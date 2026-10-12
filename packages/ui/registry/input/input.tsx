@@ -1,14 +1,10 @@
-import type { HTMLAttributes } from "@hellajs/dom";
+import type { InputProps } from "./input-types.js";
 
 // @hella:styles
 declare const base: string;
 declare const focus: string;
 declare const invalid: string;
 // @hella:end
-
-interface InputProps extends HTMLAttributes<"input"> {
-  class?: string;
-}
 
 export function Input({ class: cls, ...attrs }: InputProps): JSX.Element {
   return (

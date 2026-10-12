@@ -1,7 +1,6 @@
 import { signal } from "@hellajs/core";
 import { rovingTabIndex } from "@hellajs/dom";
 import type { HTMLAttributes } from "@hellajs/dom";
-import { cn } from "./cn.js";
 
 interface RadioGroupItem {
   value: string;
@@ -25,6 +24,7 @@ interface RadioGroupItemProps extends HTMLAttributes<"button"> {
   checked?: boolean | (() => boolean);
   onSelect?: () => void;
 }
+import { cn } from "./cn.js";
 
 /** The circle icon (refs/icons/circle.svg), created per call so reactive swaps never share nodes between clones. */
 const circleIcon = (): JSX.Element => (

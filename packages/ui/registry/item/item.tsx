@@ -1,4 +1,4 @@
-import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
+import type { ItemGroupProps, ItemSeparatorProps, ItemProps, ItemMediaProps, ItemContentProps, ItemTitleProps, ItemDescriptionProps, ItemActionsProps, ItemHeaderProps, ItemFooterProps } from "./item-types.js";
 
 // @hella:styles
 declare const actions: string;
@@ -17,11 +17,6 @@ declare const title: string;
 declare const variants: Record<string, string>;
 // @hella:end
 
-interface ItemGroupProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function ItemGroup({ children, class: cls, ...attrs }: ItemGroupProps): JSX.Element {
   return (
     <div
@@ -37,10 +32,6 @@ export function ItemGroup({ children, class: cls, ...attrs }: ItemGroupProps): J
       {children}
     </div>
   );
-}
-
-interface ItemSeparatorProps extends HTMLAttributes<"div"> {
-  class?: string;
 }
 
 export function ItemSeparator({ class: cls, ...attrs }: ItemSeparatorProps): JSX.Element {
@@ -62,15 +53,6 @@ export function ItemSeparator({ class: cls, ...attrs }: ItemSeparatorProps): JSX
       {...attrs}
     />
   );
-}
-
-interface ItemProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  variant?: "default" | "outline" | "muted";
-  size?: "default" | "sm";
-  /** Static boolean or reactive fn; drives data-selected + aria-selected (omitted when absent). */
-  selected?: boolean | (() => boolean);
 }
 
 export function Item({ variant, size, selected, children, class: cls, ...attrs }: ItemProps): JSX.Element {
@@ -100,12 +82,6 @@ export function Item({ variant, size, selected, children, class: cls, ...attrs }
   );
 }
 
-interface ItemMediaProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  variant?: "default" | "icon" | "image";
-}
-
 export function ItemMedia({ variant, children, class: cls, ...attrs }: ItemMediaProps): JSX.Element {
   return (
     <div
@@ -127,11 +103,6 @@ export function ItemMedia({ variant, children, class: cls, ...attrs }: ItemMedia
   );
 }
 
-interface ItemContentProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function ItemContent({ children, class: cls, ...attrs }: ItemContentProps): JSX.Element {
   return (
     <div
@@ -146,11 +117,6 @@ export function ItemContent({ children, class: cls, ...attrs }: ItemContentProps
       {children}
     </div>
   );
-}
-
-interface ItemTitleProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function ItemTitle({ children, class: cls, ...attrs }: ItemTitleProps): JSX.Element {
@@ -169,11 +135,6 @@ export function ItemTitle({ children, class: cls, ...attrs }: ItemTitleProps): J
   );
 }
 
-interface ItemDescriptionProps extends HTMLAttributes<"p"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function ItemDescription({ children, class: cls, ...attrs }: ItemDescriptionProps): JSX.Element {
   return (
     <p
@@ -188,11 +149,6 @@ export function ItemDescription({ children, class: cls, ...attrs }: ItemDescript
       {children}
     </p>
   );
-}
-
-interface ItemActionsProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function ItemActions({ children, class: cls, ...attrs }: ItemActionsProps): JSX.Element {
@@ -211,11 +167,6 @@ export function ItemActions({ children, class: cls, ...attrs }: ItemActionsProps
   );
 }
 
-interface ItemHeaderProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function ItemHeader({ children, class: cls, ...attrs }: ItemHeaderProps): JSX.Element {
   return (
     <div
@@ -230,11 +181,6 @@ export function ItemHeader({ children, class: cls, ...attrs }: ItemHeaderProps):
       {children}
     </div>
   );
-}
-
-interface ItemFooterProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function ItemFooter({ children, class: cls, ...attrs }: ItemFooterProps): JSX.Element {

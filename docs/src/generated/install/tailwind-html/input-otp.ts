@@ -1,7 +1,6 @@
 import { html } from "@hellajs/dom";
 import { effect, signal } from "@hellajs/core";
-import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
-import { cn } from "./cn.js";
+import type { HellaNode, HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 interface InputOTPProps extends HTMLAttributes<"div"> {
   class?: string;
@@ -15,6 +14,22 @@ interface InputOTPProps extends HTMLAttributes<"div"> {
   /** Fires once per transition to a full code. */
   onComplete?: (value: string) => void;
 }
+
+interface InputOTPGroupProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface InputOTPSlotProps extends HTMLAttributes<"div"> {
+  class?: string;
+  /** Slot position this mirror renders; the root wires its char and caret state after mount. */
+  index: number;
+}
+
+interface InputOTPSeparatorProps extends HTMLAttributes<"div"> {
+  class?: string;
+}
+import { cn } from "./cn.js";
 
 export function InputOTP({ length: lengthProp, value: valueProp, onChange, onComplete, pattern: patternAttr, autofocus: autofocusAttr, disabled: disabledAttr, class: cls, children, ...attrs }: InputOTPProps): HellaNode {
   const length = lengthProp ?? 6;
@@ -208,11 +223,6 @@ export function InputOTP({ length: lengthProp, value: valueProp, onChange, onCom
   ` as HellaNode;
 }
 
-interface InputOTPGroupProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function InputOTPGroup({ children, class: cls, ...attrs }: InputOTPGroupProps): HellaNode {
   return html`
     <div
@@ -223,12 +233,6 @@ export function InputOTPGroup({ children, class: cls, ...attrs }: InputOTPGroupP
       ...${attrs}
     >${() => children}</div>
   ` as HellaNode;
-}
-
-interface InputOTPSlotProps extends HTMLAttributes<"div"> {
-  class?: string;
-  /** Slot position this mirror renders; the root wires its char and caret state after mount. */
-  index: number;
 }
 
 export function InputOTPSlot({ index, class: cls, ...attrs }: InputOTPSlotProps): HellaNode {
@@ -255,10 +259,6 @@ export function InputOTPSlot({ index, class: cls, ...attrs }: InputOTPSlotProps)
       </div>
     </div>
   ` as HellaNode;
-}
-
-interface InputOTPSeparatorProps extends HTMLAttributes<"div"> {
-  class?: string;
 }
 
 export function InputOTPSeparator({ class: cls, ...attrs }: InputOTPSeparatorProps): HellaNode {

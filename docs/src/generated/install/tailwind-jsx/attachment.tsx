@@ -1,4 +1,59 @@
-import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
+import type { HellaChildren, HTMLAttributes } from "@hellajs/dom";
+
+type AttachmentState = "idle" | "uploading" | "processing" | "error" | "done";
+
+interface AttachmentProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+  state?: AttachmentState;
+  size?: "default" | "sm" | "xs";
+  orientation?: "horizontal" | "vertical";
+}
+
+interface AttachmentMediaProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+  variant?: "icon" | "image";
+  /** The owning Attachment's state; inlines the loading spinner on uploading and the error glyph on error when no children are authored. */
+  state?: AttachmentState;
+}
+
+interface AttachmentContentProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface AttachmentTitleProps extends HTMLAttributes<"span"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface AttachmentDescriptionProps extends HTMLAttributes<"span"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface AttachmentActionsProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface AttachmentActionProps extends HTMLAttributes<"button"> {
+  class?: string;
+  children?: HellaChildren;
+  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+  size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
+}
+
+interface AttachmentTriggerProps extends HTMLAttributes<"button"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface AttachmentGroupProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
 import { cn } from "./cn.js";
 
 const base =
@@ -62,16 +117,6 @@ const buttonSizes = {
   "icon-lg": "size-10",
 };
 
-type AttachmentState = "idle" | "uploading" | "processing" | "error" | "done";
-
-interface AttachmentProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  state?: AttachmentState;
-  size?: "default" | "sm" | "xs";
-  orientation?: "horizontal" | "vertical";
-}
-
 export function Attachment({ state, size, orientation, children, class: cls, ...attrs }: AttachmentProps): JSX.Element {
   return (
     <div
@@ -87,14 +132,6 @@ export function Attachment({ state, size, orientation, children, class: cls, ...
       {children}
     </div>
   );
-}
-
-interface AttachmentMediaProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  variant?: "icon" | "image";
-  /** The owning Attachment's state; inlines the loading spinner on uploading and the error glyph on error when no children are authored. */
-  state?: AttachmentState;
 }
 
 export function AttachmentMedia({ variant, state, children, class: cls, ...attrs }: AttachmentMediaProps): JSX.Element {
@@ -153,11 +190,6 @@ export function AttachmentMedia({ variant, state, children, class: cls, ...attrs
   );
 }
 
-interface AttachmentContentProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function AttachmentContent({ children, class: cls, ...attrs }: AttachmentContentProps): JSX.Element {
   return (
     <div
@@ -170,11 +202,6 @@ export function AttachmentContent({ children, class: cls, ...attrs }: Attachment
       {children}
     </div>
   );
-}
-
-interface AttachmentTitleProps extends HTMLAttributes<"span"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function AttachmentTitle({ children, class: cls, ...attrs }: AttachmentTitleProps): JSX.Element {
@@ -191,11 +218,6 @@ export function AttachmentTitle({ children, class: cls, ...attrs }: AttachmentTi
   );
 }
 
-interface AttachmentDescriptionProps extends HTMLAttributes<"span"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function AttachmentDescription({ children, class: cls, ...attrs }: AttachmentDescriptionProps): JSX.Element {
   return (
     <span
@@ -210,11 +232,6 @@ export function AttachmentDescription({ children, class: cls, ...attrs }: Attach
   );
 }
 
-interface AttachmentActionsProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function AttachmentActions({ children, class: cls, ...attrs }: AttachmentActionsProps): JSX.Element {
   return (
     <div
@@ -227,13 +244,6 @@ export function AttachmentActions({ children, class: cls, ...attrs }: Attachment
       {children}
     </div>
   );
-}
-
-interface AttachmentActionProps extends HTMLAttributes<"button"> {
-  class?: string;
-  children?: HellaChildren;
-  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
-  size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
 }
 
 export function AttachmentAction({ variant, size, children, class: cls, ...attrs }: AttachmentActionProps): JSX.Element {
@@ -253,11 +263,6 @@ export function AttachmentAction({ variant, size, children, class: cls, ...attrs
   );
 }
 
-interface AttachmentTriggerProps extends HTMLAttributes<"button"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function AttachmentTrigger({ children, class: cls, ...attrs }: AttachmentTriggerProps): JSX.Element {
   return (
     <button
@@ -271,11 +276,6 @@ export function AttachmentTrigger({ children, class: cls, ...attrs }: Attachment
       {children}
     </button>
   );
-}
-
-interface AttachmentGroupProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function AttachmentGroup({ children, class: cls, ...attrs }: AttachmentGroupProps): JSX.Element {

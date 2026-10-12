@@ -1,19 +1,182 @@
 import { effect, signal } from "@hellajs/core";
 import { anchorPosition, html, layerDismissal, menuTypeahead, Portal } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChild, HellaChildren, HellaNode, Placement } from "@hellajs/dom";
-import { cn } from "./cn.js";
+import type { HellaChild, HellaNode, Placement, HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 type AnchorSide = "top" | "bottom" | "left" | "right";
-type AnchorAlign = "start" | "center" | "end";
 
-const placementOf = (side: AnchorSide, align: AnchorAlign): Placement =>
-  align === "center" ? side : `${side}-${align}`;
+type AnchorAlign = "start" | "center" | "end";
 
 interface ComboboxEntry {
   value: string;
   label?: string;
   disabled?: boolean;
 }
+
+interface ComboboxValueProps extends HTMLAttributes<"span"> {
+  /** The displayed selection. A string reads statically; an accessor keeps it reactive; an array joins with ", ". */
+  value?: string | string[] | (() => string | string[] | undefined);
+  class?: string;
+}
+
+interface ComboboxTriggerProps extends HTMLAttributes<"button"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface ComboboxClearProps extends HTMLAttributes<"button"> {
+  /** Called on click; the composed Combobox wipes the selection. */
+  onClear?: () => void;
+  class?: string;
+}
+
+interface ComboboxGroupProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface ComboboxLabelProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface ComboboxCollectionProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface ComboboxEmptyProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface ComboboxSeparatorProps extends HTMLAttributes<"div"> {
+  class?: string;
+}
+
+interface ComboboxItemProps extends HTMLAttributes<"div"> {
+  value?: string;
+  label?: string;
+  /** Selected state. A boolean reads statically; an accessor keeps the item reactive against its owning combobox. */
+  selected?: boolean | (() => boolean);
+  /** Highlighted state (the ref's data-highlighted ring); an accessor follows the active option. */
+  highlighted?: boolean | (() => boolean);
+  /** Hides the item (filtered out); a reactive accessor keeps it live against the query. */
+  hidden?: () => boolean;
+  /** Called on click when the item is enabled; the composed Combobox commits the selection. */
+  onselect?: () => void;
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface ComboboxListProps extends HTMLAttributes<"div"> {
+  /** Data-driven items; rendered once and hidden (never remounted) as the query filters them. */
+  items?: ComboboxEntry[];
+  /** Resolves the live query driving the filter. */
+  query?: () => string;
+  /** Replaces the default case-insensitive substring filter. */
+  filter?: (items: ComboboxEntry[], query: string) => ComboboxEntry[];
+  /** Resolves whether a value is selected (aria-selected, data-state, check icon). */
+  selected?: (value: string) => boolean;
+  /** Resolves the highlighted value (data-highlighted, the aria-activedescendant target). */
+  active?: () => string | undefined;
+  /** Called on item click with the item value; the composed Combobox commits the selection. */
+  onselect?: (value: string) => void;
+  /** Zero-match flag; drives data-empty styling. */
+  empty?: () => boolean;
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface ComboboxInputProps extends HTMLAttributes<"input"> {
+  value?: string | (() => string);
+  disabled?: boolean;
+  /** Resolves open state for aria-expanded; the composed Combobox wires it. */
+  state?: () => "open" | "closed";
+  /** Resolves the active option id for aria-activedescendant. */
+  activeDescendant?: () => string | undefined;
+  showTrigger?: boolean;
+  showClear?: boolean;
+  onToggle?: () => void;
+  onClear?: () => void;
+  hasValue?: () => boolean;
+  /** Wires the wrapper on mount and returns its dispose; the composed Combobox anchors the panel here and attaches typeahead. */
+  wire?: (node: HTMLElement) => () => void;
+  /** The portaled panel, mounted while open; rendered as a reactive child inside the wrapper. */
+  portal?: () => HellaChildren;
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface ComboboxChipsProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren;
+  /** Reactive chips; a thunk so the selected-values map stays a single reactive child (nested function children stringify). */
+  chips?: () => HellaChildren;
+  /** Wired, not spread: renders data-disabled and gates the chip remove buttons. */
+  disabled?: boolean;
+  /** Wires the chips wrapper on mount and returns its dispose; the composed Combobox anchors the panel here. */
+  wire?: (node: HTMLElement) => () => void;
+  /** The portaled panel, mounted while open; rendered as a reactive child inside the wrapper. */
+  portal?: () => HellaChildren;
+  class?: string;
+}
+
+interface ComboboxChipProps extends HTMLAttributes<"div"> {
+  value?: string;
+  /** Wired, not spread: renders data-disabled and gates the remove button. */
+  disabled?: boolean;
+  /** Renders the remove button; defaults to true. */
+  showRemove?: boolean;
+  onRemove?: () => void;
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface ComboboxChipsInputProps extends HTMLAttributes<"input"> {
+  value?: string | (() => string);
+  disabled?: boolean;
+  /** Resolves open state for aria-expanded; the composed Combobox wires it. */
+  state?: () => "open" | "closed";
+  /** Resolves the active option id for aria-activedescendant. */
+  activeDescendant?: () => string | undefined;
+  class?: string;
+}
+
+interface ComboboxContentProps extends HTMLAttributes<"div"> {
+  state?: () => "open" | "closed";
+  side?: AnchorSide;
+  align?: AnchorAlign;
+  /** Gap between the anchor and the content edge, in px. Default 6. */
+  sideOffset?: number;
+  /** Resolves the element the content anchors to (the input wrapper); positioning is skipped when undefined. */
+  anchor?: () => Element | undefined;
+  /** Sets data-chips="true" (chips-composition width styling). */
+  chips?: boolean;
+  /** Zero-match flag; drives data-empty styling. */
+  empty?: () => boolean;
+  /** When given, Escape and an outside pointerdown dismiss the top layer into this callback. */
+  onDismiss?: () => void;
+  /** Called when the exit animation ends under data-state="closed"; entry animationends are ignored. */
+  onExited?: () => void;
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface ComboboxProps extends HTMLAttributes<"div"> {
+  items?: ComboboxEntry[];
+  /** Controlled selection. Single mode holds one value; multiple mode holds an array. When given, the root never writes its internal signal and `onValueChange` reports the requested selection. */
+  value?: () => string | string[];
+  onValueChange?: (value: string | string[]) => void;
+  multiple?: boolean;
+  /** Replaces the default case-insensitive substring filter over item labels. */
+  filter?: (items: ComboboxEntry[], query: string) => ComboboxEntry[];
+  /** Renders the input's clear affordance while a value is selected. */
+  showClear?: boolean;
+  class?: string;
+}
+import { cn } from "./cn.js";
+
+const placementOf = (side: AnchorSide, align: AnchorAlign): Placement =>
+  align === "center" ? side : `${side}-${align}`;
 
 /** Open/close state: exit-holding `visible` gate so an open→closed flip never unmounts before the exit starts. */
 function comboboxOpenState() {
@@ -114,12 +277,6 @@ const clearIcon = (): HellaNode =>
     <path d="m6 6 12 12" />
   </svg>` as HellaNode;
 
-interface ComboboxValueProps extends HTMLAttributes<"span"> {
-  /** The displayed selection. A string reads statically; an accessor keeps it reactive; an array joins with ", ". */
-  value?: string | string[] | (() => string | string[] | undefined);
-  class?: string;
-}
-
 /** Renders the selected value for compositions that show the selection outside the input. */
 export function ComboboxValue({ value, class: cls, ...attrs }: ComboboxValueProps): HellaNode {
   const current = (): string | string[] | undefined =>
@@ -138,11 +295,6 @@ export function ComboboxValue({ value, class: cls, ...attrs }: ComboboxValueProp
   ` as HellaNode;
 }
 
-interface ComboboxTriggerProps extends HTMLAttributes<"button"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 /** The manual trigger button; the composed Combobox renders its chevron twin inside the input-group addon. */
 export function ComboboxTrigger({ children, class: cls, ...attrs }: ComboboxTriggerProps): HellaNode {
   return html`
@@ -157,12 +309,6 @@ export function ComboboxTrigger({ children, class: cls, ...attrs }: ComboboxTrig
       ${() => children}${chevronDownIcon()}
     </button>
   ` as HellaNode;
-}
-
-interface ComboboxClearProps extends HTMLAttributes<"button"> {
-  /** Called on click; the composed Combobox wipes the selection. */
-  onClear?: () => void;
-  class?: string;
 }
 
 /** The clear affordance, styled as the input-group's ghost icon-xs button. */
@@ -181,11 +327,6 @@ export function ComboboxClear({ onClear, "on:click": userClick, class: cls, ...a
   ` as HellaNode;
 }
 
-interface ComboboxGroupProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function ComboboxGroup({ children, class: cls, ...attrs }: ComboboxGroupProps): HellaNode {
   return html`
     <div
@@ -196,11 +337,6 @@ export function ComboboxGroup({ children, class: cls, ...attrs }: ComboboxGroupP
       ...${attrs}
     >${() => children}</div>
   ` as HellaNode;
-}
-
-interface ComboboxLabelProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  class?: string;
 }
 
 export function ComboboxLabel({ children, class: cls, ...attrs }: ComboboxLabelProps): HellaNode {
@@ -215,11 +351,6 @@ export function ComboboxLabel({ children, class: cls, ...attrs }: ComboboxLabelP
   ` as HellaNode;
 }
 
-interface ComboboxCollectionProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 /** Passthrough wrapper grouping items rendered from external data. */
 export function ComboboxCollection({ children, class: cls, ...attrs }: ComboboxCollectionProps): HellaNode {
   return html`
@@ -229,11 +360,6 @@ export function ComboboxCollection({ children, class: cls, ...attrs }: ComboboxC
       ...${attrs}
     >${() => children}</div>
   ` as HellaNode;
-}
-
-interface ComboboxEmptyProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  class?: string;
 }
 
 /** Renders when the query matches nothing; the composed Combobox mounts it with its default text. */
@@ -249,10 +375,6 @@ export function ComboboxEmpty({ children, class: cls, ...attrs }: ComboboxEmptyP
   ` as HellaNode;
 }
 
-interface ComboboxSeparatorProps extends HTMLAttributes<"div"> {
-  class?: string;
-}
-
 export function ComboboxSeparator({ class: cls, ...attrs }: ComboboxSeparatorProps): HellaNode {
   return html`
     <div
@@ -264,21 +386,6 @@ export function ComboboxSeparator({ class: cls, ...attrs }: ComboboxSeparatorPro
       ...${attrs}
     />
   ` as HellaNode;
-}
-
-interface ComboboxItemProps extends HTMLAttributes<"div"> {
-  value?: string;
-  label?: string;
-  /** Selected state. A boolean reads statically; an accessor keeps the item reactive against its owning combobox. */
-  selected?: boolean | (() => boolean);
-  /** Highlighted state (the ref's data-highlighted ring); an accessor follows the active option. */
-  highlighted?: boolean | (() => boolean);
-  /** Hides the item (filtered out); a reactive accessor keeps it live against the query. */
-  hidden?: () => boolean;
-  /** Called on click when the item is enabled; the composed Combobox commits the selection. */
-  onselect?: () => void;
-  children?: HellaChildren;
-  class?: string;
 }
 
 export function ComboboxItem({ value, label: labelProp, disabled, selected: selectedProp, highlighted: highlightedProp, hidden, onselect, "on:click": userClick, children, class: cls, ...attrs }: ComboboxItemProps): HellaNode {
@@ -325,25 +432,6 @@ export function ComboboxItem({ value, label: labelProp, disabled, selected: sele
   ` as HellaNode;
 }
 
-interface ComboboxListProps extends HTMLAttributes<"div"> {
-  /** Data-driven items; rendered once and hidden (never remounted) as the query filters them. */
-  items?: ComboboxEntry[];
-  /** Resolves the live query driving the filter. */
-  query?: () => string;
-  /** Replaces the default case-insensitive substring filter. */
-  filter?: (items: ComboboxEntry[], query: string) => ComboboxEntry[];
-  /** Resolves whether a value is selected (aria-selected, data-state, check icon). */
-  selected?: (value: string) => boolean;
-  /** Resolves the highlighted value (data-highlighted, the aria-activedescendant target). */
-  active?: () => string | undefined;
-  /** Called on item click with the item value; the composed Combobox commits the selection. */
-  onselect?: (value: string) => void;
-  /** Zero-match flag; drives data-empty styling. */
-  empty?: () => boolean;
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function ComboboxList({ id, items: itemsProp, query, filter, selected, active, onselect, empty: emptyProp, children, class: cls, ...attrs }: ComboboxListProps): HellaNode {
   const items = itemsProp ?? [];
   const matches = (): ComboboxEntry[] => {
@@ -377,26 +465,6 @@ export function ComboboxList({ id, items: itemsProp, query, filter, selected, ac
       )}${() => children}
     </div>
   ` as HellaNode;
-}
-
-interface ComboboxInputProps extends HTMLAttributes<"input"> {
-  value?: string | (() => string);
-  disabled?: boolean;
-  /** Resolves open state for aria-expanded; the composed Combobox wires it. */
-  state?: () => "open" | "closed";
-  /** Resolves the active option id for aria-activedescendant. */
-  activeDescendant?: () => string | undefined;
-  showTrigger?: boolean;
-  showClear?: boolean;
-  onToggle?: () => void;
-  onClear?: () => void;
-  hasValue?: () => boolean;
-  /** Wires the wrapper on mount and returns its dispose; the composed Combobox anchors the panel here and attaches typeahead. */
-  wire?: (node: HTMLElement) => () => void;
-  /** The portaled panel, mounted while open; rendered as a reactive child inside the wrapper. */
-  portal?: () => HellaChildren;
-  children?: HellaChildren;
-  class?: string;
 }
 
 export function ComboboxInput({ value, disabled, state: stateProp, activeDescendant, showTrigger, showClear, onToggle, onClear, wire, portal, children, class: cls, ...attrs }: ComboboxInputProps): HellaNode {
@@ -470,19 +538,6 @@ export function ComboboxInput({ value, disabled, state: stateProp, activeDescend
   ` as HellaNode;
 }
 
-interface ComboboxChipsProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  /** Reactive chips; a thunk so the selected-values map stays a single reactive child (nested function children stringify). */
-  chips?: () => HellaChildren;
-  /** Wired, not spread: renders data-disabled and gates the chip remove buttons. */
-  disabled?: boolean;
-  /** Wires the chips wrapper on mount and returns its dispose; the composed Combobox anchors the panel here. */
-  wire?: (node: HTMLElement) => () => void;
-  /** The portaled panel, mounted while open; rendered as a reactive child inside the wrapper. */
-  portal?: () => HellaChildren;
-  class?: string;
-}
-
 export function ComboboxChips({ children, chips: chipsSlot, disabled, wire, portal, class: cls, ...attrs }: ComboboxChipsProps): HellaNode {
   let disposeWire: (() => void) | undefined;
   return html`
@@ -506,17 +561,6 @@ export function ComboboxChips({ children, chips: chipsSlot, disabled, wire, port
       ${() => portal?.()}
     </div>
   ` as HellaNode;
-}
-
-interface ComboboxChipProps extends HTMLAttributes<"div"> {
-  value?: string;
-  /** Wired, not spread: renders data-disabled and gates the remove button. */
-  disabled?: boolean;
-  /** Renders the remove button; defaults to true. */
-  showRemove?: boolean;
-  onRemove?: () => void;
-  children?: HellaChildren;
-  class?: string;
 }
 
 export function ComboboxChip({ value, disabled, showRemove, onRemove, children, class: cls, ...attrs }: ComboboxChipProps): HellaNode {
@@ -544,16 +588,6 @@ export function ComboboxChip({ value, disabled, showRemove, onRemove, children, 
   ` as HellaNode;
 }
 
-interface ComboboxChipsInputProps extends HTMLAttributes<"input"> {
-  value?: string | (() => string);
-  disabled?: boolean;
-  /** Resolves open state for aria-expanded; the composed Combobox wires it. */
-  state?: () => "open" | "closed";
-  /** Resolves the active option id for aria-activedescendant. */
-  activeDescendant?: () => string | undefined;
-  class?: string;
-}
-
 export function ComboboxChipsInput({ value, disabled, state: stateProp, activeDescendant, class: cls, ...attrs }: ComboboxChipsInputProps): HellaNode {
   const state = (): "open" | "closed" => stateProp?.() ?? "closed";
   return html`
@@ -572,26 +606,6 @@ export function ComboboxChipsInput({ value, disabled, state: stateProp, activeDe
       ...${attrs}
     />
   ` as HellaNode;
-}
-
-interface ComboboxContentProps extends HTMLAttributes<"div"> {
-  state?: () => "open" | "closed";
-  side?: AnchorSide;
-  align?: AnchorAlign;
-  /** Gap between the anchor and the content edge, in px. Default 6. */
-  sideOffset?: number;
-  /** Resolves the element the content anchors to (the input wrapper); positioning is skipped when undefined. */
-  anchor?: () => Element | undefined;
-  /** Sets data-chips="true" (chips-composition width styling). */
-  chips?: boolean;
-  /** Zero-match flag; drives data-empty styling. */
-  empty?: () => boolean;
-  /** When given, Escape and an outside pointerdown dismiss the top layer into this callback. */
-  onDismiss?: () => void;
-  /** Called when the exit animation ends under data-state="closed"; entry animationends are ignored. */
-  onExited?: () => void;
-  children?: HellaChildren;
-  class?: string;
 }
 
 export function ComboboxContent({ state: stateProp, side: sideProp, align: alignProp, sideOffset, anchor, chips: chipsProp, empty: emptyProp, onDismiss, onExited, children, class: cls, ...attrs }: ComboboxContentProps): HellaNode {
@@ -642,19 +656,6 @@ export function ComboboxContent({ state: stateProp, side: sideProp, align: align
       ...${attrs}
     >${() => children}</div>
   ` as HellaNode;
-}
-
-interface ComboboxProps extends HTMLAttributes<"div"> {
-  items?: ComboboxEntry[];
-  /** Controlled selection. Single mode holds one value; multiple mode holds an array. When given, the root never writes its internal signal and `onValueChange` reports the requested selection. */
-  value?: () => string | string[];
-  onValueChange?: (value: string | string[]) => void;
-  multiple?: boolean;
-  /** Replaces the default case-insensitive substring filter over item labels. */
-  filter?: (items: ComboboxEntry[], query: string) => ComboboxEntry[];
-  /** Renders the input's clear affordance while a value is selected. */
-  showClear?: boolean;
-  class?: string;
 }
 
 let comboboxCount = 0;

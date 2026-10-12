@@ -1,15 +1,10 @@
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HellaNode } from "@hellajs/dom";
+import type { SeparatorProps } from "./separator-types.js";
 
 // @hella:styles
 declare const base: string;
 // @hella:end
-
-interface SeparatorProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  orientation?: "horizontal" | "vertical";
-}
 
 export function Separator({ orientation, children, class: cls, ...attrs }: SeparatorProps): HellaNode {
   return html`

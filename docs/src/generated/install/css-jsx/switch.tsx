@@ -1,6 +1,13 @@
 import { signal } from "@hellajs/core";
 import type { HTMLAttributes } from "@hellajs/dom";
 
+interface SwitchProps extends HTMLAttributes<"button"> {
+  class?: string;
+  /** Checked state. A boolean seeds the internal signal; an accessor makes the switch controlled — clicks then only report through `onCheckedChange`. */
+  checked?: boolean | (() => boolean);
+  onCheckedChange?: (checked: boolean) => void;
+}
+
 import { style } from "@hellajs/css";
 import { tokens } from "./tokens.js";
 
@@ -57,13 +64,6 @@ const thumb = style("switch-thumb", {
     backgroundColor: tokens.foreground,
   },
 });
-
-interface SwitchProps extends HTMLAttributes<"button"> {
-  class?: string;
-  /** Checked state. A boolean seeds the internal signal; an accessor makes the switch controlled — clicks then only report through `onCheckedChange`. */
-  checked?: boolean | (() => boolean);
-  onCheckedChange?: (checked: boolean) => void;
-}
 
 export function Switch({ checked: checkedProp, onCheckedChange, disabled, "on:click": userClick, class: cls, ...attrs }: SwitchProps): JSX.Element {
   const checkedAccessor = typeof checkedProp === "function" ? checkedProp : undefined;

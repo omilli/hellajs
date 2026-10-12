@@ -1,14 +1,8 @@
 import { signal } from "@hellajs/core";
 import { rovingTabIndex } from "@hellajs/dom";
 import type { HTMLAttributes, HellaChild } from "@hellajs/dom";
-import { cn } from "./cn.js";
 
-const variants = {
-  default: "bg-muted",
-  line: "gap-1 bg-transparent",
-};
-
-export interface TabsItem {
+interface TabsItem {
   id: string;
   label: string;
   content: HellaChild | (() => HellaChild);
@@ -47,6 +41,14 @@ interface TabsContentProps extends HTMLAttributes<"div"> {
   children?: HellaChild | (() => HellaChild);
   active?: () => boolean;
 }
+import { cn } from "./cn.js";
+
+export type { TabsItem };
+
+const variants = {
+  default: "bg-muted",
+  line: "gap-1 bg-transparent",
+};
 
 export function TabsList({ variant = "default", orientation = "horizontal", children, class: cls, ...attrs }: TabsListProps): JSX.Element {
   return (

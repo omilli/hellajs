@@ -1,16 +1,11 @@
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HellaNode } from "@hellajs/dom";
+import type { BadgeProps } from "./badge-types.js";
 
 // @hella:styles
 declare const base: string;
 declare const variants: Record<string, string>;
 // @hella:end
-
-interface BadgeProps extends HTMLAttributes<"span"> {
-  class?: string;
-  children?: HellaChildren;
-  variant?: "default" | "secondary" | "destructive" | "outline" | "ghost" | "link";
-}
 
 export function Badge({ variant, children, class: cls, ...attrs }: BadgeProps): HellaNode {
   return html`

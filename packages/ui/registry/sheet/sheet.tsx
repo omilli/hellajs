@@ -1,6 +1,7 @@
 import { effect, signal } from "@hellajs/core";
 import { onEscape, onOutside, Portal, trapFocus } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChild, HellaChildren } from "@hellajs/dom";
+import type { HellaChild, HellaChildren } from "@hellajs/dom";
+import type { SheetOverlayProps, SheetCloseProps, SheetPortalProps, SheetTriggerProps, SheetContentProps, SheetPartProps, SheetTitleProps, SheetDescriptionProps, SheetProps } from "./sheet-types.js";
 
 // @hella:styles
 declare const base: string;
@@ -14,15 +15,8 @@ declare const title: string;
 // @hella:end
 
 /** Accessibility state shared by the animated sheet parts. */
-type SheetState = () => "open" | "closed";
 
 /** Side the panel slides in from. */
-type SheetSide = "top" | "right" | "bottom" | "left";
-
-interface SheetOverlayProps extends HTMLAttributes<"div"> {
-  state?: SheetState;
-  class?: string;
-}
 
 export function SheetOverlay({ state, class: cls, ...attrs }: SheetOverlayProps): JSX.Element {
   return (
@@ -37,12 +31,6 @@ export function SheetOverlay({ state, class: cls, ...attrs }: SheetOverlayProps)
       {...attrs}
     />
   );
-}
-
-interface SheetCloseProps extends HTMLAttributes<"button"> {
-  state?: SheetState;
-  onClose?: () => void;
-  class?: string;
 }
 
 export function SheetClose({ state, onClose, "on:click": userClick, class: cls, ...attrs }: SheetCloseProps): JSX.Element {
@@ -78,10 +66,6 @@ export function SheetClose({ state, onClose, "on:click": userClick, class: cls, 
   );
 }
 
-interface SheetPortalProps {
-  children?: HellaChildren;
-}
-
 /** Portals the manual composition's parts into document.body. */
 export function SheetPortal(props: SheetPortalProps): JSX.Element {
   return (
@@ -89,11 +73,6 @@ export function SheetPortal(props: SheetPortalProps): JSX.Element {
       {props.children}
     </Portal>
   );
-}
-
-interface SheetTriggerProps extends HTMLAttributes<"button"> {
-  children?: HellaChildren;
-  class?: string;
 }
 
 /** The manual trigger button; wire its click to the caller's open signal - hella has no Radix context to do it for you. */
@@ -112,18 +91,6 @@ export function SheetTrigger({ children, class: cls, ...attrs }: SheetTriggerPro
       {children}
     </button>
   );
-}
-
-interface SheetContentProps extends HTMLAttributes<"div"> {
-  state?: SheetState;
-  side?: SheetSide;
-  showCloseButton?: boolean;
-  closeOnEscape?: boolean;
-  closeOnOutside?: boolean;
-  onClose?: () => void;
-  onExited?: () => void;
-  class?: string;
-  children?: HellaChildren;
 }
 
 /**
@@ -198,11 +165,6 @@ export function SheetContent({ state, side, showCloseButton, closeOnEscape, clos
   );
 }
 
-interface SheetPartProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function SheetHeader({ children, class: cls, ...attrs }: SheetPartProps): JSX.Element {
   return (
     <div
@@ -235,11 +197,6 @@ export function SheetFooter({ children, class: cls, ...attrs }: SheetPartProps):
   );
 }
 
-interface SheetTitleProps extends HTMLAttributes<"h2"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function SheetTitle({ id, children, class: cls, ...attrs }: SheetTitleProps): JSX.Element {
   return (
     <h2
@@ -257,11 +214,6 @@ export function SheetTitle({ id, children, class: cls, ...attrs }: SheetTitlePro
   );
 }
 
-interface SheetDescriptionProps extends HTMLAttributes<"p"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function SheetDescription({ id, children, class: cls, ...attrs }: SheetDescriptionProps): JSX.Element {
   return (
     <p
@@ -277,19 +229,6 @@ export function SheetDescription({ id, children, class: cls, ...attrs }: SheetDe
       {children}
     </p>
   );
-}
-
-interface SheetProps extends HTMLAttributes<"div"> {
-  open: () => boolean;
-  onClose: () => void;
-  side?: SheetSide;
-  title?: string;
-  description?: string;
-  showCloseButton?: boolean;
-  closeOnEscape?: boolean;
-  closeOnOutside?: boolean;
-  class?: string;
-  children?: HellaChildren;
 }
 
 let sheetCount = 0;

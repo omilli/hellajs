@@ -1,6 +1,5 @@
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaNode } from "@hellajs/dom";
-import { cn } from "./cn.js";
+import type { HellaNode, HTMLAttributes } from "@hellajs/dom";
 
 type ProgressValue = number | null | undefined;
 
@@ -9,6 +8,7 @@ interface ProgressProps extends HTMLAttributes<"div"> {
   /** 0-100; null (or a reactive fn reading null) drives the indeterminate state. */
   value?: number | null | (() => number | null);
 }
+import { cn } from "./cn.js";
 
 export function Progress({ value, class: cls, ...attrs }: ProgressProps): HellaNode {
   const current = (): ProgressValue => (typeof value === "function" ? value() : value);

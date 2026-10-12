@@ -1,11 +1,11 @@
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
-import { cn } from "./cn.js";
 
 interface SeparatorProps extends HTMLAttributes<"div"> {
   class?: string;
   children?: HellaChildren;
   orientation?: "horizontal" | "vertical";
 }
+import { cn } from "./cn.js";
 
 export function Separator({ orientation, children, class: cls, ...attrs }: SeparatorProps): JSX.Element {
   return (

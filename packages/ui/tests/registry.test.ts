@@ -18,6 +18,16 @@ function styleModuleOf(entryName: string, entry: RegistryEntry, style: UiStyle):
   return (entry.files ?? []).length > 0 ? `${entryName}-${style}.ts` : undefined;
 }
 
+/** The conventionally named shared types module of an entry, when it has canonicals. */
+function typesModuleOf(entryName: string, entry: RegistryEntry): string | undefined {
+  return (entry.files ?? []).length > 0 ? `${entryName}-types.ts` : undefined;
+}
+
+/** A component entry's canonical files: the copied jsx/html sources. */
+function canonicalsOf(entry: RegistryEntry): string[] {
+  return (entry.files ?? []).filter((file) => file.endsWith(".tsx") || file.endsWith("-html.ts"));
+}
+
 /** Files on disk as `[entryName, fileName]` pairs; registry.json excluded. */
 function diskFiles(): [string, string][] {
   const found: [string, string][] = [];
@@ -62,6 +72,35 @@ describe("registry", () => {
     rmSync(darkRoot, { recursive: true, force: true });
   });
 
+  test("every component entry owns its conventional shared types module", () => {
+    for (const [name, entry] of Object.entries(manifest.entries)) {
+      if ((entry.files ?? []).length === 0) continue;
+      expect(existsSync(join(registryDir, name, typesModuleOf(name, entry)!))).toBe(true);
+    }
+  });
+
+  test("every canonical imports its entry's shared types module exactly once, as a type import", () => {
+    for (const [name, entry] of Object.entries(manifest.entries)) {
+      for (const file of canonicalsOf(entry)) {
+        const lines = readEntryFile(name, file).split("\n").filter((line) => line.includes(`./${name}-types.js`));
+        expect(lines).toHaveLength(1);
+        expect(lines[0]!.trim().startsWith("import type")).toBe(true);
+      }
+    }
+  });
+
+  test("canonicals carry no top-level type declarations — shared types live once in the types module", () => {
+    // Declaration shape only (`type <Identifier>` / `interface <Identifier>`):
+    // the `export type { X };` re-export lines the four surface components
+    // carry are not declarations.
+    const declaration = /^(export )?(interface [A-Za-z_$]|type [A-Za-z_$])/m;
+    for (const [name, entry] of Object.entries(manifest.entries)) {
+      for (const file of canonicalsOf(entry)) {
+        expect(declaration.test(readEntryFile(name, file))).toBe(false);
+      }
+    }
+  });
+
   test("manifest carries the full catalog: 61 entries", () => {
     expect(Object.keys(manifest.entries).length).toBe(61);
   });
@@ -73,7 +112,8 @@ describe("registry", () => {
       const listed = Object.keys(entry!.styles ?? {}).some((style) => {
         return filesAt(entry!, style as UiStyle).includes(file)
           || styleModuleOf(entryName, entry!, style as UiStyle) === file;
-      });
+      })
+        || typesModuleOf(entryName, entry!) === file;
       expect(listed).toBe(true);
     }
   });

@@ -1,5 +1,22 @@
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
+interface NativeSelectProps extends HTMLAttributes<"select"> {
+  class?: string;
+  children?: HellaChildren;
+  value?: string | (() => string);
+  size?: "sm" | "default";
+}
+
+interface NativeSelectOptionProps extends HTMLAttributes<"option"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface NativeSelectOptGroupProps extends HTMLAttributes<"optgroup"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
 import { style } from "@hellajs/css";
 import { tokens } from "./tokens.js";
 
@@ -91,13 +108,6 @@ const optgroup = style("native-select-optgroup", {
   color: "CanvasText",
 });
 
-interface NativeSelectProps extends HTMLAttributes<"select"> {
-  class?: string;
-  children?: HellaChildren;
-  value?: string | (() => string);
-  size?: "sm" | "default";
-}
-
 export function NativeSelect({ value, size, children, class: cls, ...attrs }: NativeSelectProps): JSX.Element {
   return (
     <div
@@ -147,16 +157,6 @@ export function NativeSelect({ value, size, children, class: cls, ...attrs }: Na
       </svg>
     </div>
   );
-}
-
-interface NativeSelectOptionProps extends HTMLAttributes<"option"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
-interface NativeSelectOptGroupProps extends HTMLAttributes<"optgroup"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function NativeSelectOption({ children, class: cls, ...attrs }: NativeSelectOptionProps): JSX.Element {

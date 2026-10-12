@@ -5,7 +5,7 @@ import { readConfig, resolveRoot, UI_FORMATS, UI_LANGS, UI_STYLES, UI_THEME_MODE
 import { checkPeers } from "./internal/peers";
 import { resolveEntry } from "./internal/registry";
 import { stripTypes } from "./internal/strip";
-import { applyStyleVariant } from "./internal/transform";
+import { applyStyleVariant, inlineTypes } from "./internal/transform";
 import { loadRegistry } from "./loadRegistry";
 import type { AddOptions, UiFormat, UiThemeMode } from "./types";
 
@@ -24,8 +24,10 @@ function matchesFormat(file: string, format: UiFormat): boolean {
  * Copies registry component source into the project's components directory.
  * Style, format, themeMode, and lang come from the options, falling back to
  * hella.ui.json, then defaults. Component entries have their style module
- * (`<name>-<style>.ts`) spliced into every copied canonical file — both
- * styles splice; entries without canonicals (theme, cn) copy verbatim. A
+ * (`<name>-<style>.ts`) spliced into every copied canonical file and their
+ * shared types module (`<name>-types.ts`, read by a plain readFileSync — a
+ * missing module is the loud ENOENT gate) inlined at its import site — both styles splice;
+ * entries without canonicals (theme, cn) copy verbatim. A
  * `js` lang strips TypeScript after the splice through esbuild: `.tsx`
  * becomes `.jsx` with JSX preserved, `.ts` becomes plain `.js` (the theme
  * `tokens.ts` included), and `theme.css` rides through verbatim. A `dark`
@@ -77,6 +79,7 @@ export function addComponent(names: string[], options: AddOptions = {}): void {
   while (i < resolved.length) {
     const entry = resolved[i++]!;
     const styleModuleText = entry.styleFile === undefined ? undefined : readFileSync(join(entry.baseDir, entry.styleFile), "utf8");
+    const typesModuleText = entry.typesFile === undefined ? undefined : readFileSync(join(entry.baseDir, entry.typesFile), "utf8");
     // *-html.ts renames to <name>.ts (js for --lang js) so user imports resolve
     // ./components/<name> in both formats; --lang js retargets the other TS files too.
     // A dark themeMode reads the mapped dark source instead of the target file
@@ -112,7 +115,8 @@ export function addComponent(names: string[], options: AddOptions = {}): void {
         rename,
         transform: (text: string, file: string): string => {
           const spliced = styleModuleText === undefined ? text : applyStyleVariant(text, styleModuleText, style);
-          return lang === "js" ? stripTypes(spliced, file) : spliced;
+          const inlined = typesModuleText === undefined ? spliced : inlineTypes(spliced, typesModuleText);
+          return lang === "js" ? stripTypes(inlined, file) : inlined;
         },
       },
     );

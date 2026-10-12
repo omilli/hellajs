@@ -1,10 +1,10 @@
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
-import { cn } from "./cn.js";
 
 interface SkeletonProps extends HTMLAttributes<"div"> {
   class?: string;
   children?: HellaChildren;
 }
+import { cn } from "./cn.js";
 
 export function Skeleton({ children, class: cls, ...attrs }: SkeletonProps): JSX.Element {
   return (

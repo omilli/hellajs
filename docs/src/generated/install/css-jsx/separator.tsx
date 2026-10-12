@@ -1,5 +1,11 @@
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
+interface SeparatorProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+  orientation?: "horizontal" | "vertical";
+}
+
 import { style } from "@hellajs/css";
 import { tokens } from "./tokens.js";
 
@@ -15,12 +21,6 @@ const base = style("separator", {
     width: "1px",
   },
 });
-
-interface SeparatorProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  orientation?: "horizontal" | "vertical";
-}
 
 export function Separator({ orientation, children, class: cls, ...attrs }: SeparatorProps): JSX.Element {
   return (

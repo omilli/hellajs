@@ -1,7 +1,9 @@
 import { signal } from "@hellajs/core";
-import type { Signal } from "@hellajs/core";
 import { $ref, ForEach, html, onDrag, Portal } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChild, HellaNode } from "@hellajs/dom";
+import type { HellaChild, HellaNode } from "@hellajs/dom";
+import type { ToastType, ToastVariant, ToastOptions, ToastHandle, ToastData, ToastRecord, ToastTimer, PromiseMessages, ToastApi, ToastItemProps, ToasterProps } from "./sonner-types.js";
+
+export type { ToastApi };
 
 // @hella:styles
 declare const actionButton: string;
@@ -16,45 +18,18 @@ declare const toasterPositions: Record<string, string>;
 // @hella:end
 
 /** Semantic toast flavor; a toast without one renders `data-type="default"` with no icon. */
-type ToastType = "success" | "error" | "warning" | "info";
 
 /** Everything the toast li renders, including the promise-loading flavor. */
-type ToastVariant = ToastType | "loading" | "default";
 
 /** Edge the toast stack pins to. */
-type ToasterPosition = "top-left" | "top-center" | "top-right" | "bottom-left" | "bottom-center" | "bottom-right";
 
 /** Per-toast options: secondary line, a tinted icon flavor, an action button, and the auto-dismiss budget. */
-interface ToastOptions {
-  description?: string;
-  type?: ToastType;
-  action?: { label: string; onclick: () => void };
-  /** Milliseconds before auto-dismiss; defaults to 4000. Hover pauses the countdown; `Infinity` sticks. */
-  duration?: number;
-}
 
 /** Queue handle returned by every toast call. */
-interface ToastHandle {
-  id: number;
-  dismiss(): void;
-}
 
 /** One toast's rendered state; `removed` starts the exit collapse. */
-interface ToastData {
-  id: number;
-  message: string;
-  description?: string;
-  type: ToastVariant;
-  action?: { label: string; onclick: () => void };
-  duration: number;
-  removed: boolean;
-}
 
 /** Queue entry: stable identity for keyed reconciliation plus a signal so in-place updates re-render the li. */
-interface ToastRecord {
-  id: number;
-  data: Signal<ToastData>;
-}
 
 /** Cap on simultaneously visible toasts; overflow retires the oldest immediately. */
 const VISIBLE_CAP = 3;
@@ -79,11 +54,6 @@ const toasts = signal<ToastRecord[]>([]);
 let nextId = 0;
 
 /** Live countdown per toast: the timeout handle plus the remaining budget when hover has paused it. */
-interface ToastTimer {
-  timeout?: ReturnType<typeof setTimeout>;
-  remaining: number;
-  startedAt: number;
-}
 
 const timers = new Map<number, ToastTimer>();
 
@@ -144,21 +114,8 @@ function pushToast(init: { message: string; description?: string; type: ToastVar
 }
 
 /** Per-phase messages for `toast.promise`; either phase accepts a plain string or a function of the settled value. */
-interface PromiseMessages<T> {
-  loading: string;
-  success: string | ((data: T) => string);
-  error: string | ((error: unknown) => string);
-  duration?: number;
-}
 
 /** Toast queue API: `toast(message, options)`, `toast.promise(...)`, and `toast.dismiss(...)`. */
-export interface ToastApi {
-  (message: string, options?: ToastOptions): ToastHandle;
-  /** Sticky loading toast that swaps to the success (or error) flavor and message when the promise settles. */
-  promise<T>(promise: Promise<T>, messages: PromiseMessages<T>): ToastHandle;
-  /** Retires one toast by id, or every toast when called without one. */
-  dismiss(id?: number): void;
-}
 
 export const toast: ToastApi = (message: string, options?: ToastOptions): ToastHandle => {
   return pushToast({
@@ -258,11 +215,6 @@ function wireToast(record: ToastRecord): void {
       while (teardown.length) teardown.pop()!();
     },
   });
-}
-
-interface ToastItemProps {
-  record: ToastRecord;
-  richColors?: boolean;
 }
 
 /**
@@ -399,13 +351,6 @@ function ToastItem(props: ToastItemProps): HellaNode {
       </button>
     </li>
   ` as HellaNode;
-}
-
-interface ToasterProps extends HTMLAttributes<"ol"> {
-  class?: string;
-  position?: ToasterPosition;
-  /** Tints the whole card per flavor (sonner's richColors); icons are tinted either way. */
-  richColors?: boolean;
 }
 
 /**

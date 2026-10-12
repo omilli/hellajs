@@ -1,10 +1,10 @@
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaNode } from "@hellajs/dom";
-import { cn } from "./cn.js";
+import type { HellaNode, HTMLAttributes } from "@hellajs/dom";
 
 interface SpinnerProps extends HTMLAttributes<"svg"> {
   class?: string;
 }
+import { cn } from "./cn.js";
 
 export function Spinner({ class: cls, ...attrs }: SpinnerProps): HellaNode {
   return html`

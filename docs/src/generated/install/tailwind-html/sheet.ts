@@ -1,6 +1,70 @@
 import { effect, signal } from "@hellajs/core";
 import { html, onEscape, onOutside, Portal, trapFocus } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HellaChild, HellaNode, HTMLAttributes, HellaChildren } from "@hellajs/dom";
+
+type SheetState = () => "open" | "closed";
+
+type SheetSide = "top" | "right" | "bottom" | "left";
+
+interface SheetOverlayProps extends HTMLAttributes<"div"> {
+  state?: SheetState;
+  class?: string;
+}
+
+interface SheetCloseProps extends HTMLAttributes<"button"> {
+  state?: SheetState;
+  onClose?: () => void;
+  class?: string;
+}
+
+interface SheetPortalProps {
+  children?: HellaChildren;
+}
+
+interface SheetTriggerProps extends HTMLAttributes<"button"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface SheetContentProps extends HTMLAttributes<"div"> {
+  state?: SheetState;
+  side?: SheetSide;
+  showCloseButton?: boolean;
+  closeOnEscape?: boolean;
+  closeOnOutside?: boolean;
+  onClose?: () => void;
+  onExited?: () => void;
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface SheetPartProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface SheetTitleProps extends HTMLAttributes<"h2"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface SheetDescriptionProps extends HTMLAttributes<"p"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface SheetProps extends HTMLAttributes<"div"> {
+  open: () => boolean;
+  onClose: () => void;
+  side?: SheetSide;
+  title?: string;
+  description?: string;
+  showCloseButton?: boolean;
+  closeOnEscape?: boolean;
+  closeOnOutside?: boolean;
+  class?: string;
+  children?: HellaChildren;
+}
 import { cn } from "./cn.js";
 
 const contentSides = {
@@ -11,15 +75,8 @@ const contentSides = {
 };
 
 /** Accessibility state shared by the animated sheet parts. */
-type SheetState = () => "open" | "closed";
 
 /** Side the panel slides in from. */
-type SheetSide = "top" | "right" | "bottom" | "left";
-
-interface SheetOverlayProps extends HTMLAttributes<"div"> {
-  state?: SheetState;
-  class?: string;
-}
 
 export function SheetOverlay({ state, class: cls, ...attrs }: SheetOverlayProps): HellaNode {
   return html`
@@ -32,12 +89,6 @@ export function SheetOverlay({ state, class: cls, ...attrs }: SheetOverlayProps)
       ...${attrs}
     />
   ` as HellaNode;
-}
-
-interface SheetCloseProps extends HTMLAttributes<"button"> {
-  state?: SheetState;
-  onClose?: () => void;
-  class?: string;
 }
 
 export function SheetClose({ state, onClose, "on:click": userClick, class: cls, ...attrs }: SheetCloseProps): HellaNode {
@@ -71,18 +122,9 @@ export function SheetClose({ state, onClose, "on:click": userClick, class: cls, 
   ` as HellaNode;
 }
 
-interface SheetPortalProps {
-  children?: HellaChildren;
-}
-
 /** Portals the manual composition's parts into document.body. */
 export function SheetPortal(props: SheetPortalProps): HellaNode {
   return Portal({ to: "body", children: props.children === undefined ? [] : Array.isArray(props.children) ? props.children : [props.children] }) as HellaNode;
-}
-
-interface SheetTriggerProps extends HTMLAttributes<"button"> {
-  children?: HellaChildren;
-  class?: string;
 }
 
 /** The manual trigger button; wire its click to the caller's open signal - hella has no Radix context to do it for you. */
@@ -97,18 +139,6 @@ export function SheetTrigger({ children, class: cls, ...attrs }: SheetTriggerPro
       ...${attrs}
     >${() => children}</button>
   ` as HellaNode;
-}
-
-interface SheetContentProps extends HTMLAttributes<"div"> {
-  state?: SheetState;
-  side?: SheetSide;
-  showCloseButton?: boolean;
-  closeOnEscape?: boolean;
-  closeOnOutside?: boolean;
-  onClose?: () => void;
-  onExited?: () => void;
-  class?: string;
-  children?: HellaChildren;
 }
 
 /**
@@ -179,11 +209,6 @@ export function SheetContent({ state, side, showCloseButton, closeOnEscape, clos
   ` as HellaNode;
 }
 
-interface SheetPartProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function SheetHeader({ children, class: cls, ...attrs }: SheetPartProps): HellaNode {
   return html`
     <div
@@ -208,11 +233,6 @@ export function SheetFooter({ children, class: cls, ...attrs }: SheetPartProps):
   ` as HellaNode;
 }
 
-interface SheetTitleProps extends HTMLAttributes<"h2"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function SheetTitle({ id, children, class: cls, ...attrs }: SheetTitleProps): HellaNode {
   return html`
     <h2
@@ -226,11 +246,6 @@ export function SheetTitle({ id, children, class: cls, ...attrs }: SheetTitlePro
   ` as HellaNode;
 }
 
-interface SheetDescriptionProps extends HTMLAttributes<"p"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function SheetDescription({ id, children, class: cls, ...attrs }: SheetDescriptionProps): HellaNode {
   return html`
     <p
@@ -242,19 +257,6 @@ export function SheetDescription({ id, children, class: cls, ...attrs }: SheetDe
       ...${attrs}
     >${() => children}</p>
   ` as HellaNode;
-}
-
-interface SheetProps extends HTMLAttributes<"div"> {
-  open: () => boolean;
-  onClose: () => void;
-  side?: SheetSide;
-  title?: string;
-  description?: string;
-  showCloseButton?: boolean;
-  closeOnEscape?: boolean;
-  closeOnOutside?: boolean;
-  class?: string;
-  children?: HellaChildren;
 }
 
 let sheetCount = 0;

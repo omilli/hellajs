@@ -1,7 +1,6 @@
 import { signal } from "@hellajs/core";
 import { onDrag } from "@hellajs/dom";
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
-import { cn } from "./cn.js";
 
 interface ScrollBarProps extends HTMLAttributes<"div"> {
   class?: string;
@@ -10,6 +9,14 @@ interface ScrollBarProps extends HTMLAttributes<"div"> {
   /** Injectable content watcher returning its own dispose; defaults to a ResizeObserver on the viewport's content. */
   observe?: (target: Element, onGrow: () => void) => () => void;
 }
+
+interface ScrollAreaProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+  /** Injectable content watcher forwarded to the internal vertical ScrollBar. */
+  observe?: (target: Element, onGrow: () => void) => () => void;
+}
+import { cn } from "./cn.js";
 
 export function ScrollBar({ orientation: orientationProp, observe, class: cls, ...attrs }: ScrollBarProps): JSX.Element {
   const orientation = (): "vertical" | "horizontal" => orientationProp ?? "vertical";
@@ -109,13 +116,6 @@ export function ScrollBar({ orientation: orientationProp, observe, class: cls, .
       />
     </div>
   );
-}
-
-interface ScrollAreaProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  /** Injectable content watcher forwarded to the internal vertical ScrollBar. */
-  observe?: (target: Element, onGrow: () => void) => () => void;
 }
 
 /**

@@ -1,9 +1,9 @@
 import type { HTMLAttributes } from "@hellajs/dom";
-import { cn } from "./cn.js";
 
 interface InputProps extends HTMLAttributes<"input"> {
   class?: string;
 }
+import { cn } from "./cn.js";
 
 export function Input({ class: cls, ...attrs }: InputProps): JSX.Element {
   return (

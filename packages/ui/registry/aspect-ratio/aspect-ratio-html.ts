@@ -1,15 +1,10 @@
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HellaNode } from "@hellajs/dom";
+import type { AspectRatioProps } from "./aspect-ratio-types.js";
 
 // @hella:styles
 declare const base: string;
 // @hella:end
-
-interface AspectRatioProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  ratio?: number;
-}
 
 export function AspectRatio({ ratio, children, class: cls, ...attrs }: AspectRatioProps): HellaNode {
   return html`

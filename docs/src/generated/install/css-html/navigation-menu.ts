@@ -1,6 +1,69 @@
 import { effect, signal } from "@hellajs/core";
 import { html, Portal } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HellaChild, HellaNode, HTMLAttributes, HellaChildren } from "@hellajs/dom";
+
+interface NavigationMenuListProps extends HTMLAttributes<"ul"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface NavigationMenuItemProps extends HTMLAttributes<"li"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface NavigationMenuTriggerProps extends HTMLAttributes<"button"> {
+  /** This trigger's id in the root's open-value store; clicks announce it when no `onActivate` stands in. */
+  value?: string;
+  /** Resolves the open state for `aria-expanded`/`data-state`; manual wiring threads it from the owning signal. */
+  active?: () => boolean;
+  onActivate?: () => void;
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface NavigationMenuContentProps extends HTMLAttributes<"div"> {
+  /** Resolves the open state; manual wiring threads it from the owning signal. */
+  active?: () => boolean;
+  /** Portal target for the shared viewport slot; defaults to the first `[data-slot="navigation-menu-viewport"]` in the document. */
+  viewport?: string;
+  /** Called when the exit animation ends under data-state="closed"; entry animationends are ignored. */
+  onExited?: () => void;
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface NavigationMenuLinkProps extends HTMLAttributes<"a"> {
+  /** Renders `data-active="true"` and its accent styles (the ref's data-[active=true] set). */
+  active?: boolean;
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface NavigationMenuViewportProps extends HTMLAttributes<"div"> {
+  /** Resolves the open state for the viewport's enter/exit `data-state`; the composed root wires its own store. */
+  active?: () => boolean;
+  class?: string;
+}
+
+interface NavigationMenuIndicatorProps extends HTMLAttributes<"div"> {
+  /** Resolves the visible state (any panel open); manual wiring threads it from the owning signal. */
+  active?: () => boolean;
+  /** Resolves the trigger the indicator sits under; defaults to the trigger announced by the activation stream. */
+  anchor?: () => Element | undefined;
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface NavigationMenuProps extends HTMLAttributes<"div"> {
+  /** Controlled id of the open panel ("" when closed), fed by trigger announcements; the root never writes it when given. */
+  value?: () => string;
+  onValueChange?: (value: string) => void;
+  /** Renders the shared viewport slot as the last child (default true); set false to render `NavigationMenuViewport` manually. */
+  viewport?: boolean;
+  children?: HellaChildren;
+  class?: string;
+}
 
 import { keyframes, style } from "@hellajs/css";
 import { tokens } from "./tokens.js";
@@ -247,11 +310,6 @@ const chevronIcon = (): HellaNode =>
     <path d="m6 9 6 6 6-6" />
   </svg>` as HellaNode;
 
-interface NavigationMenuListProps extends HTMLAttributes<"ul"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function NavigationMenuList({ children, class: cls, ...attrs }: NavigationMenuListProps): HellaNode {
   return html`
     <ul
@@ -264,11 +322,6 @@ export function NavigationMenuList({ children, class: cls, ...attrs }: Navigatio
   ` as HellaNode;
 }
 
-interface NavigationMenuItemProps extends HTMLAttributes<"li"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function NavigationMenuItem({ children, class: cls, ...attrs }: NavigationMenuItemProps): HellaNode {
   return html`
     <li
@@ -279,16 +332,6 @@ export function NavigationMenuItem({ children, class: cls, ...attrs }: Navigatio
       ...${attrs}
     >${() => children}</li>
   ` as HellaNode;
-}
-
-interface NavigationMenuTriggerProps extends HTMLAttributes<"button"> {
-  /** This trigger's id in the root's open-value store; clicks announce it when no `onActivate` stands in. */
-  value?: string;
-  /** Resolves the open state for `aria-expanded`/`data-state`; manual wiring threads it from the owning signal. */
-  active?: () => boolean;
-  onActivate?: () => void;
-  children?: HellaChildren;
-  class?: string;
 }
 
 export function NavigationMenuTrigger({ value, active: activeProp, onActivate, children, class: cls, ...attrs }: NavigationMenuTriggerProps): HellaNode {
@@ -315,17 +358,6 @@ export function NavigationMenuTrigger({ value, active: activeProp, onActivate, c
       ${() => children}${chevronIcon()}
     </button>
   ` as HellaNode;
-}
-
-interface NavigationMenuContentProps extends HTMLAttributes<"div"> {
-  /** Resolves the open state; manual wiring threads it from the owning signal. */
-  active?: () => boolean;
-  /** Portal target for the shared viewport slot; defaults to the first `[data-slot="navigation-menu-viewport"]` in the document. */
-  viewport?: string;
-  /** Called when the exit animation ends under data-state="closed"; entry animationends are ignored. */
-  onExited?: () => void;
-  children?: HellaChildren;
-  class?: string;
 }
 
 export function NavigationMenuContent({ active: activeProp, viewport: viewportSlot, onExited, children, class: cls, ...attrs }: NavigationMenuContentProps): HellaNode {
@@ -399,13 +431,6 @@ export function NavigationMenuContent({ active: activeProp, viewport: viewportSl
   ` as HellaNode;
 }
 
-interface NavigationMenuLinkProps extends HTMLAttributes<"a"> {
-  /** Renders `data-active="true"` and its accent styles (the ref's data-[active=true] set). */
-  active?: boolean;
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function NavigationMenuLink({ active, children, class: cls, ...attrs }: NavigationMenuLinkProps): HellaNode {
   return html`
     <a
@@ -417,12 +442,6 @@ export function NavigationMenuLink({ active, children, class: cls, ...attrs }: N
       ...${attrs}
     >${() => children}</a>
   ` as HellaNode;
-}
-
-interface NavigationMenuViewportProps extends HTMLAttributes<"div"> {
-  /** Resolves the open state for the viewport's enter/exit `data-state`; the composed root wires its own store. */
-  active?: () => boolean;
-  class?: string;
 }
 
 export function NavigationMenuViewport({ active: activeProp, id, class: cls, ...attrs }: NavigationMenuViewportProps): HellaNode {
@@ -444,15 +463,6 @@ export function NavigationMenuViewport({ active: activeProp, id, class: cls, ...
       />
     </div>
   ` as HellaNode;
-}
-
-interface NavigationMenuIndicatorProps extends HTMLAttributes<"div"> {
-  /** Resolves the visible state (any panel open); manual wiring threads it from the owning signal. */
-  active?: () => boolean;
-  /** Resolves the trigger the indicator sits under; defaults to the trigger announced by the activation stream. */
-  anchor?: () => Element | undefined;
-  children?: HellaChildren;
-  class?: string;
 }
 
 export function NavigationMenuIndicator({ active: activeProp, anchor, class: cls, ...attrs }: NavigationMenuIndicatorProps): HellaNode {
@@ -524,16 +534,6 @@ export function NavigationMenuIndicator({ active: activeProp, anchor, class: cls
       />
     </div>
   ` as HellaNode;
-}
-
-interface NavigationMenuProps extends HTMLAttributes<"div"> {
-  /** Controlled id of the open panel ("" when closed), fed by trigger announcements; the root never writes it when given. */
-  value?: () => string;
-  onValueChange?: (value: string) => void;
-  /** Renders the shared viewport slot as the last child (default true); set false to render `NavigationMenuViewport` manually. */
-  viewport?: boolean;
-  children?: HellaChildren;
-  class?: string;
 }
 
 export function NavigationMenu({ value: valueProp, onValueChange, viewport: viewportProp, children, class: cls, ...attrs }: NavigationMenuProps): HellaNode {

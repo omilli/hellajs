@@ -1,18 +1,12 @@
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HellaNode } from "@hellajs/dom";
+import type { ButtonProps } from "./button-types.js";
 
 // @hella:styles
 declare const base: string;
 declare const sizes: Record<string, string>;
 declare const variants: Record<string, string>;
 // @hella:end
-
-interface ButtonProps extends HTMLAttributes<"button"> {
-  class?: string;
-  children?: HellaChildren;
-  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
-  size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
-}
 
 export function Button({ variant, size, children, class: cls, ...attrs }: ButtonProps): HellaNode {
   return html`

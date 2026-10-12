@@ -1,5 +1,10 @@
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HellaNode, HTMLAttributes, HellaChildren } from "@hellajs/dom";
+
+interface SkeletonProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
 
 import { keyframes, style } from "@hellajs/css";
 import { tokens } from "./tokens.js";
@@ -13,11 +18,6 @@ const base = style("skeleton", {
   backgroundColor: tokens.accent,
   borderRadius: `calc(${tokens.radius} * 0.8)`,
 });
-
-interface SkeletonProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
 
 export function Skeleton({ children, class: cls, ...attrs }: SkeletonProps): HellaNode {
   return html`

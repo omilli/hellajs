@@ -1,6 +1,6 @@
 import { signal } from "@hellajs/core";
 import { rovingTabIndex } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
+import type { ToggleGroupProps, ToggleGroupItemProps } from "./toggle-group-types.js";
 
 // @hella:styles
 declare const base: string;
@@ -8,39 +8,6 @@ declare const item: string;
 declare const sizes: Record<string, string>;
 declare const variants: Record<string, string>;
 // @hella:end
-
-interface ToggleGroupEntry {
-  value: string;
-  label?: HellaChildren;
-  /** Seeds the item pressed in uncontrolled mode (single keeps the first pressed; multiple keeps all). */
-  pressed?: boolean;
-  disabled?: boolean;
-}
-
-interface ToggleGroupProps extends HTMLAttributes<"div"> {
-  class?: string;
-  items: ToggleGroupEntry[];
-  type: "single" | "multiple";
-  /** Controlled single selection. */
-  value?: () => string;
-  /** Controlled multiple selection. */
-  values?: () => string[];
-  /** Single reports the newly active value ("" when deselected); multiple reports the full active array. */
-  onValueChange?: (value: string | string[]) => void;
-  variant?: "default" | "outline";
-  size?: "default" | "sm" | "lg";
-}
-
-interface ToggleGroupItemProps extends HTMLAttributes<"button"> {
-  class?: string;
-  children?: HellaChildren;
-  value?: string;
-  /** Pressed state. A boolean reads statically; an accessor keeps the manual part reactive. */
-  pressed?: boolean | (() => boolean);
-  onSelect?: () => void;
-  variant?: "default" | "outline";
-  size?: "default" | "sm" | "lg";
-}
 
 /** The toggle variant maps, duplicated from the toggle entry (self-contained entries never cross-import). */
 const toggleVariants = (options?: {

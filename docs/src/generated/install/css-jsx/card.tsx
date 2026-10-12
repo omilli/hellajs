@@ -1,5 +1,10 @@
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
+interface CardPartProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
 import { css, style } from "@hellajs/css";
 import { tokens } from "./tokens.js";
 
@@ -65,11 +70,6 @@ css({
     paddingTop: "1.5rem",
   },
 });
-
-interface CardPartProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
 
 export function Card({ children, class: cls, ...attrs }: CardPartProps): JSX.Element {
   return (

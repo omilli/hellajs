@@ -1,21 +1,14 @@
 import { effect, signal } from "@hellajs/core";
 import { anchorPosition, hoverIntent, html, Portal } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChild, HellaChildren, HellaNode, Placement } from "@hellajs/dom";
+import type { HellaChild, HellaNode, Placement } from "@hellajs/dom";
+import type { AnchorSide, AnchorAlign, TooltipProviderProps, TooltipTriggerProps, TooltipContentProps, TooltipProps } from "./tooltip-types.js";
 
 // @hella:styles
 declare const content: string;
 // @hella:end
 
-type AnchorSide = "top" | "bottom" | "left" | "right";
-type AnchorAlign = "start" | "center" | "end";
-
 const placementOf = (side: AnchorSide, align: AnchorAlign): Placement =>
   align === "center" ? side : `${side}-${align}`;
-
-interface TooltipProviderProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  class?: string;
-}
 
 /**
  * Passthrough wrapper - upstream config-carrier kept for copy-paste parity.
@@ -36,11 +29,6 @@ export function TooltipProvider({ children, class: cls, ...attrs }: TooltipProvi
   ` as HellaNode;
 }
 
-interface TooltipTriggerProps extends HTMLAttributes<"span"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 /** The manual trigger span; the composed Tooltip renders the same shape wired to hoverIntent. */
 export function TooltipTrigger({ children, class: cls, ...attrs }: TooltipTriggerProps): HellaNode {
   return html`
@@ -54,18 +42,6 @@ export function TooltipTrigger({ children, class: cls, ...attrs }: TooltipTrigge
       ...${attrs}
     >${() => children}</span>
   ` as HellaNode;
-}
-
-interface TooltipContentProps extends HTMLAttributes<"div"> {
-  state?: () => "open" | "closed";
-  side?: AnchorSide;
-  align?: AnchorAlign;
-  /** Resolves the element the content anchors to; positioning is skipped when undefined. */
-  anchor?: () => Element | undefined;
-  /** Called when the exit animation ends under data-state="closed"; entry animationends are ignored. */
-  onExited?: () => void;
-  children?: HellaChildren;
-  class?: string;
 }
 
 export function TooltipContent({ state, id, side: sideProp, align: alignProp, anchor, onExited, children, class: cls, ...attrs }: TooltipContentProps): HellaNode {
@@ -106,16 +82,6 @@ export function TooltipContent({ state, id, side: sideProp, align: alignProp, an
       ...${attrs}
     >${() => children}</div>
   ` as HellaNode;
-}
-
-interface TooltipProps extends HTMLAttributes<"span"> {
-  content: HellaChildren;
-  /** Pointer-hover ms before the content opens. Default 700. */
-  delayDuration?: number;
-  side?: AnchorSide;
-  align?: AnchorAlign;
-  children?: HellaChildren;
-  class?: string;
 }
 
 let tooltipCount = 0;

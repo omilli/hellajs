@@ -1,7 +1,6 @@
 import { html } from "@hellajs/dom";
 import { signal } from "@hellajs/core";
-import type { HTMLAttributes, HellaNode } from "@hellajs/dom";
-import { cn } from "./cn.js";
+import type { HellaNode, HTMLAttributes } from "@hellajs/dom";
 
 interface SwitchProps extends HTMLAttributes<"button"> {
   class?: string;
@@ -9,6 +8,7 @@ interface SwitchProps extends HTMLAttributes<"button"> {
   checked?: boolean | (() => boolean);
   onCheckedChange?: (checked: boolean) => void;
 }
+import { cn } from "./cn.js";
 
 export function Switch({ checked: checkedProp, onCheckedChange, disabled, "on:click": userClick, class: cls, ...attrs }: SwitchProps): HellaNode {
   const checkedAccessor = typeof checkedProp === "function" ? checkedProp : undefined;

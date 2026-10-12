@@ -1,7 +1,8 @@
 import { html } from "@hellajs/dom";
 import { signal as coreSignal } from "@hellajs/core";
 import type { Signal } from "@hellajs/core";
-import type { HTMLAttributes, HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { MessageScrollerProviderProps, MessageScrollerViewportProps, MessageScrollerContentProps, MessageScrollerItemProps, MessageScrollerButtonProps, MessageScrollerProps } from "./message-scroller-types.js";
 
 // @hella:styles
 declare const base: string;
@@ -15,10 +16,6 @@ declare const srOnly: string;
 declare const viewport: string;
 // @hella:end
 
-interface MessageScrollerProviderProps {
-  children?: HellaChildren;
-}
-
 /**
  * Drop-in composition wrapper kept for API parity with the upstream provider.
  * Hella has no context: state lives on signals the composer owns and passes to
@@ -26,19 +23,6 @@ interface MessageScrollerProviderProps {
  */
 export function MessageScrollerProvider(props: MessageScrollerProviderProps): HellaNode {
   return html`${() => props.children}` as HellaNode;
-}
-
-interface MessageScrollerViewportProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  /** Shared at-bottom state; the viewport flips it and owns an internal signal when absent. */
-  atBottom?: Signal<boolean>;
-  /** Overrides the scroll-to-bottom action used for auto-stick and the jump button. */
-  scrollToBottom?: () => void;
-  /** Distance in px from the bottom still counted as at-bottom. */
-  threshold?: number;
-  /** Injectable content watcher returning its own dispose; defaults to a ResizeObserver. */
-  observe?: (target: Element, onGrow: () => void) => () => void;
 }
 
 export function MessageScrollerViewport({ atBottom, scrollToBottom, threshold, observe, children, class: cls, ...attrs }: MessageScrollerViewportProps): HellaNode {
@@ -101,11 +85,6 @@ export function MessageScrollerViewport({ atBottom, scrollToBottom, threshold, o
   ` as HellaNode;
 }
 
-interface MessageScrollerContentProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function MessageScrollerContent({ children, class: cls, ...attrs }: MessageScrollerContentProps): HellaNode {
   return html`
     <div
@@ -120,11 +99,6 @@ export function MessageScrollerContent({ children, class: cls, ...attrs }: Messa
   ` as HellaNode;
 }
 
-interface MessageScrollerItemProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function MessageScrollerItem({ children, class: cls, ...attrs }: MessageScrollerItemProps): HellaNode {
   return html`
     <div
@@ -137,17 +111,6 @@ export function MessageScrollerItem({ children, class: cls, ...attrs }: MessageS
       ...${attrs}
     >${() => children}</div>
   ` as HellaNode;
-}
-
-interface MessageScrollerButtonProps extends HTMLAttributes<"button"> {
-  class?: string;
-  children?: HellaChildren;
-  /** Shared at-bottom state driving data-active; the default scroll action writes it back to true. */
-  atBottom?: Signal<boolean>;
-  scrollToBottom?: () => void;
-  direction?: "start" | "end";
-  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
-  size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
 }
 
 export function MessageScrollerButton({ atBottom, scrollToBottom, direction: dir, variant, size, "on:click": userClick, children, class: cls, ...attrs }: MessageScrollerButtonProps): HellaNode {
@@ -213,16 +176,6 @@ export function MessageScrollerButton({ atBottom, scrollToBottom, direction: dir
       html`<span class="${srOnly}">${direction() === "end" ? "Scroll to end" : "Scroll to start"}</span>`,
     ] as HellaChildren}</button>
   ` as HellaNode;
-}
-
-interface MessageScrollerProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  atBottom?: Signal<boolean>;
-  scrollToBottom?: () => void;
-  threshold?: number;
-  observe?: (target: Element, onGrow: () => void) => () => void;
-  showScrollButton?: boolean;
 }
 
 /**

@@ -1,14 +1,10 @@
-import type { HTMLAttributes } from "@hellajs/dom";
+import type { TextareaProps } from "./textarea-types.js";
 
 // @hella:styles
 declare const base: string;
 declare const focus: string;
 declare const invalid: string;
 // @hella:end
-
-interface TextareaProps extends HTMLAttributes<"textarea"> {
-  class?: string;
-}
 
 export function Textarea({ class: cls, ...attrs }: TextareaProps): JSX.Element {
   return (

@@ -1,8 +1,7 @@
 import { signal } from "@hellajs/core";
-import type { HTMLAttributes, HellaChild, HellaChildren } from "@hellajs/dom";
-import { cn } from "./cn.js";
+import type { HellaChildren, HTMLAttributes } from "@hellajs/dom";
 
-export interface AccordionEntry {
+interface AccordionEntry {
   value: string;
   trigger: HellaChildren;
   content: HellaChildren;
@@ -21,7 +20,7 @@ interface AccordionProps extends HTMLAttributes<"div"> {
 
 interface AccordionItemProps extends HTMLAttributes<"div"> {
   class?: string;
-  children?: HellaChild[];
+  children?: HellaChildren;
   value: string;
   active?: () => boolean;
 }
@@ -38,6 +37,9 @@ interface AccordionContentProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   active?: () => boolean;
 }
+import { cn } from "./cn.js";
+
+export type { AccordionEntry };
 
 export function AccordionItem({ value, active, children, class: cls, ...attrs }: AccordionItemProps): JSX.Element {
   return (
@@ -177,7 +179,7 @@ export function Accordion({ items, type, collapsible, open, class: cls, ...attrs
               aria-labelledby={`${"hella-accordion-trigger-"}${entry.value}`}
               children={entry.content}
             />,
-          ] as HellaChild[]}
+          ] as HellaChildren}
         />
       ))}
     </div>

@@ -1,6 +1,5 @@
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
-import { cn } from "./cn.js";
+import type { HellaNode, HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 interface NativeSelectProps extends HTMLAttributes<"select"> {
   class?: string;
@@ -8,6 +7,17 @@ interface NativeSelectProps extends HTMLAttributes<"select"> {
   value?: string | (() => string);
   size?: "sm" | "default";
 }
+
+interface NativeSelectOptionProps extends HTMLAttributes<"option"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface NativeSelectOptGroupProps extends HTMLAttributes<"optgroup"> {
+  class?: string;
+  children?: HellaChildren;
+}
+import { cn } from "./cn.js";
 
 export function NativeSelect({ value, size, children, class: cls, ...attrs }: NativeSelectProps): HellaNode {
   return html`
@@ -59,16 +69,6 @@ export function NativeSelect({ value, size, children, class: cls, ...attrs }: Na
       </svg>
     </div>
   ` as HellaNode;
-}
-
-interface NativeSelectOptionProps extends HTMLAttributes<"option"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
-interface NativeSelectOptGroupProps extends HTMLAttributes<"optgroup"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function NativeSelectOption({ children, class: cls, ...attrs }: NativeSelectOptionProps): HellaNode {

@@ -1,4 +1,4 @@
-import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
+import type { ButtonGroupProps, ButtonGroupTextProps, ButtonGroupSeparatorProps } from "./button-group-types.js";
 
 // @hella:styles
 declare const base: string;
@@ -7,12 +7,6 @@ declare const separator: string;
 declare const separatorBase: string;
 declare const text: string;
 // @hella:end
-
-interface ButtonGroupProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  orientation?: "horizontal" | "vertical";
-}
 
 export function ButtonGroup({ orientation: orient, children, class: cls, ...attrs }: ButtonGroupProps): JSX.Element {
   return (
@@ -36,11 +30,6 @@ export function ButtonGroup({ orientation: orient, children, class: cls, ...attr
   );
 }
 
-interface ButtonGroupTextProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function ButtonGroupText({ children, class: cls, ...attrs }: ButtonGroupTextProps): JSX.Element {
   return (
     <div
@@ -55,11 +44,6 @@ export function ButtonGroupText({ children, class: cls, ...attrs }: ButtonGroupT
       {children}
     </div>
   );
-}
-
-interface ButtonGroupSeparatorProps extends HTMLAttributes<"div"> {
-  orientation?: "horizontal" | "vertical";
-  class?: string;
 }
 
 export function ButtonGroupSeparator({ orientation: orient, class: cls, ...attrs }: ButtonGroupSeparatorProps): JSX.Element {

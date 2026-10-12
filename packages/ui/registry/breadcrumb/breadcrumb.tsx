@@ -1,4 +1,4 @@
-import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
+import type { BreadcrumbProps, BreadcrumbPartProps, BreadcrumbLinkProps, BreadcrumbPageProps, BreadcrumbSeparatorProps, BreadcrumbEllipsisProps } from "./breadcrumb-types.js";
 
 // @hella:styles
 declare const ellipsis: string;
@@ -10,11 +10,6 @@ declare const page: string;
 declare const separator: string;
 declare const srOnly: string;
 // @hella:end
-
-interface BreadcrumbProps extends HTMLAttributes<"nav"> {
-  class?: string;
-  children?: HellaChildren;
-}
 
 export function Breadcrumb({ children, class: cls, ...attrs }: BreadcrumbProps): JSX.Element {
   return (
@@ -31,11 +26,6 @@ export function Breadcrumb({ children, class: cls, ...attrs }: BreadcrumbProps):
       {children}
     </nav>
   );
-}
-
-interface BreadcrumbPartProps extends HTMLAttributes<"li"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function BreadcrumbList({ children, class: cls, ...attrs }: BreadcrumbPartProps): JSX.Element {
@@ -70,11 +60,6 @@ export function BreadcrumbItem({ children, class: cls, ...attrs }: BreadcrumbPar
   );
 }
 
-interface BreadcrumbLinkProps extends HTMLAttributes<"a"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function BreadcrumbLink({ children, class: cls, ...attrs }: BreadcrumbLinkProps): JSX.Element {
   return (
     <a
@@ -89,11 +74,6 @@ export function BreadcrumbLink({ children, class: cls, ...attrs }: BreadcrumbLin
       {children}
     </a>
   );
-}
-
-interface BreadcrumbPageProps extends HTMLAttributes<"span"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function BreadcrumbPage({ children, class: cls, ...attrs }: BreadcrumbPageProps): JSX.Element {
@@ -113,12 +93,6 @@ export function BreadcrumbPage({ children, class: cls, ...attrs }: BreadcrumbPag
       {children}
     </span>
   );
-}
-
-interface BreadcrumbSeparatorProps extends HTMLAttributes<"li"> {
-  /** Replaces the inlined chevron when given. */
-  children?: HellaChildren;
-  class?: string;
 }
 
 export function BreadcrumbSeparator({ children, class: cls, ...attrs }: BreadcrumbSeparatorProps): JSX.Element {
@@ -152,10 +126,6 @@ export function BreadcrumbSeparator({ children, class: cls, ...attrs }: Breadcru
       )}
     </li>
   );
-}
-
-interface BreadcrumbEllipsisProps extends HTMLAttributes<"span"> {
-  class?: string;
 }
 
 export function BreadcrumbEllipsis({ class: cls, ...attrs }: BreadcrumbEllipsisProps): JSX.Element {

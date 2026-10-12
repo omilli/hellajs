@@ -1,17 +1,10 @@
 import { signal } from "@hellajs/core";
-import type { HTMLAttributes } from "@hellajs/dom";
+import type { SwitchProps } from "./switch-types.js";
 
 // @hella:styles
 declare const base: string;
 declare const thumb: string;
 // @hella:end
-
-interface SwitchProps extends HTMLAttributes<"button"> {
-  class?: string;
-  /** Checked state. A boolean seeds the internal signal; an accessor makes the switch controlled — clicks then only report through `onCheckedChange`. */
-  checked?: boolean | (() => boolean);
-  onCheckedChange?: (checked: boolean) => void;
-}
 
 export function Switch({ checked: checkedProp, onCheckedChange, disabled, "on:click": userClick, class: cls, ...attrs }: SwitchProps): JSX.Element {
   const checkedAccessor = typeof checkedProp === "function" ? checkedProp : undefined;

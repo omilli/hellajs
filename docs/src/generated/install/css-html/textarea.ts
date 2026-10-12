@@ -1,5 +1,9 @@
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaNode } from "@hellajs/dom";
+import type { HellaNode, HTMLAttributes } from "@hellajs/dom";
+
+interface TextareaProps extends HTMLAttributes<"textarea"> {
+  class?: string;
+}
 
 import { style } from "@hellajs/css";
 import { tokens } from "./tokens.js";
@@ -52,10 +56,6 @@ const invalid = style("textarea-invalid", {
     boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
   },
 });
-
-interface TextareaProps extends HTMLAttributes<"textarea"> {
-  class?: string;
-}
 
 export function Textarea({ class: cls, ...attrs }: TextareaProps): HellaNode {
   return html`

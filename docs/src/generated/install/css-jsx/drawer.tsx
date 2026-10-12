@@ -1,7 +1,73 @@
 import { effect, signal } from "@hellajs/core";
-import type { Signal } from "@hellajs/core";
 import { onDrag, onEscape, onOutside, Portal, trapFocus } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChild, HellaChildren } from "@hellajs/dom";
+import type { HellaChild, HellaChildren, HTMLAttributes } from "@hellajs/dom";
+import type { Signal } from "@hellajs/core";
+
+type DrawerState = () => "open" | "closed";
+
+type DrawerDirection = "top" | "right" | "bottom" | "left";
+
+interface DrawerOverlayProps extends HTMLAttributes<"div"> {
+  state?: DrawerState;
+  /** Drag fraction (0..1 toward dismissal) — drives the proportional overlay fade. */
+  fraction?: Signal<number>;
+  class?: string;
+}
+
+interface DrawerCloseProps extends HTMLAttributes<"button"> {
+  state?: DrawerState;
+  onClose?: () => void;
+  class?: string;
+}
+
+interface DrawerPortalProps {
+  children?: HellaChildren;
+}
+
+interface DrawerTriggerProps extends HTMLAttributes<"button"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface DrawerContentProps extends HTMLAttributes<"div"> {
+  state?: DrawerState;
+  direction?: DrawerDirection;
+  /** Shared drag fraction (0..1 toward dismissal); the overlay fades proportionally when both parts receive the same signal. */
+  fraction?: Signal<number>;
+  closeOnEscape?: boolean;
+  closeOnOutside?: boolean;
+  onClose?: () => void;
+  onExited?: () => void;
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface DrawerPartProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface DrawerTitleProps extends HTMLAttributes<"h2"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface DrawerDescriptionProps extends HTMLAttributes<"p"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface DrawerProps extends HTMLAttributes<"div"> {
+  open: () => boolean;
+  onClose: () => void;
+  direction?: DrawerDirection;
+  title?: string;
+  description?: string;
+  closeOnEscape?: boolean;
+  closeOnOutside?: boolean;
+  class?: string;
+  children?: HellaChildren;
+}
 
 import { css, keyframes, style } from "@hellajs/css";
 import { tokens } from "./tokens.js";
@@ -177,10 +243,8 @@ const description = style("drawer-description", {
 });
 
 /** Accessibility state shared by the animated drawer parts. */
-type DrawerState = () => "open" | "closed";
 
 /** Edge the drawer mounts on; drag dismissal runs along this axis. */
-type DrawerDirection = "top" | "right" | "bottom" | "left";
 
 /** Release fraction of the panel's dismissal-axis size beyond which a release dismisses. */
 const DISMISS_DISTANCE = 0.25;
@@ -207,13 +271,6 @@ function followTransform(direction: DrawerDirection, d: number): string {
   return `translate${axis}(${clamped}px)`;
 }
 
-interface DrawerOverlayProps extends HTMLAttributes<"div"> {
-  state?: DrawerState;
-  /** Drag fraction (0..1 toward dismissal) — drives the proportional overlay fade. */
-  fraction?: Signal<number>;
-  class?: string;
-}
-
 export function DrawerOverlay({ state, fraction, class: cls, ...attrs }: DrawerOverlayProps): JSX.Element {
   const overlayStyle = (): Record<string, string> | undefined => {
     const f = fraction?.() ?? 0;
@@ -230,12 +287,6 @@ export function DrawerOverlay({ state, fraction, class: cls, ...attrs }: DrawerO
       {...attrs}
     />
   );
-}
-
-interface DrawerCloseProps extends HTMLAttributes<"button"> {
-  state?: DrawerState;
-  onClose?: () => void;
-  class?: string;
 }
 
 export function DrawerClose({ state, onClose, "on:click": userClick, class: cls, ...attrs }: DrawerCloseProps): JSX.Element {
@@ -269,10 +320,6 @@ export function DrawerClose({ state, onClose, "on:click": userClick, class: cls,
   );
 }
 
-interface DrawerPortalProps {
-  children?: HellaChildren;
-}
-
 /** Portals the manual composition's parts into document.body. */
 export function DrawerPortal(props: DrawerPortalProps): JSX.Element {
   return (
@@ -280,11 +327,6 @@ export function DrawerPortal(props: DrawerPortalProps): JSX.Element {
       {props.children}
     </Portal>
   );
-}
-
-interface DrawerTriggerProps extends HTMLAttributes<"button"> {
-  children?: HellaChildren;
-  class?: string;
 }
 
 /** The manual trigger button; wire its click to the caller's open signal - hella has no Radix context to do it for you. */
@@ -301,19 +343,6 @@ export function DrawerTrigger({ children, class: cls, ...attrs }: DrawerTriggerP
       {children}
     </button>
   );
-}
-
-interface DrawerContentProps extends HTMLAttributes<"div"> {
-  state?: DrawerState;
-  direction?: DrawerDirection;
-  /** Shared drag fraction (0..1 toward dismissal); the overlay fades proportionally when both parts receive the same signal. */
-  fraction?: Signal<number>;
-  closeOnEscape?: boolean;
-  closeOnOutside?: boolean;
-  onClose?: () => void;
-  onExited?: () => void;
-  class?: string;
-  children?: HellaChildren;
 }
 
 /**
@@ -451,11 +480,6 @@ export function DrawerContent({ state, direction: drawerDirection, fraction, clo
   );
 }
 
-interface DrawerPartProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function DrawerHeader({ children, class: cls, ...attrs }: DrawerPartProps): JSX.Element {
   return (
     <div
@@ -484,11 +508,6 @@ export function DrawerFooter({ children, class: cls, ...attrs }: DrawerPartProps
   );
 }
 
-interface DrawerTitleProps extends HTMLAttributes<"h2"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function DrawerTitle({ id, children, class: cls, ...attrs }: DrawerTitleProps): JSX.Element {
   return (
     <h2
@@ -504,11 +523,6 @@ export function DrawerTitle({ id, children, class: cls, ...attrs }: DrawerTitleP
   );
 }
 
-interface DrawerDescriptionProps extends HTMLAttributes<"p"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function DrawerDescription({ id, children, class: cls, ...attrs }: DrawerDescriptionProps): JSX.Element {
   return (
     <p
@@ -522,18 +536,6 @@ export function DrawerDescription({ id, children, class: cls, ...attrs }: Drawer
       {children}
     </p>
   );
-}
-
-interface DrawerProps extends HTMLAttributes<"div"> {
-  open: () => boolean;
-  onClose: () => void;
-  direction?: DrawerDirection;
-  title?: string;
-  description?: string;
-  closeOnEscape?: boolean;
-  closeOnOutside?: boolean;
-  class?: string;
-  children?: HellaChildren;
 }
 
 let drawerCount = 0;

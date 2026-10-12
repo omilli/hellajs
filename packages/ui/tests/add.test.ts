@@ -70,6 +70,17 @@ describe("addComponent", () => {
     expect(existsSync(join(componentsDir, "tokens.ts"))).toBe(true);
   });
 
+  test.each([
+    ["css", "jsx", "button.tsx"],
+    ["tailwind", "jsx", "button.tsx"],
+    ["css", "html", "button.ts"],
+  ] as [UiStyle, UiFormat, string][])("%s/%s button add output inlines ButtonProps and carries no -types.js specifier", (style, format, file) => {
+    addComponent(["button"], { dir: root, style, format });
+    const copied = readFileSync(join(componentsDir, file), "utf8");
+    expect(copied).toContain("interface ButtonProps");
+    expect(copied).not.toContain("-types.js");
+  });
+
   test("lang js renames the copied helper to cn.js", () => {
     addComponent(["button"], { dir: root, style: "tailwind", lang: "js" });
     expect(existsSync(join(componentsDir, "cn.js"))).toBe(true);

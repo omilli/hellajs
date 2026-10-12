@@ -1,5 +1,5 @@
 import { effect, signal } from "@hellajs/core";
-import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
+import type { InputOTPProps, InputOTPGroupProps, InputOTPSlotProps, InputOTPSeparatorProps } from "./input-otp-types.js";
 
 // @hella:styles
 declare const base: string;
@@ -9,19 +9,6 @@ declare const control: string;
 declare const group: string;
 declare const slot: string;
 // @hella:end
-
-interface InputOTPProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  /** Number of slots; fixed after mount. Defaults to 6. */
-  length?: number;
-  /** The code. A static string seeds the internal state; an accessor makes it controlled, so edits report through `onChange` only. */
-  value?: string | (() => string);
-  /** Reports every accepted value change (typing, paste, deletion). */
-  onChange?: (value: string) => void;
-  /** Fires once per transition to a full code. */
-  onComplete?: (value: string) => void;
-}
 
 export function InputOTP({ length: lengthProp, value: valueProp, onChange, onComplete, pattern: patternAttr, autofocus: autofocusAttr, disabled: disabledAttr, class: cls, children, ...attrs }: InputOTPProps): JSX.Element {
   const length = lengthProp ?? 6;
@@ -221,11 +208,6 @@ export function InputOTP({ length: lengthProp, value: valueProp, onChange, onCom
   );
 }
 
-interface InputOTPGroupProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function InputOTPGroup({ children, class: cls, ...attrs }: InputOTPGroupProps): JSX.Element {
   return (
     <div
@@ -240,12 +222,6 @@ export function InputOTPGroup({ children, class: cls, ...attrs }: InputOTPGroupP
       {children}
     </div>
   );
-}
-
-interface InputOTPSlotProps extends HTMLAttributes<"div"> {
-  class?: string;
-  /** Slot position this mirror renders; the root wires its char and caret state after mount. */
-  index: number;
 }
 
 export function InputOTPSlot({ index, class: cls, ...attrs }: InputOTPSlotProps): JSX.Element {
@@ -278,10 +254,6 @@ export function InputOTPSlot({ index, class: cls, ...attrs }: InputOTPSlotProps)
       </div>
     </div>
   );
-}
-
-interface InputOTPSeparatorProps extends HTMLAttributes<"div"> {
-  class?: string;
 }
 
 export function InputOTPSeparator({ class: cls, ...attrs }: InputOTPSeparatorProps): JSX.Element {

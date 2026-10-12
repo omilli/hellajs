@@ -1,5 +1,6 @@
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HellaChildren, HellaNode } from "@hellajs/dom";
+import type { AttachmentProps, AttachmentMediaProps, AttachmentContentProps, AttachmentTitleProps, AttachmentDescriptionProps, AttachmentActionsProps, AttachmentActionProps, AttachmentTriggerProps, AttachmentGroupProps } from "./attachment-types.js";
 
 // @hella:styles
 declare const actions: string;
@@ -18,16 +19,6 @@ declare const title: string;
 declare const trigger: string;
 // @hella:end
 
-type AttachmentState = "idle" | "uploading" | "processing" | "error" | "done";
-
-interface AttachmentProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  state?: AttachmentState;
-  size?: "default" | "sm" | "xs";
-  orientation?: "horizontal" | "vertical";
-}
-
 export function Attachment({ state, size, orientation, children, class: cls, ...attrs }: AttachmentProps): HellaNode {
   return html`
     <div
@@ -43,14 +34,6 @@ export function Attachment({ state, size, orientation, children, class: cls, ...
       ...${attrs}
     >${() => children}</div>
   ` as HellaNode;
-}
-
-interface AttachmentMediaProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  variant?: "icon" | "image";
-  /** The owning Attachment's state; inlines the loading spinner on uploading and the error glyph on error when no children are authored. */
-  state?: AttachmentState;
 }
 
 const loaderIcon = (): HellaNode => html`
@@ -107,11 +90,6 @@ export function AttachmentMedia({ variant, state, children, class: cls, ...attrs
   ` as HellaNode;
 }
 
-interface AttachmentContentProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function AttachmentContent({ children, class: cls, ...attrs }: AttachmentContentProps): HellaNode {
   return html`
     <div
@@ -124,11 +102,6 @@ export function AttachmentContent({ children, class: cls, ...attrs }: Attachment
       ...${attrs}
     >${() => children}</div>
   ` as HellaNode;
-}
-
-interface AttachmentTitleProps extends HTMLAttributes<"span"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function AttachmentTitle({ children, class: cls, ...attrs }: AttachmentTitleProps): HellaNode {
@@ -145,11 +118,6 @@ export function AttachmentTitle({ children, class: cls, ...attrs }: AttachmentTi
   ` as HellaNode;
 }
 
-interface AttachmentDescriptionProps extends HTMLAttributes<"span"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function AttachmentDescription({ children, class: cls, ...attrs }: AttachmentDescriptionProps): HellaNode {
   return html`
     <span
@@ -164,11 +132,6 @@ export function AttachmentDescription({ children, class: cls, ...attrs }: Attach
   ` as HellaNode;
 }
 
-interface AttachmentActionsProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function AttachmentActions({ children, class: cls, ...attrs }: AttachmentActionsProps): HellaNode {
   return html`
     <div
@@ -181,13 +144,6 @@ export function AttachmentActions({ children, class: cls, ...attrs }: Attachment
       ...${attrs}
     >${() => children}</div>
   ` as HellaNode;
-}
-
-interface AttachmentActionProps extends HTMLAttributes<"button"> {
-  class?: string;
-  children?: HellaChildren;
-  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
-  size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
 }
 
 export function AttachmentAction({ variant, size, children, class: cls, ...attrs }: AttachmentActionProps): HellaNode {
@@ -207,11 +163,6 @@ export function AttachmentAction({ variant, size, children, class: cls, ...attrs
   ` as HellaNode;
 }
 
-interface AttachmentTriggerProps extends HTMLAttributes<"button"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function AttachmentTrigger({ children, class: cls, ...attrs }: AttachmentTriggerProps): HellaNode {
   return html`
     <button
@@ -225,11 +176,6 @@ export function AttachmentTrigger({ children, class: cls, ...attrs }: Attachment
       ...${attrs}
     >${() => children}</button>
   ` as HellaNode;
-}
-
-interface AttachmentGroupProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function AttachmentGroup({ children, class: cls, ...attrs }: AttachmentGroupProps): HellaNode {

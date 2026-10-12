@@ -1,6 +1,7 @@
 import { effect, signal } from "@hellajs/core";
 import { html, onEscape, Portal, trapFocus } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HellaChild, HellaNode } from "@hellajs/dom";
+import type { AlertDialogOverlayProps, AlertDialogPortalProps, AlertDialogTriggerProps, AlertDialogContentProps, AlertDialogPartProps, AlertDialogTitleProps, AlertDialogDescriptionProps, AlertDialogActionProps, AlertDialogCancelProps, AlertDialogProps } from "./alert-dialog-types.js";
 
 // @hella:styles
 declare const base: string;
@@ -16,18 +17,10 @@ declare const title: string;
 // @hella:end
 
 /** Accessibility state shared by the animated dialog parts. */
-type AlertDialogState = () => "open" | "closed";
 
 /** Button variant union carried by the Action/Cancel buttons (mirrors the emitted ButtonProps). */
-type ActionVariant = "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
 
 /** Button size union carried by the Action/Cancel buttons (mirrors the emitted ButtonProps). */
-type ActionSize = "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
-
-interface AlertDialogOverlayProps extends HTMLAttributes<"div"> {
-  state?: AlertDialogState;
-  class?: string;
-}
 
 export function AlertDialogOverlay({ state, class: cls, ...attrs }: AlertDialogOverlayProps): HellaNode {
   return html`
@@ -44,18 +37,9 @@ export function AlertDialogOverlay({ state, class: cls, ...attrs }: AlertDialogO
   ` as HellaNode;
 }
 
-interface AlertDialogPortalProps {
-  children?: HellaChildren;
-}
-
 /** Portals the manual composition's parts into document.body. */
 export function AlertDialogPortal(props: AlertDialogPortalProps): HellaNode {
   return Portal({ to: "body", children: props.children === undefined ? [] : Array.isArray(props.children) ? props.children : [props.children] }) as HellaNode;
-}
-
-interface AlertDialogTriggerProps extends HTMLAttributes<"button"> {
-  children?: HellaChildren;
-  class?: string;
 }
 
 /** The manual trigger button; wire its click to the caller's open signal - hella has no Radix context to do it for you. */
@@ -72,16 +56,6 @@ export function AlertDialogTrigger({ children, class: cls, ...attrs }: AlertDial
       ...${attrs}
     >${() => children}</button>
   ` as HellaNode;
-}
-
-interface AlertDialogContentProps extends HTMLAttributes<"div"> {
-  state?: AlertDialogState;
-  size?: "default" | "sm";
-  closeOnEscape?: boolean;
-  onClose?: () => void;
-  onExited?: () => void;
-  class?: string;
-  children?: HellaChildren;
 }
 
 /**
@@ -149,11 +123,6 @@ export function AlertDialogContent({ state, size, closeOnEscape, onClose, onExit
   ` as HellaNode;
 }
 
-interface AlertDialogPartProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function AlertDialogHeader({ children, class: cls, ...attrs }: AlertDialogPartProps): HellaNode {
   return html`
     <div
@@ -182,11 +151,6 @@ export function AlertDialogFooter({ children, class: cls, ...attrs }: AlertDialo
   ` as HellaNode;
 }
 
-interface AlertDialogTitleProps extends HTMLAttributes<"h2"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function AlertDialogTitle({ id, children, class: cls, ...attrs }: AlertDialogTitleProps): HellaNode {
   return html`
     <h2
@@ -200,11 +164,6 @@ export function AlertDialogTitle({ id, children, class: cls, ...attrs }: AlertDi
       ...${attrs}
     >${() => children}</h2>
   ` as HellaNode;
-}
-
-interface AlertDialogDescriptionProps extends HTMLAttributes<"p"> {
-  children?: HellaChildren;
-  class?: string;
 }
 
 export function AlertDialogDescription({ id, children, class: cls, ...attrs }: AlertDialogDescriptionProps): HellaNode {
@@ -236,14 +195,6 @@ export function AlertDialogMedia({ children, class: cls, ...attrs }: AlertDialog
   ` as HellaNode;
 }
 
-interface AlertDialogActionProps extends HTMLAttributes<"button"> {
-  variant?: ActionVariant;
-  size?: ActionSize;
-  onClose?: () => void;
-  children?: HellaChildren;
-  class?: string;
-}
-
 /** The confirm button - a composed Button (default variant) calling the close path. */
 export function AlertDialogAction({ variant, size, onClose, "on:click": userClick, children, class: cls, ...attrs }: AlertDialogActionProps): HellaNode {
   return html`
@@ -262,14 +213,6 @@ export function AlertDialogAction({ variant, size, onClose, "on:click": userClic
   ` as HellaNode;
 }
 
-interface AlertDialogCancelProps extends HTMLAttributes<"button"> {
-  variant?: ActionVariant;
-  size?: ActionSize;
-  onClose?: () => void;
-  children?: HellaChildren;
-  class?: string;
-}
-
 /** The dismiss button - a composed Button (outline variant) calling the close path. */
 export function AlertDialogCancel({ variant, size, onClose, "on:click": userClick, children, class: cls, ...attrs }: AlertDialogCancelProps): HellaNode {
   return html`
@@ -286,17 +229,6 @@ export function AlertDialogCancel({ variant, size, onClose, "on:click": userClic
       ...${attrs}
     >${() => children}</button>
   ` as HellaNode;
-}
-
-interface AlertDialogProps extends HTMLAttributes<"div"> {
-  open: () => boolean;
-  onClose: () => void;
-  title?: string;
-  description?: string;
-  size?: "default" | "sm";
-  closeOnEscape?: boolean;
-  class?: string;
-  children?: HellaChildren;
 }
 
 let alertDialogCount = 0;

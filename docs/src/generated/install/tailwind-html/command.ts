@@ -1,9 +1,8 @@
 import { effect, signal } from "@hellajs/core";
 import { html, onEscape, onOutside, Portal, trapFocus } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
-import { cn } from "./cn.js";
+import type { HellaChild, HellaNode, HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
-export interface CommandItemData {
+interface CommandItemData {
   value: string;
   label: string;
   group?: string;
@@ -13,14 +12,82 @@ export interface CommandItemData {
   onSelect?: () => void;
 }
 
-const MATCH_BASE = 1000;
-const BOUNDARY_BONUS = 500;
-const KEYWORD_BONUS = 100;
-
 interface RankedItem {
   item: CommandItemData;
   score: number;
 }
+
+interface CommandInputProps extends HTMLAttributes<"input"> {
+  class?: string;
+}
+
+interface CommandListProps extends HTMLAttributes<"div"> {
+  /** Reactive items body; a thunk so the composed root's re-ranked list re-renders through the slot. */
+  body?: () => HellaChild | HellaChild[];
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface CommandEmptyProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface CommandGroupProps extends HTMLAttributes<"div"> {
+  heading?: string;
+  hidden?: boolean | (() => boolean);
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface CommandSeparatorProps extends HTMLAttributes<"div"> {
+  class?: string;
+}
+
+interface CommandItemProps extends HTMLAttributes<"div"> {
+  value?: string;
+  /** Selected state (the ref's data-selected accent); an accessor follows the owning command's active item. */
+  active?: () => boolean;
+  /** Called on click and on Enter when the owning command commits. */
+  onSelect?: () => void;
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface CommandShortcutProps extends HTMLAttributes<"span"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface CommandProps extends HTMLAttributes<"div"> {
+  items?: CommandItemData[];
+  /** Replaces the default scoring filter (earlier matches, word-boundary starts, keyword hits). */
+  filter?: (items: CommandItemData[], query: string) => CommandItemData[];
+  /** Wraps arrow movement at the edges; the default clamps. */
+  loop?: boolean;
+  /** Controlled active value. When given, the root never writes its internal cursor and onValueChange reports each requested move and selection. */
+  value?: () => string;
+  onValueChange?: (value: string) => void;
+  class?: string;
+  /** Extra chrome rendered below the auto-rendered list (footer hints, custom rows). */
+  children?: HellaChildren;
+}
+
+interface CommandDialogProps extends HTMLAttributes<"div"> {
+  open: () => boolean;
+  onClose: () => void;
+  title?: string;
+  description?: string;
+  class?: string;
+  children?: HellaChildren;
+}
+import { cn } from "./cn.js";
+
+export type { CommandItemData };
+
+const MATCH_BASE = 1000;
+const BOUNDARY_BONUS = 500;
+const KEYWORD_BONUS = 100;
 
 const boundaryStart = (haystack: string, at: number): boolean =>
   at === 0 || " -_/.(".includes(haystack.charAt(at - 1));
@@ -65,10 +132,6 @@ const defaultFilter = (items: CommandItemData[], query: string): CommandItemData
   return ranked.sort((a, b) => b.score - a.score).map((entry) => entry.item);
 };
 
-interface CommandInputProps extends HTMLAttributes<"input"> {
-  class?: string;
-}
-
 export function CommandInput({ class: cls, ...attrs }: CommandInputProps): HellaNode {
   return html`
     <div
@@ -107,13 +170,6 @@ export function CommandInput({ class: cls, ...attrs }: CommandInputProps): Hella
   ` as HellaNode;
 }
 
-interface CommandListProps extends HTMLAttributes<"div"> {
-  /** Reactive items body; a thunk so the composed root's re-ranked list re-renders through the slot. */
-  body?: () => HellaChild | HellaChild[];
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function CommandList({ body, children, class: cls, ...attrs }: CommandListProps): HellaNode {
   return html`
     <div
@@ -130,11 +186,6 @@ export function CommandList({ body, children, class: cls, ...attrs }: CommandLis
   ` as HellaNode;
 }
 
-interface CommandEmptyProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function CommandEmpty({ children, class: cls, ...attrs }: CommandEmptyProps): HellaNode {
   return html`
     <div
@@ -145,13 +196,6 @@ export function CommandEmpty({ children, class: cls, ...attrs }: CommandEmptyPro
       ...${attrs}
     >${() => children}</div>
   ` as HellaNode;
-}
-
-interface CommandGroupProps extends HTMLAttributes<"div"> {
-  heading?: string;
-  hidden?: boolean | (() => boolean);
-  children?: HellaChildren;
-  class?: string;
 }
 
 export function CommandGroup({ heading, hidden, children, class: cls, ...attrs }: CommandGroupProps): HellaNode {
@@ -179,10 +223,6 @@ export function CommandGroup({ heading, hidden, children, class: cls, ...attrs }
   ` as HellaNode;
 }
 
-interface CommandSeparatorProps extends HTMLAttributes<"div"> {
-  class?: string;
-}
-
 export function CommandSeparator({ class: cls, ...attrs }: CommandSeparatorProps): HellaNode {
   return html`
     <div
@@ -194,16 +234,6 @@ export function CommandSeparator({ class: cls, ...attrs }: CommandSeparatorProps
       ...${attrs}
     />
   ` as HellaNode;
-}
-
-interface CommandItemProps extends HTMLAttributes<"div"> {
-  value?: string;
-  /** Selected state (the ref's data-selected accent); an accessor follows the owning command's active item. */
-  active?: () => boolean;
-  /** Called on click and on Enter when the owning command commits. */
-  onSelect?: () => void;
-  children?: HellaChildren;
-  class?: string;
 }
 
 export function CommandItem({ value, disabled, active, onSelect, children, class: cls, ...attrs }: CommandItemProps): HellaNode {
@@ -228,11 +258,6 @@ export function CommandItem({ value, disabled, active, onSelect, children, class
   ` as HellaNode;
 }
 
-interface CommandShortcutProps extends HTMLAttributes<"span"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function CommandShortcut({ children, class: cls, ...attrs }: CommandShortcutProps): HellaNode {
   return html`
     <span
@@ -243,29 +268,6 @@ export function CommandShortcut({ children, class: cls, ...attrs }: CommandShort
       ...${attrs}
     >${() => children}</span>
   ` as HellaNode;
-}
-
-interface CommandProps extends HTMLAttributes<"div"> {
-  items?: CommandItemData[];
-  /** Replaces the default scoring filter (earlier matches, word-boundary starts, keyword hits). */
-  filter?: (items: CommandItemData[], query: string) => CommandItemData[];
-  /** Wraps arrow movement at the edges; the default clamps. */
-  loop?: boolean;
-  /** Controlled active value. When given, the root never writes its internal cursor and onValueChange reports each requested move and selection. */
-  value?: () => string;
-  onValueChange?: (value: string) => void;
-  class?: string;
-  /** Extra chrome rendered below the auto-rendered list (footer hints, custom rows). */
-  children?: HellaChildren;
-}
-
-interface CommandDialogProps extends HTMLAttributes<"div"> {
-  open: () => boolean;
-  onClose: () => void;
-  title?: string;
-  description?: string;
-  class?: string;
-  children?: HellaChildren;
 }
 
 let commandDialogCount = 0;

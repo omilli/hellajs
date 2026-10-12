@@ -1,6 +1,29 @@
 import { signal } from "@hellajs/core";
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
+interface CollapsibleProps extends HTMLAttributes<"div"> {
+  class?: string;
+  /** Controlled open state. When given, the root never writes its internal signal and `onOpenChange` reports the requested flip. */
+  open?: () => boolean;
+  defaultOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  trigger: HellaChildren;
+  content: HellaChildren;
+}
+
+interface CollapsibleTriggerProps extends HTMLAttributes<"button"> {
+  class?: string;
+  children?: HellaChildren;
+  active?: () => boolean;
+  onToggle?: () => void;
+}
+
+interface CollapsibleContentProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+  active?: () => boolean;
+}
+
 import { style } from "@hellajs/css";
 import { tokens } from "./tokens.js";
 
@@ -38,29 +61,6 @@ const contentInner = style("collapsible-content-inner", {
   minHeight: "0",
   overflow: "hidden",
 });
-
-interface CollapsibleProps extends HTMLAttributes<"div"> {
-  class?: string;
-  /** Controlled open state. When given, the root never writes its internal signal and `onOpenChange` reports the requested flip. */
-  open?: () => boolean;
-  defaultOpen?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  trigger: HellaChildren;
-  content: HellaChildren;
-}
-
-interface CollapsibleTriggerProps extends HTMLAttributes<"button"> {
-  class?: string;
-  children?: HellaChildren;
-  active?: () => boolean;
-  onToggle?: () => void;
-}
-
-interface CollapsibleContentProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  active?: () => boolean;
-}
 
 let collapsibleCount = 0;
 

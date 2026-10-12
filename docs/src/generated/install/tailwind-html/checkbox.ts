@@ -1,7 +1,6 @@
 import { html } from "@hellajs/dom";
 import { signal } from "@hellajs/core";
-import type { HTMLAttributes, HellaNode } from "@hellajs/dom";
-import { cn } from "./cn.js";
+import type { HellaNode, HTMLAttributes } from "@hellajs/dom";
 
 interface CheckboxProps extends HTMLAttributes<"button"> {
   class?: string;
@@ -11,6 +10,7 @@ interface CheckboxProps extends HTMLAttributes<"button"> {
   indeterminate?: boolean | (() => boolean);
   onCheckedChange?: (checked: boolean) => void;
 }
+import { cn } from "./cn.js";
 
 /** The check icon (refs/icons/check.svg), created per call so reactive swaps never share nodes between clones. */
 const checkIcon = (): HellaNode =>

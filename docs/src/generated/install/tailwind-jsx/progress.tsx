@@ -1,5 +1,4 @@
 import type { HTMLAttributes } from "@hellajs/dom";
-import { cn } from "./cn.js";
 
 type ProgressValue = number | null | undefined;
 
@@ -8,6 +7,7 @@ interface ProgressProps extends HTMLAttributes<"div"> {
   /** 0-100; null (or a reactive fn reading null) drives the indeterminate state. */
   value?: number | null | (() => number | null);
 }
+import { cn } from "./cn.js";
 
 export function Progress({ value, class: cls, ...attrs }: ProgressProps): JSX.Element {
   const current = (): ProgressValue => (typeof value === "function" ? value() : value);

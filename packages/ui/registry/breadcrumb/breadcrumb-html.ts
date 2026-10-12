@@ -1,5 +1,6 @@
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HellaNode } from "@hellajs/dom";
+import type { BreadcrumbProps, BreadcrumbPartProps, BreadcrumbLinkProps, BreadcrumbPageProps, BreadcrumbSeparatorProps, BreadcrumbEllipsisProps } from "./breadcrumb-types.js";
 
 // @hella:styles
 declare const ellipsis: string;
@@ -11,11 +12,6 @@ declare const page: string;
 declare const separator: string;
 declare const srOnly: string;
 // @hella:end
-
-interface BreadcrumbProps extends HTMLAttributes<"nav"> {
-  class?: string;
-  children?: HellaChildren;
-}
 
 export function Breadcrumb({ children, class: cls, ...attrs }: BreadcrumbProps): HellaNode {
   return html`
@@ -30,11 +26,6 @@ export function Breadcrumb({ children, class: cls, ...attrs }: BreadcrumbProps):
       ...${attrs}
     >${() => children}</nav>
   ` as HellaNode;
-}
-
-interface BreadcrumbPartProps extends HTMLAttributes<"li"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function BreadcrumbList({ children, class: cls, ...attrs }: BreadcrumbPartProps): HellaNode {
@@ -65,11 +56,6 @@ export function BreadcrumbItem({ children, class: cls, ...attrs }: BreadcrumbPar
   ` as HellaNode;
 }
 
-interface BreadcrumbLinkProps extends HTMLAttributes<"a"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function BreadcrumbLink({ children, class: cls, ...attrs }: BreadcrumbLinkProps): HellaNode {
   return html`
     <a
@@ -82,11 +68,6 @@ export function BreadcrumbLink({ children, class: cls, ...attrs }: BreadcrumbLin
       ...${attrs}
     >${() => children}</a>
   ` as HellaNode;
-}
-
-interface BreadcrumbPageProps extends HTMLAttributes<"span"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function BreadcrumbPage({ children, class: cls, ...attrs }: BreadcrumbPageProps): HellaNode {
@@ -104,12 +85,6 @@ export function BreadcrumbPage({ children, class: cls, ...attrs }: BreadcrumbPag
       ...${attrs}
     >${() => children}</span>
   ` as HellaNode;
-}
-
-interface BreadcrumbSeparatorProps extends HTMLAttributes<"li"> {
-  /** Replaces the inlined chevron when given. */
-  children?: HellaChildren;
-  class?: string;
 }
 
 export function BreadcrumbSeparator({ children, class: cls, ...attrs }: BreadcrumbSeparatorProps): HellaNode {
@@ -142,10 +117,6 @@ export function BreadcrumbSeparator({ children, class: cls, ...attrs }: Breadcru
         </svg>`}
     </li>
   ` as HellaNode;
-}
-
-interface BreadcrumbEllipsisProps extends HTMLAttributes<"span"> {
-  class?: string;
 }
 
 export function BreadcrumbEllipsis({ class: cls, ...attrs }: BreadcrumbEllipsisProps): HellaNode {

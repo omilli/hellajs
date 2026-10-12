@@ -1,18 +1,11 @@
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaNode } from "@hellajs/dom";
+import type { HellaNode } from "@hellajs/dom";
+import type { ProgressValue, ProgressProps } from "./progress-types.js";
 
 // @hella:styles
 declare const base: string;
 declare const indicator: string;
 // @hella:end
-
-type ProgressValue = number | null | undefined;
-
-interface ProgressProps extends HTMLAttributes<"div"> {
-  class?: string;
-  /** 0-100; null (or a reactive fn reading null) drives the indeterminate state. */
-  value?: number | null | (() => number | null);
-}
 
 export function Progress({ value, class: cls, ...attrs }: ProgressProps): HellaNode {
   const current = (): ProgressValue => (typeof value === "function" ? value() : value);

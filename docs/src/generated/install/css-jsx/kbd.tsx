@@ -1,5 +1,10 @@
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
+interface KbdProps extends HTMLAttributes<"kbd"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
 import { style } from "@hellajs/css";
 import { tokens } from "./tokens.js";
 
@@ -40,11 +45,6 @@ const group = style("kbd-group", {
   display: "inline-flex",
   gap: "0.25rem",
 });
-
-interface KbdProps extends HTMLAttributes<"kbd"> {
-  class?: string;
-  children?: HellaChildren;
-}
 
 export function Kbd({ children, class: cls, ...attrs }: KbdProps): JSX.Element {
   return (

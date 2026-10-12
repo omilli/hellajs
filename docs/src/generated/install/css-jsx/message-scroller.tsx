@@ -1,6 +1,54 @@
 import { signal } from "@hellajs/core";
 import type { Signal } from "@hellajs/core";
-import type { HTMLAttributes, HellaChild, HellaChildren } from "@hellajs/dom";
+import type { HellaChild, HellaChildren, HTMLAttributes } from "@hellajs/dom";
+
+interface MessageScrollerProviderProps {
+  children?: HellaChildren;
+}
+
+interface MessageScrollerViewportProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+  /** Shared at-bottom state; the viewport flips it and owns an internal signal when absent. */
+  atBottom?: Signal<boolean>;
+  /** Overrides the scroll-to-bottom action used for auto-stick and the jump button. */
+  scrollToBottom?: () => void;
+  /** Distance in px from the bottom still counted as at-bottom. */
+  threshold?: number;
+  /** Injectable content watcher returning its own dispose; defaults to a ResizeObserver. */
+  observe?: (target: Element, onGrow: () => void) => () => void;
+}
+
+interface MessageScrollerContentProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface MessageScrollerItemProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface MessageScrollerButtonProps extends HTMLAttributes<"button"> {
+  class?: string;
+  children?: HellaChildren;
+  /** Shared at-bottom state driving data-active; the default scroll action writes it back to true. */
+  atBottom?: Signal<boolean>;
+  scrollToBottom?: () => void;
+  direction?: "start" | "end";
+  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+  size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
+}
+
+interface MessageScrollerProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+  atBottom?: Signal<boolean>;
+  scrollToBottom?: () => void;
+  threshold?: number;
+  observe?: (target: Element, onGrow: () => void) => () => void;
+  showScrollButton?: boolean;
+}
 import { css, style } from "@hellajs/css";
 import { tokens } from "./tokens.js";
 
@@ -276,10 +324,6 @@ css({
   },
 });
 
-interface MessageScrollerProviderProps {
-  children?: HellaChildren;
-}
-
 /**
  * Drop-in composition wrapper kept for API parity with the upstream provider.
  * Hella has no context: state lives on signals the composer owns and passes to
@@ -287,19 +331,6 @@ interface MessageScrollerProviderProps {
  */
 export function MessageScrollerProvider(props: MessageScrollerProviderProps): JSX.Element {
   return <>{props.children}</>;
-}
-
-interface MessageScrollerViewportProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  /** Shared at-bottom state; the viewport flips it and owns an internal signal when absent. */
-  atBottom?: Signal<boolean>;
-  /** Overrides the scroll-to-bottom action used for auto-stick and the jump button. */
-  scrollToBottom?: () => void;
-  /** Distance in px from the bottom still counted as at-bottom. */
-  threshold?: number;
-  /** Injectable content watcher returning its own dispose; defaults to a ResizeObserver. */
-  observe?: (target: Element, onGrow: () => void) => () => void;
 }
 
 export function MessageScrollerViewport({ atBottom, scrollToBottom, threshold, observe, children, class: cls, ...attrs }: MessageScrollerViewportProps): JSX.Element {
@@ -362,11 +393,6 @@ export function MessageScrollerViewport({ atBottom, scrollToBottom, threshold, o
   );
 }
 
-interface MessageScrollerContentProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function MessageScrollerContent({ children, class: cls, ...attrs }: MessageScrollerContentProps): JSX.Element {
   return (
     <div
@@ -381,11 +407,6 @@ export function MessageScrollerContent({ children, class: cls, ...attrs }: Messa
   );
 }
 
-interface MessageScrollerItemProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function MessageScrollerItem({ children, class: cls, ...attrs }: MessageScrollerItemProps): JSX.Element {
   return (
     <div
@@ -398,17 +419,6 @@ export function MessageScrollerItem({ children, class: cls, ...attrs }: MessageS
       {children}
     </div>
   );
-}
-
-interface MessageScrollerButtonProps extends HTMLAttributes<"button"> {
-  class?: string;
-  children?: HellaChildren;
-  /** Shared at-bottom state driving data-active; the default scroll action writes it back to true. */
-  atBottom?: Signal<boolean>;
-  scrollToBottom?: () => void;
-  direction?: "start" | "end";
-  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
-  size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
 }
 
 export function MessageScrollerButton({ atBottom, scrollToBottom, direction: dir, variant, size, "on:click": userClick, children, class: cls, ...attrs }: MessageScrollerButtonProps): JSX.Element {
@@ -475,16 +485,6 @@ export function MessageScrollerButton({ atBottom, scrollToBottom, direction: dir
       )}
     </button>
   );
-}
-
-interface MessageScrollerProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  atBottom?: Signal<boolean>;
-  scrollToBottom?: () => void;
-  threshold?: number;
-  observe?: (target: Element, onGrow: () => void) => () => void;
-  showScrollButton?: boolean;
 }
 
 /**

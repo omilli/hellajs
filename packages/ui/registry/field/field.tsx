@@ -1,4 +1,5 @@
-import type { HTMLAttributes, HellaChild, HellaChildren } from "@hellajs/dom";
+import type { HellaChild } from "@hellajs/dom";
+import type { FieldSetProps, FieldLegendProps, FieldGroupProps, FieldProps, FieldContentProps, FieldLabelProps, FieldTitleProps, FieldDescriptionProps, FieldSeparatorProps, FieldErrorProps } from "./field-types.js";
 
 // @hella:styles
 declare const base: string;
@@ -19,11 +20,6 @@ declare const set: string;
 declare const title: string;
 // @hella:end
 
-interface FieldSetProps extends HTMLAttributes<"fieldset"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function FieldSet({ children, class: cls, ...attrs }: FieldSetProps): JSX.Element {
   return (
     <fieldset
@@ -38,12 +34,6 @@ export function FieldSet({ children, class: cls, ...attrs }: FieldSetProps): JSX
       {children}
     </fieldset>
   );
-}
-
-interface FieldLegendProps extends HTMLAttributes<"legend"> {
-  class?: string;
-  children?: HellaChildren;
-  variant?: "legend" | "label";
 }
 
 export function FieldLegend({ variant, children, class: cls, ...attrs }: FieldLegendProps): JSX.Element {
@@ -67,11 +57,6 @@ export function FieldLegend({ variant, children, class: cls, ...attrs }: FieldLe
   );
 }
 
-interface FieldGroupProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function FieldGroup({ children, class: cls, ...attrs }: FieldGroupProps): JSX.Element {
   return (
     <div
@@ -86,14 +71,6 @@ export function FieldGroup({ children, class: cls, ...attrs }: FieldGroupProps):
       {children}
     </div>
   );
-}
-
-interface FieldProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  orientation?: "vertical" | "horizontal" | "responsive";
-  /** Renders data-invalid="true" (destructive text) on the field; `disabled` (native attr) renders data-disabled="true" (label/title opacity). */
-  invalid?: boolean;
 }
 
 export function Field({ orientation: orient, disabled, invalid, children, class: cls, ...attrs }: FieldProps): JSX.Element {
@@ -120,11 +97,6 @@ export function Field({ orientation: orient, disabled, invalid, children, class:
   );
 }
 
-interface FieldContentProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function FieldContent({ children, class: cls, ...attrs }: FieldContentProps): JSX.Element {
   return (
     <div
@@ -139,11 +111,6 @@ export function FieldContent({ children, class: cls, ...attrs }: FieldContentPro
       {children}
     </div>
   );
-}
-
-interface FieldLabelProps extends HTMLAttributes<"label"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function FieldLabel({ children, class: cls, ...attrs }: FieldLabelProps): JSX.Element {
@@ -162,11 +129,6 @@ export function FieldLabel({ children, class: cls, ...attrs }: FieldLabelProps):
   );
 }
 
-interface FieldTitleProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function FieldTitle({ children, class: cls, ...attrs }: FieldTitleProps): JSX.Element {
   return (
     <div
@@ -183,11 +145,6 @@ export function FieldTitle({ children, class: cls, ...attrs }: FieldTitleProps):
   );
 }
 
-interface FieldDescriptionProps extends HTMLAttributes<"p"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function FieldDescription({ children, class: cls, ...attrs }: FieldDescriptionProps): JSX.Element {
   return (
     <p
@@ -202,11 +159,6 @@ export function FieldDescription({ children, class: cls, ...attrs }: FieldDescri
       {children}
     </p>
   );
-}
-
-interface FieldSeparatorProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function FieldSeparator({ children, class: cls, ...attrs }: FieldSeparatorProps): JSX.Element {
@@ -240,12 +192,6 @@ export function FieldSeparator({ children, class: cls, ...attrs }: FieldSeparato
         : null}
     </div>
   );
-}
-
-interface FieldErrorProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  errors?: Array<{ message?: string } | undefined>;
 }
 
 export function FieldError({ errors, children, class: cls, ...attrs }: FieldErrorProps): JSX.Element {

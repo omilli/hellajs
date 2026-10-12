@@ -1,6 +1,7 @@
 import { effect, signal } from "@hellajs/core";
 import { anchorPosition, html, layerDismissal, menuTypeahead, Portal } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChild, HellaChildren, HellaNode, Placement } from "@hellajs/dom";
+import type { HellaChild, HellaNode, Placement } from "@hellajs/dom";
+import type { AnchorSide, AnchorAlign, ContextMenuTriggerProps, ContextMenuContentProps, ContextMenuPartProps, ContextMenuItemProps, ContextMenuCheckboxItemProps, ContextMenuRadioGroupProps, ContextMenuRadioItemProps, ContextMenuLabelProps, ContextMenuShortcutProps, ContextMenuSubTriggerProps, ContextMenuSubContentProps, ContextMenuSubProps, ContextMenuProps } from "./context-menu-types.js";
 
 // @hella:styles
 declare const checkItem: string;
@@ -18,9 +19,6 @@ declare const subContent: string;
 declare const subTrigger: string;
 // @hella:end
 
-type AnchorSide = "top" | "bottom" | "left" | "right";
-type AnchorAlign = "start" | "center" | "end";
-
 const placementOf = (side: AnchorSide, align: AnchorAlign): Placement =>
   align === "center" ? side : `${side}-${align}`;
 
@@ -30,12 +28,6 @@ const SELECT_EVENT = "hella:menu-select";
 const closeAllMenus = (): void => {
   document.dispatchEvent(new CustomEvent(SELECT_EVENT));
 };
-
-interface MenuEntry {
-  value: string;
-  label?: HellaChildren;
-  disabled?: boolean;
-}
 
 /** Open/close state shared by the composed root and submenus: controlled override, exit-holding `visible` gate. */
 function menuOpenState(props: { open?: () => boolean; onOpenChange?: (open: boolean) => void }) {
@@ -210,11 +202,6 @@ const chevronIcon = (): HellaNode =>
     <path d="m9 18 6-6-6-6" />
   </svg>` as HellaNode;
 
-interface ContextMenuTriggerProps extends HTMLAttributes<"span"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 /** The manual trigger zone; the composed ContextMenu renders the same shape wired to the `contextmenu` listener. */
 export function ContextMenuTrigger({ children, class: cls, ...attrs }: ContextMenuTriggerProps): HellaNode {
   return html`
@@ -228,22 +215,6 @@ export function ContextMenuTrigger({ children, class: cls, ...attrs }: ContextMe
       ...${attrs}
     >${() => children}</span>
   ` as HellaNode;
-}
-
-interface ContextMenuContentProps extends HTMLAttributes<"div"> {
-  state?: () => "open" | "closed";
-  side?: AnchorSide;
-  align?: AnchorAlign;
-  /** Resolves the element the content anchors to; positioning is skipped when undefined. */
-  anchor?: () => Element | undefined;
-  /** When given, Escape and an outside pointerdown dismiss the top layer into this callback, and item selection closes every open layer. */
-  onDismiss?: () => void;
-  /** Called when the exit animation ends under data-state="closed"; entry animationends are ignored. */
-  onExited?: () => void;
-  /** ArrowLeft closes the menu when provided (submenu exit; a top-level menu stays inert). */
-  onArrowLeft?: () => void;
-  children?: HellaChildren;
-  class?: string;
 }
 
 export function ContextMenuContent({ state, id, side: sideProp, align: alignProp, anchor, onDismiss, onExited, onArrowLeft, children, class: cls, ...attrs }: ContextMenuContentProps): HellaNode {
@@ -312,11 +283,6 @@ export function ContextMenuContent({ state, id, side: sideProp, align: alignProp
   ` as HellaNode;
 }
 
-interface ContextMenuPartProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function ContextMenuGroup({ children, class: cls, ...attrs }: ContextMenuPartProps): HellaNode {
   return html`
     <div
@@ -329,15 +295,6 @@ export function ContextMenuGroup({ children, class: cls, ...attrs }: ContextMenu
       ...${attrs}
     >${() => children}</div>
   ` as HellaNode;
-}
-
-interface ContextMenuItemProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  destructive?: boolean;
-  inset?: boolean;
-  /** Shortcut text rendered as a trailing Shortcut span. */
-  shortcut?: string;
-  class?: string;
 }
 
 export function ContextMenuItem({ destructive, inset, disabled, "on:click": userClick, shortcut: shortcutSlot, children, class: cls, ...attrs }: ContextMenuItemProps): HellaNode {
@@ -365,14 +322,6 @@ export function ContextMenuItem({ destructive, inset, disabled, "on:click": user
       ${() => children}${() => (shortcutSlot !== undefined ? ContextMenuShortcut({ children: shortcutSlot }) : null)}
     </div>
   ` as HellaNode;
-}
-
-interface ContextMenuCheckboxItemProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  /** Checked state. A boolean seeds the internal signal; an accessor makes the item controlled - activation then only reports through `onCheckedChange`. */
-  checked?: boolean | (() => boolean);
-  onCheckedChange?: (checked: boolean) => void;
-  class?: string;
 }
 
 export function ContextMenuCheckboxItem({ checked: checkedProp, onCheckedChange, disabled, children, class: cls, ...attrs }: ContextMenuCheckboxItemProps): HellaNode {
@@ -418,15 +367,6 @@ export function ContextMenuCheckboxItem({ checked: checkedProp, onCheckedChange,
   ` as HellaNode;
 }
 
-interface ContextMenuRadioGroupProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  items?: MenuEntry[];
-  /** Controlled selected value. When given, the group never writes its internal signal and `onValueChange` reports the requested selection. */
-  value?: () => string;
-  onValueChange?: (value: string) => void;
-  class?: string;
-}
-
 export function ContextMenuRadioGroup({ items, value: valueProp, onValueChange, children, class: cls, ...attrs }: ContextMenuRadioGroupProps): HellaNode {
   const internal = signal("");
   const current = (): string => (valueProp !== undefined ? valueProp() : internal());
@@ -453,15 +393,6 @@ export function ContextMenuRadioGroup({ items, value: valueProp, onValueChange, 
       }))}
     </div>
   ` as HellaNode;
-}
-
-interface ContextMenuRadioItemProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  value?: string;
-  /** Checked state. A boolean reads statically; an accessor keeps the item reactive against its owning group. */
-  checked?: boolean | (() => boolean);
-  onSelect?: () => void;
-  class?: string;
 }
 
 export function ContextMenuRadioItem({ value, checked: checkedProp, onSelect, disabled, children, class: cls, ...attrs }: ContextMenuRadioItemProps): HellaNode {
@@ -504,12 +435,6 @@ export function ContextMenuRadioItem({ value, checked: checkedProp, onSelect, di
   ` as HellaNode;
 }
 
-interface ContextMenuLabelProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  inset?: boolean;
-  class?: string;
-}
-
 export function ContextMenuLabel({ inset, children, class: cls, ...attrs }: ContextMenuLabelProps): HellaNode {
   return html`
     <div
@@ -540,11 +465,6 @@ export function ContextMenuSeparator({ class: cls, ...attrs }: ContextMenuPartPr
   ` as HellaNode;
 }
 
-interface ContextMenuShortcutProps extends HTMLAttributes<"span"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function ContextMenuShortcut({ children, class: cls, ...attrs }: ContextMenuShortcutProps): HellaNode {
   return html`
     <span
@@ -557,16 +477,6 @@ export function ContextMenuShortcut({ children, class: cls, ...attrs }: ContextM
       ...${attrs}
     >${() => children}</span>
   ` as HellaNode;
-}
-
-interface ContextMenuSubTriggerProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  inset?: boolean;
-  /** Resolves the open state for `aria-expanded`/`data-state`; the composed Sub wires it. */
-  state?: () => "open" | "closed";
-  /** Called on click and hover intent to open the submenu. */
-  onOpen?: () => void;
-  class?: string;
 }
 
 export function ContextMenuSubTrigger({ inset, state, onOpen, children, class: cls, ...attrs }: ContextMenuSubTriggerProps): HellaNode {
@@ -619,24 +529,6 @@ export function ContextMenuSubTrigger({ inset, state, onOpen, children, class: c
       ${() => children}${chevronIcon()}
     </div>
   ` as HellaNode;
-}
-
-interface ContextMenuSubContentProps extends HTMLAttributes<"div"> {
-  state?: () => "open" | "closed";
-  side?: AnchorSide;
-  align?: AnchorAlign;
-  /** Resolves the element the content anchors to (the sub-trigger); positioning is skipped when undefined. */
-  anchor?: () => Element | undefined;
-  /** When given, Escape and an outside pointerdown dismiss the top layer into this callback, and item selection closes every open layer. */
-  onDismiss?: () => void;
-  /** Called when the exit animation ends under data-state="closed"; entry animationends are ignored. */
-  onExited?: () => void;
-  /** ArrowLeft closes the submenu. */
-  onArrowLeft?: () => void;
-  /** Pointer entering the content cancels the trigger's pending close. */
-  onPointerEnter?: () => void;
-  children?: HellaChildren;
-  class?: string;
 }
 
 export function ContextMenuSubContent({ state, side: sideProp, align: alignProp, anchor, onDismiss, onExited, onArrowLeft, onPointerEnter, children, class: cls, ...attrs }: ContextMenuSubContentProps): HellaNode {
@@ -705,12 +597,6 @@ export function ContextMenuSubContent({ state, side: sideProp, align: alignProp,
       ...${attrs}
     >${() => children}</div>
   ` as HellaNode;
-}
-
-interface ContextMenuSubProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  content?: HellaChildren;
-  class?: string;
 }
 
 export function ContextMenuSub({ content: contentSlot, children, class: cls, ...attrs }: ContextMenuSubProps): HellaNode {
@@ -801,14 +687,6 @@ export function ContextMenuSub({ content: contentSlot, children, class: cls, ...
       })}
     </div>
   ` as HellaNode;
-}
-
-interface ContextMenuProps extends HTMLAttributes<"span"> {
-  open?: () => boolean;
-  onOpenChange?: (open: boolean) => void;
-  children?: HellaChildren;
-  content?: HellaChildren;
-  class?: string;
 }
 
 let contextMenuCount = 0;

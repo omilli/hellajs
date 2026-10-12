@@ -1,4 +1,4 @@
-import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
+import type { MarkerProps, MarkerIconProps, MarkerContentProps } from "./marker-types.js";
 
 // @hella:styles
 declare const base: string;
@@ -6,12 +6,6 @@ declare const content: string;
 declare const icon: string;
 declare const variants: Record<string, string>;
 // @hella:end
-
-interface MarkerProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  variant?: "default" | "separator" | "border";
-}
 
 export function Marker({ variant, children, class: cls, ...attrs }: MarkerProps): JSX.Element {
   return (
@@ -34,11 +28,6 @@ export function Marker({ variant, children, class: cls, ...attrs }: MarkerProps)
   );
 }
 
-interface MarkerIconProps extends HTMLAttributes<"span"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function MarkerIcon({ children, class: cls, ...attrs }: MarkerIconProps): JSX.Element {
   return (
     <span
@@ -54,11 +43,6 @@ export function MarkerIcon({ children, class: cls, ...attrs }: MarkerIconProps):
       {children}
     </span>
   );
-}
-
-interface MarkerContentProps extends HTMLAttributes<"span"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function MarkerContent({ children, class: cls, ...attrs }: MarkerContentProps): JSX.Element {

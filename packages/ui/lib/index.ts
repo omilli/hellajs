@@ -4,5 +4,5 @@ export { initProject } from "./initProject";
 export { listComponents } from "./listComponents";
 export { loadRegistry } from "./loadRegistry";
 export { readConfig } from "./internal/config";
-export { applyStyleVariant } from "./internal/transform";
+export { applyStyleVariant, inlineTypes } from "./internal/transform";
 export type * from "./types";

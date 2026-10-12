@@ -1,5 +1,11 @@
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HellaNode, HTMLAttributes, HellaChildren } from "@hellajs/dom";
+
+interface BadgeProps extends HTMLAttributes<"span"> {
+  class?: string;
+  children?: HellaChildren;
+  variant?: "default" | "secondary" | "destructive" | "outline" | "ghost" | "link";
+}
 
 import { style } from "@hellajs/css";
 import { tokens } from "./tokens.js";
@@ -95,12 +101,6 @@ const variants = {
     },
   }),
 };
-
-interface BadgeProps extends HTMLAttributes<"span"> {
-  class?: string;
-  children?: HellaChildren;
-  variant?: "default" | "secondary" | "destructive" | "outline" | "ghost" | "link";
-}
 
 export function Badge({ variant, children, class: cls, ...attrs }: BadgeProps): HellaNode {
   return html`

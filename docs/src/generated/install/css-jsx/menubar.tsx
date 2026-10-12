@@ -1,6 +1,145 @@
 import { effect, signal } from "@hellajs/core";
 import { anchorPosition, layerDismissal, menuTypeahead, Portal } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChildren, Placement } from "@hellajs/dom";
+import type { Placement, HTMLAttributes, HellaChildren } from "@hellajs/dom";
+
+type AnchorSide = "top" | "bottom" | "left" | "right";
+
+type AnchorAlign = "start" | "center" | "end";
+
+interface MenuEntry {
+  value: string;
+  label?: HellaChildren;
+  disabled?: boolean;
+}
+
+interface MenubarTriggerProps extends HTMLAttributes<"span"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface MenubarContentProps extends HTMLAttributes<"div"> {
+  state?: () => "open" | "closed";
+  side?: AnchorSide;
+  align?: AnchorAlign;
+  /** Gap between the anchor and the content edge, in px. Default 8. */
+  sideOffset?: number;
+  /** Cross-axis shift applied after positioning, in px. Default -4. */
+  alignOffset?: number;
+  /** Resolves the element the content anchors to; positioning is skipped when undefined. */
+  anchor?: () => Element | undefined;
+  /** When given, Escape and an outside pointerdown dismiss the top layer into this callback, and item selection closes every open layer. */
+  onDismiss?: () => void;
+  /** Called when the exit animation ends under data-state="closed"; entry animationends are ignored. */
+  onExited?: () => void;
+  /** Both horizontal arrows report outward (bar open-then-move) when the focused item is not a sub-trigger. */
+  onArrow?: (direction: "left" | "right") => void;
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface MenubarPartProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface MenubarItemProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren;
+  destructive?: boolean;
+  inset?: boolean;
+  /** Shortcut text rendered as a trailing Shortcut span. */
+  shortcut?: string;
+  class?: string;
+}
+
+interface MenubarCheckboxItemProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren;
+  /** Checked state. A boolean seeds the internal signal; an accessor makes the item controlled - activation then only reports through `onCheckedChange`. */
+  checked?: boolean | (() => boolean);
+  onCheckedChange?: (checked: boolean) => void;
+  class?: string;
+}
+
+interface MenubarRadioGroupProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren;
+  items?: MenuEntry[];
+  /** Controlled selected value. When given, the group never writes its internal signal and `onValueChange` reports the requested selection. */
+  value?: () => string;
+  onValueChange?: (value: string) => void;
+  class?: string;
+}
+
+interface MenubarRadioItemProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren;
+  value?: string;
+  /** Checked state. A boolean reads statically; an accessor keeps the item reactive against its owning group. */
+  checked?: boolean | (() => boolean);
+  onSelect?: () => void;
+  class?: string;
+}
+
+interface MenubarLabelProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren;
+  inset?: boolean;
+  class?: string;
+}
+
+interface MenubarShortcutProps extends HTMLAttributes<"span"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface MenubarSubTriggerProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren;
+  inset?: boolean;
+  /** Resolves the open state for `aria-expanded`/`data-state`; the composed Sub wires it. */
+  state?: () => "open" | "closed";
+  /** Called on click and hover intent to open the submenu. */
+  onOpen?: () => void;
+  class?: string;
+}
+
+interface MenubarSubContentProps extends HTMLAttributes<"div"> {
+  state?: () => "open" | "closed";
+  side?: AnchorSide;
+  align?: AnchorAlign;
+  sideOffset?: number;
+  /** Resolves the element the content anchors to (the sub-trigger); positioning is skipped when undefined. */
+  anchor?: () => Element | undefined;
+  /** When given, Escape and an outside pointerdown dismiss the top layer into this callback, and item selection closes every open layer. */
+  onDismiss?: () => void;
+  /** Called when the exit animation ends under data-state="closed"; entry animationends are ignored. */
+  onExited?: () => void;
+  /** ArrowLeft closes the submenu. */
+  onArrowLeft?: () => void;
+  /** Pointer entering the content cancels the trigger's pending close. */
+  onPointerEnter?: () => void;
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface MenubarSubProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren;
+  content?: HellaChildren;
+  class?: string;
+}
+
+interface MenubarMenuProps extends HTMLAttributes<"div"> {
+  /** This menu's id in the bar's open-menu value; a generated id stands in when omitted. */
+  value?: string;
+  open?: () => boolean;
+  onOpenChange?: (open: boolean) => void;
+  children?: HellaChildren;
+  content?: HellaChildren;
+  class?: string;
+}
+
+interface MenubarProps extends HTMLAttributes<"div"> {
+  /** Controlled id of the open menu ("" when closed). When given, the bar never writes its internal signal and `onValueChange` reports every flip. */
+  value?: () => string;
+  onValueChange?: (value: string) => void;
+  children?: HellaChildren;
+  class?: string;
+}
 
 import { keyframes, style } from "@hellajs/css";
 import { tokens } from "./tokens.js";
@@ -302,9 +441,6 @@ const subContent = style("menubar-sub-content", {
   },
 });
 
-type AnchorSide = "top" | "bottom" | "left" | "right";
-type AnchorAlign = "start" | "center" | "end";
-
 const placementOf = (side: AnchorSide, align: AnchorAlign): Placement =>
   align === "center" ? side : `${side}-${align}`;
 
@@ -318,12 +454,6 @@ const SELECT_EVENT = "hella:menu-select";
 const closeAllMenus = (): void => {
   document.dispatchEvent(new CustomEvent(SELECT_EVENT));
 };
-
-interface MenuEntry {
-  value: string;
-  label?: HellaChildren;
-  disabled?: boolean;
-}
 
 /** Open/close state shared by the bar menu wrapper and submenus: controlled override, exit-holding `visible` gate. */
 function menuOpenState(props: { open?: () => boolean; onOpenChange?: (open: boolean) => void }) {
@@ -496,11 +626,6 @@ const chevronIcon = (): JSX.Element => (
   </svg>
 );
 
-interface MenubarTriggerProps extends HTMLAttributes<"span"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 /** The manual trigger button; the composed Menubar renders the same shape wired to toggle + aria state. */
 export function MenubarTrigger({ children, class: cls, ...attrs }: MenubarTriggerProps): JSX.Element {
   return (
@@ -516,26 +641,6 @@ export function MenubarTrigger({ children, class: cls, ...attrs }: MenubarTrigge
       {children}
     </button>
   );
-}
-
-interface MenubarContentProps extends HTMLAttributes<"div"> {
-  state?: () => "open" | "closed";
-  side?: AnchorSide;
-  align?: AnchorAlign;
-  /** Gap between the anchor and the content edge, in px. Default 8. */
-  sideOffset?: number;
-  /** Cross-axis shift applied after positioning, in px. Default -4. */
-  alignOffset?: number;
-  /** Resolves the element the content anchors to; positioning is skipped when undefined. */
-  anchor?: () => Element | undefined;
-  /** When given, Escape and an outside pointerdown dismiss the top layer into this callback, and item selection closes every open layer. */
-  onDismiss?: () => void;
-  /** Called when the exit animation ends under data-state="closed"; entry animationends are ignored. */
-  onExited?: () => void;
-  /** Both horizontal arrows report outward (bar open-then-move) when the focused item is not a sub-trigger. */
-  onArrow?: (direction: "left" | "right") => void;
-  children?: HellaChildren;
-  class?: string;
 }
 
 export function MenubarContent({ state, id, side: sideProp, align: alignProp, sideOffset, alignOffset: alignOffsetProp, anchor, onDismiss, onExited, onArrow, children, class: cls, ...attrs }: MenubarContentProps): JSX.Element {
@@ -610,11 +715,6 @@ export function MenubarContent({ state, id, side: sideProp, align: alignProp, si
   );
 }
 
-interface MenubarPartProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function MenubarGroup({ children, class: cls, ...attrs }: MenubarPartProps): JSX.Element {
   return (
     <div
@@ -627,15 +727,6 @@ export function MenubarGroup({ children, class: cls, ...attrs }: MenubarPartProp
       {children}
     </div>
   );
-}
-
-interface MenubarItemProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  destructive?: boolean;
-  inset?: boolean;
-  /** Shortcut text rendered as a trailing Shortcut span. */
-  shortcut?: string;
-  class?: string;
 }
 
 export function MenubarItem({ destructive, inset, disabled, "on:click": userClick, shortcut: shortcutSlot, children, class: cls, ...attrs }: MenubarItemProps): JSX.Element {
@@ -662,14 +753,6 @@ export function MenubarItem({ destructive, inset, disabled, "on:click": userClic
       {() => (shortcutSlot !== undefined ? <MenubarShortcut>{shortcutSlot}</MenubarShortcut> : null)}
     </div>
   );
-}
-
-interface MenubarCheckboxItemProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  /** Checked state. A boolean seeds the internal signal; an accessor makes the item controlled - activation then only reports through `onCheckedChange`. */
-  checked?: boolean | (() => boolean);
-  onCheckedChange?: (checked: boolean) => void;
-  class?: string;
 }
 
 export function MenubarCheckboxItem({ checked: checkedProp, onCheckedChange, disabled, children, class: cls, ...attrs }: MenubarCheckboxItemProps): JSX.Element {
@@ -711,15 +794,6 @@ export function MenubarCheckboxItem({ checked: checkedProp, onCheckedChange, dis
   );
 }
 
-interface MenubarRadioGroupProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  items?: MenuEntry[];
-  /** Controlled selected value. When given, the group never writes its internal signal and `onValueChange` reports the requested selection. */
-  value?: () => string;
-  onValueChange?: (value: string) => void;
-  class?: string;
-}
-
 export function MenubarRadioGroup({ items, value: valueProp, onValueChange, children, class: cls, ...attrs }: MenubarRadioGroupProps): JSX.Element {
   const internal = signal("");
   const current = (): string => (valueProp !== undefined ? valueProp() : internal());
@@ -748,15 +822,6 @@ export function MenubarRadioGroup({ items, value: valueProp, onValueChange, chil
       ))}
     </div>
   );
-}
-
-interface MenubarRadioItemProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  value?: string;
-  /** Checked state. A boolean reads statically; an accessor keeps the item reactive against its owning group. */
-  checked?: boolean | (() => boolean);
-  onSelect?: () => void;
-  class?: string;
 }
 
 export function MenubarRadioItem({ value, checked: checkedProp, onSelect, disabled, children, class: cls, ...attrs }: MenubarRadioItemProps): JSX.Element {
@@ -795,12 +860,6 @@ export function MenubarRadioItem({ value, checked: checkedProp, onSelect, disabl
   );
 }
 
-interface MenubarLabelProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  inset?: boolean;
-  class?: string;
-}
-
 export function MenubarLabel({ inset, children, class: cls, ...attrs }: MenubarLabelProps): JSX.Element {
   return (
     <div
@@ -829,11 +888,6 @@ export function MenubarSeparator({ class: cls, ...attrs }: MenubarPartProps): JS
   );
 }
 
-interface MenubarShortcutProps extends HTMLAttributes<"span"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function MenubarShortcut({ children, class: cls, ...attrs }: MenubarShortcutProps): JSX.Element {
   return (
     <span
@@ -846,16 +900,6 @@ export function MenubarShortcut({ children, class: cls, ...attrs }: MenubarShort
       {children}
     </span>
   );
-}
-
-interface MenubarSubTriggerProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  inset?: boolean;
-  /** Resolves the open state for `aria-expanded`/`data-state`; the composed Sub wires it. */
-  state?: () => "open" | "closed";
-  /** Called on click and hover intent to open the submenu. */
-  onOpen?: () => void;
-  class?: string;
 }
 
 export function MenubarSubTrigger({ inset, state, onOpen, children, class: cls, ...attrs }: MenubarSubTriggerProps): JSX.Element {
@@ -907,25 +951,6 @@ export function MenubarSubTrigger({ inset, state, onOpen, children, class: cls, 
       {chevronIcon()}
     </div>
   );
-}
-
-interface MenubarSubContentProps extends HTMLAttributes<"div"> {
-  state?: () => "open" | "closed";
-  side?: AnchorSide;
-  align?: AnchorAlign;
-  sideOffset?: number;
-  /** Resolves the element the content anchors to (the sub-trigger); positioning is skipped when undefined. */
-  anchor?: () => Element | undefined;
-  /** When given, Escape and an outside pointerdown dismiss the top layer into this callback, and item selection closes every open layer. */
-  onDismiss?: () => void;
-  /** Called when the exit animation ends under data-state="closed"; entry animationends are ignored. */
-  onExited?: () => void;
-  /** ArrowLeft closes the submenu. */
-  onArrowLeft?: () => void;
-  /** Pointer entering the content cancels the trigger's pending close. */
-  onPointerEnter?: () => void;
-  children?: HellaChildren;
-  class?: string;
 }
 
 export function MenubarSubContent({ state, side: sideProp, align: alignProp, sideOffset, anchor, onDismiss, onExited, onArrowLeft, onPointerEnter, children, class: cls, ...attrs }: MenubarSubContentProps): JSX.Element {
@@ -994,12 +1019,6 @@ export function MenubarSubContent({ state, side: sideProp, align: alignProp, sid
       {children}
     </div>
   );
-}
-
-interface MenubarSubProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  content?: HellaChildren;
-  class?: string;
 }
 
 export function MenubarSub({ content: contentSlot, children, class: cls, ...attrs }: MenubarSubProps): JSX.Element {
@@ -1089,16 +1108,6 @@ export function MenubarSub({ content: contentSlot, children, class: cls, ...attr
       )}
     </div>
   );
-}
-
-interface MenubarMenuProps extends HTMLAttributes<"div"> {
-  /** This menu's id in the bar's open-menu value; a generated id stands in when omitted. */
-  value?: string;
-  open?: () => boolean;
-  onOpenChange?: (open: boolean) => void;
-  children?: HellaChildren;
-  content?: HellaChildren;
-  class?: string;
 }
 
 let menubarMenuCount = 0;
@@ -1208,14 +1217,6 @@ export function MenubarMenu({ value, open, onOpenChange, content: contentSlot, c
       )}
     </div>
   );
-}
-
-interface MenubarProps extends HTMLAttributes<"div"> {
-  /** Controlled id of the open menu ("" when closed). When given, the bar never writes its internal signal and `onValueChange` reports every flip. */
-  value?: () => string;
-  onValueChange?: (value: string) => void;
-  children?: HellaChildren;
-  class?: string;
 }
 
 export function Menubar({ value: valueProp, onValueChange, children, class: cls, ...attrs }: MenubarProps): JSX.Element {

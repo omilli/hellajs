@@ -1,14 +1,10 @@
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HellaNode } from "@hellajs/dom";
+import type { SkeletonProps } from "./skeleton-types.js";
 
 // @hella:styles
 declare const base: string;
 // @hella:end
-
-interface SkeletonProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
 
 export function Skeleton({ children, class: cls, ...attrs }: SkeletonProps): HellaNode {
   return html`

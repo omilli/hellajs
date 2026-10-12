@@ -1,6 +1,94 @@
 import { effect, signal } from "@hellajs/core";
 import { anchorPosition, layerDismissal, menuTypeahead, Portal } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChildren, Placement } from "@hellajs/dom";
+import type { HellaChildren, Placement, HTMLAttributes } from "@hellajs/dom";
+
+type AnchorSide = "top" | "bottom" | "left" | "right";
+
+type AnchorAlign = "start" | "center" | "end";
+
+interface SelectEntry {
+  value: string;
+  label?: HellaChildren;
+  disabled?: boolean;
+}
+
+interface SelectTriggerProps extends HTMLAttributes<"button"> {
+  size?: "sm" | "default";
+  /** Resolves the open state for `data-state`/`aria-expanded`; the composed Select wires it. */
+  state?: () => "open" | "closed";
+  /** Called on click and on ArrowDown/ArrowUp to request an open toggle. */
+  onOpen?: () => void;
+  /** Renders an inline clear affordance while `hasValue` resolves truthy. */
+  clearable?: boolean;
+  /** Called when the clear affordance activates; the composed Select resets the value. */
+  onClear?: () => void;
+  /** Resolves whether a value is currently selected (drives the clear affordance). */
+  hasValue?: () => boolean;
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface SelectValueProps extends HTMLAttributes<"span"> {
+  placeholder?: string;
+  /** The chosen label. A string reads statically; an accessor keeps it reactive (the composed Select threads one). Manual wiring passes the current label. */
+  value?: HellaChildren | (() => HellaChildren | undefined);
+  class?: string;
+}
+
+interface SelectContentProps extends HTMLAttributes<"div"> {
+  state?: () => "open" | "closed";
+  side?: AnchorSide;
+  align?: AnchorAlign;
+  /** Gap between the anchor and the content edge, in px. Default 6. */
+  sideOffset?: number;
+  /** Resolves the element the content anchors to; positioning is skipped when undefined. */
+  anchor?: () => Element | undefined;
+  /** When given, Escape and an outside pointerdown dismiss the top layer into this callback. */
+  onDismiss?: () => void;
+  /** Called when the exit animation ends under data-state="closed"; entry animationends are ignored. */
+  onExited?: () => void;
+  /** Called by the listbox keyboard model to close (Tab); the composed Select wires it. */
+  onClose?: () => void;
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface SelectPartProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface SelectItemProps extends HTMLAttributes<"div"> {
+  value?: string;
+  label?: HellaChildren;
+  /** Selected state. A boolean reads statically; an accessor keeps the item reactive against its owning select. */
+  selected?: boolean | (() => boolean);
+  /** Called on click when the item is enabled; the composed Select commits the value. */
+  onselect?: () => void;
+  class?: string;
+}
+
+interface SelectLabelProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface SelectScrollButtonProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface SelectProps extends HTMLAttributes<"button"> {
+  items?: SelectEntry[];
+  /** Controlled selected value. When given, the root never writes its internal signal and `onValueChange` reports the requested selection. */
+  value?: () => string;
+  onValueChange?: (value: string) => void;
+  placeholder?: string;
+  size?: "sm" | "default";
+  /** Renders the trigger's clear affordance while a value is selected. */
+  clearable?: boolean;
+  class?: string;
+}
 
 import { keyframes, style } from "@hellajs/css";
 import { tokens } from "./tokens.js";
@@ -215,17 +303,8 @@ const scrollButton = style("select-scroll-button", {
   paddingBlock: "0.25rem",
 });
 
-type AnchorSide = "top" | "bottom" | "left" | "right";
-type AnchorAlign = "start" | "center" | "end";
-
 const placementOf = (side: AnchorSide, align: AnchorAlign): Placement =>
   align === "center" ? side : `${side}-${align}`;
-
-interface SelectEntry {
-  value: string;
-  label?: HellaChildren;
-  disabled?: boolean;
-}
 
 /** Open/close state shared by the composed root and manual compositions: controlled override, exit-holding `visible` gate. */
 function selectOpenState() {
@@ -412,22 +491,6 @@ const clearIcon = (): JSX.Element => (
   </svg>
 );
 
-interface SelectTriggerProps extends HTMLAttributes<"button"> {
-  size?: "sm" | "default";
-  /** Resolves the open state for `data-state`/`aria-expanded`; the composed Select wires it. */
-  state?: () => "open" | "closed";
-  /** Called on click and on ArrowDown/ArrowUp to request an open toggle. */
-  onOpen?: () => void;
-  /** Renders an inline clear affordance while `hasValue` resolves truthy. */
-  clearable?: boolean;
-  /** Called when the clear affordance activates; the composed Select resets the value. */
-  onClear?: () => void;
-  /** Resolves whether a value is currently selected (drives the clear affordance). */
-  hasValue?: () => boolean;
-  children?: HellaChildren;
-  class?: string;
-}
-
 /** The manual trigger button; the composed Select renders the same shape wired to state and aria. */
 export function SelectTrigger({ id, size, state, onOpen, clearable, onClear, hasValue, disabled, children, class: cls, ...attrs }: SelectTriggerProps): JSX.Element {
   const stateOf = (): "open" | "closed" => state?.() ?? "closed";
@@ -475,13 +538,6 @@ export function SelectTrigger({ id, size, state, onOpen, clearable, onClear, has
   );
 }
 
-interface SelectValueProps extends HTMLAttributes<"span"> {
-  placeholder?: string;
-  /** The chosen label. A string reads statically; an accessor keeps it reactive (the composed Select threads one). Manual wiring passes the current label. */
-  value?: HellaChildren | (() => HellaChildren | undefined);
-  class?: string;
-}
-
 /** Renders the chosen label; shows the placeholder (with `data-placeholder`) while empty. */
 export function SelectValue({ placeholder, value, class: cls, ...attrs }: SelectValueProps): JSX.Element {
   const current = (): HellaChildren | undefined =>
@@ -504,24 +560,6 @@ export function SelectValue({ placeholder, value, class: cls, ...attrs }: Select
       }}
     </span>
   );
-}
-
-interface SelectContentProps extends HTMLAttributes<"div"> {
-  state?: () => "open" | "closed";
-  side?: AnchorSide;
-  align?: AnchorAlign;
-  /** Gap between the anchor and the content edge, in px. Default 6. */
-  sideOffset?: number;
-  /** Resolves the element the content anchors to; positioning is skipped when undefined. */
-  anchor?: () => Element | undefined;
-  /** When given, Escape and an outside pointerdown dismiss the top layer into this callback. */
-  onDismiss?: () => void;
-  /** Called when the exit animation ends under data-state="closed"; entry animationends are ignored. */
-  onExited?: () => void;
-  /** Called by the listbox keyboard model to close (Tab); the composed Select wires it. */
-  onClose?: () => void;
-  children?: HellaChildren;
-  class?: string;
 }
 
 export function SelectContent({ state, id, side: sideProp, align: alignProp, sideOffset, anchor, onDismiss, onExited, onClose, children, class: cls, ...attrs }: SelectContentProps): JSX.Element {
@@ -649,11 +687,6 @@ export function SelectContent({ state, id, side: sideProp, align: alignProp, sid
   );
 }
 
-interface SelectPartProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function SelectGroup({ children, class: cls, ...attrs }: SelectPartProps): JSX.Element {
   return (
     <div
@@ -666,16 +699,6 @@ export function SelectGroup({ children, class: cls, ...attrs }: SelectPartProps)
       {children}
     </div>
   );
-}
-
-interface SelectItemProps extends HTMLAttributes<"div"> {
-  value?: string;
-  label?: HellaChildren;
-  /** Selected state. A boolean reads statically; an accessor keeps the item reactive against its owning select. */
-  selected?: boolean | (() => boolean);
-  /** Called on click when the item is enabled; the composed Select commits the value. */
-  onselect?: () => void;
-  class?: string;
 }
 
 export function SelectItem({ value, label: labelSlot, selected: selectedProp, onselect, disabled, class: cls, ...attrs }: SelectItemProps): JSX.Element {
@@ -713,11 +736,6 @@ export function SelectItem({ value, label: labelSlot, selected: selectedProp, on
   );
 }
 
-interface SelectLabelProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function SelectLabel({ children, class: cls, ...attrs }: SelectLabelProps): JSX.Element {
   return (
     <div
@@ -743,11 +761,6 @@ export function SelectSeparator({ class: cls, ...attrs }: SelectPartProps): JSX.
       {...attrs}
     />
   );
-}
-
-interface SelectScrollButtonProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  class?: string;
 }
 
 export function SelectScrollUpButton({ children, class: cls, ...attrs }: SelectScrollButtonProps): JSX.Element {
@@ -776,18 +789,6 @@ export function SelectScrollDownButton({ children, class: cls, ...attrs }: Selec
       {() => children ?? chevronDownIcon()}
     </div>
   );
-}
-
-interface SelectProps extends HTMLAttributes<"button"> {
-  items?: SelectEntry[];
-  /** Controlled selected value. When given, the root never writes its internal signal and `onValueChange` reports the requested selection. */
-  value?: () => string;
-  onValueChange?: (value: string) => void;
-  placeholder?: string;
-  size?: "sm" | "default";
-  /** Renders the trigger's clear affordance while a value is selected. */
-  clearable?: boolean;
-  class?: string;
 }
 
 let selectCount = 0;

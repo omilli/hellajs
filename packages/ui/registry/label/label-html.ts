@@ -1,14 +1,10 @@
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HellaNode } from "@hellajs/dom";
+import type { LabelProps } from "./label-types.js";
 
 // @hella:styles
 declare const base: string;
 // @hella:end
-
-interface LabelProps extends HTMLAttributes<"label"> {
-  class?: string;
-  children?: HellaChildren;
-}
 
 export function Label({ children, class: cls, ...attrs }: LabelProps): HellaNode {
   return html`

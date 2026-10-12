@@ -1,6 +1,7 @@
 import { effect, signal } from "@hellajs/core";
 import { anchorPosition, html, layerDismissal, Portal } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChild, HellaChildren, HellaNode, Placement } from "@hellajs/dom";
+import type { HellaChild, HellaNode, Placement } from "@hellajs/dom";
+import type { AnchorSide, AnchorAlign, PopoverAnchorProps, PopoverTriggerProps, PopoverContentProps, PopoverPartProps, PopoverDescriptionProps, PopoverProps } from "./popover-types.js";
 
 // @hella:styles
 declare const content: string;
@@ -9,16 +10,8 @@ declare const header: string;
 declare const title: string;
 // @hella:end
 
-type AnchorSide = "top" | "bottom" | "left" | "right";
-type AnchorAlign = "start" | "center" | "end";
-
 const placementOf = (side: AnchorSide, align: AnchorAlign): Placement =>
   align === "center" ? side : `${side}-${align}`;
-
-interface PopoverAnchorProps extends HTMLAttributes<"span"> {
-  children?: HellaChildren;
-  class?: string;
-}
 
 /** Bare anchor span - the manual composition's positioning target when the trigger should not anchor. */
 export function PopoverAnchor({ children, class: cls, ...attrs }: PopoverAnchorProps): HellaNode {
@@ -35,11 +28,6 @@ export function PopoverAnchor({ children, class: cls, ...attrs }: PopoverAnchorP
   ` as HellaNode;
 }
 
-interface PopoverTriggerProps extends HTMLAttributes<"button"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 /** The manual trigger button; the composed Popover renders the same shape wired to toggle + aria state. */
 export function PopoverTrigger({ children, class: cls, ...attrs }: PopoverTriggerProps): HellaNode {
   return html`
@@ -54,24 +42,6 @@ export function PopoverTrigger({ children, class: cls, ...attrs }: PopoverTrigge
       ...${attrs}
     >${() => children}</button>
   ` as HellaNode;
-}
-
-interface PopoverContentProps extends HTMLAttributes<"div"> {
-  state?: () => "open" | "closed";
-  side?: AnchorSide;
-  align?: AnchorAlign;
-  /** Gap between the anchor and the content edge, in px. Default 4. */
-  sideOffset?: number;
-  /** Cross-axis shift applied after positioning, in px. Default 0. */
-  alignOffset?: number;
-  /** Resolves the element the content anchors to; positioning is skipped when undefined. */
-  anchor?: () => Element | undefined;
-  /** When given, Escape and an outside pointerdown dismiss the top layer into this callback. */
-  onDismiss?: () => void;
-  /** Called when the exit animation ends under data-state="closed"; entry animationends are ignored. */
-  onExited?: () => void;
-  children?: HellaChildren;
-  class?: string;
 }
 
 export function PopoverContent({ state, id, side: sideProp, align: alignProp, sideOffset, alignOffset: alignOffsetProp, anchor, onDismiss, onExited, children, class: cls, ...attrs }: PopoverContentProps): HellaNode {
@@ -135,11 +105,6 @@ export function PopoverContent({ state, id, side: sideProp, align: alignProp, si
   ` as HellaNode;
 }
 
-interface PopoverPartProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function PopoverHeader({ children, class: cls, ...attrs }: PopoverPartProps): HellaNode {
   return html`
     <div
@@ -168,11 +133,6 @@ export function PopoverTitle({ children, class: cls, ...attrs }: PopoverPartProp
   ` as HellaNode;
 }
 
-interface PopoverDescriptionProps extends HTMLAttributes<"p"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function PopoverDescription({ children, class: cls, ...attrs }: PopoverDescriptionProps): HellaNode {
   return html`
     <p
@@ -185,16 +145,6 @@ export function PopoverDescription({ children, class: cls, ...attrs }: PopoverDe
       ...${attrs}
     >${() => children}</p>
   ` as HellaNode;
-}
-
-interface PopoverProps extends HTMLAttributes<"button"> {
-  open?: () => boolean;
-  onOpenChange?: (open: boolean) => void;
-  /** Resolves the positioning anchor; defaults to the trigger element. */
-  anchor?: () => Element | undefined;
-  children?: HellaChildren;
-  content: HellaChildren;
-  class?: string;
 }
 
 let popoverCount = 0;

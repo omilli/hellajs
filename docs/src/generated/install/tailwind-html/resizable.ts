@@ -1,7 +1,6 @@
 import { html, onDrag } from "@hellajs/dom";
 import { effect, signal } from "@hellajs/core";
-import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
-import { cn } from "./cn.js";
+import type { HellaNode, HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 interface ResizablePanelGroupProps extends HTMLAttributes<"div"> {
   class?: string;
@@ -24,6 +23,7 @@ interface ResizableHandleProps extends HTMLAttributes<"div"> {
   class?: string;
   withHandle?: boolean;
 }
+import { cn } from "./cn.js";
 
 /** The grip visual (refs/icons/grip-vertical.svg), created per call so clones never share nodes. */
 const gripIcon = (): HellaNode =>

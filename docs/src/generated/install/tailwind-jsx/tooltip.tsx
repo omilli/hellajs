@@ -1,18 +1,46 @@
 import { effect, signal } from "@hellajs/core";
 import { anchorPosition, hoverIntent, Portal } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChild, HellaChildren, Placement } from "@hellajs/dom";
-import { cn } from "./cn.js";
+import type { HellaChild, HellaChildren, Placement, HTMLAttributes } from "@hellajs/dom";
 
 type AnchorSide = "top" | "bottom" | "left" | "right";
-type AnchorAlign = "start" | "center" | "end";
 
-const placementOf = (side: AnchorSide, align: AnchorAlign): Placement =>
-  align === "center" ? side : `${side}-${align}`;
+type AnchorAlign = "start" | "center" | "end";
 
 interface TooltipProviderProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   class?: string;
 }
+
+interface TooltipTriggerProps extends HTMLAttributes<"span"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface TooltipContentProps extends HTMLAttributes<"div"> {
+  state?: () => "open" | "closed";
+  side?: AnchorSide;
+  align?: AnchorAlign;
+  /** Resolves the element the content anchors to; positioning is skipped when undefined. */
+  anchor?: () => Element | undefined;
+  /** Called when the exit animation ends under data-state="closed"; entry animationends are ignored. */
+  onExited?: () => void;
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface TooltipProps extends HTMLAttributes<"span"> {
+  content: HellaChildren;
+  /** Pointer-hover ms before the content opens. Default 700. */
+  delayDuration?: number;
+  side?: AnchorSide;
+  align?: AnchorAlign;
+  children?: HellaChildren;
+  class?: string;
+}
+import { cn } from "./cn.js";
+
+const placementOf = (side: AnchorSide, align: AnchorAlign): Placement =>
+  align === "center" ? side : `${side}-${align}`;
 
 /**
  * Passthrough wrapper - upstream config-carrier kept for copy-paste parity.
@@ -33,11 +61,6 @@ export function TooltipProvider({ children, class: cls, ...attrs }: TooltipProvi
   );
 }
 
-interface TooltipTriggerProps extends HTMLAttributes<"span"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 /** The manual trigger span; the composed Tooltip renders the same shape wired to hoverIntent. */
 export function TooltipTrigger({ children, class: cls, ...attrs }: TooltipTriggerProps): JSX.Element {
   return (
@@ -51,18 +74,6 @@ export function TooltipTrigger({ children, class: cls, ...attrs }: TooltipTrigge
       {children}
     </span>
   );
-}
-
-interface TooltipContentProps extends HTMLAttributes<"div"> {
-  state?: () => "open" | "closed";
-  side?: AnchorSide;
-  align?: AnchorAlign;
-  /** Resolves the element the content anchors to; positioning is skipped when undefined. */
-  anchor?: () => Element | undefined;
-  /** Called when the exit animation ends under data-state="closed"; entry animationends are ignored. */
-  onExited?: () => void;
-  children?: HellaChildren;
-  class?: string;
 }
 
 export function TooltipContent({ state, id, side: sideProp, align: alignProp, anchor, onExited, children, class: cls, ...attrs }: TooltipContentProps): JSX.Element {
@@ -103,16 +114,6 @@ export function TooltipContent({ state, id, side: sideProp, align: alignProp, an
       {children}
     </div>
   );
-}
-
-interface TooltipProps extends HTMLAttributes<"span"> {
-  content: HellaChildren;
-  /** Pointer-hover ms before the content opens. Default 700. */
-  delayDuration?: number;
-  side?: AnchorSide;
-  align?: AnchorAlign;
-  children?: HellaChildren;
-  class?: string;
 }
 
 let tooltipCount = 0;

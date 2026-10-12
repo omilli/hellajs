@@ -1,16 +1,16 @@
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
-import { style } from "@hellajs/css";
-
-const base = style("direction-provider", {
-  display: "contents",
-});
-
 interface DirectionProviderProps extends HTMLAttributes<"div"> {
   class?: string;
   children?: HellaChildren;
   dir?: "ltr" | "rtl";
 }
+
+import { style } from "@hellajs/css";
+
+const base = style("direction-provider", {
+  display: "contents",
+});
 
 /**
  * Renders a layout-neutral wrapper carrying the dir attribute. Upstream is a

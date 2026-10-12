@@ -1,10 +1,10 @@
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaNode } from "@hellajs/dom";
-import { cn } from "./cn.js";
+import type { HellaNode, HTMLAttributes } from "@hellajs/dom";
 
 interface InputProps extends HTMLAttributes<"input"> {
   class?: string;
 }
+import { cn } from "./cn.js";
 
 export function Input({ class: cls, ...attrs }: InputProps): HellaNode {
   return html`

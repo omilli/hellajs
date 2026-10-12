@@ -1,5 +1,38 @@
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HellaNode, HTMLAttributes, HellaChildren } from "@hellajs/dom";
+
+interface PaginationProps extends HTMLAttributes<"nav"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface PaginationContentProps extends HTMLAttributes<"ul"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface PaginationItemProps extends HTMLAttributes<"li"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface PaginationLinkProps extends HTMLAttributes<"a"> {
+  class?: string;
+  children?: HellaChildren;
+  /** Renders aria-current="page" and the outline variant; no router coupling — href forwards natively. */
+  isActive?: boolean;
+  size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
+}
+
+interface PaginationNavProps extends HTMLAttributes<"a"> {
+  class?: string;
+  /** Renders aria-current="page" and the outline variant. */
+  isActive?: boolean;
+}
+
+interface PaginationEllipsisProps extends HTMLAttributes<"span"> {
+  class?: string;
+}
 import { cn } from "./cn.js";
 
 const linkVariants = {
@@ -18,11 +51,6 @@ const linkSizes = {
   "icon-lg": "size-10",
 };
 
-interface PaginationProps extends HTMLAttributes<"nav"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function Pagination({ children, class: cls, ...attrs }: PaginationProps): HellaNode {
   return html`
     <nav
@@ -37,11 +65,6 @@ export function Pagination({ children, class: cls, ...attrs }: PaginationProps):
   ` as HellaNode;
 }
 
-interface PaginationContentProps extends HTMLAttributes<"ul"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function PaginationContent({ children, class: cls, ...attrs }: PaginationContentProps): HellaNode {
   return html`
     <ul
@@ -54,11 +77,6 @@ export function PaginationContent({ children, class: cls, ...attrs }: Pagination
   ` as HellaNode;
 }
 
-interface PaginationItemProps extends HTMLAttributes<"li"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function PaginationItem({ children, class: cls, ...attrs }: PaginationItemProps): HellaNode {
   return html`
     <li
@@ -69,14 +87,6 @@ export function PaginationItem({ children, class: cls, ...attrs }: PaginationIte
       ...${attrs}
     >${() => children}</li>
   ` as HellaNode;
-}
-
-interface PaginationLinkProps extends HTMLAttributes<"a"> {
-  class?: string;
-  children?: HellaChildren;
-  /** Renders aria-current="page" and the outline variant; no router coupling — href forwards natively. */
-  isActive?: boolean;
-  size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
 }
 
 export function PaginationLink({ isActive, size, children, class: cls, ...attrs }: PaginationLinkProps): HellaNode {
@@ -96,12 +106,6 @@ export function PaginationLink({ isActive, size, children, class: cls, ...attrs 
       ...${attrs}
     >${() => children}</a>
   ` as HellaNode;
-}
-
-interface PaginationNavProps extends HTMLAttributes<"a"> {
-  class?: string;
-  /** Renders aria-current="page" and the outline variant. */
-  isActive?: boolean;
 }
 
 export function PaginationPrevious({ isActive, class: cls, ...attrs }: PaginationNavProps): HellaNode {
@@ -174,10 +178,6 @@ export function PaginationNext({ isActive, class: cls, ...attrs }: PaginationNav
       </svg>
     </a>
   ` as HellaNode;
-}
-
-interface PaginationEllipsisProps extends HTMLAttributes<"span"> {
-  class?: string;
 }
 
 export function PaginationEllipsis({ class: cls, ...attrs }: PaginationEllipsisProps): HellaNode {

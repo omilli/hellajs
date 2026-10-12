@@ -1,6 +1,5 @@
 import { signal } from "@hellajs/core";
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
-import { cn } from "./cn.js";
 
 interface CollapsibleProps extends HTMLAttributes<"div"> {
   class?: string;
@@ -24,6 +23,7 @@ interface CollapsibleContentProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   active?: () => boolean;
 }
+import { cn } from "./cn.js";
 
 let collapsibleCount = 0;
 

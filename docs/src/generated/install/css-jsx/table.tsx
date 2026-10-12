@@ -1,5 +1,45 @@
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
+interface TableProps extends HTMLAttributes<"table"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface TableHeaderProps extends HTMLAttributes<"thead"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface TableBodyProps extends HTMLAttributes<"tbody"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface TableFooterProps extends HTMLAttributes<"tfoot"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface TableRowProps extends HTMLAttributes<"tr"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface TableHeadProps extends HTMLAttributes<"th"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface TableCellProps extends HTMLAttributes<"td"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface TableCaptionProps extends HTMLAttributes<"caption"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
 import { style } from "@hellajs/css";
 import { tokens } from "./tokens.js";
 
@@ -88,11 +128,6 @@ const caption = style("table-caption", {
   marginTop: "1rem",
 });
 
-interface TableProps extends HTMLAttributes<"table"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function Table({ children, class: cls, ...attrs }: TableProps): JSX.Element {
   return (
     <div
@@ -114,11 +149,6 @@ export function Table({ children, class: cls, ...attrs }: TableProps): JSX.Eleme
   );
 }
 
-interface TableHeaderProps extends HTMLAttributes<"thead"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function TableHeader({ children, class: cls, ...attrs }: TableHeaderProps): JSX.Element {
   return (
     <thead
@@ -131,11 +161,6 @@ export function TableHeader({ children, class: cls, ...attrs }: TableHeaderProps
       {children}
     </thead>
   );
-}
-
-interface TableBodyProps extends HTMLAttributes<"tbody"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function TableBody({ children, class: cls, ...attrs }: TableBodyProps): JSX.Element {
@@ -152,11 +177,6 @@ export function TableBody({ children, class: cls, ...attrs }: TableBodyProps): J
   );
 }
 
-interface TableFooterProps extends HTMLAttributes<"tfoot"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function TableFooter({ children, class: cls, ...attrs }: TableFooterProps): JSX.Element {
   return (
     <tfoot
@@ -169,11 +189,6 @@ export function TableFooter({ children, class: cls, ...attrs }: TableFooterProps
       {children}
     </tfoot>
   );
-}
-
-interface TableRowProps extends HTMLAttributes<"tr"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function TableRow({ children, class: cls, ...attrs }: TableRowProps): JSX.Element {
@@ -190,11 +205,6 @@ export function TableRow({ children, class: cls, ...attrs }: TableRowProps): JSX
   );
 }
 
-interface TableHeadProps extends HTMLAttributes<"th"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function TableHead({ children, class: cls, ...attrs }: TableHeadProps): JSX.Element {
   return (
     <th
@@ -209,11 +219,6 @@ export function TableHead({ children, class: cls, ...attrs }: TableHeadProps): J
   );
 }
 
-interface TableCellProps extends HTMLAttributes<"td"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function TableCell({ children, class: cls, ...attrs }: TableCellProps): JSX.Element {
   return (
     <td
@@ -226,11 +231,6 @@ export function TableCell({ children, class: cls, ...attrs }: TableCellProps): J
       {children}
     </td>
   );
-}
-
-interface TableCaptionProps extends HTMLAttributes<"caption"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function TableCaption({ children, class: cls, ...attrs }: TableCaptionProps): JSX.Element {

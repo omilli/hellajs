@@ -1,9 +1,8 @@
 import { html } from "@hellajs/dom";
 import { signal } from "@hellajs/core";
-import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
-import { cn } from "./cn.js";
+import type { HellaNode, HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
-export interface AccordionEntry {
+interface AccordionEntry {
   value: string;
   trigger: HellaChildren;
   content: HellaChildren;
@@ -39,6 +38,9 @@ interface AccordionContentProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   active?: () => boolean;
 }
+import { cn } from "./cn.js";
+
+export type { AccordionEntry };
 
 export function AccordionItem({ value, active, children, class: cls, ...attrs }: AccordionItemProps): HellaNode {
   return html`

@@ -1,5 +1,9 @@
 import type { HTMLAttributes } from "@hellajs/dom";
 
+interface SpinnerProps extends HTMLAttributes<"svg"> {
+  class?: string;
+}
+
 import { keyframes, style } from "@hellajs/css";
 
 const spin = keyframes({
@@ -11,10 +15,6 @@ const base = style("spinner", {
   height: "1rem",
   width: "1rem",
 });
-
-interface SpinnerProps extends HTMLAttributes<"svg"> {
-  class?: string;
-}
 
 export function Spinner({ class: cls, ...attrs }: SpinnerProps): JSX.Element {
   return (

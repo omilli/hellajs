@@ -1,4 +1,11 @@
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
+
+interface ButtonProps extends HTMLAttributes<"button"> {
+  class?: string;
+  children?: HellaChildren;
+  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+  size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
+}
 import { cn } from "./cn.js";
 
 const variants = {
@@ -20,13 +27,6 @@ const sizes = {
   "icon-sm": "size-8",
   "icon-lg": "size-10",
 };
-
-interface ButtonProps extends HTMLAttributes<"button"> {
-  class?: string;
-  children?: HellaChildren;
-  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
-  size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
-}
 
 export function Button({ variant, size, children, class: cls, ...attrs }: ButtonProps): JSX.Element {
   return (

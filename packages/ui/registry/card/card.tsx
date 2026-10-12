@@ -1,4 +1,4 @@
-import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
+import type { CardPartProps } from "./card-types.js";
 
 // @hella:styles
 declare const action: string;
@@ -9,11 +9,6 @@ declare const footer: string;
 declare const header: string;
 declare const title: string;
 // @hella:end
-
-interface CardPartProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
 
 export function Card({ children, class: cls, ...attrs }: CardPartProps): JSX.Element {
   return (

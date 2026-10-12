@@ -1,5 +1,9 @@
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaNode } from "@hellajs/dom";
+import type { HellaNode, HTMLAttributes } from "@hellajs/dom";
+
+interface SpinnerProps extends HTMLAttributes<"svg"> {
+  class?: string;
+}
 
 import { keyframes, style } from "@hellajs/css";
 
@@ -12,10 +16,6 @@ const base = style("spinner", {
   height: "1rem",
   width: "1rem",
 });
-
-interface SpinnerProps extends HTMLAttributes<"svg"> {
-  class?: string;
-}
 
 export function Spinner({ class: cls, ...attrs }: SpinnerProps): HellaNode {
   return html`

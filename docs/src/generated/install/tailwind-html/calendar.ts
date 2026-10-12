@@ -1,21 +1,16 @@
 import { effect, signal, untracked } from "@hellajs/core";
 import { ForEach, html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChild, HellaNode } from "@hellajs/dom";
-import { cn } from "./cn.js";
+import type { HellaChild, HellaNode, HTMLAttributes } from "@hellajs/dom";
 
-/** Selection mode: one date, a set of dates, or a from/to span. */
 type CalendarMode = "single" | "multiple" | "range";
 
-/** Range selection shape; `from` without `to` is the dangling first click. */
 interface CalendarRange {
   from?: Date;
   to?: Date;
 }
 
-/** Selected shape per mode: single → `Date`, multiple → `Date[]`, range → `CalendarRange`. */
 type CalendarSelection = Date | Date[] | CalendarRange | undefined;
 
-/** The ref's class hooks a caller may extend. The state hooks (today/outside/disabled/range/hidden) are data-attribute driven, so they are not class-mergeable. */
 type CalendarClassKey =
   | "root"
   | "months"
@@ -75,6 +70,40 @@ interface CalendarDayButtonProps extends HTMLAttributes<"button"> {
   class?: string;
 }
 
+interface CalendarCell {
+  key: string;
+  date: Date;
+  outside: boolean;
+  today: boolean;
+  disabled: boolean;
+}
+
+interface DayCellProps {
+  cell: CalendarCell;
+  selected: () => boolean;
+  rangeStart: () => boolean;
+  rangeMiddle: () => boolean;
+  rangeEnd: () => boolean;
+  focused: () => boolean;
+  hidden: boolean;
+  /** The ref's `day` class hook, applied to the grid cell. */
+  dayClass?: string;
+  /** The ref's `day_button` class hook, forwarded to the day button. */
+  buttonClass?: string;
+  onSelect: (cell: CalendarCell) => void;
+  onHover: (cell: CalendarCell) => void;
+  onLeave: () => void;
+}
+import { cn } from "./cn.js";
+
+/** Selection mode: one date, a set of dates, or a from/to span. */
+
+/** Range selection shape; `from` without `to` is the dangling first click. */
+
+/** Selected shape per mode: single → `Date`, multiple → `Date[]`, range → `CalendarRange`. */
+
+/** The ref's class hooks a caller may extend. The state hooks (today/outside/disabled/range/hidden) are data-attribute driven, so they are not class-mergeable. */
+
 const WEEKDAY_COUNT = 7;
 
 const FIXED_WEEKS = 6;
@@ -130,13 +159,6 @@ function weekdayLabels(weekStartsOn: number): string[] {
 }
 
 /** One grid day: `key` is the stable ISO identity used for focus, selection, and range math. */
-interface CalendarCell {
-  key: string;
-  date: Date;
-  outside: boolean;
-  today: boolean;
-  disabled: boolean;
-}
 
 function buildMonth(anchor: Date, weekStartsOn: number, fixedWeeks: boolean, disabled: ((date: Date) => boolean) | undefined): CalendarCell[][] {
   const monthStart = startOfMonth(anchor);
@@ -260,23 +282,6 @@ export function CalendarDayButton({ day: dayProp, selectedSingle, rangeStart, ra
       ...${attrs}
     >${dayProp.getDate()}</button>
   ` as HellaNode;
-}
-
-interface DayCellProps {
-  cell: CalendarCell;
-  selected: () => boolean;
-  rangeStart: () => boolean;
-  rangeMiddle: () => boolean;
-  rangeEnd: () => boolean;
-  focused: () => boolean;
-  hidden: boolean;
-  /** The ref's `day` class hook, applied to the grid cell. */
-  dayClass?: string;
-  /** The ref's `day_button` class hook, forwarded to the day button. */
-  buttonClass?: string;
-  onSelect: (cell: CalendarCell) => void;
-  onHover: (cell: CalendarCell) => void;
-  onLeave: () => void;
 }
 
 /** One grid cell: the td carries the today/outside/disabled/range data attributes, the day button the aria semantics. */

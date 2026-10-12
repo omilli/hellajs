@@ -1,4 +1,28 @@
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
+
+interface BubbleGroupProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface BubbleProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+  variant?: "default" | "secondary" | "muted" | "tinted" | "outline" | "ghost" | "destructive";
+  align?: "start" | "end";
+}
+
+interface BubbleContentProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface BubbleReactionsProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+  side?: "top" | "bottom";
+  align?: "start" | "end";
+}
 import { cn } from "./cn.js";
 
 const bubble =
@@ -37,11 +61,6 @@ const reactionsAligns = {
   end: "right-3",
 };
 
-interface BubbleGroupProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function BubbleGroup({ children, class: cls, ...attrs }: BubbleGroupProps): JSX.Element {
   return (
     <div
@@ -54,13 +73,6 @@ export function BubbleGroup({ children, class: cls, ...attrs }: BubbleGroupProps
       {children}
     </div>
   );
-}
-
-interface BubbleProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  variant?: "default" | "secondary" | "muted" | "tinted" | "outline" | "ghost" | "destructive";
-  align?: "start" | "end";
 }
 
 export function Bubble({ variant, align, children, class: cls, ...attrs }: BubbleProps): JSX.Element {
@@ -79,11 +91,6 @@ export function Bubble({ variant, align, children, class: cls, ...attrs }: Bubbl
   );
 }
 
-interface BubbleContentProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function BubbleContent({ children, class: cls, ...attrs }: BubbleContentProps): JSX.Element {
   return (
     <div
@@ -96,13 +103,6 @@ export function BubbleContent({ children, class: cls, ...attrs }: BubbleContentP
       {children}
     </div>
   );
-}
-
-interface BubbleReactionsProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  side?: "top" | "bottom";
-  align?: "start" | "end";
 }
 
 export function BubbleReactions({ side, align, children, class: cls, ...attrs }: BubbleReactionsProps): JSX.Element {

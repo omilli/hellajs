@@ -1,7 +1,7 @@
 import { effect, signal } from "@hellajs/core";
-import type { Signal } from "@hellajs/core";
 import { html, onDrag, onEscape, onOutside, Portal, trapFocus } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HellaChild, HellaNode } from "@hellajs/dom";
+import type { DrawerDirection, DrawerOverlayProps, DrawerCloseProps, DrawerPortalProps, DrawerTriggerProps, DrawerContentProps, DrawerPartProps, DrawerTitleProps, DrawerDescriptionProps, DrawerProps } from "./drawer-types.js";
 
 // @hella:styles
 declare const base: string;
@@ -15,10 +15,8 @@ declare const title: string;
 // @hella:end
 
 /** Accessibility state shared by the animated drawer parts. */
-type DrawerState = () => "open" | "closed";
 
 /** Edge the drawer mounts on; drag dismissal runs along this axis. */
-type DrawerDirection = "top" | "right" | "bottom" | "left";
 
 /** Release fraction of the panel's dismissal-axis size beyond which a release dismisses. */
 const DISMISS_DISTANCE = 0.25;
@@ -45,13 +43,6 @@ function followTransform(direction: DrawerDirection, d: number): string {
   return `translate${axis}(${clamped}px)`;
 }
 
-interface DrawerOverlayProps extends HTMLAttributes<"div"> {
-  state?: DrawerState;
-  /** Drag fraction (0..1 toward dismissal) — drives the proportional overlay fade. */
-  fraction?: Signal<number>;
-  class?: string;
-}
-
 export function DrawerOverlay({ state, fraction, class: cls, ...attrs }: DrawerOverlayProps): HellaNode {
   const overlayStyle = (): Record<string, string> | undefined => {
     const f = fraction?.() ?? 0;
@@ -70,12 +61,6 @@ export function DrawerOverlay({ state, fraction, class: cls, ...attrs }: DrawerO
       ...${attrs}
     />
   ` as HellaNode;
-}
-
-interface DrawerCloseProps extends HTMLAttributes<"button"> {
-  state?: DrawerState;
-  onClose?: () => void;
-  class?: string;
 }
 
 export function DrawerClose({ state, onClose, "on:click": userClick, class: cls, ...attrs }: DrawerCloseProps): HellaNode {
@@ -111,18 +96,9 @@ export function DrawerClose({ state, onClose, "on:click": userClick, class: cls,
   ` as HellaNode;
 }
 
-interface DrawerPortalProps {
-  children?: HellaChildren;
-}
-
 /** Portals the manual composition's parts into document.body. */
 export function DrawerPortal(props: DrawerPortalProps): HellaNode {
   return Portal({ to: "body", children: props.children === undefined ? [] : Array.isArray(props.children) ? props.children : [props.children] }) as HellaNode;
-}
-
-interface DrawerTriggerProps extends HTMLAttributes<"button"> {
-  children?: HellaChildren;
-  class?: string;
 }
 
 /** The manual trigger button; wire its click to the caller's open signal - hella has no Radix context to do it for you. */
@@ -139,19 +115,6 @@ export function DrawerTrigger({ children, class: cls, ...attrs }: DrawerTriggerP
       ...${attrs}
     >${() => children}</button>
   ` as HellaNode;
-}
-
-interface DrawerContentProps extends HTMLAttributes<"div"> {
-  state?: DrawerState;
-  direction?: DrawerDirection;
-  /** Shared drag fraction (0..1 toward dismissal); the overlay fades proportionally when both parts receive the same signal. */
-  fraction?: Signal<number>;
-  closeOnEscape?: boolean;
-  closeOnOutside?: boolean;
-  onClose?: () => void;
-  onExited?: () => void;
-  class?: string;
-  children?: HellaChildren;
 }
 
 /**
@@ -291,11 +254,6 @@ export function DrawerContent({ state, direction: drawerDirection, fraction, clo
   ` as HellaNode;
 }
 
-interface DrawerPartProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function DrawerHeader({ children, class: cls, ...attrs }: DrawerPartProps): HellaNode {
   return html`
     <div
@@ -324,11 +282,6 @@ export function DrawerFooter({ children, class: cls, ...attrs }: DrawerPartProps
   ` as HellaNode;
 }
 
-interface DrawerTitleProps extends HTMLAttributes<"h2"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function DrawerTitle({ id, children, class: cls, ...attrs }: DrawerTitleProps): HellaNode {
   return html`
     <h2
@@ -344,11 +297,6 @@ export function DrawerTitle({ id, children, class: cls, ...attrs }: DrawerTitleP
   ` as HellaNode;
 }
 
-interface DrawerDescriptionProps extends HTMLAttributes<"p"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function DrawerDescription({ id, children, class: cls, ...attrs }: DrawerDescriptionProps): HellaNode {
   return html`
     <p
@@ -362,18 +310,6 @@ export function DrawerDescription({ id, children, class: cls, ...attrs }: Drawer
       ...${attrs}
     >${() => children}</p>
   ` as HellaNode;
-}
-
-interface DrawerProps extends HTMLAttributes<"div"> {
-  open: () => boolean;
-  onClose: () => void;
-  direction?: DrawerDirection;
-  title?: string;
-  description?: string;
-  closeOnEscape?: boolean;
-  closeOnOutside?: boolean;
-  class?: string;
-  children?: HellaChildren;
 }
 
 let drawerCount = 0;

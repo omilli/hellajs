@@ -1,5 +1,6 @@
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HellaNode } from "@hellajs/dom";
+import type { InputGroupProps, InputGroupAddonProps, InputGroupButtonProps, InputGroupTextProps, InputGroupInputProps, InputGroupTextareaProps } from "./input-group-types.js";
 
 // @hella:styles
 declare const addon: string;
@@ -20,13 +21,6 @@ declare const textareaFocus: string;
 declare const textareaInvalid: string;
 // @hella:end
 
-interface InputGroupProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  /** Renders data-disabled="true" on the group; addons read it for their opacity state. */
-  disabled?: boolean;
-  class?: string;
-}
-
 export function InputGroup({ disabled, children, class: cls, ...attrs }: InputGroupProps): HellaNode {
   return html`
     <div
@@ -41,12 +35,6 @@ export function InputGroup({ disabled, children, class: cls, ...attrs }: InputGr
       ...${attrs}
     >${() => children}</div>
   ` as HellaNode;
-}
-
-interface InputGroupAddonProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  align?: "inline-start" | "inline-end" | "block-start" | "block-end";
-  class?: string;
 }
 
 export function InputGroupAddon({ align, children, class: cls, ...attrs }: InputGroupAddonProps): HellaNode {
@@ -74,13 +62,6 @@ export function InputGroupAddon({ align, children, class: cls, ...attrs }: Input
   ` as HellaNode;
 }
 
-interface InputGroupButtonProps extends HTMLAttributes<"button"> {
-  children?: HellaChildren;
-  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
-  size?: "xs" | "sm" | "icon-xs" | "icon-sm";
-  class?: string;
-}
-
 export function InputGroupButton({ variant, size, children, class: cls, ...attrs }: InputGroupButtonProps): HellaNode {
   return html`
     <button
@@ -104,11 +85,6 @@ export function InputGroupButton({ variant, size, children, class: cls, ...attrs
   ` as HellaNode;
 }
 
-interface InputGroupTextProps extends HTMLAttributes<"span"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function InputGroupText({ children, class: cls, ...attrs }: InputGroupTextProps): HellaNode {
   return html`
     <span
@@ -121,10 +97,6 @@ export function InputGroupText({ children, class: cls, ...attrs }: InputGroupTex
       ...${attrs}
     >${() => children}</span>
   ` as HellaNode;
-}
-
-interface InputGroupInputProps extends HTMLAttributes<"input"> {
-  class?: string;
 }
 
 export function InputGroupInput({ class: cls, ...attrs }: InputGroupInputProps): HellaNode {
@@ -145,10 +117,6 @@ export function InputGroupInput({ class: cls, ...attrs }: InputGroupInputProps):
       ...${attrs}
     />
   ` as HellaNode;
-}
-
-interface InputGroupTextareaProps extends HTMLAttributes<"textarea"> {
-  class?: string;
 }
 
 export function InputGroupTextarea({ class: cls, ...attrs }: InputGroupTextareaProps): HellaNode {

@@ -1,5 +1,6 @@
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HellaNode } from "@hellajs/dom";
+import type { AlertProps, AlertPartProps } from "./alert-types.js";
 
 // @hella:styles
 declare const base: string;
@@ -7,12 +8,6 @@ declare const description: string;
 declare const title: string;
 declare const variants: Record<string, string>;
 // @hella:end
-
-interface AlertProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  variant?: "default" | "destructive";
-}
 
 export function Alert({ variant, children, class: cls, ...attrs }: AlertProps): HellaNode {
   return html`
@@ -31,11 +26,6 @@ export function Alert({ variant, children, class: cls, ...attrs }: AlertProps): 
       ...${attrs}
     >${() => children}</div>
   ` as HellaNode;
-}
-
-interface AlertPartProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function AlertTitle({ children, class: cls, ...attrs }: AlertPartProps): HellaNode {

@@ -1,11 +1,11 @@
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
-import { cn } from "./cn.js";
+import type { HellaNode, HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 interface CardPartProps extends HTMLAttributes<"div"> {
   class?: string;
   children?: HellaChildren;
 }
+import { cn } from "./cn.js";
 
 export function Card({ children, class: cls, ...attrs }: CardPartProps): HellaNode {
   return html`

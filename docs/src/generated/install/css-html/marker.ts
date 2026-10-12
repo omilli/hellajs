@@ -1,5 +1,21 @@
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HellaNode, HTMLAttributes, HellaChildren } from "@hellajs/dom";
+
+interface MarkerProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+  variant?: "default" | "separator" | "border";
+}
+
+interface MarkerIconProps extends HTMLAttributes<"span"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface MarkerContentProps extends HTMLAttributes<"span"> {
+  class?: string;
+  children?: HellaChildren;
+}
 
 import { css, style } from "@hellajs/css";
 import { tokens } from "./tokens.js";
@@ -78,12 +94,6 @@ css({
   },
 });
 
-interface MarkerProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  variant?: "default" | "separator" | "border";
-}
-
 export function Marker({ variant, children, class: cls, ...attrs }: MarkerProps): HellaNode {
   return html`
     <div
@@ -101,11 +111,6 @@ export function Marker({ variant, children, class: cls, ...attrs }: MarkerProps)
   ` as HellaNode;
 }
 
-interface MarkerIconProps extends HTMLAttributes<"span"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function MarkerIcon({ children, class: cls, ...attrs }: MarkerIconProps): HellaNode {
   return html`
     <span
@@ -117,11 +122,6 @@ export function MarkerIcon({ children, class: cls, ...attrs }: MarkerIconProps):
       ...${attrs}
     >${() => children}</span>
   ` as HellaNode;
-}
-
-interface MarkerContentProps extends HTMLAttributes<"span"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function MarkerContent({ children, class: cls, ...attrs }: MarkerContentProps): HellaNode {

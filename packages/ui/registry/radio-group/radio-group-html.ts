@@ -1,6 +1,7 @@
 import { html, rovingTabIndex } from "@hellajs/dom";
 import { signal } from "@hellajs/core";
-import type { HTMLAttributes, HellaNode } from "@hellajs/dom";
+import type { HellaNode } from "@hellajs/dom";
+import type { RadioGroupItem, RadioGroupProps, RadioGroupItemProps } from "./radio-group-types.js";
 
 // @hella:styles
 declare const base: string;
@@ -9,29 +10,6 @@ declare const indicator: string;
 declare const item: string;
 declare const row: string;
 // @hella:end
-
-interface RadioGroupItem {
-  value: string;
-  label: string;
-  disabled?: boolean;
-}
-
-interface RadioGroupProps extends HTMLAttributes<"div"> {
-  class?: string;
-  items: RadioGroupItem[];
-  /** Controlled selected value. When given, the root never writes its internal signal and `onValueChange` reports the requested selection. */
-  value?: () => string;
-  onValueChange?: (value: string) => void;
-  orientation?: "horizontal" | "vertical";
-}
-
-interface RadioGroupItemProps extends HTMLAttributes<"button"> {
-  class?: string;
-  value: string;
-  /** Checked state. A boolean reads statically; an accessor keeps the manual part reactive. */
-  checked?: boolean | (() => boolean);
-  onSelect?: () => void;
-}
 
 /** The circle icon (refs/icons/circle.svg), created per call so reactive swaps never share nodes between clones. */
 const circleIcon = (): HellaNode =>

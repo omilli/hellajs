@@ -1,11 +1,46 @@
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
-import { cn } from "./cn.js";
+import type { HellaNode, HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 interface TableProps extends HTMLAttributes<"table"> {
   class?: string;
   children?: HellaChildren;
 }
+
+interface TableHeaderProps extends HTMLAttributes<"thead"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface TableBodyProps extends HTMLAttributes<"tbody"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface TableFooterProps extends HTMLAttributes<"tfoot"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface TableRowProps extends HTMLAttributes<"tr"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface TableHeadProps extends HTMLAttributes<"th"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface TableCellProps extends HTMLAttributes<"td"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface TableCaptionProps extends HTMLAttributes<"caption"> {
+  class?: string;
+  children?: HellaChildren;
+}
+import { cn } from "./cn.js";
 
 export function Table({ children, class: cls, ...attrs }: TableProps): HellaNode {
   return html`
@@ -26,11 +61,6 @@ export function Table({ children, class: cls, ...attrs }: TableProps): HellaNode
   ` as HellaNode;
 }
 
-interface TableHeaderProps extends HTMLAttributes<"thead"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function TableHeader({ children, class: cls, ...attrs }: TableHeaderProps): HellaNode {
   return html`
     <thead
@@ -41,11 +71,6 @@ export function TableHeader({ children, class: cls, ...attrs }: TableHeaderProps
       ...${attrs}
     >${() => children}</thead>
   ` as HellaNode;
-}
-
-interface TableBodyProps extends HTMLAttributes<"tbody"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function TableBody({ children, class: cls, ...attrs }: TableBodyProps): HellaNode {
@@ -60,11 +85,6 @@ export function TableBody({ children, class: cls, ...attrs }: TableBodyProps): H
   ` as HellaNode;
 }
 
-interface TableFooterProps extends HTMLAttributes<"tfoot"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function TableFooter({ children, class: cls, ...attrs }: TableFooterProps): HellaNode {
   return html`
     <tfoot
@@ -75,11 +95,6 @@ export function TableFooter({ children, class: cls, ...attrs }: TableFooterProps
       ...${attrs}
     >${() => children}</tfoot>
   ` as HellaNode;
-}
-
-interface TableRowProps extends HTMLAttributes<"tr"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function TableRow({ children, class: cls, ...attrs }: TableRowProps): HellaNode {
@@ -94,11 +109,6 @@ export function TableRow({ children, class: cls, ...attrs }: TableRowProps): Hel
   ` as HellaNode;
 }
 
-interface TableHeadProps extends HTMLAttributes<"th"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function TableHead({ children, class: cls, ...attrs }: TableHeadProps): HellaNode {
   return html`
     <th
@@ -111,11 +121,6 @@ export function TableHead({ children, class: cls, ...attrs }: TableHeadProps): H
   ` as HellaNode;
 }
 
-interface TableCellProps extends HTMLAttributes<"td"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function TableCell({ children, class: cls, ...attrs }: TableCellProps): HellaNode {
   return html`
     <td
@@ -126,11 +131,6 @@ export function TableCell({ children, class: cls, ...attrs }: TableCellProps): H
       ...${attrs}
     >${() => children}</td>
   ` as HellaNode;
-}
-
-interface TableCaptionProps extends HTMLAttributes<"caption"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function TableCaption({ children, class: cls, ...attrs }: TableCaptionProps): HellaNode {

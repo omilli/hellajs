@@ -1,9 +1,9 @@
 import type { HTMLAttributes } from "@hellajs/dom";
-import { cn } from "./cn.js";
 
 interface TextareaProps extends HTMLAttributes<"textarea"> {
   class?: string;
 }
+import { cn } from "./cn.js";
 
 export function Textarea({ class: cls, ...attrs }: TextareaProps): JSX.Element {
   return (

@@ -1,49 +1,19 @@
 import { effect, signal } from "@hellajs/core";
 import { anchorPosition, html, layerDismissal, Portal } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChild, HellaChildren, HellaNode, Placement } from "@hellajs/dom";
-import { cn } from "./cn.js";
+import type { HellaChild, HellaNode, Placement, HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 type AnchorSide = "top" | "bottom" | "left" | "right";
-type AnchorAlign = "start" | "center" | "end";
 
-const placementOf = (side: AnchorSide, align: AnchorAlign): Placement =>
-  align === "center" ? side : `${side}-${align}`;
+type AnchorAlign = "start" | "center" | "end";
 
 interface PopoverAnchorProps extends HTMLAttributes<"span"> {
   children?: HellaChildren;
   class?: string;
 }
 
-/** Bare anchor span - the manual composition's positioning target when the trigger should not anchor. */
-export function PopoverAnchor({ children, class: cls, ...attrs }: PopoverAnchorProps): HellaNode {
-  return html`
-    <span
-      data-slot="popover-anchor"
-      class="${
-        cn(cls)
-      }"
-      ...${attrs}
-    >${() => children}</span>
-  ` as HellaNode;
-}
-
 interface PopoverTriggerProps extends HTMLAttributes<"button"> {
   children?: HellaChildren;
   class?: string;
-}
-
-/** The manual trigger button; the composed Popover renders the same shape wired to toggle + aria state. */
-export function PopoverTrigger({ children, class: cls, ...attrs }: PopoverTriggerProps): HellaNode {
-  return html`
-    <button
-      type="button"
-      data-slot="popover-trigger"
-      class="${
-        cn(cls)
-      }"
-      ...${attrs}
-    >${() => children}</button>
-  ` as HellaNode;
 }
 
 interface PopoverContentProps extends HTMLAttributes<"div"> {
@@ -62,6 +32,57 @@ interface PopoverContentProps extends HTMLAttributes<"div"> {
   onExited?: () => void;
   children?: HellaChildren;
   class?: string;
+}
+
+interface PopoverPartProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface PopoverDescriptionProps extends HTMLAttributes<"p"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface PopoverProps extends HTMLAttributes<"button"> {
+  open?: () => boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** Resolves the positioning anchor; defaults to the trigger element. */
+  anchor?: () => Element | undefined;
+  children?: HellaChildren;
+  content: HellaChildren;
+  class?: string;
+}
+import { cn } from "./cn.js";
+
+const placementOf = (side: AnchorSide, align: AnchorAlign): Placement =>
+  align === "center" ? side : `${side}-${align}`;
+
+/** Bare anchor span - the manual composition's positioning target when the trigger should not anchor. */
+export function PopoverAnchor({ children, class: cls, ...attrs }: PopoverAnchorProps): HellaNode {
+  return html`
+    <span
+      data-slot="popover-anchor"
+      class="${
+        cn(cls)
+      }"
+      ...${attrs}
+    >${() => children}</span>
+  ` as HellaNode;
+}
+
+/** The manual trigger button; the composed Popover renders the same shape wired to toggle + aria state. */
+export function PopoverTrigger({ children, class: cls, ...attrs }: PopoverTriggerProps): HellaNode {
+  return html`
+    <button
+      type="button"
+      data-slot="popover-trigger"
+      class="${
+        cn(cls)
+      }"
+      ...${attrs}
+    >${() => children}</button>
+  ` as HellaNode;
 }
 
 export function PopoverContent({ state, id, side: sideProp, align: alignProp, sideOffset, alignOffset: alignOffsetProp, anchor, onDismiss, onExited, children, class: cls, ...attrs }: PopoverContentProps): HellaNode {
@@ -123,11 +144,6 @@ export function PopoverContent({ state, id, side: sideProp, align: alignProp, si
   ` as HellaNode;
 }
 
-interface PopoverPartProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function PopoverHeader({ children, class: cls, ...attrs }: PopoverPartProps): HellaNode {
   return html`
     <div
@@ -152,11 +168,6 @@ export function PopoverTitle({ children, class: cls, ...attrs }: PopoverPartProp
   ` as HellaNode;
 }
 
-interface PopoverDescriptionProps extends HTMLAttributes<"p"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function PopoverDescription({ children, class: cls, ...attrs }: PopoverDescriptionProps): HellaNode {
   return html`
     <p
@@ -167,16 +178,6 @@ export function PopoverDescription({ children, class: cls, ...attrs }: PopoverDe
       ...${attrs}
     >${() => children}</p>
   ` as HellaNode;
-}
-
-interface PopoverProps extends HTMLAttributes<"button"> {
-  open?: () => boolean;
-  onOpenChange?: (open: boolean) => void;
-  /** Resolves the positioning anchor; defaults to the trigger element. */
-  anchor?: () => Element | undefined;
-  children?: HellaChildren;
-  content: HellaChildren;
-  class?: string;
 }
 
 let popoverCount = 0;

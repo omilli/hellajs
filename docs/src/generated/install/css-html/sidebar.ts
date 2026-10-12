@@ -1,6 +1,121 @@
 import { effect, signal } from "@hellajs/core";
 import { anchorPosition, hoverIntent, html, onEscape, onOutside, Portal, trapFocus } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HellaChild, HellaChildren, HellaNode, HTMLAttributes } from "@hellajs/dom";
+
+/**
+ * The state SidebarProvider threads to its children function - hella has no
+ * context primitive, so the provider's composition root hands every manual
+ * part its accessors (the dual-surface counterpart of the ref's useSidebar).
+ */
+interface SidebarState {
+  /** Desktop expanded state. */
+  open: () => boolean;
+  /** Desktop open setter (writes the internal signal unless controlled). */
+  setOpen: (open: boolean) => void;
+  /** Mobile viewport (max-width: 769px). */
+  mobile: () => boolean;
+  /** Mobile sheet open state. */
+  openMobile: () => boolean;
+  /** Mobile sheet open setter. */
+  setOpenMobile: (open: boolean) => void;
+  /** Toggles the mobile sheet on mobile, the desktop open state otherwise. */
+  onToggle: () => void;
+}
+
+interface SidebarProviderProps extends HTMLAttributes<"div"> {
+  /** Controlled open state. When given, the provider never writes its internal signal and `onOpenChange` reports the requested flip. */
+  open?: () => boolean;
+  defaultOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  children: (state: SidebarState) => HellaChildren;
+  class?: string;
+}
+
+type SidebarSide = "left" | "right";
+
+type SidebarVariant = "sidebar" | "floating" | "inset";
+
+type SidebarCollapsible = "offcanvas" | "icon" | "none";
+
+interface SidebarProps extends HTMLAttributes<"div"> {
+  /** Desktop expanded accessor threaded from SidebarProvider. */
+  open?: () => boolean;
+  /** Mobile viewport accessor threaded from SidebarProvider. */
+  mobile?: () => boolean;
+  /** Mobile sheet open accessor threaded from SidebarProvider. */
+  openMobile?: () => boolean;
+  /** Mobile sheet open setter threaded from SidebarProvider. */
+  onOpenMobileChange?: (open: boolean) => void;
+  side?: SidebarSide;
+  variant?: SidebarVariant;
+  collapsible?: SidebarCollapsible;
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface SidebarMobileSheetProps {
+  open: () => boolean;
+  onClose: () => void;
+  side: SidebarSide;
+  children?: HellaChildren;
+}
+
+interface SidebarTriggerProps extends HTMLAttributes<"button"> {
+  onToggle?: () => void;
+  class?: string;
+}
+
+interface SidebarRailProps extends HTMLAttributes<"button"> {
+  onToggle?: () => void;
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface SidebarPartProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface SidebarInputProps extends HTMLAttributes<"input"> {
+  class?: string;
+}
+
+interface SidebarGroupActionProps extends HTMLAttributes<"button"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface SidebarMenuButtonProps extends HTMLAttributes<"button"> {
+  active?: boolean;
+  /** Tooltip label shown while the sidebar is collapsed to icon mode (hover). */
+  tooltip?: HellaChildren;
+  variant?: "default" | "outline";
+  size?: "default" | "sm" | "lg";
+  /** Desktop open accessor threaded from SidebarProvider; the tooltip hides while expanded. */
+  open?: () => boolean;
+  /** Mobile viewport accessor threaded from SidebarProvider; the tooltip never shows on mobile. */
+  mobile?: () => boolean;
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface SidebarMenuActionProps extends HTMLAttributes<"button"> {
+  showOnHover?: boolean;
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface SidebarMenuSkeletonProps extends HTMLAttributes<"div"> {
+  showIcon?: boolean;
+  class?: string;
+}
+
+interface SidebarMenuSubButtonProps extends HTMLAttributes<"a"> {
+  size?: "sm" | "md";
+  active?: boolean;
+  class?: string;
+  children?: HellaChildren;
+}
 
 import { css, keyframes, style, vars } from "@hellajs/css";
 import { tokens } from "./tokens.js";
@@ -905,35 +1020,6 @@ css({
   },
 });
 
-/**
- * The state SidebarProvider threads to its children function - hella has no
- * context primitive, so the provider's composition root hands every manual
- * part its accessors (the dual-surface counterpart of the ref's useSidebar).
- */
-interface SidebarState {
-  /** Desktop expanded state. */
-  open: () => boolean;
-  /** Desktop open setter (writes the internal signal unless controlled). */
-  setOpen: (open: boolean) => void;
-  /** Mobile viewport (max-width: 769px). */
-  mobile: () => boolean;
-  /** Mobile sheet open state. */
-  openMobile: () => boolean;
-  /** Mobile sheet open setter. */
-  setOpenMobile: (open: boolean) => void;
-  /** Toggles the mobile sheet on mobile, the desktop open state otherwise. */
-  onToggle: () => void;
-}
-
-interface SidebarProviderProps extends HTMLAttributes<"div"> {
-  /** Controlled open state. When given, the provider never writes its internal signal and `onOpenChange` reports the requested flip. */
-  open?: () => boolean;
-  defaultOpen?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  children: (state: SidebarState) => HellaChildren;
-  class?: string;
-}
-
 export function SidebarProvider({ open: openProp, defaultOpen, onOpenChange, children, class: cls, ...attrs }: SidebarProviderProps): HellaNode {
   const internal = signal(defaultOpen ?? true);
   // Two separate states the ref also splits: the viewport query and the
@@ -990,27 +1076,6 @@ export function SidebarProvider({ open: openProp, defaultOpen, onOpenChange, chi
 }
 
 /** Side the desktop panel hugs. */
-type SidebarSide = "left" | "right";
-
-type SidebarVariant = "sidebar" | "floating" | "inset";
-
-type SidebarCollapsible = "offcanvas" | "icon" | "none";
-
-interface SidebarProps extends HTMLAttributes<"div"> {
-  /** Desktop expanded accessor threaded from SidebarProvider. */
-  open?: () => boolean;
-  /** Mobile viewport accessor threaded from SidebarProvider. */
-  mobile?: () => boolean;
-  /** Mobile sheet open accessor threaded from SidebarProvider. */
-  openMobile?: () => boolean;
-  /** Mobile sheet open setter threaded from SidebarProvider. */
-  onOpenMobileChange?: (open: boolean) => void;
-  side?: SidebarSide;
-  variant?: SidebarVariant;
-  collapsible?: SidebarCollapsible;
-  class?: string;
-  children?: HellaChildren;
-}
 
 let sidebarCount = 0;
 
@@ -1083,13 +1148,6 @@ export function Sidebar({ open, mobile: mobileProp, openMobile, onOpenMobileChan
         </div>
       ` as HellaChild}
   ` as HellaNode;
-}
-
-interface SidebarMobileSheetProps {
-  open: () => boolean;
-  onClose: () => void;
-  side: SidebarSide;
-  children?: HellaChildren;
 }
 
 /**
@@ -1225,11 +1283,6 @@ function SidebarMobileSheet(props: SidebarMobileSheetProps): () => HellaChild {
   });
 }
 
-interface SidebarTriggerProps extends HTMLAttributes<"button"> {
-  onToggle?: () => void;
-  class?: string;
-}
-
 export function SidebarTrigger({ onToggle, class: cls, ...attrs }: SidebarTriggerProps): HellaNode {
   return html`
     <button
@@ -1262,12 +1315,6 @@ export function SidebarTrigger({ onToggle, class: cls, ...attrs }: SidebarTrigge
   ` as HellaNode;
 }
 
-interface SidebarRailProps extends HTMLAttributes<"button"> {
-  onToggle?: () => void;
-  class?: string;
-  children?: HellaChildren;
-}
-
 /** The drag-handle edge - click toggles; width dragging is out of scope (bounded open). */
 export function SidebarRail({ onToggle, class: cls, children, ...attrs }: SidebarRailProps): HellaNode {
   return html`
@@ -1287,11 +1334,6 @@ export function SidebarRail({ onToggle, class: cls, children, ...attrs }: Sideba
   ` as HellaNode;
 }
 
-interface SidebarPartProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function SidebarInset({ children, class: cls, ...attrs }: SidebarPartProps): HellaNode {
   return html`
     <main
@@ -1302,10 +1344,6 @@ export function SidebarInset({ children, class: cls, ...attrs }: SidebarPartProp
       ...${attrs}
     >${() => children}</main>
   ` as HellaNode;
-}
-
-interface SidebarInputProps extends HTMLAttributes<"input"> {
-  class?: string;
 }
 
 export function SidebarInput({ class: cls, ...attrs }: SidebarInputProps): HellaNode {
@@ -1402,11 +1440,6 @@ export function SidebarGroupLabel({ children, class: cls, ...attrs }: SidebarPar
   ` as HellaNode;
 }
 
-interface SidebarGroupActionProps extends HTMLAttributes<"button"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function SidebarGroupAction({ children, class: cls, ...attrs }: SidebarGroupActionProps): HellaNode {
   return html`
     <button
@@ -1458,20 +1491,6 @@ export function SidebarMenuItem({ children, class: cls, ...attrs }: SidebarPartP
       ...${attrs}
     >${() => children}</li>
   ` as HellaNode;
-}
-
-interface SidebarMenuButtonProps extends HTMLAttributes<"button"> {
-  active?: boolean;
-  /** Tooltip label shown while the sidebar is collapsed to icon mode (hover). */
-  tooltip?: HellaChildren;
-  variant?: "default" | "outline";
-  size?: "default" | "sm" | "lg";
-  /** Desktop open accessor threaded from SidebarProvider; the tooltip hides while expanded. */
-  open?: () => boolean;
-  /** Mobile viewport accessor threaded from SidebarProvider; the tooltip never shows on mobile. */
-  mobile?: () => boolean;
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function SidebarMenuButton({ active, tooltip: tooltipProp, variant: variantProp, size: sizeProp, open, mobile: mobileProp, disabled, class: cls, children, ...attrs }: SidebarMenuButtonProps): HellaNode {
@@ -1550,12 +1569,6 @@ export function SidebarMenuButton({ active, tooltip: tooltipProp, variant: varia
   ` as HellaNode;
 }
 
-interface SidebarMenuActionProps extends HTMLAttributes<"button"> {
-  showOnHover?: boolean;
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function SidebarMenuAction({ showOnHover, children, class: cls, ...attrs }: SidebarMenuActionProps): HellaNode {
   return html`
     <button
@@ -1582,11 +1595,6 @@ export function SidebarMenuBadge({ children, class: cls, ...attrs }: SidebarPart
       ...${attrs}
     >${() => children}</div>
   ` as HellaNode;
-}
-
-interface SidebarMenuSkeletonProps extends HTMLAttributes<"div"> {
-  showIcon?: boolean;
-  class?: string;
 }
 
 export function SidebarMenuSkeleton({ showIcon, class: cls, ...attrs }: SidebarMenuSkeletonProps): HellaNode {
@@ -1645,13 +1653,6 @@ export function SidebarMenuSubItem({ children, class: cls, ...attrs }: SidebarPa
       ...${attrs}
     >${() => children}</li>
   ` as HellaNode;
-}
-
-interface SidebarMenuSubButtonProps extends HTMLAttributes<"a"> {
-  size?: "sm" | "md";
-  active?: boolean;
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function SidebarMenuSubButton({ size: sizeProp, active, class: cls, children, ...attrs }: SidebarMenuSubButtonProps): HellaNode {

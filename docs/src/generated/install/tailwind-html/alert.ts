@@ -1,17 +1,22 @@
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
-import { cn } from "./cn.js";
-
-const variants = {
-  default: "bg-card text-card-foreground",
-  destructive: "bg-card text-destructive *:data-[slot=alert-description]:text-destructive/90 [&>svg]:text-current",
-};
+import type { HellaNode, HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 interface AlertProps extends HTMLAttributes<"div"> {
   class?: string;
   children?: HellaChildren;
   variant?: "default" | "destructive";
 }
+
+interface AlertPartProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
+import { cn } from "./cn.js";
+
+const variants = {
+  default: "bg-card text-card-foreground",
+  destructive: "bg-card text-destructive *:data-[slot=alert-description]:text-destructive/90 [&>svg]:text-current",
+};
 
 export function Alert({ variant, children, class: cls, ...attrs }: AlertProps): HellaNode {
   return html`
@@ -28,11 +33,6 @@ export function Alert({ variant, children, class: cls, ...attrs }: AlertProps): 
       ...${attrs}
     >${() => children}</div>
   ` as HellaNode;
-}
-
-interface AlertPartProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function AlertTitle({ children, class: cls, ...attrs }: AlertPartProps): HellaNode {

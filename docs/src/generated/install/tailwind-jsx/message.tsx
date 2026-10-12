@@ -1,4 +1,35 @@
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
+
+interface MessageGroupProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface MessageProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+  align?: "start" | "end";
+}
+
+interface MessageAvatarProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface MessageContentProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface MessageHeaderProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface MessageFooterProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
 import { cn } from "./cn.js";
 
 const base =
@@ -16,11 +47,6 @@ const header =
 const footer =
   "flex max-w-full min-w-0 items-center px-3 text-xs font-medium text-muted-foreground group-has-data-[variant=ghost]/message:px-0 group-data-[align=end]/message:justify-end";
 
-interface MessageGroupProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function MessageGroup({ children, class: cls, ...attrs }: MessageGroupProps): JSX.Element {
   return (
     <div
@@ -33,12 +59,6 @@ export function MessageGroup({ children, class: cls, ...attrs }: MessageGroupPro
       {children}
     </div>
   );
-}
-
-interface MessageProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  align?: "start" | "end";
 }
 
 export function Message({ align, children, class: cls, ...attrs }: MessageProps): JSX.Element {
@@ -56,11 +76,6 @@ export function Message({ align, children, class: cls, ...attrs }: MessageProps)
   );
 }
 
-interface MessageAvatarProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function MessageAvatar({ children, class: cls, ...attrs }: MessageAvatarProps): JSX.Element {
   return (
     <div
@@ -73,11 +88,6 @@ export function MessageAvatar({ children, class: cls, ...attrs }: MessageAvatarP
       {children}
     </div>
   );
-}
-
-interface MessageContentProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function MessageContent({ children, class: cls, ...attrs }: MessageContentProps): JSX.Element {
@@ -94,11 +104,6 @@ export function MessageContent({ children, class: cls, ...attrs }: MessageConten
   );
 }
 
-interface MessageHeaderProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function MessageHeader({ children, class: cls, ...attrs }: MessageHeaderProps): JSX.Element {
   return (
     <div
@@ -111,11 +116,6 @@ export function MessageHeader({ children, class: cls, ...attrs }: MessageHeaderP
       {children}
     </div>
   );
-}
-
-interface MessageFooterProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function MessageFooter({ children, class: cls, ...attrs }: MessageFooterProps): JSX.Element {

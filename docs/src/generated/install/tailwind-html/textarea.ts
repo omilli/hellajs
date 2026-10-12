@@ -1,10 +1,10 @@
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaNode } from "@hellajs/dom";
-import { cn } from "./cn.js";
+import type { HellaNode, HTMLAttributes } from "@hellajs/dom";
 
 interface TextareaProps extends HTMLAttributes<"textarea"> {
   class?: string;
 }
+import { cn } from "./cn.js";
 
 export function Textarea({ class: cls, ...attrs }: TextareaProps): HellaNode {
   return html`

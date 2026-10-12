@@ -11,6 +11,12 @@ const EXPORT_PREFIX = "export ";
 // source constant must already hold the final form to stay identical across
 // the per-module and flattened bundle builds.
 const CN_IMPORT = 'import { cn } from "./cn.js";';
+// A types-module import specifier: the conventional shared module that
+// resolveEntry derives as `<name>-types.ts` beside the canonicals.
+const TYPES_SPECIFIER_REGEX = /^\.\/[\w-]+-types\.js$/;
+// A module type-import line: the shape `inlineTypes` folds into a canonical
+// line importing from the same source (duplicate names would double-declare).
+const TYPE_IMPORT_REGEX = /^import\s+type\s+\{([^}]*)\}\s+from\s+/;
 const REQUIRED_SECTIONS = ["styles", "compose"] as const;
 // Inline-candidate shape: a single-line `const NAME = "…";` declaration.
 // Anything else (template literal, concatenation, multi-line) fails the full-line
@@ -113,6 +119,15 @@ function importSpecifier(line: string): string {
     throw new Error(`[ui] applyStyleVariant: style module import has no specifier: "${line.trim()}"`);
   }
   return spec;
+}
+
+/**
+ * Extracts the named bindings of a single-line `import type { … }` statement.
+ * @param line Type-import statement line.
+ * @returns The declared names in source order.
+ */
+function importTypeNames(line: string): string[] {
+  return (TYPE_IMPORT_REGEX.exec(line)![1]!).split(",").map((name) => name.trim()).filter((name) => name !== "");
 }
 
 /**
@@ -672,4 +687,57 @@ export function applyStyleVariant(source: string, styleModuleText: string, style
   }
   const text = out.join("\n");
   return style === "tailwind" ? text.replace(/\n{3,}/g, "\n\n") : text;
+}
+
+/**
+ * Inlines a canonical's shared types module at its import site: the single
+ * top-level `import … from "./<name>-types.js";` line is replaced with the
+ * module's normalized body (package imports ride along verbatim, `export `
+ * prefixes strip, blank edges trim), so the copied output stays one
+ * standalone file per format with the shared interfaces declared at the
+ * import site. A module `import type` whose source the canonical already
+ * type-imports folds into that existing line instead of riding along — the
+ * names dedupe (canonical order first), since a second import of the same
+ * name from the same source would double-declare it in the output.
+ * Deterministic — the same inputs always produce the same text.
+ * @param source Canonical file text carrying the types-module import.
+ * @param typesModuleText Shared types module text spliced at the import line.
+ * @returns The source with the import line replaced by the inlined body.
+ * @throws {Error} When the source carries no types-module import or more than
+ * one, or the types module is not spliceable through `parseStyleModule`
+ * (relative/absolute specifiers, `export default` / `export { … }`).
+ */
+export function inlineTypes(source: string, typesModuleText: string): string {
+  const lines = source.split("\n");
+  let at = -1;
+  let count = 0;
+  let i = 0;
+  const len = lines.length;
+  while (i < len) {
+    const line = lines[i++]!;
+    if (!IMPORT_REGEX.test(line) || !TYPES_SPECIFIER_REGEX.test(importSpecifier(line))) continue;
+    at = i - 1;
+    count++;
+  }
+  if (count === 0) {
+    throw new Error("[ui] inlineTypes: canonical imports no \"./*-types.js\" module");
+  }
+  if (count > 1) {
+    throw new Error("[ui] inlineTypes: duplicate types module import");
+  }
+  const moduleBody = parseStyleModule(typesModuleText).flatMap((line) => {
+    const typeImport = TYPE_IMPORT_REGEX.exec(line);
+    if (typeImport === null) return [line];
+    const spec = importSpecifier(line);
+    const target = lines.findIndex((candidate, index) => index !== at && candidate.startsWith("import type") && importSpecifier(candidate) === spec);
+    if (target === -1) return [line];
+    const names = new Set(importTypeNames(lines[target]!));
+    const additions = importTypeNames(line);
+    let n = 0;
+    while (n < additions.length) names.add(additions[n++]!);
+    lines[target] = `import type { ${[...names].join(", ")} } from "${spec}";`;
+    return [];
+  });
+  lines[at] = moduleBody.join("\n");
+  return lines.join("\n");
 }

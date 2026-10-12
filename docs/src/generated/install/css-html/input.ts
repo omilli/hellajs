@@ -1,5 +1,9 @@
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaNode } from "@hellajs/dom";
+import type { HellaNode, HTMLAttributes } from "@hellajs/dom";
+
+interface InputProps extends HTMLAttributes<"input"> {
+  class?: string;
+}
 
 import { style } from "@hellajs/css";
 import { tokens } from "./tokens.js";
@@ -68,10 +72,6 @@ const invalid = style("input-invalid", {
     boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
   },
 });
-
-interface InputProps extends HTMLAttributes<"input"> {
-  class?: string;
-}
 
 export function Input({ class: cls, ...attrs }: InputProps): HellaNode {
   return html`

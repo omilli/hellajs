@@ -1,5 +1,59 @@
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HellaNode, HTMLAttributes, HellaChildren } from "@hellajs/dom";
+
+interface ItemGroupProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface ItemSeparatorProps extends HTMLAttributes<"div"> {
+  class?: string;
+}
+
+interface ItemProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+  variant?: "default" | "outline" | "muted";
+  size?: "default" | "sm";
+  /** Static boolean or reactive fn; drives data-selected + aria-selected (omitted when absent). */
+  selected?: boolean | (() => boolean);
+}
+
+interface ItemMediaProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+  variant?: "default" | "icon" | "image";
+}
+
+interface ItemContentProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface ItemTitleProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface ItemDescriptionProps extends HTMLAttributes<"p"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface ItemActionsProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface ItemHeaderProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface ItemFooterProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
 
 import { css, style } from "@hellajs/css";
 import { tokens } from "./tokens.js";
@@ -179,11 +233,6 @@ css({
   },
 });
 
-interface ItemGroupProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function ItemGroup({ children, class: cls, ...attrs }: ItemGroupProps): HellaNode {
   return html`
     <div
@@ -195,10 +244,6 @@ export function ItemGroup({ children, class: cls, ...attrs }: ItemGroupProps): H
       ...${attrs}
     >${() => children}</div>
   ` as HellaNode;
-}
-
-interface ItemSeparatorProps extends HTMLAttributes<"div"> {
-  class?: string;
 }
 
 export function ItemSeparator({ class: cls, ...attrs }: ItemSeparatorProps): HellaNode {
@@ -218,15 +263,6 @@ export function ItemSeparator({ class: cls, ...attrs }: ItemSeparatorProps): Hel
       ...${attrs}
     ></div>
   ` as HellaNode;
-}
-
-interface ItemProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  variant?: "default" | "outline" | "muted";
-  size?: "default" | "sm";
-  /** Static boolean or reactive fn; drives data-selected + aria-selected (omitted when absent). */
-  selected?: boolean | (() => boolean);
 }
 
 export function Item({ variant, size, selected, children, class: cls, ...attrs }: ItemProps): HellaNode {
@@ -252,12 +288,6 @@ export function Item({ variant, size, selected, children, class: cls, ...attrs }
   ` as HellaNode;
 }
 
-interface ItemMediaProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  variant?: "default" | "icon" | "image";
-}
-
 export function ItemMedia({ variant, children, class: cls, ...attrs }: ItemMediaProps): HellaNode {
   return html`
     <div
@@ -275,11 +305,6 @@ export function ItemMedia({ variant, children, class: cls, ...attrs }: ItemMedia
   ` as HellaNode;
 }
 
-interface ItemContentProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function ItemContent({ children, class: cls, ...attrs }: ItemContentProps): HellaNode {
   return html`
     <div
@@ -290,11 +315,6 @@ export function ItemContent({ children, class: cls, ...attrs }: ItemContentProps
       ...${attrs}
     >${() => children}</div>
   ` as HellaNode;
-}
-
-interface ItemTitleProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function ItemTitle({ children, class: cls, ...attrs }: ItemTitleProps): HellaNode {
@@ -309,11 +329,6 @@ export function ItemTitle({ children, class: cls, ...attrs }: ItemTitleProps): H
   ` as HellaNode;
 }
 
-interface ItemDescriptionProps extends HTMLAttributes<"p"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function ItemDescription({ children, class: cls, ...attrs }: ItemDescriptionProps): HellaNode {
   return html`
     <p
@@ -324,11 +339,6 @@ export function ItemDescription({ children, class: cls, ...attrs }: ItemDescript
       ...${attrs}
     >${() => children}</p>
   ` as HellaNode;
-}
-
-interface ItemActionsProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function ItemActions({ children, class: cls, ...attrs }: ItemActionsProps): HellaNode {
@@ -343,11 +353,6 @@ export function ItemActions({ children, class: cls, ...attrs }: ItemActionsProps
   ` as HellaNode;
 }
 
-interface ItemHeaderProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function ItemHeader({ children, class: cls, ...attrs }: ItemHeaderProps): HellaNode {
   return html`
     <div
@@ -358,11 +363,6 @@ export function ItemHeader({ children, class: cls, ...attrs }: ItemHeaderProps):
       ...${attrs}
     >${() => children}</div>
   ` as HellaNode;
-}
-
-interface ItemFooterProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function ItemFooter({ children, class: cls, ...attrs }: ItemFooterProps): HellaNode {

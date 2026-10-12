@@ -1,10 +1,10 @@
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
-import { cn } from "./cn.js";
 
 interface LabelProps extends HTMLAttributes<"label"> {
   class?: string;
   children?: HellaChildren;
 }
+import { cn } from "./cn.js";
 
 export function Label({ children, class: cls, ...attrs }: LabelProps): JSX.Element {
   return (

@@ -1,4 +1,4 @@
-import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
+import type { InputGroupProps, InputGroupAddonProps, InputGroupButtonProps, InputGroupTextProps, InputGroupInputProps, InputGroupTextareaProps } from "./input-group-types.js";
 
 // @hella:styles
 declare const addon: string;
@@ -19,13 +19,6 @@ declare const textareaFocus: string;
 declare const textareaInvalid: string;
 // @hella:end
 
-interface InputGroupProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  /** Renders data-disabled="true" on the group; addons read it for their opacity state. */
-  disabled?: boolean;
-  class?: string;
-}
-
 export function InputGroup({ disabled, children, class: cls, ...attrs }: InputGroupProps): JSX.Element {
   return (
     <div
@@ -42,12 +35,6 @@ export function InputGroup({ disabled, children, class: cls, ...attrs }: InputGr
       {children}
     </div>
   );
-}
-
-interface InputGroupAddonProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  align?: "inline-start" | "inline-end" | "block-start" | "block-end";
-  class?: string;
 }
 
 export function InputGroupAddon({ align, children, class: cls, ...attrs }: InputGroupAddonProps): JSX.Element {
@@ -77,13 +64,6 @@ export function InputGroupAddon({ align, children, class: cls, ...attrs }: Input
   );
 }
 
-interface InputGroupButtonProps extends HTMLAttributes<"button"> {
-  children?: HellaChildren;
-  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
-  size?: "xs" | "sm" | "icon-xs" | "icon-sm";
-  class?: string;
-}
-
 export function InputGroupButton({ variant, size, children, class: cls, ...attrs }: InputGroupButtonProps): JSX.Element {
   return (
     <button
@@ -109,11 +89,6 @@ export function InputGroupButton({ variant, size, children, class: cls, ...attrs
   );
 }
 
-interface InputGroupTextProps extends HTMLAttributes<"span"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function InputGroupText({ children, class: cls, ...attrs }: InputGroupTextProps): JSX.Element {
   return (
     <span
@@ -128,10 +103,6 @@ export function InputGroupText({ children, class: cls, ...attrs }: InputGroupTex
       {children}
     </span>
   );
-}
-
-interface InputGroupInputProps extends HTMLAttributes<"input"> {
-  class?: string;
 }
 
 export function InputGroupInput({ class: cls, ...attrs }: InputGroupInputProps): JSX.Element {
@@ -152,10 +123,6 @@ export function InputGroupInput({ class: cls, ...attrs }: InputGroupInputProps):
       {...attrs}
     />
   );
-}
-
-interface InputGroupTextareaProps extends HTMLAttributes<"textarea"> {
-  class?: string;
 }
 
 export function InputGroupTextarea({ class: cls, ...attrs }: InputGroupTextareaProps): JSX.Element {

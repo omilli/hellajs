@@ -1,17 +1,27 @@
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
-import { cn } from "./cn.js";
-
-const orientation = {
-  horizontal: "[&>*:not(:first-child)]:rounded-l-none [&>*:not(:first-child)]:border-l-0 [&>*:not(:last-child)]:rounded-r-none",
-  vertical: "flex-col [&>*:not(:first-child)]:rounded-t-none [&>*:not(:first-child)]:border-t-0 [&>*:not(:last-child)]:rounded-b-none",
-};
+import type { HellaNode, HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 interface ButtonGroupProps extends HTMLAttributes<"div"> {
   class?: string;
   children?: HellaChildren;
   orientation?: "horizontal" | "vertical";
 }
+
+interface ButtonGroupTextProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface ButtonGroupSeparatorProps extends HTMLAttributes<"div"> {
+  orientation?: "horizontal" | "vertical";
+  class?: string;
+}
+import { cn } from "./cn.js";
+
+const orientation = {
+  horizontal: "[&>*:not(:first-child)]:rounded-l-none [&>*:not(:first-child)]:border-l-0 [&>*:not(:last-child)]:rounded-r-none",
+  vertical: "flex-col [&>*:not(:first-child)]:rounded-t-none [&>*:not(:first-child)]:border-t-0 [&>*:not(:last-child)]:rounded-b-none",
+};
 
 export function ButtonGroup({ orientation: orient, children, class: cls, ...attrs }: ButtonGroupProps): HellaNode {
   return html`
@@ -31,11 +41,6 @@ export function ButtonGroup({ orientation: orient, children, class: cls, ...attr
   ` as HellaNode;
 }
 
-interface ButtonGroupTextProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function ButtonGroupText({ children, class: cls, ...attrs }: ButtonGroupTextProps): HellaNode {
   return html`
     <div
@@ -46,11 +51,6 @@ export function ButtonGroupText({ children, class: cls, ...attrs }: ButtonGroupT
       ...${attrs}
     >${() => children}</div>
   ` as HellaNode;
-}
-
-interface ButtonGroupSeparatorProps extends HTMLAttributes<"div"> {
-  orientation?: "horizontal" | "vertical";
-  class?: string;
 }
 
 export function ButtonGroupSeparator({ orientation: orient, class: cls, ...attrs }: ButtonGroupSeparatorProps): HellaNode {

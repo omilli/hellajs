@@ -1,5 +1,15 @@
 import { signal } from "@hellajs/core";
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
+
+interface ToggleProps extends HTMLAttributes<"button"> {
+  class?: string;
+  children?: HellaChildren;
+  /** Pressed state. A boolean seeds the internal signal; an accessor makes the toggle controlled — clicks then only report through `onPressedChange`. */
+  pressed?: boolean | (() => boolean);
+  onPressedChange?: (pressed: boolean) => void;
+  variant?: "default" | "outline";
+  size?: "default" | "sm" | "lg";
+}
 import { cn } from "./cn.js";
 
 const variants = {
@@ -13,16 +23,6 @@ const sizes = {
   sm: "h-8 min-w-8 px-1.5",
   lg: "h-10 min-w-10 px-2.5",
 };
-
-interface ToggleProps extends HTMLAttributes<"button"> {
-  class?: string;
-  children?: HellaChildren;
-  /** Pressed state. A boolean seeds the internal signal; an accessor makes the toggle controlled — clicks then only report through `onPressedChange`. */
-  pressed?: boolean | (() => boolean);
-  onPressedChange?: (pressed: boolean) => void;
-  variant?: "default" | "outline";
-  size?: "default" | "sm" | "lg";
-}
 
 /** Resolves the toggle's full class from the spliced variant maps — the compose arrays' shared builder. */
 export function toggleVariants(options?: {

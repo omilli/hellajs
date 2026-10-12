@@ -1,6 +1,7 @@
 import { html, onDrag } from "@hellajs/dom";
 import { signal } from "@hellajs/core";
-import type { HTMLAttributes, HellaNode } from "@hellajs/dom";
+import type { HellaNode } from "@hellajs/dom";
+import type { SliderProps } from "./slider-types.js";
 
 // @hella:styles
 declare const base: string;
@@ -8,18 +9,6 @@ declare const range: string;
 declare const thumb: string;
 declare const track: string;
 // @hella:end
-
-interface SliderProps extends HTMLAttributes<"span"> {
-  class?: string;
-  /** The thumb values. A static array seeds the internal signal; an accessor makes the slider controlled, so writes report through `onValueChange` only. */
-  value?: number[] | (() => number[]);
-  onValueChange?: (value: number[]) => void;
-  /** Fired when an interaction ends: drag release and each accepted keyboard change. */
-  onValueCommit?: (value: number[]) => void;
-  orientation?: "horizontal" | "vertical";
-  /** Minimum number of steps enforced between neighboring thumbs. */
-  minStepsBetweenThumbs?: number;
-}
 
 export function Slider({ value, onValueChange, onValueCommit, orientation: orientationProp, minStepsBetweenThumbs, min: minAttr, max: maxAttr, step: stepAttr, disabled, class: cls, ...attrs }: SliderProps): HellaNode {
   const min = (minAttr as number | undefined) ?? 0;

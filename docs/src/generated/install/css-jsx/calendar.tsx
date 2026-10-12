@@ -2,6 +2,99 @@ import { effect, signal, untracked } from "@hellajs/core";
 import { ForEach } from "@hellajs/dom";
 import type { HTMLAttributes } from "@hellajs/dom";
 
+type CalendarMode = "single" | "multiple" | "range";
+
+interface CalendarRange {
+  from?: Date;
+  to?: Date;
+}
+
+type CalendarSelection = Date | Date[] | CalendarRange | undefined;
+
+type CalendarClassKey =
+  | "root"
+  | "months"
+  | "month"
+  | "nav"
+  | "button_previous"
+  | "button_next"
+  | "month_caption"
+  | "caption_label"
+  | "month_grid"
+  | "weekdays"
+  | "weekday"
+  | "week"
+  | "day"
+  | "day_button";
+
+interface CalendarProps extends HTMLAttributes<"div"> {
+  /** Selection behavior; defaults to `"single"`. */
+  mode?: CalendarMode;
+  /** Initial selection in the shape the mode calls for; selection is uncontrolled, `onSelect` reports every change. */
+  selected?: CalendarSelection;
+  onSelect?: (selected: CalendarSelection) => void;
+  /** Controlled visible-month accessor; when provided it snaps the view back on every change, winning over internal navigation. */
+  month?: () => Date;
+  onMonthChange?: (anchor: Date) => void;
+  /** Initial visible month; defaults to the current month. */
+  defaultMonth?: Date;
+  /** Predicate blocking selection and keyboard activation; outside days are always disabled. */
+  disabled?: (date: Date) => boolean;
+  /** Renders leading/trailing adjacent-month days; defaults to `true`. */
+  showOutsideDays?: boolean;
+  /** Always renders six week rows so month-to-month navigation never resizes the grid. */
+  fixedWeeks?: boolean;
+  /** First day of the week; `0` = Sunday (default) through `6` = Saturday. */
+  weekStartsOn?: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+  /** Omits the previous/next month navigation. */
+  hideNavigation?: boolean;
+  /** Per-part class hook overrides merged next to the component classes. */
+  classNames?: Partial<Record<CalendarClassKey, string>>;
+  class?: string;
+}
+
+interface CalendarDayButtonProps extends HTMLAttributes<"button"> {
+  /** The day this button renders; also emitted as `data-day` (locale string, per the ref). */
+  day: Date;
+  /** Reactive-capable selected flag; renders `data-selected-single` when the day is selected outside a range span. */
+  selectedSingle?: boolean | (() => boolean);
+  rangeStart?: boolean | (() => boolean);
+  rangeEnd?: boolean | (() => boolean);
+  rangeMiddle?: boolean | (() => boolean);
+  /** Reactive-capable disabled flag; renders the disabled state attributes (wired, not spread). */
+  disabled?: boolean | (() => boolean);
+  /** Reactive-capable roving-focus flag; drives `tabindex` 0/-1. */
+  focused?: boolean | (() => boolean);
+  /** Marks the day as today with `aria-current="date"`. */
+  today?: boolean;
+  class?: string;
+}
+
+interface CalendarCell {
+  key: string;
+  date: Date;
+  outside: boolean;
+  today: boolean;
+  disabled: boolean;
+}
+
+interface DayCellProps {
+  cell: CalendarCell;
+  selected: () => boolean;
+  rangeStart: () => boolean;
+  rangeMiddle: () => boolean;
+  rangeEnd: () => boolean;
+  focused: () => boolean;
+  hidden: boolean;
+  /** The ref's `day` class hook, applied to the grid cell. */
+  dayClass?: string;
+  /** The ref's `day_button` class hook, forwarded to the day button. */
+  buttonClass?: string;
+  onSelect: (cell: CalendarCell) => void;
+  onHover: (cell: CalendarCell) => void;
+  onLeave: () => void;
+}
+
 import { css, style } from "@hellajs/css";
 import { tokens } from "./tokens.js";
 
@@ -280,76 +373,12 @@ css({
 });
 
 /** Selection mode: one date, a set of dates, or a from/to span. */
-type CalendarMode = "single" | "multiple" | "range";
 
 /** Range selection shape; `from` without `to` is the dangling first click. */
-interface CalendarRange {
-  from?: Date;
-  to?: Date;
-}
 
 /** Selected shape per mode: single → `Date`, multiple → `Date[]`, range → `CalendarRange`. */
-type CalendarSelection = Date | Date[] | CalendarRange | undefined;
 
 /** The ref's class hooks a caller may extend. The state hooks (today/outside/disabled/range/hidden) are data-attribute driven, so they are not class-mergeable. */
-type CalendarClassKey =
-  | "root"
-  | "months"
-  | "month"
-  | "nav"
-  | "button_previous"
-  | "button_next"
-  | "month_caption"
-  | "caption_label"
-  | "month_grid"
-  | "weekdays"
-  | "weekday"
-  | "week"
-  | "day"
-  | "day_button";
-
-interface CalendarProps extends HTMLAttributes<"div"> {
-  /** Selection behavior; defaults to `"single"`. */
-  mode?: CalendarMode;
-  /** Initial selection in the shape the mode calls for; selection is uncontrolled, `onSelect` reports every change. */
-  selected?: CalendarSelection;
-  onSelect?: (selected: CalendarSelection) => void;
-  /** Controlled visible-month accessor; when provided it snaps the view back on every change, winning over internal navigation. */
-  month?: () => Date;
-  onMonthChange?: (anchor: Date) => void;
-  /** Initial visible month; defaults to the current month. */
-  defaultMonth?: Date;
-  /** Predicate blocking selection and keyboard activation; outside days are always disabled. */
-  disabled?: (date: Date) => boolean;
-  /** Renders leading/trailing adjacent-month days; defaults to `true`. */
-  showOutsideDays?: boolean;
-  /** Always renders six week rows so month-to-month navigation never resizes the grid. */
-  fixedWeeks?: boolean;
-  /** First day of the week; `0` = Sunday (default) through `6` = Saturday. */
-  weekStartsOn?: 0 | 1 | 2 | 3 | 4 | 5 | 6;
-  /** Omits the previous/next month navigation. */
-  hideNavigation?: boolean;
-  /** Per-part class hook overrides merged next to the component classes. */
-  classNames?: Partial<Record<CalendarClassKey, string>>;
-  class?: string;
-}
-
-interface CalendarDayButtonProps extends HTMLAttributes<"button"> {
-  /** The day this button renders; also emitted as `data-day` (locale string, per the ref). */
-  day: Date;
-  /** Reactive-capable selected flag; renders `data-selected-single` when the day is selected outside a range span. */
-  selectedSingle?: boolean | (() => boolean);
-  rangeStart?: boolean | (() => boolean);
-  rangeEnd?: boolean | (() => boolean);
-  rangeMiddle?: boolean | (() => boolean);
-  /** Reactive-capable disabled flag; renders the disabled state attributes (wired, not spread). */
-  disabled?: boolean | (() => boolean);
-  /** Reactive-capable roving-focus flag; drives `tabindex` 0/-1. */
-  focused?: boolean | (() => boolean);
-  /** Marks the day as today with `aria-current="date"`. */
-  today?: boolean;
-  class?: string;
-}
 
 const WEEKDAY_COUNT = 7;
 
@@ -409,13 +438,6 @@ function weekdayLabels(weekStartsOn: number): string[] {
 }
 
 /** One grid day: `key` is the stable ISO identity used for focus, selection, and range math. */
-interface CalendarCell {
-  key: string;
-  date: Date;
-  outside: boolean;
-  today: boolean;
-  disabled: boolean;
-}
 
 function buildMonth(anchor: Date, weekStartsOn: number, fixedWeeks: boolean, disabled: ((date: Date) => boolean) | undefined): CalendarCell[][] {
   const monthStart = startOfMonth(anchor);
@@ -535,23 +557,6 @@ export function CalendarDayButton({ day: dayProp, selectedSingle, rangeStart, ra
       {...attrs}
     >{dayProp.getDate()}</button>
   );
-}
-
-interface DayCellProps {
-  cell: CalendarCell;
-  selected: () => boolean;
-  rangeStart: () => boolean;
-  rangeMiddle: () => boolean;
-  rangeEnd: () => boolean;
-  focused: () => boolean;
-  hidden: boolean;
-  /** The ref's `day` class hook, applied to the grid cell. */
-  dayClass?: string;
-  /** The ref's `day_button` class hook, forwarded to the day button. */
-  buttonClass?: string;
-  onSelect: (cell: CalendarCell) => void;
-  onHover: (cell: CalendarCell) => void;
-  onLeave: () => void;
 }
 
 /** One grid cell: the td carries the today/outside/disabled/range data attributes, the day button the aria semantics. */

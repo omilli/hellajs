@@ -1,30 +1,14 @@
 import { effect, signal } from "@hellajs/core";
 import { anchorPosition, hoverIntent, html, Portal } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChild, HellaChildren, HellaNode, Placement } from "@hellajs/dom";
-import { cn } from "./cn.js";
+import type { HellaChild, HellaNode, Placement, HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 type AnchorSide = "top" | "bottom" | "left" | "right";
-type AnchorAlign = "start" | "center" | "end";
 
-const placementOf = (side: AnchorSide, align: AnchorAlign): Placement =>
-  align === "center" ? side : `${side}-${align}`;
+type AnchorAlign = "start" | "center" | "end";
 
 interface HoverCardTriggerProps extends HTMLAttributes<"span"> {
   children?: HellaChildren;
   class?: string;
-}
-
-/** The manual trigger span; the composed HoverCard renders the same shape wired to hoverIntent. */
-export function HoverCardTrigger({ children, class: cls, ...attrs }: HoverCardTriggerProps): HellaNode {
-  return html`
-    <span
-      data-slot="hover-card-trigger"
-      class="${
-        cn(cls)
-      }"
-      ...${attrs}
-    >${() => children}</span>
-  ` as HellaNode;
 }
 
 interface HoverCardContentProps extends HTMLAttributes<"div"> {
@@ -40,6 +24,31 @@ interface HoverCardContentProps extends HTMLAttributes<"div"> {
   onExited?: () => void;
   children?: HellaChildren;
   class?: string;
+}
+
+interface HoverCardProps extends HTMLAttributes<"span"> {
+  open?: () => boolean;
+  onOpenChange?: (open: boolean) => void;
+  children?: HellaChildren;
+  content: HellaChildren;
+  class?: string;
+}
+import { cn } from "./cn.js";
+
+const placementOf = (side: AnchorSide, align: AnchorAlign): Placement =>
+  align === "center" ? side : `${side}-${align}`;
+
+/** The manual trigger span; the composed HoverCard renders the same shape wired to hoverIntent. */
+export function HoverCardTrigger({ children, class: cls, ...attrs }: HoverCardTriggerProps): HellaNode {
+  return html`
+    <span
+      data-slot="hover-card-trigger"
+      class="${
+        cn(cls)
+      }"
+      ...${attrs}
+    >${() => children}</span>
+  ` as HellaNode;
 }
 
 export function HoverCardContent({ state, side: sideProp, align: alignProp, anchor, onOpen, onClose, onExited, children, class: cls, ...attrs }: HoverCardContentProps): HellaNode {
@@ -82,14 +91,6 @@ export function HoverCardContent({ state, side: sideProp, align: alignProp, anch
       ...${attrs}
     >${() => children}</div>
   ` as HellaNode;
-}
-
-interface HoverCardProps extends HTMLAttributes<"span"> {
-  open?: () => boolean;
-  onOpenChange?: (open: boolean) => void;
-  children?: HellaChildren;
-  content: HellaChildren;
-  class?: string;
 }
 
 export function HoverCard({ open, onOpenChange, children, content: contentSlot, class: cls, ...attrs }: HoverCardProps): HellaNode {

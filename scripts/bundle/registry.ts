@@ -3,7 +3,7 @@ import path from "node:path";
 import { transformSync } from "@babel/core";
 import babelHellaJS from "babel-plugin-hellajs";
 import presetTypeScript from "@babel/preset-typescript";
-import { applyStyleVariant } from "../../packages/ui/lib/internal/transform.js";
+import { applyStyleVariant, inlineTypes } from "../../packages/ui/lib/internal/transform.js";
 import {
   ensureDir,
   execCommand,
@@ -68,6 +68,8 @@ function transformRegistrySource(code: string, filename: string): string {
  * @param stageDir Declaration staging root, or null to skip staging.
  * @param styleModuleText Style module text spliced into the canonical's marker
  * regions, or null to compile the file verbatim (no canonicals of its own).
+ * @param typesText Shared types module text inlined at its import site after
+ * the splice, or null when the entry has none (or still inlines its types).
  * @param style Target registry style.
  */
 async function compileFile(
@@ -76,6 +78,7 @@ async function compileFile(
   outRoot: string,
   stageDir: string | null,
   styleModuleText: string | null,
+  typesText: string | null,
   style: UiStyle,
 ): Promise<void> {
   const filename = path.basename(sourcePath);
@@ -88,7 +91,11 @@ async function compileFile(
   }
 
   const canonical = await fs.readFile(sourcePath, "utf8");
-  const flavored = styleModuleText === null ? canonical : applyStyleVariant(canonical, styleModuleText, style);
+  const spliced = styleModuleText === null ? canonical : applyStyleVariant(canonical, styleModuleText, style);
+  // Types inlining couples to the splice: only canonicals carry the types
+  // import, and both module texts derive from the entry's shared-files flag —
+  // so staging and compile both consume self-contained sources.
+  const flavored = styleModuleText !== null && typesText !== null ? inlineTypes(spliced, typesText) : spliced;
   const compiled = transformRegistrySource(flavored, filename);
   // Spliced style modules import the theme sheet as a components-dir sibling
   // ("./tokens.js"); in dist the sheet compiles once at registry/theme/, so
@@ -147,6 +154,7 @@ async function compileDependency(
       outRoot,
       stageDir,
       null,
+      null,
       style,
     );
   }
@@ -174,6 +182,29 @@ async function readStyleModule(
     return await fs.readFile(styleFile, "utf8");
   } catch {
     throw new Error(`[bundle] registry entry "${name}" is missing its style module "${name}-${style}.ts"`);
+  }
+}
+
+/**
+ * Reads an entry's conventionally named shared types module
+ * (`<name>-types.ts`). Component entries (those with shared canonical files)
+ * must carry one; shared entries (theme, cn) have none.
+ * @param registryDir Source registry directory.
+ * @param name Entry name.
+ * @param hasSharedFiles Whether the entry declares shared canonical files.
+ * @returns The types module text, or null when the entry has no canonicals.
+ * @throws {Error} When the entry has canonicals but the module is absent.
+ */
+async function readTypesModule(
+  registryDir: string,
+  name: string,
+  hasSharedFiles: boolean,
+): Promise<string | null> {
+  if (!hasSharedFiles) return null;
+  try {
+    return await fs.readFile(path.join(registryDir, name, `${name}-types.ts`), "utf8");
+  } catch {
+    throw new Error(`[bundle] registry entry "${name}" is missing its types module "${name}-types.ts"`);
   }
 }
 /**
@@ -207,18 +238,19 @@ export async function compileRegistry(packageInfo: PackageInfo): Promise<void> {
         const slot = entry.styles![style]!;
         const shared = entry.files ?? [];
         const styleModuleText = await readStyleModule(registryDir, name, styleName, shared.length > 0);
+        const typesText = await readTypesModule(registryDir, name, shared.length > 0);
         const outBase = shared.length > 0
           ? path.join(outDir, name, style)
           : path.join(outDir, name);
 
         for (const file of shared) {
-          await compileFile(path.join(registryDir, name, file), outBase, outDir, stageDir, styleModuleText, styleName);
+          await compileFile(path.join(registryDir, name, file), outBase, outDir, stageDir, styleModuleText, typesText, styleName);
         }
         for (const file of slot.files ?? []) {
-          await compileFile(path.join(registryDir, name, file), outBase, outDir, stageDir, null, styleName);
+          await compileFile(path.join(registryDir, name, file), outBase, outDir, stageDir, null, null, styleName);
         }
         for (const source of Object.values(slot.darkFiles ?? {})) {
-          await compileFile(path.join(registryDir, name, source), outBase, outDir, stageDir, null, styleName);
+          await compileFile(path.join(registryDir, name, source), outBase, outDir, stageDir, null, null, styleName);
         }
         for (const dep of slot.registryDependencies ?? []) {
           await compileDependency(dep, styleName, manifest, registryDir, outBase, outDir, stageDir);

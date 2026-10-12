@@ -1,5 +1,6 @@
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HellaNode } from "@hellajs/dom";
+import type { BubbleGroupProps, BubbleProps, BubbleContentProps, BubbleReactionsProps } from "./bubble-types.js";
 
 // @hella:styles
 declare const base: string;
@@ -10,11 +11,6 @@ declare const reactionsAligns: Record<string, string>;
 declare const reactionsSides: Record<string, string>;
 declare const variants: Record<string, string>;
 // @hella:end
-
-interface BubbleGroupProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
 
 export function BubbleGroup({ children, class: cls, ...attrs }: BubbleGroupProps): HellaNode {
   return html`
@@ -28,13 +24,6 @@ export function BubbleGroup({ children, class: cls, ...attrs }: BubbleGroupProps
       ...${attrs}
     >${() => children}</div>
   ` as HellaNode;
-}
-
-interface BubbleProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  variant?: "default" | "secondary" | "muted" | "tinted" | "outline" | "ghost" | "destructive";
-  align?: "start" | "end";
 }
 
 export function Bubble({ variant, align, children, class: cls, ...attrs }: BubbleProps): HellaNode {
@@ -53,11 +42,6 @@ export function Bubble({ variant, align, children, class: cls, ...attrs }: Bubbl
   ` as HellaNode;
 }
 
-interface BubbleContentProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function BubbleContent({ children, class: cls, ...attrs }: BubbleContentProps): HellaNode {
   return html`
     <div
@@ -70,13 +54,6 @@ export function BubbleContent({ children, class: cls, ...attrs }: BubbleContentP
       ...${attrs}
     >${() => children}</div>
   ` as HellaNode;
-}
-
-interface BubbleReactionsProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  side?: "top" | "bottom";
-  align?: "start" | "end";
 }
 
 export function BubbleReactions({ side, align, children, class: cls, ...attrs }: BubbleReactionsProps): HellaNode {

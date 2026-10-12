@@ -1,9 +1,9 @@
 import type { HTMLAttributes } from "@hellajs/dom";
-import { cn } from "./cn.js";
 
 interface SpinnerProps extends HTMLAttributes<"svg"> {
   class?: string;
 }
+import { cn } from "./cn.js";
 
 export function Spinner({ class: cls, ...attrs }: SpinnerProps): JSX.Element {
   return (

@@ -1,7 +1,6 @@
 import { signal } from "@hellajs/core";
 import { onDrag } from "@hellajs/dom";
 import type { HTMLAttributes } from "@hellajs/dom";
-import { cn } from "./cn.js";
 
 interface SliderProps extends HTMLAttributes<"span"> {
   class?: string;
@@ -14,6 +13,7 @@ interface SliderProps extends HTMLAttributes<"span"> {
   /** Minimum number of steps enforced between neighboring thumbs. */
   minStepsBetweenThumbs?: number;
 }
+import { cn } from "./cn.js";
 
 export function Slider({ value, onValueChange, onValueCommit, orientation: orientationProp, minStepsBetweenThumbs, min: minAttr, max: maxAttr, step: stepAttr, disabled, class: cls, ...attrs }: SliderProps): JSX.Element {
   const min = (minAttr as number | undefined) ?? 0;

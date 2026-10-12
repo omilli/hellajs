@@ -1,15 +1,11 @@
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HellaNode } from "@hellajs/dom";
+import type { KbdProps } from "./kbd-types.js";
 
 // @hella:styles
 declare const base: string;
 declare const group: string;
 // @hella:end
-
-interface KbdProps extends HTMLAttributes<"kbd"> {
-  class?: string;
-  children?: HellaChildren;
-}
 
 export function Kbd({ children, class: cls, ...attrs }: KbdProps): HellaNode {
   return html`

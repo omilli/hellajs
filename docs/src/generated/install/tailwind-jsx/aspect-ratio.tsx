@@ -1,11 +1,11 @@
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
-import { cn } from "./cn.js";
 
 interface AspectRatioProps extends HTMLAttributes<"div"> {
   class?: string;
   children?: HellaChildren;
   ratio?: number;
 }
+import { cn } from "./cn.js";
 
 export function AspectRatio({ ratio, children, class: cls, ...attrs }: AspectRatioProps): JSX.Element {
   return (

@@ -1,14 +1,42 @@
 import { signal } from "@hellajs/core";
-import type { Signal } from "@hellajs/core";
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
-import { cn } from "./cn.js";
+import type { HellaNode, HTMLAttributes, HellaChildren } from "@hellajs/dom";
+import type { Signal } from "@hellajs/core";
 
 interface AvatarProps extends HTMLAttributes<"div"> {
   class?: string;
   children?: HellaChildren;
   size?: "default" | "sm" | "lg";
 }
+
+interface AvatarImageProps extends HTMLAttributes<"img"> {
+  class?: string;
+  /** Shared loaded state: flipped by load/error, read by AvatarFallback to swap visibility. */
+  loaded?: Signal<boolean>;
+}
+
+interface AvatarFallbackProps extends HTMLAttributes<"span"> {
+  class?: string;
+  children?: HellaChildren;
+  /** Shared loaded state: the fallback hides while the signal reads true. */
+  loaded?: () => boolean;
+}
+
+interface AvatarBadgeProps extends HTMLAttributes<"span"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface AvatarGroupProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface AvatarGroupCountProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
+import { cn } from "./cn.js";
 
 export function Avatar({ size, children, class: cls, ...attrs }: AvatarProps): HellaNode {
   return html`
@@ -21,12 +49,6 @@ export function Avatar({ size, children, class: cls, ...attrs }: AvatarProps): H
       ...${attrs}
     >${() => children}</div>
   ` as HellaNode;
-}
-
-interface AvatarImageProps extends HTMLAttributes<"img"> {
-  class?: string;
-  /** Shared loaded state: flipped by load/error, read by AvatarFallback to swap visibility. */
-  loaded?: Signal<boolean>;
 }
 
 export function AvatarImage({ loaded: loadedSignal, class: cls, ...attrs }: AvatarImageProps): HellaNode {
@@ -45,13 +67,6 @@ export function AvatarImage({ loaded: loadedSignal, class: cls, ...attrs }: Avat
   ` as HellaNode;
 }
 
-interface AvatarFallbackProps extends HTMLAttributes<"span"> {
-  class?: string;
-  children?: HellaChildren;
-  /** Shared loaded state: the fallback hides while the signal reads true. */
-  loaded?: () => boolean;
-}
-
 export function AvatarFallback({ loaded, children, class: cls, ...attrs }: AvatarFallbackProps): HellaNode {
   return html`
     <span
@@ -63,11 +78,6 @@ export function AvatarFallback({ loaded, children, class: cls, ...attrs }: Avata
       ...${attrs}
     >${() => children}</span>
   ` as HellaNode;
-}
-
-interface AvatarBadgeProps extends HTMLAttributes<"span"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function AvatarBadge({ children, class: cls, ...attrs }: AvatarBadgeProps): HellaNode {
@@ -82,11 +92,6 @@ export function AvatarBadge({ children, class: cls, ...attrs }: AvatarBadgeProps
   ` as HellaNode;
 }
 
-interface AvatarGroupProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function AvatarGroup({ children, class: cls, ...attrs }: AvatarGroupProps): HellaNode {
   return html`
     <div
@@ -97,11 +102,6 @@ export function AvatarGroup({ children, class: cls, ...attrs }: AvatarGroupProps
       ...${attrs}
     >${() => children}</div>
   ` as HellaNode;
-}
-
-interface AvatarGroupCountProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function AvatarGroupCount({ children, class: cls, ...attrs }: AvatarGroupCountProps): HellaNode {

@@ -1,6 +1,7 @@
 import { effect, signal } from "@hellajs/core";
 import { anchorPosition, html, layerDismissal, menuTypeahead, Portal } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChild, HellaChildren, HellaNode, Placement } from "@hellajs/dom";
+import type { HellaChild, HellaNode, Placement } from "@hellajs/dom";
+import type { AnchorSide, AnchorAlign, DropdownMenuTriggerProps, DropdownMenuContentProps, DropdownMenuPartProps, DropdownMenuItemProps, DropdownMenuCheckboxItemProps, DropdownMenuRadioGroupProps, DropdownMenuRadioItemProps, DropdownMenuLabelProps, DropdownMenuShortcutProps, DropdownMenuSubTriggerProps, DropdownMenuSubContentProps, DropdownMenuSubProps, DropdownMenuProps } from "./dropdown-menu-types.js";
 
 // @hella:styles
 declare const base: string;
@@ -19,9 +20,6 @@ declare const subContent: string;
 declare const subTrigger: string;
 // @hella:end
 
-type AnchorSide = "top" | "bottom" | "left" | "right";
-type AnchorAlign = "start" | "center" | "end";
-
 const placementOf = (side: AnchorSide, align: AnchorAlign): Placement =>
   align === "center" ? side : `${side}-${align}`;
 
@@ -31,12 +29,6 @@ const SELECT_EVENT = "hella:menu-select";
 const closeAllMenus = (): void => {
   document.dispatchEvent(new CustomEvent(SELECT_EVENT));
 };
-
-interface MenuEntry {
-  value: string;
-  label?: HellaChildren;
-  disabled?: boolean;
-}
 
 /** Open/close state shared by the composed root and submenus: controlled override, exit-holding `visible` gate. */
 function menuOpenState(props: { open?: () => boolean; onOpenChange?: (open: boolean) => void }) {
@@ -211,11 +203,6 @@ const chevronIcon = (): HellaNode =>
     <path d="m9 18 6-6-6-6" />
   </svg>` as HellaNode;
 
-interface DropdownMenuTriggerProps extends HTMLAttributes<"span"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 /** The manual trigger button; the composed DropdownMenu renders the same shape wired to toggle + aria state. */
 export function DropdownMenuTrigger({ children, class: cls, ...attrs }: DropdownMenuTriggerProps): HellaNode {
   return html`
@@ -231,26 +218,6 @@ export function DropdownMenuTrigger({ children, class: cls, ...attrs }: Dropdown
       ...${attrs}
     >${() => children}</button>
   ` as HellaNode;
-}
-
-interface DropdownMenuContentProps extends HTMLAttributes<"div"> {
-  state?: () => "open" | "closed";
-  side?: AnchorSide;
-  align?: AnchorAlign;
-  /** Gap between the anchor and the content edge, in px. Default 4. */
-  sideOffset?: number;
-  /** Cross-axis shift applied after positioning, in px. Default 0. */
-  alignOffset?: number;
-  /** Resolves the element the content anchors to; positioning is skipped when undefined. */
-  anchor?: () => Element | undefined;
-  /** When given, Escape and an outside pointerdown dismiss the top layer into this callback, and item selection closes every open layer. */
-  onDismiss?: () => void;
-  /** Called when the exit animation ends under data-state="closed"; entry animationends are ignored. */
-  onExited?: () => void;
-  /** ArrowLeft closes the menu when provided (submenu exit; a top-level menu stays inert). */
-  onArrowLeft?: () => void;
-  children?: HellaChildren;
-  class?: string;
 }
 
 export function DropdownMenuContent({ state, id, side: sideProp, align: alignProp, sideOffset, alignOffset: alignOffsetProp, anchor, onDismiss, onExited, onArrowLeft, children, class: cls, ...attrs }: DropdownMenuContentProps): HellaNode {
@@ -325,11 +292,6 @@ export function DropdownMenuContent({ state, id, side: sideProp, align: alignPro
   ` as HellaNode;
 }
 
-interface DropdownMenuPartProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function DropdownMenuGroup({ children, class: cls, ...attrs }: DropdownMenuPartProps): HellaNode {
   return html`
     <div
@@ -342,15 +304,6 @@ export function DropdownMenuGroup({ children, class: cls, ...attrs }: DropdownMe
       ...${attrs}
     >${() => children}</div>
   ` as HellaNode;
-}
-
-interface DropdownMenuItemProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  destructive?: boolean;
-  inset?: boolean;
-  /** Shortcut text rendered as a trailing Shortcut span. */
-  shortcut?: string;
-  class?: string;
 }
 
 export function DropdownMenuItem({ destructive, inset, disabled, "on:click": userClick, shortcut: shortcutSlot, children, class: cls, ...attrs }: DropdownMenuItemProps): HellaNode {
@@ -378,14 +331,6 @@ export function DropdownMenuItem({ destructive, inset, disabled, "on:click": use
       ${() => children}${() => (shortcutSlot !== undefined ? DropdownMenuShortcut({ children: shortcutSlot }) : null)}
     </div>
   ` as HellaNode;
-}
-
-interface DropdownMenuCheckboxItemProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  /** Checked state. A boolean seeds the internal signal; an accessor makes the item controlled - activation then only reports through `onCheckedChange`. */
-  checked?: boolean | (() => boolean);
-  onCheckedChange?: (checked: boolean) => void;
-  class?: string;
 }
 
 export function DropdownMenuCheckboxItem({ checked: checkedProp, onCheckedChange, disabled, children, class: cls, ...attrs }: DropdownMenuCheckboxItemProps): HellaNode {
@@ -431,15 +376,6 @@ export function DropdownMenuCheckboxItem({ checked: checkedProp, onCheckedChange
   ` as HellaNode;
 }
 
-interface DropdownMenuRadioGroupProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  items?: MenuEntry[];
-  /** Controlled selected value. When given, the group never writes its internal signal and `onValueChange` reports the requested selection. */
-  value?: () => string;
-  onValueChange?: (value: string) => void;
-  class?: string;
-}
-
 export function DropdownMenuRadioGroup({ items, value: valueProp, onValueChange, children, class: cls, ...attrs }: DropdownMenuRadioGroupProps): HellaNode {
   const internal = signal("");
   const current = (): string => (valueProp !== undefined ? valueProp() : internal());
@@ -466,15 +402,6 @@ export function DropdownMenuRadioGroup({ items, value: valueProp, onValueChange,
       }))}
     </div>
   ` as HellaNode;
-}
-
-interface DropdownMenuRadioItemProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  value?: string;
-  /** Checked state. A boolean reads statically; an accessor keeps the item reactive against its owning group. */
-  checked?: boolean | (() => boolean);
-  onSelect?: () => void;
-  class?: string;
 }
 
 export function DropdownMenuRadioItem({ value, checked: checkedProp, onSelect, disabled, children, class: cls, ...attrs }: DropdownMenuRadioItemProps): HellaNode {
@@ -517,12 +444,6 @@ export function DropdownMenuRadioItem({ value, checked: checkedProp, onSelect, d
   ` as HellaNode;
 }
 
-interface DropdownMenuLabelProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  inset?: boolean;
-  class?: string;
-}
-
 export function DropdownMenuLabel({ inset, children, class: cls, ...attrs }: DropdownMenuLabelProps): HellaNode {
   return html`
     <div
@@ -553,11 +474,6 @@ export function DropdownMenuSeparator({ class: cls, ...attrs }: DropdownMenuPart
   ` as HellaNode;
 }
 
-interface DropdownMenuShortcutProps extends HTMLAttributes<"span"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function DropdownMenuShortcut({ children, class: cls, ...attrs }: DropdownMenuShortcutProps): HellaNode {
   return html`
     <span
@@ -570,16 +486,6 @@ export function DropdownMenuShortcut({ children, class: cls, ...attrs }: Dropdow
       ...${attrs}
     >${() => children}</span>
   ` as HellaNode;
-}
-
-interface DropdownMenuSubTriggerProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  inset?: boolean;
-  /** Resolves the open state for `aria-expanded`/`data-state`; the composed Sub wires it. */
-  state?: () => "open" | "closed";
-  /** Called on click and hover intent to open the submenu. */
-  onOpen?: () => void;
-  class?: string;
 }
 
 export function DropdownMenuSubTrigger({ inset, state, onOpen, children, class: cls, ...attrs }: DropdownMenuSubTriggerProps): HellaNode {
@@ -632,25 +538,6 @@ export function DropdownMenuSubTrigger({ inset, state, onOpen, children, class: 
       ${() => children}${chevronIcon()}
     </div>
   ` as HellaNode;
-}
-
-interface DropdownMenuSubContentProps extends HTMLAttributes<"div"> {
-  state?: () => "open" | "closed";
-  side?: AnchorSide;
-  align?: AnchorAlign;
-  sideOffset?: number;
-  /** Resolves the element the content anchors to (the sub-trigger); positioning is skipped when undefined. */
-  anchor?: () => Element | undefined;
-  /** When given, Escape and an outside pointerdown dismiss the top layer into this callback, and item selection closes every open layer. */
-  onDismiss?: () => void;
-  /** Called when the exit animation ends under data-state="closed"; entry animationends are ignored. */
-  onExited?: () => void;
-  /** ArrowLeft closes the submenu. */
-  onArrowLeft?: () => void;
-  /** Pointer entering the content cancels the trigger's pending close. */
-  onPointerEnter?: () => void;
-  children?: HellaChildren;
-  class?: string;
 }
 
 export function DropdownMenuSubContent({ state, side: sideProp, align: alignProp, sideOffset, anchor, onDismiss, onExited, onArrowLeft, onPointerEnter, children, class: cls, ...attrs }: DropdownMenuSubContentProps): HellaNode {
@@ -719,12 +606,6 @@ export function DropdownMenuSubContent({ state, side: sideProp, align: alignProp
       ...${attrs}
     >${() => children}</div>
   ` as HellaNode;
-}
-
-interface DropdownMenuSubProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  content?: HellaChildren;
-  class?: string;
 }
 
 export function DropdownMenuSub({ content: contentSlot, children, class: cls, ...attrs }: DropdownMenuSubProps): HellaNode {
@@ -815,14 +696,6 @@ export function DropdownMenuSub({ content: contentSlot, children, class: cls, ..
       })}
     </div>
   ` as HellaNode;
-}
-
-interface DropdownMenuProps extends HTMLAttributes<"button"> {
-  open?: () => boolean;
-  onOpenChange?: (open: boolean) => void;
-  children?: HellaChildren;
-  content?: HellaChildren;
-  class?: string;
 }
 
 let dropdownMenuCount = 0;

@@ -1,5 +1,60 @@
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HellaChild, HellaNode, HTMLAttributes, HellaChildren } from "@hellajs/dom";
+
+interface FieldSetProps extends HTMLAttributes<"fieldset"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface FieldLegendProps extends HTMLAttributes<"legend"> {
+  class?: string;
+  children?: HellaChildren;
+  variant?: "legend" | "label";
+}
+
+interface FieldGroupProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface FieldProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+  orientation?: "vertical" | "horizontal" | "responsive";
+  /** Renders data-invalid="true" (destructive text) on the field; `disabled` (native attr) renders data-disabled="true" (label/title opacity). */
+  invalid?: boolean;
+}
+
+interface FieldContentProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface FieldLabelProps extends HTMLAttributes<"label"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface FieldTitleProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface FieldDescriptionProps extends HTMLAttributes<"p"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface FieldSeparatorProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface FieldErrorProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+  errors?: Array<{ message?: string } | undefined>;
+}
 import { cn } from "./cn.js";
 
 const legendVariants = {
@@ -13,11 +68,6 @@ const orientation = {
   responsive: "flex-col @md/field-group:flex-row @md/field-group:items-center [&>*]:w-full @md/field-group:[&>*]:w-auto [&>.sr-only]:w-auto @md/field-group:[&>[data-slot=field-label]]:flex-auto @md/field-group:has-[>[data-slot=field-content]]:items-start @md/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px",
 };
 
-interface FieldSetProps extends HTMLAttributes<"fieldset"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function FieldSet({ children, class: cls, ...attrs }: FieldSetProps): HellaNode {
   return html`
     <fieldset
@@ -28,12 +78,6 @@ export function FieldSet({ children, class: cls, ...attrs }: FieldSetProps): Hel
       ...${attrs}
     >${() => children}</fieldset>
   ` as HellaNode;
-}
-
-interface FieldLegendProps extends HTMLAttributes<"legend"> {
-  class?: string;
-  children?: HellaChildren;
-  variant?: "legend" | "label";
 }
 
 export function FieldLegend({ variant, children, class: cls, ...attrs }: FieldLegendProps): HellaNode {
@@ -53,11 +97,6 @@ export function FieldLegend({ variant, children, class: cls, ...attrs }: FieldLe
   ` as HellaNode;
 }
 
-interface FieldGroupProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function FieldGroup({ children, class: cls, ...attrs }: FieldGroupProps): HellaNode {
   return html`
     <div
@@ -68,14 +107,6 @@ export function FieldGroup({ children, class: cls, ...attrs }: FieldGroupProps):
       ...${attrs}
     >${() => children}</div>
   ` as HellaNode;
-}
-
-interface FieldProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  orientation?: "vertical" | "horizontal" | "responsive";
-  /** Renders data-invalid="true" (destructive text) on the field; `disabled` (native attr) renders data-disabled="true" (label/title opacity). */
-  invalid?: boolean;
 }
 
 export function Field({ orientation: orient, disabled, invalid, children, class: cls, ...attrs }: FieldProps): HellaNode {
@@ -98,11 +129,6 @@ export function Field({ orientation: orient, disabled, invalid, children, class:
   ` as HellaNode;
 }
 
-interface FieldContentProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function FieldContent({ children, class: cls, ...attrs }: FieldContentProps): HellaNode {
   return html`
     <div
@@ -113,11 +139,6 @@ export function FieldContent({ children, class: cls, ...attrs }: FieldContentPro
       ...${attrs}
     >${() => children}</div>
   ` as HellaNode;
-}
-
-interface FieldLabelProps extends HTMLAttributes<"label"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function FieldLabel({ children, class: cls, ...attrs }: FieldLabelProps): HellaNode {
@@ -132,11 +153,6 @@ export function FieldLabel({ children, class: cls, ...attrs }: FieldLabelProps):
   ` as HellaNode;
 }
 
-interface FieldTitleProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function FieldTitle({ children, class: cls, ...attrs }: FieldTitleProps): HellaNode {
   return html`
     <div
@@ -149,11 +165,6 @@ export function FieldTitle({ children, class: cls, ...attrs }: FieldTitleProps):
   ` as HellaNode;
 }
 
-interface FieldDescriptionProps extends HTMLAttributes<"p"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function FieldDescription({ children, class: cls, ...attrs }: FieldDescriptionProps): HellaNode {
   return html`
     <p
@@ -164,11 +175,6 @@ export function FieldDescription({ children, class: cls, ...attrs }: FieldDescri
       ...${attrs}
     >${() => children}</p>
   ` as HellaNode;
-}
-
-interface FieldSeparatorProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function FieldSeparator({ children, class: cls, ...attrs }: FieldSeparatorProps): HellaNode {
@@ -190,12 +196,6 @@ export function FieldSeparator({ children, class: cls, ...attrs }: FieldSeparato
         ? html`<span data-slot="field-separator-content" class="${["relative mx-auto block w-fit bg-background px-2 text-muted-foreground"]}">${() => children}</span>`
         : null}</div>
   ` as HellaNode;
-}
-
-interface FieldErrorProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  errors?: Array<{ message?: string } | undefined>;
 }
 
 export function FieldError({ errors, children, class: cls, ...attrs }: FieldErrorProps): HellaNode {

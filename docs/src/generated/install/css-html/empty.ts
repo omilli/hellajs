@@ -1,5 +1,16 @@
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HellaNode, HTMLAttributes, HellaChildren } from "@hellajs/dom";
+
+interface EmptyPartProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface EmptyMediaProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+  variant?: "default" | "icon";
+}
 
 import { style } from "@hellajs/css";
 import { tokens } from "./tokens.js";
@@ -101,11 +112,6 @@ const content = style("empty-content", {
   width: "100%",
 });
 
-interface EmptyPartProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function Empty({ children, class: cls, ...attrs }: EmptyPartProps): HellaNode {
   return html`
     <div
@@ -128,12 +134,6 @@ export function EmptyHeader({ children, class: cls, ...attrs }: EmptyPartProps):
       ...${attrs}
     >${() => children}</div>
   ` as HellaNode;
-}
-
-interface EmptyMediaProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  variant?: "default" | "icon";
 }
 
 export function EmptyMedia({ variant, children, class: cls, ...attrs }: EmptyMediaProps): HellaNode {

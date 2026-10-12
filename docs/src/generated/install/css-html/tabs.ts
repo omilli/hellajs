@@ -1,6 +1,48 @@
 import { html, rovingTabIndex } from "@hellajs/dom";
 import { signal } from "@hellajs/core";
-import type { HTMLAttributes, HellaChild, HellaNode } from "@hellajs/dom";
+import type { HellaNode, HTMLAttributes, HellaChild } from "@hellajs/dom";
+
+interface TabsItem {
+  id: string;
+  label: string;
+  content: HellaChild | (() => HellaChild);
+}
+
+interface TabsProps extends HTMLAttributes<"div"> {
+  class?: string;
+  items: TabsItem[];
+  initialId?: string;
+  orientation?: "horizontal" | "vertical";
+  variant?: "default" | "line";
+}
+
+interface TabsListProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChild | HellaChild[];
+  variant?: "default" | "line";
+  orientation?: "horizontal" | "vertical";
+}
+
+interface TabsTriggerProps extends HTMLAttributes<"button"> {
+  class?: string;
+  /** The raw TabsItem id - the DOM id is `${TAB_ID}${id}`. */
+  id?: string;
+  children?: HellaChild;
+  active?: () => boolean;
+  onActivate?: () => void;
+  orientation?: "horizontal" | "vertical";
+  listVariant?: "default" | "line";
+}
+
+interface TabsContentProps extends HTMLAttributes<"div"> {
+  class?: string;
+  /** The raw TabsItem id - the DOM id is `${PANEL_ID}${id}`. */
+  id?: string;
+  children?: HellaChild | (() => HellaChild);
+  active?: () => boolean;
+}
+
+export type { TabsItem };
 
 import { css, style } from "@hellajs/css";
 import { tokens } from "./tokens.js";
@@ -143,46 +185,6 @@ css({
     opacity: "1",
   },
 });
-
-export interface TabsItem {
-  id: string;
-  label: string;
-  content: HellaChild | (() => HellaChild);
-}
-
-interface TabsProps extends HTMLAttributes<"div"> {
-  class?: string;
-  items: TabsItem[];
-  initialId?: string;
-  orientation?: "horizontal" | "vertical";
-  variant?: "default" | "line";
-}
-
-interface TabsListProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChild | HellaChild[];
-  variant?: "default" | "line";
-  orientation?: "horizontal" | "vertical";
-}
-
-interface TabsTriggerProps extends HTMLAttributes<"button"> {
-  class?: string;
-  /** The raw TabsItem id - the DOM id is `${TAB_ID}${id}`. */
-  id?: string;
-  children?: HellaChild;
-  active?: () => boolean;
-  onActivate?: () => void;
-  orientation?: "horizontal" | "vertical";
-  listVariant?: "default" | "line";
-}
-
-interface TabsContentProps extends HTMLAttributes<"div"> {
-  class?: string;
-  /** The raw TabsItem id - the DOM id is `${PANEL_ID}${id}`. */
-  id?: string;
-  children?: HellaChild | (() => HellaChild);
-  active?: () => boolean;
-}
 
 const TAB_ID = "hella-tabs-tab-";
 const PANEL_ID = "hella-tabs-panel-";

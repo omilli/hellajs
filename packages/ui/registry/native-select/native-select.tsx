@@ -1,4 +1,4 @@
-import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
+import type { NativeSelectProps, NativeSelectOptionProps, NativeSelectOptGroupProps } from "./native-select-types.js";
 
 // @hella:styles
 declare const base: string;
@@ -9,13 +9,6 @@ declare const optgroup: string;
 declare const option: string;
 declare const wrapper: string;
 // @hella:end
-
-interface NativeSelectProps extends HTMLAttributes<"select"> {
-  class?: string;
-  children?: HellaChildren;
-  value?: string | (() => string);
-  size?: "sm" | "default";
-}
 
 export function NativeSelect({ value, size, children, class: cls, ...attrs }: NativeSelectProps): JSX.Element {
   return (
@@ -72,16 +65,6 @@ export function NativeSelect({ value, size, children, class: cls, ...attrs }: Na
       </svg>
     </div>
   );
-}
-
-interface NativeSelectOptionProps extends HTMLAttributes<"option"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
-interface NativeSelectOptGroupProps extends HTMLAttributes<"optgroup"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function NativeSelectOption({ children, class: cls, ...attrs }: NativeSelectOptionProps): JSX.Element {

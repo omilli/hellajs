@@ -1,6 +1,5 @@
 import { signal } from "@hellajs/core";
 import type { HTMLAttributes } from "@hellajs/dom";
-import { cn } from "./cn.js";
 
 interface CheckboxProps extends HTMLAttributes<"button"> {
   class?: string;
@@ -10,6 +9,7 @@ interface CheckboxProps extends HTMLAttributes<"button"> {
   indeterminate?: boolean | (() => boolean);
   onCheckedChange?: (checked: boolean) => void;
 }
+import { cn } from "./cn.js";
 
 /** The check icon (refs/icons/check.svg), created per call so reactive swaps never share nodes between clones. */
 const checkIcon = (): JSX.Element => (

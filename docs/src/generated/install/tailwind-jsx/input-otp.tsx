@@ -1,6 +1,5 @@
 import { effect, signal } from "@hellajs/core";
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
-import { cn } from "./cn.js";
 
 interface InputOTPProps extends HTMLAttributes<"div"> {
   class?: string;
@@ -14,6 +13,22 @@ interface InputOTPProps extends HTMLAttributes<"div"> {
   /** Fires once per transition to a full code. */
   onComplete?: (value: string) => void;
 }
+
+interface InputOTPGroupProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface InputOTPSlotProps extends HTMLAttributes<"div"> {
+  class?: string;
+  /** Slot position this mirror renders; the root wires its char and caret state after mount. */
+  index: number;
+}
+
+interface InputOTPSeparatorProps extends HTMLAttributes<"div"> {
+  class?: string;
+}
+import { cn } from "./cn.js";
 
 export function InputOTP({ length: lengthProp, value: valueProp, onChange, onComplete, pattern: patternAttr, autofocus: autofocusAttr, disabled: disabledAttr, class: cls, children, ...attrs }: InputOTPProps): JSX.Element {
   const length = lengthProp ?? 6;
@@ -209,11 +224,6 @@ export function InputOTP({ length: lengthProp, value: valueProp, onChange, onCom
   );
 }
 
-interface InputOTPGroupProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function InputOTPGroup({ children, class: cls, ...attrs }: InputOTPGroupProps): JSX.Element {
   return (
     <div
@@ -226,12 +236,6 @@ export function InputOTPGroup({ children, class: cls, ...attrs }: InputOTPGroupP
       {children}
     </div>
   );
-}
-
-interface InputOTPSlotProps extends HTMLAttributes<"div"> {
-  class?: string;
-  /** Slot position this mirror renders; the root wires its char and caret state after mount. */
-  index: number;
 }
 
 export function InputOTPSlot({ index, class: cls, ...attrs }: InputOTPSlotProps): JSX.Element {
@@ -258,10 +262,6 @@ export function InputOTPSlot({ index, class: cls, ...attrs }: InputOTPSlotProps)
       </div>
     </div>
   );
-}
-
-interface InputOTPSeparatorProps extends HTMLAttributes<"div"> {
-  class?: string;
 }
 
 export function InputOTPSeparator({ class: cls, ...attrs }: InputOTPSeparatorProps): JSX.Element {

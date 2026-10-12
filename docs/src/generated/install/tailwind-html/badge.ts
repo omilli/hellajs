@@ -1,5 +1,11 @@
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HellaNode, HTMLAttributes, HellaChildren } from "@hellajs/dom";
+
+interface BadgeProps extends HTMLAttributes<"span"> {
+  class?: string;
+  children?: HellaChildren;
+  variant?: "default" | "secondary" | "destructive" | "outline" | "ghost" | "link";
+}
 import { cn } from "./cn.js";
 
 const variants = {
@@ -10,12 +16,6 @@ const variants = {
   ghost: "[a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
   link: "text-primary underline-offset-4 [a&]:hover:underline",
 };
-
-interface BadgeProps extends HTMLAttributes<"span"> {
-  class?: string;
-  children?: HellaChildren;
-  variant?: "default" | "secondary" | "destructive" | "outline" | "ghost" | "link";
-}
 
 export function Badge({ variant, children, class: cls, ...attrs }: BadgeProps): HellaNode {
   return html`

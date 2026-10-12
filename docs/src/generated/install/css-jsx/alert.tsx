@@ -1,5 +1,16 @@
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
+interface AlertProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+  variant?: "default" | "destructive";
+}
+
+interface AlertPartProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
 import { style } from "@hellajs/css";
 import { tokens } from "./tokens.js";
 
@@ -71,12 +82,6 @@ const description = style("alert-description", {
   },
 });
 
-interface AlertProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  variant?: "default" | "destructive";
-}
-
 export function Alert({ variant, children, class: cls, ...attrs }: AlertProps): JSX.Element {
   return (
     <div
@@ -94,11 +99,6 @@ export function Alert({ variant, children, class: cls, ...attrs }: AlertProps): 
       {children}
     </div>
   );
-}
-
-interface AlertPartProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function AlertTitle({ children, class: cls, ...attrs }: AlertPartProps): JSX.Element {

@@ -1,11 +1,11 @@
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
-import { cn } from "./cn.js";
 
 interface DirectionProviderProps extends HTMLAttributes<"div"> {
   class?: string;
   children?: HellaChildren;
   dir?: "ltr" | "rtl";
 }
+import { cn } from "./cn.js";
 
 /**
  * Renders a layout-neutral wrapper carrying the dir attribute. Upstream is a

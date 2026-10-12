@@ -1,5 +1,6 @@
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HellaNode } from "@hellajs/dom";
+import type { EmptyPartProps, EmptyMediaProps } from "./empty-types.js";
 
 // @hella:styles
 declare const base: string;
@@ -10,11 +11,6 @@ declare const media: string;
 declare const mediaVariants: Record<string, string>;
 declare const title: string;
 // @hella:end
-
-interface EmptyPartProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
 
 export function Empty({ children, class: cls, ...attrs }: EmptyPartProps): HellaNode {
   return html`
@@ -42,12 +38,6 @@ export function EmptyHeader({ children, class: cls, ...attrs }: EmptyPartProps):
       ...${attrs}
     >${() => children}</div>
   ` as HellaNode;
-}
-
-interface EmptyMediaProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  variant?: "default" | "icon";
 }
 
 export function EmptyMedia({ variant, children, class: cls, ...attrs }: EmptyMediaProps): HellaNode {

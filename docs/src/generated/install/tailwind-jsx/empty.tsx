@@ -1,15 +1,21 @@
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
+
+interface EmptyPartProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface EmptyMediaProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+  variant?: "default" | "icon";
+}
 import { cn } from "./cn.js";
 
 const mediaVariants = {
   default: "bg-transparent",
   icon: "flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground [&_svg:not([class*='size-'])]:size-6",
 };
-
-interface EmptyPartProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
 
 export function Empty({ children, class: cls, ...attrs }: EmptyPartProps): JSX.Element {
   return (
@@ -37,12 +43,6 @@ export function EmptyHeader({ children, class: cls, ...attrs }: EmptyPartProps):
       {children}
     </div>
   );
-}
-
-interface EmptyMediaProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  variant?: "default" | "icon";
 }
 
 export function EmptyMedia({ variant, children, class: cls, ...attrs }: EmptyMediaProps): JSX.Element {

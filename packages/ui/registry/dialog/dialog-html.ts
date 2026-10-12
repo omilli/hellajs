@@ -1,6 +1,7 @@
 import { effect, signal } from "@hellajs/core";
 import { html, onEscape, onOutside, Portal, trapFocus } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HellaChild, HellaNode } from "@hellajs/dom";
+import type { DialogOverlayProps, DialogCloseProps, DialogContentProps, DialogPartProps, DialogTitleProps, DialogDescriptionProps, DialogProps } from "./dialog-types.js";
 
 // @hella:styles
 declare const base: string;
@@ -13,12 +14,6 @@ declare const title: string;
 // @hella:end
 
 /** Accessibility state shared by the animated dialog parts. */
-type DialogState = () => "open" | "closed";
-
-interface DialogOverlayProps extends HTMLAttributes<"div"> {
-  state?: DialogState;
-  class?: string;
-}
 
 export function DialogOverlay({ state, class: cls, ...attrs }: DialogOverlayProps): HellaNode {
   return html`
@@ -33,12 +28,6 @@ export function DialogOverlay({ state, class: cls, ...attrs }: DialogOverlayProp
       ...${attrs}
     />
   ` as HellaNode;
-}
-
-interface DialogCloseProps extends HTMLAttributes<"button"> {
-  state?: DialogState;
-  onClose?: () => void;
-  class?: string;
 }
 
 export function DialogClose({ state, onClose, "on:click": userClick, class: cls, ...attrs }: DialogCloseProps): HellaNode {
@@ -72,17 +61,6 @@ export function DialogClose({ state, onClose, "on:click": userClick, class: cls,
       <span class="sr-only">Close</span>
     </button>
   ` as HellaNode;
-}
-
-interface DialogContentProps extends HTMLAttributes<"div"> {
-  state?: DialogState;
-  showCloseButton?: boolean;
-  closeOnEscape?: boolean;
-  closeOnOutside?: boolean;
-  onClose?: () => void;
-  onExited?: () => void;
-  class?: string;
-  children?: HellaChildren;
 }
 
 /**
@@ -149,11 +127,6 @@ export function DialogContent({ state, showCloseButton, closeOnEscape, closeOnOu
   ` as HellaNode;
 }
 
-interface DialogPartProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function DialogHeader({ children, class: cls, ...attrs }: DialogPartProps): HellaNode {
   return html`
     <div
@@ -182,11 +155,6 @@ export function DialogFooter({ children, class: cls, ...attrs }: DialogPartProps
   ` as HellaNode;
 }
 
-interface DialogTitleProps extends HTMLAttributes<"h2"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function DialogTitle({ id, children, class: cls, ...attrs }: DialogTitleProps): HellaNode {
   return html`
     <h2
@@ -202,11 +170,6 @@ export function DialogTitle({ id, children, class: cls, ...attrs }: DialogTitleP
   ` as HellaNode;
 }
 
-interface DialogDescriptionProps extends HTMLAttributes<"p"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function DialogDescription({ id, children, class: cls, ...attrs }: DialogDescriptionProps): HellaNode {
   return html`
     <p
@@ -220,18 +183,6 @@ export function DialogDescription({ id, children, class: cls, ...attrs }: Dialog
       ...${attrs}
     >${() => children}</p>
   ` as HellaNode;
-}
-
-interface DialogProps extends HTMLAttributes<"div"> {
-  open: () => boolean;
-  onClose: () => void;
-  title?: string;
-  description?: string;
-  showCloseButton?: boolean;
-  closeOnEscape?: boolean;
-  closeOnOutside?: boolean;
-  class?: string;
-  children?: HellaChildren;
 }
 
 let dialogCount = 0;

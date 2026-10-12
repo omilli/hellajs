@@ -1,16 +1,26 @@
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
-import { cn } from "./cn.js";
-
-const variants: Record<string, string> = {
-  separator: "before:mr-1 before:h-px before:min-w-0 before:flex-1 before:bg-border after:ml-1 after:h-px after:min-w-0 after:flex-1 after:bg-border",
-  border: "border-b border-border pb-2",
-};
 
 interface MarkerProps extends HTMLAttributes<"div"> {
   class?: string;
   children?: HellaChildren;
   variant?: "default" | "separator" | "border";
 }
+
+interface MarkerIconProps extends HTMLAttributes<"span"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface MarkerContentProps extends HTMLAttributes<"span"> {
+  class?: string;
+  children?: HellaChildren;
+}
+import { cn } from "./cn.js";
+
+const variants: Record<string, string> = {
+  separator: "before:mr-1 before:h-px before:min-w-0 before:flex-1 before:bg-border after:ml-1 after:h-px after:min-w-0 after:flex-1 after:bg-border",
+  border: "border-b border-border pb-2",
+};
 
 export function Marker({ variant, children, class: cls, ...attrs }: MarkerProps): JSX.Element {
   return (
@@ -31,11 +41,6 @@ export function Marker({ variant, children, class: cls, ...attrs }: MarkerProps)
   );
 }
 
-interface MarkerIconProps extends HTMLAttributes<"span"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function MarkerIcon({ children, class: cls, ...attrs }: MarkerIconProps): JSX.Element {
   return (
     <span
@@ -49,11 +54,6 @@ export function MarkerIcon({ children, class: cls, ...attrs }: MarkerIconProps):
       {children}
     </span>
   );
-}
-
-interface MarkerContentProps extends HTMLAttributes<"span"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function MarkerContent({ children, class: cls, ...attrs }: MarkerContentProps): JSX.Element {

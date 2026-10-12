@@ -1,21 +1,13 @@
 import { html } from "@hellajs/dom";
 import { signal } from "@hellajs/core";
-import type { HTMLAttributes, HellaNode } from "@hellajs/dom";
+import type { HellaNode } from "@hellajs/dom";
+import type { CheckboxProps } from "./checkbox-types.js";
 
 // @hella:styles
 declare const base: string;
 declare const icon: string;
 declare const indicator: string;
 // @hella:end
-
-interface CheckboxProps extends HTMLAttributes<"button"> {
-  class?: string;
-  /** Checked state. A boolean seeds the internal signal; an accessor makes the checkbox controlled — clicks then only report through `onCheckedChange`. */
-  checked?: boolean | (() => boolean);
-  /** Indeterminate (mixed) state. A boolean seeds the internal signal; an accessor makes it controlled. Wins over `checked` for rendering. */
-  indeterminate?: boolean | (() => boolean);
-  onCheckedChange?: (checked: boolean) => void;
-}
 
 /** The check icon (refs/icons/check.svg), created per call so reactive swaps never share nodes between clones. */
 const checkIcon = (): HellaNode =>

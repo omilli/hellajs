@@ -1,6 +1,57 @@
 import { effect, signal } from "@hellajs/core";
 import { onEscape, onOutside, Portal, trapFocus } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChild, HellaChildren } from "@hellajs/dom";
+import type { HellaChild, HellaChildren, HTMLAttributes } from "@hellajs/dom";
+
+type DialogState = () => "open" | "closed";
+
+interface DialogOverlayProps extends HTMLAttributes<"div"> {
+  state?: DialogState;
+  class?: string;
+}
+
+interface DialogCloseProps extends HTMLAttributes<"button"> {
+  state?: DialogState;
+  onClose?: () => void;
+  class?: string;
+}
+
+interface DialogContentProps extends HTMLAttributes<"div"> {
+  state?: DialogState;
+  showCloseButton?: boolean;
+  closeOnEscape?: boolean;
+  closeOnOutside?: boolean;
+  onClose?: () => void;
+  onExited?: () => void;
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface DialogPartProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface DialogTitleProps extends HTMLAttributes<"h2"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface DialogDescriptionProps extends HTMLAttributes<"p"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+interface DialogProps extends HTMLAttributes<"div"> {
+  open: () => boolean;
+  onClose: () => void;
+  title?: string;
+  description?: string;
+  showCloseButton?: boolean;
+  closeOnEscape?: boolean;
+  closeOnOutside?: boolean;
+  class?: string;
+  children?: HellaChildren;
+}
 
 import { keyframes, style } from "@hellajs/css";
 import { tokens } from "./tokens.js";
@@ -131,12 +182,6 @@ const description = style("dialog-description", {
 });
 
 /** Accessibility state shared by the animated dialog parts. */
-type DialogState = () => "open" | "closed";
-
-interface DialogOverlayProps extends HTMLAttributes<"div"> {
-  state?: DialogState;
-  class?: string;
-}
 
 export function DialogOverlay({ state, class: cls, ...attrs }: DialogOverlayProps): JSX.Element {
   return (
@@ -149,12 +194,6 @@ export function DialogOverlay({ state, class: cls, ...attrs }: DialogOverlayProp
       {...attrs}
     />
   );
-}
-
-interface DialogCloseProps extends HTMLAttributes<"button"> {
-  state?: DialogState;
-  onClose?: () => void;
-  class?: string;
 }
 
 export function DialogClose({ state, onClose, "on:click": userClick, class: cls, ...attrs }: DialogCloseProps): JSX.Element {
@@ -186,17 +225,6 @@ export function DialogClose({ state, onClose, "on:click": userClick, class: cls,
       <span class="sr-only">Close</span>
     </button>
   );
-}
-
-interface DialogContentProps extends HTMLAttributes<"div"> {
-  state?: DialogState;
-  showCloseButton?: boolean;
-  closeOnEscape?: boolean;
-  closeOnOutside?: boolean;
-  onClose?: () => void;
-  onExited?: () => void;
-  class?: string;
-  children?: HellaChildren;
 }
 
 /**
@@ -263,11 +291,6 @@ export function DialogContent({ state, showCloseButton, closeOnEscape, closeOnOu
   );
 }
 
-interface DialogPartProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function DialogHeader({ children, class: cls, ...attrs }: DialogPartProps): JSX.Element {
   return (
     <div
@@ -296,11 +319,6 @@ export function DialogFooter({ children, class: cls, ...attrs }: DialogPartProps
   );
 }
 
-interface DialogTitleProps extends HTMLAttributes<"h2"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function DialogTitle({ id, children, class: cls, ...attrs }: DialogTitleProps): JSX.Element {
   return (
     <h2
@@ -316,11 +334,6 @@ export function DialogTitle({ id, children, class: cls, ...attrs }: DialogTitleP
   );
 }
 
-interface DialogDescriptionProps extends HTMLAttributes<"p"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export function DialogDescription({ id, children, class: cls, ...attrs }: DialogDescriptionProps): JSX.Element {
   return (
     <p
@@ -334,18 +347,6 @@ export function DialogDescription({ id, children, class: cls, ...attrs }: Dialog
       {children}
     </p>
   );
-}
-
-interface DialogProps extends HTMLAttributes<"div"> {
-  open: () => boolean;
-  onClose: () => void;
-  title?: string;
-  description?: string;
-  showCloseButton?: boolean;
-  closeOnEscape?: boolean;
-  closeOnOutside?: boolean;
-  class?: string;
-  children?: HellaChildren;
 }
 
 let dialogCount = 0;

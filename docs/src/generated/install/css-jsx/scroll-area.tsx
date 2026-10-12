@@ -2,6 +2,21 @@ import { signal } from "@hellajs/core";
 import { onDrag } from "@hellajs/dom";
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
+interface ScrollBarProps extends HTMLAttributes<"div"> {
+  class?: string;
+  /** Axis the bar tracks and drags. Both orientations may be composed into one root. */
+  orientation?: "vertical" | "horizontal";
+  /** Injectable content watcher returning its own dispose; defaults to a ResizeObserver on the viewport's content. */
+  observe?: (target: Element, onGrow: () => void) => () => void;
+}
+
+interface ScrollAreaProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+  /** Injectable content watcher forwarded to the internal vertical ScrollBar. */
+  observe?: (target: Element, onGrow: () => void) => () => void;
+}
+
 import { style } from "@hellajs/css";
 import { tokens } from "./tokens.js";
 
@@ -61,14 +76,6 @@ const thumb = style("scroll-area-thumb", {
   borderRadius: "9999px",
   backgroundColor: tokens.border,
 });
-
-interface ScrollBarProps extends HTMLAttributes<"div"> {
-  class?: string;
-  /** Axis the bar tracks and drags. Both orientations may be composed into one root. */
-  orientation?: "vertical" | "horizontal";
-  /** Injectable content watcher returning its own dispose; defaults to a ResizeObserver on the viewport's content. */
-  observe?: (target: Element, onGrow: () => void) => () => void;
-}
 
 export function ScrollBar({ orientation: orientationProp, observe, class: cls, ...attrs }: ScrollBarProps): JSX.Element {
   const orientation = (): "vertical" | "horizontal" => orientationProp ?? "vertical";
@@ -168,13 +175,6 @@ export function ScrollBar({ orientation: orientationProp, observe, class: cls, .
       />
     </div>
   );
-}
-
-interface ScrollAreaProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  /** Injectable content watcher forwarded to the internal vertical ScrollBar. */
-  observe?: (target: Element, onGrow: () => void) => () => void;
 }
 
 /**

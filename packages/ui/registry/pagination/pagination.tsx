@@ -1,4 +1,4 @@
-import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
+import type { PaginationProps, PaginationContentProps, PaginationItemProps, PaginationLinkProps, PaginationNavProps, PaginationEllipsisProps } from "./pagination-types.js";
 
 // @hella:styles
 declare const base: string;
@@ -12,11 +12,6 @@ declare const next: string;
 declare const previous: string;
 declare const srOnly: string;
 // @hella:end
-
-interface PaginationProps extends HTMLAttributes<"nav"> {
-  class?: string;
-  children?: HellaChildren;
-}
 
 export function Pagination({ children, class: cls, ...attrs }: PaginationProps): JSX.Element {
   return (
@@ -36,11 +31,6 @@ export function Pagination({ children, class: cls, ...attrs }: PaginationProps):
   );
 }
 
-interface PaginationContentProps extends HTMLAttributes<"ul"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function PaginationContent({ children, class: cls, ...attrs }: PaginationContentProps): JSX.Element {
   return (
     <ul
@@ -57,11 +47,6 @@ export function PaginationContent({ children, class: cls, ...attrs }: Pagination
   );
 }
 
-interface PaginationItemProps extends HTMLAttributes<"li"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function PaginationItem({ children, class: cls, ...attrs }: PaginationItemProps): JSX.Element {
   return (
     <li
@@ -76,14 +61,6 @@ export function PaginationItem({ children, class: cls, ...attrs }: PaginationIte
       {children}
     </li>
   );
-}
-
-interface PaginationLinkProps extends HTMLAttributes<"a"> {
-  class?: string;
-  children?: HellaChildren;
-  /** Renders aria-current="page" and the outline variant; no router coupling — href forwards natively. */
-  isActive?: boolean;
-  size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
 }
 
 export function PaginationLink({ isActive, size, children, class: cls, ...attrs }: PaginationLinkProps): JSX.Element {
@@ -107,12 +84,6 @@ export function PaginationLink({ isActive, size, children, class: cls, ...attrs 
       {children}
     </a>
   );
-}
-
-interface PaginationNavProps extends HTMLAttributes<"a"> {
-  class?: string;
-  /** Renders aria-current="page" and the outline variant. */
-  isActive?: boolean;
 }
 
 export function PaginationPrevious({ isActive, class: cls, ...attrs }: PaginationNavProps): JSX.Element {
@@ -189,10 +160,6 @@ export function PaginationNext({ isActive, class: cls, ...attrs }: PaginationNav
       </svg>
     </a>
   );
-}
-
-interface PaginationEllipsisProps extends HTMLAttributes<"span"> {
-  class?: string;
 }
 
 export function PaginationEllipsis({ class: cls, ...attrs }: PaginationEllipsisProps): JSX.Element {

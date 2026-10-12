@@ -1,6 +1,6 @@
 import { signal } from "@hellajs/core";
 import type { Signal } from "@hellajs/core";
-import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
+import type { FormOptions, FormController, FormItemProps, FormLabelProps, FormControlProps, FormDescriptionProps, FormMessageProps } from "./form-types.js";
 
 // @hella:styles
 declare const base: string;
@@ -10,35 +10,10 @@ declare const message: string;
 // @hella:end
 
 /** Per-field validator: receives the field value and the full values snapshot, returns the error message or null when the value is clean. */
-type FormValidator<T> = (value: T[keyof T], values: T) => string | null;
 
 /** Options bag for createForm. */
-interface FormOptions<T> {
-  /** Per-field validators; a field without one is always clean. */
-  validators?: Partial<Record<keyof T, FormValidator<T>>>;
-}
 
 /** Signals controller createForm returns; the form parts read it through explicit props (no context). */
-interface FormController<T extends object> {
-  /** One writable signal per field. */
-  values: { [K in keyof T]: Signal<T[K]> };
-  /** Current validation messages keyed by field. */
-  errors: Signal<Partial<Record<keyof T, string>>>;
-  /** Fields that have blurred or been submitted. */
-  touched: Signal<Partial<Record<keyof T, boolean>>>;
-  /** True while any field differs from its initial value. */
-  dirty: Signal<boolean>;
-  /** Writes the field value, retracks dirty, and revalidates the field when it is already touched. */
-  setField: <K extends keyof T>(key: K, value: T[K]) => void;
-  /** Marks the field touched and validates it. */
-  blur: (key: keyof T) => void;
-  /** Validates every field; returns true when no messages remain. */
-  validate: () => boolean;
-  /** Restores every field to its initial value and clears errors, touched, and dirty. */
-  reset: () => void;
-  /** Validates all and marks all touched; calls onValid with the values only when clean. The optional event is preventDefaulted. */
-  handleSubmit: (onValid: (values: T) => void) => (e?: Event) => void;
-}
 
 /** Signals-native form controller replacing react-hook-form's provider: values, errors, touched, and dirty are plain signals, validators run on blur, on setField after touch, and on submit. */
 export function createForm<T extends object>(initial: T, options?: FormOptions<T>): FormController<T> {
@@ -110,13 +85,6 @@ export function createForm<T extends object>(initial: T, options?: FormOptions<T
   return { values, errors, touched, dirty, setField, blur, validate, reset, handleSubmit };
 }
 
-interface FormItemProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  /** Error flag; renders data-error="true"/"false" as the container-level hook for the error state. */
-  error?: boolean | (() => boolean);
-}
-
 export function FormItem({ error, children, class: cls, ...attrs }: FormItemProps): JSX.Element {
   const hasError = (): boolean => (typeof error === "function" ? error() : error) === true;
   return (
@@ -133,13 +101,6 @@ export function FormItem({ error, children, class: cls, ...attrs }: FormItemProp
       {children}
     </div>
   );
-}
-
-interface FormLabelProps extends HTMLAttributes<"label"> {
-  class?: string;
-  children?: HellaChildren;
-  /** Error flag; renders data-error="true"/"false", aria-invalid, and the destructive text hook. */
-  error?: boolean | (() => boolean);
 }
 
 export function FormLabel({ required, for: htmlFor, error, children, class: cls, ...attrs }: FormLabelProps): JSX.Element {
@@ -164,15 +125,6 @@ export function FormLabel({ required, for: htmlFor, error, children, class: cls,
   );
 }
 
-interface FormControlProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  /** Error flag; renders aria-invalid="true" on the passthrough wrapper. */
-  invalid?: boolean | (() => boolean);
-  /** aria-describedby target, typically the FormDescription or FormMessage id. */
-  describedBy?: string;
-}
-
 export function FormControl({ invalid, describedBy, children, class: cls, ...attrs }: FormControlProps): JSX.Element {
   const isInvalid = (): boolean => (typeof invalid === "function" ? invalid() : invalid) === true;
   return (
@@ -192,11 +144,6 @@ export function FormControl({ invalid, describedBy, children, class: cls, ...att
   );
 }
 
-interface FormDescriptionProps extends HTMLAttributes<"p"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function FormDescription({ id, children, class: cls, ...attrs }: FormDescriptionProps): JSX.Element {
   return (
     <p
@@ -212,13 +159,6 @@ export function FormDescription({ id, children, class: cls, ...attrs }: FormDesc
       {children}
     </p>
   );
-}
-
-interface FormMessageProps extends HTMLAttributes<"p"> {
-  class?: string;
-  children?: HellaChildren;
-  /** Error messages; the first one renders. An accessor re-evaluates as validation runs. */
-  errors?: string[] | (() => string[] | undefined);
 }
 
 export function FormMessage({ errors, children, class: cls, ...attrs }: FormMessageProps): JSX.Element {

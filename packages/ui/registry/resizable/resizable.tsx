@@ -1,6 +1,6 @@
 import { effect, signal } from "@hellajs/core";
 import { onDrag } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
+import type { ResizablePanelGroupProps, ResizablePanelProps, ResizableHandleProps } from "./resizable-types.js";
 
 // @hella:styles
 declare const base: string;
@@ -8,28 +8,6 @@ declare const grip: string;
 declare const handle: string;
 declare const icon: string;
 // @hella:end
-
-interface ResizablePanelGroupProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  direction?: "horizontal" | "vertical";
-  /** Reports the panel sizes (percentages) after each drag or keyboard resize. The initial layout does not fire it. */
-  onLayout?: (sizes: number[]) => void;
-}
-
-interface ResizablePanelProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  /** Initial share of the group, in percent. The group rewrites `flex-grow` as handles resize the pair. */
-  defaultSize: number;
-  minSize?: number;
-  maxSize?: number;
-}
-
-interface ResizableHandleProps extends HTMLAttributes<"div"> {
-  class?: string;
-  withHandle?: boolean;
-}
 
 /** The grip visual (refs/icons/grip-vertical.svg), created per call so clones never share nodes. */
 const gripIcon = (): JSX.Element => (

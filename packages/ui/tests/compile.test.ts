@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 const distRegistry = join(import.meta.dir, "..", "dist", "registry");
@@ -28,6 +28,23 @@ describe("compile", () => {
     expectArtifact("theme", "tokens.dark.js");
     expectArtifact("theme", "theme.css");
     expectArtifact("cn", "cn.js");
+  });
+
+  test("button declarations carry the inlined ButtonProps and no artifact references the types module", () => {
+    for (const style of ["css", "tailwind"]) {
+      expectArtifact("button", style, "button.d.ts");
+      expect(readArtifact("button", style, "button.d.ts")).toContain("ButtonProps");
+    }
+    const leaked: string[] = [];
+    const walk = (dir: string): void => {
+      for (const item of readdirSync(dir)) {
+        const at = join(dir, item);
+        if (statSync(at).isDirectory()) walk(at);
+        else if (readFileSync(at, "utf8").includes("-types.js")) leaked.push(at);
+      }
+    };
+    walk(join(distRegistry, "button"));
+    expect(leaked).toEqual([]);
   });
 
   test("emits plain javascript with verbatim external imports and no injected runtime", () => {

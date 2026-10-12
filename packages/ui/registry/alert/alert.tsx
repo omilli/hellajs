@@ -1,4 +1,4 @@
-import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
+import type { AlertProps, AlertPartProps } from "./alert-types.js";
 
 // @hella:styles
 declare const base: string;
@@ -6,12 +6,6 @@ declare const description: string;
 declare const title: string;
 declare const variants: Record<string, string>;
 // @hella:end
-
-interface AlertProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  variant?: "default" | "destructive";
-}
 
 export function Alert({ variant, children, class: cls, ...attrs }: AlertProps): JSX.Element {
   return (
@@ -32,11 +26,6 @@ export function Alert({ variant, children, class: cls, ...attrs }: AlertProps): 
       {children}
     </div>
   );
-}
-
-interface AlertPartProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
 }
 
 export function AlertTitle({ children, class: cls, ...attrs }: AlertPartProps): JSX.Element {

@@ -1,5 +1,12 @@
 import { html } from "@hellajs/dom";
-import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HellaNode, HTMLAttributes, HellaChildren } from "@hellajs/dom";
+
+interface ButtonProps extends HTMLAttributes<"button"> {
+  class?: string;
+  children?: HellaChildren;
+  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+  size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
+}
 
 import { style } from "@hellajs/css";
 import { tokens } from "./tokens.js";
@@ -173,13 +180,6 @@ const sizes = {
     width: "2.5rem",
   }),
 };
-
-interface ButtonProps extends HTMLAttributes<"button"> {
-  class?: string;
-  children?: HellaChildren;
-  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
-  size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
-}
 
 export function Button({ variant, size, children, class: cls, ...attrs }: ButtonProps): HellaNode {
   return html`

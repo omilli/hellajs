@@ -1,6 +1,5 @@
 import { signal } from "@hellajs/core";
 import type { HTMLAttributes } from "@hellajs/dom";
-import { cn } from "./cn.js";
 
 interface SwitchProps extends HTMLAttributes<"button"> {
   class?: string;
@@ -8,6 +7,7 @@ interface SwitchProps extends HTMLAttributes<"button"> {
   checked?: boolean | (() => boolean);
   onCheckedChange?: (checked: boolean) => void;
 }
+import { cn } from "./cn.js";
 
 export function Switch({ checked: checkedProp, onCheckedChange, disabled, "on:click": userClick, class: cls, ...attrs }: SwitchProps): JSX.Element {
   const checkedAccessor = typeof checkedProp === "function" ? checkedProp : undefined;

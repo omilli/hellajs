@@ -1,5 +1,13 @@
 import type { HTMLAttributes } from "@hellajs/dom";
 
+type ProgressValue = number | null | undefined;
+
+interface ProgressProps extends HTMLAttributes<"div"> {
+  class?: string;
+  /** 0-100; null (or a reactive fn reading null) drives the indeterminate state. */
+  value?: number | null | (() => number | null);
+}
+
 import { keyframes, style } from "@hellajs/css";
 import { tokens } from "./tokens.js";
 
@@ -27,14 +35,6 @@ const indicator = style("progress-indicator", {
     animation: `${indeterminate} 2s linear infinite`,
   },
 });
-
-type ProgressValue = number | null | undefined;
-
-interface ProgressProps extends HTMLAttributes<"div"> {
-  class?: string;
-  /** 0-100; null (or a reactive fn reading null) drives the indeterminate state. */
-  value?: number | null | (() => number | null);
-}
 
 export function Progress({ value, class: cls, ...attrs }: ProgressProps): JSX.Element {
   const current = (): ProgressValue => (typeof value === "function" ? value() : value);

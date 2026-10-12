@@ -1,12 +1,8 @@
-import type { HTMLAttributes } from "@hellajs/dom";
+import type { SpinnerProps } from "./spinner-types.js";
 
 // @hella:styles
 declare const base: string;
 // @hella:end
-
-interface SpinnerProps extends HTMLAttributes<"svg"> {
-  class?: string;
-}
 
 export function Spinner({ class: cls, ...attrs }: SpinnerProps): JSX.Element {
   return (

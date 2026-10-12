@@ -1,5 +1,21 @@
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
+interface ButtonGroupProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+  orientation?: "horizontal" | "vertical";
+}
+
+interface ButtonGroupTextProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface ButtonGroupSeparatorProps extends HTMLAttributes<"div"> {
+  orientation?: "horizontal" | "vertical";
+  class?: string;
+}
+
 import { style } from "@hellajs/css";
 import { tokens } from "./tokens.js";
 
@@ -95,12 +111,6 @@ const separator = style("button-group-separator-override", {
   },
 });
 
-interface ButtonGroupProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  orientation?: "horizontal" | "vertical";
-}
-
 export function ButtonGroup({ orientation: orient, children, class: cls, ...attrs }: ButtonGroupProps): JSX.Element {
   return (
     <div
@@ -121,11 +131,6 @@ export function ButtonGroup({ orientation: orient, children, class: cls, ...attr
   );
 }
 
-interface ButtonGroupTextProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 export function ButtonGroupText({ children, class: cls, ...attrs }: ButtonGroupTextProps): JSX.Element {
   return (
     <div
@@ -138,11 +143,6 @@ export function ButtonGroupText({ children, class: cls, ...attrs }: ButtonGroupT
       {children}
     </div>
   );
-}
-
-interface ButtonGroupSeparatorProps extends HTMLAttributes<"div"> {
-  orientation?: "horizontal" | "vertical";
-  class?: string;
 }
 
 export function ButtonGroupSeparator({ orientation: orient, class: cls, ...attrs }: ButtonGroupSeparatorProps): JSX.Element {
