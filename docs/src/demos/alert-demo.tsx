@@ -1,5 +1,5 @@
 
-import Alert, { AlertDescription, AlertTitle } from "@registry/alert/css/alert.js";
+import { Alert, AlertDescription, AlertTitle } from "@registry/alert/css/alert.js";
 
 export function AlertDemo() {
   return (

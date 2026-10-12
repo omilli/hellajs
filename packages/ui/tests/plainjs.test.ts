@@ -3,7 +3,7 @@ import { cpSync, existsSync, readFileSync, rmSync, writeFileSync } from "node:fs
 import { join } from "node:path";
 import { resetTestState } from "@utils/test-helpers.js";
 import { addComponent, readConfig } from "@hellajs/ui/bundle";
-import ButtonTsHtml from "../dist/registry/button/css/button-html";
+import { Button as ButtonTsHtml } from "../dist/registry/button/css/button-html";
 import { transformSync } from "@babel/core";
 import babelHellaJS from "babel-plugin-hellajs";
 import presetTypeScript from "@babel/preset-typescript";
@@ -118,10 +118,10 @@ describe("plain-js delivery", () => {
     const root = fixture("parity");
     addComponent(["button"], { dir: root, format: "html", lang: "js" });
     const written = await import(join(componentsDir(root), "button.js")) as {
-      default: ComponentVariant<ButtonVariantProps>["render"];
+      Button: ComponentVariant<ButtonVariantProps>["render"];
     };
     const stripped = renderVariant(
-      { style: "css", format: "html", render: written.default },
+      { style: "css", format: "html", render: written.Button },
       { children: "Save" },
     );
     const tsVariant = renderVariant(

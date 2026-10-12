@@ -1,7 +1,8 @@
 import { signal } from "@hellajs/core";
 
-import Button from "@registry/button/css/button.js";
-import AlertDialog, {
+import { Button } from "@registry/button/css/button.js";
+import {
+  AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,

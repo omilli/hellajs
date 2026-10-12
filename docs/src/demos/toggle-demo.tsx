@@ -1,6 +1,6 @@
 import { signal } from "@hellajs/core";
 import { style } from "@hellajs/css";
-import Toggle, { toggleVariants } from "@registry/toggle/css/toggle.js";
+import { Toggle, toggleVariants } from "@registry/toggle/css/toggle.js";
 
 const row = style({
   alignItems: "center",

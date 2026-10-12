@@ -284,7 +284,7 @@ interface SheetContentProps extends HTMLAttributes<"div"> {
 /**
  * The sheet panel. Manual composition portals it alongside a SheetOverlay
  * sibling - hella has no Radix context, so the portal/overlay pairing is the
- * composer's (the default Sheet below shows the wired composition). The
+ * composer's (the Sheet export below shows the wired composition). The
  * Title/Description parts carry the required aria wiring: pass their
  * generated ids as the panel's `aria-labelledby`/`aria-describedby` attrs
  * even in manual compositions, screen readers announce nothing without them.
@@ -439,7 +439,7 @@ interface SheetProps extends HTMLAttributes<"div"> {
 
 let sheetCount = 0;
 
-export default function Sheet({ open, onClose, side, title: titleText, description: descriptionText, showCloseButton, closeOnEscape, closeOnOutside, children, class: cls, ...attrs }: SheetProps): JSX.Element {
+export function Sheet({ open, onClose, side, title: titleText, description: descriptionText, showCloseButton, closeOnEscape, closeOnOutside, children, class: cls, ...attrs }: SheetProps): JSX.Element {
   const titleId = `hella-sheet-title-${++sheetCount}`;
   const descriptionId = `hella-sheet-description-${sheetCount}`;
   // `visible` alone gates the render so an open→closed flip never unmounts

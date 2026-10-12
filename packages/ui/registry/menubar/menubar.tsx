@@ -976,7 +976,7 @@ interface MenubarProps extends HTMLAttributes<"div"> {
   class?: string;
 }
 
-export default function Menubar({ value: valueProp, onValueChange, children, class: cls, ...attrs }: MenubarProps): JSX.Element {
+export function Menubar({ value: valueProp, onValueChange, children, class: cls, ...attrs }: MenubarProps): JSX.Element {
   const internal = signal("");
   const active = (): string => (valueProp !== undefined ? valueProp() : internal());
   const setActive = (value: string): void => {

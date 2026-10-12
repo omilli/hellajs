@@ -6,7 +6,7 @@ interface TableProps extends HTMLAttributes<"table"> {
   children?: HellaChildren;
 }
 
-export default function Table({ children, class: cls, ...attrs }: TableProps): JSX.Element {
+export function Table({ children, class: cls, ...attrs }: TableProps): JSX.Element {
   return (
     <div
       data-slot="table-container"

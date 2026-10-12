@@ -813,7 +813,7 @@ interface ContextMenuProps extends HTMLAttributes<"span"> {
 
 let contextMenuCount = 0;
 
-export default function ContextMenu({ open, onOpenChange, content: contentSlot, children, class: cls, ...attrs }: ContextMenuProps): HellaNode {
+export function ContextMenu({ open, onOpenChange, content: contentSlot, children, class: cls, ...attrs }: ContextMenuProps): HellaNode {
   const s = menuOpenState({ open, onOpenChange });
   const contentId = `hella-context-menu-content-${++contextMenuCount}`;
   let triggerNode: HTMLElement | undefined;

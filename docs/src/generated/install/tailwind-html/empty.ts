@@ -12,7 +12,7 @@ interface EmptyPartProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
 }
 
-export default function Empty({ children, class: cls, ...attrs }: EmptyPartProps): HellaNode {
+export function Empty({ children, class: cls, ...attrs }: EmptyPartProps): HellaNode {
   return html`
     <div
       data-slot="empty"

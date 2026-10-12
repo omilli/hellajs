@@ -321,7 +321,7 @@ function DayCell(props: DayCellProps): JSX.Element {
  * previous/next month navigation. `numberOfMonths > 1`, `fromDate`/`toDate`
  * bounds, custom `formatters`, and week numbers are out of scope.
  */
-export default function Calendar({ mode: modeProp, selected, onSelect, month: monthProp, onMonthChange, defaultMonth, disabled, showOutsideDays, fixedWeeks, weekStartsOn: weekStartProp, hideNavigation, classNames, class: cls, ...attrs }: CalendarProps): JSX.Element {
+export function Calendar({ mode: modeProp, selected, onSelect, month: monthProp, onMonthChange, defaultMonth, disabled, showOutsideDays, fixedWeeks, weekStartsOn: weekStartProp, hideNavigation, classNames, class: cls, ...attrs }: CalendarProps): JSX.Element {
   const mode = modeProp ?? "single";
   const weekStartsOn = weekStartProp ?? 0;
 

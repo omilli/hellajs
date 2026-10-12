@@ -78,7 +78,7 @@ interface BreadcrumbProps extends HTMLAttributes<"nav"> {
   children?: HellaChildren;
 }
 
-export default function Breadcrumb({ children, class: cls, ...attrs }: BreadcrumbProps): HellaNode {
+export function Breadcrumb({ children, class: cls, ...attrs }: BreadcrumbProps): HellaNode {
   return html`
     <nav
       aria-label="breadcrumb"

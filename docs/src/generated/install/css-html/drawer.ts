@@ -313,7 +313,7 @@ interface DrawerContentProps extends HTMLAttributes<"div"> {
 /**
  * The drawer panel. Manual composition portals it alongside a DrawerOverlay
  * sibling - hella has no Radix context, so the portal/overlay pairing is the
- * composer's (the default Drawer below shows the wired composition). The
+ * composer's (the Drawer export below shows the wired composition). The
  * whole panel drags along its dismissal axis; the pointer-follow is instant
  * (data-dragging suspends the transform transition), and release either
  * dismisses - past 25% of the panel size, or moving faster than 500px/s -
@@ -524,7 +524,7 @@ interface DrawerProps extends HTMLAttributes<"div"> {
 
 let drawerCount = 0;
 
-export default function Drawer({ open, onClose, direction, title: titleText, description: descriptionText, closeOnEscape, closeOnOutside, children, class: cls, ...attrs }: DrawerProps): HellaNode {
+export function Drawer({ open, onClose, direction, title: titleText, description: descriptionText, closeOnEscape, closeOnOutside, children, class: cls, ...attrs }: DrawerProps): HellaNode {
   const titleId = `hella-drawer-title-${++drawerCount}`;
   const descriptionId = `hella-drawer-description-${drawerCount}`;
   // `visible` alone gates the render so an open→closed flip never unmounts

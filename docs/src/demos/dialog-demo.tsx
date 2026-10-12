@@ -1,7 +1,7 @@
 import { signal } from "@hellajs/core";
 
-import Button from "@registry/button/css/button.js";
-import Dialog from "@registry/dialog/css/dialog.js";
+import { Button } from "@registry/button/css/button.js";
+import { Dialog } from "@registry/dialog/css/dialog.js";
 
 export function DialogDemo() {
   const open = signal(false);

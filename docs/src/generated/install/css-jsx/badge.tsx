@@ -101,7 +101,7 @@ interface BadgeProps extends HTMLAttributes<"span"> {
   variant?: "default" | "secondary" | "destructive" | "outline" | "ghost" | "link";
 }
 
-export default function Badge({ variant, children, class: cls, ...attrs }: BadgeProps): JSX.Element {
+export function Badge({ variant, children, class: cls, ...attrs }: BadgeProps): JSX.Element {
   return (
     <span
       data-slot="badge"

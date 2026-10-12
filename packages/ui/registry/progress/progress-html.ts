@@ -14,7 +14,7 @@ interface ProgressProps extends HTMLAttributes<"div"> {
   value?: number | null | (() => number | null);
 }
 
-export default function Progress({ value, class: cls, ...attrs }: ProgressProps): HellaNode {
+export function Progress({ value, class: cls, ...attrs }: ProgressProps): HellaNode {
   const current = (): ProgressValue => (typeof value === "function" ? value() : value);
   const state = (): string => {
     const v = current();

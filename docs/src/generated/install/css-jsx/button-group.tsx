@@ -101,7 +101,7 @@ interface ButtonGroupProps extends HTMLAttributes<"div"> {
   orientation?: "horizontal" | "vertical";
 }
 
-export default function ButtonGroup({ orientation: orient, children, class: cls, ...attrs }: ButtonGroupProps): JSX.Element {
+export function ButtonGroup({ orientation: orient, children, class: cls, ...attrs }: ButtonGroupProps): JSX.Element {
   return (
     <div
       role="group"

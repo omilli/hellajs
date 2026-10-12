@@ -23,7 +23,7 @@ interface PaginationProps extends HTMLAttributes<"nav"> {
   children?: HellaChildren;
 }
 
-export default function Pagination({ children, class: cls, ...attrs }: PaginationProps): HellaNode {
+export function Pagination({ children, class: cls, ...attrs }: PaginationProps): HellaNode {
   return html`
     <nav
       role="navigation"

@@ -17,7 +17,7 @@ interface SpinnerProps extends HTMLAttributes<"svg"> {
   class?: string;
 }
 
-export default function Spinner({ class: cls, ...attrs }: SpinnerProps): HellaNode {
+export function Spinner({ class: cls, ...attrs }: SpinnerProps): HellaNode {
   return html`
     <svg
       xmlns="http://www.w3.org/2000/svg"

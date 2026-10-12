@@ -84,7 +84,7 @@ export function CollapsibleContent({ active, id, children, class: cls, ...attrs 
   );
 }
 
-export default function Collapsible({ open, defaultOpen, onOpenChange, trigger: triggerSlot, content: contentSlot, class: cls, ...attrs }: CollapsibleProps): JSX.Element {
+export function Collapsible({ open, defaultOpen, onOpenChange, trigger: triggerSlot, content: contentSlot, class: cls, ...attrs }: CollapsibleProps): JSX.Element {
   const internal = signal(defaultOpen ?? false);
   const active = (): boolean => (open !== undefined ? open() : internal());
   const contentId = `hella-collapsible-content-${++collapsibleCount}`;

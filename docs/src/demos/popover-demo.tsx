@@ -1,6 +1,6 @@
 import { signal } from "@hellajs/core";
-import Button from "@registry/button/css/button.js";
-import Popover, { PopoverContent, PopoverDescription, PopoverHeader, PopoverTitle } from "@registry/popover/css/popover.js";
+import { Button } from "@registry/button/css/button.js";
+import { Popover, PopoverContent, PopoverDescription, PopoverHeader, PopoverTitle } from "@registry/popover/css/popover.js";
 import { Portal } from "@hellajs/dom";
 
 function panel(name: string) {

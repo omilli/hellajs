@@ -891,7 +891,7 @@ interface MenubarProps extends HTMLAttributes<"div"> {
   class?: string;
 }
 
-export default function Menubar({ value: valueProp, onValueChange, children, class: cls, ...attrs }: MenubarProps): HellaNode {
+export function Menubar({ value: valueProp, onValueChange, children, class: cls, ...attrs }: MenubarProps): HellaNode {
   const internal = signal("");
   const active = (): string => (valueProp !== undefined ? valueProp() : internal());
   const setActive = (value: string): void => {

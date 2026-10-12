@@ -1,6 +1,6 @@
 import { signal } from "@hellajs/core";
 import { style } from "@hellajs/css";
-import Switch from "@registry/switch/css/switch.js";
+import { Switch } from "@registry/switch/css/switch.js";
 
 const switchRow = style({
   alignItems: "center",

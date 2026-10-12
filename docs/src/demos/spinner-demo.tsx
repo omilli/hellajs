@@ -1,6 +1,6 @@
 import { style } from "@hellajs/css";
 import { tokens } from "../styles/tokens";
-import Spinner from "@registry/spinner/css/spinner.js";
+import { Spinner } from "@registry/spinner/css/spinner.js";
 
 const sizeRow = style({
   alignItems: "center",

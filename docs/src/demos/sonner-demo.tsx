@@ -1,7 +1,7 @@
 import { signal } from "@hellajs/core";
 import { style } from "@hellajs/css";
-import Button from "@registry/button/css/button.js";
-import Toaster, { toast } from "@registry/sonner/css/sonner.js";
+import { Button } from "@registry/button/css/button.js";
+import { Toaster, toast } from "@registry/sonner/css/sonner.js";
 
 const stack = style({
   alignItems: "flex-start",

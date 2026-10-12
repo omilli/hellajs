@@ -8,7 +8,7 @@ interface NativeSelectProps extends HTMLAttributes<"select"> {
   size?: "sm" | "default";
 }
 
-export default function NativeSelect({ value, size, children, class: cls, ...attrs }: NativeSelectProps): JSX.Element {
+export function NativeSelect({ value, size, children, class: cls, ...attrs }: NativeSelectProps): JSX.Element {
   return (
     <div
       data-slot="native-select-wrapper"

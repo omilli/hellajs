@@ -1,6 +1,6 @@
 
-import Button from "@registry/button/css/button.js";
-import Card, { CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@registry/card/css/card.js";
+import { Button } from "@registry/button/css/button.js";
+import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@registry/card/css/card.js";
 
 export function CardDemo() {
   return (

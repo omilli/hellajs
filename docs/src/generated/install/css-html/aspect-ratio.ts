@@ -13,7 +13,7 @@ interface AspectRatioProps extends HTMLAttributes<"div"> {
   ratio?: number;
 }
 
-export default function AspectRatio({ ratio, children, class: cls, ...attrs }: AspectRatioProps): HellaNode {
+export function AspectRatio({ ratio, children, class: cls, ...attrs }: AspectRatioProps): HellaNode {
   return html`
     <div
       data-slot="aspect-ratio"

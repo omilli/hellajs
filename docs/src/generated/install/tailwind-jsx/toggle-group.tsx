@@ -80,7 +80,7 @@ export function ToggleGroupItem({ value, pressed, onSelect, variant = "default",
   );
 }
 
-export default function ToggleGroup({ items, type, value, values, onValueChange, variant = "default", size = "default", class: cls, ...attrs }: ToggleGroupProps): JSX.Element {
+export function ToggleGroup({ items, type, value, values, onValueChange, variant = "default", size = "default", class: cls, ...attrs }: ToggleGroupProps): JSX.Element {
   const pressedValues = items.filter((entry) => entry.pressed).map((entry) => entry.value);
   const internalSingle = signal(pressedValues[0] ?? "");
   const internalMulti = signal<Set<string>>(new Set(pressedValues));

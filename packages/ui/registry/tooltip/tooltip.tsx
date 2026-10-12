@@ -126,7 +126,7 @@ interface TooltipProps extends HTMLAttributes<"span"> {
 
 let tooltipCount = 0;
 
-export default function Tooltip({ content: contentSlot, delayDuration, side: sideProp, align: alignProp, children, class: cls, ...attrs }: TooltipProps): JSX.Element {
+export function Tooltip({ content: contentSlot, delayDuration, side: sideProp, align: alignProp, children, class: cls, ...attrs }: TooltipProps): JSX.Element {
   const contentId = `hella-tooltip-content-${++tooltipCount}`;
   const open = signal(false);
   // `visible` alone gates the render so an open→closed flip never unmounts

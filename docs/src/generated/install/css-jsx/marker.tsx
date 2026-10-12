@@ -83,7 +83,7 @@ interface MarkerProps extends HTMLAttributes<"div"> {
   variant?: "default" | "separator" | "border";
 }
 
-export default function Marker({ variant, children, class: cls, ...attrs }: MarkerProps): JSX.Element {
+export function Marker({ variant, children, class: cls, ...attrs }: MarkerProps): JSX.Element {
   return (
     <div
       data-slot="marker"

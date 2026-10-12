@@ -9,7 +9,7 @@ interface NativeSelectProps extends HTMLAttributes<"select"> {
   size?: "sm" | "default";
 }
 
-export default function NativeSelect({ value, size, children, class: cls, ...attrs }: NativeSelectProps): HellaNode {
+export function NativeSelect({ value, size, children, class: cls, ...attrs }: NativeSelectProps): HellaNode {
   return html`
     <div
       data-slot="native-select-wrapper"

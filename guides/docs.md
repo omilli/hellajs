@@ -490,7 +490,7 @@ Every code block must show relevant imports at the top:
 import { signal, computed } from '@hellajs/core';
 ```
 
-- Use package imports (`@scope/package-name`), never relative paths. Registry components (`@hellajs/ui` docs) are the exception: the copied file is app-local source with no package surface, so usage imports it from the project's components dir (`import Input from './components/input';`).
+- Use package imports (`@scope/package-name`), never relative paths. Registry components (`@hellajs/ui` docs) are the exception: the copied file is app-local source with no package surface, so usage imports it from the project's components dir (`import { Input } from './components/input';`).
 - Only show imports needed for the example — not every dependency.
 - First example in a doc must show the import for the export being documented. Subsequent examples in the same doc may omit if they're the same.
 - Prefix docs (`on:`, `e:`, etc.) must also show imports in their first example.

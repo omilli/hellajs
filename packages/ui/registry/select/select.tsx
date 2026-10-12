@@ -626,7 +626,7 @@ interface SelectProps extends HTMLAttributes<"button"> {
 
 let selectCount = 0;
 
-export default function Select({ items, value, onValueChange, placeholder, size, clearable, class: cls, ...attrs }: SelectProps): JSX.Element {
+export function Select({ items, value, onValueChange, placeholder, size, clearable, class: cls, ...attrs }: SelectProps): JSX.Element {
   const s = selectOpenState();
   const contentId = `hella-select-content-${++selectCount}`;
   const internal = signal("");

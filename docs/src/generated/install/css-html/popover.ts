@@ -234,7 +234,7 @@ interface PopoverProps extends HTMLAttributes<"button"> {
 
 let popoverCount = 0;
 
-export default function Popover({ open, onOpenChange, anchor: anchorProp, "on:click": userClick, children, content: contentSlot, class: cls, ...attrs }: PopoverProps): HellaNode {
+export function Popover({ open, onOpenChange, anchor: anchorProp, "on:click": userClick, children, content: contentSlot, class: cls, ...attrs }: PopoverProps): HellaNode {
   const internal = signal(false);
   const isOpen = (): boolean => (open !== undefined ? open() : internal());
   const setOpen = (next: boolean): void => {

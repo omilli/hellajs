@@ -6,7 +6,7 @@ interface BreadcrumbProps extends HTMLAttributes<"nav"> {
   children?: HellaChildren;
 }
 
-export default function Breadcrumb({ children, class: cls, ...attrs }: BreadcrumbProps): JSX.Element {
+export function Breadcrumb({ children, class: cls, ...attrs }: BreadcrumbProps): JSX.Element {
   return (
     <nav
       aria-label="breadcrumb"

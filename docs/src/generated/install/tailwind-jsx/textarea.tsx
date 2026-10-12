@@ -5,7 +5,7 @@ interface TextareaProps extends HTMLAttributes<"textarea"> {
   class?: string;
 }
 
-export default function Textarea({ class: cls, ...attrs }: TextareaProps): JSX.Element {
+export function Textarea({ class: cls, ...attrs }: TextareaProps): JSX.Element {
   return (
     <textarea
       data-slot="textarea"

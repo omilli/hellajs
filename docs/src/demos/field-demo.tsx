@@ -1,6 +1,6 @@
 
-import Checkbox from "@registry/checkbox/css/checkbox.js";
-import Input from "@registry/input/css/input.js";
+import { Checkbox } from "@registry/checkbox/css/checkbox.js";
+import { Input } from "@registry/input/css/input.js";
 import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSeparator, FieldSet, FieldTitle } from "@registry/field/css/field.js";
 
 export function FieldDemo() {

@@ -1,6 +1,6 @@
 import { cx, style } from "@hellajs/css";
 import { tokens } from "../styles/tokens";
-import AspectRatio from "@registry/aspect-ratio/css/aspect-ratio.js";
+import { AspectRatio } from "@registry/aspect-ratio/css/aspect-ratio.js";
 
 const box = style({
   background: tokens.muted,

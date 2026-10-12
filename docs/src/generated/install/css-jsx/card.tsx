@@ -71,7 +71,7 @@ interface CardPartProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
 }
 
-export default function Card({ children, class: cls, ...attrs }: CardPartProps): JSX.Element {
+export function Card({ children, class: cls, ...attrs }: CardPartProps): JSX.Element {
   return (
     <div
       data-slot="card"

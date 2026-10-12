@@ -156,7 +156,7 @@ export function ResizableHandle({ withHandle, disabled, class: cls, ...attrs }: 
   );
 }
 
-export default function ResizablePanelGroup({ direction: directionProp, onLayout, children, class: cls, ...attrs }: ResizablePanelGroupProps): JSX.Element {
+export function ResizablePanelGroup({ direction: directionProp, onLayout, children, class: cls, ...attrs }: ResizablePanelGroupProps): JSX.Element {
   const direction = directionProp ?? "horizontal";
   const sizes = signal<number[]>([]);
   const panels: HTMLElement[] = [];

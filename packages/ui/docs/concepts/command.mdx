@@ -129,7 +129,7 @@ The default filter scores every item case-insensitively against its label, value
 Pass `filter` to replace the default entirely - it receives the full item list and the live query and returns the items to render, ranked:
 
 ```jsx
-import Command from './components/command';
+import { Command } from './components/command';
 
 const startsWith = (items, query) =>
   query ? items.filter((item) => item.value.toLowerCase().startsWith(query.toLowerCase())) : items;

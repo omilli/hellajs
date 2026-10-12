@@ -1,5 +1,5 @@
 import { style } from "@hellajs/css";
-import Kbd, { KbdGroup } from "@registry/kbd/css/kbd.js";
+import { Kbd, KbdGroup } from "@registry/kbd/css/kbd.js";
 
 const keyRow = style({
   alignItems: "center",

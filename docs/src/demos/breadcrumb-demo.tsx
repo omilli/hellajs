@@ -1,5 +1,6 @@
 import { style } from "@hellajs/css";
-import Breadcrumb, {
+import {
+  Breadcrumb,
   BreadcrumbEllipsis,
   BreadcrumbItem,
   BreadcrumbLink,
@@ -7,7 +8,7 @@ import Breadcrumb, {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@registry/breadcrumb/css/breadcrumb.js";
-import DropdownMenu, { DropdownMenuItem } from "@registry/dropdown-menu/css/dropdown-menu.js";
+import { DropdownMenu, DropdownMenuItem } from "@registry/dropdown-menu/css/dropdown-menu.js";
 
 export function BreadcrumbDemo() {
   return (

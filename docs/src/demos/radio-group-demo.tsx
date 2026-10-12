@@ -1,5 +1,5 @@
 import { signal } from "@hellajs/core";
-import RadioGroup from "@registry/radio-group/css/radio-group.js";
+import { RadioGroup } from "@registry/radio-group/css/radio-group.js";
 
 export function RadioGroupDemo() {
   const plan = signal("pro");

@@ -1,5 +1,6 @@
 import { signal } from "@hellajs/core";
-import Menubar, {
+import {
+  Menubar,
   MenubarCheckboxItem,
   MenubarItem,
   MenubarLabel,

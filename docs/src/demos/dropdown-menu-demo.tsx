@@ -1,6 +1,7 @@
 import { signal } from "@hellajs/core";
-import Button from "@registry/button/css/button.js";
-import DropdownMenu, {
+import { Button } from "@registry/button/css/button.js";
+import {
+  DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuItem,
   DropdownMenuLabel,

@@ -123,7 +123,7 @@ interface ScrollAreaProps extends HTMLAttributes<"div"> {
  * a real scrolling viewport plus a vertical ScrollBar, and a horizontal bar
  * composes in as a child for both-axes scrolling.
  */
-export default function ScrollArea({ observe, children, class: cls, ...attrs }: ScrollAreaProps): HellaNode {
+export function ScrollArea({ observe, children, class: cls, ...attrs }: ScrollAreaProps): HellaNode {
   return html`
     <div
       data-slot="scroll-area"

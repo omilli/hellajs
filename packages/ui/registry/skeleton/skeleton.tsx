@@ -9,7 +9,7 @@ interface SkeletonProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
 }
 
-export default function Skeleton({ children, class: cls, ...attrs }: SkeletonProps): JSX.Element {
+export function Skeleton({ children, class: cls, ...attrs }: SkeletonProps): JSX.Element {
   return (
     <div
       data-slot="skeleton"

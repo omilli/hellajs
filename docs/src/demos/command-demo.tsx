@@ -1,7 +1,7 @@
 import { signal } from "@hellajs/core";
 
-import Button from "@registry/button/css/button.js";
-import Command, { CommandDialog, CommandInput, CommandList, CommandGroup, CommandItem, CommandShortcut } from "@registry/command/css/command.js";
+import { Button } from "@registry/button/css/button.js";
+import { Command, CommandDialog, CommandInput, CommandList, CommandGroup, CommandItem, CommandShortcut } from "@registry/command/css/command.js";
 
 const commands = [
   { value: "theme-light", label: "Light theme", group: "Theme", shortcut: "⌘1" },

@@ -148,7 +148,7 @@ export function ResizableHandle({ withHandle, disabled, class: cls, ...attrs }: 
   ` as HellaNode;
 }
 
-export default function ResizablePanelGroup({ direction: directionProp, onLayout, children, class: cls, ...attrs }: ResizablePanelGroupProps): HellaNode {
+export function ResizablePanelGroup({ direction: directionProp, onLayout, children, class: cls, ...attrs }: ResizablePanelGroupProps): HellaNode {
   const direction = directionProp ?? "horizontal";
   const sizes = signal<number[]>([]);
   const panels: HTMLElement[] = [];

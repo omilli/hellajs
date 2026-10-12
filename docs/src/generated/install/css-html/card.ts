@@ -72,7 +72,7 @@ interface CardPartProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
 }
 
-export default function Card({ children, class: cls, ...attrs }: CardPartProps): HellaNode {
+export function Card({ children, class: cls, ...attrs }: CardPartProps): HellaNode {
   return html`
     <div
       data-slot="card"

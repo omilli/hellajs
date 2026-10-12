@@ -29,7 +29,7 @@ interface ButtonProps extends HTMLAttributes<"button"> {
   size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
 }
 
-export default function Button({ variant, size, children, class: cls, ...attrs }: ButtonProps): HellaNode {
+export function Button({ variant, size, children, class: cls, ...attrs }: ButtonProps): HellaNode {
   return html`
     <button
       data-slot="button"

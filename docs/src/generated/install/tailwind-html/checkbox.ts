@@ -32,7 +32,7 @@ const checkIcon = (): HellaNode =>
     <path d="M20 6 9 17l-5-5" />
   </svg>` as HellaNode;
 
-export default function Checkbox({ checked: checkedProp, indeterminate: indeterminateProp, onCheckedChange, id, disabled, "on:click": userClick, class: cls, ...attrs }: CheckboxProps): HellaNode {
+export function Checkbox({ checked: checkedProp, indeterminate: indeterminateProp, onCheckedChange, id, disabled, "on:click": userClick, class: cls, ...attrs }: CheckboxProps): HellaNode {
   const checkedAccessor = typeof checkedProp === "function" ? checkedProp : undefined;
   const indeterminateAccessor = typeof indeterminateProp === "function" ? indeterminateProp : undefined;
   const internalChecked = signal(typeof checkedProp === "boolean" ? checkedProp : false);

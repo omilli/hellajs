@@ -13,7 +13,7 @@ interface ButtonGroupProps extends HTMLAttributes<"div"> {
   orientation?: "horizontal" | "vertical";
 }
 
-export default function ButtonGroup({ orientation: orient, children, class: cls, ...attrs }: ButtonGroupProps): HellaNode {
+export function ButtonGroup({ orientation: orient, children, class: cls, ...attrs }: ButtonGroupProps): HellaNode {
   return html`
     <div
       role="group"

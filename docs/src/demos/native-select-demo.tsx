@@ -1,5 +1,5 @@
 import { signal } from "@hellajs/core";
-import NativeSelect from "@registry/native-select/css/native-select.js";
+import { NativeSelect } from "@registry/native-select/css/native-select.js";
 
 export function NativeSelectDemo() {
   const region = signal("eu");

@@ -1,6 +1,7 @@
 import { signal } from "@hellajs/core";
 import { tokens } from "../styles/tokens";
-import ContextMenu, {
+import {
+  ContextMenu,
   ContextMenuCheckboxItem,
   ContextMenuItem,
   ContextMenuSeparator,

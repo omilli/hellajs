@@ -33,7 +33,7 @@
  * width (.site-search-command).
  */
 import { effect, signal } from "@hellajs/core";
-import Command, { CommandDialog } from "@registry/command/css/command.js";
+import { Command, CommandDialog } from "@registry/command/css/command.js";
 import type { CommandItemData } from "@registry/command/css/command.js";
 
 /** Pagefind's runtime API surface (the subset this island uses). */

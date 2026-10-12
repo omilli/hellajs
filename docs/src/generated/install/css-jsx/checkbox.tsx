@@ -86,7 +86,7 @@ const checkIcon = (): JSX.Element => (
   </svg>
 );
 
-export default function Checkbox({ checked: checkedProp, indeterminate: indeterminateProp, onCheckedChange, id, disabled, "on:click": userClick, class: cls, ...attrs }: CheckboxProps): JSX.Element {
+export function Checkbox({ checked: checkedProp, indeterminate: indeterminateProp, onCheckedChange, id, disabled, "on:click": userClick, class: cls, ...attrs }: CheckboxProps): JSX.Element {
   const checkedAccessor = typeof checkedProp === "function" ? checkedProp : undefined;
   const indeterminateAccessor = typeof indeterminateProp === "function" ? indeterminateProp : undefined;
   const internalChecked = signal(typeof checkedProp === "boolean" ? checkedProp : false);

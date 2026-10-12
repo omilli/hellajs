@@ -86,7 +86,7 @@ interface SliderProps extends HTMLAttributes<"span"> {
   minStepsBetweenThumbs?: number;
 }
 
-export default function Slider({ value, onValueChange, onValueCommit, orientation: orientationProp, minStepsBetweenThumbs, min: minAttr, max: maxAttr, step: stepAttr, disabled, class: cls, ...attrs }: SliderProps): JSX.Element {
+export function Slider({ value, onValueChange, onValueCommit, orientation: orientationProp, minStepsBetweenThumbs, min: minAttr, max: maxAttr, step: stepAttr, disabled, class: cls, ...attrs }: SliderProps): JSX.Element {
   const min = (minAttr as number | undefined) ?? 0;
   const max = (maxAttr as number | undefined) ?? 100;
   const step = (stepAttr as number | undefined) ?? 1;

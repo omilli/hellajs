@@ -247,7 +247,7 @@ export function TabsContent({ id, active, children, class: cls, ...attrs }: Tabs
   );
 }
 
-export default function Tabs({ items, initialId, orientation = "horizontal", variant = "default", class: cls, ...attrs }: TabsProps): JSX.Element {
+export function Tabs({ items, initialId, orientation = "horizontal", variant = "default", class: cls, ...attrs }: TabsProps): JSX.Element {
   const selected = signal(initialId ?? items[0]!.id);
   const wirings: (() => void)[] = [];
   let tablist: HTMLElement | null = null;

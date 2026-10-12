@@ -1,5 +1,6 @@
 
-import InputGroup, {
+import {
+  InputGroup,
   InputGroupAddon,
   InputGroupButton,
   InputGroupInput,

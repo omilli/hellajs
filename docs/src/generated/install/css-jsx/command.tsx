@@ -733,7 +733,7 @@ export function CommandDialog({ open, onClose, title: titleText, description: de
   );
 }
 
-export default function Command({ items: itemsProp, filter, loop, value, onValueChange, children, class: cls, ...attrs }: CommandProps): JSX.Element {
+export function Command({ items: itemsProp, filter, loop, value, onValueChange, children, class: cls, ...attrs }: CommandProps): JSX.Element {
   const items = itemsProp ?? [];
   const query = signal("");
   const activeIndex = signal(0);
@@ -938,4 +938,3 @@ function orderedGroups(items: CommandItemData[]): string[] {
   return keys;
 }
 
-export { Command };

@@ -1,5 +1,6 @@
 import { signal } from "@hellajs/core";
-import NavigationMenu, {
+import {
+  NavigationMenu,
   NavigationMenuContent,
   NavigationMenuItem,
   NavigationMenuIndicator,

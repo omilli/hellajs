@@ -1,6 +1,6 @@
 import { signal } from "@hellajs/core";
 import { style } from "@hellajs/css";
-import Slider from "@registry/slider/css/slider.js";
+import { Slider } from "@registry/slider/css/slider.js";
 
 const controlRow = style({
   alignItems: "center",

@@ -849,7 +849,7 @@ interface DropdownMenuProps extends HTMLAttributes<"button"> {
 
 let dropdownMenuCount = 0;
 
-export default function DropdownMenu({ open, onOpenChange, content: contentSlot, children, class: cls, ...attrs }: DropdownMenuProps): JSX.Element {
+export function DropdownMenu({ open, onOpenChange, content: contentSlot, children, class: cls, ...attrs }: DropdownMenuProps): JSX.Element {
   const s = menuOpenState({ open, onOpenChange });
   const contentId = `hella-dropdown-menu-content-${++dropdownMenuCount}`;
   let triggerNode: HTMLElement | undefined;

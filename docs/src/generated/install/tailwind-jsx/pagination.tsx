@@ -22,7 +22,7 @@ interface PaginationProps extends HTMLAttributes<"nav"> {
   children?: HellaChildren;
 }
 
-export default function Pagination({ children, class: cls, ...attrs }: PaginationProps): JSX.Element {
+export function Pagination({ children, class: cls, ...attrs }: PaginationProps): JSX.Element {
   return (
     <nav
       role="navigation"

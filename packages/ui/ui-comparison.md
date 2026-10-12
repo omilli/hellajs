@@ -169,7 +169,7 @@ npx @hellajs/ui list
 A copied button is used like any local component, with variant and size props baked into the owned file:
 
 ```jsx
-import Button from './components/button';
+import { Button } from './components/button';
 
 <Button variant="outline" size="lg" class="w-full">Deploy</Button>
 ```

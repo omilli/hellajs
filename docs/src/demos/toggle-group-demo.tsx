@@ -1,5 +1,5 @@
 import { signal } from "@hellajs/core";
-import ToggleGroup from "@registry/toggle-group/css/toggle-group.js";
+import { ToggleGroup } from "@registry/toggle-group/css/toggle-group.js";
 
 export function ToggleGroupDemo() {
   const view = signal("week");

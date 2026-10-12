@@ -11,7 +11,7 @@ interface KbdProps extends HTMLAttributes<"kbd"> {
   children?: HellaChildren;
 }
 
-export default function Kbd({ children, class: cls, ...attrs }: KbdProps): HellaNode {
+export function Kbd({ children, class: cls, ...attrs }: KbdProps): HellaNode {
   return html`
     <kbd
       data-slot="kbd"

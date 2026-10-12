@@ -1,5 +1,5 @@
 import { signal } from "@hellajs/core";
-import Pagination, { PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@registry/pagination/css/pagination.js";
+import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@registry/pagination/css/pagination.js";
 
 const pages = [1, 2, 3, 4, 5];
 

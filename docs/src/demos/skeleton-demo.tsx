@@ -1,5 +1,5 @@
 import { style } from "@hellajs/css";
-import Skeleton from "@registry/skeleton/css/skeleton.js";
+import { Skeleton } from "@registry/skeleton/css/skeleton.js";
 
 const avatarRow = style({
   alignItems: "center",

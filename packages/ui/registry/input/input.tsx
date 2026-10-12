@@ -10,7 +10,7 @@ interface InputProps extends HTMLAttributes<"input"> {
   class?: string;
 }
 
-export default function Input({ class: cls, ...attrs }: InputProps): JSX.Element {
+export function Input({ class: cls, ...attrs }: InputProps): JSX.Element {
   return (
     <input
       data-slot="input"

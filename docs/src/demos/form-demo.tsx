@@ -1,8 +1,8 @@
 import { signal } from "@hellajs/core";
 import { style } from "@hellajs/css";
 import { tokens } from "../styles/tokens";
-import Button from "@registry/button/css/button.js";
-import Input from "@registry/input/css/input.js";
+import { Button } from "@registry/button/css/button.js";
+import { Input } from "@registry/input/css/input.js";
 import { createForm, FormControl, FormDescription, FormItem, FormLabel, FormMessage } from "@registry/form/css/form.js";
 
 const stack = style({

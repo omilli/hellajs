@@ -649,7 +649,7 @@ interface ToasterProps extends HTMLAttributes<"ol"> {
  * The queue is the singleton in this file: mount one Toaster per app and call
  * `toast()` from anywhere that imports the same copied module.
  */
-export default function Toaster({ position = "bottom-right", richColors, class: cls, ...attrs }: ToasterProps): HellaNode {
+export function Toaster({ position = "bottom-right", richColors, class: cls, ...attrs }: ToasterProps): HellaNode {
   return html`
     ${Portal({
       to: "body",

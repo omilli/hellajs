@@ -606,7 +606,7 @@ interface SelectProps extends HTMLAttributes<"button"> {
 
 let selectCount = 0;
 
-export default function Select({ items, value, onValueChange, placeholder, size, clearable, class: cls, ...attrs }: SelectProps): HellaNode {
+export function Select({ items, value, onValueChange, placeholder, size, clearable, class: cls, ...attrs }: SelectProps): HellaNode {
   const s = selectOpenState();
   const contentId = `hella-select-content-${++selectCount}`;
   const internal = signal("");

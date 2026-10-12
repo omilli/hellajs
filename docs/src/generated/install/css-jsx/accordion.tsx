@@ -205,7 +205,7 @@ export function AccordionContent({ active, id, children, class: cls, ...attrs }:
   );
 }
 
-export default function Accordion({ items, type, collapsible, open, class: cls, ...attrs }: AccordionProps): JSX.Element {
+export function Accordion({ items, type, collapsible, open, class: cls, ...attrs }: AccordionProps): JSX.Element {
   const mode = type ?? "single";
   const seed = open === undefined
     ? []

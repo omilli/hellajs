@@ -23,7 +23,7 @@ interface InputOTPProps extends HTMLAttributes<"div"> {
   onComplete?: (value: string) => void;
 }
 
-export default function InputOTP({ length: lengthProp, value: valueProp, onChange, onComplete, pattern: patternAttr, autofocus: autofocusAttr, disabled: disabledAttr, class: cls, children, ...attrs }: InputOTPProps): JSX.Element {
+export function InputOTP({ length: lengthProp, value: valueProp, onChange, onComplete, pattern: patternAttr, autofocus: autofocusAttr, disabled: disabledAttr, class: cls, children, ...attrs }: InputOTPProps): JSX.Element {
   const length = lengthProp ?? 6;
   const pattern = patternAttr as string | undefined;
   const autofocus = autofocusAttr as boolean | undefined;

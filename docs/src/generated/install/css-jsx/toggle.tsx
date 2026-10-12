@@ -109,7 +109,7 @@ export function toggleVariants(options?: {
   ].filter(Boolean).join(" ");
 }
 
-export default function Toggle({ pressed: pressedProp, onPressedChange, variant, size, disabled, "on:click": userClick, children, class: cls, ...attrs }: ToggleProps): JSX.Element {
+export function Toggle({ pressed: pressedProp, onPressedChange, variant, size, disabled, "on:click": userClick, children, class: cls, ...attrs }: ToggleProps): JSX.Element {
   const pressedAccessor = typeof pressedProp === "function" ? pressedProp : undefined;
   const internal = signal(typeof pressedProp === "boolean" ? pressedProp : false);
   const pressed = (): boolean => (pressedAccessor ? pressedAccessor() : internal());

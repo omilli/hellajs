@@ -134,7 +134,7 @@ interface AvatarProps extends HTMLAttributes<"div"> {
   size?: "default" | "sm" | "lg";
 }
 
-export default function Avatar({ size, children, class: cls, ...attrs }: AvatarProps): JSX.Element {
+export function Avatar({ size, children, class: cls, ...attrs }: AvatarProps): JSX.Element {
   return (
     <div
       data-slot="avatar"

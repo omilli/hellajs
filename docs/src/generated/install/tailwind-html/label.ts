@@ -7,7 +7,7 @@ interface LabelProps extends HTMLAttributes<"label"> {
   children?: HellaChildren;
 }
 
-export default function Label({ children, class: cls, ...attrs }: LabelProps): HellaNode {
+export function Label({ children, class: cls, ...attrs }: LabelProps): HellaNode {
   return html`
     <label
       data-slot="label"

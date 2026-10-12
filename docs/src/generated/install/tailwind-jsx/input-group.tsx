@@ -38,7 +38,7 @@ interface InputGroupProps extends HTMLAttributes<"div"> {
   class?: string;
 }
 
-export default function InputGroup({ disabled, children, class: cls, ...attrs }: InputGroupProps): JSX.Element {
+export function InputGroup({ disabled, children, class: cls, ...attrs }: InputGroupProps): JSX.Element {
   return (
     <div
       data-slot="input-group"

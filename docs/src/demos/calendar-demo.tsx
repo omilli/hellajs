@@ -1,5 +1,5 @@
 import { signal } from "@hellajs/core";
-import Calendar from "@registry/calendar/css/calendar.js";
+import { Calendar } from "@registry/calendar/css/calendar.js";
 
 const format = (date?: Date): string =>
   date ? date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";

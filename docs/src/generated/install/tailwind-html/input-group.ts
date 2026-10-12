@@ -39,7 +39,7 @@ interface InputGroupProps extends HTMLAttributes<"div"> {
   class?: string;
 }
 
-export default function InputGroup({ disabled, children, class: cls, ...attrs }: InputGroupProps): HellaNode {
+export function InputGroup({ disabled, children, class: cls, ...attrs }: InputGroupProps): HellaNode {
   return html`
     <div
       data-slot="input-group"

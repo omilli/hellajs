@@ -73,7 +73,7 @@ interface InputProps extends HTMLAttributes<"input"> {
   class?: string;
 }
 
-export default function Input({ class: cls, ...attrs }: InputProps): HellaNode {
+export function Input({ class: cls, ...attrs }: InputProps): HellaNode {
   return html`
     <input
       data-slot="input"

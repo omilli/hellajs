@@ -13,7 +13,7 @@ interface AlertProps extends HTMLAttributes<"div"> {
   variant?: "default" | "destructive";
 }
 
-export default function Alert({ variant, children, class: cls, ...attrs }: AlertProps): JSX.Element {
+export function Alert({ variant, children, class: cls, ...attrs }: AlertProps): JSX.Element {
   return (
     <div
       data-slot="alert"

@@ -103,7 +103,7 @@ interface HoverCardProps extends HTMLAttributes<"span"> {
   class?: string;
 }
 
-export default function HoverCard({ open, onOpenChange, children, content: contentSlot, class: cls, ...attrs }: HoverCardProps): JSX.Element {
+export function HoverCard({ open, onOpenChange, children, content: contentSlot, class: cls, ...attrs }: HoverCardProps): JSX.Element {
   const internal = signal(false);
   const isOpen = (): boolean => (open !== undefined ? open() : internal());
   const setOpen = (next: boolean): void => {

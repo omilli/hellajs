@@ -79,7 +79,7 @@ export function RadioGroupItem({ value, checked, onSelect, disabled, name, "on:c
   );
 }
 
-export default function RadioGroup({ items, value, onValueChange, orientation, name, class: cls, ...attrs }: RadioGroupProps): JSX.Element {
+export function RadioGroup({ items, value, onValueChange, orientation, name, class: cls, ...attrs }: RadioGroupProps): JSX.Element {
   const internal = signal("");
   const current = (): string => (value !== undefined ? value() : internal());
   const wirings: (() => void)[] = [];

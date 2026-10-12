@@ -52,7 +52,7 @@ The html format plus `--lang js` runs in the browser with no bundler and no tran
 </script>
 <script type="module">
   import { mount } from "@hellajs/dom";
-  import Button from "./src/components/button.js";
+  import { Button } from "./src/components/button.js";
 
   mount(Button({ variant: "outline", children: "Save" }), document.body);
 </script>

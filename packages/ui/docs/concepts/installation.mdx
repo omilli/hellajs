@@ -33,7 +33,7 @@ Each component copies as one editable file per format into `componentsDir`:
 | jsx (`--format jsx`, default) | `button.tsx` | `button.tsx` |
 | html (`--format html`) | `button-html.ts` | `button.ts` |
 
-The rename is deliberate: `import Button from './components/button'` resolves in both formats.
+The rename is deliberate: `import { Button } from './components/button'` resolves in both formats.
 
 The copied file carries everything it needs: markup, props, and the style declarations for the chosen style, spliced in at copy time. It never imports the registry, `@hellajs/ui`, or any file the CLI did not copy beside it. Editing the file is the supported customization path: change the markup, add a prop, retune the style declarations. Nothing upstream can drift out from under you, because nothing upstream exists at runtime.
 

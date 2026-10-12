@@ -25,7 +25,7 @@ interface LabelProps extends HTMLAttributes<"label"> {
   children?: HellaChildren;
 }
 
-export default function Label({ children, class: cls, ...attrs }: LabelProps): JSX.Element {
+export function Label({ children, class: cls, ...attrs }: LabelProps): JSX.Element {
   return (
     <label
       data-slot="label"

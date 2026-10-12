@@ -4,114 +4,114 @@ import { delay, setupContainer } from "@utils/test-helpers.js";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components import the bare
 // specifier, so the harness mount and a component's Portal must share one dom instance.
 import { html, mount, peekState } from "@hellajs/dom";
-import ButtonCssJsx from "../../dist/registry/button/css/button";
-import ButtonCssHtml from "../../dist/registry/button/css/button-html";
-import ButtonTailwindJsx from "../../dist/registry/button/tailwind/button";
-import ButtonTailwindHtml from "../../dist/registry/button/tailwind/button-html";
-import InputCssJsx from "../../dist/registry/input/css/input";
-import InputCssHtml from "../../dist/registry/input/css/input-html";
-import InputTailwindJsx from "../../dist/registry/input/tailwind/input";
-import InputTailwindHtml from "../../dist/registry/input/tailwind/input-html";
-import CardCssDefault from "../../dist/registry/card/css/card";
-import CardCssHtmlDefault from "../../dist/registry/card/css/card-html";
-import CardTailwindDefault from "../../dist/registry/card/tailwind/card";
-import CardTailwindHtmlDefault from "../../dist/registry/card/tailwind/card-html";
+import { Button as ButtonCssJsx } from "../../dist/registry/button/css/button";
+import { Button as ButtonCssHtml } from "../../dist/registry/button/css/button-html";
+import { Button as ButtonTailwindJsx } from "../../dist/registry/button/tailwind/button";
+import { Button as ButtonTailwindHtml } from "../../dist/registry/button/tailwind/button-html";
+import { Input as InputCssJsx } from "../../dist/registry/input/css/input";
+import { Input as InputCssHtml } from "../../dist/registry/input/css/input-html";
+import { Input as InputTailwindJsx } from "../../dist/registry/input/tailwind/input";
+import { Input as InputTailwindHtml } from "../../dist/registry/input/tailwind/input-html";
+import { Card as CardCssDefault } from "../../dist/registry/card/css/card";
+import { Card as CardCssHtmlDefault } from "../../dist/registry/card/css/card-html";
+import { Card as CardTailwindDefault } from "../../dist/registry/card/tailwind/card";
+import { Card as CardTailwindHtmlDefault } from "../../dist/registry/card/tailwind/card-html";
 import * as CardCssJsx from "../../dist/registry/card/css/card";
 import * as CardCssHtml from "../../dist/registry/card/css/card-html";
 import * as CardTailwindJsx from "../../dist/registry/card/tailwind/card";
 import * as CardTailwindHtml from "../../dist/registry/card/tailwind/card-html";
-import DialogCssDefault from "../../dist/registry/dialog/css/dialog";
-import DialogCssHtmlDefault from "../../dist/registry/dialog/css/dialog-html";
-import DialogTailwindDefault from "../../dist/registry/dialog/tailwind/dialog";
-import DialogTailwindHtmlDefault from "../../dist/registry/dialog/tailwind/dialog-html";
+import { Dialog as DialogCssDefault } from "../../dist/registry/dialog/css/dialog";
+import { Dialog as DialogCssHtmlDefault } from "../../dist/registry/dialog/css/dialog-html";
+import { Dialog as DialogTailwindDefault } from "../../dist/registry/dialog/tailwind/dialog";
+import { Dialog as DialogTailwindHtmlDefault } from "../../dist/registry/dialog/tailwind/dialog-html";
 import * as DialogCssJsx from "../../dist/registry/dialog/css/dialog";
 import * as DialogCssHtml from "../../dist/registry/dialog/css/dialog-html";
 import * as DialogTailwindJsx from "../../dist/registry/dialog/tailwind/dialog";
 import * as DialogTailwindHtml from "../../dist/registry/dialog/tailwind/dialog-html";
-import TabsCssDefault from "../../dist/registry/tabs/css/tabs";
-import TabsCssHtmlDefault from "../../dist/registry/tabs/css/tabs-html";
-import TabsTailwindDefault from "../../dist/registry/tabs/tailwind/tabs";
-import TabsTailwindHtmlDefault from "../../dist/registry/tabs/tailwind/tabs-html";
+import { Tabs as TabsCssDefault } from "../../dist/registry/tabs/css/tabs";
+import { Tabs as TabsCssHtmlDefault } from "../../dist/registry/tabs/css/tabs-html";
+import { Tabs as TabsTailwindDefault } from "../../dist/registry/tabs/tailwind/tabs";
+import { Tabs as TabsTailwindHtmlDefault } from "../../dist/registry/tabs/tailwind/tabs-html";
 import * as TabsCssJsx from "../../dist/registry/tabs/css/tabs";
 import * as TabsCssHtml from "../../dist/registry/tabs/css/tabs-html";
 import * as TabsTailwindJsx from "../../dist/registry/tabs/tailwind/tabs";
 import * as TabsTailwindHtml from "../../dist/registry/tabs/tailwind/tabs-html";
-import BadgeCssJsx from "../../dist/registry/badge/css/badge";
-import BadgeCssHtml from "../../dist/registry/badge/css/badge-html";
-import BadgeTailwindJsx from "../../dist/registry/badge/tailwind/badge";
-import BadgeTailwindHtml from "../../dist/registry/badge/tailwind/badge-html";
-import AlertCssDefault from "../../dist/registry/alert/css/alert";
-import AlertCssHtmlDefault from "../../dist/registry/alert/css/alert-html";
-import AlertTailwindDefault from "../../dist/registry/alert/tailwind/alert";
-import AlertTailwindHtmlDefault from "../../dist/registry/alert/tailwind/alert-html";
+import { Badge as BadgeCssJsx } from "../../dist/registry/badge/css/badge";
+import { Badge as BadgeCssHtml } from "../../dist/registry/badge/css/badge-html";
+import { Badge as BadgeTailwindJsx } from "../../dist/registry/badge/tailwind/badge";
+import { Badge as BadgeTailwindHtml } from "../../dist/registry/badge/tailwind/badge-html";
+import { Alert as AlertCssDefault } from "../../dist/registry/alert/css/alert";
+import { Alert as AlertCssHtmlDefault } from "../../dist/registry/alert/css/alert-html";
+import { Alert as AlertTailwindDefault } from "../../dist/registry/alert/tailwind/alert";
+import { Alert as AlertTailwindHtmlDefault } from "../../dist/registry/alert/tailwind/alert-html";
 import * as AlertCssJsx from "../../dist/registry/alert/css/alert";
 import * as AlertCssHtml from "../../dist/registry/alert/css/alert-html";
 import * as AlertTailwindJsx from "../../dist/registry/alert/tailwind/alert";
 import * as AlertTailwindHtml from "../../dist/registry/alert/tailwind/alert-html";
-import KbdCssDefault from "../../dist/registry/kbd/css/kbd";
-import KbdCssHtmlDefault from "../../dist/registry/kbd/css/kbd-html";
-import KbdTailwindDefault from "../../dist/registry/kbd/tailwind/kbd";
-import KbdTailwindHtmlDefault from "../../dist/registry/kbd/tailwind/kbd-html";
+import { Kbd as KbdCssDefault } from "../../dist/registry/kbd/css/kbd";
+import { Kbd as KbdCssHtmlDefault } from "../../dist/registry/kbd/css/kbd-html";
+import { Kbd as KbdTailwindDefault } from "../../dist/registry/kbd/tailwind/kbd";
+import { Kbd as KbdTailwindHtmlDefault } from "../../dist/registry/kbd/tailwind/kbd-html";
 import * as KbdCssJsx from "../../dist/registry/kbd/css/kbd";
 import * as KbdCssHtml from "../../dist/registry/kbd/css/kbd-html";
 import * as KbdTailwindJsx from "../../dist/registry/kbd/tailwind/kbd";
 import * as KbdTailwindHtml from "../../dist/registry/kbd/tailwind/kbd-html";
-import SeparatorCssJsx from "../../dist/registry/separator/css/separator";
-import SeparatorCssHtml from "../../dist/registry/separator/css/separator-html";
-import SeparatorTailwindJsx from "../../dist/registry/separator/tailwind/separator";
-import SeparatorTailwindHtml from "../../dist/registry/separator/tailwind/separator-html";
-import SkeletonCssJsx from "../../dist/registry/skeleton/css/skeleton";
-import SkeletonCssHtml from "../../dist/registry/skeleton/css/skeleton-html";
-import SkeletonTailwindJsx from "../../dist/registry/skeleton/tailwind/skeleton";
-import SkeletonTailwindHtml from "../../dist/registry/skeleton/tailwind/skeleton-html";
-import SpinnerCssJsx from "../../dist/registry/spinner/css/spinner";
-import SpinnerCssHtml from "../../dist/registry/spinner/css/spinner-html";
-import SpinnerTailwindJsx from "../../dist/registry/spinner/tailwind/spinner";
-import SpinnerTailwindHtml from "../../dist/registry/spinner/tailwind/spinner-html";
-import EmptyCssDefault from "../../dist/registry/empty/css/empty";
-import EmptyCssHtmlDefault from "../../dist/registry/empty/css/empty-html";
-import EmptyTailwindDefault from "../../dist/registry/empty/tailwind/empty";
-import EmptyTailwindHtmlDefault from "../../dist/registry/empty/tailwind/empty-html";
+import { Separator as SeparatorCssJsx } from "../../dist/registry/separator/css/separator";
+import { Separator as SeparatorCssHtml } from "../../dist/registry/separator/css/separator-html";
+import { Separator as SeparatorTailwindJsx } from "../../dist/registry/separator/tailwind/separator";
+import { Separator as SeparatorTailwindHtml } from "../../dist/registry/separator/tailwind/separator-html";
+import { Skeleton as SkeletonCssJsx } from "../../dist/registry/skeleton/css/skeleton";
+import { Skeleton as SkeletonCssHtml } from "../../dist/registry/skeleton/css/skeleton-html";
+import { Skeleton as SkeletonTailwindJsx } from "../../dist/registry/skeleton/tailwind/skeleton";
+import { Skeleton as SkeletonTailwindHtml } from "../../dist/registry/skeleton/tailwind/skeleton-html";
+import { Spinner as SpinnerCssJsx } from "../../dist/registry/spinner/css/spinner";
+import { Spinner as SpinnerCssHtml } from "../../dist/registry/spinner/css/spinner-html";
+import { Spinner as SpinnerTailwindJsx } from "../../dist/registry/spinner/tailwind/spinner";
+import { Spinner as SpinnerTailwindHtml } from "../../dist/registry/spinner/tailwind/spinner-html";
+import { Empty as EmptyCssDefault } from "../../dist/registry/empty/css/empty";
+import { Empty as EmptyCssHtmlDefault } from "../../dist/registry/empty/css/empty-html";
+import { Empty as EmptyTailwindDefault } from "../../dist/registry/empty/tailwind/empty";
+import { Empty as EmptyTailwindHtmlDefault } from "../../dist/registry/empty/tailwind/empty-html";
 import * as EmptyCssJsx from "../../dist/registry/empty/css/empty";
 import * as EmptyCssHtml from "../../dist/registry/empty/css/empty-html";
 import * as EmptyTailwindJsx from "../../dist/registry/empty/tailwind/empty";
 import * as EmptyTailwindHtml from "../../dist/registry/empty/tailwind/empty-html";
-import LabelCssJsx from "../../dist/registry/label/css/label";
-import LabelCssHtml from "../../dist/registry/label/css/label-html";
-import LabelTailwindJsx from "../../dist/registry/label/tailwind/label";
-import LabelTailwindHtml from "../../dist/registry/label/tailwind/label-html";
-import TextareaCssJsx from "../../dist/registry/textarea/css/textarea";
-import TextareaCssHtml from "../../dist/registry/textarea/css/textarea-html";
-import TextareaTailwindJsx from "../../dist/registry/textarea/tailwind/textarea";
-import TextareaTailwindHtml from "../../dist/registry/textarea/tailwind/textarea-html";
-import NativeSelectCssDefault from "../../dist/registry/native-select/css/native-select";
-import NativeSelectCssHtmlDefault from "../../dist/registry/native-select/css/native-select-html";
-import NativeSelectTailwindDefault from "../../dist/registry/native-select/tailwind/native-select";
-import NativeSelectTailwindHtmlDefault from "../../dist/registry/native-select/tailwind/native-select-html";
+import { Label as LabelCssJsx } from "../../dist/registry/label/css/label";
+import { Label as LabelCssHtml } from "../../dist/registry/label/css/label-html";
+import { Label as LabelTailwindJsx } from "../../dist/registry/label/tailwind/label";
+import { Label as LabelTailwindHtml } from "../../dist/registry/label/tailwind/label-html";
+import { Textarea as TextareaCssJsx } from "../../dist/registry/textarea/css/textarea";
+import { Textarea as TextareaCssHtml } from "../../dist/registry/textarea/css/textarea-html";
+import { Textarea as TextareaTailwindJsx } from "../../dist/registry/textarea/tailwind/textarea";
+import { Textarea as TextareaTailwindHtml } from "../../dist/registry/textarea/tailwind/textarea-html";
+import { NativeSelect as NativeSelectCssDefault } from "../../dist/registry/native-select/css/native-select";
+import { NativeSelect as NativeSelectCssHtmlDefault } from "../../dist/registry/native-select/css/native-select-html";
+import { NativeSelect as NativeSelectTailwindDefault } from "../../dist/registry/native-select/tailwind/native-select";
+import { NativeSelect as NativeSelectTailwindHtmlDefault } from "../../dist/registry/native-select/tailwind/native-select-html";
 import * as NativeSelectCssJsx from "../../dist/registry/native-select/css/native-select";
 import * as NativeSelectCssHtml from "../../dist/registry/native-select/css/native-select-html";
 import * as NativeSelectTailwindJsx from "../../dist/registry/native-select/tailwind/native-select";
 import * as NativeSelectTailwindHtml from "../../dist/registry/native-select/tailwind/native-select-html";
-import AspectRatioCssJsx from "../../dist/registry/aspect-ratio/css/aspect-ratio";
-import AspectRatioCssHtml from "../../dist/registry/aspect-ratio/css/aspect-ratio-html";
-import AspectRatioTailwindJsx from "../../dist/registry/aspect-ratio/tailwind/aspect-ratio";
-import AspectRatioTailwindHtml from "../../dist/registry/aspect-ratio/tailwind/aspect-ratio-html";
-import AvatarCssDefault from "../../dist/registry/avatar/css/avatar";
-import AvatarCssHtmlDefault from "../../dist/registry/avatar/css/avatar-html";
-import AvatarTailwindDefault from "../../dist/registry/avatar/tailwind/avatar";
-import AvatarTailwindHtmlDefault from "../../dist/registry/avatar/tailwind/avatar-html";
+import { AspectRatio as AspectRatioCssJsx } from "../../dist/registry/aspect-ratio/css/aspect-ratio";
+import { AspectRatio as AspectRatioCssHtml } from "../../dist/registry/aspect-ratio/css/aspect-ratio-html";
+import { AspectRatio as AspectRatioTailwindJsx } from "../../dist/registry/aspect-ratio/tailwind/aspect-ratio";
+import { AspectRatio as AspectRatioTailwindHtml } from "../../dist/registry/aspect-ratio/tailwind/aspect-ratio-html";
+import { Avatar as AvatarCssDefault } from "../../dist/registry/avatar/css/avatar";
+import { Avatar as AvatarCssHtmlDefault } from "../../dist/registry/avatar/css/avatar-html";
+import { Avatar as AvatarTailwindDefault } from "../../dist/registry/avatar/tailwind/avatar";
+import { Avatar as AvatarTailwindHtmlDefault } from "../../dist/registry/avatar/tailwind/avatar-html";
 import * as AvatarCssJsx from "../../dist/registry/avatar/css/avatar";
 import * as AvatarCssHtml from "../../dist/registry/avatar/css/avatar-html";
 import * as AvatarTailwindJsx from "../../dist/registry/avatar/tailwind/avatar";
 import * as AvatarTailwindHtml from "../../dist/registry/avatar/tailwind/avatar-html";
-import ProgressCssJsx from "../../dist/registry/progress/css/progress";
-import ProgressCssHtml from "../../dist/registry/progress/css/progress-html";
-import ProgressTailwindJsx from "../../dist/registry/progress/tailwind/progress";
-import ProgressTailwindHtml from "../../dist/registry/progress/tailwind/progress-html";
-import TableCssDefault from "../../dist/registry/table/css/table";
-import TableCssHtmlDefault from "../../dist/registry/table/css/table-html";
-import TableTailwindDefault from "../../dist/registry/table/tailwind/table";
-import TableTailwindHtmlDefault from "../../dist/registry/table/tailwind/table-html";
+import { Progress as ProgressCssJsx } from "../../dist/registry/progress/css/progress";
+import { Progress as ProgressCssHtml } from "../../dist/registry/progress/css/progress-html";
+import { Progress as ProgressTailwindJsx } from "../../dist/registry/progress/tailwind/progress";
+import { Progress as ProgressTailwindHtml } from "../../dist/registry/progress/tailwind/progress-html";
+import { Table as TableCssDefault } from "../../dist/registry/table/css/table";
+import { Table as TableCssHtmlDefault } from "../../dist/registry/table/css/table-html";
+import { Table as TableTailwindDefault } from "../../dist/registry/table/tailwind/table";
+import { Table as TableTailwindHtmlDefault } from "../../dist/registry/table/tailwind/table-html";
 import * as TableCssJsx from "../../dist/registry/table/css/table";
 import * as TableCssHtml from "../../dist/registry/table/css/table-html";
 import * as TableTailwindJsx from "../../dist/registry/table/tailwind/table";
@@ -306,13 +306,13 @@ export type ButtonVariant = ChildrenVariant<ButtonVariantProps>;
 /** One compiled Input flavor. */
 export type InputVariant = ComponentVariant<InputVariantProps>;
 
-/** One compiled Card flavor (the default Card export). */
+/** One compiled Card flavor (the Card export). */
 export type CardVariant = ChildrenVariant<CardPartProps>;
 
-/** One compiled Dialog flavor (the default Dialog export). */
+/** One compiled Dialog flavor (the Dialog export). */
 export type DialogVariant = ChildrenVariant<DialogVariantProps>;
 
-/** One compiled Tabs flavor (the default Tabs export). */
+/** One compiled Tabs flavor (the Tabs export). */
 export type TabsVariant = ComponentVariant<TabsVariantProps>;
 
 /** One named part of a multi-part component, at one flavor. */
@@ -348,7 +348,7 @@ export const inputVariants: InputVariant[] = [
 ];
 
 /**
- * Every compiled Card variant (the default export) from dist/registry.
+ * Every compiled Card variant (the Card export) from dist/registry.
  */
 export const cardVariants: CardVariant[] = [
   { style: "css", format: "jsx", render: CardCssDefault, child: (value) => [value] },
@@ -357,13 +357,13 @@ export const cardVariants: CardVariant[] = [
   { style: "tailwind", format: "html", render: CardTailwindHtmlDefault, child: (value) => value },
 ];
 
-/** The named Card parts (every export except the default Card). */
+/** The named Card parts (the other Card exports). */
 export const CARD_PARTS = ["Header", "Title", "Description", "Action", "Content", "Footer"] as const;
 
-/** The named Dialog parts (every export except the default Dialog). */
+/** The named Dialog parts (the other Dialog exports). */
 export const DIALOG_PARTS = ["Overlay", "Content", "Header", "Footer", "Title", "Description", "Close"] as const;
 
-/** The named Tabs parts (every export except the default Tabs). */
+/** The named Tabs parts (the other Tabs exports). */
 export const TABS_PARTS = ["List", "Trigger", "Content"] as const;
 
 export type AnyModule = Record<string, (props: never) => HellaNode>;
@@ -419,7 +419,7 @@ export const tabsPartVariants: PartVariant<Record<string, never> & { children?: 
 );
 
 /**
- * Every compiled Dialog variant (the default export) from dist/registry.
+ * Every compiled Dialog variant (the Dialog export) from dist/registry.
  * Dialog portals its panel into document.body, so `root` resolves the newest
  * panel there instead of the mount container's first element child.
  */
@@ -431,7 +431,7 @@ export const dialogVariants: DialogVariant[] = [
 ];
 
 /**
- * Every compiled Tabs variant (the default export) from dist/registry.
+ * Every compiled Tabs variant (the Tabs export) from dist/registry.
  * Tabs renders no children prop, so the suites carry no `child` wrapper.
  */
 export const tabsVariants: TabsVariant[] = [
@@ -442,7 +442,7 @@ export const tabsVariants: TabsVariant[] = [
 ];
 
 /**
- * Every compiled Badge variant (the default export) from dist/registry.
+ * Every compiled Badge variant (the Badge export) from dist/registry.
  */
 export const badgeVariants: ChildrenVariant<BadgeVariantProps>[] = [
   { style: "css", format: "jsx", render: BadgeCssJsx, child: (value) => [value] },
@@ -451,11 +451,11 @@ export const badgeVariants: ChildrenVariant<BadgeVariantProps>[] = [
   { style: "tailwind", format: "html", render: BadgeTailwindHtml, child: (value) => value },
 ];
 
-/** The named Alert parts (every export except the default Alert). */
+/** The named Alert parts (the other Alert exports). */
 export const ALERT_PARTS = ["Title", "Description"] as const;
 
 /**
- * Every compiled Alert variant (the default export) from dist/registry.
+ * Every compiled Alert variant (the Alert export) from dist/registry.
  */
 export const alertVariants: ChildrenVariant<AlertVariantProps>[] = [
   { style: "css", format: "jsx", render: AlertCssDefault, child: (value) => [value] },
@@ -476,11 +476,11 @@ export const alertPartVariants: PartVariant<CardPartProps>[] = ALERT_PARTS.flatM
   ]),
 );
 
-/** The named Kbd parts (every export except the default Kbd). */
+/** The named Kbd parts (the other Kbd exports). */
 export const KBD_PARTS = ["Group"] as const;
 
 /**
- * Every compiled Kbd variant (the default export) from dist/registry.
+ * Every compiled Kbd variant (the Kbd export) from dist/registry.
  */
 export const kbdVariants: ChildrenVariant<KbdVariantProps>[] = [
   { style: "css", format: "jsx", render: KbdCssDefault, child: (value) => [value] },
@@ -533,11 +533,11 @@ export const spinnerVariants: ComponentVariant<SpinnerVariantProps>[] = [
   { style: "tailwind", format: "html", render: SpinnerTailwindHtml },
 ];
 
-/** The named Empty parts (every export except the default Empty). */
+/** The named Empty parts (the other Empty exports). */
 export const EMPTY_PARTS = ["Header", "Media", "Title", "Description", "Content"] as const;
 
 /**
- * Every compiled Empty variant (the default export) from dist/registry.
+ * Every compiled Empty variant (the Empty export) from dist/registry.
  */
 export const emptyVariants: ChildrenVariant<EmptyPartProps>[] = [
   { style: "css", format: "jsx", render: EmptyCssDefault, child: (value) => [value] },
@@ -579,11 +579,11 @@ export const textareaVariants: ComponentVariant<TextareaVariantProps>[] = [
   { style: "tailwind", format: "html", render: TextareaTailwindHtml },
 ];
 
-/** The named NativeSelect parts (every export except the default NativeSelect). */
+/** The named NativeSelect parts (the other NativeSelect exports). */
 export const NATIVE_SELECT_PARTS = ["Option", "OptGroup"] as const;
 
 /**
- * Every compiled NativeSelect variant (the default export) from dist/registry.
+ * Every compiled NativeSelect variant (the NativeSelect export) from dist/registry.
  * Options are authored by the caller as children.
  */
 export const nativeSelectVariants: ChildrenVariant<NativeSelectVariantProps>[] = [
@@ -615,14 +615,14 @@ export const aspectRatioVariants: ChildrenVariant<AspectRatioVariantProps>[] = [
   { style: "tailwind", format: "html", render: AspectRatioTailwindHtml, child: (value) => value },
 ];
 
-/** The named Avatar parts (every export except the default Avatar). */
+/** The named Avatar parts (the other Avatar exports). */
 export const AVATAR_PARTS = ["Image", "Fallback", "Badge", "Group", "GroupCount"] as const;
 
 /** Superset prop bag across Avatar parts (Image carries src/alt/loaded; Fallback carries loaded). */
 export type AvatarPartVariantProps = AvatarImageVariantProps & AvatarFallbackVariantProps;
 
 /**
- * Every compiled Avatar variant (the default export) from dist/registry.
+ * Every compiled Avatar variant (the Avatar export) from dist/registry.
  */
 export const avatarVariants: ChildrenVariant<AvatarVariantProps>[] = [
   { style: "css", format: "jsx", render: AvatarCssDefault, child: (value) => [value] },
@@ -654,11 +654,11 @@ export const progressVariants: ComponentVariant<ProgressVariantProps>[] = [
   { style: "tailwind", format: "html", render: ProgressTailwindHtml },
 ];
 
-/** The named Table parts (every export except the default Table). */
+/** The named Table parts (the other Table exports). */
 export const TABLE_PARTS = ["Header", "Body", "Footer", "Row", "Head", "Cell", "Caption"] as const;
 
 /**
- * Every compiled Table variant (the default export) from dist/registry.
+ * Every compiled Table variant (the Table export) from dist/registry.
  */
 export const tableVariants: ChildrenVariant<CardPartProps>[] = [
   { style: "css", format: "jsx", render: TableCssDefault, child: (value) => [value] },
@@ -796,18 +796,18 @@ export function assertHandlerForwarded<P extends object>(
   }
 }
 
-import ButtonGroupCssDefault from "../../dist/registry/button-group/css/button-group";
-import ButtonGroupCssHtmlDefault from "../../dist/registry/button-group/css/button-group-html";
-import ButtonGroupTailwindDefault from "../../dist/registry/button-group/tailwind/button-group";
-import ButtonGroupTailwindHtmlDefault from "../../dist/registry/button-group/tailwind/button-group-html";
+import { ButtonGroup as ButtonGroupCssDefault } from "../../dist/registry/button-group/css/button-group";
+import { ButtonGroup as ButtonGroupCssHtmlDefault } from "../../dist/registry/button-group/css/button-group-html";
+import { ButtonGroup as ButtonGroupTailwindDefault } from "../../dist/registry/button-group/tailwind/button-group";
+import { ButtonGroup as ButtonGroupTailwindHtmlDefault } from "../../dist/registry/button-group/tailwind/button-group-html";
 import * as ButtonGroupCssJsx from "../../dist/registry/button-group/css/button-group";
 import * as ButtonGroupCssHtml from "../../dist/registry/button-group/css/button-group-html";
 import * as ButtonGroupTailwindJsx from "../../dist/registry/button-group/tailwind/button-group";
 import * as ButtonGroupTailwindHtml from "../../dist/registry/button-group/tailwind/button-group-html";
-import InputGroupCssDefault from "../../dist/registry/input-group/css/input-group";
-import InputGroupCssHtmlDefault from "../../dist/registry/input-group/css/input-group-html";
-import InputGroupTailwindDefault from "../../dist/registry/input-group/tailwind/input-group";
-import InputGroupTailwindHtmlDefault from "../../dist/registry/input-group/tailwind/input-group-html";
+import { InputGroup as InputGroupCssDefault } from "../../dist/registry/input-group/css/input-group";
+import { InputGroup as InputGroupCssHtmlDefault } from "../../dist/registry/input-group/css/input-group-html";
+import { InputGroup as InputGroupTailwindDefault } from "../../dist/registry/input-group/tailwind/input-group";
+import { InputGroup as InputGroupTailwindHtmlDefault } from "../../dist/registry/input-group/tailwind/input-group-html";
 import * as InputGroupCssJsx from "../../dist/registry/input-group/css/input-group";
 import * as InputGroupCssHtml from "../../dist/registry/input-group/css/input-group-html";
 import * as InputGroupTailwindJsx from "../../dist/registry/input-group/tailwind/input-group";
@@ -816,10 +816,10 @@ import * as FieldCssJsx from "../../dist/registry/field/css/field";
 import * as FieldCssHtml from "../../dist/registry/field/css/field-html";
 import * as FieldTailwindJsx from "../../dist/registry/field/tailwind/field";
 import * as FieldTailwindHtml from "../../dist/registry/field/tailwind/field-html";
-import PaginationCssDefault from "../../dist/registry/pagination/css/pagination";
-import PaginationCssHtmlDefault from "../../dist/registry/pagination/css/pagination-html";
-import PaginationTailwindDefault from "../../dist/registry/pagination/tailwind/pagination";
-import PaginationTailwindHtmlDefault from "../../dist/registry/pagination/tailwind/pagination-html";
+import { Pagination as PaginationCssDefault } from "../../dist/registry/pagination/css/pagination";
+import { Pagination as PaginationCssHtmlDefault } from "../../dist/registry/pagination/css/pagination-html";
+import { Pagination as PaginationTailwindDefault } from "../../dist/registry/pagination/tailwind/pagination";
+import { Pagination as PaginationTailwindHtmlDefault } from "../../dist/registry/pagination/tailwind/pagination-html";
 import * as PaginationCssJsx from "../../dist/registry/pagination/css/pagination";
 import * as PaginationCssHtml from "../../dist/registry/pagination/css/pagination-html";
 import * as PaginationTailwindJsx from "../../dist/registry/pagination/tailwind/pagination";
@@ -828,18 +828,18 @@ import * as ItemCssJsx from "../../dist/registry/item/css/item";
 import * as ItemCssHtml from "../../dist/registry/item/css/item-html";
 import * as ItemTailwindJsx from "../../dist/registry/item/tailwind/item";
 import * as ItemTailwindHtml from "../../dist/registry/item/tailwind/item-html";
-import MarkerCssDefault from "../../dist/registry/marker/css/marker";
-import MarkerCssHtmlDefault from "../../dist/registry/marker/css/marker-html";
-import MarkerTailwindDefault from "../../dist/registry/marker/tailwind/marker";
-import MarkerTailwindHtmlDefault from "../../dist/registry/marker/tailwind/marker-html";
+import { Marker as MarkerCssDefault } from "../../dist/registry/marker/css/marker";
+import { Marker as MarkerCssHtmlDefault } from "../../dist/registry/marker/css/marker-html";
+import { Marker as MarkerTailwindDefault } from "../../dist/registry/marker/tailwind/marker";
+import { Marker as MarkerTailwindHtmlDefault } from "../../dist/registry/marker/tailwind/marker-html";
 import * as MarkerCssJsx from "../../dist/registry/marker/css/marker";
 import * as MarkerCssHtml from "../../dist/registry/marker/css/marker-html";
 import * as MarkerTailwindJsx from "../../dist/registry/marker/tailwind/marker";
 import * as MarkerTailwindHtml from "../../dist/registry/marker/tailwind/marker-html";
-import DirectionCssDefault from "../../dist/registry/direction/css/direction";
-import DirectionCssHtmlDefault from "../../dist/registry/direction/css/direction-html";
-import DirectionTailwindDefault from "../../dist/registry/direction/tailwind/direction";
-import DirectionTailwindHtmlDefault from "../../dist/registry/direction/tailwind/direction-html";
+import { DirectionProvider as DirectionCssDefault } from "../../dist/registry/direction/css/direction";
+import { DirectionProvider as DirectionCssHtmlDefault } from "../../dist/registry/direction/css/direction-html";
+import { DirectionProvider as DirectionTailwindDefault } from "../../dist/registry/direction/tailwind/direction";
+import { DirectionProvider as DirectionTailwindHtmlDefault } from "../../dist/registry/direction/tailwind/direction-html";
 
 /** Prop bag shared by every compiled ButtonGroup variant (mirrors the emitted ButtonGroupProps). */
 export interface ButtonGroupVariantProps extends HTMLAttributes<"div"> {
@@ -860,11 +860,11 @@ export interface ButtonGroupSeparatorVariantProps extends HTMLAttributes<"div"> 
 /** Superset prop bag across ButtonGroup parts. */
 export type ButtonGroupPartVariantProps = ButtonGroupTextVariantProps & ButtonGroupSeparatorVariantProps;
 
-/** The named ButtonGroup parts (every export except the default ButtonGroup). */
+/** The named ButtonGroup parts (the other ButtonGroup exports). */
 export const BUTTON_GROUP_PARTS = ["Text", "Separator"] as const;
 
 /**
- * Every compiled ButtonGroup variant (the default export) from dist/registry.
+ * Every compiled ButtonGroup variant (the ButtonGroup export) from dist/registry.
  */
 export const buttonGroupVariants: ChildrenVariant<ButtonGroupVariantProps>[] = [
   { style: "css", format: "jsx", render: ButtonGroupCssDefault, child: (value) => [value] },
@@ -940,11 +940,11 @@ export interface InputGroupTextareaVariantProps {
 export type InputGroupPartVariantProps = InputGroupAddonVariantProps & InputGroupButtonVariantProps
   & InputGroupTextVariantProps & InputGroupInputVariantProps & InputGroupTextareaVariantProps;
 
-/** The named InputGroup parts (every export except the default InputGroup). */
+/** The named InputGroup parts (the other InputGroup exports). */
 export const INPUT_GROUP_PARTS = ["Addon", "Button", "Text", "Input", "Textarea"] as const;
 
 /**
- * Every compiled InputGroup variant (the default export) from dist/registry.
+ * Every compiled InputGroup variant (the InputGroup export) from dist/registry.
  */
 export const inputGroupVariants: ChildrenVariant<InputGroupVariantProps>[] = [
   { style: "css", format: "jsx", render: InputGroupCssDefault, child: (value) => [value] },
@@ -1043,11 +1043,11 @@ export interface PaginationEllipsisVariantProps extends HTMLAttributes<"span"> {
 export type PaginationPartVariantProps = PaginationLinkVariantProps & PaginationNavVariantProps
   & PaginationContentVariantProps & PaginationEllipsisVariantProps;
 
-/** The named Pagination parts (every export except the default Pagination). */
+/** The named Pagination parts (the other Pagination exports). */
 export const PAGINATION_PARTS = ["Content", "Item", "Link", "Previous", "Next", "Ellipsis"] as const;
 
 /**
- * Every compiled Pagination variant (the default export) from dist/registry.
+ * Every compiled Pagination variant (the Pagination export) from dist/registry.
  */
 export const paginationVariants: ChildrenVariant<PaginationVariantProps>[] = [
   { style: "css", format: "jsx", render: PaginationCssDefault, child: (value) => [value] },
@@ -1122,11 +1122,11 @@ export interface MarkerPartProps extends HTMLAttributes<"span"> {
   children?: HellaChildren;
 }
 
-/** The named Marker parts (every export except the default Marker). */
+/** The named Marker parts (the other Marker exports). */
 export const MARKER_PARTS = ["Icon", "Content"] as const;
 
 /**
- * Every compiled Marker variant (the default export) from dist/registry.
+ * Every compiled Marker variant (the Marker export) from dist/registry.
  */
 export const markerVariants: ChildrenVariant<MarkerVariantProps>[] = [
   { style: "css", format: "jsx", render: MarkerCssDefault, child: (value) => [value] },
@@ -1155,7 +1155,7 @@ export interface DirectionVariantProps extends HTMLAttributes<"div"> {
 }
 
 /**
- * Every compiled DirectionProvider variant (the default export) from dist/registry.
+ * Every compiled DirectionProvider variant (the DirectionProvider export) from dist/registry.
  */
 export const directionVariants: ChildrenVariant<DirectionVariantProps>[] = [
   { style: "css", format: "jsx", render: DirectionCssDefault, child: (value) => [value] },
@@ -1376,46 +1376,46 @@ export const attachmentPartVariants: PartVariant<AttachmentPartVariantProps>[] =
   ]),
 );
 
-import CollapsibleCssDefault from "../../dist/registry/collapsible/css/collapsible";
-import CollapsibleCssHtmlDefault from "../../dist/registry/collapsible/css/collapsible-html";
-import CollapsibleTailwindDefault from "../../dist/registry/collapsible/tailwind/collapsible";
-import CollapsibleTailwindHtmlDefault from "../../dist/registry/collapsible/tailwind/collapsible-html";
+import { Collapsible as CollapsibleCssDefault } from "../../dist/registry/collapsible/css/collapsible";
+import { Collapsible as CollapsibleCssHtmlDefault } from "../../dist/registry/collapsible/css/collapsible-html";
+import { Collapsible as CollapsibleTailwindDefault } from "../../dist/registry/collapsible/tailwind/collapsible";
+import { Collapsible as CollapsibleTailwindHtmlDefault } from "../../dist/registry/collapsible/tailwind/collapsible-html";
 import * as CollapsibleCssJsx from "../../dist/registry/collapsible/css/collapsible";
 import * as CollapsibleCssHtml from "../../dist/registry/collapsible/css/collapsible-html";
 import * as CollapsibleTailwindJsx from "../../dist/registry/collapsible/tailwind/collapsible";
 import * as CollapsibleTailwindHtml from "../../dist/registry/collapsible/tailwind/collapsible-html";
-import AccordionCssDefault from "../../dist/registry/accordion/css/accordion";
-import AccordionCssHtmlDefault from "../../dist/registry/accordion/css/accordion-html";
-import AccordionTailwindDefault from "../../dist/registry/accordion/tailwind/accordion";
-import AccordionTailwindHtmlDefault from "../../dist/registry/accordion/tailwind/accordion-html";
+import { Accordion as AccordionCssDefault } from "../../dist/registry/accordion/css/accordion";
+import { Accordion as AccordionCssHtmlDefault } from "../../dist/registry/accordion/css/accordion-html";
+import { Accordion as AccordionTailwindDefault } from "../../dist/registry/accordion/tailwind/accordion";
+import { Accordion as AccordionTailwindHtmlDefault } from "../../dist/registry/accordion/tailwind/accordion-html";
 import * as AccordionCssJsx from "../../dist/registry/accordion/css/accordion";
 import * as AccordionCssHtml from "../../dist/registry/accordion/css/accordion-html";
 import * as AccordionTailwindJsx from "../../dist/registry/accordion/tailwind/accordion";
 import * as AccordionTailwindHtml from "../../dist/registry/accordion/tailwind/accordion-html";
-import CheckboxCssJsx from "../../dist/registry/checkbox/css/checkbox";
-import CheckboxCssHtml from "../../dist/registry/checkbox/css/checkbox-html";
-import CheckboxTailwindJsx from "../../dist/registry/checkbox/tailwind/checkbox";
-import CheckboxTailwindHtml from "../../dist/registry/checkbox/tailwind/checkbox-html";
-import RadioGroupCssDefault from "../../dist/registry/radio-group/css/radio-group";
-import RadioGroupCssHtmlDefault from "../../dist/registry/radio-group/css/radio-group-html";
-import RadioGroupTailwindDefault from "../../dist/registry/radio-group/tailwind/radio-group";
-import RadioGroupTailwindHtmlDefault from "../../dist/registry/radio-group/tailwind/radio-group-html";
+import { Checkbox as CheckboxCssJsx } from "../../dist/registry/checkbox/css/checkbox";
+import { Checkbox as CheckboxCssHtml } from "../../dist/registry/checkbox/css/checkbox-html";
+import { Checkbox as CheckboxTailwindJsx } from "../../dist/registry/checkbox/tailwind/checkbox";
+import { Checkbox as CheckboxTailwindHtml } from "../../dist/registry/checkbox/tailwind/checkbox-html";
+import { RadioGroup as RadioGroupCssDefault } from "../../dist/registry/radio-group/css/radio-group";
+import { RadioGroup as RadioGroupCssHtmlDefault } from "../../dist/registry/radio-group/css/radio-group-html";
+import { RadioGroup as RadioGroupTailwindDefault } from "../../dist/registry/radio-group/tailwind/radio-group";
+import { RadioGroup as RadioGroupTailwindHtmlDefault } from "../../dist/registry/radio-group/tailwind/radio-group-html";
 import * as RadioGroupCssJsx from "../../dist/registry/radio-group/css/radio-group";
 import * as RadioGroupCssHtml from "../../dist/registry/radio-group/css/radio-group-html";
 import * as RadioGroupTailwindJsx from "../../dist/registry/radio-group/tailwind/radio-group";
 import * as RadioGroupTailwindHtml from "../../dist/registry/radio-group/tailwind/radio-group-html";
-import SwitchCssJsx from "../../dist/registry/switch/css/switch";
-import SwitchCssHtml from "../../dist/registry/switch/css/switch-html";
-import SwitchTailwindJsx from "../../dist/registry/switch/tailwind/switch";
-import SwitchTailwindHtml from "../../dist/registry/switch/tailwind/switch-html";
-import ToggleCssJsx from "../../dist/registry/toggle/css/toggle";
-import ToggleCssHtml from "../../dist/registry/toggle/css/toggle-html";
-import ToggleTailwindJsx from "../../dist/registry/toggle/tailwind/toggle";
-import ToggleTailwindHtml from "../../dist/registry/toggle/tailwind/toggle-html";
-import ToggleGroupCssDefault from "../../dist/registry/toggle-group/css/toggle-group";
-import ToggleGroupCssHtmlDefault from "../../dist/registry/toggle-group/css/toggle-group-html";
-import ToggleGroupTailwindDefault from "../../dist/registry/toggle-group/tailwind/toggle-group";
-import ToggleGroupTailwindHtmlDefault from "../../dist/registry/toggle-group/tailwind/toggle-group-html";
+import { Switch as SwitchCssJsx } from "../../dist/registry/switch/css/switch";
+import { Switch as SwitchCssHtml } from "../../dist/registry/switch/css/switch-html";
+import { Switch as SwitchTailwindJsx } from "../../dist/registry/switch/tailwind/switch";
+import { Switch as SwitchTailwindHtml } from "../../dist/registry/switch/tailwind/switch-html";
+import { Toggle as ToggleCssJsx } from "../../dist/registry/toggle/css/toggle";
+import { Toggle as ToggleCssHtml } from "../../dist/registry/toggle/css/toggle-html";
+import { Toggle as ToggleTailwindJsx } from "../../dist/registry/toggle/tailwind/toggle";
+import { Toggle as ToggleTailwindHtml } from "../../dist/registry/toggle/tailwind/toggle-html";
+import { ToggleGroup as ToggleGroupCssDefault } from "../../dist/registry/toggle-group/css/toggle-group";
+import { ToggleGroup as ToggleGroupCssHtmlDefault } from "../../dist/registry/toggle-group/css/toggle-group-html";
+import { ToggleGroup as ToggleGroupTailwindDefault } from "../../dist/registry/toggle-group/tailwind/toggle-group";
+import { ToggleGroup as ToggleGroupTailwindHtmlDefault } from "../../dist/registry/toggle-group/tailwind/toggle-group-html";
 import * as ToggleGroupCssJsx from "../../dist/registry/toggle-group/css/toggle-group";
 import * as ToggleGroupCssHtml from "../../dist/registry/toggle-group/css/toggle-group-html";
 import * as ToggleGroupTailwindJsx from "../../dist/registry/toggle-group/tailwind/toggle-group";
@@ -1470,7 +1470,7 @@ export interface AccordionPartVariantProps extends GlobalHTMLAttributes {
 }
 
 /**
- * Every compiled Collapsible variant (the default export) from dist/registry.
+ * Every compiled Collapsible variant (the Collapsible export) from dist/registry.
  * Collapsible takes trigger/content props, so the suites carry no `child` wrapper.
  */
 export const collapsibleVariants: ComponentVariant<CollapsibleVariantProps>[] = [
@@ -1480,7 +1480,7 @@ export const collapsibleVariants: ComponentVariant<CollapsibleVariantProps>[] = 
   { style: "tailwind", format: "html", render: CollapsibleTailwindHtmlDefault },
 ];
 
-/** The named Collapsible parts (every export except the default Collapsible). */
+/** The named Collapsible parts (the other Collapsible exports). */
 export const COLLAPSIBLE_PARTS = ["Trigger", "Content"] as const;
 
 /**
@@ -1496,7 +1496,7 @@ export const collapsiblePartVariants: PartVariant<CollapsiblePartVariantProps>[]
 );
 
 /**
- * Every compiled Accordion variant (the default export) from dist/registry.
+ * Every compiled Accordion variant (the Accordion export) from dist/registry.
  * Accordion takes an items array, so the suites carry no `child` wrapper.
  */
 export const accordionVariants: ComponentVariant<AccordionVariantProps>[] = [
@@ -1506,7 +1506,7 @@ export const accordionVariants: ComponentVariant<AccordionVariantProps>[] = [
   { style: "tailwind", format: "html", render: AccordionTailwindHtmlDefault },
 ];
 
-/** The named Accordion parts (every export except the default Accordion). */
+/** The named Accordion parts (the other Accordion exports). */
 export const ACCORDION_PARTS = ["Item", "Trigger", "Content"] as const;
 
 /**
@@ -1593,7 +1593,7 @@ export const checkboxVariants: ComponentVariant<CheckboxVariantProps>[] = [
 ];
 
 /**
- * Every compiled RadioGroup variant (the default export) from dist/registry.
+ * Every compiled RadioGroup variant (the RadioGroup export) from dist/registry.
  * RadioGroup takes an items array, so the suites carry no `child` wrapper.
  */
 export const radioGroupVariants: ComponentVariant<RadioGroupVariantProps>[] = [
@@ -1603,7 +1603,7 @@ export const radioGroupVariants: ComponentVariant<RadioGroupVariantProps>[] = [
   { style: "tailwind", format: "html", render: RadioGroupTailwindHtmlDefault },
 ];
 
-/** The named RadioGroup parts (every export except the default RadioGroup). */
+/** The named RadioGroup parts (the other RadioGroup exports). */
 export const RADIO_GROUP_PARTS = ["Item"] as const;
 
 /** Prop bag shared by every compiled RadioGroup part (mirrors the emitted RadioGroupItemProps). */
@@ -1648,7 +1648,7 @@ export const toggleVariants: ChildrenVariant<ToggleVariantProps>[] = [
 ];
 
 /**
- * Every compiled ToggleGroup variant (the default export) from dist/registry.
+ * Every compiled ToggleGroup variant (the ToggleGroup export) from dist/registry.
  * ToggleGroup takes an items array, so the suites carry no `child` wrapper.
  */
 export const toggleGroupVariants: ComponentVariant<ToggleGroupVariantProps>[] = [
@@ -1658,7 +1658,7 @@ export const toggleGroupVariants: ComponentVariant<ToggleGroupVariantProps>[] = 
   { style: "tailwind", format: "html", render: ToggleGroupTailwindHtmlDefault },
 ];
 
-/** The named ToggleGroup parts (every export except the default ToggleGroup). */
+/** The named ToggleGroup parts (the other ToggleGroup exports). */
 export const TOGGLE_GROUP_PARTS = ["Item"] as const;
 
 /** Prop bag shared by every compiled ToggleGroup part (mirrors the emitted ToggleGroupItemProps). */
@@ -1684,14 +1684,14 @@ export const toggleGroupPartVariants: PartVariant<ToggleGroupPartVariantProps>[]
   ]),
 );
 
-import SliderCssDefault from "../../dist/registry/slider/css/slider";
-import SliderCssHtmlDefault from "../../dist/registry/slider/css/slider-html";
-import SliderTailwindDefault from "../../dist/registry/slider/tailwind/slider";
-import SliderTailwindHtmlDefault from "../../dist/registry/slider/tailwind/slider-html";
-import ResizableCssDefault from "../../dist/registry/resizable/css/resizable";
-import ResizableCssHtmlDefault from "../../dist/registry/resizable/css/resizable-html";
-import ResizableTailwindDefault from "../../dist/registry/resizable/tailwind/resizable";
-import ResizableTailwindHtmlDefault from "../../dist/registry/resizable/tailwind/resizable-html";
+import { Slider as SliderCssDefault } from "../../dist/registry/slider/css/slider";
+import { Slider as SliderCssHtmlDefault } from "../../dist/registry/slider/css/slider-html";
+import { Slider as SliderTailwindDefault } from "../../dist/registry/slider/tailwind/slider";
+import { Slider as SliderTailwindHtmlDefault } from "../../dist/registry/slider/tailwind/slider-html";
+import { ResizablePanelGroup as ResizableCssDefault } from "../../dist/registry/resizable/css/resizable";
+import { ResizablePanelGroup as ResizableCssHtmlDefault } from "../../dist/registry/resizable/css/resizable-html";
+import { ResizablePanelGroup as ResizableTailwindDefault } from "../../dist/registry/resizable/tailwind/resizable";
+import { ResizablePanelGroup as ResizableTailwindHtmlDefault } from "../../dist/registry/resizable/tailwind/resizable-html";
 import * as ResizableCssJsx from "../../dist/registry/resizable/css/resizable";
 import * as ResizableCssHtml from "../../dist/registry/resizable/css/resizable-html";
 import * as ResizableTailwindJsx from "../../dist/registry/resizable/tailwind/resizable";
@@ -1726,7 +1726,7 @@ export interface ResizableVariantProps extends HTMLAttributes<"div"> {
 }
 
 /**
- * Every compiled ResizablePanelGroup variant (the default export) from dist/registry.
+ * Every compiled ResizablePanelGroup variant (the ResizablePanelGroup export) from dist/registry.
  * The group takes composed children, so the suites carry a child wrapper rendering a panel/handle/panel stack.
  */
 export const resizableVariants: ChildrenVariant<ResizableVariantProps>[] = [
@@ -1782,7 +1782,7 @@ export interface ResizablePartVariantProps extends HTMLAttributes<"div"> {
   withHandle?: boolean;
 }
 
-/** The named Resizable parts (every export except the default ResizablePanelGroup). */
+/** The named Resizable parts (the other ResizablePanelGroup exports). */
 export const RESIZABLE_PARTS = ["Panel", "Handle"] as const;
 
 /**
@@ -1835,19 +1835,19 @@ export interface TooltipPartVariantProps extends GlobalHTMLAttributes {
   class?: string;
 }
 
-/** The named Tooltip parts (every export except the default Tooltip). */
+/** The named Tooltip parts (the other Tooltip exports). */
 export const TOOLTIP_PARTS = ["Provider", "Trigger", "Content"] as const;
 
 /**
- * Every compiled Tooltip variant (the default export) from dist/registry.
+ * Every compiled Tooltip variant (the Tooltip export) from dist/registry.
  * Tooltip's content portals into document.body on open, so the suites render
  * the trigger root and resolve content through the helpers/anchored pollers.
  */
 export const tooltipVariants: ComponentVariant<TooltipVariantProps>[] = [
-  { style: "css", format: "jsx", render: (TooltipCssJsx as unknown as AnyModule).default as unknown as (props: TooltipVariantProps) => HellaNode },
-  { style: "css", format: "html", render: (TooltipCssHtml as unknown as AnyModule).default as unknown as (props: TooltipVariantProps) => HellaNode },
-  { style: "tailwind", format: "jsx", render: (TooltipTailwindJsx as unknown as AnyModule).default as unknown as (props: TooltipVariantProps) => HellaNode },
-  { style: "tailwind", format: "html", render: (TooltipTailwindHtml as unknown as AnyModule).default as unknown as (props: TooltipVariantProps) => HellaNode },
+  { style: "css", format: "jsx", render: (TooltipCssJsx as unknown as AnyModule).Tooltip as unknown as (props: TooltipVariantProps) => HellaNode },
+  { style: "css", format: "html", render: (TooltipCssHtml as unknown as AnyModule).Tooltip as unknown as (props: TooltipVariantProps) => HellaNode },
+  { style: "tailwind", format: "jsx", render: (TooltipTailwindJsx as unknown as AnyModule).Tooltip as unknown as (props: TooltipVariantProps) => HellaNode },
+  { style: "tailwind", format: "html", render: (TooltipTailwindHtml as unknown as AnyModule).Tooltip as unknown as (props: TooltipVariantProps) => HellaNode },
 ];
 
 /**
@@ -1884,19 +1884,19 @@ export interface HoverCardPartVariantProps extends GlobalHTMLAttributes {
   class?: string;
 }
 
-/** The named HoverCard parts (every export except the default HoverCard). */
+/** The named HoverCard parts (the other HoverCard exports). */
 export const HOVER_CARD_PARTS = ["Trigger", "Content"] as const;
 
 /**
- * Every compiled HoverCard variant (the default export) from dist/registry.
+ * Every compiled HoverCard variant (the HoverCard export) from dist/registry.
  * HoverCard's content portals into document.body on open, so the suites render
  * the trigger root and resolve content through the helpers/anchored pollers.
  */
 export const hoverCardVariants: ComponentVariant<HoverCardVariantProps>[] = [
-  { style: "css", format: "jsx", render: (HoverCardCssJsx as unknown as AnyModule).default as unknown as (props: HoverCardVariantProps) => HellaNode },
-  { style: "css", format: "html", render: (HoverCardCssHtml as unknown as AnyModule).default as unknown as (props: HoverCardVariantProps) => HellaNode },
-  { style: "tailwind", format: "jsx", render: (HoverCardTailwindJsx as unknown as AnyModule).default as unknown as (props: HoverCardVariantProps) => HellaNode },
-  { style: "tailwind", format: "html", render: (HoverCardTailwindHtml as unknown as AnyModule).default as unknown as (props: HoverCardVariantProps) => HellaNode },
+  { style: "css", format: "jsx", render: (HoverCardCssJsx as unknown as AnyModule).HoverCard as unknown as (props: HoverCardVariantProps) => HellaNode },
+  { style: "css", format: "html", render: (HoverCardCssHtml as unknown as AnyModule).HoverCard as unknown as (props: HoverCardVariantProps) => HellaNode },
+  { style: "tailwind", format: "jsx", render: (HoverCardTailwindJsx as unknown as AnyModule).HoverCard as unknown as (props: HoverCardVariantProps) => HellaNode },
+  { style: "tailwind", format: "html", render: (HoverCardTailwindHtml as unknown as AnyModule).HoverCard as unknown as (props: HoverCardVariantProps) => HellaNode },
 ];
 
 /**
@@ -1935,19 +1935,19 @@ export interface PopoverPartVariantProps extends GlobalHTMLAttributes {
   class?: string;
 }
 
-/** The named Popover parts (every export except the default Popover). */
+/** The named Popover parts (the other Popover exports). */
 export const POPOVER_PARTS = ["Anchor", "Trigger", "Content", "Header", "Title", "Description"] as const;
 
 /**
- * Every compiled Popover variant (the default export) from dist/registry.
+ * Every compiled Popover variant (the Popover export) from dist/registry.
  * Popover's content portals into document.body on open, so the suites render
  * the trigger root and resolve content through the helpers/anchored pollers.
  */
 export const popoverVariants: ComponentVariant<PopoverVariantProps>[] = [
-  { style: "css", format: "jsx", render: (PopoverCssJsx as unknown as AnyModule).default as unknown as (props: PopoverVariantProps) => HellaNode },
-  { style: "css", format: "html", render: (PopoverCssHtml as unknown as AnyModule).default as unknown as (props: PopoverVariantProps) => HellaNode },
-  { style: "tailwind", format: "jsx", render: (PopoverTailwindJsx as unknown as AnyModule).default as unknown as (props: PopoverVariantProps) => HellaNode },
-  { style: "tailwind", format: "html", render: (PopoverTailwindHtml as unknown as AnyModule).default as unknown as (props: PopoverVariantProps) => HellaNode },
+  { style: "css", format: "jsx", render: (PopoverCssJsx as unknown as AnyModule).Popover as unknown as (props: PopoverVariantProps) => HellaNode },
+  { style: "css", format: "html", render: (PopoverCssHtml as unknown as AnyModule).Popover as unknown as (props: PopoverVariantProps) => HellaNode },
+  { style: "tailwind", format: "jsx", render: (PopoverTailwindJsx as unknown as AnyModule).Popover as unknown as (props: PopoverVariantProps) => HellaNode },
+  { style: "tailwind", format: "html", render: (PopoverTailwindHtml as unknown as AnyModule).Popover as unknown as (props: PopoverVariantProps) => HellaNode },
 ];
 
 /**
@@ -2026,7 +2026,7 @@ export interface DropdownMenuPartVariantProps extends GlobalHTMLAttributes {
   class?: string;
 }
 
-/** The named DropdownMenu parts (every export except the default DropdownMenu). */
+/** The named DropdownMenu parts (the other DropdownMenu exports). */
 export const DROPDOWN_MENU_PARTS = ["Trigger", "Content", "Group", "Item", "CheckboxItem", "RadioGroup", "RadioItem", "Label", "Separator", "Shortcut", "Sub", "SubTrigger", "SubContent"] as const;
 
 /** Compiled DropdownMenu module table, keyed [style][format]. */
@@ -2036,15 +2036,15 @@ export const dropdownMenuModules: MenuModuleTable = {
 };
 
 /**
- * Every compiled DropdownMenu variant (the default export) from dist/registry.
+ * Every compiled DropdownMenu variant (the DropdownMenu export) from dist/registry.
  * DropdownMenu's content portals into document.body on open, so the suites
  * render the trigger root and resolve content through the helpers/anchored pollers.
  */
 export const dropdownMenuVariants: ComponentVariant<DropdownMenuVariantProps>[] = [
-  { style: "css", format: "jsx", render: (DropdownMenuCssJsx as unknown as AnyModule).default as unknown as (props: DropdownMenuVariantProps) => HellaNode },
-  { style: "css", format: "html", render: (DropdownMenuCssHtml as unknown as AnyModule).default as unknown as (props: DropdownMenuVariantProps) => HellaNode },
-  { style: "tailwind", format: "jsx", render: (DropdownMenuTailwindJsx as unknown as AnyModule).default as unknown as (props: DropdownMenuVariantProps) => HellaNode },
-  { style: "tailwind", format: "html", render: (DropdownMenuTailwindHtml as unknown as AnyModule).default as unknown as (props: DropdownMenuVariantProps) => HellaNode },
+  { style: "css", format: "jsx", render: (DropdownMenuCssJsx as unknown as AnyModule).DropdownMenu as unknown as (props: DropdownMenuVariantProps) => HellaNode },
+  { style: "css", format: "html", render: (DropdownMenuCssHtml as unknown as AnyModule).DropdownMenu as unknown as (props: DropdownMenuVariantProps) => HellaNode },
+  { style: "tailwind", format: "jsx", render: (DropdownMenuTailwindJsx as unknown as AnyModule).DropdownMenu as unknown as (props: DropdownMenuVariantProps) => HellaNode },
+  { style: "tailwind", format: "html", render: (DropdownMenuTailwindHtml as unknown as AnyModule).DropdownMenu as unknown as (props: DropdownMenuVariantProps) => HellaNode },
 ];
 
 /**
@@ -2094,7 +2094,7 @@ export interface ContextMenuPartVariantProps extends GlobalHTMLAttributes {
   class?: string;
 }
 
-/** The named ContextMenu parts (every export except the default ContextMenu). */
+/** The named ContextMenu parts (the other ContextMenu exports). */
 export const CONTEXT_MENU_PARTS = ["Trigger", "Content", "Group", "Item", "CheckboxItem", "RadioGroup", "RadioItem", "Label", "Separator", "Shortcut", "Sub", "SubTrigger", "SubContent"] as const;
 
 /** Compiled ContextMenu module table, keyed [style][format]. */
@@ -2104,15 +2104,15 @@ export const contextMenuModules: MenuModuleTable = {
 };
 
 /**
- * Every compiled ContextMenu variant (the default export) from dist/registry.
+ * Every compiled ContextMenu variant (the ContextMenu export) from dist/registry.
  * ContextMenu's content portals into document.body on open, so the suites
  * render the trigger root and resolve content through the helpers/anchored pollers.
  */
 export const contextMenuVariants: ComponentVariant<ContextMenuVariantProps>[] = [
-  { style: "css", format: "jsx", render: (ContextMenuCssJsx as unknown as AnyModule).default as unknown as (props: ContextMenuVariantProps) => HellaNode },
-  { style: "css", format: "html", render: (ContextMenuCssHtml as unknown as AnyModule).default as unknown as (props: ContextMenuVariantProps) => HellaNode },
-  { style: "tailwind", format: "jsx", render: (ContextMenuTailwindJsx as unknown as AnyModule).default as unknown as (props: ContextMenuVariantProps) => HellaNode },
-  { style: "tailwind", format: "html", render: (ContextMenuTailwindHtml as unknown as AnyModule).default as unknown as (props: ContextMenuVariantProps) => HellaNode },
+  { style: "css", format: "jsx", render: (ContextMenuCssJsx as unknown as AnyModule).ContextMenu as unknown as (props: ContextMenuVariantProps) => HellaNode },
+  { style: "css", format: "html", render: (ContextMenuCssHtml as unknown as AnyModule).ContextMenu as unknown as (props: ContextMenuVariantProps) => HellaNode },
+  { style: "tailwind", format: "jsx", render: (ContextMenuTailwindJsx as unknown as AnyModule).ContextMenu as unknown as (props: ContextMenuVariantProps) => HellaNode },
+  { style: "tailwind", format: "html", render: (ContextMenuTailwindHtml as unknown as AnyModule).ContextMenu as unknown as (props: ContextMenuVariantProps) => HellaNode },
 ];
 
 /**
@@ -2172,7 +2172,7 @@ export interface MenubarPartVariantProps extends GlobalHTMLAttributes {
   class?: string;
 }
 
-/** The named Menubar parts (every export except the default Menubar). */
+/** The named Menubar parts (the other Menubar exports). */
 export const MENUBAR_PARTS = ["Menu", "Trigger", "Group", "Content", "Item", "CheckboxItem", "RadioGroup", "RadioItem", "Label", "Separator", "Shortcut", "Sub", "SubTrigger", "SubContent"] as const;
 
 /** Compiled Menubar module table, keyed [style][format]. */
@@ -2182,15 +2182,15 @@ export const menubarModules: MenuModuleTable = {
 };
 
 /**
- * Every compiled Menubar variant (the default export) from dist/registry.
+ * Every compiled Menubar variant (the Menubar export) from dist/registry.
  * Menubar's content portals into document.body on open, so the suites
  * render the bar and resolve content through the helpers/anchored pollers.
  */
 export const menubarVariants: ComponentVariant<MenubarVariantProps>[] = [
-  { style: "css", format: "jsx", render: (MenubarCssJsx as unknown as AnyModule).default as unknown as (props: MenubarVariantProps) => HellaNode },
-  { style: "css", format: "html", render: (MenubarCssHtml as unknown as AnyModule).default as unknown as (props: MenubarVariantProps) => HellaNode },
-  { style: "tailwind", format: "jsx", render: (MenubarTailwindJsx as unknown as AnyModule).default as unknown as (props: MenubarVariantProps) => HellaNode },
-  { style: "tailwind", format: "html", render: (MenubarTailwindHtml as unknown as AnyModule).default as unknown as (props: MenubarVariantProps) => HellaNode },
+  { style: "css", format: "jsx", render: (MenubarCssJsx as unknown as AnyModule).Menubar as unknown as (props: MenubarVariantProps) => HellaNode },
+  { style: "css", format: "html", render: (MenubarCssHtml as unknown as AnyModule).Menubar as unknown as (props: MenubarVariantProps) => HellaNode },
+  { style: "tailwind", format: "jsx", render: (MenubarTailwindJsx as unknown as AnyModule).Menubar as unknown as (props: MenubarVariantProps) => HellaNode },
+  { style: "tailwind", format: "html", render: (MenubarTailwindHtml as unknown as AnyModule).Menubar as unknown as (props: MenubarVariantProps) => HellaNode },
 ];
 
 /**
@@ -2233,18 +2233,18 @@ export interface NavigationMenuPartVariantProps extends GlobalHTMLAttributes {
   class?: string;
 }
 
-/** The named NavigationMenu parts (every export except the default NavigationMenu). */
+/** The named NavigationMenu parts (the other NavigationMenu exports). */
 export const NAVIGATION_MENU_PARTS = ["List", "Item", "Trigger", "Content", "Link", "Viewport", "Indicator"] as const;
 
 /**
- * Every compiled NavigationMenu variant (the default export) from dist/registry.
+ * Every compiled NavigationMenu variant (the NavigationMenu export) from dist/registry.
  * The composed root appends the shared viewport slot its contents portal into.
  */
 export const navigationMenuVariants: ComponentVariant<NavigationMenuVariantProps>[] = [
-  { style: "css", format: "jsx", render: (NavigationMenuCssJsx as unknown as AnyModule).default as unknown as (props: NavigationMenuVariantProps) => HellaNode },
-  { style: "css", format: "html", render: (NavigationMenuCssHtml as unknown as AnyModule).default as unknown as (props: NavigationMenuVariantProps) => HellaNode },
-  { style: "tailwind", format: "jsx", render: (NavigationMenuTailwindJsx as unknown as AnyModule).default as unknown as (props: NavigationMenuVariantProps) => HellaNode },
-  { style: "tailwind", format: "html", render: (NavigationMenuTailwindHtml as unknown as AnyModule).default as unknown as (props: NavigationMenuVariantProps) => HellaNode },
+  { style: "css", format: "jsx", render: (NavigationMenuCssJsx as unknown as AnyModule).NavigationMenu as unknown as (props: NavigationMenuVariantProps) => HellaNode },
+  { style: "css", format: "html", render: (NavigationMenuCssHtml as unknown as AnyModule).NavigationMenu as unknown as (props: NavigationMenuVariantProps) => HellaNode },
+  { style: "tailwind", format: "jsx", render: (NavigationMenuTailwindJsx as unknown as AnyModule).NavigationMenu as unknown as (props: NavigationMenuVariantProps) => HellaNode },
+  { style: "tailwind", format: "html", render: (NavigationMenuTailwindHtml as unknown as AnyModule).NavigationMenu as unknown as (props: NavigationMenuVariantProps) => HellaNode },
 ];
 
 /**
@@ -2277,17 +2277,17 @@ export interface BreadcrumbPartVariantProps extends GlobalHTMLAttributes {
   class?: string;
 }
 
-/** The named Breadcrumb parts (every export except the default Breadcrumb). */
+/** The named Breadcrumb parts (the other Breadcrumb exports). */
 export const BREADCRUMB_PARTS = ["List", "Item", "Link", "Page", "Separator", "Ellipsis"] as const;
 
 /**
- * Every compiled Breadcrumb variant (the default export) from dist/registry.
+ * Every compiled Breadcrumb variant (the Breadcrumb export) from dist/registry.
  */
 export const breadcrumbVariants: ComponentVariant<BreadcrumbVariantProps>[] = [
-  { style: "css", format: "jsx", render: (BreadcrumbCssJsx as unknown as AnyModule).default as unknown as (props: BreadcrumbVariantProps) => HellaNode },
-  { style: "css", format: "html", render: (BreadcrumbCssHtml as unknown as AnyModule).default as unknown as (props: BreadcrumbVariantProps) => HellaNode },
-  { style: "tailwind", format: "jsx", render: (BreadcrumbTailwindJsx as unknown as AnyModule).default as unknown as (props: BreadcrumbVariantProps) => HellaNode },
-  { style: "tailwind", format: "html", render: (BreadcrumbTailwindHtml as unknown as AnyModule).default as unknown as (props: BreadcrumbVariantProps) => HellaNode },
+  { style: "css", format: "jsx", render: (BreadcrumbCssJsx as unknown as AnyModule).Breadcrumb as unknown as (props: BreadcrumbVariantProps) => HellaNode },
+  { style: "css", format: "html", render: (BreadcrumbCssHtml as unknown as AnyModule).Breadcrumb as unknown as (props: BreadcrumbVariantProps) => HellaNode },
+  { style: "tailwind", format: "jsx", render: (BreadcrumbTailwindJsx as unknown as AnyModule).Breadcrumb as unknown as (props: BreadcrumbVariantProps) => HellaNode },
+  { style: "tailwind", format: "html", render: (BreadcrumbTailwindHtml as unknown as AnyModule).Breadcrumb as unknown as (props: BreadcrumbVariantProps) => HellaNode },
 ];
 
 /**
@@ -2355,7 +2355,7 @@ export interface SelectPartVariantProps extends GlobalHTMLAttributes {
   class?: string;
 }
 
-/** The named Select parts (every export except the default Select). */
+/** The named Select parts (the other Select exports). */
 export const SELECT_PARTS = ["Trigger", "Value", "Content", "Group", "Item", "Label", "Separator", "ScrollUpButton", "ScrollDownButton"] as const;
 
 /** Compiled Select module table, keyed [style][format]. */
@@ -2365,15 +2365,15 @@ export const selectModules: MenuModuleTable = {
 };
 
 /**
- * Every compiled Select variant (the default export) from dist/registry.
+ * Every compiled Select variant (the Select export) from dist/registry.
  * Select's content portals into document.body on open, so the suites
  * render the trigger root and resolve content through the helpers/anchored pollers.
  */
 export const selectVariants: ComponentVariant<SelectVariantProps>[] = [
-  { style: "css", format: "jsx", render: (SelectCssJsx as unknown as AnyModule).default as unknown as (props: SelectVariantProps) => HellaNode },
-  { style: "css", format: "html", render: (SelectCssHtml as unknown as AnyModule).default as unknown as (props: SelectVariantProps) => HellaNode },
-  { style: "tailwind", format: "jsx", render: (SelectTailwindJsx as unknown as AnyModule).default as unknown as (props: SelectVariantProps) => HellaNode },
-  { style: "tailwind", format: "html", render: (SelectTailwindHtml as unknown as AnyModule).default as unknown as (props: SelectVariantProps) => HellaNode },
+  { style: "css", format: "jsx", render: (SelectCssJsx as unknown as AnyModule).Select as unknown as (props: SelectVariantProps) => HellaNode },
+  { style: "css", format: "html", render: (SelectCssHtml as unknown as AnyModule).Select as unknown as (props: SelectVariantProps) => HellaNode },
+  { style: "tailwind", format: "jsx", render: (SelectTailwindJsx as unknown as AnyModule).Select as unknown as (props: SelectVariantProps) => HellaNode },
+  { style: "tailwind", format: "html", render: (SelectTailwindHtml as unknown as AnyModule).Select as unknown as (props: SelectVariantProps) => HellaNode },
 ];
 
 /**
@@ -2441,7 +2441,7 @@ export interface ComboboxPartVariantProps extends HTMLAttributes<"input"> {
   class?: string;
 }
 
-/** The named Combobox parts (every export except the default Combobox). */
+/** The named Combobox parts (the other Combobox exports). */
 export const COMBOBOX_PARTS = ["Value", "Trigger", "Clear", "Group", "Label", "Collection", "Empty", "Separator", "Item", "List", "Input", "Chips", "Chip", "ChipsInput", "Content"] as const;
 
 /** Compiled Combobox module table, keyed [style][format]. */
@@ -2451,15 +2451,15 @@ export const comboboxModules: MenuModuleTable = {
 };
 
 /**
- * Every compiled Combobox variant (the default export) from dist/registry.
+ * Every compiled Combobox variant (the Combobox export) from dist/registry.
  * Combobox's content portals into document.body on open, so the suites
  * render the wrapper root and resolve content through the helpers/anchored pollers.
  */
 export const comboboxVariants: ComponentVariant<ComboboxVariantProps>[] = [
-  { style: "css", format: "jsx", render: (ComboboxCssJsx as unknown as AnyModule).default as unknown as (props: ComboboxVariantProps) => HellaNode },
-  { style: "css", format: "html", render: (ComboboxCssHtml as unknown as AnyModule).default as unknown as (props: ComboboxVariantProps) => HellaNode },
-  { style: "tailwind", format: "jsx", render: (ComboboxTailwindJsx as unknown as AnyModule).default as unknown as (props: ComboboxVariantProps) => HellaNode },
-  { style: "tailwind", format: "html", render: (ComboboxTailwindHtml as unknown as AnyModule).default as unknown as (props: ComboboxVariantProps) => HellaNode },
+  { style: "css", format: "jsx", render: (ComboboxCssJsx as unknown as AnyModule).Combobox as unknown as (props: ComboboxVariantProps) => HellaNode },
+  { style: "css", format: "html", render: (ComboboxCssHtml as unknown as AnyModule).Combobox as unknown as (props: ComboboxVariantProps) => HellaNode },
+  { style: "tailwind", format: "jsx", render: (ComboboxTailwindJsx as unknown as AnyModule).Combobox as unknown as (props: ComboboxVariantProps) => HellaNode },
+  { style: "tailwind", format: "html", render: (ComboboxTailwindHtml as unknown as AnyModule).Combobox as unknown as (props: ComboboxVariantProps) => HellaNode },
 ];
 
 /**
@@ -2518,17 +2518,17 @@ export interface CommandPartVariantProps extends HTMLAttributes<"div"> {
   description?: string;
 }
 
-/** The named Command parts (every export except the default Command). */
+/** The named Command parts (the other Command exports). */
 export const COMMAND_PARTS = ["Input", "List", "Empty", "Group", "Separator", "Item", "Shortcut", "Dialog"] as const;
 
 /**
- * Every compiled Command variant (the default export) from dist/registry.
+ * Every compiled Command variant (the Command export) from dist/registry.
  */
 export const commandVariants: ComponentVariant<CommandVariantProps>[] = [
-  { style: "css", format: "jsx", render: (CommandCssJsx as unknown as AnyModule).default as unknown as (props: CommandVariantProps) => HellaNode },
-  { style: "css", format: "html", render: (CommandCssHtml as unknown as AnyModule).default as unknown as (props: CommandVariantProps) => HellaNode },
-  { style: "tailwind", format: "jsx", render: (CommandTailwindJsx as unknown as AnyModule).default as unknown as (props: CommandVariantProps) => HellaNode },
-  { style: "tailwind", format: "html", render: (CommandTailwindHtml as unknown as AnyModule).default as unknown as (props: CommandVariantProps) => HellaNode },
+  { style: "css", format: "jsx", render: (CommandCssJsx as unknown as AnyModule).Command as unknown as (props: CommandVariantProps) => HellaNode },
+  { style: "css", format: "html", render: (CommandCssHtml as unknown as AnyModule).Command as unknown as (props: CommandVariantProps) => HellaNode },
+  { style: "tailwind", format: "jsx", render: (CommandTailwindJsx as unknown as AnyModule).Command as unknown as (props: CommandVariantProps) => HellaNode },
+  { style: "tailwind", format: "html", render: (CommandTailwindHtml as unknown as AnyModule).Command as unknown as (props: CommandVariantProps) => HellaNode },
 ];
 
 /**
@@ -2543,26 +2543,26 @@ export const commandPartVariants: PartVariant<CommandPartVariantProps>[] = COMMA
   ]),
 );
 
-import AlertDialogCssDefault from "../../dist/registry/alert-dialog/css/alert-dialog";
-import AlertDialogCssHtmlDefault from "../../dist/registry/alert-dialog/css/alert-dialog-html";
-import AlertDialogTailwindDefault from "../../dist/registry/alert-dialog/tailwind/alert-dialog";
-import AlertDialogTailwindHtmlDefault from "../../dist/registry/alert-dialog/tailwind/alert-dialog-html";
+import { AlertDialog as AlertDialogCssDefault } from "../../dist/registry/alert-dialog/css/alert-dialog";
+import { AlertDialog as AlertDialogCssHtmlDefault } from "../../dist/registry/alert-dialog/css/alert-dialog-html";
+import { AlertDialog as AlertDialogTailwindDefault } from "../../dist/registry/alert-dialog/tailwind/alert-dialog";
+import { AlertDialog as AlertDialogTailwindHtmlDefault } from "../../dist/registry/alert-dialog/tailwind/alert-dialog-html";
 import * as AlertDialogCssJsx from "../../dist/registry/alert-dialog/css/alert-dialog";
 import * as AlertDialogCssHtml from "../../dist/registry/alert-dialog/css/alert-dialog-html";
 import * as AlertDialogTailwindJsx from "../../dist/registry/alert-dialog/tailwind/alert-dialog";
 import * as AlertDialogTailwindHtml from "../../dist/registry/alert-dialog/tailwind/alert-dialog-html";
-import SheetCssDefault from "../../dist/registry/sheet/css/sheet";
-import SheetCssHtmlDefault from "../../dist/registry/sheet/css/sheet-html";
-import SheetTailwindDefault from "../../dist/registry/sheet/tailwind/sheet";
-import SheetTailwindHtmlDefault from "../../dist/registry/sheet/tailwind/sheet-html";
+import { Sheet as SheetCssDefault } from "../../dist/registry/sheet/css/sheet";
+import { Sheet as SheetCssHtmlDefault } from "../../dist/registry/sheet/css/sheet-html";
+import { Sheet as SheetTailwindDefault } from "../../dist/registry/sheet/tailwind/sheet";
+import { Sheet as SheetTailwindHtmlDefault } from "../../dist/registry/sheet/tailwind/sheet-html";
 import * as SheetCssJsx from "../../dist/registry/sheet/css/sheet";
 import * as SheetCssHtml from "../../dist/registry/sheet/css/sheet-html";
 import * as SheetTailwindJsx from "../../dist/registry/sheet/tailwind/sheet";
 import * as SheetTailwindHtml from "../../dist/registry/sheet/tailwind/sheet-html";
-import DrawerCssDefault from "../../dist/registry/drawer/css/drawer";
-import DrawerCssHtmlDefault from "../../dist/registry/drawer/css/drawer-html";
-import DrawerTailwindDefault from "../../dist/registry/drawer/tailwind/drawer";
-import DrawerTailwindHtmlDefault from "../../dist/registry/drawer/tailwind/drawer-html";
+import { Drawer as DrawerCssDefault } from "../../dist/registry/drawer/css/drawer";
+import { Drawer as DrawerCssHtmlDefault } from "../../dist/registry/drawer/css/drawer-html";
+import { Drawer as DrawerTailwindDefault } from "../../dist/registry/drawer/tailwind/drawer";
+import { Drawer as DrawerTailwindHtmlDefault } from "../../dist/registry/drawer/tailwind/drawer-html";
 import * as DrawerCssJsx from "../../dist/registry/drawer/css/drawer";
 import * as DrawerCssHtml from "../../dist/registry/drawer/css/drawer-html";
 import * as DrawerTailwindJsx from "../../dist/registry/drawer/tailwind/drawer";
@@ -2635,22 +2635,22 @@ export interface DrawerPartVariantProps extends Omit<AlertDialogPartVariantProps
   closeOnOutside?: boolean;
 }
 
-/** The named AlertDialog parts (every export except the default AlertDialog). */
+/** The named AlertDialog parts (the other AlertDialog exports). */
 export const ALERT_DIALOG_PARTS = ["Trigger", "Portal", "Overlay", "Content", "Header", "Footer", "Title", "Description", "Media", "Action", "Cancel"] as const;
 
-/** The named Sheet parts (every export except the default Sheet). */
+/** The named Sheet parts (the other Sheet exports). */
 export const SHEET_PARTS = ["Trigger", "Close", "Portal", "Overlay", "Content", "Header", "Footer", "Title", "Description"] as const;
 
-/** The named Drawer parts (every export except the default Drawer). */
+/** The named Drawer parts (the other Drawer exports). */
 export const DRAWER_PARTS = ["Trigger", "Close", "Portal", "Overlay", "Content", "Header", "Footer", "Title", "Description"] as const;
 
-/** One compiled AlertDialog flavor (the default export). */
+/** One compiled AlertDialog flavor (the AlertDialog export). */
 export type AlertDialogVariant = ChildrenVariant<AlertDialogVariantProps>;
 
-/** One compiled Sheet flavor (the default export). */
+/** One compiled Sheet flavor (the Sheet export). */
 export type SheetVariant = ChildrenVariant<SheetVariantProps>;
 
-/** One compiled Drawer flavor (the default export). */
+/** One compiled Drawer flavor (the Drawer export). */
 export type DrawerVariant = ChildrenVariant<DrawerVariantProps>;
 
 /** The newest alert dialog panel portaled into document.body (role=alertdialog sorts after dialogs). */
@@ -2672,7 +2672,7 @@ function newestDrawerPanel(): Element | null {
 }
 
 /**
- * Every compiled AlertDialog variant (the default export) from dist/registry.
+ * Every compiled AlertDialog variant (the AlertDialog export) from dist/registry.
  * AlertDialog portals its panel into document.body, so `root` resolves the
  * newest alertdialog there instead of the mount container's first element child.
  */
@@ -2684,7 +2684,7 @@ export const alertDialogVariants: ChildrenVariant<AlertDialogVariantProps>[] = [
 ];
 
 /**
- * Every compiled Sheet variant (the default export) from dist/registry.
+ * Every compiled Sheet variant (the Sheet export) from dist/registry.
  */
 export const sheetVariants: ChildrenVariant<SheetVariantProps>[] = [
   { style: "css", format: "jsx", render: SheetCssDefault, child: (value) => [value], root: newestSheetPanel },
@@ -2694,7 +2694,7 @@ export const sheetVariants: ChildrenVariant<SheetVariantProps>[] = [
 ];
 
 /**
- * Every compiled Drawer variant (the default export) from dist/registry.
+ * Every compiled Drawer variant (the Drawer export) from dist/registry.
  */
 export const drawerVariants: ChildrenVariant<DrawerVariantProps>[] = [
   { style: "css", format: "jsx", render: DrawerCssDefault, child: (value) => [value], root: newestDrawerPanel },
@@ -2761,7 +2761,7 @@ function newestToaster(): Element | null {
 }
 
 /**
- * Every compiled Sonner flavor. `render` is the default Toaster export;
+ * Every compiled Sonner flavor. `render` is the Toaster export;
  * `toast` is the same compiled module's queue singleton, so each variant
  * drives its own store.
  */
@@ -2771,19 +2771,19 @@ export interface SonnerVariant extends ComponentVariant<SonnerVariantProps> {
 }
 
 /**
- * Every compiled Sonner variant (the default Toaster) from dist/registry.
+ * Every compiled Sonner variant (the Toaster export) from dist/registry.
  */
 export const sonnerVariants: SonnerVariant[] = [
-  { style: "css", format: "jsx", render: SonnerCss.default, toast: SonnerCss.toast, root: newestToaster },
-  { style: "css", format: "html", render: SonnerCssHtml.default, toast: SonnerCssHtml.toast, root: newestToaster },
-  { style: "tailwind", format: "jsx", render: SonnerTailwind.default, toast: SonnerTailwind.toast, root: newestToaster },
-  { style: "tailwind", format: "html", render: SonnerTailwindHtml.default, toast: SonnerTailwindHtml.toast, root: newestToaster },
+  { style: "css", format: "jsx", render: SonnerCss.Toaster, toast: SonnerCss.toast, root: newestToaster },
+  { style: "css", format: "html", render: SonnerCssHtml.Toaster, toast: SonnerCssHtml.toast, root: newestToaster },
+  { style: "tailwind", format: "jsx", render: SonnerTailwind.Toaster, toast: SonnerTailwind.toast, root: newestToaster },
+  { style: "tailwind", format: "html", render: SonnerTailwindHtml.Toaster, toast: SonnerTailwindHtml.toast, root: newestToaster },
 ];
 
-import ScrollAreaCssDefault from "../../dist/registry/scroll-area/css/scroll-area";
-import ScrollAreaCssHtmlDefault from "../../dist/registry/scroll-area/css/scroll-area-html";
-import ScrollAreaTailwindDefault from "../../dist/registry/scroll-area/tailwind/scroll-area";
-import ScrollAreaTailwindHtmlDefault from "../../dist/registry/scroll-area/tailwind/scroll-area-html";
+import { ScrollArea as ScrollAreaCssDefault } from "../../dist/registry/scroll-area/css/scroll-area";
+import { ScrollArea as ScrollAreaCssHtmlDefault } from "../../dist/registry/scroll-area/css/scroll-area-html";
+import { ScrollArea as ScrollAreaTailwindDefault } from "../../dist/registry/scroll-area/tailwind/scroll-area";
+import { ScrollArea as ScrollAreaTailwindHtmlDefault } from "../../dist/registry/scroll-area/tailwind/scroll-area-html";
 import * as ScrollAreaCssJsx from "../../dist/registry/scroll-area/css/scroll-area";
 import * as ScrollAreaCssHtml from "../../dist/registry/scroll-area/css/scroll-area-html";
 import * as ScrollAreaTailwindJsx from "../../dist/registry/scroll-area/tailwind/scroll-area";
@@ -2804,7 +2804,7 @@ export interface ScrollBarVariantProps extends GlobalHTMLAttributes {
 }
 
 /**
- * Every compiled ScrollArea variant (the default export) from dist/registry.
+ * Every compiled ScrollArea variant (the ScrollArea export) from dist/registry.
  */
 export const scrollAreaVariants: ChildrenVariant<ScrollAreaVariantProps>[] = [
   { style: "css", format: "jsx", render: ScrollAreaCssDefault, child: (value) => [value] },
@@ -2823,10 +2823,10 @@ export const scrollBarVariants: ComponentVariant<ScrollBarVariantProps>[] = [
   { style: "tailwind", format: "html", render: ScrollAreaTailwindHtml.ScrollBar },
 ];
 
-import CalendarCssDefault from "../../dist/registry/calendar/css/calendar";
-import CalendarCssHtmlDefault from "../../dist/registry/calendar/css/calendar-html";
-import CalendarTailwindDefault from "../../dist/registry/calendar/tailwind/calendar";
-import CalendarTailwindHtmlDefault from "../../dist/registry/calendar/tailwind/calendar-html";
+import { Calendar as CalendarCssDefault } from "../../dist/registry/calendar/css/calendar";
+import { Calendar as CalendarCssHtmlDefault } from "../../dist/registry/calendar/css/calendar-html";
+import { Calendar as CalendarTailwindDefault } from "../../dist/registry/calendar/tailwind/calendar";
+import { Calendar as CalendarTailwindHtmlDefault } from "../../dist/registry/calendar/tailwind/calendar-html";
 import * as CalendarCssJsx from "../../dist/registry/calendar/css/calendar";
 import * as CalendarCssHtml from "../../dist/registry/calendar/css/calendar-html";
 import * as CalendarTailwindJsx from "../../dist/registry/calendar/tailwind/calendar";
@@ -2863,7 +2863,7 @@ export interface CalendarDayButtonVariantProps extends HTMLAttributes<"button"> 
 }
 
 /**
- * Every compiled Calendar variant (the default export) from dist/registry.
+ * Every compiled Calendar variant (the Calendar export) from dist/registry.
  * Calendar renders no children, so the suites carry no `child` wrapper.
  */
 export const calendarVariants: ComponentVariant<CalendarVariantProps>[] = [
@@ -2883,10 +2883,10 @@ export const calendarDayButtonVariants: ComponentVariant<CalendarDayButtonVarian
   { style: "tailwind", format: "html", render: CalendarTailwindHtml.CalendarDayButton },
 ];
 
-import InputOtpCssDefault from "../../dist/registry/input-otp/css/input-otp";
-import InputOtpCssHtmlDefault from "../../dist/registry/input-otp/css/input-otp-html";
-import InputOtpTailwindDefault from "../../dist/registry/input-otp/tailwind/input-otp";
-import InputOtpTailwindHtmlDefault from "../../dist/registry/input-otp/tailwind/input-otp-html";
+import { InputOTP as InputOtpCssDefault } from "../../dist/registry/input-otp/css/input-otp";
+import { InputOTP as InputOtpCssHtmlDefault } from "../../dist/registry/input-otp/css/input-otp-html";
+import { InputOTP as InputOtpTailwindDefault } from "../../dist/registry/input-otp/tailwind/input-otp";
+import { InputOTP as InputOtpTailwindHtmlDefault } from "../../dist/registry/input-otp/tailwind/input-otp-html";
 import * as InputOtpCssJsx from "../../dist/registry/input-otp/css/input-otp";
 import * as InputOtpCssHtml from "../../dist/registry/input-otp/css/input-otp-html";
 import * as InputOtpTailwindJsx from "../../dist/registry/input-otp/tailwind/input-otp";
@@ -2903,7 +2903,7 @@ export interface InputOtpVariantProps extends HTMLAttributes<"div"> {
 }
 
 /**
- * Every compiled InputOTP variant (the default export) from dist/registry.
+ * Every compiled InputOTP variant (the InputOTP export) from dist/registry.
  * Children are the user-composed groups/slots, so the suites build them from
  * `inputOtpPartModules` per render.
  */

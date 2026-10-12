@@ -10,7 +10,7 @@ interface SwitchProps extends HTMLAttributes<"button"> {
   onCheckedChange?: (checked: boolean) => void;
 }
 
-export default function Switch({ checked: checkedProp, onCheckedChange, disabled, "on:click": userClick, class: cls, ...attrs }: SwitchProps): HellaNode {
+export function Switch({ checked: checkedProp, onCheckedChange, disabled, "on:click": userClick, class: cls, ...attrs }: SwitchProps): HellaNode {
   const checkedAccessor = typeof checkedProp === "function" ? checkedProp : undefined;
   const internal = signal(typeof checkedProp === "boolean" ? checkedProp : false);
   const checked = (): boolean => (checkedAccessor ? checkedAccessor() : internal());

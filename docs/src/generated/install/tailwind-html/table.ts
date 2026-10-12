@@ -7,7 +7,7 @@ interface TableProps extends HTMLAttributes<"table"> {
   children?: HellaChildren;
 }
 
-export default function Table({ children, class: cls, ...attrs }: TableProps): HellaNode {
+export function Table({ children, class: cls, ...attrs }: TableProps): HellaNode {
   return html`
     <div
       data-slot="table-container"

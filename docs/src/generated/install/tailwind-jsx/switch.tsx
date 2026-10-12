@@ -9,7 +9,7 @@ interface SwitchProps extends HTMLAttributes<"button"> {
   onCheckedChange?: (checked: boolean) => void;
 }
 
-export default function Switch({ checked: checkedProp, onCheckedChange, disabled, "on:click": userClick, class: cls, ...attrs }: SwitchProps): JSX.Element {
+export function Switch({ checked: checkedProp, onCheckedChange, disabled, "on:click": userClick, class: cls, ...attrs }: SwitchProps): JSX.Element {
   const checkedAccessor = typeof checkedProp === "function" ? checkedProp : undefined;
   const internal = signal(typeof checkedProp === "boolean" ? checkedProp : false);
   const checked = (): boolean => (checkedAccessor ? checkedAccessor() : internal());

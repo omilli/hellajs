@@ -202,7 +202,7 @@ interface DialogContentProps extends HTMLAttributes<"div"> {
 /**
  * The dialog panel. Manual composition portals it alongside a DialogOverlay
  * sibling - hella has no Radix context, so the portal/overlay pairing is the
- * composer's (the default Dialog below shows the wired composition).
+ * composer's (the Dialog export below shows the wired composition).
  */
 export function DialogContent({ state, showCloseButton, closeOnEscape, closeOnOutside, onClose, onExited, children, class: cls, ...attrs }: DialogContentProps): HellaNode {
   const wirings: (() => void)[] = [];
@@ -340,7 +340,7 @@ interface DialogProps extends HTMLAttributes<"div"> {
 
 let dialogCount = 0;
 
-export default function Dialog({ open, onClose, title: titleText, description: descriptionText, showCloseButton, closeOnEscape, closeOnOutside, children, class: cls, ...attrs }: DialogProps): HellaNode {
+export function Dialog({ open, onClose, title: titleText, description: descriptionText, showCloseButton, closeOnEscape, closeOnOutside, children, class: cls, ...attrs }: DialogProps): HellaNode {
   const titleId = `hella-dialog-title-${++dialogCount}`;
   const descriptionId = `hella-dialog-description-${dialogCount}`;
   // `visible` alone gates the render so an open→closed flip never unmounts

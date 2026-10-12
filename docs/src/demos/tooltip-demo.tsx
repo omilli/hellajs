@@ -1,6 +1,6 @@
 import { signal } from "@hellajs/core";
-import Button from "@registry/button/css/button.js";
-import Tooltip, { TooltipContent, TooltipTrigger } from "@registry/tooltip/css/tooltip.js";
+import { Button } from "@registry/button/css/button.js";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@registry/tooltip/css/tooltip.js";
 import { hoverIntent, Portal } from "@hellajs/dom";
 
 export function TooltipDemo() {

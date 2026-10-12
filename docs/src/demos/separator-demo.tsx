@@ -1,6 +1,6 @@
 import { style } from "@hellajs/css";
 import { tokens } from "../styles/tokens";
-import Separator from "@registry/separator/css/separator.js";
+import { Separator } from "@registry/separator/css/separator.js";
 
 const section = style({
   display: "flex",

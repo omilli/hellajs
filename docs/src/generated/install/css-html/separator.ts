@@ -23,7 +23,7 @@ interface SeparatorProps extends HTMLAttributes<"div"> {
   orientation?: "horizontal" | "vertical";
 }
 
-export default function Separator({ orientation, children, class: cls, ...attrs }: SeparatorProps): HellaNode {
+export function Separator({ orientation, children, class: cls, ...attrs }: SeparatorProps): HellaNode {
   return html`
     <div
       data-slot="separator"

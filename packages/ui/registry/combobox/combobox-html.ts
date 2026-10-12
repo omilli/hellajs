@@ -733,7 +733,7 @@ interface ComboboxProps extends HTMLAttributes<"div"> {
 
 let comboboxCount = 0;
 
-export default function Combobox({ items: itemsProp, value, onValueChange, multiple, filter, showClear, class: cls, ...attrs }: ComboboxProps): HellaNode {
+export function Combobox({ items: itemsProp, value, onValueChange, multiple, filter, showClear, class: cls, ...attrs }: ComboboxProps): HellaNode {
   const items = itemsProp ?? [];
   const s = comboboxOpenState();
   const listId = `hella-combobox-list-${++comboboxCount}`;
@@ -912,4 +912,3 @@ export default function Combobox({ items: itemsProp, value, onValueChange, multi
   });
 }
 
-export { Combobox };

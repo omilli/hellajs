@@ -11,7 +11,7 @@ interface TextareaProps extends HTMLAttributes<"textarea"> {
   class?: string;
 }
 
-export default function Textarea({ class: cls, ...attrs }: TextareaProps): HellaNode {
+export function Textarea({ class: cls, ...attrs }: TextareaProps): HellaNode {
   return html`
     <textarea
       data-slot="textarea"

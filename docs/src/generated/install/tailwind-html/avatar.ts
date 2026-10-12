@@ -10,7 +10,7 @@ interface AvatarProps extends HTMLAttributes<"div"> {
   size?: "default" | "sm" | "lg";
 }
 
-export default function Avatar({ size, children, class: cls, ...attrs }: AvatarProps): HellaNode {
+export function Avatar({ size, children, class: cls, ...attrs }: AvatarProps): HellaNode {
   return html`
     <div
       data-slot="avatar"

@@ -1,6 +1,6 @@
 import { signal } from "@hellajs/core";
 import { style } from "@hellajs/css";
-import Checkbox from "@registry/checkbox/css/checkbox.js";
+import { Checkbox } from "@registry/checkbox/css/checkbox.js";
 
 const checkRow = style({
   alignItems: "center",

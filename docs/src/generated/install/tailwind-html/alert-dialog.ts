@@ -91,7 +91,7 @@ interface AlertDialogContentProps extends HTMLAttributes<"div"> {
 /**
  * The alert dialog panel. Manual composition portals it alongside an
  * AlertDialogOverlay sibling - hella has no Radix context, so the
- * portal/overlay pairing is the composer's (the default AlertDialog below
+ * portal/overlay pairing is the composer's (the AlertDialog export below
  * shows the wired composition). Unlike DialogContent there is no outside
  * dismissal: Radix's AlertDialog semantics are escape-only by design.
  */
@@ -289,7 +289,7 @@ interface AlertDialogProps extends HTMLAttributes<"div"> {
 
 let alertDialogCount = 0;
 
-export default function AlertDialog({ open, onClose, title: titleText, description: descriptionText, size, closeOnEscape, children, class: cls, ...attrs }: AlertDialogProps): HellaNode {
+export function AlertDialog({ open, onClose, title: titleText, description: descriptionText, size, closeOnEscape, children, class: cls, ...attrs }: AlertDialogProps): HellaNode {
   const titleId = `hella-alert-dialog-title-${++alertDialogCount}`;
   const descriptionId = `hella-alert-dialog-description-${alertDialogCount}`;
   // `visible` alone gates the render so an open→closed flip never unmounts

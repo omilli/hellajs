@@ -28,7 +28,7 @@ interface ButtonProps extends HTMLAttributes<"button"> {
   size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
 }
 
-export default function Button({ variant, size, children, class: cls, ...attrs }: ButtonProps): JSX.Element {
+export function Button({ variant, size, children, class: cls, ...attrs }: ButtonProps): JSX.Element {
   return (
     <button
       data-slot="button"

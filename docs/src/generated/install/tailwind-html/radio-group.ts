@@ -78,7 +78,7 @@ export function RadioGroupItem({ value, checked, onSelect, disabled, name, "on:c
   ` as HellaNode;
 }
 
-export default function RadioGroup({ items, value, onValueChange, orientation, name, class: cls, ...attrs }: RadioGroupProps): HellaNode {
+export function RadioGroup({ items, value, onValueChange, orientation, name, class: cls, ...attrs }: RadioGroupProps): HellaNode {
   const internal = signal("");
   const current = (): string => (value !== undefined ? value() : internal());
   const wirings: (() => void)[] = [];

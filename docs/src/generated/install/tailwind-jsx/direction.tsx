@@ -14,7 +14,7 @@ interface DirectionProviderProps extends HTMLAttributes<"div"> {
  * attribute IS the mechanism. display: contents keeps the wrapper out of
  * layout so compositions render as if the node were not there.
  */
-export default function DirectionProvider({ dir, children, class: cls, ...attrs }: DirectionProviderProps): JSX.Element {
+export function DirectionProvider({ dir, children, class: cls, ...attrs }: DirectionProviderProps): JSX.Element {
   return (
     <div
       data-slot="direction-provider"

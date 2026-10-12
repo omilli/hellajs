@@ -1,6 +1,6 @@
 import { signal } from "@hellajs/core";
 
-import Collapsible, { CollapsibleContent, CollapsibleTrigger } from "@registry/collapsible/css/collapsible.js";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@registry/collapsible/css/collapsible.js";
 
 export function CollapsibleDemo() {
   const open = signal(false);

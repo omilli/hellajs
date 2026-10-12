@@ -78,7 +78,7 @@ interface AlertProps extends HTMLAttributes<"div"> {
   variant?: "default" | "destructive";
 }
 
-export default function Alert({ variant, children, class: cls, ...attrs }: AlertProps): HellaNode {
+export function Alert({ variant, children, class: cls, ...attrs }: AlertProps): HellaNode {
   return html`
     <div
       data-slot="alert"

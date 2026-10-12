@@ -147,7 +147,7 @@ export function AccordionContent({ active, id, children, class: cls, ...attrs }:
   ` as HellaNode;
 }
 
-export default function Accordion({ items, type, collapsible, open, class: cls, ...attrs }: AccordionProps): HellaNode {
+export function Accordion({ items, type, collapsible, open, class: cls, ...attrs }: AccordionProps): HellaNode {
   const mode = type ?? "single";
   const seed = open === undefined
     ? []

@@ -322,7 +322,7 @@ interface NavigationMenuProps extends HTMLAttributes<"div"> {
   class?: string;
 }
 
-export default function NavigationMenu({ value: valueProp, onValueChange, viewport: viewportProp, children, class: cls, ...attrs }: NavigationMenuProps): JSX.Element {
+export function NavigationMenu({ value: valueProp, onValueChange, viewport: viewportProp, children, class: cls, ...attrs }: NavigationMenuProps): JSX.Element {
   const internal = signal("");
   const active = (): string => (valueProp !== undefined ? valueProp() : internal());
   const setActive = (value: string): void => {

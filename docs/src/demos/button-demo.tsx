@@ -1,5 +1,5 @@
 import { css } from "@hellajs/css";
-import Button from "@registry/button/css/button.js";
+import { Button } from "@registry/button/css/button.js";
 
 
 export function ButtonVariants() {

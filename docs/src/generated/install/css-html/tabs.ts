@@ -241,7 +241,7 @@ export function TabsContent({ id, active, children, class: cls, ...attrs }: Tabs
   ` as HellaNode;
 }
 
-export default function Tabs({ items, initialId, orientation = "horizontal", variant = "default", class: cls, ...attrs }: TabsProps): HellaNode {
+export function Tabs({ items, initialId, orientation = "horizontal", variant = "default", class: cls, ...attrs }: TabsProps): HellaNode {
   const selected = signal(initialId ?? items[0]!.id);
   const wirings: (() => void)[] = [];
   let tablist: HTMLElement | null = null;

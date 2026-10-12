@@ -1,7 +1,7 @@
 import { signal } from "@hellajs/core";
 import { style } from "@hellajs/css";
 import { tokens } from "../styles/tokens";
-import Progress from "@registry/progress/css/progress.js";
+import { Progress } from "@registry/progress/css/progress.js";
 
 const advance = style({
   border: `1px solid ${tokens.border}`,

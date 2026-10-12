@@ -15,7 +15,7 @@ interface EmptyPartProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
 }
 
-export default function Empty({ children, class: cls, ...attrs }: EmptyPartProps): JSX.Element {
+export function Empty({ children, class: cls, ...attrs }: EmptyPartProps): JSX.Element {
   return (
     <div
       data-slot="empty"

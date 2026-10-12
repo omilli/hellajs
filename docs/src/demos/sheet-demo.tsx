@@ -1,7 +1,7 @@
 import { signal } from "@hellajs/core";
 
-import Button from "@registry/button/css/button.js";
-import Sheet, { SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetOverlay, SheetTitle } from "@registry/sheet/css/sheet.js";
+import { Button } from "@registry/button/css/button.js";
+import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetOverlay, SheetTitle } from "@registry/sheet/css/sheet.js";
 import { Portal } from "@hellajs/dom";
 
 export function SheetDemo() {

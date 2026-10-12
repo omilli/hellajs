@@ -1,6 +1,6 @@
 import { signal } from "@hellajs/core";
 
-import Avatar, { AvatarFallback, AvatarGroup, AvatarGroupCount, AvatarImage } from "@registry/avatar/css/avatar.js";
+import { Avatar, AvatarFallback, AvatarGroup, AvatarGroupCount, AvatarImage } from "@registry/avatar/css/avatar.js";
 
 export function AvatarDemo() {
   const loaded = signal(false);
