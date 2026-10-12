@@ -8,14 +8,16 @@ Six named parts ship beside the default `Popover`: `PopoverTrigger`, `PopoverCon
 
 ### Popover
 
+The composed root portals its `content` prop into `document.body` while open.
+
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `open` | `() => boolean` | `-` |
 | `onOpenChange` | `(open: boolean) => void` | `-` |
 | `anchor` | `() => Element \| undefined` | The trigger element |
-| `content` | `HellaChildren` | The panel children, portaled into `document.body` while open |
+| `content` | `HellaChildren` | `-` |
 | `class` | `string` | `-` |
-| `children` | `HellaChildren` | The trigger label |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `button` attributes (forwarded to the root element; a user `on:click` chains with the owned toggle).
 
 A controlled `open` stops the root from writing its internal signal; `onOpenChange` reports every requested open and close flip.
@@ -26,7 +28,7 @@ The manual trigger button; the composed `Popover` renders the same shape wired t
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | The trigger label |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `button` attributes (forwarded to the root element).
 
 ### PopoverContent
@@ -44,7 +46,7 @@ The `role="dialog"` panel carrying `tabindex="-1"` for the focus-on-open contrac
 | `anchor` | `() => Element \| undefined` | `-` |
 | `onDismiss` | `() => void` | `-` |
 | `onExited` | `() => void` | `-` |
-| `children` | `HellaChildren` | The panel body |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element; a user-supplied `id` wins over the generated one).
 
 ### PopoverAnchor
@@ -53,7 +55,7 @@ A bare anchor span for compositions where the trigger should not be the position
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | The anchor content |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `span` attributes (forwarded to the root element).
 
 ### PopoverHeader
@@ -62,7 +64,7 @@ The top grouping `div` carrying `data-slot="popover-header"`.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | Title and description nodes |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
 ### PopoverTitle
@@ -71,7 +73,7 @@ The heading `div` carrying `data-slot="popover-title"`.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | The title text |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
 ### PopoverDescription
@@ -80,7 +82,7 @@ The supporting line: a `p` carrying `data-slot="popover-description"`.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | The description text |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `p` attributes (forwarded to the root element).
 
 Every part also takes a `class` string, landing last in its style composition.

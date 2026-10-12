@@ -71,7 +71,7 @@ The portaled `role="listbox"` surface with its keyboard model, typeahead, and ed
 | `onDismiss` | `() => void` | `-` |
 | `onExited` | `() => void` | `-` |
 | `onClose` | `() => void` | `-` |
-| `children` | `HellaChildren` | The options and grouping parts |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
 ### SelectItem
@@ -92,7 +92,7 @@ A passthrough grouping `div` for options and labels.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | The grouped items |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
 ### SelectLabel
@@ -101,7 +101,7 @@ A section label inside a group.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | The label text |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
 ### SelectSeparator
@@ -116,7 +116,7 @@ The top edge scroll row, rendering an up chevron unless children replace it; `Se
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | Replaces the default up chevron when given |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
 ### SelectScrollDownButton
@@ -125,7 +125,7 @@ The bottom edge scroll row, rendering a down chevron unless children replace it;
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | Replaces the default down chevron when given |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
 Every part also takes a `class` string, landing last in its style composition.

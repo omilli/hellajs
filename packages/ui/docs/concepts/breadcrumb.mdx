@@ -9,7 +9,7 @@ The labeled `nav` wrapper.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `class` | `string` | `-` |
-| `children` | `HellaChildren` | The list |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `nav` attributes (forwarded to the root element).
 
 ### BreadcrumbList
@@ -18,7 +18,7 @@ The trail: an `ol` laid out as the wrapping flex row with the `sm:` gap step.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | The trail's items and separators |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `ol` attributes (forwarded to the root element).
 
 ### BreadcrumbItem
@@ -27,7 +27,7 @@ One trail slot: an `li` holding a link, the current page, an ellipsis, or a drop
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | The slot's node |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `li` attributes (forwarded to the root element).
 
 ### BreadcrumbLink
@@ -36,7 +36,7 @@ One trail link: an `a` with the color transition on hover.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | The segment label |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `a` attributes (forwarded to the root element).
 
 ### BreadcrumbPage
@@ -45,16 +45,16 @@ The current segment: a `span` carrying `role="link"`, `aria-disabled="true"`, an
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | The current page's label |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `span` attributes (forwarded to the root element).
 
 ### BreadcrumbSeparator
 
-The between-items marker: an `li` carrying `role="presentation"` and `aria-hidden="true"`, inlining the chevron.
+The between-items marker: an `li` carrying `role="presentation"` and `aria-hidden="true"`, inlining the chevron; given children replace it.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | Replaces the inlined chevron when given |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `li` attributes (forwarded to the root element).
 
 ### BreadcrumbEllipsis

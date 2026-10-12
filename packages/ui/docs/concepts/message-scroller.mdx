@@ -19,7 +19,7 @@ The composed root: it adopts or owns the at-bottom signal, wraps the children in
 | `threshold` | `number` | `80` |
 | `scrollToBottom` | `() => void` | `-` |
 | `observe` | `(target: Element, onGrow: () => void) => () => void` | A `ResizeObserver` |
-| `children` | `HellaChildren` | The message items |
+| `children` | `HellaChildren` | `-` |
 
 Accepts all native `div` attributes (forwarded to the root element).
 
@@ -33,7 +33,7 @@ The scroll container: a `div` carrying `data-slot="message-scroller-viewport"` w
 | `threshold` | `number` | `80` |
 | `scrollToBottom` | `() => void` | `-` |
 | `observe` | `(target: Element, onGrow: () => void) => () => void` | A `ResizeObserver` |
-| `children` | `HellaChildren` | The content stack |
+| `children` | `HellaChildren` | `-` |
 
 Accepts all native `div` attributes (forwarded to the root element).
 
@@ -43,7 +43,7 @@ The content stack: a `div` carrying `data-slot="message-scroller-content"` that 
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | The items |
+| `children` | `HellaChildren` | `-` |
 
 Accepts all native `div` attributes (forwarded to the root element).
 
@@ -53,7 +53,7 @@ One message row: a `div` carrying `data-slot="message-scroller-item"`.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | The message node |
+| `children` | `HellaChildren` | `-` |
 
 Accepts all native `div` attributes (forwarded to the root element).
 
@@ -68,7 +68,7 @@ The jump button: rendered while the shared state reads false and hidden while tr
 | `variant` | Button variant pick | `"secondary"` |
 | `size` | Button size pick | `"icon-sm"` |
 | `scrollToBottom` | `() => void` | `-` |
-| `children` | `HellaChildren` | The arrow icon plus a screen-reader label |
+| `children` | `HellaChildren` | `-` |
 
 Accepts all native `button` attributes (forwarded to the root element; a user `on:click` chains ahead of the owned scroll action).
 
@@ -78,7 +78,7 @@ A passthrough kept for API parity: renders `children` only; hella has no context
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | The composed shell |
+| `children` | `HellaChildren` | `-` |
 
 Every part also takes a `class` string, landing last in its style composition.
 

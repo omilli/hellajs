@@ -21,7 +21,7 @@ The field row: a `div` carrying `data-error` as the container-level error hook.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `error` | `boolean \| (() => boolean)` | `-` |
-| `children` | `HellaChildren` | The label, control, description, and message nodes |
+| `children` | `HellaChildren` | `-` |
 
 Accepts all native `div` attributes (forwarded to the root element).
 
@@ -32,7 +32,7 @@ The field's label: renders `data-required` when the native `required` attribute 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `error` | `boolean \| (() => boolean)` | `-` |
-| `children` | `HellaChildren` | The label text |
+| `children` | `HellaChildren` | `-` |
 
 Accepts all native `label` attributes (forwarded to the root element; `for` re-emits from the destructured attribute).
 
@@ -44,7 +44,7 @@ The passthrough slot around the control itself: a wrapper carrying `aria-invalid
 | ---- | ---- | ------- |
 | `invalid` | `boolean \| (() => boolean)` | `-` |
 | `describedBy` | `string` | `-` |
-| `children` | `HellaChildren` | The control node |
+| `children` | `HellaChildren` | `-` |
 
 Accepts all native `div` attributes (forwarded to the root element).
 
@@ -54,18 +54,18 @@ The hint line: carries the native `id` the control's `describedBy` points at.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | The hint text |
+| `children` | `HellaChildren` | `-` |
 
 Accepts all native `p` attributes (forwarded to the root element; `id` re-emits from the destructured attribute).
 
 ### FormMessage
 
-The message: renders the first error with `role="alert"` and hides (rather than unmounts) when there is nothing to show, so both formats keep one DOM shape.
+The message: renders the first error with `role="alert"` and hides (rather than unmounts) when there is nothing to show, so both formats keep one DOM shape. Children are the fallback content rendered when there are no errors.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `errors` | `string[] \| (() => string[] \| undefined)` | `-` |
-| `children` | `HellaChildren` | Fallback content rendered when there are no errors |
+| `children` | `HellaChildren` | `-` |
 
 Accepts all native `p` attributes (forwarded to the root element).
 

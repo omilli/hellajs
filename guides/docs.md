@@ -679,6 +679,7 @@ Use for structured data: error categories/status enums, hook timing reference, o
 - Always include header row.
 - Keep columns narrow enough for readable rendering.
 - Delimiter row cell count must match the header row (escaped `\|` does not split a cell); GFM refuses the whole table otherwise. Enforced by `bun lint:structure`.
+- **Prop tables (`Prop | Type | Default`)**: the Default column holds actual default values only. End-user slot rows (`children`, children-passing `content`/`trigger` props) have no default and show `-`; a slot's role or behavior lives in the prose around the table, never in the Default cell.
 
 ## Callouts
 
@@ -791,6 +792,7 @@ Run this when holding a Docs file (`.mdx` / `.md`). Each item is a yes/no or a c
 
 **Accuracy**
 - [ ] Every code example compiles against current source signatures (cross-check `lib/index.ts`)
+- [ ] Prop-table Default cells hold actual default values only; end-user slot rows (`children`, children-passing `content`/`trigger`) show `-`, with the slot's role or behavior in the surrounding prose (§Tables)
 - [ ] Interface signatures match the actual exported types verbatim (wrapper types named, never substituted)
 - [ ] No claim contradicts the implementation — cross-checked against source and tests
 - [ ] Callback parameter types match what the implementation passes

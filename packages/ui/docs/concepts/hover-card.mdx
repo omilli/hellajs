@@ -6,15 +6,15 @@ Two named parts ship beside the default `HoverCard`: `HoverCardTrigger` and `Hov
 
 ### HoverCard
 
-The composed `HoverCard` wraps its children in the trigger span. It opens 200ms after the pointer rests on the trigger and closes 300ms after it leaves. Moving the pointer from the trigger into the panel keeps it open: the content carries a second [`hoverIntent`](/reference/dom/hoverintent) with zero delays that re-arms the open state the moment the pointer enters, cancelling the trigger's pending close. Leaving the content closes it immediately; returning to the trigger cancels that close in turn, so crossing between the two regions in either direction never flickers.
+The composed `HoverCard` wraps its children in the trigger span. It opens 200ms after the pointer rests on the trigger and closes 300ms after it leaves. Moving the pointer from the trigger into the panel keeps it open: the content carries a second [`hoverIntent`](/reference/dom/hoverintent) with zero delays that re-arms the open state the moment the pointer enters, cancelling the trigger's pending close. Leaving the content closes it immediately; returning to the trigger cancels that close in turn, so crossing between the two regions in either direction never flickers. The `content` prop portals into `document.body` while open.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `open` | `() => boolean` | `-` |
 | `onOpenChange` | `(open: boolean) => void` | `-` |
-| `content` | `HellaChildren` | The panel children, portaled into `document.body` while open |
+| `content` | `HellaChildren` | `-` |
 | `class` | `string` | `-` |
-| `children` | `HellaChildren` | The trigger content |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `span` attributes (forwarded to the root element).
 
 A controlled `open` stops the root from writing its internal signal; `onOpenChange` reports every requested open and close flip.
@@ -25,7 +25,7 @@ The manual trigger span; the composed `HoverCard` renders the same shape wired t
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | The trigger content |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `span` attributes (forwarded to the root element).
 
 ### HoverCardContent
@@ -41,7 +41,7 @@ The panel `div` carrying `data-slot="hover-card-content"`, positioned through [`
 | `onOpen` | `() => void` | `-` |
 | `onClose` | `() => void` | `-` |
 | `onExited` | `() => void` | `-` |
-| `children` | `HellaChildren` | The panel body |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
 `state` drives `data-state` and the enter/exit cycle. The anchor resolves to the element the panel anchors to; positioning is skipped when undefined. `onOpen` fires when the pointer enters the panel, re-arming the open state; `onClose` fires when it leaves; `onExited` fires when the exit animation ends under `data-state="closed"`.

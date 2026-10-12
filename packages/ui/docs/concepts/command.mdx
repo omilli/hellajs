@@ -13,7 +13,7 @@ Items sharing a `group` render under one heading, in the order the groups first 
 | `loop` | `boolean` | `false` |
 | `value` | `() => string` | `-` |
 | `onValueChange` | `(value: string) => void` | `-` |
-| `children` | `HellaChildren` | Extra chrome below the list |
+| `children` | `HellaChildren` | `-` |
 | `class` | `string` | `-` |
 
 Accepts all native `div` attributes (forwarded to the root element).
@@ -53,7 +53,7 @@ The scrolling `role="listbox"` container.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `body` | `() => HellaChild \| HellaChild[]` | `-` |
-| `children` | `HellaChildren` | Static list chrome |
+| `children` | `HellaChildren` | `-` |
 
 Accepts all native `div` attributes (forwarded to the root element).
 
@@ -63,7 +63,7 @@ The zero-match row.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | The empty-state text |
+| `children` | `HellaChildren` | `-` |
 
 Accepts all native `div` attributes (forwarded to the root element).
 
@@ -88,7 +88,7 @@ One `role="option"` row; activation runs `onSelect` on click.
 | `active` | `() => boolean` | `-` |
 | `onSelect` | `() => void` | `-` |
 | `disabled` | `boolean` | `-` |
-| `children` | `HellaChildren` | The row's label |
+| `children` | `HellaChildren` | `-` |
 
 Accepts all native `div` attributes (forwarded to the root element); a user `on:click` chains with the owned select.
 
@@ -98,7 +98,7 @@ The right-aligned key hint inside a row.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | The hint text |
+| `children` | `HellaChildren` | `-` |
 
 Accepts all native `span` attributes (forwarded to the root element).
 
@@ -116,7 +116,7 @@ The palette wrapped in the dialog surface: the overlay, the portaled panel, the 
 | `onClose` | `() => void` | `-` |
 | `title` | `string` | `-` |
 | `description` | `string` | `-` |
-| `children` | `HellaChildren` | The palette (input, list, groups) |
+| `children` | `HellaChildren` | `-` |
 
 Accepts all native `div` attributes (forwarded to the portaled panel element).
 

@@ -15,7 +15,7 @@ Fourteen named parts ship beside the default `Menubar`: `MenubarMenu`, `MenubarT
 | `value` | `() => string` | `-` |
 | `onValueChange` | `(value: string) => void` | `-` |
 | `class` | `string` | `-` |
-| `children` | `HellaChildren` | The `MenubarMenu` wrappers |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
 A controlled `value` is the open menu's id ("" when closed); when given, the bar never writes its internal signal.
@@ -29,8 +29,8 @@ One menu: the trigger button plus its portaled content, named in the bar's store
 | `value` | `string` | Generated |
 | `open` | `() => boolean` | `-` |
 | `onOpenChange` | `(open: boolean) => void` | `-` |
-| `children` | `HellaChildren` | The trigger label |
-| `content` | `HellaChildren` | The menu items, portaled while open |
+| `children` | `HellaChildren` | `-` |
+| `content` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
 A controlled `open` accessor supports manual wiring without the bar; `onOpenChange` reports this menu's flips.
@@ -41,7 +41,7 @@ The menu button inside the bar, accent-highlighted while its menu is open.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | The trigger label |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `button` attributes (forwarded to the root element).
 
 ### MenubarContent
@@ -59,7 +59,7 @@ The `role="menu"` surface with the full keyboard model, anchored against its tri
 | `onDismiss` | `() => void` | `-` |
 | `onExited` | `() => void` | `-` |
 | `onArrow` | `(direction: "left" \| "right") => void` | `-` |
-| `children` | `HellaChildren` | The menu items |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
 `state` drives `data-state` and the enter/exit cycle; `closed` tears the wirings down. The anchor resolves to the element the content anchors to; positioning is skipped when undefined. `onDismiss` receives Escape and outside pointerdowns from the top layer, and item selection closes every open layer through it; `onExited` fires when the exit animation ends. Both horizontal arrows report outward through `onArrow` (bar open-then-move) when the focused item is not a sub-trigger.
@@ -70,7 +70,7 @@ A passthrough grouping `div`.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | The grouped items |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
 ### MenubarItem
@@ -82,7 +82,7 @@ A `role="menuitem"` row; activation closes every open layer.
 | `destructive` | `boolean` | `-` |
 | `inset` | `boolean` | `-` |
 | `shortcut` | `string` | `-` |
-| `children` | `HellaChildren` | The row's label |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
 A user `on:click` chains with the owned close (it fires before the close-all activation event); `destructive` renders the destructive `data-variant` treatment; `inset` renders `data-inset="true"`; `disabled` renders `data-disabled` plus `aria-disabled` and blocks the user's `on:click` and the close; `shortcut` renders as a trailing `MenubarShortcut` span.
@@ -95,7 +95,7 @@ A `role="menuitemcheckbox"` row with the check indicator.
 | ---- | ---- | ------- |
 | `checked` | `boolean \| (() => boolean)` | `-` |
 | `onCheckedChange` | `(checked: boolean) => void` | `-` |
-| `children` | `HellaChildren` | The row's label |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
 A boolean `checked` seeds the internal signal; an accessor makes the item controlled - activation then only reports through `onCheckedChange`, which fires on every requested flip before every open layer closes.
@@ -109,7 +109,7 @@ A group rendering one radio item per entry.
 | `items` | `{ value, label?, disabled? }[]` | `-` |
 | `value` | `() => string` | `-` |
 | `onValueChange` | `(value: string) => void` | `-` |
-| `children` | `HellaChildren` | Static group content rendered alongside the items |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
 ### MenubarRadioItem
@@ -121,7 +121,7 @@ A `role="menuitemradio"` row with the circle indicator.
 | `value` | `string` | `-` |
 | `checked` | `boolean \| (() => boolean)` | `-` |
 | `onSelect` | `() => void` | `-` |
-| `children` | `HellaChildren` | The row's label |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
 ### MenubarLabel
@@ -131,7 +131,7 @@ A section label.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `inset` | `boolean` | `-` |
-| `children` | `HellaChildren` | The label text |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
 ### MenubarSeparator
@@ -146,7 +146,7 @@ The trailing key-hint span inside a row.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | The hint text |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `span` attributes (forwarded to the root element).
 
 ### MenubarSub
@@ -155,8 +155,8 @@ A sub-trigger plus its portaled sub-content; open state owned here with hover-in
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `content` | `HellaChildren` | The sub-surface items |
-| `children` | `HellaChildren` | The sub-trigger label |
+| `content` | `HellaChildren` | `-` |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
 ### MenubarSubTrigger
@@ -168,7 +168,7 @@ The manual sub-trigger row (chevron, `aria-haspopup`).
 | `state` | `() => "open" \| "closed"` | `-` |
 | `onOpen` | `() => void` | `-` |
 | `inset` | `boolean` | `-` |
-| `children` | `HellaChildren` | The sub-trigger label |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
 ### MenubarSubContent
@@ -186,7 +186,7 @@ The `role="menu"` sub-surface, anchored against its sub-trigger.
 | `onExited` | `() => void` | `-` |
 | `onArrowLeft` | `() => void` | `-` |
 | `onPointerEnter` | `() => void` | `-` |
-| `children` | `HellaChildren` | The sub-surface items |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
 Every part also takes a `class` string, landing last in its style composition. Menus keep their own open state, so a menu also composes standalone through `MenubarMenu` with explicit `open` and `onOpenChange` props, and the item parts wire manually exactly as in the dropdown-menu entry.

@@ -12,7 +12,7 @@ The chip root: a `div` carrying the three state attributes the whole chip keys o
 | `size` | `"default" \| "sm" \| "xs"` | `"default"` |
 | `orientation` | `"horizontal" \| "vertical"` | `"horizontal"` |
 | `class` | `string` | `-` |
-| `children` | `HellaChildren` | The media, content, and action nodes |
+| `children` | `HellaChildren` | `-` |
 
 Accepts all native `div` attributes (forwarded to the root element).
 
@@ -24,7 +24,7 @@ The media well: a `div` carrying `data-variant`; with no authored children it in
 | ---- | ---- | ------- |
 | `variant` | `"icon" \| "image"` | `"icon"` |
 | `state` | `"idle" \| "uploading" \| "processing" \| "error" \| "done"` | `-` |
-| `children` | `HellaChildren` | Authored media nodes; suppress the inlined icons |
+| `children` | `HellaChildren` | `-` |
 
 Accepts all native `div` attributes (forwarded to the root element).
 
@@ -34,7 +34,7 @@ The text column: a `div` carrying `data-slot="attachment-content"`.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | Title and description nodes |
+| `children` | `HellaChildren` | `-` |
 
 Accepts all native `div` attributes (forwarded to the root element).
 
@@ -44,7 +44,7 @@ The filename line: a `span` carrying `data-slot="attachment-title"`.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | The title node |
+| `children` | `HellaChildren` | `-` |
 
 Accepts all native `span` attributes (forwarded to the root element).
 
@@ -54,7 +54,7 @@ The status line: a `span` carrying `data-slot="attachment-description"`, tinted 
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | The description node |
+| `children` | `HellaChildren` | `-` |
 
 Accepts all native `span` attributes (forwarded to the root element).
 
@@ -64,7 +64,7 @@ The action row: a `div` carrying `data-slot="attachment-actions"`.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | Action buttons |
+| `children` | `HellaChildren` | `-` |
 
 Accepts all native `div` attributes (forwarded to the root element).
 
@@ -76,7 +76,7 @@ A real button for remove/retry actions.
 | ---- | ---- | ------- |
 | `variant` | `"default" \| "destructive" \| "outline" \| "secondary" \| "ghost" \| "link"` | `"ghost"` |
 | `size` | `"default" \| "xs" \| "sm" \| "lg" \| "icon" \| "icon-xs" \| "icon-sm" \| "icon-lg"` | `"icon-xs"` |
-| `children` | `HellaChildren` | Icon or label node |
+| `children` | `HellaChildren` | `-` |
 
 Accepts all native `button` attributes (forwarded to the root element).
 
@@ -86,7 +86,7 @@ An invisible button stretched over the whole chip for open interactions.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | Optional label nodes |
+| `children` | `HellaChildren` | `-` |
 
 Accepts all native `button` attributes (forwarded to the root element).
 
@@ -96,7 +96,7 @@ The scroll-snapping chip row: a `div` carrying `data-slot="attachment-group"`.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | The chips |
+| `children` | `HellaChildren` | `-` |
 
 Accepts all native `div` attributes (forwarded to the root element).
 

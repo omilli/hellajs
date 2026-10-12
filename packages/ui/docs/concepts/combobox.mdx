@@ -36,7 +36,7 @@ The manual trigger button; the composed root renders its chevron twin inside the
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | The trigger label |
+| `children` | `HellaChildren` | `-` |
 
 Accepts all native `button` attributes (forwarded to the root element); `on:click` and `disabled` ride the spread.
 
@@ -75,7 +75,7 @@ The positioned panel surface.
 | `empty` | `() => boolean` | `-` |
 | `onDismiss` | `() => void` | `-` |
 | `onExited` | `() => void` | `-` |
-| `children` | `HellaChildren` | The list and static chrome |
+| `children` | `HellaChildren` | `-` |
 
 Accepts all native `div` attributes (forwarded to the root element).
 
@@ -92,7 +92,7 @@ The `role="listbox"` rendering one `ComboboxItem` per entry, hidden in place as 
 | `active` | `() => string \| undefined` | `-` |
 | `onselect` | `(value: string) => void` | `-` |
 | `empty` | `() => boolean` | `-` |
-| `children` | `HellaChildren` | Static children such as `ComboboxEmpty` |
+| `children` | `HellaChildren` | `-` |
 
 Accepts all native `div` attributes (forwarded to the root element); `id` wires the listbox identity the options' ids and the input's `aria-controls` read.
 
@@ -118,7 +118,7 @@ A passthrough grouping `div`.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | The grouped items |
+| `children` | `HellaChildren` | `-` |
 
 Accepts all native `div` attributes (forwarded to the root element).
 
@@ -128,7 +128,7 @@ A section label inside a group.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | The label text |
+| `children` | `HellaChildren` | `-` |
 
 Accepts all native `div` attributes (forwarded to the root element).
 
@@ -138,7 +138,7 @@ A passthrough wrapper grouping items rendered from external data.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | The collected items |
+| `children` | `HellaChildren` | `-` |
 
 Accepts all native `div` attributes (forwarded to the root element).
 
@@ -148,7 +148,7 @@ The zero-match row; the composed root mounts it with its default text.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | The empty-state text |
+| `children` | `HellaChildren` | `-` |
 
 Accepts all native `div` attributes (forwarded to the root element).
 
@@ -186,7 +186,7 @@ The multiple-mode chips wrapper; anchors the panel in chips compositions.
 | `wire` | `(node) => () => void` | `-` |
 | `portal` | `() => HellaChildren` | `-` |
 | `disabled` | `boolean` | `-` |
-| `children` | `HellaChildren` | Static chips wrapper content |
+| `children` | `HellaChildren` | `-` |
 
 Accepts all native `div` attributes (forwarded to the root element).
 
@@ -199,7 +199,7 @@ One selected-value chip with its remove button.
 | `value` | `string` | `-` |
 | `showRemove` | `boolean` | `true` |
 | `onRemove` | `() => void` | `-` |
-| `children` | `HellaChildren` | The chip label |
+| `children` | `HellaChildren` | `-` |
 | `disabled` | `boolean` | `-` |
 
 Accepts all native `div` attributes (forwarded to the root element).

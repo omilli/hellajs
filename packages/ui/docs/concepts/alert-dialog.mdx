@@ -13,7 +13,7 @@ A modal confirmation: the composed `AlertDialog` portals an overlay plus a cente
 | `size` | `"default" \| "sm"` | `"default"` |
 | `closeOnEscape` | `boolean` | `true` |
 | `class` | `string` | `-` |
-| `children` | `HellaChildren` | The panel body |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
 `title` renders as a wired `AlertDialogTitle` (the panel's `aria-labelledby` target) and `description` as a wired `AlertDialogDescription` (the `aria-describedby` target). `"sm"` narrows the panel to 20rem and grids the footer into two columns.
@@ -24,7 +24,7 @@ A bare button; wire its click to your own signal write.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | The trigger label |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `button` attributes (forwarded to the root element).
 
 ### AlertDialogPortal
@@ -33,7 +33,7 @@ Wraps children in a `Portal to="body"` for compositions that want the named part
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | The portaled nodes |
+| `children` | `HellaChildren` | `-` |
 
 ### AlertDialogOverlay
 
@@ -55,7 +55,7 @@ The `role="alertdialog"` panel carrying `data-slot="alert-dialog-content"`: focu
 | `closeOnEscape` | `boolean` | `true` |
 | `onClose` | `() => void` | `-` |
 | `onExited` | `() => void` | `-` |
-| `children` | `HellaChildren` | The panel body |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element). Pass the wired ids as the panel's `aria-labelledby` and `aria-describedby` attrs - in the composed `AlertDialog` the root threads them for you.
 
 ### AlertDialogHeader
@@ -64,7 +64,7 @@ The top grouping `div` carrying `data-slot="alert-dialog-header"`.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | Title, description, and optional media nodes |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
 ### AlertDialogFooter
@@ -73,7 +73,7 @@ The bottom grouping `div` carrying `data-slot="alert-dialog-footer"`, laying the
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | Action and Cancel nodes |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
 ### AlertDialogTitle
@@ -83,7 +83,7 @@ The heading: an `h2` carrying `data-slot="alert-dialog-title"` whose `id` the pa
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `id` | `string` | `-` |
-| `children` | `HellaChildren` | The title text |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `h2` attributes (forwarded to the root element).
 
 ### AlertDialogDescription
@@ -93,7 +93,7 @@ The supporting line: a `p` carrying `data-slot="alert-dialog-description"` whose
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `id` | `string` | `-` |
-| `children` | `HellaChildren` | The description text |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `p` attributes (forwarded to the root element).
 
 ### AlertDialogMedia
@@ -102,7 +102,7 @@ An icon slot above the title, re-flowing the header rows around it.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | The icon node, typically an `svg` |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
 ### AlertDialogAction
@@ -114,7 +114,7 @@ The confirm button: a composed Button calling `onClose` when clicked.
 | `variant` | `"default" \| "destructive" \| "outline" \| "secondary" \| "ghost" \| "link"` | `"default"` |
 | `size` | `"default" \| "xs" \| "sm" \| "lg" \| "icon" \| "icon-xs" \| "icon-sm" \| "icon-lg"` | `"default"` |
 | `onClose` | `() => void` | `-` |
-| `children` | `HellaChildren` | The button label |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `button` attributes (forwarded to the root element; a user `on:click` chains with the owned dismiss).
 
 ### AlertDialogCancel
@@ -126,7 +126,7 @@ The dismiss button: a composed Button calling `onClose` when clicked.
 | `variant` | `"default" \| "destructive" \| "outline" \| "secondary" \| "ghost" \| "link"` | `"outline"` |
 | `size` | `"default" \| "xs" \| "sm" \| "lg" \| "icon" \| "icon-xs" \| "icon-sm" \| "icon-lg"` | `"default"` |
 | `onClose` | `() => void` | `-` |
-| `children` | `HellaChildren` | The button label |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `button` attributes (forwarded to the root element; a user `on:click` chains with the owned dismiss).
 
 Every part also takes a `class` string, landing last in its style composition. The header, footer, title, and media parts follow the panel's `data-size`: `"default"` left-aligns the text from wide screens up, `"sm"` keeps everything centered.

@@ -33,7 +33,7 @@ The tablist row: a `role="tablist"` div carrying `data-orientation` and `data-va
 | ---- | ---- | ------- |
 | `variant` | `"default" \| "line"` | `"default"` |
 | `orientation` | `"horizontal" \| "vertical"` | `"horizontal"` |
-| `children` | `HellaChild \| HellaChild[]` | The trigger buttons |
+| `children` | `HellaChild \| HellaChild[]` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
 ### TabsTrigger
@@ -47,7 +47,7 @@ The tab button: the `id` derives the DOM id and the `aria-controls` pointer at t
 | `onActivate` | `() => void` | `-` |
 | `orientation` | `"horizontal" \| "vertical"` | `"horizontal"` |
 | `listVariant` | `"default" \| "line"` | `"default"` |
-| `children` | `HellaChild` | The label inside the button |
+| `children` | `HellaChild` | `-` |
 Accepts all native `button` attributes (forwarded to the root element).
 
 `active` drives `aria-selected` and the button's `data-state` (`active` / `inactive`).
@@ -60,7 +60,7 @@ The panel: `hidden` while inactive, labelled by its tab.
 | ---- | ---- | ------- |
 | `id` | `string` | `-` |
 | `active` | `() => boolean` | `-` |
-| `children` | `HellaChild \| (() => HellaChild)` | The panel body |
+| `children` | `HellaChild \| (() => HellaChild)` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
 Every part also takes a `class` string, landing last in its style composition.

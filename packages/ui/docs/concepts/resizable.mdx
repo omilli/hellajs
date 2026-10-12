@@ -8,12 +8,12 @@ Compose the three exports: `ResizablePanelGroup` (the default), `ResizablePanel`
 | ---- | ---- | ------- |
 | `direction` | `"horizontal" \| "vertical"` | `"horizontal"` |
 | `onLayout` | `(sizes: number[]) => void` | `-` |
-| `children` | panels and handles | Discovered in the DOM at mount |
+| `children` | panels and handles | `-` |
 | `class` | `string` | `-` |
 
 Accepts all native `div` attributes (forwarded to the root element).
 
-`direction` is the flex axis, rendered as `aria-orientation`. `onLayout` reports the panel sizes in percent after each drag or keyboard resize; the initial layout does not fire it. Every `ResizablePanel` child joins the layout.
+`direction` is the flex axis, rendered as `aria-orientation`. `onLayout` reports the panel sizes in percent after each drag or keyboard resize; the initial layout does not fire it. Every `ResizablePanel` child joins the layout; the group discovers its panels and handles in the DOM at mount.
 
 ### ResizablePanel
 
@@ -22,7 +22,7 @@ Accepts all native `div` attributes (forwarded to the root element).
 | `defaultSize` | `number` | `-` |
 | `minSize` | `number` | `0` |
 | `maxSize` | `number` | `100` |
-| `children` | any | Rendered inside the panel |
+| `children` | any | `-` |
 | `class` | `string` | `-` |
 
 Accepts all native `div` attributes (forwarded to the panel element).

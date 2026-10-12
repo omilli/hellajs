@@ -1,12 +1,12 @@
 ## API
 
-Give the root an explicit height (and width when needed): the viewport fills it with `size-full`, so an unbounded root has nothing to scroll.
+Give the root an explicit height (and width when needed): the viewport fills it with `size-full`, so an unbounded root has nothing to scroll. Children render inside the viewport's content wrapper.
 
 ### ScrollArea
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | any | Rendered inside the viewport's content wrapper |
+| `children` | any | `-` |
 | `observe` | `(target, onGrow) => () => void` | A `ResizeObserver` on the content wrapper |
 | `class` | `string` | `-` |
 

@@ -20,8 +20,8 @@ Each entry is one row; `value` keys its `data-value`, the generated id pair, and
 | Field | Type | Default |
 | ----- | ---- | ------- |
 | `value` | `string` | `-` |
-| `trigger` | `HellaChildren` | The row's trigger label |
-| `content` | `HellaChildren` | The row's body |
+| `trigger` | `HellaChildren` | `-` |
+| `content` | `HellaChildren` | `-` |
 | `disabled` | `boolean` | `-` |
 
 ### AccordionItem
@@ -32,7 +32,7 @@ The row wrapper: a `div` carrying the value and open state.
 | ---- | ---- | ------- |
 | `value` | `string` | `-` |
 | `active` | `() => boolean` | `-` |
-| `children` | `HellaChild[]` | The trigger and content pair |
+| `children` | `HellaChild[]` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
 ### AccordionTrigger
@@ -41,7 +41,7 @@ The header row: an `h3` wrapping the toggle button, with the chevron icon append
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `children` | `HellaChildren` | The label inside the button |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `button` attributes (forwarded to the root element).
 
 ### AccordionContent
@@ -51,7 +51,7 @@ The body region: a `role="region"` div whose inner wrapper carries the collapse 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `active` | `() => boolean` | `-` |
-| `children` | `HellaChildren` | The body inside the region |
+| `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
 Every part also takes a `class` string, landing last in its style composition.
