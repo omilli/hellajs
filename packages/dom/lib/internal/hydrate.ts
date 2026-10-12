@@ -1,6 +1,6 @@
 import type { HellaNode, HellaChild, HellaElement, RenderFn, ElementMountFn, DirectListenerSpec } from "../types/nodes";
 import { isFunction, isObject, isNull, objectLoop } from "./core";
-import { renderProp, resolveDeep, isHellaNode, chainScopes, wireFragmentScope, routePrefixedProps } from "./utils";
+import { renderProp, resolveDeep, isHellaNode, chainScopes, wireFragmentScope, routePrefixedProps, toText } from "./utils";
 import { setNodeHandler, setDirectHandler } from "./events";
 import { dispatchError, toError } from "./dispatch";
 import { registry } from "../registry";
@@ -242,18 +242,30 @@ function adoptReactiveRegion(parent: HellaElement, child: HellaChild, anchor: No
         (resolved as RenderFn)(proxyParent as HellaElement);
         return;
       }
-      const node = resolveNode(resolved as HellaChild, parent, childNamespaceOf(parent));
-      if (node.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
-        let f: ChildNode | null = node.firstChild;
-        while (f) {
-          renderedNodes.push(f);
-          actualParent.insertBefore(f, anchor);
-          f = node.firstChild;
+      // Primitives settle INTO the anchor, mirroring runReactiveChild's tail: a transient text
+      // node ahead of the anchor would become the region's first node, and hydrate's fragment
+      // scope rides exactly that node (regionPrev.nextSibling) — the next re-run's clear would
+      // dispose the chained component scope one region flip early (killing the component's
+      // effects while it stays mounted). Only arrays and tag/raw objects mount fresh nodes.
+      if (
+        Array.isArray(resolved) ||
+        (isObject(resolved) && ((resolved as HellaNode).tag !== undefined || "raw" in resolved))
+      ) {
+        const node = resolveNode(resolved as HellaChild, parent, childNamespaceOf(parent));
+        if (node.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
+          let f: ChildNode | null = node.firstChild;
+          while (f) {
+            renderedNodes.push(f);
+            actualParent.insertBefore(f, anchor);
+            f = node.firstChild;
+          }
+        } else {
+          renderedNodes.push(node);
+          actualParent.insertBefore(node, anchor);
         }
-      } else {
-        renderedNodes.push(node);
-        actualParent.insertBefore(node, anchor);
+        return;
       }
+      anchor.textContent = toText(resolved);
     } catch (err) {
       const config = getBoundaryConfig(boundaryElement);
       dispatchError(toError(err), { phase: "mount", element: parent, config });

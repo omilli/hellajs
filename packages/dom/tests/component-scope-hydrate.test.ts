@@ -109,5 +109,39 @@ describe("dom", () => {
       flush();
       expect(effectRuns).toHaveBeenCalledTimes(3);
     });
+
+    test("keeps a falsy-first fragment-root component's scope across the region's first re-run", async () => {
+      const count = signal(0);
+      const show = signal(false);
+      const effectRuns = mock(() => { });
+      // The region resolves falsy at SSR (empty markers) — the dialog shape: a
+      // visible-gated region renders nothing until its signal flips. hydrate must
+      // settle the falsy resolution into the region anchor, never mount a transient
+      // text node ahead of it: that node would BE the fragment scope's carrier
+      // (regionPrev.nextSibling) and the first re-run's clear would dispose the
+      // component scope — killing its effects while the component stays mounted.
+      const FalsyFirst = () => {
+        effect(() => { effectRuns(); count(); });
+        return html`<>${() => show() && html`<span>shown</span>`} tail</>` as HellaNode;
+      };
+
+      // One component() instance drives both ssr() and hydrate() (memory 092):
+      // a second call would leak a server-realm instance's effect into the counts.
+      const view = component(FalsyFirst, {});
+      const container = ssrContainer(view);
+      expect(effectRuns).toHaveBeenCalledTimes(1);
+
+      hydrate(view, container);
+      expect(effectRuns).toHaveBeenCalledTimes(1);
+
+      show(true);
+      flush();
+      expect(container.textContent).toBe("shown tail");
+
+      // The scope must have survived the falsy region's first re-run.
+      count(1);
+      flush();
+      expect(effectRuns).toHaveBeenCalledTimes(2);
+    });
   });
 });
