@@ -10,7 +10,7 @@ interface Props {
 const { entry } = Astro.props;
 
 // All four variants are real `add`-output files written by `bun
-// install-sources` — the Manual tab shows exactly what the CLI writes, as
+// docs-ui` — the Manual tab shows exactly what the CLI writes, as
 // real greppable files, with no ui-package import anywhere in site code.
 const cssJsx = import.meta.glob("../generated/install/css-jsx/*.tsx", {
   query: "?raw",
@@ -57,7 +57,7 @@ for (const [variant, key] of Object.entries(sourceKeys)) {
   );
   if (match === undefined) {
     throw new Error(
-      `[InstallSection] missing ${variant} install source for ${entry}; generate with: bun install-sources ${entry}`,
+      `[InstallSection] missing ${variant} install source for ${entry}; generate with: bun docs-ui ${entry}`,
     );
   }
   sources[variant] = match[1];

@@ -35,8 +35,8 @@
  */
 import { effect, signal } from "@hellajs/core";
 import { css } from "@hellajs/css";
-import { Command, CommandDialog } from "@registry/command/css/command.js";
-import type { CommandItemData } from "@registry/command/css/command.js";
+import { Command, CommandDialog } from "@components/ui/command.js";
+import type { CommandItemData } from "@components/ui/command.js";
 
 css({
   ".site-search-command": {

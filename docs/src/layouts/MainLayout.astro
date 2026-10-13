@@ -92,22 +92,27 @@ const toc: { text: string; slug: string; depth: number }[] = Array.from(
     />
     {cssText.vars() && <style id="hella-vars" is:inline set:html={cssText.vars()} />}
   </head>
-  <body>
-    <!-- Drawer state: checked = open. Sits before every drawer surface so
-         the sibling selectors (`#nav-drawer:checked ~ …`, owned by DocsNav
-         and below) reach them; Navbar's hamburger label toggles it — zero
-         client JS. -->
-    <input id="nav-drawer" type="checkbox" hidden />
-    <Navbar />
-    <Toc entries={toc} variant="mobile" />
-    <label for="nav-drawer" class="nav-overlay" aria-label="Close navigation"></label>
-    <DocsNav pathname={Astro.url.pathname} />
-    <div class:list={["site-main", toc.length > 0 && "has-toc"]}>
-      <main set:html={content} />
+  <body class="dark">
+    <!-- body.dark carries the registry default dark palette; this wrapper
+         rescopes the site palette over chrome/prose (see
+         ../styles/tokens.ts). Portals appended to body escape the wrapper
+         and keep the registry default. Drawer state: checked = open. Sits
+         before every drawer surface so the sibling selectors
+         (`#nav-drawer:checked ~ …`, owned by DocsNav and below) reach them;
+         Navbar's hamburger label toggles it — zero client JS. -->
+    <div class="docs-palette">
+      <input id="nav-drawer" type="checkbox" hidden />
+      <Navbar />
+      <Toc entries={toc} variant="mobile" />
+      <label for="nav-drawer" class="nav-overlay" aria-label="Close navigation"></label>
+      <DocsNav pathname={Astro.url.pathname} />
+      <div class:list={["site-main", toc.length > 0 && "has-toc"]}>
+        <main set:html={content} />
+      </div>
+      <Toc entries={toc} variant="rail" />
+      <!-- Search palette: renders nothing until the trigger or ⌘K opens it;
+           its styles register client-side with its module. -->
+      <SearchPalette client:load />
     </div>
-    <Toc entries={toc} variant="rail" />
-    <!-- Search palette: renders nothing until the trigger or ⌘K opens it;
-         its styles register client-side with its module. -->
-    <SearchPalette client:load />
   </body>
 </html>

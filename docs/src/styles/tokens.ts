@@ -3,39 +3,35 @@
  * foundation set). Values are the user-approved port of the current palette:
  * the daisy-era `:root`/`@theme` blocks (base-50/100/200/300, primary,
  * primary-content), daisyUI dark `base-content` for foreground text, tailwind
- * slate-700/600 for border/input, and the Mulish font. Registry-named tokens
- * override the registry theme sheets so every surface outside the ui demo
- * frames (chrome, prose, the search palette) renders in the site palette;
- * the `base-*` ladder carries the site's own tonal vocabulary for chrome
- * styles. The ui demo frames are the exception: `Component.astro` imports
- * `@registry/theme/tokens.js` and adds the `dark` class to `.demo-frame`, so
- * the theme sheet's `.dark` class block declares the registry's default dark
- * palette directly on the frame - a direct class-scoped declaration beats
- * this inherited `html:root` block, and the examples render exactly what a
- * dark-default registry install produces. Portal-mounted demo surfaces
- * (dialogs, dropdowns, toasts) escape the frame to `body` and fall back to
- * this site palette. Registered UNLAYERED at `html:root`
- * (`scoped: "html:root"`): registry tokens and site tokens are both
- * unlayered `:root`-family declarations now, and this block sits at
- * `html:root` (0,1,1) so it beats every registry `:root` (0,1,0)
- * registration regardless of registration order - island hydration
- * registers the registry sheet client-side after this static tag and loses
- * on specificity. The palette probe is the guard (a gitignored Playwright
- * script over `astro preview` under docs/dist): body and chrome surfaces
- * must compute to this palette identically on a static page and an island
- * page, and demo frames (`.demo-frame.dark`) must compute to the registry's
- * default dark palette - a failure there is a set-design fork, not a styling
- * bug to patch here.
+ * slate-700/600 for border/input, and the Mulish font. The `base-*` ladder
+ * carries the site's own tonal vocabulary for chrome styles.
+ *
+ * Palette architecture (portal escape): `body` carries the `dark` class, so
+ * the registry theme sheet's `.dark` block (imported site-wide by
+ * `../styles/global.ts`) declares the registry's default dark palette
+ * directly on body - portal-mounted demo surfaces (dialogs, dropdowns,
+ * toasts) append to body and inherit it, and the canvas paints it. This
+ * sheet is the site palette overlay, registered on the `.docs-palette`
+ * wrapper div every layout wraps its body content in (`scoped:
+ * ".docs-palette"`): element-level declarations beat values inherited from
+ * body regardless of registration order, so chrome, prose, and the landing
+ * page resolve the site ladder while anything portaled to body keeps the
+ * registry default. The accepted shift: the ⌘K `SearchPalette` portals to
+ * body and renders the registry palette. The ui demo frames re-assert the
+ * registry default themselves - `Component.astro` adds the `dark` class to
+ * `.demo-frame`, so the theme sheet's `.dark` class block declares values
+ * identical to body's directly on the frame, and the examples render
+ * exactly what a dark-default registry install produces.
  * The `sidebar-*` family (unit 09) overrides the registry sidebar css
- * module's own light-value registration (`packages/ui/registry/sidebar/`),
- * whose `.dark` block never applies (the site's html carries no `.dark`
- * class) — without the override, static chrome composing the registry
- * sidebar vocabulary would render the light sheet. Values map the sidebar
- * surfaces onto the site ladder per the current chrome: aside `bg-base-300`
- * → `--sidebar`, daisy menu hover/active → `--base-50`, the rest alias the
- * site tokens. Registered here rather than in the chrome css module so the
- * palette and its sidebar overrides register as one sheet, scoped with the
- * palette to `html:root`.
+ * module's own dark-value registration (`packages/ui/registry/sidebar/`),
+ * whose `.dark` block now reaches the wrapper inherited from `body.dark` -
+ * without the override, static chrome composing the registry sidebar
+ * vocabulary would render the registry values instead of the site ladder.
+ * Values map the sidebar surfaces onto the site ladder per the current
+ * chrome: aside `bg-base-300` → `--sidebar`, daisy menu hover/active →
+ * `--base-50`, the rest alias the site tokens. Registered here rather than
+ * in the chrome css module so the palette and its sidebar overrides
+ * register as one sheet, scoped with the palette to `.docs-palette`.
  *
  * Layout metrics follow the palette: `--nav-w` (left rail/drawer width,
  * the old chrome's w-70), `--toc-w` (right rail clearance, lg:mr-80), and
@@ -90,4 +86,4 @@ export const tokens = vars({
   navW: "17.5rem",
   tocW: "20rem",
   navbarH: "4rem",
-}, { scoped: "html:root" });
+}, { scoped: ".docs-palette" });

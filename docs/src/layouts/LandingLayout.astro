@@ -45,9 +45,14 @@ const description =
     <style id="hella-css" is:inline set:html={cssText.css()} />
     {cssText.vars() && <style id="hella-vars" is:inline set:html={cssText.vars()} />}
   </head>
-  <body>
-    <main>
-      <slot />
-    </main>
+  <body class="dark">
+    <!-- Same body.dark + wrapper contract as MainLayout: the registry
+         default dark palette anchors on body, the site palette overlays
+         the wrapper (see ../styles/tokens.ts). -->
+    <div class="docs-palette">
+      <main>
+        <slot />
+      </main>
+    </div>
   </body>
 </html>

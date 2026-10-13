@@ -1,6 +1,6 @@
 import { style } from "@hellajs/css";
 import { tokens } from "../styles/tokens";
-import { Label } from "@registry/label/css/label.js";
+import { Label } from "@components/ui/label.js";
 
 const stack = style({
   alignItems: "flex-start",

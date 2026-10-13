@@ -1,5 +1,5 @@
 
-import { Tabs } from "@registry/tabs/css/tabs.js";
+import { Tabs } from "@components/ui/tabs.js";
 
 const account = [
   { id: "account", label: "Account", content: [<p>Change your name, email, and profile details.</p>] },

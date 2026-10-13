@@ -3,13 +3,13 @@ import { css } from "@hellajs/css";
 import { tokens } from "../styles/tokens";
 import CodeExample from "./CodeExample.astro";
 // `tokens.js`, not `tokens.dark.js`: its `.dark` class block carries the
-// registry's default dark palette. The demo frame below carries the `dark`
-// class, so that class-scoped declaration re-asserts the default tokens on
-// the frame and beats the site palette inherited from `html:root` - every
-// surface outside the frame keeps the site theme. Portal-mounted demo
-// surfaces (dialogs, dropdowns, toasts) escape to `body` and render in the
-// site palette; scope contract recorded in `../styles/tokens.ts`.
-import "@registry/theme/tokens.js";
+// registry's default dark palette. `.demo-frame` keeps the `dark` class so
+// that class-scoped declaration re-asserts values identical to `body.dark`'s
+// on the frame - the frame renders the registry palette regardless of
+// embedding scope. Portaled demo surfaces (dialogs, dropdowns, toasts)
+// inherit the same default from `body.dark`; scope contract recorded in
+// `../styles/tokens.ts`.
+import "../components/ui/tokens.js";
 
 css({
   ".demo-frame":{

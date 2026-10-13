@@ -1,5 +1,5 @@
 import { signal } from "@hellajs/core";
-import { Input } from "@registry/input/css/input.js";
+import { Input } from "@components/ui/input.js";
 
 export function InputDemo() {
   const email = signal("");

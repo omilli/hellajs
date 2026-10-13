@@ -1,5 +1,5 @@
 
-import { Combobox } from "@registry/combobox/css/combobox.js";
+import { Combobox } from "@components/ui/combobox.js";
 
 const fruits = [
   { value: "apple", label: "Apple" },

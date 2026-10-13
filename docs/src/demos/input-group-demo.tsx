@@ -6,7 +6,7 @@ import {
   InputGroupInput,
   InputGroupText,
   InputGroupTextarea,
-} from "@registry/input-group/css/input-group.js";
+} from "@components/ui/input-group.js";
 
 export function InputGroupDemo() {
   return (

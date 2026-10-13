@@ -6,7 +6,7 @@ import {
   ContextMenuItem,
   ContextMenuSeparator,
   ContextMenuSub,
-} from "@registry/context-menu/css/context-menu.js";
+} from "@components/ui/context-menu.js";
 
 function zone(label: string) {
   return (

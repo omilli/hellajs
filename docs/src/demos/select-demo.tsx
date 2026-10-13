@@ -1,5 +1,5 @@
 
-import { Select } from "@registry/select/css/select.js";
+import { Select } from "@components/ui/select.js";
 import { style } from "@hellajs/css";
 
 const compact = style({ width: "12rem" }, { label: "demo-select-compact" });

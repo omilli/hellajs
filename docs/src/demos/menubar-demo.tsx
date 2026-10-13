@@ -8,7 +8,7 @@ import {
   MenubarRadioGroup,
   MenubarSeparator,
   MenubarSub,
-} from "@registry/menubar/css/menubar.js";
+} from "@components/ui/menubar.js";
 
 export function MenubarDemo() {
   const fileItems = (

@@ -1,5 +1,5 @@
 import { style } from "@hellajs/css";
-import { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@registry/table/css/table.js";
+import { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@components/ui/table.js";
 
 const right = style({ textAlign: "right" }, { label: "demo-num" });
 

@@ -1,6 +1,6 @@
 import { style } from "@hellajs/css";
-import { Message, MessageAvatar, MessageContent, MessageFooter, MessageGroup, MessageHeader } from "@registry/message/css/message.js";
-import { Bubble } from "@registry/bubble/css/bubble.js";
+import { Message, MessageAvatar, MessageContent, MessageFooter, MessageGroup, MessageHeader } from "@components/ui/message.js";
+import { Bubble } from "@components/ui/bubble.js";
 
 const initial = style({
   fontSize: "0.625rem",

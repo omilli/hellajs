@@ -1,10 +1,11 @@
-// Regenerates the install-source files the docs ui section's InstallSection
-// renders in its Manual tab. For each registry component it runs the PUBLIC
-// `addComponent` API once per generated variant (css-jsx, css-html,
-// tailwind-jsx, tailwind-html) inside a throwaway project and copies the
-// canonical file into `docs/src/generated/install/<variant>/` — the Manual
-// tab shows what `add` writes by construction, as real greppable files.
-// Usage: bun install-sources [entry ...]  (no args = all components)
+// Regenerates the docs ui section's generated sources — two outputs, both
+// canonical PUBLIC `addComponent` output. Per entry × variant (css-jsx,
+// css-html, tailwind-jsx, tailwind-html) it copies the entry's own canonical
+// file into `docs/src/generated/install/<variant>/` for the InstallSection
+// Manual tab; one css-jsx `addComponent` call over the full name list writes
+// the live component set — every `<name>.tsx` + `tokens.ts` — into
+// `docs/src/components/ui/`. Usage: bun docs-ui [entry ...]  (no args = all
+// components)
 import { copyFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { addComponent, loadRegistry } from "../packages/ui/dist/index.js";
@@ -61,20 +62,21 @@ async function generateEntry(name: string, scratchDir: string, outRoot: string):
     await ensureDir(targetDir);
     copyFileSync(join(scratchDir, "src/components", variant.file(name)), join(targetDir, variant.file(name)));
   }
-  logger.info(`[install-sources] ${name} -> docs/src/generated/install`);
+  logger.info(`[docs-ui] ${name} -> docs/src/generated/install`);
 }
 
 /** CLI entry: parse args, prepare scratch + output dirs, generate, report. */
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const names = args.length > 0 ? resolveNames(args) : componentNames();
-  const scratchDir = join(projectRoot, "docs/.tmp/install-sources");
+  const scratchDir = join(projectRoot, "docs/.tmp/docs-ui");
   const outRoot = join(projectRoot, "docs/src/generated/install");
+  const uiDir = join(projectRoot, "docs/src/components/ui");
 
   // checkPeers reads this manifest so the adds run without peer warnings; the
   // union of both styles' deps covers every entry.
   const peers = {
-    name: "install-source-gen",
+    name: "docs-ui-gen",
     private: true,
     type: "module",
     dependencies: {
@@ -94,12 +96,24 @@ async function main(): Promise<void> {
     for (const variant of variants) {
       rmSync(join(outRoot, variant.dir), { recursive: true, force: true });
     }
+    rmSync(uiDir, { recursive: true, force: true });
   }
   try {
     for (const name of names) {
       await generateEntry(name, scratchDir, outRoot);
     }
-    logger.success(`install-sources: ${names.length} ${names.length === 1 ? "entry" : "entries"} written`);
+    // Live set: one addComponent call for the whole name list — dependencies
+    // resolve once, checkPeers runs once. It runs after the variant loops, so
+    // each scratch `<name>.tsx` is the css-jsx canonical (tailwind-jsx's
+    // earlier copy is overwritten); mirror every `<name>.tsx` plus `tokens.ts`
+    // out of scratch byte-exact — no post-copy edits, ever.
+    addComponent(names, { dir: scratchDir, style: "css", format: "jsx", overwrite: true });
+    await ensureDir(uiDir);
+    for (const name of names) {
+      copyFileSync(join(scratchDir, "src/components", `${name}.tsx`), join(uiDir, `${name}.tsx`));
+    }
+    copyFileSync(join(scratchDir, "src/components", "tokens.ts"), join(uiDir, "tokens.ts"));
+    logger.success(`docs-ui: ${names.length} ${names.length === 1 ? "entry" : "entries"} written -> docs/src/generated/install + docs/src/components/ui`);
   } finally {
     rmSync(scratchDir, { recursive: true, force: true });
   }
@@ -107,7 +121,7 @@ async function main(): Promise<void> {
 
 if (import.meta.main) {
   main().catch((error: Error) => {
-    logger.error("install-sources failed", error);
+    logger.error("docs-ui failed", error);
     process.exit(1);
   });
 }

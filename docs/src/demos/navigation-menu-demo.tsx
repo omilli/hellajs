@@ -8,7 +8,7 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
   NavigationMenuViewport,
-} from "@registry/navigation-menu/css/navigation-menu.js";
+} from "@components/ui/navigation-menu.js";
 
 function trigger(id: string, label: string, value: () => string, toggle: (id: string) => void) {
   return (

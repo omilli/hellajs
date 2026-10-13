@@ -1,6 +1,6 @@
 import { signal } from "@hellajs/core";
 import { style } from "@hellajs/css";
-import { ResizablePanelGroup as Resizable, ResizableHandle, ResizablePanel } from "@registry/resizable/css/resizable.js";
+import { ResizablePanelGroup as Resizable, ResizableHandle, ResizablePanel } from "@components/ui/resizable.js";
 
 const viewport = style({
   height: "12rem",

@@ -7,8 +7,8 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@registry/breadcrumb/css/breadcrumb.js";
-import { DropdownMenu, DropdownMenuItem } from "@registry/dropdown-menu/css/dropdown-menu.js";
+} from "@components/ui/breadcrumb.js";
+import { DropdownMenu, DropdownMenuItem } from "@components/ui/dropdown-menu.js";
 
 export function BreadcrumbDemo() {
   return (

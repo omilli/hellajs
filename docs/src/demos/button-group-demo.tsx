@@ -1,7 +1,7 @@
 import { signal } from "@hellajs/core";
-import { Button } from "@registry/button/css/button.js";
-import { Input } from "@registry/input/css/input.js";
-import { ButtonGroup, ButtonGroupSeparator, ButtonGroupText } from "@registry/button-group/css/button-group.js";
+import { Button } from "@components/ui/button.js";
+import { Input } from "@components/ui/input.js";
+import { ButtonGroup, ButtonGroupSeparator, ButtonGroupText } from "@components/ui/button-group.js";
 
 export function ButtonGroupDemo() {
   return (

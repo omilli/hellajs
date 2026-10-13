@@ -8,7 +8,7 @@ import {
   AttachmentGroup,
   AttachmentMedia,
   AttachmentTitle,
-} from "@registry/attachment/css/attachment.js";
+} from "@components/ui/attachment.js";
 
 type ChipState = "idle" | "uploading" | "processing" | "error" | "done";
 

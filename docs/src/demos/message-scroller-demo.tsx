@@ -1,8 +1,8 @@
 import { signal } from "@hellajs/core";
 import { style } from "@hellajs/css";
 import { tokens } from "../styles/tokens";
-import { MessageScroller, MessageScrollerItem } from "@registry/message-scroller/css/message-scroller.js";
-import { Bubble } from "@registry/bubble/css/bubble.js";
+import { MessageScroller, MessageScrollerItem } from "@components/ui/message-scroller.js";
+import { Bubble } from "@components/ui/bubble.js";
 
 
 

@@ -1,0 +1,142 @@
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
+
+interface MarkerProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+  variant?: "default" | "separator" | "border";
+}
+
+interface MarkerIconProps extends HTMLAttributes<"span"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+interface MarkerContentProps extends HTMLAttributes<"span"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+import { css, style } from "@hellajs/css";
+import { tokens } from "./tokens.js";
+
+const base = style("marker", {
+  alignItems: "center",
+  color: tokens.mutedForeground,
+  columnGap: "0.5rem",
+  display: "flex",
+  minHeight: "1rem",
+  position: "relative",
+  textAlign: "left",
+  width: "100%",
+  "& svg:not([class*='size-'])": {
+    height: "1rem",
+    width: "1rem",
+  },
+  "& a": {
+    textDecorationLine: "underline",
+    textUnderlineOffset: "3px",
+  },
+  "& a:hover": {
+    color: tokens.foreground,
+  },
+});
+
+const variants: Record<string, string> = {
+  separator: style("marker-separator", {
+    "&::before": {
+      backgroundColor: tokens.border,
+      flex: "1 1 0%",
+      height: "1px",
+      marginRight: "0.25rem",
+      minWidth: "0",
+    },
+    "&::after": {
+      backgroundColor: tokens.border,
+      flex: "1 1 0%",
+      height: "1px",
+      marginLeft: "0.25rem",
+      minWidth: "0",
+    },
+  }),
+  border: style("marker-border", {
+    borderBottom: `1px solid ${tokens.border}`,
+    paddingBottom: "0.5rem",
+  }),
+};
+
+const icon = style("marker-icon", {
+  flexShrink: "0",
+  height: "1rem",
+  width: "1rem",
+  "& svg:not([class*='size-'])": {
+    height: "1rem",
+    width: "1rem",
+  },
+});
+
+const content = style("marker-content", {
+  minWidth: "0",
+  overflowWrap: "break-word",
+  "& a": {
+    textDecorationLine: "underline",
+    textUnderlineOffset: "3px",
+  },
+  "& a:hover": {
+    color: tokens.foreground,
+  },
+});
+
+css({
+  "[data-slot='marker'][data-variant='separator'] [data-slot='marker-content']": {
+    flex: "none",
+    textAlign: "center",
+  },
+});
+
+export function Marker({ variant, children, class: cls, ...attrs }: MarkerProps): JSX.Element {
+  return (
+    <div
+      data-slot="marker"
+      data-variant={variant ?? "default"}
+      class={
+        [
+          base,
+          variants[variant ?? "default"],
+          cls,
+        ]
+      }
+      {...attrs}
+    >
+      {children}
+    </div>
+  );
+}
+
+export function MarkerIcon({ children, class: cls, ...attrs }: MarkerIconProps): JSX.Element {
+  return (
+    <span
+      data-slot="marker-icon"
+      aria-hidden="true"
+      class={
+        [icon, cls]
+      }
+      {...attrs}
+    >
+      {children}
+    </span>
+  );
+}
+
+export function MarkerContent({ children, class: cls, ...attrs }: MarkerContentProps): JSX.Element {
+  return (
+    <span
+      data-slot="marker-content"
+      class={
+        [content, cls]
+      }
+      {...attrs}
+    >
+      {children}
+    </span>
+  );
+}

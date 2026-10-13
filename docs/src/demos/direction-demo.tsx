@@ -1,8 +1,8 @@
 import { signal } from "@hellajs/core";
 import { style } from "@hellajs/css";
 import { tokens } from "../styles/tokens";
-import { Button } from "@registry/button/css/button.js";
-import { DirectionProvider } from "@registry/direction/css/direction.js";
+import { Button } from "@components/ui/button.js";
+import { DirectionProvider } from "@components/ui/direction.js";
 
 
 

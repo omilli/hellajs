@@ -1,6 +1,6 @@
 import { style } from "@hellajs/css";
 import { tokens } from "../styles/tokens";
-import { ScrollArea, ScrollBar } from "@registry/scroll-area/css/scroll-area.js";
+import { ScrollArea, ScrollBar } from "@components/ui/scroll-area.js";
 
 const pane = style({
   border: `1px solid ${tokens.border}`,

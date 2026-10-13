@@ -1,5 +1,5 @@
 import { signal } from "@hellajs/core";
-import { Button } from "@registry/button/css/button.js";
+import { Button } from "@components/ui/button.js";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -8,7 +8,7 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuSeparator,
   DropdownMenuSub,
-} from "@registry/dropdown-menu/css/dropdown-menu.js";
+} from "@components/ui/dropdown-menu.js";
 
 export function DropdownMenuDemo() {
   const bold = signal(false);

@@ -1,5 +1,5 @@
 
-import { Bubble, BubbleContent, BubbleGroup, BubbleReactions } from "@registry/bubble/css/bubble.js";
+import { Bubble, BubbleContent, BubbleGroup, BubbleReactions } from "@components/ui/bubble.js";
 
 export function BubbleDemo() {
   return (

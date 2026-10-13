@@ -1,5 +1,5 @@
 import { html } from "@hellajs/dom";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@registry/accordion/css/accordion.js";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@components/ui/accordion.js";
 
 export function AccordionDemo() {
   const faq = [{

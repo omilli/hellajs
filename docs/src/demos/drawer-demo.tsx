@@ -1,6 +1,6 @@
 import { signal } from "@hellajs/core";
 
-import { Button } from "@registry/button/css/button.js";
+import { Button } from "@components/ui/button.js";
 import {
   Drawer,
   DrawerClose,
@@ -10,7 +10,7 @@ import {
   DrawerHeader,
   DrawerOverlay,
   DrawerTitle,
-} from "@registry/drawer/css/drawer.js";
+} from "@components/ui/drawer.js";
 import { Portal } from "@hellajs/dom";
 
 export function DrawerDemo() {

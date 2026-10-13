@@ -1,6 +1,6 @@
 import { signal } from "@hellajs/core";
 
-import { Button } from "@registry/button/css/button.js";
+import { Button } from "@components/ui/button.js";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,7 +12,7 @@ import {
   AlertDialogMedia,
   AlertDialogOverlay,
   AlertDialogTitle,
-} from "@registry/alert-dialog/css/alert-dialog.js";
+} from "@components/ui/alert-dialog.js";
 import { Portal } from "@hellajs/dom";
 
 export function AlertDialogDemo() {

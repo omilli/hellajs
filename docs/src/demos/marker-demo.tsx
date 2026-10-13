@@ -1,5 +1,5 @@
 
-import { Marker, MarkerContent, MarkerIcon } from "@registry/marker/css/marker.js";
+import { Marker, MarkerContent, MarkerIcon } from "@components/ui/marker.js";
 
 export function MarkerDemo() {
   return (

@@ -1,7 +1,7 @@
 import { signal } from "@hellajs/core";
 
-import { Button } from "@registry/button/css/button.js";
-import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemSeparator, ItemTitle } from "@registry/item/css/item.js";
+import { Button } from "@components/ui/button.js";
+import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemSeparator, ItemTitle } from "@components/ui/item.js";
 
 function row(title: string, copy: string) {
   return (

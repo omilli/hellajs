@@ -72,7 +72,7 @@
     "em-dash": "bun ./scripts/em-dash.ts",
     "lint:structure": "bun ./scripts/doc-structure.ts",
     "doc-snippets": "bun ./scripts/doc-snippets.ts",
-    "install-sources": "bun ./scripts/install-sources.ts"
+    "docs-ui": "bun ./scripts/docs-ui.ts"
   },
   "version": ""
 }

@@ -21,7 +21,7 @@ import {
   SidebarProvider,
   SidebarSeparator,
   SidebarTrigger,
-} from "@registry/sidebar/css/sidebar.js";
+} from "@components/ui/sidebar.js";
 
 
 

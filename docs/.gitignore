@@ -26,5 +26,5 @@ pnpm-debug.log*
 # per-page demo css (gen-demo-css)
 src/generated/pagecss/
 
-# generator scratch (install-sources)
+# generator scratch (docs-ui)
 .tmp/

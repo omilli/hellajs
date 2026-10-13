@@ -1,6 +1,6 @@
 import { style } from "@hellajs/css";
 import { tokens } from "../styles/tokens";
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@registry/empty/css/empty.js";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@components/ui/empty.js";
 
 const bareMedia = style({
   color: tokens.mutedForeground,

@@ -1,5 +1,5 @@
 import { signal } from "@hellajs/core";
-import { Textarea } from "@registry/textarea/css/textarea.js";
+import { Textarea } from "@components/ui/textarea.js";
 
 export function TextareaDemo() {
   const bio = signal("");

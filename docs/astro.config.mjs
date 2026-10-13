@@ -24,7 +24,6 @@ export default defineConfig({
         '@store/*': '../packages/store/docs/*',
         '@ssr/*': '../packages/ssr/docs/*',
         '@ui/*': '../packages/ui/docs/*',
-        '@registry/*': '../packages/ui/dist/registry/*',
         '@examples/*': '../examples/*'
       }
     }
