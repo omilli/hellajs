@@ -13,4 +13,4 @@ HellaJS ui components read props explicitly (no spread-to-element), so any prop 
 
 # Evidence
 
-`packages/ui/registry/native-select/native-select.tsx` `NativeSelectOptGroup` renders `<optgroup data-slot class>{children}</optgroup>` with no `label` read; identical body in `native-select-html.ts` and both tailwind flavors (`docs/src/generated/install/native-select.json`); repo-wide `rg "NativeSelectOptGroup"` shows the doc example was the only `label` passer.
+`packages/ui/registry/native-select/native-select.tsx` `NativeSelectOptGroup` renders `<optgroup data-slot class>{children}</optgroup>` with no `label` read; identical body in `native-select-html.ts` and both tailwind flavors (`docs/src/ui-install/native-select.json`); repo-wide `rg "NativeSelectOptGroup"` shows the doc example was the only `label` passer.

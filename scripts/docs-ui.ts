@@ -1,7 +1,7 @@
 // Regenerates the docs ui section's generated sources — two outputs, both
 // canonical PUBLIC `addComponent` output. Per entry × variant (css-jsx,
 // css-html, tailwind-jsx, tailwind-html) it copies the entry's own canonical
-// file into `docs/src/generated/install/<variant>/` for the InstallSection
+// file into `docs/src/ui-install/<variant>/` for the InstallSection
 // Manual tab; one css-jsx `addComponent` call over the full name list writes
 // the live component set — every `<name>.tsx` + `tokens.ts` — into
 // `docs/src/components/ui/`. Usage: bun docs-ui [entry ...]  (no args = all
@@ -53,7 +53,7 @@ function resolveNames(args: string[]): string[] {
  * alongside are ignored — only the entry's own file ships.
  * @param name Component name.
  * @param scratchDir Throwaway project addComponent copies into.
- * @param outRoot Generation root (`docs/src/generated/install`).
+ * @param outRoot Generation root (`docs/src/ui-install`).
  */
 async function generateEntry(name: string, scratchDir: string, outRoot: string): Promise<void> {
   for (const variant of variants) {
@@ -62,7 +62,7 @@ async function generateEntry(name: string, scratchDir: string, outRoot: string):
     await ensureDir(targetDir);
     copyFileSync(join(scratchDir, "src/components", variant.file(name)), join(targetDir, variant.file(name)));
   }
-  logger.info(`[docs-ui] ${name} -> docs/src/generated/install`);
+  logger.info(`[docs-ui] ${name} -> docs/src/ui-install`);
 }
 
 /** CLI entry: parse args, prepare scratch + output dirs, generate, report. */
@@ -70,7 +70,7 @@ async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const names = args.length > 0 ? resolveNames(args) : componentNames();
   const scratchDir = join(projectRoot, "docs/.tmp/docs-ui");
-  const outRoot = join(projectRoot, "docs/src/generated/install");
+  const outRoot = join(projectRoot, "docs/src/ui-install");
   const uiDir = join(projectRoot, "docs/src/components/ui");
 
   // checkPeers reads this manifest so the adds run without peer warnings; the
@@ -113,7 +113,7 @@ async function main(): Promise<void> {
       copyFileSync(join(scratchDir, "src/components", `${name}.tsx`), join(uiDir, `${name}.tsx`));
     }
     copyFileSync(join(scratchDir, "src/components", "tokens.ts"), join(uiDir, "tokens.ts"));
-    logger.success(`docs-ui: ${names.length} ${names.length === 1 ? "entry" : "entries"} written -> docs/src/generated/install + docs/src/components/ui`);
+    logger.success(`docs-ui: ${names.length} ${names.length === 1 ? "entry" : "entries"} written -> docs/src/ui-install + docs/src/components/ui`);
   } finally {
     rmSync(scratchDir, { recursive: true, force: true });
   }

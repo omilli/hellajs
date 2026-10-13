@@ -23,5 +23,5 @@ General-case exceptions (none present in this repo at eradication time): member 
 # Evidence
 
 - Empirical transform probe (2026-10-07, babel plugin): `data-state="${() => state()}"` → `"data-state": () => state()` vs `data-state="${state}"` → `"data-state": state` — both function-valued props.
-- Sweep: 111 files (registry tsx/html, ui+ssr docs mdx, docs-site astro pages, dom tests, babel double-wrap fixture input changed to `fn(1)` to keep the guard tested without the shape), regenerated `docs/src/generated/install/` + `docs/src/components/ui/` via `bun bundle ui && bun install-sources` + the `add` vendoring command.
+- Sweep: 111 files (registry tsx/html, ui+ssr docs mdx, docs-site astro pages, dom tests, babel double-wrap fixture input changed to `fn(1)` to keep the guard tested without the shape), regenerated `docs/src/ui-install/` + `docs/src/components/ui/` via `bun bundle ui && bun install-sources` + the `add` vendoring command.
 - Gates: `bun coverage ui` (2897 pass), `bun coverage dom` (575 pass), `bun test plugins/babel/tests` (246 pass), `bun doc-snippets` strict clean, full `bun lint` green; repo-wide `rg '\{\(\) => \w+\(\)\}'` → zero matches (memory/archive deliberately untouched — retired history).

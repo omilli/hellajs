@@ -24,5 +24,5 @@ success, not a skipped entry.
 `git stash` + rerun on baseline → identical exit 1 (foreign failure confirmed 2026-09-29).
 `bun docs/scripts/gen-install-sources.ts <remaining-names>` (cn excluded) → exit 1 only at the
 final theme entry, with all 54 component entries regenerated
-(`git status docs/src/generated/install/`). `ls docs/src/generated/install/` holds 59 files:
+(`git status docs/src/ui-install/`). `ls docs/src/ui-install/` holds 59 files:
 no cn.json, no theme.json.
