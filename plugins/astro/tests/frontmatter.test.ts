@@ -45,7 +45,7 @@ function run(code: string, opts: { id?: string; resolve?: Resolve; load?: Load }
   const virtual = /import "virtual:hella-frontmatter\/([^"]+)\.css";/.exec(result.code);
   expect(virtual).not.toBeNull();
   const tag = /<style id="hella-css">([\s\S]*?)<\/style>/.exec(result.code);
-  return { code: result.code, css: plugin.load.call({}, `\0virtual:hella-frontmatter/${virtual![1]}.css`), island: tag?.[1] ?? null, watched };
+  return { code: result.code, css: plugin.load.call({}, `virtual:hella-frontmatter/${virtual![1]}.css`), island: tag?.[1] ?? null, watched };
 }
 
 describe("astro", () => {

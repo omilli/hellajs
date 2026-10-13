@@ -2,7 +2,6 @@ import { createHash } from "node:crypto";
 import { extractFrontmatter } from "./evaluate.mjs";
 
 const VIRTUAL_PREFIX = "virtual:hella-frontmatter/";
-const RESOLVED_PREFIX = `\0${VIRTUAL_PREFIX}`;
 
 /**
  * Escapes collected island CSS for embedding inside the compiled template
@@ -64,7 +63,13 @@ function findIslandAnchor(code) {
  * pipeline via a virtual CSS import injected at the module top, while
  * collected island-module CSS rides an adoptable `<style id="hella-css">`
  * spliced into the page template (merged into the virtual import when the
- * module has no head/body anchor). Modules importing and referencing `cssText` keep
+ * module has no head/body anchor). The virtual module resolves to its own
+ * specifier — no `\0` prefix: Astro dev SSR wraps null-byte ids into
+ * `/@id/__x00__…` for the inline `<style data-vite-dev-id>` while vite's
+ * client injects with the raw id, and the mismatch defeats vite's
+ * `sheetsMap` reuse (a duplicate style per module). A prefix-less id makes
+ * both dev-ids identical, so the client claims the SSR tag in place.
+ * Modules importing and referencing `cssText` keep
  * byte-identical behavior (manual-management opt-out).
  * @param {object} [options] Injection seams for tests
  * @param {(specifier: string, importer: string) => string | null} [options.resolve] Module resolver overriding the default relative-path probe
@@ -80,12 +85,16 @@ export function frontmatterCss(options = {}) {
     name: "hella-frontmatter",
     enforce: "post",
     resolveId(source) {
-      if (!source.startsWith(VIRTUAL_PREFIX)) return null;
-      return `\0${source}`;
+      // Normalize the leading-slash form Astro's dev script tag produces
+      // (`/virtual:…`) onto the canonical specifier so both resolve to one
+      // module id — two ids would deliver the CSS twice.
+      const id = source.startsWith(`/${VIRTUAL_PREFIX}`) ? source.slice(1) : source;
+      if (!id.startsWith(VIRTUAL_PREFIX)) return null;
+      return id;
     },
     load(id) {
-      if (!id.startsWith(RESOLVED_PREFIX)) return null;
-      const css = batches.get(id.slice(1));
+      if (!id.startsWith(VIRTUAL_PREFIX)) return null;
+      const css = batches.get(id);
       return css === undefined ? null : css;
     },
     transform(code, id) {
