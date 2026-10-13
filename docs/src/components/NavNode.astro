@@ -1,10 +1,10 @@
 ---
 /**
- * One docs-nav node (unit 09): a leaf page link or a group disclosure.
- * Classes come from chrome-css.ts's re-declaration of the registry sidebar
- * menu vocabulary (`.site-menu-link`, `.site-nav-group-label`,
- * `.site-nav-sub`); active state is computed server-side from the pathname
- * — leaf = exact case-insensitive URL match, group = any descendant active
+ * One docs-nav node: a leaf page link or a group disclosure. Classes come
+ * from the shared menu vocabulary in ../styles/menu plus DocsNav's group
+ * rules (`.site-menu-link`, `.site-nav-group-label`, `.site-nav-sub`);
+ * active state is computed server-side from the pathname — leaf = exact
+ * case-insensitive URL match, group = any descendant active
  * (`[data-active='true']` hooks in both cases). Groups render as open
  * details/summary rows (parity with the daisy-era nav: no collapsible
  * state). Recursive via Astro.self for nested groups.

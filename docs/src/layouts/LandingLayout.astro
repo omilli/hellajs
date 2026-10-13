@@ -1,11 +1,11 @@
 ---
 import { cssText } from "@hellajs/css";
 import "../styles/preflight";
+import "../styles/menu";
+import "../styles/fonts";
 import "../styles/global";
 import "../styles/prose";
-import "../chrome/chrome-css";
 import "../styles/tokens";
-import "../global.css";
 
 const { frontmatter = {}, title: pageTitle } = Astro.props;
 const title = frontmatter.title || pageTitle;
@@ -37,9 +37,11 @@ const description =
          global to the build process, so whatever the layout imports itself
          is what cssText() deterministically contains — the same module
          set as MainLayout keeps this page's head identical in shape no matter
-         which page the build rendered before it. The ids are what make the
-         tags adoptable: hydration claims the delivered rules against client
-         re-registrations instead of re-injecting them. -->
+         which page the build rendered before it. The landing page's own
+         sheets register with its page module (index.astro) and ride along.
+         The ids are what make the tags adoptable: hydration claims the
+         delivered rules against client re-registrations instead of
+         re-injecting them. -->
     <style id="hella-css" is:inline set:html={cssText.css()} />
     {cssText.vars() && <style id="hella-vars" is:inline set:html={cssText.vars()} />}
   </head>

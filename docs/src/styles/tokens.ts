@@ -1,7 +1,7 @@
 /**
  * Site design tokens on the hella token vocabulary (unit 06 of the site
  * foundation set). Values are the user-approved port of the current palette:
- * `:root`/`@theme` from `docs/src/global.css` (base-50/100/200/300, primary,
+ * the daisy-era `:root`/`@theme` blocks (base-50/100/200/300, primary,
  * primary-content), daisyUI dark `base-content` for foreground text, tailwind
  * slate-700/600 for border/input, and the Mulish font. Registry-named tokens
  * override the registry theme sheets so every surface outside the ui demo
@@ -36,6 +36,13 @@
  * site tokens. Registered here rather than in the chrome css module so the
  * palette and its sidebar overrides register as one sheet, scoped with the
  * palette to `html:root`.
+ *
+ * Layout metrics follow the palette: `--nav-w` (left rail/drawer width,
+ * the old chrome's w-70), `--toc-w` (right rail clearance, lg:mr-80), and
+ * `--navbar-h` (fixed navbar height the rails, anchors, and content clear)
+ * are the chrome's structural dials — vars() so they read and change at a
+ * glance, consumed as `tokens.navW` / `tokens.tocW` / `tokens.navbarH` by
+ * Navbar, DocsNav, Toc, MainLayout, and global.ts.
  * Consume through `cssText()` for the static head styles (unit 08); the
  * exported `tokens` object maps each camelCase key to its `var(--*)`
  * reference (`base50` to `var(--base-50)`, digit-aware) for typed access
@@ -80,4 +87,7 @@ export const tokens = vars({
   sidebarPrimaryForeground: "var(--primary-foreground)",
   sidebarBorder: "var(--border)",
   sidebarRing: "var(--ring)",
+  navW: "17.5rem",
+  tocW: "20rem",
+  navbarH: "4rem",
 }, { scoped: "html:root" });

@@ -2,10 +2,236 @@
 import LandingLayout from "../layouts/LandingLayout.astro";
 import CodeExample from "../components/CodeExample.mdx";
 import { Icon } from "astro-icon/components";
+import { css } from "@hellajs/css";
+import { tokens } from "../styles/tokens";
 import "../styles/tokens";
 const title = "HellaJS";
 const description =
   "A reactive JavaScript framework for building fast, lightweight user interfaces with JSX.";
+
+// Landing page styles (stopgap until the deferred redesign re-derives this
+// surface): this page owns the markup, so the css() lives here with it.
+// Class names are landing-owned; values port the retired utility-class
+// markup against tokens.ts. The traffic-light dots and feat-check green
+// stay raw oklch — no palette token matches them.
+css({
+  ".landing-hero": {
+    alignItems: "center",
+    display: "flex",
+    minHeight: "100vh",
+  },
+
+  ".landing-inner": {
+    marginInline: "auto",
+    paddingInline: "1rem",
+    width: "100%",
+    maxWidth: "80rem",
+    "@media (min-width: 40rem)": {
+      "&": { paddingInline: "1.5rem" },
+    },
+    "@media (min-width: 64rem)": {
+      "&": { paddingInline: "2rem" },
+    },
+  },
+
+  ".landing-grid": {
+    display: "grid",
+    gridTemplateColumns: "1fr",
+    gap: "1.5rem",
+    alignItems: "center",
+    "@media (min-width: 64rem)": {
+      "&": {
+        gridTemplateColumns: "1fr 1fr",
+        gap: "4rem",
+      },
+    },
+  },
+
+  ".landing-copy": {
+    textAlign: "center",
+    display: "flex",
+    flexDirection: "column",
+    gap: "2rem",
+    "@media (min-width: 64rem)": {
+      "&": { textAlign: "left" },
+    },
+  },
+
+  ".landing-title": {
+    fontSize: "2.25rem",
+    fontWeight: "700",
+    lineHeight: "1.25",
+    margin: "0 0 1rem",
+    "@media (min-width: 40rem)": {
+      "&": { fontSize: "3rem" },
+    },
+    "@media (min-width: 64rem)": {
+      "&": { fontSize: "3.75rem" },
+    },
+  },
+
+  ".landing-tagline": {
+    fontSize: "1.125rem",
+    lineHeight: "1.6",
+    margin: "0 auto",
+    maxWidth: "42rem",
+    "@media (min-width: 40rem)": {
+      "&": { fontSize: "1.25rem" },
+    },
+    "@media (min-width: 64rem)": {
+      "&": { marginInline: "0" },
+    },
+  },
+
+  ".landing-ctas": {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
+    justifyContent: "center",
+    "@media (min-width: 40rem)": {
+      "&": { flexDirection: "row" },
+    },
+    "@media (min-width: 64rem)": {
+      "&": { justifyContent: "flex-start" },
+    },
+  },
+
+  ".landing-btn": {
+    alignItems: "center",
+    borderRadius: "0.25rem",
+    cursor: "pointer",
+    display: "inline-flex",
+    fontSize: "1.125rem",
+    fontWeight: "600",
+    gap: "0.5rem",
+    justifyContent: "center",
+    padding: "0.625rem 1.25rem",
+    textDecoration: "none",
+    transition: "filter 150ms ease, background-color 150ms ease",
+  },
+
+  ".landing-btn-primary": {
+    backgroundColor: tokens.primary,
+    color: tokens.primaryForeground,
+    "&:hover": { filter: "brightness(0.92)" },
+  },
+
+  ".landing-btn-outline": {
+    border: `1px solid ${tokens.foreground}`,
+    color: tokens.foreground,
+    "&:hover": {
+      backgroundColor: `color-mix(in oklab, ${tokens.foreground} 10%, transparent)`,
+    },
+  },
+
+  ".landing-feats": {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
+    textAlign: "left",
+    fontSize: "0.875rem",
+    "@media (min-width: 40rem)": {
+      "&": { flexDirection: "row" },
+    },
+    "@media (min-width: 64rem)": {
+      "&": { justifyContent: "flex-start" },
+    },
+  },
+
+  ".landing-feat": {
+    display: "flex",
+    gap: "0.5rem",
+    alignItems: "flex-start",
+    "& svg": {
+      color: "oklch(76% .177 163.223)",
+      flex: "none",
+      marginTop: "0.125rem",
+    },
+    "@media (min-width: 40rem)": {
+      "&": { width: "33.3333%" },
+    },
+  },
+
+  ".landing-demo": {
+    display: "flex",
+    justifyContent: "center",
+    "@media (min-width: 64rem)": {
+      "&": { justifyContent: "flex-end" },
+    },
+  },
+
+  ".landing-window": {
+    backgroundColor: tokens.base300,
+    borderRadius: "0.5rem",
+    boxShadow: "0 25px 50px -12px rgb(0 0 0 / 0.25)",
+    overflow: "hidden",
+    width: "100%",
+    maxWidth: "36rem",
+  },
+
+  ".landing-window-bar": {
+    alignItems: "center",
+    backgroundColor: tokens.base200,
+    borderBottom: `1px solid ${tokens.base300}`,
+    display: "flex",
+    gap: "0.5rem",
+    padding: "0.75rem 1rem",
+  },
+
+  ".landing-dots": {
+    display: "flex",
+    gap: "0.25rem",
+  },
+
+  ".landing-dot": {
+    borderRadius: "9999px",
+    height: "0.75rem",
+    width: "0.75rem",
+  },
+
+  ".landing-dot-error": {
+    backgroundColor: "oklch(71% .194 13.428)",
+  },
+
+  ".landing-dot-warning": {
+    backgroundColor: "oklch(82% .189 84.429)",
+  },
+
+  ".landing-dot-success": {
+    backgroundColor: "oklch(76% .177 163.223)",
+  },
+
+  ".landing-window-label": {
+    color: `color-mix(in oklab, ${tokens.foreground} 60%, transparent)`,
+    fontSize: "0.875rem",
+  },
+
+  ".landing-code": {
+    background: tokens.base50,
+    padding: "1rem",
+    "@media (min-width: 64rem)": {
+      "&": { padding: "2.5rem" },
+    },
+    // (0,2,1): beats prose's `main pre.astro-code` (0,1,2) — the landing
+    // window carries its own chrome, no prose padding/border inside.
+    "& pre.astro-code": {
+      background: `${tokens.base50} !important`,
+      border: "none",
+      boxShadow: "none",
+      fontFamily: tokens.fontMono,
+      fontSize: "1rem",
+      lineHeight: 1.6,
+      margin: "0",
+      overflowX: "auto",
+      padding: "0",
+    },
+  },
+
+  // TypeIt's blinking caret — hidden, the typewriter carries itself.
+  ".ti-cursor": {
+    display: "none !important",
+  },
+});
 ---
 
 <LandingLayout {title} {description}>

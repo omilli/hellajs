@@ -1,13 +1,12 @@
 ---
 /**
- * Docs-site callout (unit 11 of the site-foundation set): the docs
- * vocabulary replacing the retired daisyUI alert classes in package docs
- * and tutorials. Renders the registry alert's anatomy — mirrored
- * statically in `../styles/callouts` (the ui dist keeps those classes
- * module-private) — with a site-owned semantic variant. `role="alert"`
- * always: two migrated callouts carried the invalid `role="error"`, which
- * the component corrects by construction. Static, zero client JS; styles
- * land in the layout's head tag via `cssText()`.
+ * Docs-site callout: the docs vocabulary replacing the retired daisyUI
+ * alert classes in package docs and tutorials. Renders the registry alert's
+ * anatomy — re-declared here as site-owned style() maps (the ui dist keeps
+ * those classes module-private) — with a site-owned semantic variant.
+ * `role="alert"` always: two migrated callouts carried the invalid
+ * `role="error"`, which the component corrects by construction. Static,
+ * zero client JS; styles land in the layout's head tag via `cssText()`.
  */
 import { cx } from "@hellajs/css";
 import { style } from "@hellajs/css";

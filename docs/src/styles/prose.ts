@@ -7,9 +7,9 @@
  * headings/bold/links/quotes/table headers at full foreground, bullets and
  * row borders at 50%/20% mixes). Callouts are NOT styled here: the vocabulary
  * routes them through the ui registry alert's style module via a docs Callout
- * wrapper (unit 11); demo-frame classes stay in global.css until 11. The only
- * `!important` is the pre background, which must beat shiki's inline `style`
- * attr on `pre.astro-code`; token colors inside code blocks are inline spans
+ * wrapper (unit 11); demo-frame classes live with their markup owner
+ * (Component.astro). The only `!important` is the pre background, which must
+ * beat shiki's inline `style` attr on `pre.astro-code`; token colors inside code blocks are inline spans
  * and are deliberately untouched. kbd/figure/video/figcaption are omitted:
  * no mdx content uses them (add when one does). Collected by the MainLayout
  * head tag via `cssText()`; imported for side effect by the layout, no
@@ -19,7 +19,7 @@
  * demo frame and any future inline island opts out of prose entirely (the
  * shadcn/tailwindcss-typography model). The guard wraps its argument in
  * `:where()` so it adds zero specificity — every existing beat/loss stands
- * (global.css's `.landing-code pre.astro-code` must keep beating the prose
+ * (index.astro's `.landing-code pre.astro-code` must keep beating the prose
  * `pre.astro-code` rule). Nested keys stay plain: css() composes them into
  * `main <guarded-ancestor> <key>`, and an element inside a `.not-prose`
  * subtree always has its matched ancestor there too, so the exclusion is

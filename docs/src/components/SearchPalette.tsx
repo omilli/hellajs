@@ -1,11 +1,11 @@
 /**
- * Search palette (unit 10 of the site-foundation set) — the resolved fork:
- * the registry Command palette is the entry (CommandDialog, opened from the
- * navbar's data-command-open trigger and ⌘K/Ctrl+K), pagefind is the
- * engine. The daisy-era pagefind UI web component it replaces owned its
- * own markup and the `--pagefind-ui-*` vars global.css carried; both died
- * with this fork (the astro-pagefind INTEGRATION stays — it builds the
- * index this island queries at /pagefind/pagefind.js).
+ * Search palette — the resolved fork: the registry Command palette is the
+ * entry (CommandDialog, opened from the navbar's data-command-open trigger
+ * and ⌘K/Ctrl+K), pagefind is the engine. The daisy-era pagefind UI web
+ * component it replaces owned its own markup and the `--pagefind-ui-*` vars
+ * the old plain-CSS sheet carried; both died with this fork (the
+ * astro-pagefind INTEGRATION stays — it builds the index this island queries at
+ * /pagefind/pagefind.js).
  *
  * Engine wiring: the pagefind bundle only exists in production builds
  * (astro dev serves no index), so the dynamic import is lazy (first open)
@@ -29,12 +29,20 @@
  * module load (before the dialog can ever open — both triggers live on
  * this island); the adoptable head tags (see MainLayout) carry the same
  * rules and hydration claims them against this registration, so nothing
- * duplicates. chrome-css.ts owns the palette
- * width (.site-search-command).
+ * duplicates. This module owns the palette width (.site-search-command
+ * below) — the dialog panel shrink-wraps its content, so the command root
+ * carries the width.
  */
 import { effect, signal } from "@hellajs/core";
+import { css } from "@hellajs/css";
 import { Command, CommandDialog } from "@registry/command/css/command.js";
 import type { CommandItemData } from "@registry/command/css/command.js";
+
+css({
+  ".site-search-command": {
+    width: "min(40rem, calc(100vw - 2rem))",
+  },
+});
 
 /** Pagefind's runtime API surface (the subset this island uses). */
 interface PagefindApi {

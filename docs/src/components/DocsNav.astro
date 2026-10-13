@@ -1,23 +1,98 @@
 ---
 /**
- * Docs left navigation (unit 09 of the site-foundation set) —
- * server-rendered, zero client JS. The item look comes from chrome-css.ts's
- * re-declaration of the registry sidebar menu vocabulary (`.site-menu-link`,
- * `.site-nav-group-label`, `.site-nav-sub`; the registry's built output
- * keeps style constants module-private, so the copies are docs-owned).
- * Active route is computed at build time from Astro.url.pathname; the
- * mobile drawer is the layout's checkbox + this aside (chrome-css.ts owns
- * the mechanics). Replaces the daisyUI Sidebar.astro/NavItem.astro pair;
- * the URL map is docs/src/nav.ts, whose tree is unchanged — only the
- * transform moved here.
+ * Docs left navigation — server-rendered, zero client JS. The item look
+ * comes from the shared menu vocabulary in ../styles/menu (`.site-menu-link`;
+ * the registry's built output keeps style constants module-private, so the
+ * copies are docs-owned); groups and the rail/drawer shell are inlined
+ * below. Active route is computed at build time from Astro.url.pathname;
+ * the mobile drawer is the layout's checkbox + this aside (the sibling
+ * rules below own the mechanics). Replaces the daisyUI Sidebar.astro/
+ * NavItem.astro pair; the URL map is docs/src/nav.ts, whose tree is
+ * unchanged — only the transform moved here.
+ *
+ * The menu import lives in the layouts, not here: a css-bearing module in
+ * a component's import graph rides the plugin's per-instance island splice
+ * (duplicated on every render), while layout-imported sheets register once
+ * into the deterministic cssText head.
  */
 import NavNode from "./NavNode.astro";
+import { css } from "@hellajs/css";
+import { tokens } from "../styles/tokens";
 import {
   navigation,
   type NavEntry,
   type NavSection,
   type NavTreeNode,
 } from "../nav";
+
+css({
+  // Left nav: off-canvas drawer on mobile, fixed rail on desktop. Drawer
+  // mechanics: the layout's hidden checkbox + Navbar's label[for]; sibling
+  // selectors reach this aside because it follows the checkbox in body.
+  ".site-nav": {
+    background: tokens.sidebar,
+    color: tokens.sidebarForeground,
+    insetBlock: "0",
+    left: "0",
+    overflowY: "auto",
+    position: "fixed",
+    transform: "translateX(-100%)",
+    transition: "transform 200ms ease",
+    width: tokens.navW,
+    zIndex: "40",
+    "& > nav": { paddingBlock: "1rem", paddingInline: "0.5rem" },
+    "& details": { marginTop: "0.75rem" },
+    "@media (min-width: 64rem)": {
+      "&": { transform: "none", top: tokens.navbarH },
+    },
+  },
+
+  // Drawer open: the checkbox state is the subject (the compiler substitutes
+  // only a LEADING `&`), so the sibling rule sits at the top level.
+  "#nav-drawer:checked ~ .site-nav": { transform: "none" },
+
+  // Group disclosure row — registry sidebar groupLabel values plus the
+  // pointer/marker behavior a summary needs; the parent-of-active highlight
+  // has no registry hook (groupLabel carries no [data-active] rule), so
+  // this owns it.
+  ".site-nav-group-label": {
+    alignItems: "center",
+    borderRadius: `calc(${tokens.radius} * 0.8)`,
+    color: `color-mix(in oklab, ${tokens.sidebarForeground} 70%, transparent)`,
+    cursor: "pointer",
+    display: "flex",
+    flexShrink: "0",
+    fontSize: "0.75rem",
+    fontWeight: "500",
+    height: "2rem",
+    lineHeight: "1rem",
+    listStyle: "none",
+    paddingInline: "0.5rem",
+    width: "100%",
+    "&::-webkit-details-marker": { display: "none" },
+    "&[data-active='true']": { color: tokens.primary },
+  },
+
+  // Nested group list — registry sidebar menuSub values.
+  ".site-nav-sub": {
+    borderLeft: `1px solid ${tokens.sidebarBorder}`,
+    marginInline: "0.875rem",
+    paddingBlock: "0.125rem",
+    paddingInline: "0.625rem",
+    translate: "1px",
+  },
+
+  // Mobile-only main-nav links list above the section tree; the bottom
+  // border is the divider the daisy menu's hr used to draw.
+  ".mobile-only": {
+    borderBottom: `1px solid ${tokens.sidebarBorder}`,
+    marginBottom: "0.5rem",
+    paddingBottom: "0.5rem",
+    "@media (min-width: 64rem)": {
+      "&": { display: "none" },
+    },
+  },
+});
 
 const { pathname: rawPathname } = Astro.props as { pathname: string };
 

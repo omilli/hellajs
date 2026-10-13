@@ -12,10 +12,27 @@ const { entry } = Astro.props;
 // All four variants are real `add`-output files written by `bun
 // install-sources` — the Manual tab shows exactly what the CLI writes, as
 // real greppable files, with no ui-package import anywhere in site code.
-const cssJsx = import.meta.glob("../generated/install/css-jsx/*.tsx", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
-const cssHtml = import.meta.glob("../generated/install/css-html/*.ts", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
-const tailwindJsx = import.meta.glob("../generated/install/tailwind-jsx/*.tsx", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
-const tailwindHtml = import.meta.glob("../generated/install/tailwind-html/*.ts", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
+const cssJsx = import.meta.glob("../generated/install/css-jsx/*.tsx", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+}) as Record<string, string>;
+
+const cssHtml = import.meta.glob("../generated/install/css-html/*.ts", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+}) as Record<string, string>;
+
+const tailwindJsx = import.meta.glob(
+  "../generated/install/tailwind-jsx/*.tsx",
+  { query: "?raw", import: "default", eager: true },
+) as Record<string, string>;
+
+const tailwindHtml = import.meta.glob(
+  "../generated/install/tailwind-html/*.ts",
+  { query: "?raw", import: "default", eager: true },
+) as Record<string, string>;
 
 const sourceMaps: Record<string, Record<string, string>> = {
   "css-jsx": cssJsx,
@@ -23,6 +40,7 @@ const sourceMaps: Record<string, Record<string, string>> = {
   "tailwind-jsx": tailwindJsx,
   "tailwind-html": tailwindHtml,
 };
+
 const sourceKeys: Record<string, string> = {
   "css-jsx": `../generated/install/css-jsx/${entry}.tsx`,
   "css-html": `../generated/install/css-html/${entry}.ts`,
@@ -34,9 +52,13 @@ const sourceKeys: Record<string, string> = {
 // suffix instead of assuming a literal key.
 const sources: Record<string, string> = {};
 for (const [variant, key] of Object.entries(sourceKeys)) {
-  const match = Object.entries(sourceMaps[variant]).find(([file]) => file.endsWith(key));
+  const match = Object.entries(sourceMaps[variant]).find(([file]) =>
+    file.endsWith(key),
+  );
   if (match === undefined) {
-    throw new Error(`[InstallSection] missing ${variant} install source for ${entry}; generate with: bun install-sources ${entry}`);
+    throw new Error(
+      `[InstallSection] missing ${variant} install source for ${entry}; generate with: bun install-sources ${entry}`,
+    );
   }
   sources[variant] = match[1];
 }
@@ -115,35 +137,87 @@ css({
 
 <section class="install-section" data-install>
   <h2 id="installation">Installation</h2>
+
   <div class="install-tabs">
-    <button type="button" class="install-tab is-active" data-install-tab="command">Command</button>
-    <button type="button" class="install-tab" data-install-tab="manual">Manual</button>
+    <button
+      type="button"
+      class="install-tab is-active"
+      data-install-tab="command"
+    >
+      Command
+    </button>
+    <button type="button" class="install-tab" data-install-tab="manual">
+      Manual
+    </button>
   </div>
+
   <div class="install-panel" data-install-panel="command">
-    <div class="install-code"><Code code={commandCode} lang="bash" theme="github-dark" /></div>
+    <div class="install-code">
+      <Code code={commandCode} lang="bash" theme="github-dark" />
+    </div>
   </div>
+
   <div class="install-panel" data-install-panel="manual" hidden>
     <div class="install-pickers">
       <div class="install-picker" role="group" aria-label="Style">
-        <button type="button" class="install-pick is-active" data-pick-style="css">css</button>
-        <button type="button" class="install-pick" data-pick-style="tailwind">tailwind</button>
+        <button
+          type="button"
+          class="install-pick is-active"
+          data-pick-style="css"
+        >
+          css
+        </button>
+        <button type="button" class="install-pick" data-pick-style="tailwind">
+          tailwind
+        </button>
       </div>
       <div class="install-picker" role="group" aria-label="Format">
-        <button type="button" class="install-pick is-active" data-pick-format="jsx">jsx</button>
-        <button type="button" class="install-pick" data-pick-format="html">html</button>
+        <button
+          type="button"
+          class="install-pick is-active"
+          data-pick-format="jsx"
+        >
+          jsx
+        </button>
+        <button type="button" class="install-pick" data-pick-format="html">
+          html
+        </button>
       </div>
     </div>
+
     <div class="install-source-frame">
-      <template data-install-template="css-jsx"><div class="install-code"><Code code={sources["css-jsx"]} lang="tsx" theme="github-dark" /></div></template>
-      <template data-install-template="css-html"><div class="install-code"><Code code={sources["css-html"]} lang="ts" theme="github-dark" /></div></template>
-      <template data-install-template="tailwind-jsx"><div class="install-code"><Code code={sources["tailwind-jsx"]} lang="tsx" theme="github-dark" /></div></template>
-      <template data-install-template="tailwind-html"><div class="install-code"><Code code={sources["tailwind-html"]} lang="ts" theme="github-dark" /></div></template>
+      <template data-install-template="css-jsx">
+        <div class="install-code">
+          <Code code={sources["css-jsx"]} lang="tsx" theme="github-dark" />
+        </div>
+      </template>
+
+      <template data-install-template="css-html">
+        <div class="install-code">
+          <Code code={sources["css-html"]} lang="ts" theme="github-dark" />
+        </div>
+      </template>
+
+      <template data-install-template="tailwind-jsx">
+        <div class="install-code">
+          <Code code={sources["tailwind-jsx"]} lang="tsx" theme="github-dark" />
+        </div>
+      </template>
+
+      <template data-install-template="tailwind-html">
+        <div class="install-code">
+          <Code code={sources["tailwind-html"]} lang="ts" theme="github-dark" />
+        </div>
+      </template>
+
       <div class="install-code" data-install-live />
-      <button type="button" class="install-copy" data-install-copy>Copy</button>
+
+      <button type="button" class="install-copy" data-install-copy>
+        Copy
+      </button>
     </div>
   </div>
 </section>
-
 
 <script>
   // Tab and picker state is data-attribute swapping of pre-rendered blocks;
@@ -152,8 +226,12 @@ css({
   function wireInstallSection(section: Element): void {
     const tabs = Array.from(section.querySelectorAll("[data-install-tab]"));
     const panels = Array.from(section.querySelectorAll("[data-install-panel]"));
-    const stylePicks = Array.from(section.querySelectorAll("[data-pick-style]"));
-    const formatPicks = Array.from(section.querySelectorAll("[data-pick-format]"));
+    const stylePicks = Array.from(
+      section.querySelectorAll("[data-pick-style]"),
+    );
+    const formatPicks = Array.from(
+      section.querySelectorAll("[data-pick-format]"),
+    );
     const liveSlot = section.querySelector("[data-install-live]");
     const copyButton = section.querySelector("[data-install-copy]");
     let style = "css";
@@ -164,11 +242,14 @@ css({
     const syncSource = () => {
       if (!liveSlot) return;
       liveSlot.replaceChildren();
-      const template = section.querySelector<HTMLTemplateElement>(`template[data-install-template="${style}-${format}"]`);
+      const template = section.querySelector<HTMLTemplateElement>(
+        `template[data-install-template="${style}-${format}"]`,
+      );
       if (template) {
         liveSlot.appendChild(template.content.cloneNode(true));
       }
     };
+
     const syncPicks = (picks: Element[], attr: string, value: string) => {
       picks.forEach((pick) => {
         pick.classList.toggle("is-active", pick.getAttribute(attr) === value);
@@ -178,12 +259,17 @@ css({
     tabs.forEach((tab) => {
       tab.addEventListener("click", () => {
         const key = tab.getAttribute("data-install-tab");
-        tabs.forEach((other) => other.classList.toggle("is-active", other === tab));
+        tabs.forEach((other) =>
+          other.classList.toggle("is-active", other === tab),
+        );
+
         panels.forEach((panel) => {
-          panel.hidden = panel.getAttribute("data-install-panel") !== key;
+          (panel as HTMLSelectElement).hidden =
+            panel.getAttribute("data-install-panel") !== key;
         });
       });
     });
+
     stylePicks.forEach((pick) => {
       pick.addEventListener("click", () => {
         style = pick.getAttribute("data-pick-style") ?? "css";
@@ -191,6 +277,7 @@ css({
         syncSource();
       });
     });
+
     formatPicks.forEach((pick) => {
       pick.addEventListener("click", () => {
         format = pick.getAttribute("data-pick-format") ?? "jsx";
@@ -198,6 +285,7 @@ css({
         syncSource();
       });
     });
+
     copyButton?.addEventListener("click", () => {
       const code = liveSlot?.querySelector("pre")?.textContent ?? "";
       navigator.clipboard.writeText(code).then(() => {
@@ -213,6 +301,7 @@ css({
   const init = () => {
     document.querySelectorAll("[data-install]").forEach(wireInstallSection);
   };
+
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);
   } else {

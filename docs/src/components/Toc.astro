@@ -1,0 +1,153 @@
+---
+/**
+ * "On This Page", fully server-rendered (the hard requirement that kills
+ * the client-extractor flash): the layout extracts h2/h3 text+ids from the
+ * slot's rendered HTML and passes them here as plain data. Two surfaces
+ * from one entry list, placed by the layout: `mobile` renders a
+ * details/summary above the content (trigger is the browser's — no JS),
+ * `rail` renders the fixed desktop aside. Item links reuse the shared menu
+ * vocabulary from ../styles/menu (imported by the layouts — a css-bearing
+ * module in a component's import graph would ride the plugin's per-instance
+ * island splice); the surfaces are inlined below. Emits nothing when the
+ * page has no extractable headings — the layout's has-toc margin only pairs
+ * with a rendered rail.
+ */
+import { css } from "@hellajs/css";
+import { tokens } from "../styles/tokens";
+
+css({
+  // Mobile "On This Page": a native details/summary above the content —
+  // content is server-rendered, the trigger is the browser's. Surfaces use
+  // the same sidebar/accent pairing as the nav (base-300 panel, base-50
+  // hover) so the toc reads as the same chrome.
+  ".toc-mobile": {
+    margin: `calc(${tokens.navbarH} + 1rem) 1rem 0`,
+    "@media (min-width: 64rem)": {
+      "&": { display: "none" },
+    },
+    "& summary": {
+      alignItems: "center",
+      background: tokens.sidebar,
+      border: `1px solid ${tokens.sidebarBorder}`,
+      borderRadius: `calc(${tokens.radius} * 0.8)`,
+      cursor: "pointer",
+      display: "flex",
+      fontSize: "0.875rem",
+      gap: "0.5rem",
+      justifyContent: "space-between",
+      listStyle: "none",
+      paddingBlock: "0.625rem",
+      paddingInline: "1rem",
+      "&::-webkit-details-marker": { display: "none" },
+    },
+    "& .toc-chevron": {
+      height: "1rem",
+      transition: "transform 150ms ease",
+      width: "1rem",
+    },
+    "&[open] .toc-chevron": { transform: "rotate(180deg)" },
+    "& ul": {
+      background: tokens.sidebar,
+      border: `1px solid ${tokens.sidebarBorder}`,
+      borderRadius: `calc(${tokens.radius} * 0.8)`,
+      marginBlockStart: "0.5rem",
+      maxHeight: "calc(100dvh - 12rem)",
+      overflowY: "auto",
+      padding: "0.5rem",
+    },
+  },
+
+  // Desktop "On This Page" rail: fixed, right, below the navbar. Hidden
+  // entirely (mobile too) when the layout found no h2/h3 — the has-toc
+  // margin only pairs with a rendered rail.
+  ".toc-rail": {
+    bottom: "0",
+    display: "none",
+    overflowY: "auto",
+    position: "fixed",
+    right: "0",
+    top: tokens.navbarH,
+    width: "17.5rem",
+    zIndex: "20",
+    "& h2": {
+      color: tokens.foreground,
+      fontSize: "0.875rem",
+      fontWeight: "700",
+      marginBottom: "0.5rem",
+      paddingInline: "0.5rem",
+    },
+    "@media (min-width: 64rem)": {
+      "&": { display: "block" },
+    },
+  },
+});
+
+interface TocEntry {
+  text: string;
+  slug: string;
+  depth: number;
+}
+
+interface Props {
+  entries: TocEntry[];
+  variant: "mobile" | "rail";
+}
+
+const { entries, variant } = Astro.props;
+---
+
+{
+  variant === "mobile" && entries.length > 0 && (
+    <details class="toc-mobile">
+      <summary aria-label="On this page">
+        <span>On this page</span>
+        <svg
+          class="toc-chevron"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </summary>
+      <ul>
+        {
+          entries.map((entry) => (
+            <li>
+              <a
+                href={`#${entry.slug}`}
+                class="site-menu-link"
+                style={`padding-left: ${(entry.depth - 2) * 1.5 + 0.5}rem`}
+              >
+                {entry.text}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </details>
+  )
+}
+{
+  variant === "rail" && entries.length > 0 && (
+    <aside class="toc-rail" aria-label="On this page">
+      <h2>On this page</h2>
+      <ul>
+        {
+          entries.map((entry) => (
+            <li>
+              <a
+                href={`#${entry.slug}`}
+                class="site-menu-link"
+                style={`padding-left: ${(entry.depth - 2) * 1.5 + 0.5}rem`}
+              >
+                {entry.text}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </aside>
+  )
+}

@@ -4,7 +4,7 @@ title: Build Tools Plugins
 description: Official plugins for integrating HellaJS with popular build tools including Vite, Babel, and Rollup for seamless JSX transformation and development experience.
 ---
 
-import { Icon } from "astro-icon/components";
+import Plugins from "../../components/Plugins.astro"
 
 # Build Tool Plugins
 
@@ -12,70 +12,7 @@ Official plugins that transform HellaJS JSX syntax and `html` tagged templates i
 
 All plugins are zero-config: install and add to your build tool. No options to configure.
 
-{(() => {
-  const plugins = [
-    {
-      name: "Babel", 
-      href: "/plugins/babel",
-      icon: "simple-icons:babel",
-      color: "#F9DC3E",
-      description: "JSX support for HellaJS.",
-      buttonTextColor: "#000"
-    },
-    {
-      name: "Rollup",
-      href: "/plugins/rollup", 
-      icon: "simple-icons:rollupdotjs",
-      color: "#EC4A3F",
-      description: "Tree-shaking output.",
-      buttonTextColor: "#fff"
-    },
-    {
-      name: "Vite",
-      href: "/plugins/vite", 
-      icon: "simple-icons:vite",
-      color: "#515cbd",
-      description: "Lightning-fast development.",
-      buttonTextColor: "#fff"
-    },
-    {
-      name: "Astro",
-      href: "/plugins/astro",
-      icon: "simple-icons:astro",
-      color: "#5f18ab",
-      description: "HellaJS components in Astro.",
-      buttonTextColor: "#fff"
-    },
-  ];
-
-  return (
-    <div class="index-grid plugin-grid">
-      {plugins.map((plugin) => (
-        <a 
-          href={plugin.href} 
-          class="index-card index-card-lift"
-          style={`background: linear-gradient(to bottom right, color-mix(in srgb, ${plugin.color} 10%, transparent), color-mix(in srgb, ${plugin.color} 5%, transparent)); border: 1px solid color-mix(in srgb, ${plugin.color} 30%, transparent);`}
-        >
-          <div class="index-card-body">
-            <div class="index-card-head">
-              <Icon name={plugin.icon} width={32} height={32} style={`color: ${plugin.color}`} />
-              <h3 class="index-card-title">{plugin.name}</h3>
-            </div>
-            <p class="index-card-desc">{plugin.description}</p>
-            <div>
-              <span 
-                class="index-card-cta"
-                style={`background-color: ${plugin.color}; color: ${plugin.buttonTextColor}`}
-              >
-                Get Started
-              </span>
-            </div>
-          </div>
-        </a>
-      ))}
-    </div>
-  );
-})()}
+<Plugins/>
 
 ## TypeScript Configuration
 

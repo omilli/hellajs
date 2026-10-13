@@ -1,4 +1,19 @@
 ---
+import { css } from "@hellajs/css";
+
+// npm version shields on the reference/ui index pages. Prose gives
+// `main img` 2em margins; badges opt back out.
+css({
+  ".pkg-badge-row": {
+    display: "flex",
+    gap: "0.5rem",
+    "& img": {
+      display: "block",
+      marginBlock: "0",
+    },
+  },
+});
+
 const { package: pack } = Astro.props as {
   package: string;
 };

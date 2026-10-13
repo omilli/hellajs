@@ -8,6 +8,10 @@ import hellajs from "astro-plugin-hellajs";
 // https://astro.build/config
 export default defineConfig({
   integrations: [icon(), mdx(), pagefind(), hellajs()],
+  // Component css (chrome, callouts, install tabs) rides Astro's stylesheet
+  // pipeline as extracted per-module chunks; inline them so every page is
+  // self-contained — no render-blocking css requests, no opaque chunk names.
+  build: { inlineStylesheets: "always" },
   vite: {
     resolve: {
       alias: {

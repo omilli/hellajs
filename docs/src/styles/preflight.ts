@@ -4,28 +4,13 @@
  * blob/main/packages/tailwindcss/preflight.css) as a `css()` module.
  * Unlayered like every site sheet; specificity - never cascade-layer rank -
  * keeps its element selectors under the class-scoped chrome and registry
- * rules registered alongside it.
+ * rules registered alongside it. Font stacks inline as literal values
+ * (site convention: no consts holding CSS values) — the mono stack is
+ * byte-identical to `tokens.fontMono`, kept local so the port stays a
+ * faithful port rather than a palette consumer.
  */
 
 import { css } from "@hellajs/css";
-
-const SANS = [
-  "-apple-system",
-  "BlinkMacSystemFont",
-  "'Segoe UI'",
-  "Roboto",
-  "'Helvetica Neue'",
-  "'Noto Sans'",
-  "Arial",
-  "sans-serif",
-  "'Apple Color Emoji'",
-  "'Segoe UI Emoji'",
-  "'Segoe UI Symbol'",
-  "'Noto Color Emoji'",
-];
-
-const MONO =
-  "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace";
 
 css({
     // Prevent padding and border from affecting element width; remove
@@ -44,7 +29,20 @@ css({
       lineHeight: 1.5,
       WebkitTextSizeAdjust: "100%",
       tabSize: "4",
-      fontFamily: SANS,
+      fontFamily: [
+        "-apple-system",
+        "BlinkMacSystemFont",
+        "'Segoe UI'",
+        "Roboto",
+        "'Helvetica Neue'",
+        "'Noto Sans'",
+        "Arial",
+        "sans-serif",
+        "'Apple Color Emoji'",
+        "'Segoe UI Emoji'",
+        "'Segoe UI Symbol'",
+        "'Noto Color Emoji'",
+      ],
       fontFeatureSettings: "normal",
       fontVariationSettings: "normal",
       WebkitTapHighlightColor: "transparent",
@@ -83,7 +81,8 @@ css({
     // Default mono stack with normal feature/variation settings; correct
     // the odd `em` code sizing.
     "code, kbd, samp, pre": {
-      fontFamily: MONO,
+      fontFamily:
+        "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
       fontFeatureSettings: "normal",
       fontVariationSettings: "normal",
       fontSize: "1em",

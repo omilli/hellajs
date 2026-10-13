@@ -1,15 +1,59 @@
 ---
-import Navbar from "../chrome/Navbar.astro";
-import DocsNav from "../chrome/DocsNav.astro";
-import SearchPalette from "../chrome/SearchPalette";
-import Toc from "../chrome/Toc.astro";
+import Navbar from "../components/Navbar.astro";
+import DocsNav from "../components/DocsNav.astro";
+import SearchPalette from "../components/SearchPalette";
+import Toc from "../components/Toc.astro";
 import {tocRegex} from "../utils/toc-regex";
-import { cssText } from "@hellajs/css";
+import { css, cssText } from "@hellajs/css";
+import { tokens } from "../styles/tokens";
 import "../styles/preflight";
+import "../styles/menu";
+import "../styles/fonts";
 import "../styles/global";
 import "../styles/prose";
-import "../chrome/chrome-css";
-import "../global.css";
+
+css({
+  // Content column: clear the fixed navbar, the left rail on desktop, and
+  // the right rail when the page has one (has-toc set server-side by the
+  // layout from the extracted TOC length).
+  ".site-main": {
+    paddingTop: tokens.navbarH,
+    "&.has-toc": {
+      "@media (min-width: 64rem)": {
+        "&": { marginRight: tokens.tocW },
+      },
+    },
+    "& > main": {
+      padding: "1rem",
+      "@media (min-width: 64rem)": {
+        "&": { padding: "2rem" },
+      },
+    },
+    "@media (min-width: 64rem)": {
+      "&": { marginLeft: tokens.navW },
+    },
+  },
+
+  // Mobile drawer overlay: follows the checkbox like the nav; desktop
+  // never shows it (the rail is static there). The checkbox state is the
+  // subject (the compiler substitutes only a LEADING `&`), so the sibling
+  // rules sit at the top level.
+  ".nav-overlay": {
+    background: "rgb(0 0 0 / 60%)",
+    display: "none",
+    inset: "0",
+    position: "fixed",
+    zIndex: "30",
+    "@media (min-width: 64rem)": {
+      "&": { display: "none" },
+    },
+  },
+  "#nav-drawer:checked ~ .nav-overlay": { display: "block" },
+  "@media (min-width: 64rem)": {
+    "#nav-drawer:checked ~ .nav-overlay": { display: "none" },
+  },
+});
+
 const { frontmatter = {}, title: pageTitle } = Astro.props;
 const title = frontmatter.title || pageTitle;
 // Adoptable split: the ids let hydration claim the delivered rules against
@@ -50,8 +94,9 @@ const toc: { text: string; slug: string; depth: number }[] = Array.from(
   </head>
   <body>
     <!-- Drawer state: checked = open. Sits before every drawer surface so
-         chrome-css's sibling selectors (`#nav-drawer:checked ~ …`) reach
-         them; Navbar's hamburger label toggles it — zero client JS. -->
+         the sibling selectors (`#nav-drawer:checked ~ …`, owned by DocsNav
+         and below) reach them; Navbar's hamburger label toggles it — zero
+         client JS. -->
     <input id="nav-drawer" type="checkbox" hidden />
     <Navbar />
     <Toc entries={toc} variant="mobile" />
@@ -61,8 +106,8 @@ const toc: { text: string; slug: string; depth: number }[] = Array.from(
       <main set:html={content} />
     </div>
     <Toc entries={toc} variant="rail" />
-    <!-- Search palette (unit 10): renders nothing until the trigger or
-         ⌘K opens it; its styles register client-side with its module. -->
+    <!-- Search palette: renders nothing until the trigger or ⌘K opens it;
+         its styles register client-side with its module. -->
     <SearchPalette client:load />
   </body>
 </html>
