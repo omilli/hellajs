@@ -49,7 +49,7 @@ A complete walkthrough lives in the [Astro Islands tutorial](https://hellajs.com
 
 ## Frontmatter styles
 
-Statically evaluable `css()`, `style()`, and `keyframes()` calls in `.astro` frontmatter compile at build: the integration folds each call against the real `@hellajs/css` package and replaces it with its class or name literal. The collected CSS splits by channel: rules from the page's own module ride Astro's pipeline as a page-scoped `<style>` in the built head, and rules collected from imported island modules ride a `<style id="hella-css">` in the page, which hydration claims against the islands' re-registrations so those rules never duplicate. No client-side CSS ships for frontmatter styles.
+Statically evaluable `css()`, `style()`, and `keyframes()` calls in `.astro` frontmatter compile at build: the integration folds each call against the real `@hellajs/css` package and replaces it with its class or name literal. The collected CSS splits by channel: rules from the page's own module ride Astro's pipeline as a page-scoped `<style>` in the built head, and rules collected from imported island modules ride a `<style id="hella-css">` in the page, which hydration claims against the islands' re-registrations so those rules never duplicate. The id'd tag needs a document anchor: a page whose template opens with neither `<head>` nor `<body>` merges island rules into the same page-scoped import instead - Astro renders that import exactly once per page, but hydration cannot claim its rules, so a transient duplicate can exist until the islands register their own copies (identical rules, no visual difference). No client-side CSS ships for frontmatter styles.
 
 ```astro
 ---
@@ -80,7 +80,7 @@ A frontmatter creator call with non-foldable arguments fails the build and point
 
 A page importing and referencing `cssText` keeps byte-identical behavior: the integration leaves it untouched. That is also the escape hatch for dynamic styles: move them to a module and collect with `cssText()`, as shown under [Styling](#styling).
 
-Islands keep runtime registration. Rules collected from island modules ship inside the page's `<style id="hella-css">`: hydration adopts that element once, claiming the delivered rules against the islands' re-registrations so each exists exactly once.
+Islands keep runtime registration. In anchored pages, rules collected from island modules ship inside the page's `<style id="hella-css">`: hydration adopts that element once, claiming the delivered rules against the islands' re-registrations so each exists exactly once. In pages without a head/body anchor those rules merge into the page-scoped import instead - delivered once per page, but not claimable at hydration.
 
 ## Styling
 

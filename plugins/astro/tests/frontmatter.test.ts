@@ -116,7 +116,7 @@ describe("astro", () => {
       const { code, css, island, watched } = run(compiled(
         [`import { style } from "@hellajs/css";`, `import { base, spin } from "../theme";`],
         "  const hero = style(base, { animation: `${spin} 1s linear` });",
-        "<div></div>",
+        "<body><div></div></body>",
       ), { resolve, load });
       expect(code).toMatch(/const hero = "[a-z]+"/);
       expect(island).toContain("@keyframes kf-");
@@ -156,7 +156,7 @@ describe("astro", () => {
       const { css, island } = run(compiled(
         [`import { style } from "@hellajs/css";`, `import "../island-styles";`],
         `  const own = style({ color: "blue" });`,
-        "<div></div>",
+        "<body><div></div></body>",
       ), { resolve, load });
       expect(island).toContain(".imported-rule {");
       expect(island).toContain("color: green;");
@@ -185,7 +185,7 @@ describe("astro", () => {
       const { code, css, island, watched } = run(compiled(
         [`import { css } from "@hellajs/css";`, `import { tokens } from "../styles/tokens";`, `import "../island-styles";`],
         `  css({ ".hero": { color: tokens.brand } });`,
-        "<div></div>",
+        "<body><div></div></body>",
       ), { resolve, load });
       expect(code).toContain("void 0");
       expect(css).toContain(".hero {\n  color: var(--brand);\n}");
@@ -234,7 +234,7 @@ describe("astro", () => {
       const { css, island, watched } = run(compiled(
         [`import { css } from "@hellajs/css";`, `import Counter from "../components/Counter";`],
         `  css({ body: { margin: "2rem auto" } });`,
-        "<Counter client:load initial={0} />",
+        "<body><Counter client:load initial={0} /></body>",
       ), { resolve, load });
       expect(island).toContain("padding: 0.5rem;");
       expect(island).toMatch(/\.counter-btn-[a-z]+/);
@@ -292,7 +292,6 @@ describe("astro", () => {
     test.each([
       { label: "after the head open tag", template: "<html><head><title>t</title></head><body><div></div></body></html>", adjacent: '<head><style id="hella-css">' },
       { label: "after the body open tag", template: "<html><body><div></div></body></html>", adjacent: '<body><style id="hella-css">' },
-      { label: "at the quasi start without head or body", template: "<div></div>", adjacent: '$$render`<style id="hella-css">' },
     ])("splices the island tag $label", ({ template, adjacent } : {template: string, adjacent: string}) => {
       const files = new Map<string, string>([
         ["/src/island.ts", `import { style } from "@hellajs/css";\nstyle({ margin: 0 });`],
@@ -309,6 +308,23 @@ describe("astro", () => {
       expect(island).not.toContain("color: blue");
     });
 
+    test("merges island css into the virtual import when the quasi has no head/body anchor", () => {
+      const files = new Map<string, string>([
+        ["/src/island.ts", `import { style } from "@hellajs/css";\nstyle({ margin: 0 });`],
+      ]);
+      const resolve: Resolve = (specifier) => (specifier === "../island" ? "/src/island.ts" : null);
+      const load: Load = (id) => files.get(id) ?? "";
+      const { code, css, island } = run(compiled(
+        [`import { style } from "@hellajs/css";`, `import "../island";`],
+        `  const own = style({ color: "blue" });`,
+        "<div></div>",
+      ), { resolve, load });
+      expect(island).toBeNull();
+      expect(css).toContain("margin: 0px;");
+      expect(css).toContain("color: blue");
+      expect(code).not.toContain('<style id="hella-css">');
+    });
+
     test("escapes island css for the template literal and keeps the module parseable", () => {
       const files = new Map<string, string>([
         ["/src/island.ts", [
@@ -321,7 +337,7 @@ describe("astro", () => {
       const { code, island } = run(compiled(
         [`import { style } from "@hellajs/css";`, `import "../island";`],
         `  const own = style({ color: "blue" });`,
-        "<div></div>",
+        "<body><div></div></body>",
       ), { resolve, load });
       expect(island).toContain("<\\\\/style>");
       expect(island).toContain("\\`");

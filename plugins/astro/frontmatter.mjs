@@ -25,8 +25,10 @@ function escapeIslandCss(text) {
  * Locates where the island style tag enters the compiled template: inside
  * the first `$$render` quasi (anchor `return $$render\``, falling back to
  * the first `$$render\``), after the `<head…>` open tag when present, else
- * after `<body…>`, else at the quasi start. Returns -1 when the module
- * carries no template (the island CSS then merges into the virtual import).
+ * after `<body…>`. Splice anchors are document-level open tags only: a
+ * quasi opening with neither returns -1 (as does a module with no template),
+ * merging the island CSS into the virtual import instead of splicing a
+ * duplicate tag per rendered component.
  * @param {string} code Compiled `.astro` module source
  * @returns {number} Insertion offset into `code`, or -1 without an anchor
  */
@@ -50,7 +52,7 @@ function findIslandAnchor(code) {
   if (head) return quasiStart + head.index + head[0].length;
   const body = /<body(?=[\s>])[^>]*>/.exec(quasi);
   if (body) return quasiStart + body.index + body[0].length;
-  return quasiStart;
+  return -1;
 }
 
 /**
@@ -62,7 +64,7 @@ function findIslandAnchor(code) {
  * pipeline via a virtual CSS import injected at the module top, while
  * collected island-module CSS rides an adoptable `<style id="hella-css">`
  * spliced into the page template (merged into the virtual import when the
- * module has no template). Modules importing and referencing `cssText` keep
+ * module has no head/body anchor). Modules importing and referencing `cssText` keep
  * byte-identical behavior (manual-management opt-out).
  * @param {object} [options] Injection seams for tests
  * @param {(specifier: string, importer: string) => string | null} [options.resolve] Module resolver overriding the default relative-path probe
@@ -93,9 +95,12 @@ export function frontmatterCss(options = {}) {
       const { pageCss, islandCss, replacements, watchFiles } = batch;
       // Island rules ride the adoptable `hella-css` tag — hydration claims
       // its delivered rules against the islands' re-registrations, so the
-      // rules never duplicate. No template anchor → status-quo single-batch
-      // delivery (duplicate-but-styled degradation for degenerate compiled
-      // shapes).
+      // rules never duplicate. The splice is kept only for document-anchored
+      // modules: a page quasi opens with `<head…>`/`<body…>`, renders once,
+      // and the id'd tag stays unique and hydration-claimable. An anchorless
+      // module merges into the virtual import — Astro's page CSS collection
+      // renders that import exactly once per page however often the component
+      // renders, so splicing would emit a duplicate tag per render.
       let virtualCss = pageCss;
       if (islandCss) {
         const anchor = findIslandAnchor(code);
