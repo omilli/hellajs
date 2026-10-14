@@ -1,5 +1,14 @@
 # Memory Update Log
 
+## 2026-10-14
+* **Creation**: Added concept [287](entries/287.md) (type: decision).
+* **Creation**: Added concept [288](entries/288.md) (type: decision).
+* **Deprecation**: Archived [287](archive/287-foreach-explicit-key-prop-consumed.md) → superseded by [288](entries/288.md).
+* **Creation**: Added concept [289](entries/289.md) (type: decision).
+* **Creation**: Added concept [290](entries/290.md) (type: decision).
+* **Creation**: Added concept [291](entries/291.md) (type: decision).
+* **Update**: unit 02 (reactive items: select/combobox): added 291 - per-entry item accessors compare by value, never reference (combobox hidden-trick staleness under keyBy reuse; contract-frozen this unit)
+
 ## 2026-10-13
 * **Creation**: Added concept [285](entries/285.md) (type: decision).
 * **Update**:
