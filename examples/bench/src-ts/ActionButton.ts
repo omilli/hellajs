@@ -1,16 +1,16 @@
-import { html } from "@hellajs/dom";
+import { html, HTMLAttributes } from "@hellajs/dom";
 
-interface ButtonProps {
+interface ButtonProps extends HTMLAttributes<"button"> {
   id: string;
   onClick: () => void;
   text: string;
 }
 
-export const ActionButton = ({ id, onClick, text }: ButtonProps) => html`
+export const ActionButton = ({ id, text, ...attrs }: ButtonProps) => html`
   <div class="col-sm-6">
     <button
       id=${id}
-      on:click=${onClick}
+      on:click=${attrs["on:click"]}
       class="btn btn-primary btn-block col-md-6"
       type="button"
     >
