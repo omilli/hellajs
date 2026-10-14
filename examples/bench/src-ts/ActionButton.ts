@@ -1,15 +1,13 @@
 import { html, HTMLAttributes } from "@hellajs/dom";
 
 interface ButtonProps extends HTMLAttributes<"button"> {
-  id: string;
-  onClick: () => void;
   text: string;
 }
 
-export const ActionButton = ({ id, text, ...attrs }: ButtonProps) => html`
+export const ActionButton = ({ text, ...attrs }: ButtonProps) => html`
   <div class="col-sm-6">
     <button
-      id=${id}
+      id=${attrs.id}
       on:click=${attrs["on:click"]}
       class="btn btn-primary btn-block col-md-6"
       type="button"
