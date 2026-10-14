@@ -1,5 +1,5 @@
 import { html } from "@hellajs/dom";
-import { signal } from "@hellajs/core";
+import { signalSet } from "@hellajs/core";
 import type { HellaNode, HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 interface AccordionEntry {
@@ -208,27 +208,26 @@ export function AccordionContent({ active, id, children, class: cls, ...attrs }:
 
 export function Accordion({ items, type, collapsible, open, class: cls, ...attrs }: AccordionProps): HellaNode {
   const mode = type ?? "single";
-  const seed = open === undefined
-    ? []
-    : Array.isArray(open)
-      ? open
-      : [open];
+  // A single open string wraps to a one-value list, a list passes through, absent starts closed.
+  const seed = typeof open === "string" ? [open] : open ?? [];
   // Single mode keeps at most one value open: a multi-value seed clamps to the first.
-  const openValues = signal<Set<string>>(new Set(mode === "single" ? seed.slice(0, 1) : seed));
+  // signalSet gives each item's isOpen reader its own membership signal, so a toggle
+  // wakes only the affected items' state effects.
+  const openValues = signalSet<string>(mode === "single" ? seed.slice(0, 1) : seed);
 
-  const isOpen = (value: string): boolean => openValues().has(value);
+  const isOpen = (value: string): boolean => openValues.has(value);
 
   const toggle = (value: string, disabled?: boolean): void => {
     if (disabled) return;
-    const next = new Set(openValues());
-    if (next.has(value)) {
+    if (openValues.has(value)) {
       if (mode === "single" && collapsible !== true) return;
-      next.delete(value);
+      openValues.delete(value);
+    } else if (mode === "single") {
+      // The reconcile setter swaps the open item in one pass: closes the previous value, opens this one.
+      openValues(new Set([value]));
     } else {
-      if (mode === "single") next.clear();
-      next.add(value);
+      openValues.add(value);
     }
-    openValues(next);
   };
 
   return html`
