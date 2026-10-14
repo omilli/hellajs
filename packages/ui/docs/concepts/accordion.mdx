@@ -6,7 +6,8 @@ The composed root derives each row's trigger/content id pair and threads the ope
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `items` | `AccordionEntry[]` | `-` |
+| `items` | `AccordionEntry[] \| (() => AccordionEntry[])` | `-` |
+| `keyBy` | `"value"` | `-` |
 | `type` | `"single" \| "multiple"` | `"single"` |
 | `collapsible` | `boolean` | `-` |
 | `open` | `string \| string[]` | `-` |
@@ -63,3 +64,23 @@ Every part also takes a `class` string, landing last in its style composition.
 | `type="single"` (default) | Closes the previous item, opens the clicked one | Does nothing unless `collapsible` is set |
 | `type="single" collapsible` | Same swap | Closes the item, leaving none open |
 | `type="multiple"` | Opens it alongside the rest | Closes it |
+
+## Dynamic items
+
+`items` reads once at mount when passed a plain array; pass a signal accessor and the rows re-render as the array grows, shrinks, or reorders:
+
+```jsx
+import { signal } from "@hellajs/core";
+import { Accordion } from "./components/accordion";
+
+const sections = signal([
+  { value: "a", trigger: "A", content: "A body" },
+]);
+
+<Accordion items={sections} keyBy="value" type="multiple" open={["a"]} />;
+
+// Appends a live row without remounting the existing ones.
+sections([...sections(), { value: "b", trigger: "B", content: "B body" }]);
+```
+
+By default rows key by array index: a reorder rebuilds them, losing transient state such as focus or an in-flight collapse animation (rendered state like `data-state` re-derives from the root's signal either way). `keyBy="value"` reuses each row's DOM by its entry `value` instead, so nodes move to their new positions intact through reorders and removals. Order always follows the array, never the key history. A row reused under the same `value` keeps its rendered children, so swapping an entry's `trigger` or `content` under a repeated value needs a getter for that content to reach the DOM.

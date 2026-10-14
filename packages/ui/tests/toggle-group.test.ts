@@ -12,7 +12,7 @@ import {
   toggleGroupPartVariants,
   toggleGroupVariants,
 } from "./helpers/variants";
-import type { ComponentVariant, ToggleGroupVariantProps } from "./helpers/variants";
+import type { ComponentVariant, ToggleGroupEntryVariant, ToggleGroupVariantProps } from "./helpers/variants";
 
 beforeEach(() => {
   resetTestState();
@@ -203,6 +203,39 @@ describe("toggle-group", () => {
   test.each(toggleGroupVariants)("$format/$style merges props.class into the class attribute", (variant) => {
     const { root } = mountToggleGroup(variant, { items, type: "single", class: "my-toggle-group" });
     expect(classTokens(root).at(-1)).toBe("my-toggle-group");
+  });
+
+  test.each(toggleGroupVariants)("$format/$style re-renders a signal items list across append, remove, and reorder", (variant) => {
+    const liveItems = signal<ToggleGroupEntryVariant[]>([...items]);
+    const { root } = mountToggleGroup(variant, { items: liveItems, type: "multiple" });
+    const values = () => Array.from(root.querySelectorAll("[data-slot='toggle-group-item']")).map((el) => el.getAttribute("value"));
+    expect(values()).toEqual(["bold", "italic", "underline"]);
+    liveItems([...liveItems(), { value: "strikethrough", label: "Strikethrough" }]);
+    expect(values()).toEqual(["bold", "italic", "underline", "strikethrough"]);
+    liveItems(liveItems().filter((entry) => entry.value !== "italic"));
+    expect(values()).toEqual(["bold", "underline", "strikethrough"]);
+    liveItems([liveItems()[2]!, liveItems()[0]!, liveItems()[1]!]);
+    expect(values()).toEqual(["strikethrough", "bold", "underline"]);
+  });
+
+  test.each(toggleGroupVariants)("$format/$style reuses the pressed item's node through a reorder when keyBy is value", async (variant) => {
+    const liveItems = signal<ToggleGroupEntryVariant[]>([...items]);
+    const { root } = mountToggleGroup(variant, { items: liveItems, type: "multiple", keyBy: "value" });
+    await awaitWiring(root);
+    const itemEls = () => Array.from(root.querySelectorAll("[data-slot='toggle-group-item']")) as HTMLElement[];
+    itemEls()[1]!.dispatchEvent(new Event("click"));
+    const italicBefore = itemEls().find((el) => el.getAttribute("value") === "italic")!;
+    expect(italicBefore.getAttribute("data-state")).toBe("on");
+    liveItems([liveItems()[2]!, liveItems()[0]!, liveItems()[1]!]);
+    expect(itemEls().map((el) => el.getAttribute("value"))).toEqual(["underline", "bold", "italic"]);
+    const italicAfter = itemEls().find((el) => el.getAttribute("value") === "italic")!;
+    expect(italicAfter).toBe(italicBefore);
+    expect(italicAfter.getAttribute("aria-pressed")).toBe("true");
+  });
+
+  test.each(toggleGroupVariants)("$format/$style keeps the reconciliation key out of the markup when keyBy is value", (variant) => {
+    const { root } = mountToggleGroup(variant, { items, type: "single", keyBy: "value" });
+    expect(root.outerHTML).not.toContain("key=");
   });
 
   test("keeps structural parity across all four variants", () => {

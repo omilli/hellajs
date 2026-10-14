@@ -1,4 +1,4 @@
-import { html, rovingTabIndex } from "@hellajs/dom";
+import { ForEach, html, rovingTabIndex } from "@hellajs/dom";
 import { signal } from "@hellajs/core";
 import type { HellaNode, HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
@@ -12,7 +12,10 @@ interface ToggleGroupEntry {
 
 interface ToggleGroupProps extends HTMLAttributes<"div"> {
   class?: string;
-  items: ToggleGroupEntry[];
+  /** The rendered items. An array reads statically at mount; an accessor keeps the list reactive across appends, removes, and reorders. */
+  items: ToggleGroupEntry[] | (() => ToggleGroupEntry[]);
+  /** Reuses item DOM through reorders by `value` identity (pressed state survives); order always follows the array. */
+  keyBy?: "value";
   type: "single" | "multiple";
   /** Controlled single selection. */
   value?: () => string;
@@ -139,8 +142,9 @@ export function ToggleGroupItem({ value, pressed, onSelect, variant = "default",
   ` as HellaNode;
 }
 
-export function ToggleGroup({ items, type, value, values, onValueChange, variant = "default", size = "default", class: cls, ...attrs }: ToggleGroupProps): HellaNode {
-  const pressedValues = items.filter((entry) => entry.pressed).map((entry) => entry.value);
+export function ToggleGroup({ items, keyBy, type, value, values, onValueChange, variant = "default", size = "default", class: cls, ...attrs }: ToggleGroupProps): HellaNode {
+  // One-shot seed read: a getter items is called once here, an array reads directly.
+  const pressedValues = (typeof items === "function" ? items() : items).filter((entry) => entry.pressed).map((entry) => entry.value);
   const internalSingle = signal(pressedValues[0] ?? "");
   const internalMulti = signal<Set<string>>(new Set(pressedValues));
   const wirings: (() => void)[] = [];
@@ -186,18 +190,22 @@ export function ToggleGroup({ items, type, value, values, onValueChange, variant
       }}"
       ...${attrs}
     >
-      ${items.map((entry) => ToggleGroupItem({
-        value: entry.value,
-        pressed: () => isPressed(entry.value),
-        onSelect: () => {
-          if (entry.disabled) return;
-          toggleItem(entry.value);
-        },
-        variant,
-        size,
-        disabled: entry.disabled,
-        children: entry.label,
-      }))}
+      ${ForEach({
+        each: items,
+        use: (entry) => ToggleGroupItem({
+          key: keyBy ? entry.value : undefined,
+          value: entry.value,
+          pressed: () => isPressed(entry.value),
+          onSelect: () => {
+            if (entry.disabled) return;
+            toggleItem(entry.value);
+          },
+          variant,
+          size,
+          disabled: entry.disabled,
+          children: entry.label,
+        }),
+      })}
     </div>
   ` as HellaNode;
 }

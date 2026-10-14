@@ -11,7 +11,7 @@ import {
   tabsPartVariants,
   tabsVariants,
 } from "./helpers/variants";
-import type { TabsVariant, TabsVariantProps } from "./helpers/variants";
+import type { TabsItem, TabsVariant, TabsVariantProps } from "./helpers/variants";
 
 beforeEach(() => {
   resetTestState();
@@ -178,6 +178,41 @@ describe("tabs", () => {
     expect(countPanel.hasAttribute("hidden")).toBe(true);
     expect(root.contains(tablist)).toBe(true);
     expect(root.contains(tabNode)).toBe(true);
+  });
+
+  test.each(tabsVariants)("$format/$style re-renders a signal items list across append, remove, and reorder", (variant) => {
+    const liveItems = signal<TabsItem[]>([...items]);
+    const { root } = mountTabs(variant, { items: liveItems, initialId: "alpha" });
+    const labels = () => Array.from(root.querySelectorAll('[role="tab"]')).map((el) => el.textContent);
+    const panelIds = () => Array.from(root.querySelectorAll('[role="tabpanel"]')).map((el) => el.id);
+    expect(labels()).toEqual(["Alpha", "Beta", "Gamma"]);
+    liveItems([...liveItems(), { id: "delta", label: "Delta", content: "Delta panel" }]);
+    expect(labels()).toEqual(["Alpha", "Beta", "Gamma", "Delta"]);
+    liveItems(liveItems().filter((entry) => entry.id !== "beta"));
+    expect(labels()).toEqual(["Alpha", "Gamma", "Delta"]);
+    liveItems([liveItems()[2]!, liveItems()[0]!, liveItems()[1]!]);
+    expect(labels()).toEqual(["Delta", "Alpha", "Gamma"]);
+    expect(panelIds()).toEqual(["hella-tabs-panel-delta", "hella-tabs-panel-alpha", "hella-tabs-panel-gamma"]);
+  });
+
+  test.each(tabsVariants)("$format/$style reuses the id-keyed trigger and keeps selection through a reorder", async (variant) => {
+    const liveItems = signal<TabsItem[]>([...items]);
+    const { root, tablist } = mountTabs(variant, { items: liveItems, initialId: "beta" });
+    await awaitWiring(root);
+    const tabEls = () => Array.from(tablist.querySelectorAll('[role="tab"]')) as HTMLElement[];
+    const betaBefore = tabEls()[1]!;
+    expect(betaBefore.getAttribute("aria-selected")).toBe("true");
+    liveItems([liveItems()[2]!, liveItems()[0]!, liveItems()[1]!]);
+    expect(tabEls().map((el) => el.textContent)).toEqual(["Gamma", "Alpha", "Beta"]);
+    const betaAfter = tabEls().find((el) => el.textContent === "Beta")!;
+    expect(betaAfter).toBe(betaBefore);
+    expect(betaAfter.getAttribute("aria-selected")).toBe("true");
+    expect(root.querySelector("#hella-tabs-panel-beta")!.getAttribute("data-state")).toBe("active");
+  });
+
+  test.each(tabsVariants)("$format/$style keeps the reconciliation key out of the markup for id-keyed items", (variant) => {
+    const { root } = mountTabs(variant, { items });
+    expect(root.outerHTML).not.toContain("key=");
   });
 
   test("keeps structural parity across all four variants", () => {

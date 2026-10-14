@@ -1,12 +1,13 @@
 ## API
 
-The composed root takes an items array, not children slots; items render joined into one segment strip (`data-spacing="0"`, `--gap: 0`). The `data-[spacing=...]` classes ride along in both style modules, so relaxing the joined strip into spaced buttons is an edit of the copied file away.
+The composed root takes an items list, not children slots; items render joined into one segment strip (`data-spacing="0"`, `--gap: 0`). The `data-[spacing=...]` classes ride along in both style modules, so relaxing the joined strip into spaced buttons is an edit of the copied file away.
 
 ### ToggleGroup
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `items` | `{ value, label?, pressed?, disabled? }[]` | `-` |
+| `items` | `{ value, label?, pressed?, disabled? }[] \| (() => { value, label?, pressed?, disabled? }[])` | `-` |
+| `keyBy` | `"value"` | `-` |
 | `type` | `"single" \| "multiple"` | `"single"` |
 | `value` | `() => string` | `-` |
 | `values` | `() => string[]` | `-` |
@@ -47,3 +48,24 @@ Every part also takes a `class` string, landing last in its style composition.
 | Keyboard | Arrow keys move focus (wrapping at both ends); Space and Enter toggle through native button activation; disabled items are skipped |
 | Tab | Roving tabindex: `0` on the first item, `-1` on the rest; selection never steals focus |
 | Labeling | Item text content names each button; icon-only items pair an `aria-label` attribute |
+
+## Dynamic items
+
+`items` reads once at mount when passed a plain array; pass a signal accessor and the items re-render as the array grows, shrinks, or reorders:
+
+```jsx
+import { signal } from "@hellajs/core";
+import { ToggleGroup } from "./components/toggle-group";
+
+const styles = signal([
+  { value: "bold", label: "Bold" },
+  { value: "italic", label: "Italic" },
+]);
+
+<ToggleGroup items={styles} keyBy="value" type="multiple" />;
+
+// Appends a live item without remounting the existing ones.
+styles([...styles(), { value: "underline", label: "Underline" }]);
+```
+
+By default items key by array index: a reorder rebuilds them, losing transient state such as focus (pressed state re-derives from the group's signal either way). `keyBy="value"` reuses each item's DOM by its entry `value` instead, so nodes move to their new positions intact through reorders and removals. Order always follows the array, never the key history. An item reused under the same `value` keeps its rendered children, so swapping an entry's `label` under a repeated value needs a getter for that content to reach the DOM.

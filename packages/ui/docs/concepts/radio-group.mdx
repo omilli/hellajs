@@ -1,12 +1,13 @@
 ## API
 
-The composed root takes an items array, not children slots.
+The composed root takes an items list, not children slots.
 
 ### RadioGroup
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `items` | `{ value, label, disabled? }[]` | `-` |
+| `items` | `{ value, label, disabled? }[] \| (() => { value, label, disabled? }[])` | `-` |
+| `keyBy` | `"value"` | `-` |
 | `value` | `() => string` | `-` |
 | `onValueChange` | `(value: string) => void` | `-` |
 | `orientation` | `"horizontal" \| "vertical"` | `-` |
@@ -42,3 +43,24 @@ Every part also takes a `class` string, landing last in its style composition.
 | Keyboard | Arrow keys move focus and select (wrapping at both ends); Home and End jump; disabled items are skipped |
 | Tab | Roving tabindex: `0` on the selected item, `-1` on the rest; the first item receives tab focus when nothing is selected |
 | Labeling | Each row is a `label` wrapping its button, so the entry text names and activates the control |
+
+## Dynamic items
+
+`items` reads once at mount when passed a plain array; pass a signal accessor and the rows re-render as the array grows, shrinks, or reorders:
+
+```jsx
+import { signal } from "@hellajs/core";
+import { RadioGroup } from "./components/radio-group";
+
+const channels = signal([
+  { value: "email", label: "Email" },
+  { value: "sms", label: "SMS" },
+]);
+
+<RadioGroup items={channels} keyBy="value" />;
+
+// Appends a live row without remounting the existing ones.
+channels([...channels(), { value: "push", label: "Push" }]);
+```
+
+By default rows key by array index: a reorder rebuilds them, losing transient state such as focus (the checked state re-derives from the group's signal either way). `keyBy="value"` reuses each row's DOM by its entry `value` instead, so nodes move to their new positions intact through reorders and removals. Order always follows the array, never the key history. A row reused under the same `value` keeps its rendered children, so swapping an entry's `label` under a repeated value needs a getter for that content to reach the DOM.

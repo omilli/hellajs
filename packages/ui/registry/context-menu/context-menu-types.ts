@@ -55,7 +55,10 @@ export interface ContextMenuCheckboxItemProps extends HTMLAttributes<"div"> {
 
 export interface ContextMenuRadioGroupProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
-  items?: MenuEntry[];
+  /** The rendered radio entries. An array reads statically at mount; an accessor keeps the list reactive across appends, removes, and reorders. */
+  items?: MenuEntry[] | (() => MenuEntry[]);
+  /** Reuses item DOM through reorders by `value` identity (selection state survives); order always follows the array. */
+  keyBy?: "value";
   /** Controlled selected value. When given, the group never writes its internal signal and `onValueChange` reports the requested selection. */
   value?: () => string;
   onValueChange?: (value: string) => void;

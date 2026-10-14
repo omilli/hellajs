@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { signal } from "@hellajs/core";
 import { mount } from "@hellajs/dom";
 import type { HellaChildren } from "@hellajs/dom";
 import { resetTestState, setupContainer } from "@utils/test-helpers.js";
@@ -12,6 +13,7 @@ import {
   renderVariant,
   type ComponentVariant,
   type MenubarVariantProps,
+  type MenuRadioEntryVariant,
 } from "./helpers/variants";
 import {
   awaitDetached,
@@ -307,6 +309,22 @@ describe("menubar", () => {
     expect(radios[1]!.getAttribute("aria-checked")).toBe("false");
   });
 
+  test.each(menubarVariants)("$format/$style re-renders a signal radio items list across appends", async (variant) => {
+    const liveItems = signal<MenuRadioEntryVariant[]>([{ value: "light", label: "Light" }]);
+    const bar = renderBar(variant, [
+      Menu(variant, {
+        value: "theme",
+        content: Part(variant, "RadioGroup")({ items: liveItems }),
+      }),
+    ]);
+    const [file] = triggers(bar);
+    const content = await openMenu(file!);
+    const values = () => [...content.querySelectorAll("[role='menuitemradio']")].map((el) => el.getAttribute("data-value"));
+    expect(values()).toEqual(["light"]);
+    liveItems([...liveItems(), { value: "dark", label: "Dark" }]);
+    expect(values()).toEqual(["light", "dark"]);
+  });
+
   test.each(menubarVariants)("$format/$style enters submenus with ArrowRight and returns with ArrowLeft", async (variant) => {
     const bar = renderBar(variant, [
       Menu(variant, {
@@ -547,6 +565,10 @@ describe("menubar", () => {
 
   test("keeps structural parity across all four variants", () => {
     assertStructuralParity(menubarVariants, { children: [] });
+    assertStructuralParity(
+      menubarPartVariants.filter((variant) => variant.part === "RadioGroup"),
+      { items: [{ value: "light", label: "Light" }, { value: "dark", label: "Dark" }] },
+    );
   });
 
   test("renders every named part with its data-slot across all four variants", () => {

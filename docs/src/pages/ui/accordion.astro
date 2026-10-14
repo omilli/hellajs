@@ -4,7 +4,7 @@ import InstallSection from "../../components/InstallSection.astro";
 import AccordionContent from "@ui/concepts/accordion.mdx";
 import Component from "../../components/Component.astro";
 
-import { AccordionDemo, AccordionMultipleDemo, AccordionDisabledDemo } from "../../demos/accordion-demo";
+import { AccordionDemo, AccordionMultipleDemo, AccordionDisabledDemo, AccordionReactiveDemo, AccordionManualDemo } from "../../demos/accordion-demo";
 
 const title = "Accordion";
 const description = "Interactive Accordion demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
@@ -22,6 +22,10 @@ const description = "Interactive Accordion demo running the site's built registr
   </Component>
   <Component heading="Disabled" Demo={<AccordionDisabledDemo client:load />} code="AccordionDisabledDemo">
     <p>The disabled row ignores activation in every mode.</p>
+  </Component>
+
+  <Component heading="Reactive" Demo={<AccordionReactiveDemo client:load />} code="AccordionReactiveDemo">
+    <p>Reactive</p>
   </Component>
 
   <AccordionContent />

@@ -1,5 +1,5 @@
 import { effect, signal } from "@hellajs/core";
-import { anchorPosition, html, layerDismissal, menuTypeahead, Portal } from "@hellajs/dom";
+import { anchorPosition, ForEach, html, layerDismissal, menuTypeahead, Portal } from "@hellajs/dom";
 import type { HellaChild, HellaNode, Placement, HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 type AnchorSide = "top" | "bottom" | "left" | "right";
@@ -69,8 +69,10 @@ interface ComboboxItemProps extends HTMLAttributes<"div"> {
 }
 
 interface ComboboxListProps extends HTMLAttributes<"div"> {
-  /** Data-driven items; rendered once and hidden (never remounted) as the query filters them. */
-  items?: ComboboxEntry[];
+  /** Data-driven items; a plain array reads once at mount, an accessor re-renders the list as it changes. The query keeps rows mounted and toggles their visibility. */
+  items?: ComboboxEntry[] | (() => ComboboxEntry[]);
+  /** Reuses item DOM through reorders by `value` identity (selection and highlight state survive); order always follows the array. */
+  keyBy?: "value";
   /** Resolves the live query driving the filter. */
   query?: () => string;
   /** Replaces the default case-insensitive substring filter. */
@@ -162,7 +164,9 @@ interface ComboboxContentProps extends HTMLAttributes<"div"> {
 }
 
 interface ComboboxProps extends HTMLAttributes<"div"> {
-  items?: ComboboxEntry[];
+  items?: ComboboxEntry[] | (() => ComboboxEntry[]);
+  /** Reuses option DOM through reorders by `value` identity (selection state survives); order always follows the array. */
+  keyBy?: "value";
   /** Controlled selection. Single mode holds one value; multiple mode holds an array. When given, the root never writes its internal signal and `onValueChange` reports the requested selection. */
   value?: () => string | string[];
   onValueChange?: (value: string | string[]) => void;
@@ -432,13 +436,14 @@ export function ComboboxItem({ value, label: labelProp, disabled, selected: sele
   ` as HellaNode;
 }
 
-export function ComboboxList({ id, items: itemsProp, query, filter, selected, active, onselect, empty: emptyProp, children, class: cls, ...attrs }: ComboboxListProps): HellaNode {
-  const items = itemsProp ?? [];
+export function ComboboxList({ id, items: itemsProp, keyBy, query, filter, selected, active, onselect, empty: emptyProp, children, class: cls, ...attrs }: ComboboxListProps): HellaNode {
+  const items = (): ComboboxEntry[] =>
+    typeof itemsProp === "function" ? (itemsProp as () => ComboboxEntry[])() : itemsProp ?? [];
   const matches = (): ComboboxEntry[] => {
-    if (filter) return filter(items, query?.() ?? "");
+    if (filter) return filter(items(), query?.() ?? "");
     const q = (query?.() ?? "").trim().toLowerCase();
-    if (q === "") return items;
-    return items.filter((entry) => (entry.label ?? entry.value).toLowerCase().includes(q));
+    if (q === "") return items();
+    return items().filter((entry) => (entry.label ?? entry.value).toLowerCase().includes(q));
   };
   return html`
     <div
@@ -451,18 +456,21 @@ export function ComboboxList({ id, items: itemsProp, query, filter, selected, ac
       }"
       ...${attrs}
     >
-      ${items.map((entry) =>
-        ComboboxItem({
-          value: entry.value,
-          label: entry.label,
-          disabled: entry.disabled,
-          id: id + "-opt-" + items.indexOf(entry),
-          selected: () => selected?.(entry.value) ?? false,
-          highlighted: () => active?.() === entry.value,
-          hidden: () => !matches().includes(entry),
-          onselect: () => onselect?.(entry.value),
-        }) as HellaChild,
-      )}${() => children}
+      ${ForEach({
+        each: items,
+        use: (entry) =>
+          ComboboxItem({
+            key: keyBy ? entry.value : undefined,
+            value: entry.value,
+            label: entry.label,
+            disabled: entry.disabled,
+            id: `${id}-opt-${entry.value}`,
+            selected: () => selected?.(entry.value) ?? false,
+            highlighted: () => active?.() === entry.value,
+            hidden: () => !matches().includes(entry),
+            onselect: () => onselect?.(entry.value),
+          }) as HellaChild,
+      })}${() => children}
     </div>
   ` as HellaNode;
 }
@@ -660,8 +668,9 @@ export function ComboboxContent({ state: stateProp, side: sideProp, align: align
 
 let comboboxCount = 0;
 
-export function Combobox({ items: itemsProp, value, onValueChange, multiple, filter, showClear, class: cls, ...attrs }: ComboboxProps): HellaNode {
-  const items = itemsProp ?? [];
+export function Combobox({ items: itemsProp, keyBy, value, onValueChange, multiple, filter, showClear, class: cls, ...attrs }: ComboboxProps): HellaNode {
+  const items = (): ComboboxEntry[] =>
+    typeof itemsProp === "function" ? (itemsProp as () => ComboboxEntry[])() : itemsProp ?? [];
   const s = comboboxOpenState();
   const listId = `hella-combobox-list-${++comboboxCount}`;
   const query = signal("");
@@ -684,18 +693,17 @@ export function Combobox({ items: itemsProp, value, onValueChange, multiple, fil
     onValueChange?.(next);
   };
   const matches = (): ComboboxEntry[] => {
-    if (filter) return filter(items, query());
+    if (filter) return filter(items(), query());
     const q = query().trim().toLowerCase();
-    if (q === "") return items;
-    return items.filter((entry) => (entry.label ?? entry.value).toLowerCase().includes(q));
+    if (q === "") return items();
+    return items().filter((entry) => (entry.label ?? entry.value).toLowerCase().includes(q));
   };
   // The active option is tracked by value, so highlight survives the
   // items staying mounted while the query hides and shows them.
   const activeValue = signal<string | undefined>(undefined);
-  const optionIdOf = (optionValue: string): string => {
-    const at = items.findIndex((entry) => entry.value === optionValue);
-    return listId + "-opt-" + at;
-  };
+  // Value-derived ids stay stable across reorders, so aria-activedescendant
+  // and the typeahead's node lookup survive value-keyed list changes.
+  const optionIdOf = (optionValue: string): string => listId + "-opt-" + optionValue;
   const move = (delta: number): void => {
     const enabled = matches().filter((entry) => !entry.disabled);
     if (enabled.length === 0) return;
@@ -765,7 +773,7 @@ export function Combobox({ items: itemsProp, value, onValueChange, multiple, fil
       }
       return entries;
     }, (record) => {
-      const entry = items.find((e) => optionIdOf(e.value) === record.node.id);
+      const entry = items().find((e) => optionIdOf(e.value) === record.node.id);
       if (entry) activeValue(entry.value);
     });
   };
@@ -784,6 +792,7 @@ export function Combobox({ items: itemsProp, value, onValueChange, multiple, fil
           ComboboxList({
             id: listId,
             items,
+            keyBy,
             query,
             filter,
             selected: (v: string) => selectedList().includes(v),
@@ -806,7 +815,7 @@ export function Combobox({ items: itemsProp, value, onValueChange, multiple, fil
         ComboboxChip({
           value: v,
           onRemove: () => select(v),
-          children: items.find((entry) => entry.value === v)?.label ?? v,
+          children: items().find((entry) => entry.value === v)?.label ?? v,
         }) as HellaChild,
       ),
       wire: (node: HTMLElement) => {

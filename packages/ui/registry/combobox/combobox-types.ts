@@ -67,8 +67,10 @@ export interface ComboboxItemProps extends HTMLAttributes<"div"> {
 }
 
 export interface ComboboxListProps extends HTMLAttributes<"div"> {
-  /** Data-driven items; rendered once and hidden (never remounted) as the query filters them. */
-  items?: ComboboxEntry[];
+  /** Data-driven items; a plain array reads once at mount, an accessor re-renders the list as it changes. The query keeps rows mounted and toggles their visibility. */
+  items?: ComboboxEntry[] | (() => ComboboxEntry[]);
+  /** Reuses item DOM through reorders by `value` identity (selection and highlight state survive); order always follows the array. */
+  keyBy?: "value";
   /** Resolves the live query driving the filter. */
   query?: () => string;
   /** Replaces the default case-insensitive substring filter. */
@@ -160,7 +162,9 @@ export interface ComboboxContentProps extends HTMLAttributes<"div"> {
 }
 
 export interface ComboboxProps extends HTMLAttributes<"div"> {
-  items?: ComboboxEntry[];
+  items?: ComboboxEntry[] | (() => ComboboxEntry[]);
+  /** Reuses option DOM through reorders by `value` identity (selection state survives); order always follows the array. */
+  keyBy?: "value";
   /** Controlled selection. Single mode holds one value; multiple mode holds an array. When given, the root never writes its internal signal and `onValueChange` reports the requested selection. */
   value?: () => string | string[];
   onValueChange?: (value: string | string[]) => void;

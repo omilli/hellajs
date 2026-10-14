@@ -58,7 +58,7 @@ export interface CommandShortcutProps extends HTMLAttributes<"span"> {
 }
 
 export interface CommandProps extends HTMLAttributes<"div"> {
-  items?: CommandItemData[];
+  items?: CommandItemData[] | (() => CommandItemData[]);
   /** Replaces the default scoring filter (earlier matches, word-boundary starts, keyword hits). */
   filter?: (items: CommandItemData[], query: string) => CommandItemData[];
   /** Wraps arrow movement at the edges; the default clamps. */

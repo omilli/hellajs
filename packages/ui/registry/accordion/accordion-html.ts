@@ -1,4 +1,4 @@
-import { html } from "@hellajs/dom";
+import { ForEach, html } from "@hellajs/dom";
 import { signalSet } from "@hellajs/core";
 import type { HellaNode } from "@hellajs/dom";
 import type { AccordionEntry, AccordionProps, AccordionItemProps, AccordionTriggerProps, AccordionContentProps } from "./accordion-types.js";
@@ -113,7 +113,7 @@ export function AccordionContent({ active, id, children, class: cls, ...attrs }:
   ` as HellaNode;
 }
 
-export function Accordion({ items, type, collapsible, open, class: cls, ...attrs }: AccordionProps): HellaNode {
+export function Accordion({ items, keyBy, type, collapsible, open, class: cls, ...attrs }: AccordionProps): HellaNode {
   const mode = type ?? "single";
   // A single open string wraps to a one-value list, a list passes through, absent starts closed.
   const seed = typeof open === "string" ? [open] : open ?? [];
@@ -147,26 +147,30 @@ export function Accordion({ items, type, collapsible, open, class: cls, ...attrs
       }"
       ...${attrs}
     >
-      ${items.map((entry) => AccordionItem({
-        value: entry.value,
-        active: () => isOpen(entry.value),
-        children: [
-          AccordionTrigger({
-            id: `${TRIGGER_ID}${entry.value}`,
-            active: () => isOpen(entry.value),
-            onToggle: () => toggle(entry.value, entry.disabled),
-            disabled: entry.disabled,
-            "aria-controls": `${CONTENT_ID}${entry.value}`,
-            children: entry.trigger,
-          }),
-          AccordionContent({
-            id: `${CONTENT_ID}${entry.value}`,
-            active: () => isOpen(entry.value),
-            "aria-labelledby": `${TRIGGER_ID}${entry.value}`,
-            children: entry.content,
-          }),
-        ],
-      }))}
+      ${ForEach({
+        each: items,
+        use: (entry) => AccordionItem({
+          key: keyBy ? entry.value : undefined,
+          value: entry.value,
+          active: () => isOpen(entry.value),
+          children: [
+            AccordionTrigger({
+              id: `${TRIGGER_ID}${entry.value}`,
+              active: () => isOpen(entry.value),
+              onToggle: () => toggle(entry.value, entry.disabled),
+              disabled: entry.disabled,
+              "aria-controls": `${CONTENT_ID}${entry.value}`,
+              children: entry.trigger,
+            }),
+            AccordionContent({
+              id: `${CONTENT_ID}${entry.value}`,
+              active: () => isOpen(entry.value),
+              "aria-labelledby": `${TRIGGER_ID}${entry.value}`,
+              children: entry.content,
+            }),
+          ],
+        }),
+      })}
     </div>
   ` as HellaNode;
 }

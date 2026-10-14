@@ -331,6 +331,67 @@ describe("combobox", () => {
     expect(content.isConnected).toBe(false);
   });
 
+  test.each(comboboxVariants)("$format/$style re-renders a signal items list and the filter follows the append", async (variant) => {
+    const liveItems = signal<ComboboxEntryVariant[]>([...FRUITS]);
+    const { input, content } = await openCombobox(variant, { items: liveItems });
+    const visibleValues = () => [...content.querySelectorAll("[role='option']")]
+      .filter((el) => (el as HTMLElement).style.display !== "none")
+      .map((el) => el.getAttribute("data-value"));
+    expect(visibleValues()).toEqual(["apple", "blueberry", "canteloupe"]);
+    liveItems([...liveItems(), { value: "date", label: "Date" }]);
+    expect(visibleValues()).toEqual(["apple", "blueberry", "canteloupe", "date"]);
+    type(input, "dat");
+    await delay();
+    expect(visibleValues()).toEqual(["date"]);
+    type(input, "");
+    await delay();
+    expect(visibleValues()).toEqual(["apple", "blueberry", "canteloupe", "date"]);
+  });
+
+  test.each(comboboxVariants)("$format/$style reuses the selected item's node through a reorder when keyBy is value", async (variant) => {
+    const liveItems = signal<ComboboxEntryVariant[]>([...FRUITS]);
+    const { content } = await openCombobox(variant, { items: liveItems, keyBy: "value", value: () => "blueberry" });
+    const itemEls = () => [...content.querySelectorAll("[role='option']")] as HTMLElement[];
+    const blueberryBefore = itemEls().find((el) => el.getAttribute("data-value") === "blueberry")!;
+    expect(blueberryBefore.getAttribute("aria-selected")).toBe("true");
+    liveItems([liveItems()[2]!, liveItems()[0]!, liveItems()[1]!]);
+    expect(itemEls().map((el) => el.getAttribute("data-value"))).toEqual(["canteloupe", "apple", "blueberry"]);
+    const blueberryAfter = itemEls().find((el) => el.getAttribute("data-value") === "blueberry")!;
+    expect(blueberryAfter).toBe(blueberryBefore);
+    expect(blueberryAfter.getAttribute("aria-selected")).toBe("true");
+  });
+
+  test.each(comboboxVariants)("$format/$style derives option ids from values and keeps keyboard navigation on the moved node after a reorder with keyBy", async (variant) => {
+    const liveItems = signal<ComboboxEntryVariant[]>([...FRUITS]);
+    const { input, content } = await openCombobox(variant, { items: liveItems, keyBy: "value" });
+    const listId = content.querySelector("[role='listbox']")!.id;
+    const itemEls = () => [...content.querySelectorAll("[role='option']")] as HTMLElement[];
+    expect(itemEls().map((el) => el.id)).toEqual([
+      `${listId}-opt-apple`,
+      `${listId}-opt-blueberry`,
+      `${listId}-opt-canteloupe`,
+    ]);
+    expect(input.getAttribute("aria-activedescendant")).toBe(`${listId}-opt-apple`);
+    liveItems([liveItems()[2]!, liveItems()[0]!, liveItems()[1]!]);
+    expect(itemEls().map((el) => el.id)).toEqual([
+      `${listId}-opt-canteloupe`,
+      `${listId}-opt-apple`,
+      `${listId}-opt-blueberry`,
+    ]);
+    // The highlight roves by value: ArrowDown from apple lands on blueberry,
+    // whose node moved to the last position but kept its value-derived id.
+    pressKey(input, "ArrowDown");
+    const highlighted = itemEls().find((el) => el.hasAttribute("data-highlighted"))!;
+    expect(highlighted.getAttribute("data-value")).toBe("blueberry");
+    expect(highlighted.id).toBe(`${listId}-opt-blueberry`);
+    expect(input.getAttribute("aria-activedescendant")).toBe(`${listId}-opt-blueberry`);
+  });
+
+  test.each(comboboxVariants)("$format/$style keeps the reconciliation key out of the markup when keyBy is value", async (variant) => {
+    const { content } = await openCombobox(variant, { items: FRUITS, keyBy: "value" });
+    expect(content.outerHTML).not.toContain("key=");
+  });
+
   test("keeps structural parity across all four variants", () => {
     assertStructuralParity(comboboxVariants, { items: FRUITS, placeholder: "Parity" });
   });
@@ -403,7 +464,7 @@ describe("combobox", () => {
     expect(list.getAttribute("data-empty")).toBeNull();
     const options = [...list.querySelectorAll("[role='option']")] as HTMLElement[];
     expect(options).toHaveLength(3);
-    expect(options[0]!.id).toBe("list-1-opt-0");
+    expect(options[0]!.id).toBe("list-1-opt-apple");
     expect(options[1]!.getAttribute("aria-selected")).toBe("true");
     expect(options[1]!.getAttribute("data-state")).toBe("checked");
     expect(options[2]!.hasAttribute("data-highlighted")).toBe(true);

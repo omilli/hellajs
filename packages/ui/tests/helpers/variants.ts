@@ -148,7 +148,7 @@ export interface TabsItem {
 /** Prop bag shared by every compiled Tabs variant (mirrors the emitted TabsProps). */
 export interface TabsVariantProps extends HTMLAttributes<"div"> {
   class?: string;
-  items: TabsItem[];
+  items: TabsItem[] | (() => TabsItem[]);
   initialId?: string;
   orientation?: "horizontal" | "vertical";
   variant?: "default" | "line";
@@ -1452,7 +1452,8 @@ export interface AccordionEntryVariant {
 /** Prop bag shared by every compiled Accordion variant (mirrors the emitted AccordionProps). */
 export interface AccordionVariantProps extends HTMLAttributes<"div"> {
   class?: string;
-  items: AccordionEntryVariant[];
+  items: AccordionEntryVariant[] | (() => AccordionEntryVariant[]);
+  keyBy?: "value";
   type?: "single" | "multiple";
   collapsible?: boolean;
   open?: string | string[];
@@ -1531,7 +1532,8 @@ export interface RadioGroupEntryVariant {
 /** Prop bag shared by every compiled RadioGroup variant (mirrors the emitted RadioGroupProps). */
 export interface RadioGroupVariantProps extends HTMLAttributes<"div"> {
   class?: string;
-  items: RadioGroupEntryVariant[];
+  items: RadioGroupEntryVariant[] | (() => RadioGroupEntryVariant[]);
+  keyBy?: "value";
   value?: () => string;
   onValueChange?: (value: string) => void;
   orientation?: "horizontal" | "vertical";
@@ -1573,7 +1575,8 @@ export interface ToggleGroupEntryVariant {
 /** Prop bag shared by every compiled ToggleGroup variant (mirrors the emitted ToggleGroupProps). */
 export interface ToggleGroupVariantProps extends HTMLAttributes<"div"> {
   class?: string;
-  items: ToggleGroupEntryVariant[];
+  items: ToggleGroupEntryVariant[] | (() => ToggleGroupEntryVariant[]);
+  keyBy?: "value";
   type: "single" | "multiple";
   value?: () => string;
   values?: () => string[];
@@ -2020,7 +2023,8 @@ export interface DropdownMenuPartVariantProps extends GlobalHTMLAttributes {
   onCheckedChange?: (checked: boolean) => void;
   value?: string;
   onSelect?: () => void;
-  items?: MenuRadioEntryVariant[];
+  items?: MenuRadioEntryVariant[] | (() => MenuRadioEntryVariant[]);
+  keyBy?: "value";
   onValueChange?: (value: string) => void;
   children?: HellaChildren;
   class?: string;
@@ -2088,7 +2092,8 @@ export interface ContextMenuPartVariantProps extends GlobalHTMLAttributes {
   onCheckedChange?: (checked: boolean) => void;
   value?: string;
   onSelect?: () => void;
-  items?: MenuRadioEntryVariant[];
+  items?: MenuRadioEntryVariant[] | (() => MenuRadioEntryVariant[]);
+  keyBy?: "value";
   onValueChange?: (value: string) => void;
   children?: HellaChildren;
   class?: string;
@@ -2165,7 +2170,8 @@ export interface MenubarPartVariantProps extends GlobalHTMLAttributes {
   checked?: boolean | (() => boolean);
   onCheckedChange?: (checked: boolean) => void;
   onSelect?: () => void;
-  items?: MenuRadioEntryVariant[];
+  items?: MenuRadioEntryVariant[] | (() => MenuRadioEntryVariant[]);
+  keyBy?: "value";
   onValueChange?: (value: string) => void;
   children?: HellaChildren;
   content?: HellaChildren;
@@ -2320,7 +2326,8 @@ export interface SelectEntryVariant {
 
 /** Prop bag shared by every compiled Select variant (mirrors the emitted SelectProps). */
 export interface SelectVariantProps extends HTMLAttributes<"button"> {
-  items?: SelectEntryVariant[];
+  items?: SelectEntryVariant[] | (() => SelectEntryVariant[]);
+  keyBy?: "value";
   value?: () => string;
   onValueChange?: (value: string) => void;
   placeholder?: string;
@@ -2397,7 +2404,8 @@ export interface ComboboxEntryVariant {
 
 /** Prop bag shared by every compiled Combobox variant (mirrors the emitted ComboboxProps). */
 export interface ComboboxVariantProps extends HTMLAttributes<"div"> {
-  items?: ComboboxEntryVariant[];
+  items?: ComboboxEntryVariant[] | (() => ComboboxEntryVariant[]);
+  keyBy?: "value";
   value?: () => string | string[];
   onValueChange?: (value: string | string[]) => void;
   multiple?: boolean;
@@ -2429,7 +2437,8 @@ export interface ComboboxPartVariantProps extends HTMLAttributes<"input"> {
   filter?: (items: ComboboxEntryVariant[], query: string) => ComboboxEntryVariant[];
   empty?: () => boolean;
   active?: () => string | undefined;
-  items?: ComboboxEntryVariant[];
+  items?: ComboboxEntryVariant[] | (() => ComboboxEntryVariant[]);
+  keyBy?: "value";
   side?: AnchoredSide;
   align?: AnchoredAlign;
   sideOffset?: number;
@@ -2492,7 +2501,7 @@ export interface CommandItemDataVariant {
 
 /** Prop bag shared by every compiled Command variant (mirrors the emitted CommandProps). */
 export interface CommandVariantProps extends HTMLAttributes<"div"> {
-  items?: CommandItemDataVariant[];
+  items?: CommandItemDataVariant[] | (() => CommandItemDataVariant[]);
   filter?: (items: CommandItemDataVariant[], query: string) => CommandItemDataVariant[];
   loop?: boolean;
   value?: () => string;

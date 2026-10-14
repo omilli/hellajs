@@ -8,7 +8,8 @@ export interface TabsItem {
 
 export interface TabsProps extends HTMLAttributes<"div"> {
   class?: string;
-  items: TabsItem[];
+  /** The rendered tabs. An array reads statically at mount; an accessor keeps the list reactive across appends, removes, and reorders. Items auto-key by `id`, so reorders preserve trigger and panel identity. */
+  items: TabsItem[] | (() => TabsItem[]);
   initialId?: string;
   orientation?: "horizontal" | "vertical";
   variant?: "default" | "line";

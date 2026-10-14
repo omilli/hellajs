@@ -1,5 +1,5 @@
 import { effect, signal } from "@hellajs/core";
-import { anchorPosition, html, layerDismissal, menuTypeahead, Portal } from "@hellajs/dom";
+import { anchorPosition, ForEach, html, layerDismissal, menuTypeahead, Portal } from "@hellajs/dom";
 import type { HellaChild, HellaNode, Placement, HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 type AnchorSide = "top" | "bottom" | "left" | "right";
@@ -61,7 +61,10 @@ interface MenubarCheckboxItemProps extends HTMLAttributes<"div"> {
 
 interface MenubarRadioGroupProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
-  items?: MenuEntry[];
+  /** The rendered radio entries. An array reads statically at mount; an accessor keeps the list reactive across appends, removes, and reorders. */
+  items?: MenuEntry[] | (() => MenuEntry[]);
+  /** Reuses item DOM through reorders by `value` identity (selection state survives); order always follows the array. */
+  keyBy?: "value";
   /** Controlled selected value. When given, the group never writes its internal signal and `onValueChange` reports the requested selection. */
   value?: () => string;
   onValueChange?: (value: string) => void;
@@ -784,7 +787,7 @@ export function MenubarCheckboxItem({ checked: checkedProp, onCheckedChange, dis
   ` as HellaNode;
 }
 
-export function MenubarRadioGroup({ items, value: valueProp, onValueChange, children, class: cls, ...attrs }: MenubarRadioGroupProps): HellaNode {
+export function MenubarRadioGroup({ items, keyBy, value: valueProp, onValueChange, children, class: cls, ...attrs }: MenubarRadioGroupProps): HellaNode {
   const internal = signal("");
   const current = (): string => (valueProp !== undefined ? valueProp() : internal());
   const select = (value: string): void => {
@@ -799,13 +802,17 @@ export function MenubarRadioGroup({ items, value: valueProp, onValueChange, chil
       }"
       ...${attrs}
     >
-      ${() => children}${(items ?? []).map((entry) => MenubarRadioItem({
-        value: entry.value,
-        checked: () => current() === entry.value,
-        disabled: entry.disabled,
-        onSelect: () => select(entry.value),
-        children: entry.label,
-      }))}
+      ${() => children}${ForEach({
+        each: items ?? (() => []),
+        use: (entry) => MenubarRadioItem({
+          key: keyBy ? entry.value : undefined,
+          value: entry.value,
+          checked: () => current() === entry.value,
+          disabled: entry.disabled,
+          onSelect: () => select(entry.value),
+          children: entry.label,
+        }),
+      })}
     </div>
   ` as HellaNode;
 }

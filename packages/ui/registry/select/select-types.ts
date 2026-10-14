@@ -77,7 +77,9 @@ export interface SelectScrollButtonProps extends HTMLAttributes<"div"> {
 }
 
 export interface SelectProps extends HTMLAttributes<"button"> {
-  items?: SelectEntry[];
+  items?: SelectEntry[] | (() => SelectEntry[]);
+  /** Reuses option DOM through reorders by `value` identity (selection state survives); order always follows the array. */
+  keyBy?: "value";
   /** Controlled selected value. When given, the root never writes its internal signal and `onValueChange` reports the requested selection. */
   value?: () => string;
   onValueChange?: (value: string) => void;

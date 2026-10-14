@@ -1,5 +1,5 @@
 import { effect, signal } from "@hellajs/core";
-import { anchorPosition, layerDismissal, menuTypeahead, Portal } from "@hellajs/dom";
+import { anchorPosition, ForEach, layerDismissal, menuTypeahead, Portal } from "@hellajs/dom";
 import type { Placement } from "@hellajs/dom";
 import type { AnchorSide, AnchorAlign, MenubarTriggerProps, MenubarContentProps, MenubarPartProps, MenubarItemProps, MenubarCheckboxItemProps, MenubarRadioGroupProps, MenubarRadioItemProps, MenubarLabelProps, MenubarShortcutProps, MenubarSubTriggerProps, MenubarSubContentProps, MenubarSubProps, MenubarMenuProps, MenubarProps } from "./menubar-types.js";
 
@@ -392,7 +392,7 @@ export function MenubarCheckboxItem({ checked: checkedProp, onCheckedChange, dis
   );
 }
 
-export function MenubarRadioGroup({ items, value: valueProp, onValueChange, children, class: cls, ...attrs }: MenubarRadioGroupProps): JSX.Element {
+export function MenubarRadioGroup({ items, keyBy, value: valueProp, onValueChange, children, class: cls, ...attrs }: MenubarRadioGroupProps): JSX.Element {
   const internal = signal("");
   const current = (): string => (valueProp !== undefined ? valueProp() : internal());
   const select = (value: string): void => {
@@ -410,16 +410,20 @@ export function MenubarRadioGroup({ items, value: valueProp, onValueChange, chil
       {...attrs}
     >
       {children}
-      {(items ?? []).map((entry) => (
-        <MenubarRadioItem
-          value={entry.value}
-          checked={() => current() === entry.value}
-          disabled={entry.disabled}
-          onSelect={() => select(entry.value)}
-        >
-          {entry.label}
-        </MenubarRadioItem>
-      ))}
+      <ForEach
+        each={items ?? (() => [])}
+        use={(entry) => (
+          <MenubarRadioItem
+            key={keyBy ? entry.value : undefined}
+            value={entry.value}
+            checked={() => current() === entry.value}
+            disabled={entry.disabled}
+            onSelect={() => select(entry.value)}
+          >
+            {entry.label}
+          </MenubarRadioItem>
+        )}
+      />
     </div>
   );
 }

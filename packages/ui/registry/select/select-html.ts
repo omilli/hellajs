@@ -1,7 +1,7 @@
 import { effect, signal } from "@hellajs/core";
-import { anchorPosition, html, layerDismissal, menuTypeahead, Portal } from "@hellajs/dom";
+import { anchorPosition, ForEach, html, layerDismissal, menuTypeahead, Portal } from "@hellajs/dom";
 import type { HellaChild, HellaChildren, HellaNode, Placement } from "@hellajs/dom";
-import type { AnchorSide, AnchorAlign, SelectTriggerProps, SelectValueProps, SelectContentProps, SelectPartProps, SelectItemProps, SelectLabelProps, SelectScrollButtonProps, SelectProps } from "./select-types.js";
+import type { AnchorSide, AnchorAlign, SelectEntry, SelectTriggerProps, SelectValueProps, SelectContentProps, SelectPartProps, SelectItemProps, SelectLabelProps, SelectScrollButtonProps, SelectProps } from "./select-types.js";
 
 // @hella:styles
 declare const base: string;
@@ -520,7 +520,7 @@ export function SelectScrollDownButton({ children, class: cls, ...attrs }: Selec
 
 let selectCount = 0;
 
-export function Select({ items, value, onValueChange, placeholder, size, clearable, class: cls, ...attrs }: SelectProps): HellaNode {
+export function Select({ items, keyBy, value, onValueChange, placeholder, size, clearable, class: cls, ...attrs }: SelectProps): HellaNode {
   const s = selectOpenState();
   const contentId = `hella-select-content-${++selectCount}`;
   const internal = signal("");
@@ -529,8 +529,10 @@ export function Select({ items, value, onValueChange, placeholder, size, clearab
     if (value === undefined) internal(next);
     onValueChange?.(next);
   };
+  const resolveItems = (): SelectEntry[] =>
+    typeof items === "function" ? (items as () => SelectEntry[])() : items ?? [];
   const currentLabel = (): HellaChildren | undefined =>
-    (items ?? []).find((entry) => entry.value === current())?.label;
+    resolveItems().find((entry) => entry.value === current())?.label;
   let triggerNode: HTMLElement | undefined;
 
   // Focus returns to the trigger when the listbox closes (one open→closed
@@ -588,18 +590,21 @@ export function Select({ items, value, onValueChange, placeholder, size, clearab
             onDismiss: () => s.setOpen(false),
             onExited: s.finishExit,
             onClose: () => s.setOpen(false),
-            children: (items ?? []).map((entry) =>
-              SelectItem({
-                value: entry.value,
-                label: entry.label,
-                disabled: entry.disabled,
-                selected: () => current() === entry.value,
-                onselect: () => {
-                  select(entry.value);
-                  s.setOpen(false);
-                },
-              }) as HellaChild,
-            ),
+            children: ForEach({
+              each: resolveItems,
+              use: (entry) =>
+                SelectItem({
+                  key: keyBy ? entry.value : undefined,
+                  value: entry.value,
+                  label: entry.label,
+                  disabled: entry.disabled,
+                  selected: () => current() === entry.value,
+                  onselect: () => {
+                    select(entry.value);
+                    s.setOpen(false);
+                  },
+                }) as HellaChild,
+            }),
           }) as HellaChild,
         ],
     })}

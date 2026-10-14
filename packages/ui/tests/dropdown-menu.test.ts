@@ -13,6 +13,7 @@ import {
   renderVariant,
   type ComponentVariant,
   type DropdownMenuVariantProps,
+  type MenuRadioEntryVariant,
 } from "./helpers/variants";
 import {
   awaitDetached,
@@ -44,6 +45,14 @@ interface SubProps {
   children?: HellaChildren;
   content?: HellaChildren;
   class?: string;
+}
+
+/** Local prop bag for the RadioGroup under test (mirrors the emitted RadioGroupProps). */
+interface RadioGroupProps {
+  items?: MenuRadioEntryVariant[] | (() => MenuRadioEntryVariant[]);
+  keyBy?: "value";
+  value?: () => string;
+  onValueChange?: (value: string) => void;
 }
 
 /** Builds one Item of the same flavor as the composed root under test. */
@@ -252,6 +261,44 @@ describe("dropdown-menu", () => {
     expect(radios[0]!.getAttribute("data-state")).toBe("checked");
     expect(radios[1]!.getAttribute("aria-checked")).toBe("false");
     expect(content.getAttribute("data-state")).toBe("closed");
+  });
+
+  test.each(dropdownMenuVariants)("$format/$style re-renders a signal radio items list across append, remove, and reorder", async (variant) => {
+    const RadioGroup = menuModulePart<RadioGroupProps>(dropdownMenuModules, variant, "DropdownMenuRadioGroup");
+    const liveItems = signal<MenuRadioEntryVariant[]>([{ value: "light", label: "Light" }, { value: "dark", label: "Dark" }]);
+    const { content } = await openMenu(variant, RadioGroup({ items: liveItems }));
+    const values = () => [...content.querySelectorAll("[role='menuitemradio']")].map((el) => el.getAttribute("data-value"));
+    expect(values()).toEqual(["light", "dark"]);
+    liveItems([...liveItems(), { value: "system", label: "System" }]);
+    expect(values()).toEqual(["light", "dark", "system"]);
+    liveItems(liveItems().filter((entry) => entry.value !== "dark"));
+    expect(values()).toEqual(["light", "system"]);
+    liveItems([liveItems()[1]!, liveItems()[0]!]);
+    expect(values()).toEqual(["system", "light"]);
+  });
+
+  test.each(dropdownMenuVariants)("$format/$style reuses the checked radio item's node through a reorder when keyBy is value", async (variant) => {
+    const RadioGroup = menuModulePart<RadioGroupProps>(dropdownMenuModules, variant, "DropdownMenuRadioGroup");
+    const liveItems = signal<MenuRadioEntryVariant[]>([{ value: "light", label: "Light" }, { value: "dark", label: "Dark" }]);
+    const { content } = await openMenu(variant, RadioGroup({ items: liveItems, keyBy: "value", value: () => "light" }));
+    const radios = () => [...content.querySelectorAll("[role='menuitemradio']")] as HTMLElement[];
+    const lightBefore = radios()[0]!;
+    expect(lightBefore.getAttribute("aria-checked")).toBe("true");
+    liveItems([liveItems()[1]!, liveItems()[0]!]);
+    expect(radios().map((el) => el.getAttribute("data-value"))).toEqual(["dark", "light"]);
+    const lightAfter = radios()[1]!;
+    expect(lightAfter).toBe(lightBefore);
+    expect(lightAfter.getAttribute("aria-checked")).toBe("true");
+    expect(lightAfter.getAttribute("data-state")).toBe("checked");
+  });
+
+  test.each(dropdownMenuVariants)("$format/$style keeps the reconciliation key out of the markup when keyBy is value", async (variant) => {
+    const RadioGroup = menuModulePart<RadioGroupProps>(dropdownMenuModules, variant, "DropdownMenuRadioGroup");
+    const { content } = await openMenu(variant, RadioGroup({
+      items: [{ value: "light", label: "Light" }, { value: "dark", label: "Dark" }],
+      keyBy: "value",
+    }));
+    expect(content.outerHTML).not.toContain("key=");
   });
 
   test.each(dropdownMenuVariants)("$format/$style opens submenus on hover after the intent delay", async (variant) => {
@@ -469,6 +516,10 @@ describe("dropdown-menu", () => {
 
   test("keeps structural parity across all four variants", () => {
     assertStructuralParity(dropdownMenuVariants, { content: "Parity" }, ["aria-controls"]);
+    assertStructuralParity(
+      dropdownMenuPartVariants.filter((variant) => variant.part === "RadioGroup"),
+      { items: [{ value: "light", label: "Light" }, { value: "dark", label: "Dark" }] },
+    );
   });
 
   test("renders every named part with its data-slot across all four variants", () => {

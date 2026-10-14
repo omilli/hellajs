@@ -9,7 +9,10 @@ export interface AccordionEntry {
 
 export interface AccordionProps extends HTMLAttributes<"div"> {
   class?: string;
-  items: AccordionEntry[];
+  /** The rendered sections. An array reads statically at mount; an accessor keeps the list reactive across appends, removes, and reorders. */
+  items: AccordionEntry[] | (() => AccordionEntry[]);
+  /** Reuses item DOM through reorders by `value` identity (open state survives); order always follows the array. */
+  keyBy?: "value";
   /** `single` keeps at most one item open (`collapsible` gates the last close); `multiple` toggles freely. */
   type?: "single" | "multiple";
   collapsible?: boolean;

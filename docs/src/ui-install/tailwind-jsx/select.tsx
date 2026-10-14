@@ -1,5 +1,5 @@
 import { effect, signal } from "@hellajs/core";
-import { anchorPosition, layerDismissal, menuTypeahead, Portal } from "@hellajs/dom";
+import { anchorPosition, ForEach, layerDismissal, menuTypeahead, Portal } from "@hellajs/dom";
 import type { HellaChildren, Placement, HTMLAttributes } from "@hellajs/dom";
 
 type AnchorSide = "top" | "bottom" | "left" | "right";
@@ -79,7 +79,9 @@ interface SelectScrollButtonProps extends HTMLAttributes<"div"> {
 }
 
 interface SelectProps extends HTMLAttributes<"button"> {
-  items?: SelectEntry[];
+  items?: SelectEntry[] | (() => SelectEntry[]);
+  /** Reuses option DOM through reorders by `value` identity (selection state survives); order always follows the array. */
+  keyBy?: "value";
   /** Controlled selected value. When given, the root never writes its internal signal and `onValueChange` reports the requested selection. */
   value?: () => string;
   onValueChange?: (value: string) => void;
@@ -581,7 +583,7 @@ export function SelectScrollDownButton({ children, class: cls, ...attrs }: Selec
 
 let selectCount = 0;
 
-export function Select({ items, value, onValueChange, placeholder, size, clearable, class: cls, ...attrs }: SelectProps): JSX.Element {
+export function Select({ items, keyBy, value, onValueChange, placeholder, size, clearable, class: cls, ...attrs }: SelectProps): JSX.Element {
   const s = selectOpenState();
   const contentId = `hella-select-content-${++selectCount}`;
   const internal = signal("");
@@ -590,8 +592,10 @@ export function Select({ items, value, onValueChange, placeholder, size, clearab
     if (value === undefined) internal(next);
     onValueChange?.(next);
   };
+  const resolveItems = (): SelectEntry[] =>
+    typeof items === "function" ? (items as () => SelectEntry[])() : items ?? [];
   const currentLabel = (): HellaChildren | undefined =>
-    (items ?? []).find((entry) => entry.value === current())?.label;
+    resolveItems().find((entry) => entry.value === current())?.label;
   let triggerNode: HTMLElement | undefined;
 
   // Focus returns to the trigger when the listbox closes (one open→closed
@@ -654,18 +658,22 @@ export function Select({ items, value, onValueChange, placeholder, size, clearab
             onExited={s.finishExit}
             onClose={() => s.setOpen(false)}
           >
-            {(items ?? []).map((entry) => (
-              <SelectItem
-                value={entry.value}
-                label={entry.label}
-                disabled={entry.disabled}
-                selected={() => current() === entry.value}
-                onselect={() => {
-                  select(entry.value);
-                  s.setOpen(false);
-                }}
-              />
-            ))}
+            <ForEach
+              each={resolveItems}
+              use={(entry) => (
+                <SelectItem
+                  key={keyBy ? entry.value : undefined}
+                  value={entry.value}
+                  label={entry.label}
+                  disabled={entry.disabled}
+                  selected={() => current() === entry.value}
+                  onselect={() => {
+                    select(entry.value);
+                    s.setOpen(false);
+                  }}
+                />
+              )}
+            />
           </SelectContent>
         </Portal>
       )}

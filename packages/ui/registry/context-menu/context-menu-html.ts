@@ -1,5 +1,5 @@
 import { effect, signal } from "@hellajs/core";
-import { anchorPosition, html, layerDismissal, menuTypeahead, Portal } from "@hellajs/dom";
+import { anchorPosition, ForEach, html, layerDismissal, menuTypeahead, Portal } from "@hellajs/dom";
 import type { HellaChild, HellaNode, Placement } from "@hellajs/dom";
 import type { AnchorSide, AnchorAlign, ContextMenuTriggerProps, ContextMenuContentProps, ContextMenuPartProps, ContextMenuItemProps, ContextMenuCheckboxItemProps, ContextMenuRadioGroupProps, ContextMenuRadioItemProps, ContextMenuLabelProps, ContextMenuShortcutProps, ContextMenuSubTriggerProps, ContextMenuSubContentProps, ContextMenuSubProps, ContextMenuProps } from "./context-menu-types.js";
 
@@ -367,7 +367,7 @@ export function ContextMenuCheckboxItem({ checked: checkedProp, onCheckedChange,
   ` as HellaNode;
 }
 
-export function ContextMenuRadioGroup({ items, value: valueProp, onValueChange, children, class: cls, ...attrs }: ContextMenuRadioGroupProps): HellaNode {
+export function ContextMenuRadioGroup({ items, keyBy, value: valueProp, onValueChange, children, class: cls, ...attrs }: ContextMenuRadioGroupProps): HellaNode {
   const internal = signal("");
   const current = (): string => (valueProp !== undefined ? valueProp() : internal());
   const select = (value: string): void => {
@@ -384,13 +384,17 @@ export function ContextMenuRadioGroup({ items, value: valueProp, onValueChange, 
       }"
       ...${attrs}
     >
-      ${() => children}${(items ?? []).map((entry) => ContextMenuRadioItem({
-        value: entry.value,
-        checked: () => current() === entry.value,
-        disabled: entry.disabled,
-        onSelect: () => select(entry.value),
-        children: entry.label,
-      }))}
+      ${() => children}${ForEach({
+        each: items ?? (() => []),
+        use: (entry) => ContextMenuRadioItem({
+          key: keyBy ? entry.value : undefined,
+          value: entry.value,
+          checked: () => current() === entry.value,
+          disabled: entry.disabled,
+          onSelect: () => select(entry.value),
+          children: entry.label,
+        }),
+      })}
     </div>
   ` as HellaNode;
 }

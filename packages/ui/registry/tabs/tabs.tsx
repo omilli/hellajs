@@ -1,5 +1,5 @@
 import { signal } from "@hellajs/core";
-import { rovingTabIndex } from "@hellajs/dom";
+import { ForEach, rovingTabIndex } from "@hellajs/dom";
 import type { TabsItem, TabsProps, TabsListProps, TabsTriggerProps, TabsContentProps } from "./tabs-types.js";
 
 export type { TabsItem };
@@ -82,7 +82,7 @@ export function TabsContent({ id, active, children, class: cls, ...attrs }: Tabs
 }
 
 export function Tabs({ items, initialId, orientation = "horizontal", variant = "default", class: cls, ...attrs }: TabsProps): JSX.Element {
-  const selected = signal(initialId ?? items[0]!.id);
+  const selected = signal(initialId ?? (typeof items === "function" ? items()[0] : items[0])!.id);
   const wirings: (() => void)[] = [];
   let tablist: HTMLElement | null = null;
 
@@ -145,23 +145,31 @@ export function Tabs({ items, initialId, orientation = "horizontal", variant = "
       <TabsList
         variant={variant}
         orientation={orientation}
-        children={items.map((item) => (
-          <TabsTrigger
-            id={item.id}
-            active={() => selected() === item.id}
-            onActivate={() => select(item.id)}
-            orientation={orientation}
-            listVariant={variant}
-          >
-            {item.label}
-          </TabsTrigger>
-        ))}
+        children={
+          <ForEach
+            each={items}
+            use={(item) => (
+              <TabsTrigger
+                id={item.id}
+                active={() => selected() === item.id}
+                onActivate={() => select(item.id)}
+                orientation={orientation}
+                listVariant={variant}
+              >
+                {item.label}
+              </TabsTrigger>
+            )}
+          />
+        }
       />
-      {items.map((item) => (
-        <TabsContent id={item.id} active={() => selected() === item.id}>
-          {item.content}
-        </TabsContent>
-      ))}
+      <ForEach
+        each={items}
+        use={(item) => (
+          <TabsContent id={item.id} active={() => selected() === item.id}>
+            {item.content}
+          </TabsContent>
+        )}
+      />
     </div>
   );
 }

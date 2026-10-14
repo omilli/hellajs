@@ -10,7 +10,10 @@ export interface ToggleGroupEntry {
 
 export interface ToggleGroupProps extends HTMLAttributes<"div"> {
   class?: string;
-  items: ToggleGroupEntry[];
+  /** The rendered items. An array reads statically at mount; an accessor keeps the list reactive across appends, removes, and reorders. */
+  items: ToggleGroupEntry[] | (() => ToggleGroupEntry[]);
+  /** Reuses item DOM through reorders by `value` identity (pressed state survives); order always follows the array. */
+  keyBy?: "value";
   type: "single" | "multiple";
   /** Controlled single selection. */
   value?: () => string;

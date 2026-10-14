@@ -10,7 +10,8 @@ Nine named parts ship beside the default `Select`: `SelectTrigger`, `SelectValue
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `items` | `SelectEntry[]` | `-` |
+| `items` | `SelectEntry[] \| (() => SelectEntry[])` | `-` |
+| `keyBy` | `"value"` | `-` |
 | `value` | `() => string` | `-` |
 | `onValueChange` | `(value: string) => void` | `-` |
 | `placeholder` | `string` | `-` |
@@ -139,3 +140,23 @@ Dismissal runs through [`layerDismissal`](/reference/dom/layerdismissal): Escape
 The panel positions itself through [`anchorPosition`](/reference/dom/anchorposition) with `matchAnchorWidth`: the listbox always anchors below the trigger (flipped on viewport collision) and stretches to its width. Scroll buttons render at the listbox edges; they repeat-scroll while hovered and hide at their scroll bounds.
 
 The clear affordance is pointer-only: it lives inside the trigger button, so it cannot take keyboard focus without nesting interactive content. Keyboard users clear by re-running the composed flow (the empty string is a valid `onValueChange` report) or by pairing with `native-select`.
+
+## Dynamic items
+
+`items` reads once at mount when passed a plain array; pass a signal accessor and the options re-render as the array grows, shrinks, or reorders:
+
+```jsx
+import { signal } from "@hellajs/core";
+import { Select } from "./components/select";
+
+const options = signal([
+  { value: "a", label: "Alpha" },
+]);
+
+<Select items={options} keyBy="value" />;
+
+// Appends a live option without remounting the existing ones.
+options([...options(), { value: "b", label: "Beta" }]);
+```
+
+By default options key by array index: a reorder rebuilds them, losing transient state such as focus or the highlight ring (rendered state like `data-state` re-derives from the selected value either way). `keyBy="value"` reuses each option's DOM by its entry `value` instead, so nodes move to their new positions intact through reorders and removals. Order always follows the array, never the key history. An option reused under the same `value` keeps its rendered children, so swapping an entry's `label` under a repeated value needs a getter for that label to reach the DOM.

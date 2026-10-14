@@ -108,3 +108,6 @@
 ## 2026-06-30
 
 ## 2026-06-29
+* **Creation**: Added concept [290](entries/290.md) (type: decision).
+* **Creation**: Added concept [291](entries/291.md) (type: decision).
+* **Update**: unit 02 (reactive items: select/combobox): added 291 - per-entry item accessors compare by value, never reference (combobox hidden-trick staleness under keyBy reuse; contract-frozen this unit)

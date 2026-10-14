@@ -8,7 +8,8 @@ The input always shows the query, never the selection: the selected value lives 
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `items` | `ComboboxEntry[]` | `-` |
+| `items` | `ComboboxEntry[] \| (() => ComboboxEntry[])` | `-` |
+| `keyBy` | `"value"` | `-` |
 | `value` | `() => string \| string[]` | `-` |
 | `onValueChange` | `(value: string \| string[]) => void` | `-` |
 | `multiple` | `boolean` | `-` |
@@ -85,7 +86,8 @@ The `role="listbox"` rendering one `ComboboxItem` per entry, hidden in place as 
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `items` | `ComboboxEntry[]` | `-` |
+| `items` | `ComboboxEntry[] \| (() => ComboboxEntry[])` | `-` |
+| `keyBy` | `"value"` | `-` |
 | `query` | `() => string` | `-` |
 | `filter` | `(items, query) => ComboboxEntry[]` | Case-insensitive substring |
 | `selected` | `(value: string) => boolean` | `-` |
@@ -243,3 +245,25 @@ The input keeps focus the whole time (`role="combobox"`): ArrowDown and ArrowUp 
 In single mode, Enter closes the panel and clears the query. In `multiple` mode, Enter toggles the active value in or out of the array and the panel stays open; each selected value renders as a `ComboboxChip` whose remove button toggles it back out. `showClear` adds a clear affordance that wipes the whole selection.
 
 Dismissal runs through [`layerDismissal`](/reference/dom/layerdismissal): Escape and a pointerdown outside the wrapper close the top layer. Closing starts the exit - the panel stays mounted under `data-state="closed"` until its animation ends, with dismissal wiring down while it leaves. The panel positions itself through [`anchorPosition`](/reference/dom/anchorposition) with `matchAnchorWidth`, anchored to the input wrapper (the chips wrapper in multiple mode), flipping sides on viewport collision.
+
+## Dynamic items
+
+`items` reads once at mount when passed a plain array; pass a signal accessor and the options re-render as the array grows, shrinks, or reorders:
+
+```jsx
+import { signal } from "@hellajs/core";
+import { Combobox } from "./components/combobox";
+
+const options = signal([
+  { value: "a", label: "Alpha" },
+]);
+
+<Combobox items={options} keyBy="value" />;
+
+// Appends a live option without remounting the existing ones.
+options([...options(), { value: "b", label: "Beta" }]);
+```
+
+By default options key by array index: a reorder rebuilds them, losing transient state such as the highlight ring (rendered state like `aria-selected` re-derives from the selection either way). `keyBy="value"` reuses each option's DOM by its entry `value` instead, so nodes move to their new positions intact through reorders and removals. Order always follows the array, never the key history. An option reused under the same `value` keeps its rendered children, so swapping an entry's `label` under a repeated value needs a getter for that label to reach the DOM.
+
+Option ids derive from the entry `value` rather than the array index (the listbox id prefixes them: `{list id}-opt-{value}`), so a reordered option keeps its id and `aria-activedescendant` and the typeahead's node lookup keep targeting the right node.

@@ -4,7 +4,7 @@
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `items` | `TabsEntry[]` | `-` |
+| `items` | `TabsItem[] \| (() => TabsItem[])` | `-` |
 | `initialId` | `string` | The first tab |
 | `orientation` | `"horizontal" \| "vertical"` | `"horizontal"` |
 | `variant` | `"default" \| "line"` | `"default"` |
@@ -13,7 +13,7 @@ Accepts all native `div` attributes (forwarded to the root element).
 
 `initialId` opens a tab other than the first. `"vertical"` moves the arrow keys to Up and Down, declares `aria-orientation`, and stacks the panels. `"default"` is the segmented pill, the active tab elevated with a shadow; `"line"` is a transparent list whose active tab draws a foreground underline through its `::after`.
 
-### TabsEntry
+### TabsItem
 
 Each entry in the `items` array is one tab and its panel.
 
@@ -78,3 +78,24 @@ The tablist wires [`rovingTabIndex`](/reference/dom/rovingtabindex) from `@hella
 ## Accessibility Wiring
 
 The generated ids link the parts without any querySelector: each tab's `aria-controls` names its panel's `hella-tabs-panel-<id>`, each panel's `aria-labelledby` names its tab back, and `aria-selected` marks the active tab. Inactive panels carry the `hidden` attribute, so they stay out of view and out of the tab order. Selection lives in an internal signal and panel switches are instant; motion composes later through the dom `Transition` primitive without changing the tabs' contract.
+
+## Dynamic items
+
+`items` reads once at mount when passed a plain array; pass a signal accessor and the tablist and panels re-render as the array grows, shrinks, or reorders:
+
+```jsx
+import { signal } from "@hellajs/core";
+import { Tabs } from "./components/tabs";
+
+const pages = signal([
+  { id: "a", label: "A", content: "A panel" },
+  { id: "b", label: "B", content: "B panel" },
+]);
+
+<Tabs items={pages} initialId="a" />;
+
+// Appends a live tab and panel; no remount of the existing ones.
+pages([...pages(), { id: "c", label: "C", content: "C panel" }]);
+```
+
+Every entry keys by its `id` automatically: a reorder moves the existing trigger and panel nodes to their new positions, and the selected tab stays selected through it. Order always follows the array. A node reused under the same `id` keeps its rendered children, so a same-`id` entry whose `label` changed does not update the trigger text; keep labels stable per `id`, or put changing text in `content` behind a getter (the panel getter re-evaluates in place).

@@ -1,5 +1,5 @@
 import { effect, signal } from "@hellajs/core";
-import { anchorPosition, layerDismissal, menuTypeahead, Portal } from "@hellajs/dom";
+import { anchorPosition, ForEach, layerDismissal, menuTypeahead, Portal } from "@hellajs/dom";
 import type { Placement } from "@hellajs/dom";
 import type { AnchorSide, AnchorAlign, DropdownMenuTriggerProps, DropdownMenuContentProps, DropdownMenuPartProps, DropdownMenuItemProps, DropdownMenuCheckboxItemProps, DropdownMenuRadioGroupProps, DropdownMenuRadioItemProps, DropdownMenuLabelProps, DropdownMenuShortcutProps, DropdownMenuSubTriggerProps, DropdownMenuSubContentProps, DropdownMenuSubProps, DropdownMenuProps } from "./dropdown-menu-types.js";
 
@@ -386,7 +386,7 @@ export function DropdownMenuCheckboxItem({ checked: checkedProp, onCheckedChange
   );
 }
 
-export function DropdownMenuRadioGroup({ items, value: valueProp, onValueChange, children, class: cls, ...attrs }: DropdownMenuRadioGroupProps): JSX.Element {
+export function DropdownMenuRadioGroup({ items, keyBy, value: valueProp, onValueChange, children, class: cls, ...attrs }: DropdownMenuRadioGroupProps): JSX.Element {
   const internal = signal("");
   const current = (): string => (valueProp !== undefined ? valueProp() : internal());
   const select = (value: string): void => {
@@ -404,16 +404,20 @@ export function DropdownMenuRadioGroup({ items, value: valueProp, onValueChange,
       {...attrs}
     >
       {children}
-      {(items ?? []).map((entry) => (
-        <DropdownMenuRadioItem
-          value={entry.value}
-          checked={() => current() === entry.value}
-          disabled={entry.disabled}
-          onSelect={() => select(entry.value)}
-        >
-          {entry.label}
-        </DropdownMenuRadioItem>
-      ))}
+      <ForEach
+        each={items ?? (() => [])}
+        use={(entry) => (
+          <DropdownMenuRadioItem
+            key={keyBy ? entry.value : undefined}
+            value={entry.value}
+            checked={() => current() === entry.value}
+            disabled={entry.disabled}
+            onSelect={() => select(entry.value)}
+          >
+            {entry.label}
+          </DropdownMenuRadioItem>
+        )}
+      />
     </div>
   );
 }

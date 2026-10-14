@@ -349,6 +349,34 @@ describe("command", () => {
     expect(list.compareDocumentPosition(chrome) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  test.each(commandVariants)("$format/$style makes an appended signal item findable and selectable", async (variant) => {
+    const onSelect = mock(() => {});
+    const onValueChange = mock<(value: string) => void>(() => {});
+    const liveItems = signal<CommandItemDataVariant[]>([...GROUPED]);
+    const root = renderVariant(variant, { items: liveItems, onValueChange });
+    await delay();
+    liveItems([...liveItems(), { value: "date", label: "Date", group: "Fruits", onSelect }]);
+    await delay();
+    type(queryInput(root), "dat");
+    await delay();
+    expect(items(root).map((el) => el.getAttribute("data-value"))).toEqual(["date"]);
+    pressKey(queryInput(root), "Enter");
+    expect(onSelect).toHaveBeenCalledTimes(1);
+    expect(onValueChange).toHaveBeenCalledWith("date");
+  });
+
+  test.each(commandVariants)("$format/$style applies an items write to the filtered list while a query is active", async (variant) => {
+    const liveItems = signal<CommandItemDataVariant[]>([{ value: "apple", label: "Apple" }]);
+    const root = renderVariant(variant, { items: liveItems });
+    await delay();
+    type(queryInput(root), "app");
+    await delay();
+    expect(items(root).map((el) => el.getAttribute("data-value"))).toEqual(["apple"]);
+    liveItems([{ value: "grapple", label: "Grapple" }, { value: "banana", label: "Banana" }]);
+    await delay();
+    expect(items(root).map((el) => el.getAttribute("data-value"))).toEqual(["grapple"]);
+  });
+
   test.each(commandPartVariants.filter((variant) => variant.part === "Dialog"))("$format/$style renders the palette inside the dialog surface and closes on Escape", async (variant) => {
     const open = signal(true);
     const onClose = mock(() => {

@@ -1,4 +1,4 @@
-import { html, rovingTabIndex } from "@hellajs/dom";
+import { ForEach, html, rovingTabIndex } from "@hellajs/dom";
 import { signal } from "@hellajs/core";
 import type { HellaNode } from "@hellajs/dom";
 import type { RadioGroupItem, RadioGroupProps, RadioGroupItemProps } from "./radio-group-types.js";
@@ -69,7 +69,7 @@ export function RadioGroupItem({ value, checked, onSelect, disabled, name, "on:c
   ` as HellaNode;
 }
 
-export function RadioGroup({ items, value, onValueChange, orientation, name, class: cls, ...attrs }: RadioGroupProps): HellaNode {
+export function RadioGroup({ items, keyBy, value, onValueChange, orientation, name, class: cls, ...attrs }: RadioGroupProps): HellaNode {
   const internal = signal("");
   const current = (): string => (value !== undefined ? value() : internal());
   const wirings: (() => void)[] = [];
@@ -137,30 +137,34 @@ export function RadioGroup({ items, value, onValueChange, orientation, name, cla
       }}"
       ...${attrs}
     >
-      ${items.map((entry) => html`
-        <label
-          data-slot="radio-group-row"
-          class="${
-            // @hella:compose
-            [row]
-            // @hella:end
-          }"
-        >
-          ${RadioGroupItem({
-            value: entry.value,
-            name: name as string | undefined,
-            checked: () => current() === entry.value,
-            onSelect: () => {
-              if (entry.disabled) return;
-              select(entry.value);
-            },
-            disabled: entry.disabled,
-          })}
-          <span>
-            ${entry.label}
-          </span>
-        </label>
-      `)}
+      ${ForEach({
+        each: items,
+        use: (entry) => html`
+          <label
+            key="${keyBy ? entry.value : undefined}"
+            data-slot="radio-group-row"
+            class="${
+              // @hella:compose
+              [row]
+              // @hella:end
+            }"
+          >
+            ${RadioGroupItem({
+              value: entry.value,
+              name: name as string | undefined,
+              checked: () => current() === entry.value,
+              onSelect: () => {
+                if (entry.disabled) return;
+                select(entry.value);
+              },
+              disabled: entry.disabled,
+            })}
+            <span>
+              ${entry.label}
+            </span>
+          </label>
+        ` as HellaNode,
+      })}
     </div>
   ` as HellaNode;
 }

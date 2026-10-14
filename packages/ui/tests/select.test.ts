@@ -11,6 +11,7 @@ import {
   selectVariants,
   menuModulePart,
   type ComponentVariant,
+  type SelectEntryVariant,
   type SelectVariantProps,
 } from "./helpers/variants";
 import {
@@ -343,6 +344,37 @@ describe("select", () => {
     const container = setupContainer();
     mount(variant.render({ children: [] }), container);
     expect(container.firstElementChild!.hasAttribute("aria-controls")).toBe(false);
+  });
+
+  test.each(selectVariants)("$format/$style re-renders a signal items list across append, remove, and reorder", async (variant) => {
+    const liveItems = signal<SelectEntryVariant[]>([...FRUITS]);
+    const { content } = await openSelect(variant, { items: liveItems });
+    const values = () => [...content.querySelectorAll("[role='option']")].map((el) => el.getAttribute("data-value"));
+    expect(values()).toEqual(["apple", "blueberry", "canteloupe"]);
+    liveItems([...liveItems(), { value: "date", label: "Date" }]);
+    expect(values()).toEqual(["apple", "blueberry", "canteloupe", "date"]);
+    liveItems(liveItems().filter((entry) => entry.value !== "blueberry"));
+    expect(values()).toEqual(["apple", "canteloupe", "date"]);
+    liveItems([liveItems()[2]!, liveItems()[0]!, liveItems()[1]!]);
+    expect(values()).toEqual(["date", "apple", "canteloupe"]);
+  });
+
+  test.each(selectVariants)("$format/$style reuses the selected item's node through a reorder when keyBy is value", async (variant) => {
+    const liveItems = signal<SelectEntryVariant[]>([...FRUITS]);
+    const { content } = await openSelect(variant, { items: liveItems, value: () => "blueberry", keyBy: "value" });
+    const itemEls = () => [...content.querySelectorAll("[role='option']")] as HTMLElement[];
+    const blueberryBefore = itemEls().find((el) => el.getAttribute("data-value") === "blueberry")!;
+    expect(blueberryBefore.getAttribute("data-state")).toBe("checked");
+    liveItems([liveItems()[2]!, liveItems()[0]!, liveItems()[1]!]);
+    expect(itemEls().map((el) => el.getAttribute("data-value"))).toEqual(["canteloupe", "apple", "blueberry"]);
+    const blueberryAfter = itemEls().find((el) => el.getAttribute("data-value") === "blueberry")!;
+    expect(blueberryAfter).toBe(blueberryBefore);
+    expect(blueberryAfter.getAttribute("data-state")).toBe("checked");
+  });
+
+  test.each(selectVariants)("$format/$style keeps the reconciliation key out of the markup when keyBy is value", async (variant) => {
+    const { content } = await openSelect(variant, { items: FRUITS, keyBy: "value" });
+    expect(content.outerHTML).not.toContain("key=");
   });
 
   test("keeps structural parity across all four variants", () => {

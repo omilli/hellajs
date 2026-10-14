@@ -1,5 +1,5 @@
 import { effect, signal } from "@hellajs/core";
-import { anchorPosition, layerDismissal, menuTypeahead, Portal } from "@hellajs/dom";
+import { anchorPosition, ForEach, layerDismissal, menuTypeahead, Portal } from "@hellajs/dom";
 import type { Placement, HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 type AnchorSide = "top" | "bottom" | "left" | "right";
@@ -57,7 +57,10 @@ interface ContextMenuCheckboxItemProps extends HTMLAttributes<"div"> {
 
 interface ContextMenuRadioGroupProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
-  items?: MenuEntry[];
+  /** The rendered radio entries. An array reads statically at mount; an accessor keeps the list reactive across appends, removes, and reorders. */
+  items?: MenuEntry[] | (() => MenuEntry[]);
+  /** Reuses item DOM through reorders by `value` identity (selection state survives); order always follows the array. */
+  keyBy?: "value";
   /** Controlled selected value. When given, the group never writes its internal signal and `onValueChange` reports the requested selection. */
   value?: () => string;
   onValueChange?: (value: string) => void;
@@ -746,7 +749,7 @@ export function ContextMenuCheckboxItem({ checked: checkedProp, onCheckedChange,
   );
 }
 
-export function ContextMenuRadioGroup({ items, value: valueProp, onValueChange, children, class: cls, ...attrs }: ContextMenuRadioGroupProps): JSX.Element {
+export function ContextMenuRadioGroup({ items, keyBy, value: valueProp, onValueChange, children, class: cls, ...attrs }: ContextMenuRadioGroupProps): JSX.Element {
   const internal = signal("");
   const current = (): string => (valueProp !== undefined ? valueProp() : internal());
   const select = (value: string): void => {
@@ -762,16 +765,20 @@ export function ContextMenuRadioGroup({ items, value: valueProp, onValueChange, 
       {...attrs}
     >
       {children}
-      {(items ?? []).map((entry) => (
-        <ContextMenuRadioItem
-          value={entry.value}
-          checked={() => current() === entry.value}
-          disabled={entry.disabled}
-          onSelect={() => select(entry.value)}
-        >
-          {entry.label}
-        </ContextMenuRadioItem>
-      ))}
+      <ForEach
+        each={items ?? (() => [])}
+        use={(entry) => (
+          <ContextMenuRadioItem
+            key={keyBy ? entry.value : undefined}
+            value={entry.value}
+            checked={() => current() === entry.value}
+            disabled={entry.disabled}
+            onSelect={() => select(entry.value)}
+          >
+            {entry.label}
+          </ContextMenuRadioItem>
+        )}
+      />
     </div>
   );
 }

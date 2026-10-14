@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { signal } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { mount, peekState } from "@hellajs/dom";
 import type { HellaChildren } from "@hellajs/dom";
@@ -12,6 +13,7 @@ import {
   renderVariant,
   type ComponentVariant,
   type ContextMenuVariantProps,
+  type MenuRadioEntryVariant,
 } from "./helpers/variants";
 import {
   awaitDetached,
@@ -186,6 +188,18 @@ describe("context-menu", () => {
     expect(radios[1]!.getAttribute("aria-checked")).toBe("true");
   });
 
+  test.each(contextMenuVariants)("$format/$style re-renders a signal radio items list across appends", async (variant) => {
+    const RadioGroup = menuModulePart<{ items?: MenuRadioEntryVariant[] | (() => MenuRadioEntryVariant[]) }>(
+      contextMenuModules, variant, "ContextMenuRadioGroup",
+    );
+    const liveItems = signal<MenuRadioEntryVariant[]>([{ value: "small", label: "Small" }]);
+    const { content } = await openContextMenu(variant, RadioGroup({ items: liveItems }));
+    const values = () => [...content.querySelectorAll("[role='menuitemradio']")].map((el) => el.getAttribute("data-value"));
+    expect(values()).toEqual(["small"]);
+    liveItems([...liveItems(), { value: "large", label: "Large" }]);
+    expect(values()).toEqual(["small", "large"]);
+  });
+
   test.each(contextMenuVariants)("$format/$style enters submenus with ArrowRight and returns with ArrowLeft", async (variant) => {
     const Sub = menuModulePart<{ children?: HellaChildren; content?: HellaChildren }>(contextMenuModules, variant, "ContextMenuSub");
     const { content } = await openContextMenu(variant, [
@@ -333,6 +347,10 @@ describe("context-menu", () => {
 
   test("keeps structural parity across all four variants", () => {
     assertStructuralParity(contextMenuVariants, { content: "Parity" }, ["aria-controls"]);
+    assertStructuralParity(
+      contextMenuPartVariants.filter((variant) => variant.part === "RadioGroup"),
+      { items: [{ value: "light", label: "Light" }, { value: "dark", label: "Dark" }] },
+    );
   });
 
   test("renders every named part with its data-slot across all four variants", () => {

@@ -60,7 +60,7 @@ interface CommandShortcutProps extends HTMLAttributes<"span"> {
 }
 
 interface CommandProps extends HTMLAttributes<"div"> {
-  items?: CommandItemData[];
+  items?: CommandItemData[] | (() => CommandItemData[]);
   /** Replaces the default scoring filter (earlier matches, word-boundary starts, keyword hits). */
   filter?: (items: CommandItemData[], query: string) => CommandItemData[];
   /** Wraps arrow movement at the edges; the default clamps. */
@@ -712,15 +712,16 @@ export function CommandDialog({ open, onClose, title: titleText, description: de
   ` as HellaNode;
 }
 
-export function Command({ items: itemsProp, filter, loop, value, onValueChange, children, class: cls, ...attrs }: CommandProps): HellaNode {
-  const items = itemsProp ?? [];
+export function Command({ items, filter, loop, value, onValueChange, children, class: cls, ...attrs }: CommandProps): HellaNode {
+  const resolveItems = (): CommandItemData[] =>
+    typeof items === "function" ? (items as () => CommandItemData[])() : items ?? [];
   const query = signal("");
   const activeIndex = signal(0);
   let rootNode: HTMLElement | undefined;
   let previous: string | undefined;
 
   const ranked = (): CommandItemData[] =>
-    (filter ?? defaultFilter)(items, query());
+    (filter ?? defaultFilter)(resolveItems(), query());
 
   // The active value: the controlled accessor when given, the internal
   // cursor resolved against the ranked list otherwise.
@@ -856,7 +857,7 @@ export function Command({ items: itemsProp, filter, loop, value, onValueChange, 
     const rankedList = ranked();
     if (rankedList.length === 0) return CommandEmpty({ children: "No results found." });
     const nodes: HellaChild[] = [];
-    const groups = orderedGroups(items);
+    const groups = orderedGroups(resolveItems());
     let g = 0;
     const gLen = groups.length;
     while (g < gLen) {

@@ -1,4 +1,4 @@
-import { html, rovingTabIndex } from "@hellajs/dom";
+import { ForEach, html, rovingTabIndex } from "@hellajs/dom";
 import { signal } from "@hellajs/core";
 import type { HellaNode, HTMLAttributes } from "@hellajs/dom";
 
@@ -10,7 +10,10 @@ interface RadioGroupItem {
 
 interface RadioGroupProps extends HTMLAttributes<"div"> {
   class?: string;
-  items: RadioGroupItem[];
+  /** The rendered options. An array reads statically at mount; an accessor keeps the list reactive across appends, removes, and reorders. */
+  items: RadioGroupItem[] | (() => RadioGroupItem[]);
+  /** Reuses item DOM through reorders by `value` identity (selection state survives); order always follows the array. */
+  keyBy?: "value";
   /** Controlled selected value. When given, the root never writes its internal signal and `onValueChange` reports the requested selection. */
   value?: () => string;
   onValueChange?: (value: string) => void;
@@ -78,7 +81,7 @@ export function RadioGroupItem({ value, checked, onSelect, disabled, name, "on:c
   ` as HellaNode;
 }
 
-export function RadioGroup({ items, value, onValueChange, orientation, name, class: cls, ...attrs }: RadioGroupProps): HellaNode {
+export function RadioGroup({ items, keyBy, value, onValueChange, orientation, name, class: cls, ...attrs }: RadioGroupProps): HellaNode {
   const internal = signal("");
   const current = (): string => (value !== undefined ? value() : internal());
   const wirings: (() => void)[] = [];
@@ -144,28 +147,32 @@ export function RadioGroup({ items, value, onValueChange, orientation, name, cla
       }}"
       ...${attrs}
     >
-      ${items.map((entry) => html`
-        <label
-          data-slot="radio-group-row"
-          class="${
-            cn("flex items-center gap-2")
-          }"
-        >
-          ${RadioGroupItem({
-            value: entry.value,
-            name: name as string | undefined,
-            checked: () => current() === entry.value,
-            onSelect: () => {
-              if (entry.disabled) return;
-              select(entry.value);
-            },
-            disabled: entry.disabled,
-          })}
-          <span>
-            ${entry.label}
-          </span>
-        </label>
-      `)}
+      ${ForEach({
+        each: items,
+        use: (entry) => html`
+          <label
+            key="${keyBy ? entry.value : undefined}"
+            data-slot="radio-group-row"
+            class="${
+              cn("flex items-center gap-2")
+            }"
+          >
+            ${RadioGroupItem({
+              value: entry.value,
+              name: name as string | undefined,
+              checked: () => current() === entry.value,
+              onSelect: () => {
+                if (entry.disabled) return;
+                select(entry.value);
+              },
+              disabled: entry.disabled,
+            })}
+            <span>
+              ${entry.label}
+            </span>
+          </label>
+        ` as HellaNode,
+      })}
     </div>
   ` as HellaNode;
 }

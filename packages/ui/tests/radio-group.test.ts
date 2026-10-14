@@ -12,7 +12,7 @@ import {
   radioGroupPartVariants,
   radioGroupVariants,
 } from "./helpers/variants";
-import type { ComponentVariant, RadioGroupVariantProps } from "./helpers/variants";
+import type { ComponentVariant, RadioGroupEntryVariant, RadioGroupVariantProps } from "./helpers/variants";
 
 beforeEach(() => {
   resetTestState();
@@ -179,6 +179,39 @@ describe("radio-group", () => {
   test.each(radioGroupVariants)("$format/$style merges props.class into the class attribute", (variant) => {
     const { root } = mountRadioGroup(variant, { items, class: "my-radio-group" });
     expect(classTokens(root).at(-1)).toBe("my-radio-group");
+  });
+
+  test.each(radioGroupVariants)("$format/$style re-renders a signal items list across append, remove, and reorder", (variant) => {
+    const liveItems = signal<RadioGroupEntryVariant[]>([...items]);
+    const { root } = mountRadioGroup(variant, { items: liveItems });
+    const values = () => Array.from(root.querySelectorAll("[role='radio']")).map((el) => el.getAttribute("value"));
+    expect(values()).toEqual(["alpha", "beta", "gamma"]);
+    liveItems([...liveItems(), { value: "delta", label: "Delta" }]);
+    expect(values()).toEqual(["alpha", "beta", "gamma", "delta"]);
+    liveItems(liveItems().filter((entry) => entry.value !== "beta"));
+    expect(values()).toEqual(["alpha", "gamma", "delta"]);
+    liveItems([liveItems()[2]!, liveItems()[0]!, liveItems()[1]!]);
+    expect(values()).toEqual(["delta", "alpha", "gamma"]);
+  });
+
+  test.each(radioGroupVariants)("$format/$style reuses the checked item's row through a reorder when keyBy is value", async (variant) => {
+    const liveItems = signal<RadioGroupEntryVariant[]>([...items]);
+    const { root } = mountRadioGroup(variant, { items: liveItems, keyBy: "value" });
+    await awaitWiring(root);
+    const rows = () => Array.from(root.querySelectorAll("[data-slot='radio-group-row']")) as HTMLElement[];
+    rows()[1]!.querySelector("[role='radio']")!.dispatchEvent(new Event("click"));
+    const rowBefore = rows()[1]!;
+    expect(rowBefore.querySelector("[role='radio']")!.getAttribute("aria-checked")).toBe("true");
+    liveItems([liveItems()[2]!, liveItems()[0]!, liveItems()[1]!]);
+    expect(rows().map((el) => el.querySelector("[role='radio']")!.getAttribute("value"))).toEqual(["gamma", "alpha", "beta"]);
+    const rowAfter = rows()[2]!;
+    expect(rowAfter).toBe(rowBefore);
+    expect(rowAfter.querySelector("[role='radio']")!.getAttribute("aria-checked")).toBe("true");
+  });
+
+  test.each(radioGroupVariants)("$format/$style keeps the reconciliation key out of the markup when keyBy is value", (variant) => {
+    const { root } = mountRadioGroup(variant, { items, keyBy: "value" });
+    expect(root.outerHTML).not.toContain("key=");
   });
 
   test("keeps structural parity across all four variants", () => {

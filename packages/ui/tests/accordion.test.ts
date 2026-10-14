@@ -155,6 +155,37 @@ describe("accordion", () => {
     }
   });
 
+  test.each(accordionVariants)("$format/$style re-renders a signal items list across append, remove, and reorder", (variant) => {
+    const liveItems = signal<AccordionEntryVariant[]>([...items]);
+    const { root } = mountAccordion(variant, { items: liveItems, open: "beta" });
+    const values = () => Array.from(root.querySelectorAll('[data-slot="accordion-item"]')).map((el) => el.getAttribute("data-value"));
+    expect(values()).toEqual(["alpha", "beta", "gamma"]);
+    liveItems([...liveItems(), { value: "delta", trigger: "Delta", content: "Delta body" }]);
+    expect(values()).toEqual(["alpha", "beta", "gamma", "delta"]);
+    liveItems(liveItems().filter((entry) => entry.value !== "beta"));
+    expect(values()).toEqual(["alpha", "gamma", "delta"]);
+    liveItems([liveItems()[2]!, liveItems()[0]!, liveItems()[1]!]);
+    expect(values()).toEqual(["delta", "alpha", "gamma"]);
+  });
+
+  test.each(accordionVariants)("$format/$style reuses the open item's node through a reorder when keyBy is value", (variant) => {
+    const liveItems = signal<AccordionEntryVariant[]>([...items]);
+    const { root } = mountAccordion(variant, { items: liveItems, open: "beta", keyBy: "value" });
+    const itemEls = () => Array.from(root.querySelectorAll('[data-slot="accordion-item"]')) as HTMLElement[];
+    const betaBefore = itemEls().find((el) => el.getAttribute("data-value") === "beta")!;
+    expect(betaBefore.getAttribute("data-state")).toBe("open");
+    liveItems([liveItems()[2]!, liveItems()[0]!, liveItems()[1]!]);
+    expect(itemEls().map((el) => el.getAttribute("data-value"))).toEqual(["gamma", "alpha", "beta"]);
+    const betaAfter = itemEls().find((el) => el.getAttribute("data-value") === "beta")!;
+    expect(betaAfter).toBe(betaBefore);
+    expect(betaAfter.getAttribute("data-state")).toBe("open");
+  });
+
+  test.each(accordionVariants)("$format/$style keeps the reconciliation key out of the markup when keyBy is value", (variant) => {
+    const { root } = mountAccordion(variant, { items, keyBy: "value" });
+    expect(root.outerHTML).not.toContain("key=");
+  });
+
   test("keeps structural parity across all four variants", () => {
     assertStructuralParity(accordionVariants, { items });
   });

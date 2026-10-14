@@ -86,7 +86,8 @@ A group rendering one radio item per entry.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `items` | `{ value, label?, disabled? }[]` | `-` |
+| `items` | `{ value, label?, disabled? }[] \| (() => { value, label?, disabled? }[])` | `-` |
+| `keyBy` | `"value"` | `-` |
 | `value` | `() => string` | `-` |
 | `onValueChange` | `(value: string) => void` | `-` |
 | `children` | `HellaChildren` | `-` |
@@ -197,3 +198,23 @@ Dismissal runs through [`layerDismissal`](/reference/dom/layerdismissal): Escape
 | printable keys | Typeahead: selects the first item starting with the buffered keys |
 
 The menu opens from the pointer, so there is no trigger-key open path: keyboard users reach a context menu through the surrounding app (for example a button that opens a controlled `ContextMenu` via its `open` accessor).
+
+## Dynamic items
+
+The radio group's `items` reads once at mount when passed a plain array; pass a signal accessor and the items re-render as the list grows, shrinks, or reorders:
+
+```jsx
+import { signal } from "@hellajs/core";
+import { ContextMenuRadioGroup } from "./components/context-menu";
+
+const themes = signal([
+  { value: "light", label: "Light" },
+]);
+
+<ContextMenuRadioGroup items={themes} keyBy="value" />;
+
+// Appends a live item without remounting the existing ones.
+themes([...themes(), { value: "dark", label: "Dark" }]);
+```
+
+By default items key by array index: a reorder rebuilds them, losing transient state such as focus (the checked state re-derives from the group's value either way). `keyBy="value"` reuses each item's DOM by its entry `value` instead, so nodes move to their new positions intact through reorders and removals. Order always follows the array, never the key history. An item reused under the same `value` keeps its rendered children, so swapping an entry's `label` under a repeated value needs a getter for that content to reach the DOM.
