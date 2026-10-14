@@ -48,11 +48,14 @@ export function resolveText(value: unknown): string {
  * Plain-object `style` values serialize to kebab-case declarations; props on custom
  * elements (hyphenated tag + key present on the element) assign the raw value to
  * the element property instead of stringifying through setAttribute.
+ * The `key` prop is reconciliation metadata (ForEach reads it from vnode props) and
+ * never renders as an attribute.
  * @param element The DOM element to set the property on
  * @param key The property/attribute key name
  * @param value The value to set
  */
 export function renderProp(element: HellaElement, key: string, value: unknown) {
+  if (key === "key") return;
   const isFalsyVal = isFalsy(value);
   if (key === "value" || key === "checked" || key === "selected" || key === "innerHTML") {
     (element as unknown as Record<string, unknown>)[key] = isFalsyVal ? "" : value;

@@ -49,9 +49,11 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
  * property) is intentionally NOT mirrored — emitting `checked=""` would mean CHECKED in HTML.
  * `renderProp`'s custom-element property branch (hyphenated tag + `key in element` → raw property
  * assignment) has no server equivalent — there is no element instance to probe, so object/array
- * props on custom elements stringify via the generic branch server-side.
+ * props on custom elements stringify via the generic branch server-side. The `key` prop is
+ * reconciliation metadata (ForEach reads it from vnode props) and is omitted, matching `renderProp`.
  */
 export function serializeProp(key: string, value: unknown): string {
+  if (key === "key") return "";                    // reconciliation metadata — never in HTML output
   const isFalsy = value === false || value === null || value === undefined;
   if (isFalsy) return "";                          // omit (renderProp removeAttribute equivalent)
   if (key === "style" && isPlainObject(value)) {   // style objects — byte-parity with renderProp

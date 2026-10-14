@@ -37,7 +37,7 @@ The same list renders in [`html`](/reference/dom/html#list-rendering) template s
 
 ### Key-Based Optimization
 
-Use the `key` attribute for optimal reconciliation. Explicit keys use key-only comparison: same key always reuses the DOM node, even if the item reference changes.
+Use the `key` prop for optimal reconciliation. Explicit keys use key-only comparison: same key always reuses the DOM node, even if the item reference changes. The `key` prop is reconciliation metadata only: it never appears as a DOM attribute, in mounted or server-rendered HTML.
 
 ```jsx
 import { signal } from "@hellajs/core";

@@ -47,6 +47,24 @@ describe("dom", () => {
       expect(container.querySelectorAll("li").length).toBe(3);
     });
 
+    test("adopts server-rendered keyed items without key attributes and reconciles a prepend", () => {
+      const items = signal([{ uid: 1, text: "a" }, { uid: 2, text: "b" }, { uid: 3, text: "c" }]);
+      const App = () => html`<ul id="list"><${ForEach} each=${items} use=${(item: { uid: number; text: string }) => html`<li key=${item.uid} id=${"item-" + item.uid}>${item.text}</li>`} /></ul>`;
+      const container = ssrContainer(html`<${App} />`);
+      expect(container.querySelector("li")!.outerHTML).toBe('<li id="item-1">a</li>');
+      const bBefore = container.querySelector("#item-2")!;
+      const cBefore = container.querySelector("#item-3")!;
+
+      hydrate(html`<${App} />`, container);
+      expect(container.querySelectorAll("[key]")).toHaveLength(0);
+      expect(container.querySelector("#item-2")).toBe(bBefore);
+
+      items([{ uid: 0, text: "z" }, ...items()]);
+      flush();
+      expect(container.querySelector("#item-0")!.textContent).toBe("z");
+      expect(container.querySelector("#item-3")).toBe(cBefore);
+    });
+
     test("adopts index-keyed items by position", () => {
       const items = signal([{ v: "a" }, { v: "b" }]);
       const App = () => html`<ul id="list"><${ForEach} each=${items} use=${(item: { v: string }) => html`<li>${item.v}</li>`} /></ul>`;

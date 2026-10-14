@@ -273,6 +273,63 @@ describe("dom", () => {
       expect(getListTexts()).toEqual(["ALICE", "BOB"]);
     });
 
+    test("renders explicit-key items without a key attribute and reuses nodes through prepend and reorder", () => {
+      interface KeyedItem { uid: number; name: string; }
+      const items = signal<KeyedItem[]>([
+        { uid: 1, name: "A" },
+        { uid: 2, name: "B" },
+        { uid: 3, name: "C" }
+      ]);
+      const renderer = (item: KeyedItem) => html`<li key=${item.uid}>${item.name}</li>`;
+
+      mount(() => createList(items, renderer));
+      expect(getListTexts()).toEqual(["A", "B", "C"]);
+      expect(document.querySelector("li")!.outerHTML).toBe("<li>A</li>");
+      const mountedNodes = Array.from(document.querySelectorAll("li"));
+      const nodeByName = new Map(mountedNodes.map(li => [li.textContent, li]));
+
+      items([{ uid: 0, name: "Z" }, { uid: 1, name: "A" }, { uid: 2, name: "B" }, { uid: 3, name: "C" }]);
+      flush();
+      expect(getListTexts()).toEqual(["Z", "A", "B", "C"]);
+      const afterPrepend = Array.from(document.querySelectorAll("li"));
+      expect(afterPrepend[1]).toBe(nodeByName.get("A"));
+      expect(afterPrepend[3]).toBe(nodeByName.get("C"));
+
+      items([{ uid: 3, name: "C" }, { uid: 0, name: "Z" }, { uid: 2, name: "B" }, { uid: 1, name: "A" }]);
+      flush();
+      expect(getListTexts()).toEqual(["C", "Z", "B", "A"]);
+      const afterReorder = Array.from(document.querySelectorAll("li"));
+      expect(afterReorder[0]).toBe(nodeByName.get("C"));
+      expect(afterReorder[3]).toBe(nodeByName.get("A"));
+    });
+
+    test("renders a spread-carried key without an attribute and reuses nodes by key", () => {
+      interface KeyedItem { uid: number; name: string; }
+      const items = signal<KeyedItem[]>([
+        { uid: 1, name: "A" },
+        { uid: 2, name: "B" }
+      ]);
+      const renderer = (item: KeyedItem) => {
+        const attrs = { key: item.uid, class: "item" };
+        return html`<li ...${attrs}>${item.name}</li>`;
+      };
+
+      mount(() => createList(items, renderer));
+      expect(getListTexts()).toEqual(["A", "B"]);
+      expect(document.querySelector("li")!.outerHTML).toBe("<li class=\"item\">A</li>");
+      const nodeA = Array.from(document.querySelectorAll("li"))[0];
+
+      items([{ uid: 2, name: "B" }, { uid: 1, name: "A" }]);
+      flush();
+      expect(getListTexts()).toEqual(["B", "A"]);
+      expect(Array.from(document.querySelectorAll("li"))[1]).toBe(nodeA);
+    });
+
+    test("renders no key attribute for a keyed element mounted outside ForEach", () => {
+      mount(html`<div id="solo" key="solo-key">x</div>`);
+      expect(document.getElementById("solo")!.outerHTML).toBe("<div id=\"solo\">x</div>");
+    });
+
     test("preserves sibling elements during updates", () => {
       const items = signal([1, 2]);
       const showEmpty = signal(false);

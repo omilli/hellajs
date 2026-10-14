@@ -129,6 +129,12 @@ describe("ssr", () => {
       .toBe('<button class="b" disabled title="t"></button>');
   });
 
+  test("omits key from serialized output for declared and spread props", () => {
+    expect(ssr(html`<li key=${7} class="row">x</li>` as HellaNode)).toBe('<li class="row">x</li>');
+    const attrs = { key: 7, class: "row" };
+    expect(ssr(html`<li ...${attrs}>x</li>` as HellaNode)).toBe('<li class="row">x</li>');
+  });
+
   test("renders void elements without a closing tag", () => {
     expect(ssr(html`<img src=${"a.jpg"} />` as HellaNode)).toBe('<img src="a.jpg">');
   });
