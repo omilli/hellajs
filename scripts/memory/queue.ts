@@ -1,28 +1,19 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { basename, join } from "node:path";
+import { join } from "node:path";
 import { logger, projectRoot } from "../utils/index.js";
 
-/** The repo knowledge base root. */
+/** The repo knowledge base root — flat `NNN-slug.md` entries. */
 const MEMORY_ROOT = join(projectRoot, "memory");
 
-/** Active concepts (`memory/entries/*.md`, canonical single source). */
-const ENTRIES_DIR = join(MEMORY_ROOT, "entries");
-
-/** Retired concepts (`memory/archive/`); the supersede sink. */
-const ARCHIVE_DIR = join(MEMORY_ROOT, "archive");
-
 /** Frontmatter line read for the queue display; entries without it are skipped. */
-const LAST_CONFIRMED_LINE = /^last_confirmed:\s*(\d{4}-\d{2}-\d{2})\s*$/;
+const CONFIRMED_LINE = /^confirmed:\s*(\d{4}-\d{2}-\d{2})\s*$/;
 
-/** Frontmatter line for the concept title (quote-stripped on read). */
+/** Frontmatter line for the entry title (quote-stripped on read). */
 const TITLE_LINE = /^title:\s*(.*)$/;
 
-/** Frontmatter line naming the retired predecessor. */
-const SUPERSEDES_LINE = /^supersedes:\s*(\S+)\s*$/;
-
-/** One active KB concept queued for verification. */
+/** One KB entry queued for verification. */
 export interface MemoryEntry {
-  /** Concept ID — the leading numeric run of the filename stem. */
+  /** Entry ID — the leading numeric run of the filename stem. */
   id: string;
   /** Filename stem (`NNN-slug`). */
   stem: string;
@@ -30,8 +21,8 @@ export interface MemoryEntry {
   file: string;
   /** Frontmatter title, quotes stripped; empty when absent. */
   title: string;
-  /** Frontmatter `last_confirmed` date (`YYYY-MM-DD`). */
-  lastConfirmed: string;
+  /** Frontmatter `confirmed` date (`YYYY-MM-DD`). */
+  confirmed: string;
 }
 
 /** Queue derivation options. */
@@ -44,15 +35,14 @@ export interface QueueOptions {
 
 /** Post-run outcome of one entry, classified from the before/after file state. */
 export type EntryOutcome =
+  | { kind: "changed" }
   | { kind: "unchanged" }
-  | { kind: "refreshed" }
-  | { kind: "superseded"; successor: string | null }
   | { kind: "removed" };
 
 /**
  * Read one entry file's frontmatter into a queue record; null when
- * `last_confirmed` is missing or malformed (warned — the dry-run queue
- * reports it, so entries without it stay unverifiable by the runner).
+ * `confirmed` is missing or malformed (warned — the dry-run queue reports
+ * it, so entries without it stay unverifiable by the runner).
  *
  * @param file Absolute entry file path.
  * @param name Filename, for the warning.
@@ -65,16 +55,16 @@ function readEntry(file: string, name: string): MemoryEntry | null {
     logger.warn(`no frontmatter in ${name} — skipped`);
     return null;
   }
-  let lastConfirmed: string | null = null;
+  let confirmed: string | null = null;
   let title = "";
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i]?.trim() ?? "";
     if (line === "---") {
       break;
     }
-    const confirmed = LAST_CONFIRMED_LINE.exec(line);
-    if (confirmed !== null) {
-      lastConfirmed = confirmed[1] ?? null;
+    const confirmedMatch = CONFIRMED_LINE.exec(line);
+    if (confirmedMatch !== null) {
+      confirmed = confirmedMatch[1] ?? null;
       continue;
     }
     const titleMatch = TITLE_LINE.exec(line);
@@ -82,8 +72,8 @@ function readEntry(file: string, name: string): MemoryEntry | null {
       title = (titleMatch[1] ?? "").trim().replace(/^["']|["']$/g, "");
     }
   }
-  if (lastConfirmed === null || !isCalendarDate(lastConfirmed)) {
-    logger.warn(`bad last_confirmed in ${name} — skipped`);
+  if (confirmed === null || !isCalendarDate(confirmed)) {
+    logger.warn(`bad confirmed date in ${name} — skipped`);
     return null;
   }
   const stem = name.slice(0, -3);
@@ -92,7 +82,7 @@ function readEntry(file: string, name: string): MemoryEntry | null {
     stem,
     file,
     title,
-    lastConfirmed,
+    confirmed,
   };
 }
 
@@ -121,20 +111,20 @@ export function idValue(id: string): number {
 }
 
 /**
- * Derive the verification queue: every active entry, numeric ID ascending
- * (tie-break filename), floored by `startId`, capped by `limit`. Read-only —
- * the runner never writes KB content.
+ * Derive the verification queue: every entry in the flat KB, numeric ID
+ * ascending (tie-break filename), floored by `startId`, capped by `limit`.
+ * Read-only — the runner never writes KB content.
  *
  * @param options Start floor and cap.
  * @returns The queue in execution order.
  */
 export function deriveQueue(options: QueueOptions): MemoryEntry[] {
-  if (!existsSync(ENTRIES_DIR)) {
-    throw new Error(`no knowledge base at ${ENTRIES_DIR}`);
+  if (!existsSync(MEMORY_ROOT)) {
+    throw new Error(`no knowledge base at ${MEMORY_ROOT}`);
   }
   const entries: MemoryEntry[] = [];
-  for (const name of readdirSync(ENTRIES_DIR).filter((f: string): boolean => f.endsWith(".md")).sort()) {
-    const entry = readEntry(join(ENTRIES_DIR, name), name);
+  for (const name of readdirSync(MEMORY_ROOT).filter((f: string): boolean => f.endsWith(".md")).sort()) {
+    const entry = readEntry(join(MEMORY_ROOT, name), name);
     if (entry === null) {
       continue;
     }
@@ -160,47 +150,18 @@ export function snapshotEntry(file: string): string {
 }
 
 /**
- * Find the entry that superseded a retired concept, by its `supersedes:`
- * frontmatter pointer.
- *
- * @param id The retired concept's ID.
- * @returns The successor's stem, or null when none names it.
- */
-function findSuccessor(id: string): string | null {
-  for (const name of readdirSync(ENTRIES_DIR).filter((f: string): boolean => f.endsWith(".md")).sort()) {
-    const text = readFileSync(join(ENTRIES_DIR, name), "utf-8");
-    for (const line of text.split(/\r?\n/)) {
-      const match = SUPERSEDES_LINE.exec(line.trim());
-      if (match !== null && stripLeadingZeros(match[1] ?? "") === stripLeadingZeros(id)) {
-        return name.slice(0, -3);
-      }
-    }
-  }
-  return null;
-}
-
-/** Strip leading zeros so ID comparison tolerates `007` vs `7`. */
-function stripLeadingZeros(value: string): string {
-  return value.replace(/^0+/, "");
-}
-
-/**
  * Classify what the verification instance did to one entry, from the
- * pre-run snapshot: same content → `unchanged`; different content →
- * `refreshed`; file gone and archived → `superseded` (successor resolved
- * when some entry names it); file gone, not archived → `removed`.
+ * pre-run snapshot: file gone → `removed` (terminal and healthy whether or
+ * not a successor was authored); same content → `unchanged`; different
+ * content → `changed` (any file-state change is an action).
  *
  * @param file Absolute entry file path.
  * @param before The pre-run content from {@link snapshotEntry}.
  * @returns The outcome.
  */
 export function classifyOutcome(file: string, before: string): EntryOutcome {
-  if (existsSync(file)) {
-    return readFileSync(file, "utf-8") === before ? { kind: "unchanged" } : { kind: "refreshed" };
-  }
-  if (!existsSync(join(ARCHIVE_DIR, basename(file)))) {
+  if (!existsSync(file)) {
     return { kind: "removed" };
   }
-  const id = /^\d+/.exec(basename(file))?.[0] ?? "";
-  return { kind: "superseded", successor: id === "" ? null : findSuccessor(id) };
+  return readFileSync(file, "utf-8") === before ? { kind: "unchanged" } : { kind: "changed" };
 }

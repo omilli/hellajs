@@ -1,9 +1,9 @@
-import { join, relative } from "node:path";
-import { execCommand, logger, projectRoot } from "../utils/index.js";
+import { relative } from "node:path";
+import { logger, projectRoot } from "../utils/index.js";
 import { dialogHook, driveAgent, installSigint, makeRelay } from "../agent/driver.js";
 import type { Relay } from "../agent/relay.js";
 import { classifyOutcome, deriveQueue, idValue, snapshotEntry } from "./queue.js";
-import type { EntryOutcome, MemoryEntry } from "./queue.js";
+import type { MemoryEntry } from "./queue.js";
 
 /** Default model pattern for verification instances (`--model` overrides). */
 const DEFAULT_MEMORY_MODEL = "glm-5.3-flash";
@@ -26,7 +26,7 @@ export interface RunMemoryOptions {
 }
 
 /** Terminal status of one entry. */
-type EntryStatus = "verified" | "superseded" | "accepted" | "skipped" | "failed";
+type EntryStatus = "verified" | "removed" | "skipped";
 
 /** Per-entry record for the final summary. */
 interface EntryRecord {
@@ -36,17 +36,15 @@ interface EntryRecord {
   session: string;
 }
 
-/** Operator gate choices for an entry whose instance left no outcome signal. */
-type GateChoice = "retry" | "accept" | "skip" | "halt";
-
 /**
  * Build the per-entry verification prompt.
  *
  * The `/skill:memory` prefix expands to the full SKILL.md inline; the prompt
- * scopes it to the Step 5 refresh flow for this one entry. The instance owns
- * every KB write (bump, author, supersede) via the `memory.ts` commands —
- * the runner never writes KB content and only reads the before/after file
- * state.
+ * scopes it to the Step 5 refresh flow for this one entry. The instance runs
+ * AFK: it decides autonomously (never `ask_user_question` — no operator)
+ * and owns every KB write (confirm, delete, author) via the `memory.ts`
+ * commands — the runner never writes KB content and only reads the
+ * before/after file state.
  *
  * @param entry The entry under verification.
  * @returns The prompt text.
@@ -54,89 +52,36 @@ type GateChoice = "retry" | "accept" | "skip" | "halt";
 function buildVerifyPrompt(entry: MemoryEntry): string {
   return [
     `/skill:memory Verify one knowledge-base entry against the current source tree — the skill's Step 5 refresh flow, scoped to this single entry.`,
-    `Entry: ${entry.file}`,
+    `Entry: ${entry.file} (ID ${entry.id})`,
     "Do not verify, write, or refresh any other entry you happen to read. Do not act on code-level implications of a false claim: record the corrected fact; code changes are a separate decision.",
+    "You are running unattended (AFK): decide autonomously — never call ask_user_question; there is no operator to answer.",
     "Re-verify every factual claim against the current source, tests, and docs — open the files the entry cites or names. Then take exactly one action:",
-    "- Still accurate (including concept-preserving drift — stale line refs, renamed symbols, thin citations): edit the drifted evidence in place, bump `last_confirmed` in the entry frontmatter to today, bump `timestamp` too when the body changed, run `bun .agents/skills/memory/memory.ts rebuild`, and log the refresh via `bun .agents/skills/memory/memory.ts log \"<what you re-verified>\" --label Refresh`.",
-    "- False or reversed (the old claim itself is wrong, or the decision/ritual it records is undone): author the corrected concept (`bun .agents/skills/memory/memory.ts add`, `--fix` for a correction type; fill in frontmatter + body per the skill's Step 3), then `bun .agents/skills/memory/memory.ts supersede <old-id> <new-id>`. Concept-unchanged drift never takes this path — supersede archives refuted beliefs, not stale copies.",
-    "- Cannot verify (the entry's subject is gone, the evidence is ambiguous, or retiring it is a load-bearing fork): write nothing and state exactly what blocked you.",
-    "ask_user_question dialogs are relayed to a human operator at the terminal: use the tool for any load-bearing fork.",
+    `- Still accurate (including concept-preserving drift — stale line refs, renamed symbols, thin citations): edit the drifted evidence in place, then run \`bun .agents/skills/memory/memory.ts confirm ${entry.id}\` (rewrites \`confirmed\` to today; everything else preserved).`,
+    `- False or reversed (the old claim itself is wrong, or the decision/ritual it records is undone): delete the entry file; when the corrected fact is worth keeping, run \`bun .agents/skills/memory/memory.ts add "<imperative title>"\` and fill the created file per the skill's Step 3 — self-contained: no references to the deleted entry, no \`plans/\` paths.`,
+    "- Cannot verify (the entry's subject is gone, or the evidence is ambiguous): write nothing and state exactly what blocked you.",
     "If you would hand back or are blocked, stop and report exactly that.",
   ].join("\n");
 }
 
 /**
- * The operator gate: an instance left the entry unchanged (or removed it
- * outside supersession) — ask what to do.
- *
- * @param relay The shared terminal relay.
- * @param stem Entry stem, for the prompt text.
- * @returns The chosen operator action.
- */
-async function askGate(relay: Relay, stem: string): Promise<GateChoice> {
-  for (;;) {
-    const line = (
-      await relay.askOrchestrator(`${stem}: no verification action landed — retry / accept / skip / halt?`)
-    )
-      .trim()
-      .toLowerCase();
-    if (line === "r" || line === "retry") {
-      return "retry";
-    }
-    if (line === "a" || line === "accept") {
-      return "accept";
-    }
-    if (line === "s" || line === "skip") {
-      return "skip";
-    }
-    if (line === "h" || line === "halt") {
-      return "halt";
-    }
-    console.log(
-      "  (r=retry, fresh instance · a=accept the report as-is, no write needed · s=skip this entry, marks the run failed · h=halt the run)",
-    );
-  }
-}
-
-/**
- * Map a classified outcome to the record it lands in the summary as; null
- * when the outcome carries no signal and the operator gate must decide.
- *
- * @param outcome The classified before/after outcome.
- * @param entry The entry under verification.
- * @returns The record, or null for the gate.
- */
-function outcomeRecord(outcome: EntryOutcome, entry: MemoryEntry): { status: EntryStatus; detail: string } | null {
-  if (outcome.kind === "refreshed") {
-    return { status: "verified", detail: "dates bumped or entry refreshed" };
-  }
-  if (outcome.kind === "superseded") {
-    return {
-      status: "superseded",
-      detail: outcome.successor === null ? `${entry.id} archived, no successor named` : `${entry.id} → ${outcome.successor}`,
-    };
-  }
-  return null;
-}
-
-/**
- * Drive one entry to a terminal outcome: each attempt is a fresh instance;
- * a file-state change ends it, anything else reaches the operator gate.
+ * Drive one entry to a terminal outcome, unattended: each attempt is a
+ * fresh instance; any file-state change (content edit or deletion) ends it.
+ * Unchanged after attempt 1 → exactly one retry; unchanged after attempt 2
+ * → record `skipped` and continue.
  *
  * @param entry The entry under verification.
  * @param options Run options (model, thinking).
  * @param relay The shared terminal relay.
  * @param records Accumulator for the final summary.
- * @returns True when the operator halted the whole run.
  */
-async function runEntryWithGate(
+async function runEntry(
   entry: MemoryEntry,
   options: RunMemoryOptions,
   relay: Relay,
   records: EntryRecord[],
-): Promise<boolean> {
-  for (let attempt = 1; ; attempt++) {
-    const suffix = attempt === 1 ? "" : ` (pass ${attempt})`;
+): Promise<void> {
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    const suffix = attempt === 1 ? "" : " (retry)";
     const sessionName = `memory: ${entry.stem}${suffix}`;
     logger.info(`\n── ${entry.stem} · session ${sessionName} ──`);
     console.log('  (type to steer the verifier · ".stop" aborts it)\n');
@@ -151,82 +96,34 @@ async function runEntryWithGate(
     });
     console.log(`\n── verify report (${entry.stem}) ──\n${report}\n`);
     const outcome = classifyOutcome(entry.file, before);
-    const record = outcomeRecord(outcome, entry);
-    if (record !== null) {
-      records.push({ stem: entry.stem, status: record.status, detail: record.detail, session: sessionName });
-      logger.success(`${entry.stem}: ${record.status} (${record.detail})`);
-      return false;
+    if (outcome.kind === "changed") {
+      const detail = `file state changed (attempt ${attempt})`;
+      records.push({ stem: entry.stem, status: "verified", detail, session: sessionName });
+      logger.success(`${entry.stem}: verified (${detail})`);
+      return;
     }
     if (outcome.kind === "removed") {
-      logger.warn(`${entry.stem}: entry vanished without supersession — treating as no signal`);
+      const detail = `entry deleted (attempt ${attempt})`;
+      records.push({ stem: entry.stem, status: "removed", detail, session: sessionName });
+      logger.success(`${entry.stem}: removed (${detail})`);
+      return;
     }
-    const gate = await askGate(relay, entry.stem);
-    if (gate === "retry") {
-      continue;
-    }
-    if (gate === "accept") {
-      records.push({
-        stem: entry.stem,
-        status: "accepted",
-        detail: `accepted after ${attempt} attempt(s)`,
-        session: sessionName,
-      });
-      return false;
-    }
-    if (gate === "skip") {
-      records.push({
-        stem: entry.stem,
-        status: "skipped",
-        detail: `gate: skipped after ${attempt} attempt(s)`,
-        session: sessionName,
-      });
-      return false;
-    }
-    records.push({
-      stem: entry.stem,
-      status: "failed",
-      detail: `gate: halted after ${attempt} attempt(s)`,
-      session: sessionName,
-    });
-    return true;
+    logger.warn(`${entry.stem}: no file-state change — attempt ${attempt} of 2`);
   }
+  const detail = "unchanged after 2 attempts";
+  records.push({ stem: entry.stem, status: "skipped", detail, session: `memory: ${entry.stem} (retry)` });
+  logger.warn(`${entry.stem}: skipped (${detail})`);
 }
 
 /**
- * Print the per-entry summary plus the supersession pairs for log review.
+ * Print the per-entry summary.
  *
  * @param records Per-entry records.
- * @param halted True when the operator halted the run.
  */
-function printSummary(records: EntryRecord[], halted: boolean): void {
+function printSummary(records: EntryRecord[]): void {
   logger.info("── summary ──");
   for (const record of records) {
     logger.info(`  ${record.stem}  ${record.status}  (${record.detail}) · ${record.session}`);
-  }
-  if (halted) {
-    logger.warn("run halted by operator; remaining entries not started");
-  }
-}
-
-/**
- * Prune archive orphans at sweep end: supersession chains settle when the
- * sweep's instances supersede entries, so this is where orphaned archive
- * files appear. Delegates to the memory CLI's `prune --apply` — the KB write
- * side stays single-sourced there; the runner only triggers it. Runs even
- * after a halt (reference-based and mechanical — chains from the entries
- * already processed may have settled). A prune failure rejects upward: the
- * KB is in an unexpected state and the run must fail.
- */
-async function pruneArchiveOrphans(): Promise<void> {
-  const result = await execCommand(
-    "bun",
-    [join(projectRoot, ".agents", "skills", "memory", "memory.ts"), "prune", "--apply"],
-    { cwd: projectRoot },
-  );
-  for (const line of result.stdout.trim().split("\n")) {
-    if (line !== "") {
-      logger.info(`  ${line}`);
-    }
   }
 }
 
@@ -248,18 +145,17 @@ function nextStartId(queue: MemoryEntry[], limit: number): number | null {
 }
 
 /**
- * Run the verification pipeline over the KB: derive the queue (every active
- * entry in ID order, floored by `startId`, capped by `limit` — default 10),
- * then drive one fresh pi instance per entry, each verifying the entry
- * against the current source tree and taking the memory skill's Step 5
- * action.
+ * Run the verification pipeline over the KB: derive the queue (every entry
+ * in the flat KB in ID order, floored by `startId`, capped by `limit` —
+ * default 10), then drive one fresh pi instance per entry, each verifying
+ * the entry against the current source tree and taking the memory skill's
+ * Step 5 action.
  *
- * The runner never verifies and never writes KB content — instances do. Its
- * only signals are the entry file's before/after state and the operator
- * gate (retry / accept / skip / halt) when no action landed. `--dry-run`
- * prints the queue without spawning. The sweep ends with an archive orphan
- * prune (the settle point for this run's supersession chains). Exit code is
- * 0 only when every attempted entry ended verified, superseded, or accepted.
+ * The runner never verifies and never writes KB content — instances do; its
+ * only signal is the entry file's before/after state. An unchanged entry
+ * gets exactly one retry, then is recorded skipped — the runner never
+ * prompts (AFK-safe). `--dry-run` prints the queue without spawning. Exit
+ * code is 0 only when no attempted entry was skipped.
  *
  * @param options Start floor, cap, model, thinking level, dry-run flag.
  * @returns Process exit code.
@@ -279,9 +175,9 @@ export async function runMemory(options: RunMemoryOptions): Promise<number> {
   }
   if (options.dryRun) {
     logger.info(`memory · dry run · ${queue.length} entry(s), no instances spawned`);
-    logger.info("  actions: still true or drifted → in-place edit + bump dates + rebuild · false/reversed → author corrected concept + supersede · blocked → operator gate");
+    logger.info("  actions: still true → confirm date bump (+ in-place drift fix) · false/reversed → delete the entry, author the corrected fact fresh · blocked/no-verdict → one retry, then auto-skip");
     for (const entry of queue) {
-      logger.info(`  ${entry.id}  last_confirmed=${entry.lastConfirmed}  ${relative(projectRoot, entry.file)}`);
+      logger.info(`  ${entry.id}  confirmed=${entry.confirmed}  ${relative(projectRoot, entry.file)}`);
     }
     const resume = nextStartId(queue, options.limit);
     if (resume !== null) {
@@ -296,21 +192,13 @@ export async function runMemory(options: RunMemoryOptions): Promise<number> {
     `memory · ${queue.length} entry(s), ID order from ${queue[0]?.id} · fresh instance per entry (Ctrl-C aborts the current one)`,
   );
   const records: EntryRecord[] = [];
-  let halted = false;
   for (const entry of queue) {
-    halted = await runEntryWithGate(entry, options, relay, records);
-    if (halted) {
-      break;
-    }
+    await runEntry(entry, options, relay, records);
   }
-  printSummary(records, halted);
-  await pruneArchiveOrphans();
-  const resume = halted ? null : nextStartId(queue, options.limit);
+  printSummary(records);
+  const resume = nextStartId(queue, options.limit);
   if (resume !== null) {
     logger.info(`next chunk: bun memory --start-id=${resume}`);
   }
-  const complete =
-    !halted &&
-    records.every((record: EntryRecord): boolean => record.status === "verified" || record.status === "superseded" || record.status === "accepted");
-  return complete ? 0 : 1;
+  return records.every((record: EntryRecord): boolean => record.status !== "skipped") ? 0 : 1;
 }

@@ -42,13 +42,12 @@ An incomplete component would strand the checkpoint; an out-of-order overlap is 
 
 Copy the worktree's postimage of each unit file over the main-tree copy — authoritative even when the worker rewrote the contract mid-run (an in-session fork resolution supersedes the main-tree draft); land the rewrite whole, flag it in the report. Multiple components ticking the same unit merge arithmetically — ticked in either is ticked, both evidence notes preserved. Correct the set `index.md` description lines for YOUR units when a rewrite falsifies them (the top-marker flip is orchestrator-owned — never touch it).
 
-## Step 4 — Memory-ID collisions, then rebuild
+## Step 4 — Memory-ID collisions
 
 Parallel components each saw the carried knowledge base, so a worker can allocate an ID the main tree has since taken (three parallel "100"s observed in one set).
 
-- After the pick, scan the merged `memory/entries/` for duplicate numeric IDs. On collision: renumber the just-merged entry to the next free ID, record via `memory.ts log`, and `rebuild`.
+- After the pick, scan the merged `memory/` for duplicate numeric IDs. On collision: rename the just-merged entry file to the next free ID (max+1 over `memory/`).
 - Any `memory/` change made here lands INSIDE the component's commit: `git commit --amend --no-edit` (the one amend permitted).
-- `memory/index.md` conflicts resolve by taking ours and rebuilding — the derived index regenerates from ground truth. Prefer rename + `log` over `supersede` while duplicate IDs coexist (`supersede` resolves an ID and cannot disambiguate two live entries sharing one).
 
 ## Step 5 — Clean the worktree
 

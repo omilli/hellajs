@@ -19,7 +19,7 @@ d. Every `lib/` source file, `lib/internal/` included — the most consequential
 e. Every `tests/` file — what is actually exercised.
 f. `lib/index.ts` barrel — the public surface; arbiter of "surface change" at handoff.
 g. `{pkg}-comparison.md` — primary seed for competitor-driven ideas: every competitor-has/lacks row, honest-gap sentence, differentiator hinting at a missing counterpart. Absent → skip, don't block.
-h. `memory/index.md` — grep the target's symbols; prior verified decisions bound what's worth proposing.
+h. `memory/` — rg the target's symbols; prior verified decisions bound what's worth proposing.
 
 ## Step 2 — Build the idea ledger
 

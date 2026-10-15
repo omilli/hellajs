@@ -78,8 +78,7 @@ SHOULD-FIX
   Blast: 1 caller passes silent expecting $update to still fire.
   Direction: split into two named functions or take an options object.
 
-Drift mechanism (true story): memory/entries/070 recorded that
-  `guides/tests.md`'s phrase "flush the microtask queue" was imprecise —
+Drift mechanism (true story): `guides/tests.md`'s phrase "flush the microtask queue" was imprecise —
   `delay()` is ONE microtask hop. The guide now reads "drain one microtask hop
   … NOT sufficient for multi-hop chains". Drift found → rule-update proposal →
   guide fixed. That loop is Step 4's product.

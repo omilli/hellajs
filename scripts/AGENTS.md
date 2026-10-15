@@ -72,7 +72,7 @@
   | `bundle/optimize.ts` | `applyTerser` (bunx terser) + `fixMinifiedImports` (4-pass regex) |
   | `bundle/declarations.ts` | `buildDeclarations` (bunx tsc) + `copyDeclarationFiles` |
   | `bundle/registry.ts` | `compileRegistry` (ui-only): canonical registry files per style spliced with their conventional style module through the vite-mirror babel transform via `applyStyleVariant` → `dist/registry/<name>/{css,tailwind}`, verbatim theme/cn copies, shared dep modules alongside tailwind output (canonical-carrying component deps skipped: self-contained, compiled at their own dist paths), `.d.ts` via tsc over staged generated sources (the splice typecheck gate; also the canonicals' only typecheck). |
-    | `bundle/cache.ts` | `calculateFileHash` + `isCacheValid` + `cleanCache` + `updateCache`. Hash set: package.json + tsconfig + `lib/**` + `registry/**` (every source dir a build step reads must join — memory 153: untracked packages have constant git status, so only hash-set membership invalidates). |
+    | `bundle/cache.ts` | `calculateFileHash` + `isCacheValid` + `cleanCache` + `updateCache`. Hash set: package.json + tsconfig + `lib/**` + `registry/**` (every source dir a build step reads must join — untracked packages have constant git status, so only hash-set membership invalidates). |
   | `bundle/validate.ts` | `validateBuildArtifacts` |
   | `bundle/metrics.ts` | `calculateFileMetrics` + `calculateMetrics` → `dist/sizes.json` |
 
@@ -137,13 +137,13 @@ Entry `audits.ts` → `run.ts` (section derivation from the package dir, set-dir
 
 ## Memory runner pipeline (`scripts/memory/`, one concern per file)
 
-Entry `memory.ts` → `queue.ts` (read-only KB listing: `memory/entries/*.md`, `last_confirmed`/`title` frontmatter parse, numeric-ID ascending order with `--start-id` floor and `--limit` cap (default 10, `0` = no cap), pre-run content snapshot + post-run outcome classification: unchanged / refreshed / superseded-with-successor / removed) → `run.ts` (per-entry instance loop over the shared `../agent/` concern: `/skill:memory` prompt scoping the skill's Step 5 refresh to one entry — still true or drifted → in-place edit + bump dates + rebuild, false/reversed → author corrected concept + supersede (refutations only; concept-preserving drift edits in place), blocked → write nothing; outcome signal = the entry file's before/after state; unchanged/removed → operator gate retry / accept / skip / halt; dry-run mode; summary + exit code; sweep ends by shelling the memory CLI's `prune --apply` — archive orphans from this run's settled chains never linger). The runner never verifies and never writes KB content — instances do (the sweep-end prune is mechanical orphan deletion, not content authoring); an empty queue exits 0 ("nothing to verify"). No worktree machinery, no plan files — verification is read-assess + KB-write in the main tree.
+Entry `memory.ts` → `queue.ts` (read-only KB listing: flat `memory/*.md`, `confirmed`/`title` frontmatter parse, numeric-ID ascending order with `--start-id` floor and `--limit` cap (default 10, `0` = no cap), pre-run content snapshot + post-run outcome classification: changed / unchanged / removed) → `run.ts` (per-entry AFK instance loop over the shared `../agent/` concern: `/skill:memory` prompt scoping the skill's Step 5 refresh to one entry — still true → `confirm` date bump (+ in-place drift fix), false/reversed → delete the entry, author the corrected fact fresh, blocked → write nothing; instances decide autonomously, never prompting; outcome signal = the entry file's before/after state; unchanged → one retry, then the entry is recorded skipped; dry-run mode; summary + exit code). The runner never verifies and never writes KB content — instances do; an empty queue exits 0 ("nothing to verify"). No worktree machinery, no plan files — verification is read-assess + KB-write in the main tree.
 
 | File | Concern |
 |---|---|
 | `memory.ts` | Thin entry: args → run → report → exit |
 | `memory/queue.ts` | KB entry listing (ID order, `--start-id` floor, `--limit` cap), outcome classification; read-only |
-| `memory/run.ts` | Per-entry instance loop, operator gate, dry-run, summary, sweep-end archive prune |
+| `memory/run.ts` | Per-entry AFK instance loop (one retry on unchanged), dry-run, summary |
 
 ## Testing
 

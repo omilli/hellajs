@@ -50,7 +50,7 @@ async function runStep(
  *
  * Stages `index.html` + `dist/` into `.bench/current/`, replacing any prior
  * staging. Order is mandatory: `bun bundle` first (a stale package `dist/`
- * silently measures the wrong source — see memory/entries/048.md).
+ * silently measures the wrong source).
  *
  * @param variant Which `examples/bench` bundle variant to build.
  */
