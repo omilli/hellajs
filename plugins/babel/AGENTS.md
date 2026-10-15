@@ -120,7 +120,7 @@ Grounded in tests — verify any change against these:
 
 ## Tests
 
-Four files under `tests/`: `transform.test.ts` (full pipeline + the negative pin: `html` tagged-template source passes through untransformed — no visitor exists for it), `processor.test.ts` (attribute/child processing), `builder.test.ts` (`buildHellaNode`, `buildComponentCall`), `tag-callee.test.ts` (`getTagCallee`).
+Four files under `tests/`: `transform.test.ts` (full pipeline), `processor.test.ts` (attribute/child processing), `builder.test.ts` (`buildHellaNode`, `buildComponentCall`), `tag-callee.test.ts` (`getTagCallee`).
 
 - **Helpers** — `transformJSX(code)` runs `babel.transformSync` with `configFile: false` and the plugin; `normalize(output)` collapses whitespace for full-output equality asserts; `getNamedImports(code, source)` regex-extracts specifier names.
 - **Style** — integration-style: most tests exercise the full transform and assert either `toContain` on substrings or `toBe` on `normalize()` output. Some tests import internals directly from `src/**/*.mjs` — a documented carveout (`guides/tests.md` §Test Coverage, `plugins/**` rule).

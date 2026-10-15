@@ -156,7 +156,7 @@ describe("dom", () => {
       expect(outerHandler).toHaveBeenCalledTimes(1);
     });
 
-    test("html template supports prefix", () => {
+    test("element supports prefix", () => {
       const clickHandler = mock(() => {});
       mount(<button e:click={clickHandler}>Click Me</button>);
 

@@ -49,7 +49,7 @@ function hasLabel(token: string | undefined, label: string): boolean {
   return token !== undefined && token.slice(0, token.lastIndexOf("-")) === label;
 }
 
-/** The children bag every render needs (html flavors take the value, jsx flavors an array). */
+/** The children bag every render needs. */
 function propsOf(variant: (typeof buttonVariants)[number], extra: Partial<ButtonVariantProps>): ButtonVariantProps {
   return { children: variant.child("Save"), ...extra };
 }

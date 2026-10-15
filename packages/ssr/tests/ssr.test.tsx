@@ -52,7 +52,7 @@ describe("ssr", () => {
   });
 
   test("renders a function child's resolved nodes through a component child slot", () => {
-    // The vendored html-flavor codegen interpolates `${() => props.children}`; the walker must
+    // A function child through a component slot may arrive as a bare getter; the walker must
     // deep-resolve the chain before classifying, never emit the getter's source text. The
     // compiled shape nests the component region around the child region (two marker pairs).
     const node = <ul><SlotBox>{(() => [1, 2, 3].map((n) => <li>{n}</li>))}</SlotBox></ul>;

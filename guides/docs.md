@@ -595,7 +595,7 @@ One block per doc carries `export` lines. `bun doc-snippets` concatenates a doc'
 
 ## Example Syntax (JSX Default)
 
-JSX is the only example syntax in every package, `dom` included. Write every example as JSX. There is no second syntax: no tagged-template fallback, no build-free-recipe exception.
+JSX is the only example syntax in every package, `dom` included. Write every example as JSX. There is no second syntax and no build-free-recipe exception.
 
 ## Cross-References
 

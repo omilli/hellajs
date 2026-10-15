@@ -74,7 +74,7 @@ describe("dom", () => {
       expect(document.querySelector("#modal-root #portal-span")).toBeNull();
     });
 
-    test("works with html templates", () => {
+    test("works with JSX markup", () => {
       resetTestState('<div id="app"></div><div id="modal-root"></div>');
       const content = signal("initial");
 

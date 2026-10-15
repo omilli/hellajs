@@ -386,10 +386,4 @@ describe("babel", () => {
     });
 
   });
-  describe("html passthrough (inert)", () => {
-    test("html`` source passes through untransformed (no visitor exists for the tag)", () => {
-      const output = transformJSX("const node = html`<div/>`;");
-      expect(normalize(output)).toBe("const node = html`<div/>`;");
-    });
-  });
 });

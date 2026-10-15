@@ -46,7 +46,7 @@ describe("aspect-ratio", () => {
   });
 
   test("keeps structural parity across both styles", () => {
-    // HappyDOM serializes the html flavor's style attribute through cssText (spaces); jsx keeps it raw.
+    // HappyDOM can serialize the style attribute through cssText (spaces) — parity ignores style.
     assertStructuralParity(aspectRatioVariants, { ratio: 1.5 }, ["style"]);
   });
 

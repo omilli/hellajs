@@ -124,7 +124,7 @@ describe("dom", () => {
       }
     });
 
-    test("works with html template error: prefix", () => {
+    test("works with JSX error: prefix", () => {
       let capturedError: Error | null = null;
       onError((e) => {
         capturedError = e;

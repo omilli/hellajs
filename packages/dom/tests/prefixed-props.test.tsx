@@ -92,7 +92,7 @@ describe("dom", () => {
       expect(btn.outerHTML).not.toContain("on:click");
     });
 
-    test("runtime html delivers props['on:click'] to the component", () => {
+    test("delivers props['on:click'] to the component", () => {
       let received: unknown;
       const Comp = (props: Record<string, unknown>) => {
         received = props["on:click"];
