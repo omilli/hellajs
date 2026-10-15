@@ -59,7 +59,7 @@ async function openSelect(variant: ComponentVariant<SelectVariantProps>, props: 
 }
 
 describe("select", () => {
-  test.each(selectVariants)("$format/$style opens on click with listbox aria on trigger and content", async (variant) => {
+  test.each(selectVariants)("$style opens on click with listbox aria on trigger and content", async (variant) => {
     const { trigger, content } = await openSelect(variant);
     expect(content.getAttribute("data-state")).toBe("open");
     expect(content.getAttribute("role")).toBe("listbox");
@@ -69,7 +69,7 @@ describe("select", () => {
     expect(trigger.getAttribute("aria-controls")).toBe(content.id);
   });
 
-  test.each(selectVariants)("$format/$style renders options with role, aria-selected, and the check indicator", async (variant) => {
+  test.each(selectVariants)("$style renders options with role, aria-selected, and the check indicator", async (variant) => {
     const onValueChange = mock<(value: string) => void>(() => {});
     const trigger = renderVariant(variant, { items: FRUITS, value: () => "blueberry", onValueChange });
     trigger.dispatchEvent(new Event("click"));
@@ -85,14 +85,14 @@ describe("select", () => {
     expect(unchecked.querySelector("[data-slot='select-item-indicator'] svg")).toBeNull();
   });
 
-  test.each(selectVariants)("$format/$style shows the placeholder with data-placeholder before selection", (variant) => {
+  test.each(selectVariants)("$style shows the placeholder with data-placeholder before selection", (variant) => {
     const trigger = renderVariant(variant, { items: FRUITS, placeholder: "Pick a fruit" });
     const value = trigger.querySelector("[data-slot='select-value']")!;
     expect(value.textContent).toBe("Pick a fruit");
     expect(value.hasAttribute("data-placeholder")).toBe(true);
   });
 
-  test.each(selectVariants)("$format/$style selects on Enter, updates the trigger label, closes, and restores focus", async (variant) => {
+  test.each(selectVariants)("$style selects on Enter, updates the trigger label, closes, and restores focus", async (variant) => {
     const { onValueChange, trigger, content } = await openSelect(variant);
     const first = content.querySelector("[role='option']") as HTMLElement;
     expect(document.activeElement).toBe(first);
@@ -106,7 +106,7 @@ describe("select", () => {
     expect(value.hasAttribute("data-placeholder")).toBe(false);
   });
 
-  test.each(selectVariants)("$format/$style opens with ArrowDown on the trigger", async (variant) => {
+  test.each(selectVariants)("$style opens with ArrowDown on the trigger", async (variant) => {
     const trigger = renderVariant(variant, { items: FRUITS });
     pressKey(trigger, "ArrowDown");
     const content = await awaitPortaled("select-content");
@@ -114,7 +114,7 @@ describe("select", () => {
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
   });
 
-  test.each(selectVariants)("$format/$style roves arrows over data-highlighted with wrap and Home/End", async (variant) => {
+  test.each(selectVariants)("$style roves arrows over data-highlighted with wrap and Home/End", async (variant) => {
     const { content } = await openSelect(variant);
     const options = [...content.querySelectorAll("[role='option']")] as HTMLElement[];
     expect(options[0]!.hasAttribute("data-highlighted")).toBe(true);
@@ -133,7 +133,7 @@ describe("select", () => {
     expect(document.activeElement).toBe(options[2]!);
   });
 
-  test.each(selectVariants)("$format/$style focuses the first match on typeahead", async (variant) => {
+  test.each(selectVariants)("$style focuses the first match on typeahead", async (variant) => {
     const { content } = await openSelect(variant);
     pressKey(content, "b");
     const options = [...content.querySelectorAll("[role='option']")] as HTMLElement[];
@@ -141,7 +141,7 @@ describe("select", () => {
     expect(options[1]!.hasAttribute("data-highlighted")).toBe(true);
   });
 
-  test.each(selectVariants)("$format/$style skips and styles disabled options", async (variant) => {
+  test.each(selectVariants)("$style skips and styles disabled options", async (variant) => {
     const onValueChange = mock<(value: string) => void>(() => {});
     const trigger = renderVariant(variant, {
       items: [{ value: "apple", label: "Apple" }, { value: "blueberry", label: "Blueberry", disabled: true }, { value: "canteloupe", label: "Canteloupe" }],
@@ -160,7 +160,7 @@ describe("select", () => {
     expect(content.getAttribute("data-state")).toBe("open");
   });
 
-  test.each(selectVariants)("$format/$style closes on Escape and on an outside pointerdown", async (variant) => {
+  test.each(selectVariants)("$style closes on Escape and on an outside pointerdown", async (variant) => {
     const first = await openSelect(variant);
     pressEscape();
     expect(first.content.getAttribute("data-state")).toBe("closed");
@@ -170,13 +170,13 @@ describe("select", () => {
     expect(second.content.getAttribute("data-state")).toBe("closed");
   });
 
-  test.each(selectVariants)("$format/$style toggles closed when the trigger is clicked again", async (variant) => {
+  test.each(selectVariants)("$style toggles closed when the trigger is clicked again", async (variant) => {
     const { trigger, content } = await openSelect(variant);
     trigger.dispatchEvent(new Event("click"));
     expect(content.getAttribute("data-state")).toBe("closed");
   });
 
-  test.each(selectVariants)("$format/$style stretches the content to the trigger width and places it below", async (variant) => {
+  test.each(selectVariants)("$style stretches the content to the trigger width and places it below", async (variant) => {
     const onValueChange = mock<(value: string) => void>(() => {});
     const trigger = renderVariant(variant, { items: FRUITS, onValueChange });
     pinRect(trigger, 50, 100, 200, 20);
@@ -189,7 +189,7 @@ describe("select", () => {
     expect(content.getAttribute("data-align")).toBe("start");
   });
 
-  test.each(selectVariants)("$format/$style scrolls the selected option into view on open", async (variant) => {
+  test.each(selectVariants)("$style scrolls the selected option into view on open", async (variant) => {
     const spy = spyScrollIntoView();
     try {
       const onValueChange = mock<(value: string) => void>(() => {});
@@ -205,7 +205,7 @@ describe("select", () => {
     }
   });
 
-  test.each(selectVariants)("$format/$style hides scroll buttons at their edges and repeat-scrolls while hovered", async (variant) => {
+  test.each(selectVariants)("$style hides scroll buttons at their edges and repeat-scrolls while hovered", async (variant) => {
     const onValueChange = mock<(value: string) => void>(() => {});
     const trigger = renderVariant(variant, { items: FRUITS, onValueChange });
     trigger.dispatchEvent(new Event("click"));
@@ -241,7 +241,7 @@ describe("select", () => {
     expect(scrollTop).toBe(afterLeave);
   });
 
-  test.each(selectVariants)("$format/$style clears the selection through the clear affordance without toggling", async (variant) => {
+  test.each(selectVariants)("$style clears the selection through the clear affordance without toggling", async (variant) => {
     const onValueChange = mock<(value: string) => void>(() => {});
     const trigger = renderVariant(variant, { items: FRUITS, clearable: true, value: () => "apple", onValueChange });
     const clear = trigger.querySelector("[data-slot='select-clear']")!;
@@ -252,7 +252,7 @@ describe("select", () => {
     expect(trigger.querySelector("[data-slot='select-content']")).toBeNull();
   });
 
-  test.each(selectVariants)("$format/$style respects a controlled value accessor", async (variant) => {
+  test.each(selectVariants)("$style respects a controlled value accessor", async (variant) => {
     const current = signal("");
     const onValueChange = mock<(value: string) => void>(() => {});
     const trigger = renderVariant(variant, {
@@ -271,7 +271,7 @@ describe("select", () => {
     expect(content.getAttribute("data-state")).toBe("closed");
   });
 
-  test.each(selectVariants)("$format/$style reopens cleanly across open and close cycles", async (variant) => {
+  test.each(selectVariants)("$style reopens cleanly across open and close cycles", async (variant) => {
     const trigger = renderVariant(variant, { items: FRUITS });
     trigger.dispatchEvent(new Event("click"));
     const first = await awaitPortaled("select-content");
@@ -285,13 +285,13 @@ describe("select", () => {
     expect(second.getAttribute("data-state")).toBe("open");
   });
 
-  test.each(selectVariants)("$format/$style closes under Tab via the listbox keyboard model", async (variant) => {
+  test.each(selectVariants)("$style closes under Tab via the listbox keyboard model", async (variant) => {
     const { content } = await openSelect(variant);
     pressKey(content, "Tab");
     expect(content.getAttribute("data-state")).toBe("closed");
   });
 
-  test.each(selectVariants)("$format/$style unmounts the content through its exit animationend", async (variant) => {
+  test.each(selectVariants)("$style unmounts the content through its exit animationend", async (variant) => {
     const { trigger, content } = await openSelect(variant);
     pressEscape();
     expect(content.getAttribute("data-state")).toBe("closed");
@@ -300,7 +300,7 @@ describe("select", () => {
     expect(trigger.isConnected).toBe(true);
   });
 
-  test.each(selectVariants)("$format/$style unmounts every layer on disposal and drains its wirings", async (variant) => {
+  test.each(selectVariants)("$style unmounts every layer on disposal and drains its wirings", async (variant) => {
     const container = setupContainer();
     const handle = mount(variant.render({ items: FRUITS }), container);
     const trigger = container.firstElementChild as HTMLElement;
@@ -315,24 +315,24 @@ describe("select", () => {
     expect(content.isConnected).toBe(false);
   });
 
-  test.each(selectVariants)("$format/$style forwards user attrs onto the trigger root across all four variants", (variant) => {
+  test.each(selectVariants)("$style forwards user attrs onto the trigger root across both styles", (variant) => {
     const trigger = renderVariant(variant, { items: FRUITS, "aria-label": "fruit" });
     expect(trigger.getAttribute("aria-label")).toBe("fruit");
   });
 
-  test.each(selectVariants)("$format/$style fires a user on:click handler on the trigger root across all four variants", (variant) => {
+  test.each(selectVariants)("$style fires a user on:click handler on the trigger root across both styles", (variant) => {
     const userClick = mock(() => {});
     const trigger = renderVariant(variant, { items: FRUITS, "on:click": userClick });
     trigger.dispatchEvent(new Event("click"));
     expect(userClick).toHaveBeenCalledTimes(1);
   });
 
-  test.each(selectVariants)("$format/$style merges a user class into the trigger root's class across all four variants", (variant) => {
+  test.each(selectVariants)("$style merges a user class into the trigger root's class across both styles", (variant) => {
     const trigger = renderVariant(variant, { items: FRUITS, class: "user-class" });
     expect(classTokens(trigger).at(-1)).toBe("user-class");
   });
 
-  test.each(selectPartVariants.filter((variant) => variant.part === "Trigger"))("$format/$style trigger part lands a user aria-controls and re-emits the id", (variant) => {
+  test.each(selectPartVariants.filter((variant) => variant.part === "Trigger"))("$style trigger part lands a user aria-controls and re-emits the id", (variant) => {
     const container = setupContainer();
     mount(variant.render({ children: [], id: "my-trigger", "aria-controls": "my-listbox" }), container);
     const trigger = container.firstElementChild!;
@@ -340,13 +340,13 @@ describe("select", () => {
     expect(trigger.getAttribute("aria-controls")).toBe("my-listbox");
   });
 
-  test.each(selectPartVariants.filter((variant) => variant.part === "Trigger"))("$format/$style trigger part leaves aria-controls to the caller when absent", (variant) => {
+  test.each(selectPartVariants.filter((variant) => variant.part === "Trigger"))("$style trigger part leaves aria-controls to the caller when absent", (variant) => {
     const container = setupContainer();
     mount(variant.render({ children: [] }), container);
     expect(container.firstElementChild!.hasAttribute("aria-controls")).toBe(false);
   });
 
-  test.each(selectVariants)("$format/$style re-renders a signal items list across append, remove, and reorder", async (variant) => {
+  test.each(selectVariants)("$style re-renders a signal items list across append, remove, and reorder", async (variant) => {
     const liveItems = signal<SelectEntryVariant[]>([...FRUITS]);
     const { content } = await openSelect(variant, { items: liveItems });
     const values = () => [...content.querySelectorAll("[role='option']")].map((el) => el.getAttribute("data-value"));
@@ -359,7 +359,7 @@ describe("select", () => {
     expect(values()).toEqual(["date", "apple", "canteloupe"]);
   });
 
-  test.each(selectVariants)("$format/$style reuses the selected item's node through a reorder when keyBy is value", async (variant) => {
+  test.each(selectVariants)("$style reuses the selected item's node through a reorder when keyBy is value", async (variant) => {
     const liveItems = signal<SelectEntryVariant[]>([...FRUITS]);
     const { content } = await openSelect(variant, { items: liveItems, value: () => "blueberry", keyBy: "value" });
     const itemEls = () => [...content.querySelectorAll("[role='option']")] as HTMLElement[];
@@ -372,16 +372,16 @@ describe("select", () => {
     expect(blueberryAfter.getAttribute("data-state")).toBe("checked");
   });
 
-  test.each(selectVariants)("$format/$style keeps the reconciliation key out of the markup when keyBy is value", async (variant) => {
+  test.each(selectVariants)("$style keeps the reconciliation key out of the markup when keyBy is value", async (variant) => {
     const { content } = await openSelect(variant, { items: FRUITS, keyBy: "value" });
     expect(content.outerHTML).not.toContain("key=");
   });
 
-  test("keeps structural parity across all four variants", () => {
+  test("keeps structural parity across both styles", () => {
     assertStructuralParity(selectVariants, { items: FRUITS, placeholder: "Parity" }, ["aria-controls"]);
   });
 
-  test("renders every named part with its data-slot across all four variants", () => {
+  test("renders every named part with its data-slot across both styles", () => {
     for (const variant of selectPartVariants) {
       const container = setupContainer();
       const rendered = variant.render({ children: [] });
@@ -394,7 +394,7 @@ describe("select", () => {
     }
   });
 
-  test.each(selectPartVariants.filter((variant) => variant.part === "Content"))("$format/$style content part anchors with matchAnchorWidth, dismisses, and drains wirings on disposal", (variant) => {
+  test.each(selectPartVariants.filter((variant) => variant.part === "Content"))("$style content part anchors with matchAnchorWidth, dismisses, and drains wirings on disposal", (variant) => {
     const anchor = document.createElement("button");
     document.body.appendChild(anchor);
     pinRect(anchor, 100, 50, 200, 20);
@@ -412,7 +412,7 @@ describe("select", () => {
     expect(content.isConnected).toBe(false);
   });
 
-  test.each(selectPartVariants.filter((variant) => variant.part === "Trigger"))("$format/$style trigger part renders the clear affordance only while a value is selected", (variant) => {
+  test.each(selectPartVariants.filter((variant) => variant.part === "Trigger"))("$style trigger part renders the clear affordance only while a value is selected", (variant) => {
     const onClear = mock(() => {});
     const container = setupContainer();
     const handle = mount(variant.render({ children: [], clearable: true, hasValue: () => true, onClear }), container);
@@ -426,7 +426,7 @@ describe("select", () => {
     expect(idle.querySelector("[data-slot='select-clear']")).toBeNull();
   });
 
-  test.each(selectPartVariants.filter((variant) => variant.part === "Trigger"))("$format/$style trigger part reports opens from click and ArrowDown", (variant) => {
+  test.each(selectPartVariants.filter((variant) => variant.part === "Trigger"))("$style trigger part reports opens from click and ArrowDown", (variant) => {
     const onOpen = mock(() => {});
     const container = setupContainer();
     const handle = mount(variant.render({ children: [], onOpen }), container);
@@ -440,12 +440,10 @@ describe("select", () => {
     handle.unmount();
   });
 
-  test("builds content trees through the shared module table at each flavor", () => {
+  test("builds content trees through the shared module table at each style", () => {
     for (const style of ["css", "tailwind"] as const) {
-      for (const format of ["jsx", "html"] as const) {
-        const Item = menuModulePart<{ value?: string; label?: string; selected?: boolean }>(selectModules, { style, format }, "SelectItem");
-        expect(Item({ value: "a", label: "A" })).toBeDefined();
-      }
+        const Item = menuModulePart<{ value?: string; label?: string; selected?: boolean }>(selectModules, { style }, "SelectItem");
+      expect(Item({ value: "a", label: "A" })).toBeDefined();
     }
   });
 });

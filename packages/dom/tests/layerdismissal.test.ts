@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { resetTestState } from "@utils/test-helpers.js";
-import { layerDismissal } from "@hellajs/dom/bundle";
+import { layerDismissal } from "@hellajs/dom";
 import { pointerDown, pressKey } from "./helpers";
 
 describe("layerDismissal", () => {

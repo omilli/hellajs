@@ -13,13 +13,12 @@ npx @hellajs/ui list
 | Command | Behavior |
 |---|---|
 | `init` | Writes `hella.ui.json` (including `themeMode` when `--theme-mode` passes) to the project root and adds the shared `theme` entry for the configured style |
-| `add <name>...` | Resolves each entry recursively, runs the peer check, and copies the format-matched files into `componentsDir` |
+| `add <name>...` | Resolves each entry recursively, runs the peer check, and copies the canonical files into `componentsDir` |
 | `list` | Prints every entry name in the registry |
 
 | Flag | Applies to | Behavior |
 |---|---|---|
 | `--style css\|tailwind` | `add` | Registry style to copy; defaults to the saved value |
-| `--format jsx\|html` | `add` | Source format to copy; defaults to the saved value |
 | `--lang js\|ts` | `add` | Output language; `ts` (default) copies verbatim, `js` strips types |
 | `--theme-mode light\|dark` | `init`, `add` | Theme palette for the theme entry; defaults to the saved value; `dark` copies the dark-only tokens sheet (css style only) |
 | `--dir <path>` | `init`, `add` | Target project root; the process cwd when absent |
@@ -32,7 +31,6 @@ npx @hellajs/ui list
 {
   "componentsDir": "src/components",
   "style": "css",
-  "format": "jsx",
   "themeMode": "light",
   "lang": "ts"
 }
@@ -40,7 +38,7 @@ npx @hellajs/ui list
 
 `init` writes these defaults when the file is absent and keeps an existing file otherwise; `--force` rewrites it. `add` reads the saved values as its defaults, and the per-call flags override them.
 
-`--lang js` also retargets the copied names: `button.tsx` becomes `button.jsx`, and `button.ts`, `cn.ts`, and `tokens.ts` become `.js`, while `theme.css` passes through unchanged. The output is plain JavaScript with the same declarations and markup. **Plain JavaScript** covers when to skip the flag entirely: Bun and Deno run TypeScript natively, so only no-build browser pages and JS-only toolchains need it.
+`--lang js` also retargets the copied names: `button.tsx` becomes `button.jsx`, and `cn.ts` and `tokens.ts` become `.js`, while `theme.css` passes through unchanged. The output is plain JavaScript with the same declarations and markup. **Plain JavaScript** covers when to skip the flag entirely: Bun and Deno run TypeScript natively, so only JS-only toolchains need it.
 
 ## Dependency Resolution
 
@@ -53,7 +51,7 @@ The canonical source carries marker regions the CLI consumes at copy time (and s
 - **css** splices [`style`](/reference/css/style) maps into the styles region and keeps every compose array in its `class` attribute; dom joins plain arrays there, and the maps emit as plain unlayered rules.
 - **tailwind** inlines every class string at its use site inside `cn(...)`: compose members, static class attributes, and references from helpers or runtime code, with a non-class constant like an event name inlining the same way at its references. Only keyed variant/size maps stay at the styles region. Every compose array wraps in `cn(...)`, and `import { cn } from "./cn.js";` injects after the last import so the helper import resolves next to the copied file.
 
-Style modules export one lowerCamel binding per styled part that carries classes (`header`, `title`, `close`); a part with no classes gets no binding, and an empty-string export appears only as a css/tailwind flavor bridge (an empty binding in one flavor mirrors a live binding in the other). `variants`/`sizes` keyed maps appear only where a component actually has them (Button's variant and size sets, TabsList's pill/line).
+Style modules export one lowerCamel binding per styled part that carries classes (`header`, `title`, `close`); a part with no classes gets no binding, and an empty-string export appears only as a css/tailwind style bridge (an empty binding in one style mirrors a live binding in the other). `variants`/`sizes` keyed maps appear only where a component actually has them (Button's variant and size sets, TabsList's pill/line).
 
 ## Peer Checking
 

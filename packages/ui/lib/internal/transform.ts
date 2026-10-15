@@ -694,7 +694,7 @@ export function applyStyleVariant(source: string, styleModuleText: string, style
  * top-level `import … from "./<name>-types.js";` line is replaced with the
  * module's normalized body (package imports ride along verbatim, `export `
  * prefixes strip, blank edges trim), so the copied output stays one
- * standalone file per format with the shared interfaces declared at the
+ * standalone file with the shared interfaces declared at the
  * import site. A module `import type` whose source the canonical already
  * type-imports folds into that existing line instead of riding along — the
  * names dedupe (canonical order first), since a second import of the same

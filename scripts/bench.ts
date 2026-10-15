@@ -1,12 +1,11 @@
-import { buildAndStage, isBenchVariant, type BenchVariant } from "./bench/build.js";
+import { buildAndStage } from "./bench/build.js";
 import { runBench } from "./bench/driver.js";
 import { BENCH_OPS, getOpIds } from "./bench/ops.js";
-import { appendReport, getGitDescriptor, printReport } from "./bench/report.js";
+import { appendReport, getGitDescriptor, printReport, type BenchReport } from "./bench/report.js";
 import { startBenchServer } from "./bench/serve.js";
 import { logger } from "./utils/index.js";
 
 interface BenchArgs {
-  variant: BenchVariant;
   runs: number;
   throttle: number;
   label: string | null;
@@ -22,7 +21,6 @@ interface BenchArgs {
  */
 function parseArgs(argv: string[]): BenchArgs {
   const args: BenchArgs = {
-    variant: "html",
     runs: 10,
     throttle: 4,
     label: null,
@@ -42,12 +40,7 @@ function parseArgs(argv: string[]): BenchArgs {
     const key = arg.slice(0, equals);
     const value = arg.slice(equals + 1);
 
-    if (key === "--variant") {
-      if (!isBenchVariant(value)) {
-        throw new Error(`unknown variant "${value}" (expected html, jsx, or ts)`);
-      }
-      args.variant = value;
-    } else if (key === "--runs") {
+    if (key === "--runs") {
       if (!/^\d+$/.test(value) || Number(value) < 1) {
         throw new Error(`invalid --runs "${value}" (expected an integer >= 1)`);
       }
@@ -91,10 +84,8 @@ async function main(): Promise<void> {
     const git = await getGitDescriptor();
     const label = args.label ?? `${git.shortSha}${git.dirty ? "*" : ""}`;
 
-    logger.info(
-      `Building variant "${args.variant}" (packages + example bundle)…`,
-    );
-    await buildAndStage(args.variant);
+    logger.info("Building packages + example bundle…");
+    await buildAndStage("jsx");
 
     const { server, port } = startBenchServer();
     const url = `http://localhost:${port}/current/`;
@@ -111,10 +102,10 @@ async function main(): Promise<void> {
       server.stop(true);
     }
 
-    const report = {
+    const report: BenchReport = {
       label,
       git,
-      variant: args.variant,
+      variant: "jsx",
       throttle: args.throttle,
       runs: args.runs,
       result,

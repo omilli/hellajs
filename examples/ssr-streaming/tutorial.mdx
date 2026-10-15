@@ -14,7 +14,7 @@ Jump to the [Complete Code](#complete-code) for the finished application.
 - **[`hydrate`](/reference/dom/hydrate)**: Adopt the streamed HTML on the client; each region's inline swap script already swapped it in on arrival, and hydrate just binds the already-present nodes
 - **[`css`](/reference/css/css) + [`style`](/reference/css/style)**: Register global and scoped styles on both platforms; [`cssText`](/reference/css/csstext) collects the text injected into the streamed shell
 
-This is the one SSR example that uses **JSX with the Vite plugin on both the server and the client**. The [`html`](/reference/dom/html) tag parses templates at runtime, so the [Islands](/learn/tutorials/ssr-islands) and [Routing](/learn/tutorials/ssr-routing) examples need no build plugin. JSX does: without the transform, `<Dashboard />` is not a `HellaNode`, so the server plugin is mandatory here.
+This is the one SSR example that compiles through Vite's plugin rather than the esbuild glue: like the [Islands](/learn/tutorials/ssr-islands) and [Routing](/learn/tutorials/ssr-routing) examples, it runs `babel-plugin-hellajs` over `.tsx` on both the server and the client. Without the transform, `<Dashboard />` is not a `HellaNode`: JSX always needs its compile pass.
 
 ## Project Setup
 

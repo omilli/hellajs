@@ -7,7 +7,7 @@ export default function viteHellaJS() {
     name: "vite-plugin-hellajs",
     enforce: "pre",
     async transform(code, id) {
-      // Transform all JS/TS files for JSX and html`` templates
+      // Transform all JS/TS files for JSX
       if (!id.endsWith(".jsx") && !id.endsWith(".tsx") && !id.endsWith(".js") && !id.endsWith(".ts")) return null;
 
       // Skip node_modules

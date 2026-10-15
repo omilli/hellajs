@@ -368,33 +368,35 @@ router({
 
 ### Shared App
 
-One isomorphic module defines the view signal, the route map, and the shell. Each handler is a pure state-setter, the view-signal pattern `() => currentView(...)`. Recipes use [`html`](/reference/dom/html) templates so the server entry needs no build plugin.
+One isomorphic module defines the view signal, the route map, and the shell. Each handler is a pure state-setter, the view-signal pattern `() => currentView(...)`. Recipes author JSX; the babel pass compiles the server entry the same way it compiles the client (see [Build Tools Plugins](/plugins)).
 
-```js
+```jsx
 import { signal } from '@hellajs/core';
-import { html } from '@hellajs/dom';
 import { router, route } from '@hellajs/router';
+import type { Params } from '@hellajs/router';
 
-const currentView = signal(html`<h1>Loading…</h1>`);
+const currentView = signal(<h1>Loading…</h1>);
 
-const Home = () => html`<h1>Home</h1>`;
-const User = ({ id }) => html`<h1>User ${id}</h1>`;
-const NotFound = () => html`<h1>Not Found</h1>`;
+const Home = () => <h1>Home</h1>;
+const User = ({ id }: { id: string }) => <h1>User {id}</h1>;
+const NotFound = () => <h1>Not Found</h1>;
 
 const routes = {
   '/': () => currentView(Home()),
-  '/users/:id': (params) => currentView(User({ id: params.id }))
+  '/users/:id': (params: Params) => currentView(User({ id: params.id ?? '' }))
 };
 
 const notFound = () => currentView(NotFound());
 
-const App = () => html`
-  <nav>
-    <a href="/" class=${() => route().active('/') ? 'active' : ''}>Home</a>
-    <a href="/users/1" class=${() => route().active('/users/1') ? 'active' : ''}>User</a>
-  </nav>
-  <main>${currentView}</main>
-`;
+const App = () => (
+  <>
+    <nav>
+      <a href="/" class={route().active('/') ? 'active' : ''}>Home</a>
+      <a href="/users/1" class={route().active('/users/1') ? 'active' : ''}>User</a>
+    </nav>
+    <main>{currentView}</main>
+  </>
+);
 
 export { routes, App, notFound };
 ```
@@ -405,8 +407,7 @@ The view-signal style is the isomorphic handler form: the same handlers fire on 
 
 [`ssr`](/reference/ssr/ssr) is synchronous, so resolve the route before stringifying: pass the request URL via the `url` option, the full request URL (`req.url`) or a path (`pathname + search`); see [`router`](/reference/router/router) for `url` semantics.
 
-```js
-import { html } from '@hellajs/dom';
+```jsx
 import { router } from '@hellajs/router';
 import { ssr, doc } from '@hellajs/ssr';
 import { routes, App, notFound } from './app.js';
@@ -420,7 +421,7 @@ Bun.serve({
     // holds the matched view before ssr walks the tree.
     router({ routes, url: pathname + search, notFound });
 
-    const body = ssr(html`<${App} />`);
+    const body = ssr(<App />);
     return new Response(
       doc({ lang: 'en', head: { title: 'App' }, body }),
       { headers: { 'content-type': 'text/html' } }
@@ -433,22 +434,22 @@ Bun.serve({
 
 For server-fetched data, return a Promise from a getter child; [`ssr.async`](/reference/ssr/ssr#async) awaits it in tree order. Everything else is identical to the [`ssr`](/reference/ssr/ssr) recipe.
 
-```js
+```jsx
 import { signal } from '@hellajs/core';
-import { html } from '@hellajs/dom';
 import { router } from '@hellajs/router';
+import type { Params } from '@hellajs/router';
 import { ssr, doc } from '@hellajs/ssr';
 
-const loadName = (id) => fetch(`/api/users/${id}`).then((r) => r.text());
+const loadName = (id: string) => fetch(`/api/users/${id}`).then((r) => r.text());
 // A promise-getter child is awaited by ssr.async
-const Profile = ({ id }) => html`<h1>${() => loadName(id)}</h1>`;
+const Profile = ({ id }: { id: string }) => <h1>{() => loadName(id)}</h1>
 
-const currentView = signal(html`<h1>Loading…</h1>`);
+const currentView = signal(<h1>Loading…</h1>);
 const routes = {
-  '/': () => currentView(html`<h1>Home</h1>`),
-  '/users/:id': (params) => currentView(Profile({ id: params.id }))
+  '/': () => currentView(<h1>Home</h1>),
+  '/users/:id': (params: Params) => currentView(Profile({ id: params.id ?? '' }))
 };
-const App = () => html`<main>${currentView}</main>`;
+const App = () => <main>{currentView}</main>;
 
 Bun.serve({
   port: 3000,
@@ -456,7 +457,7 @@ Bun.serve({
     const { pathname, search } = new URL(req.url);
     router({ routes, url: pathname + search });
 
-    const body = await ssr.async(html`<${App} />`);
+    const body = await ssr.async(<App />);
     return new Response(
       doc({ lang: 'en', head: { title: 'App' }, body }),
       { headers: { 'content-type': 'text/html' } }
@@ -469,24 +470,25 @@ Bun.serve({
 
 [`ssr.stream`](/reference/ssr/ssr#stream) flushes the static shell before async values resolve: wrap an async subtree in [`<Suspense>`](/reference/dom/suspense) and the shell plus `fallback` flush immediately while the children resolve. Assemble the full document with [`doc`](/reference/ssr/doc)'s stream overload: the head and mount wrapper flush first, each body chunk pipes through as it renders, and the closing tags land only after the body closes.
 
-```js
+```jsx
 import { signal } from '@hellajs/core';
-import { html, Suspense } from '@hellajs/dom';
+import { Suspense } from '@hellajs/dom';
 import { router } from '@hellajs/router';
+import type { Params } from '@hellajs/router';
 import { ssr, doc } from '@hellajs/ssr';
 
-const loadName = (id) => fetch(`/api/users/${id}`).then((r) => r.text());
-const Profile = ({ id }) => html`
-  <${Suspense} fallback=${html`<p>Loading…</p>`}>
-    ${() => loadName(id).then((name) => html`<h1>${name}</h1>`)}
-  </${Suspense}>
-`;
+const loadName = (id: string) => fetch(`/api/users/${id}`).then((r) => r.text());
+const Profile = ({ id }: { id: string }) => (
+  <Suspense fallback={<p>Loading…</p>}>
+    {() => loadName(id).then((name) => <h1>{name}</h1>)}
+  </Suspense>
+);
 
-const currentView = signal(html`<h1>Loading…</h1>`);
+const currentView = signal(<h1>Loading…</h1>);
 const routes = {
-  '/users/:id': (params) => currentView(Profile({ id: params.id }))
+  '/users/:id': (params: Params) => currentView(Profile({ id: params.id ?? '' }))
 };
-const App = () => html`<main>${currentView}</main>`;
+const App = () => <main>{currentView}</main>;
 
 Bun.serve({
   port: 3000,
@@ -498,7 +500,7 @@ Bun.serve({
       doc({
         lang: 'en',
         head: { title: 'App', scripts: [{ src: '/client.js', type: 'module' }] },
-        body: ssr.stream(html`<${App} />`),
+        body: ssr.stream(<App />),
         mount: '#app'
       }).pipeThrough(new TextEncoderStream()),
       { headers: { 'content-type': 'text/html' } }

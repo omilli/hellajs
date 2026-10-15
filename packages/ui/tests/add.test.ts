@@ -2,7 +2,7 @@ import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { addComponent } from "@hellajs/ui/bundle";
-import type { UiFormat, UiStyle } from "@hellajs/ui";
+import type { UiStyle } from "@hellajs/ui";
 
 const root = join(import.meta.dir, ".tmp", "add");
 const componentsDir = join(root, "src", "components");
@@ -37,7 +37,6 @@ describe("addComponent", () => {
     expect(tokens.includes('layer: "hella"')).toBe(false);
     expect(tokens.includes("@layer")).toBe(false);
     expect(existsSync(join(componentsDir, "tokens.ts"))).toBe(true);
-    expect(existsSync(join(componentsDir, "button-html.ts"))).toBe(false);
     expect(existsSync(join(componentsDir, "button-css.ts"))).toBe(false);
     expect(existsSync(join(componentsDir, "button-tailwind.ts"))).toBe(false);
     expect(existsSync(join(componentsDir, "cn.ts"))).toBe(false);
@@ -59,23 +58,11 @@ describe("addComponent", () => {
     expect(existsSync(join(componentsDir, "button-tailwind.ts"))).toBe(false);
   });
 
-  test("html add lands button.ts renamed from the html flavor with the array interpolation", () => {
-    addComponent(["button"], { dir: root, format: "html" });
-    const button = readFileSync(join(componentsDir, "button.ts"), "utf8");
-    expect(button).toContain("html`");
-    expect(button).toContain('class="${\n        [\n          base,');
-    expect(button.includes("@hella:")).toBe(false);
-    expect(existsSync(join(componentsDir, "button.tsx"))).toBe(false);
-    expect(existsSync(join(componentsDir, "button-html.ts"))).toBe(false);
-    expect(existsSync(join(componentsDir, "tokens.ts"))).toBe(true);
-  });
-
   test.each([
-    ["css", "jsx", "button.tsx"],
-    ["tailwind", "jsx", "button.tsx"],
-    ["css", "html", "button.ts"],
-  ] as [UiStyle, UiFormat, string][])("%s/%s button add output inlines ButtonProps and carries no -types.js specifier", (style, format, file) => {
-    addComponent(["button"], { dir: root, style, format });
+    ["css", "button.tsx"],
+    ["tailwind", "button.tsx"],
+  ] as [UiStyle, string][])("%s button add output inlines ButtonProps and carries no -types.js specifier", (style, file) => {
+    addComponent(["button"], { dir: root, style });
     const copied = readFileSync(join(componentsDir, file), "utf8");
     expect(copied).toContain("interface ButtonProps");
     expect(copied).not.toContain("-types.js");
@@ -205,11 +192,6 @@ describe("addComponent", () => {
       .toThrow("[ui] addComponent: at least one component name is required");
   });
 
-  test("invalid format throws the two-format contract", () => {
-    expect(() => addComponent(["button"], { dir: root, format: "bogus" as UiFormat }))
-      .toThrow('[ui] addComponent: format must be jsx or html, received "bogus"');
-  });
-
   test("a target dir without package.json throws the checkPeers contract", () => {
     const bare = join(root, "bare");
     mkdirSync(bare);
@@ -229,7 +211,7 @@ describe("addComponent", () => {
     ["css", "@hellajs/core @hellajs/dom @hellajs/css"],
     ["tailwind", "@hellajs/core @hellajs/dom tw-animate-css clsx tailwind-merge"],
   ] as [UiStyle, string][])("peer warning names exactly the missing packages for the %s style", (style, installLine) => {
-    addComponent(["button"], { dir: root, style, format: "jsx" });
+    addComponent(["button"], { dir: root, style });
     const joined = warnings.join("\n");
     expect(joined).toContain(`bun add ${installLine}`);
   });
@@ -238,7 +220,7 @@ describe("addComponent", () => {
     ["css", "@hellajs/core @hellajs/dom @hellajs/css"],
     ["tailwind", "@hellajs/core @hellajs/dom tw-animate-css clsx tailwind-merge"],
   ] as [UiStyle, string][])("dialog peer warning names exactly the missing packages for the %s style", (style, installLine) => {
-    addComponent(["dialog"], { dir: root, style, format: "jsx" });
+    addComponent(["dialog"], { dir: root, style });
     const joined = warnings.join("\n");
     expect(joined).toContain(`bun add ${installLine}`);
   });
@@ -247,7 +229,7 @@ describe("addComponent", () => {
     ["css", "@hellajs/core @hellajs/dom @hellajs/css"],
     ["tailwind", "@hellajs/core @hellajs/dom tw-animate-css clsx tailwind-merge"],
   ] as [UiStyle, string][])("tabs peer warning names exactly the missing packages for the %s style", (style, installLine) => {
-    addComponent(["tabs"], { dir: root, style, format: "jsx" });
+    addComponent(["tabs"], { dir: root, style });
     const joined = warnings.join("\n");
     expect(joined).toContain(`bun add ${installLine}`);
   });

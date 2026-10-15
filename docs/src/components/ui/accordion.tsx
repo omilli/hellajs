@@ -247,7 +247,7 @@ export function Accordion({ items, keyBy, type, collapsible, open, class: cls, .
         each={items}
         use={(entry) => (
           <AccordionItem
-            key={keyBy}
+            key={keyBy ? entry.value : undefined}
             value={entry.value}
             active={() => isOpen(entry.value)}
             children={[

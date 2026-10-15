@@ -18,7 +18,7 @@ import {
   pointerLeave,
 } from "./helpers/anchored";
 
-// resetTestState resets the @hellajs/dom/bundle instance; the compiled registry
+// resetTestState resets the @hellajs/dom instance; the compiled registry
 // components import the bare specifier, whose shared hoverIntent clock and layer
 // stack need the bare instance's own reset.
 beforeEach(() => {
@@ -49,7 +49,7 @@ async function openHoverCard(variant: (typeof hoverCardVariants)[number]) {
 }
 
 describe("hover-card", () => {
-  test.each(hoverCardVariants)("$format/$style opens on hover of the trigger after the open delay", async (variant) => {
+  test.each(hoverCardVariants)("$style opens on hover of the trigger after the open delay", async (variant) => {
     const trigger = renderVariant(variant, { content: "Card" });
     pointerEnter(trigger);
     expect(newestPortaled("hover-card-content")).toBeUndefined();
@@ -59,7 +59,7 @@ describe("hover-card", () => {
     expect(content.textContent).toBe("Card");
   });
 
-  test.each(hoverCardVariants)("$format/$style stays open when the pointer moves into the content", async (variant) => {
+  test.each(hoverCardVariants)("$style stays open when the pointer moves into the content", async (variant) => {
     const { trigger, content } = await openHoverCard(variant);
     pointerLeave(trigger);
     pointerEnter(content);
@@ -68,7 +68,7 @@ describe("hover-card", () => {
     expect(content.isConnected).toBe(true);
   });
 
-  test.each(hoverCardVariants)("$format/$style closes when the pointer leaves both trigger and content", async (variant) => {
+  test.each(hoverCardVariants)("$style closes when the pointer leaves both trigger and content", async (variant) => {
     const { trigger, content } = await openHoverCard(variant);
     pointerLeave(trigger);
     pointerEnter(content);
@@ -77,7 +77,7 @@ describe("hover-card", () => {
     expect(content.getAttribute("data-state")).toBe("closed");
   });
 
-  test.each(hoverCardVariants)("$format/$style returns to the trigger from the content without closing", async (variant) => {
+  test.each(hoverCardVariants)("$style returns to the trigger from the content without closing", async (variant) => {
     const { trigger, content } = await openHoverCard(variant);
     pointerLeave(trigger);
     pointerEnter(content);
@@ -87,13 +87,13 @@ describe("hover-card", () => {
     expect(content.getAttribute("data-state")).toBe("open");
   });
 
-  test.each(hoverCardVariants)("$format/$style closes on an outside pointerdown while open", async (variant) => {
+  test.each(hoverCardVariants)("$style closes on an outside pointerdown while open", async (variant) => {
     const { content } = await openHoverCard(variant);
     pointerDownOutside();
     expect(content.getAttribute("data-state")).toBe("closed");
   });
 
-  test.each(hoverCardVariants)("$format/$style opens on focus and closes on blur", async (variant) => {
+  test.each(hoverCardVariants)("$style opens on focus and closes on blur", async (variant) => {
     const trigger = renderVariant(variant, { content: "Card" });
     trigger.dispatchEvent(new FocusEvent("focus"));
     await delay(260);
@@ -104,7 +104,7 @@ describe("hover-card", () => {
     expect(content.getAttribute("data-state")).toBe("closed");
   });
 
-  test.each(hoverCardVariants)("$format/$style anchors below the trigger with the upstream offset", async (variant) => {
+  test.each(hoverCardVariants)("$style anchors below the trigger with the upstream offset", async (variant) => {
     const trigger = renderVariant(variant, { content: "Card" });
     pinRect(trigger, 100, 50, 200, 20);
     pointerEnter(trigger);
@@ -116,7 +116,7 @@ describe("hover-card", () => {
     expect(content.getAttribute("data-align")).toBe("center");
   });
 
-  test.each(hoverCardVariants)("$format/$style reports opens and closes through onOpenChange", async (variant) => {
+  test.each(hoverCardVariants)("$style reports opens and closes through onOpenChange", async (variant) => {
     const onOpenChange = mock<(open: boolean) => void>(() => {});
     const trigger = renderVariant(variant, { onOpenChange, content: "Card" });
     pointerEnter(trigger);
@@ -126,7 +126,7 @@ describe("hover-card", () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
-  test.each(hoverCardVariants)("$format/$style unmounts portal content on disposal", async (variant) => {
+  test.each(hoverCardVariants)("$style unmounts portal content on disposal", async (variant) => {
     const container = setupContainer();
     const handle = mount(variant.render({ content: "Card" }), container);
     const trigger = container.firstElementChild as HTMLElement;
@@ -138,7 +138,7 @@ describe("hover-card", () => {
     expect(trigger.isConnected).toBe(false);
   });
 
-  test.each(hoverCardVariants)("$format/$style keeps the content mounted under data-state closed until its animationend", async (variant) => {
+  test.each(hoverCardVariants)("$style keeps the content mounted under data-state closed until its animationend", async (variant) => {
     const { content } = await openHoverCard(variant);
     pointerDownOutside();
     expect(content.getAttribute("data-state")).toBe("closed");
@@ -147,7 +147,7 @@ describe("hover-card", () => {
     await awaitDetached(content);
   });
 
-  test.each(hoverCardPartVariants.filter((variant) => variant.part === "Content"))("$format/$style content part positions against the anchor and drains its wirings on disposal", async (variant) => {
+  test.each(hoverCardPartVariants.filter((variant) => variant.part === "Content"))("$style content part positions against the anchor and drains its wirings on disposal", async (variant) => {
     const anchor = document.createElement("button");
     document.body.appendChild(anchor);
     pinRect(anchor, 100, 50, 200, 20);
@@ -165,34 +165,34 @@ describe("hover-card", () => {
     expect(content.isConnected).toBe(false);
   });
 
-  test.each(hoverCardVariants)("$format/$style forwards user attrs onto the trigger root across all four variants", (variant) => {
+  test.each(hoverCardVariants)("$style forwards user attrs onto the trigger root across both styles", (variant) => {
     const trigger = renderVariant(variant, { content: "Card", "aria-label": "trigger" });
     expect(trigger.getAttribute("aria-label")).toBe("trigger");
   });
 
-  test.each(hoverCardVariants)("$format/$style fires a user on:click handler on the trigger root across all four variants", (variant) => {
+  test.each(hoverCardVariants)("$style fires a user on:click handler on the trigger root across both styles", (variant) => {
     const userClick = mock(() => {});
     const trigger = renderVariant(variant, { content: "Card", "on:click": userClick });
     trigger.dispatchEvent(new Event("click"));
     expect(userClick).toHaveBeenCalledTimes(1);
   });
 
-  test.each(hoverCardVariants)("$format/$style merges a user class into the trigger root's class across all four variants", (variant) => {
+  test.each(hoverCardVariants)("$style merges a user class into the trigger root's class across both styles", (variant) => {
     const trigger = renderVariant(variant, { content: "Card", class: "user-class" });
     expect(classTokens(trigger).at(-1)).toBe("user-class");
   });
 
-  test.each(hoverCardPartVariants.filter((variant) => variant.part === "Content"))("$format/$style content part forwards user attrs", (variant) => {
+  test.each(hoverCardPartVariants.filter((variant) => variant.part === "Content"))("$style content part forwards user attrs", (variant) => {
     const container = setupContainer();
     mount(variant.render({ "aria-label": "panel", children: [] }), container);
     expect(container.firstElementChild!.getAttribute("aria-label")).toBe("panel");
   });
 
-  test("keeps structural parity across all four variants", () => {
+  test("keeps structural parity across both styles", () => {
     assertStructuralParity(hoverCardVariants, { content: "Parity" });
   });
 
-  test("renders every named part with its data-slot across all four variants", () => {
+  test("renders every named part with its data-slot across both styles", () => {
     for (const variant of hoverCardPartVariants) {
       const container = setupContainer();
       const rendered = variant.render({ children: [] });

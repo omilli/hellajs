@@ -17,7 +17,7 @@ beforeEach(() => {
 });
 
 describe("skeleton", () => {
-  test.each(skeletonVariants)("$format/$style renders the pulse div with its data-slot and class merge", (variant) => {
+  test.each(skeletonVariants)("$style renders the pulse div with its data-slot and class merge", (variant) => {
     const skeleton = renderVariant(variant, { children: variant.child(""), class: "my-skeleton" });
     expect(skeleton.tagName).toBe("DIV");
     expect(skeleton.getAttribute("data-slot")).toBe("skeleton");
@@ -31,15 +31,15 @@ describe("skeleton", () => {
     }
   });
 
-  test("keeps structural parity across all four variants", () => {
+  test("keeps structural parity across both styles", () => {
     assertStructuralParity(skeletonVariants);
   });
 
-  test("forwards user attrs onto the root across all four variants", () => {
+  test("forwards user attrs onto the root across both styles", () => {
     assertAttrForwarded(skeletonVariants, { title: "Hella" }, "title", "Hella");
   });
 
-  test("fires a user on:click handler across all four variants", () => {
+  test("fires a user on:click handler across both styles", () => {
     const onClick = mock(() => {});
     assertHandlerForwarded(skeletonVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });

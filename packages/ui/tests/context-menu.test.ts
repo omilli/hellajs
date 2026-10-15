@@ -53,7 +53,7 @@ async function openContextMenu(variant: ComponentVariant<ContextMenuVariantProps
 }
 
 describe("context-menu", () => {
-  test.each(contextMenuVariants)("$format/$style opens on contextmenu with data-state and aria state", async (variant) => {
+  test.each(contextMenuVariants)("$style opens on contextmenu with data-state and aria state", async (variant) => {
     const { trigger, content } = await openContextMenu(variant);
     expect(content.getAttribute("data-state")).toBe("open");
     expect(content.getAttribute("role")).toBe("menu");
@@ -61,7 +61,7 @@ describe("context-menu", () => {
     expect(trigger.getAttribute("aria-haspopup")).toBe("menu");
   });
 
-  test.each(contextMenuVariants)("$format/$style anchors the content at the pointer coordinates", async (variant) => {
+  test.each(contextMenuVariants)("$style anchors the content at the pointer coordinates", async (variant) => {
     const onOpenChange = mock<(open: boolean) => void>(() => {});
     const trigger = renderVariant(variant, { content: Item(variant, { children: "Inspect" }), onOpenChange });
     trigger.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX: 40, clientY: 40 }));
@@ -76,7 +76,7 @@ describe("context-menu", () => {
     expect(content.getAttribute("data-align")).toBe("start");
   });
 
-  test.each(contextMenuVariants)("$format/$style moves the zero-size anchor on reopen", async (variant) => {
+  test.each(contextMenuVariants)("$style moves the zero-size anchor on reopen", async (variant) => {
     await openContextMenu(variant);
     const firstAnchor = document.querySelector("[data-slot='context-menu-anchor']")!;
     pressEscape();
@@ -88,7 +88,7 @@ describe("context-menu", () => {
     expect(secondAnchor.style.top).toBe("20px");
   });
 
-  test.each(contextMenuVariants)("$format/$style closes on Escape and restores focus to the trigger zone", async (variant) => {
+  test.each(contextMenuVariants)("$style closes on Escape and restores focus to the trigger zone", async (variant) => {
     const { trigger, content } = await openContextMenu(variant);
     pressEscape();
     expect(content.getAttribute("data-state")).toBe("closed");
@@ -96,7 +96,7 @@ describe("context-menu", () => {
     expect(document.activeElement).toBe(trigger);
   });
 
-  test.each(contextMenuVariants)("$format/$style closes on a pointerdown outside the content and unmounts through its exit animationend", async (variant) => {
+  test.each(contextMenuVariants)("$style closes on a pointerdown outside the content and unmounts through its exit animationend", async (variant) => {
     const { content } = await openContextMenu(variant);
     pointerDownOutside();
     expect(content.getAttribute("data-state")).toBe("closed");
@@ -104,12 +104,12 @@ describe("context-menu", () => {
     await awaitDetached(content);
   });
 
-  test.each(contextMenuVariants)("$format/$style reports flips through onOpenChange", async (variant) => {
+  test.each(contextMenuVariants)("$style reports flips through onOpenChange", async (variant) => {
     const { onOpenChange } = await openContextMenu(variant);
     expect(onOpenChange).toHaveBeenCalledWith(true);
   });
 
-  test.each(contextMenuVariants)("$format/$style roves arrows with wrap and jumps with Home/End", async (variant) => {
+  test.each(contextMenuVariants)("$style roves arrows with wrap and jumps with Home/End", async (variant) => {
     const { content } = await openContextMenu(variant, [
       Item(variant, { children: "Alpha" }),
       Item(variant, { children: "Beta" }),
@@ -131,7 +131,7 @@ describe("context-menu", () => {
     expect(document.activeElement).toBe(items[2]!);
   });
 
-  test.each(contextMenuVariants)("$format/$style activates items with Enter and closes the menu", async (variant) => {
+  test.each(contextMenuVariants)("$style activates items with Enter and closes the menu", async (variant) => {
     const onclick = mock(() => {});
     const { content } = await openContextMenu(variant, [
       Item(variant, { children: "Rename", "on:click": onclick, shortcut: "⌘R" }),
@@ -145,7 +145,7 @@ describe("context-menu", () => {
     expect(content.getAttribute("data-state")).toBe("closed");
   });
 
-  test.each(contextMenuVariants)("$format/$style blocks activation on disabled items", async (variant) => {
+  test.each(contextMenuVariants)("$style blocks activation on disabled items", async (variant) => {
     const onclick = mock(() => {});
     const { content } = await openContextMenu(variant, [
       Item(variant, { children: "Locked", disabled: true, "on:click": onclick }),
@@ -157,7 +157,7 @@ describe("context-menu", () => {
     expect(content.getAttribute("data-state")).toBe("open");
   });
 
-  test.each(contextMenuVariants)("$format/$style toggles checkbox items with the check icon", async (variant) => {
+  test.each(contextMenuVariants)("$style toggles checkbox items with the check icon", async (variant) => {
     const onCheckedChange = mock<(checked: boolean) => void>(() => {});
     const CheckboxItem = menuModulePart<{ children?: HellaChildren; checked?: boolean | (() => boolean); onCheckedChange?: (checked: boolean) => void }>(
       contextMenuModules, variant, "ContextMenuCheckboxItem",
@@ -172,7 +172,7 @@ describe("context-menu", () => {
     expect(content.getAttribute("data-state")).toBe("closed");
   });
 
-  test.each(contextMenuVariants)("$format/$style radio groups single-select through the items table", async (variant) => {
+  test.each(contextMenuVariants)("$style radio groups single-select through the items table", async (variant) => {
     const onValueChange = mock<(value: string) => void>(() => {});
     const RadioGroup = menuModulePart<{ items?: Array<{ value: string; label?: HellaChildren }>; onValueChange?: (value: string) => void }>(
       contextMenuModules, variant, "ContextMenuRadioGroup",
@@ -188,7 +188,7 @@ describe("context-menu", () => {
     expect(radios[1]!.getAttribute("aria-checked")).toBe("true");
   });
 
-  test.each(contextMenuVariants)("$format/$style re-renders a signal radio items list across appends", async (variant) => {
+  test.each(contextMenuVariants)("$style re-renders a signal radio items list across appends", async (variant) => {
     const RadioGroup = menuModulePart<{ items?: MenuRadioEntryVariant[] | (() => MenuRadioEntryVariant[]) }>(
       contextMenuModules, variant, "ContextMenuRadioGroup",
     );
@@ -200,7 +200,7 @@ describe("context-menu", () => {
     expect(values()).toEqual(["small", "large"]);
   });
 
-  test.each(contextMenuVariants)("$format/$style enters submenus with ArrowRight and returns with ArrowLeft", async (variant) => {
+  test.each(contextMenuVariants)("$style enters submenus with ArrowRight and returns with ArrowLeft", async (variant) => {
     const Sub = menuModulePart<{ children?: HellaChildren; content?: HellaChildren }>(contextMenuModules, variant, "ContextMenuSub");
     const { content } = await openContextMenu(variant, [
       Sub({ children: "Sort By", content: Item(variant, { children: "Name" }) }),
@@ -217,7 +217,7 @@ describe("context-menu", () => {
     expect(content.getAttribute("data-state")).toBe("open");
   });
 
-  test.each(contextMenuVariants)("$format/$style pops one level per Escape while submenus are open", async (variant) => {
+  test.each(contextMenuVariants)("$style pops one level per Escape while submenus are open", async (variant) => {
     const Sub = menuModulePart<{ children?: HellaChildren; content?: HellaChildren }>(contextMenuModules, variant, "ContextMenuSub");
     const { content } = await openContextMenu(variant, [
       Sub({ children: "Sort By", content: Item(variant, { children: "Name" }) }),
@@ -234,7 +234,7 @@ describe("context-menu", () => {
     expect(content.getAttribute("data-state")).toBe("closed");
   });
 
-  test.each(contextMenuVariants)("$format/$style opens submenus on hover after the intent delay and cancels an early leave", async (variant) => {
+  test.each(contextMenuVariants)("$style opens submenus on hover after the intent delay and cancels an early leave", async (variant) => {
     const Sub = menuModulePart<{ children?: HellaChildren; content?: HellaChildren }>(contextMenuModules, variant, "ContextMenuSub");
     const { content } = await openContextMenu(variant, [
       Sub({ children: "Sort By", content: Item(variant, { children: "Name" }) }),
@@ -250,7 +250,7 @@ describe("context-menu", () => {
     expect(subContent.getAttribute("data-state")).toBe("open");
   });
 
-  test.each(contextMenuVariants)("$format/$style keeps the submenu open when the pointer re-enters the trigger or the content", async (variant) => {
+  test.each(contextMenuVariants)("$style keeps the submenu open when the pointer re-enters the trigger or the content", async (variant) => {
     const Sub = menuModulePart<{ children?: HellaChildren; content?: HellaChildren }>(contextMenuModules, variant, "ContextMenuSub");
     const { content } = await openContextMenu(variant, [
       Sub({ children: "Sort By", content: Item(variant, { children: "Name" }) }),
@@ -273,7 +273,7 @@ describe("context-menu", () => {
     expect(subTrigger.getAttribute("aria-expanded")).toBe("false");
   });
 
-  test.each(contextMenuVariants)("$format/$style anchors submenu content against the sub-trigger", async (variant) => {
+  test.each(contextMenuVariants)("$style anchors submenu content against the sub-trigger", async (variant) => {
     const Sub = menuModulePart<{ children?: HellaChildren; content?: HellaChildren }>(contextMenuModules, variant, "ContextMenuSub");
     const { content } = await openContextMenu(variant, [
       Sub({ children: "Sort By", content: Item(variant, { children: "Name" }) }),
@@ -287,7 +287,7 @@ describe("context-menu", () => {
     expect(subContent.getAttribute("data-side")).toBe("right");
   });
 
-  test.each(contextMenuVariants)("$format/$style focuses the first matching item on typeahead", async (variant) => {
+  test.each(contextMenuVariants)("$style focuses the first matching item on typeahead", async (variant) => {
     const { content } = await openContextMenu(variant, [
       Item(variant, { children: "Cut" }),
       Item(variant, { children: "Copy" }),
@@ -298,13 +298,13 @@ describe("context-menu", () => {
     expect(document.activeElement).toBe(items[0]!);
   });
 
-  test.each(contextMenuVariants)("$format/$style closes under Tab", async (variant) => {
+  test.each(contextMenuVariants)("$style closes under Tab", async (variant) => {
     const { content } = await openContextMenu(variant);
     pressKey(content, "Tab");
     expect(content.getAttribute("data-state")).toBe("closed");
   });
 
-  test.each(contextMenuVariants)("$format/$style unmounts all layers on disposal", async (variant) => {
+  test.each(contextMenuVariants)("$style unmounts all layers on disposal", async (variant) => {
     const container = setupContainer();
     const handle = mount(variant.render({
       content: Item(variant, { children: "Inspect" }),
@@ -322,30 +322,30 @@ describe("context-menu", () => {
     expect(content.isConnected).toBe(false);
   });
 
-  test.each(contextMenuVariants)("$format/$style forwards user attrs onto the trigger root across all four variants", (variant) => {
+  test.each(contextMenuVariants)("$style forwards user attrs onto the trigger root across both styles", (variant) => {
     const trigger = renderVariant(variant, { content: "Inspect", "aria-label": "zone" });
     expect(trigger.getAttribute("aria-label")).toBe("zone");
   });
 
-  test.each(contextMenuVariants)("$format/$style fires a user on:click handler on the trigger root across all four variants", (variant) => {
+  test.each(contextMenuVariants)("$style fires a user on:click handler on the trigger root across both styles", (variant) => {
     const userClick = mock(() => {});
     const trigger = renderVariant(variant, { content: "Inspect", "on:click": userClick });
     trigger.dispatchEvent(new Event("click"));
     expect(userClick).toHaveBeenCalledTimes(1);
   });
 
-  test.each(contextMenuVariants)("$format/$style merges a user class into the trigger root's class across all four variants", (variant) => {
+  test.each(contextMenuVariants)("$style merges a user class into the trigger root's class across both styles", (variant) => {
     const trigger = renderVariant(variant, { content: "Inspect", class: "user-class" });
     expect(classTokens(trigger).at(-1)).toBe("user-class");
   });
 
-  test.each(contextMenuPartVariants.filter((variant) => variant.part === "Content"))("$format/$style content part respects a user-supplied id", (variant) => {
+  test.each(contextMenuPartVariants.filter((variant) => variant.part === "Content"))("$style content part respects a user-supplied id", (variant) => {
     const container = setupContainer();
     mount(variant.render({ id: "custom-menu", children: [] }), container);
     expect(container.firstElementChild!.getAttribute("id")).toBe("custom-menu");
   });
 
-  test("keeps structural parity across all four variants", () => {
+  test("keeps structural parity across both styles", () => {
     assertStructuralParity(contextMenuVariants, { content: "Parity" }, ["aria-controls"]);
     assertStructuralParity(
       contextMenuPartVariants.filter((variant) => variant.part === "RadioGroup"),
@@ -353,7 +353,7 @@ describe("context-menu", () => {
     );
   });
 
-  test("renders every named part with its data-slot across all four variants", () => {
+  test("renders every named part with its data-slot across both styles", () => {
     for (const variant of contextMenuPartVariants) {
       const container = setupContainer();
       const rendered = variant.render({ children: [] });
@@ -369,7 +369,7 @@ describe("context-menu", () => {
     }
   });
 
-  test.each(contextMenuPartVariants.filter((variant) => variant.part === "SubTrigger"))("$format/$style sub-trigger part opens through onOpen from hover intent", async (variant) => {
+  test.each(contextMenuPartVariants.filter((variant) => variant.part === "SubTrigger"))("$style sub-trigger part opens through onOpen from hover intent", async (variant) => {
     const onOpen = mock(() => {});
     const container = setupContainer();
     const handle = mount(variant.render({ children: "Sort By", onOpen }), container);

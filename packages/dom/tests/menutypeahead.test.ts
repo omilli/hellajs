@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { menuTypeahead } from "@hellajs/dom/bundle";
+import { menuTypeahead } from "@hellajs/dom";
 import { pressKey } from "./helpers";
 
 const item = (text: string) => ({ node: document.createElement("div"), text });

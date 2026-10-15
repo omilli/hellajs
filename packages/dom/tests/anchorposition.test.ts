@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { resetTestState } from "@utils/test-helpers.js";
-import { anchorPosition } from "@hellajs/dom/bundle";
+import { anchorPosition } from "@hellajs/dom";
 
 const setViewport = (width: number, height: number): void => {
   Object.defineProperty(window, "innerWidth", { value: width, configurable: true });

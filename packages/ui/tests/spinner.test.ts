@@ -20,7 +20,7 @@ beforeEach(() => {
 });
 
 describe("spinner", () => {
-  test.each(spinnerVariants)("$format/$style renders the loading svg with status semantics", (variant) => {
+  test.each(spinnerVariants)("$style renders the loading svg with status semantics", (variant) => {
     const spinner = renderVariant(variant, { class: "my-spinner" });
     expect(spinner.tagName).toBe("svg");
     expect(spinner.getAttribute("role")).toBe("status");
@@ -36,22 +36,22 @@ describe("spinner", () => {
     }
   });
 
-  test.each(spinnerVariants)("$format/$style inlines the loader-circle path from the icon ref", (variant) => {
+  test.each(spinnerVariants)("$style inlines the loader-circle path from the icon ref", (variant) => {
     const spinner = renderVariant(variant, {});
     const path = spinner.querySelector("path");
     expect(path).not.toBeNull();
     expect(path!.getAttribute("d")).toBe(LOADER_PATH);
   });
 
-  test("keeps structural parity across all four variants", () => {
+  test("keeps structural parity across both styles", () => {
     assertStructuralParity(spinnerVariants);
   });
 
-  test("forwards user attrs onto the root across all four variants", () => {
+  test("forwards user attrs onto the root across both styles", () => {
     assertAttrForwarded(spinnerVariants, { title: "Hella" }, "title", "Hella");
   });
 
-  test("fires a user on:click handler across all four variants", () => {
+  test("fires a user on:click handler across both styles", () => {
     const onClick = mock(() => {});
     assertHandlerForwarded(spinnerVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });

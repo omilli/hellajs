@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { resetTestState } from "@utils/test-helpers.js";
-import { onDrag } from "@hellajs/dom/bundle";
+import { onDrag } from "@hellajs/dom";
 import { pointerDown, pointerMove, pointerUp, pointerCancel } from "./helpers";
 
 describe("onDrag", () => {

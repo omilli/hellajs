@@ -52,9 +52,8 @@ import { logger, packagesDir, projectRoot } from "./utils/index.js";
  *    alert icon spans, no `> ⚠️` blockquote markers, no function-wrapped
  *    `class`/`style`/`title`/`href`/`id` attributes inside jsx/tsx fences, and no
  *    single-line `css()`/`style()` object arguments (multiline always,
- *    single-property calls included). The JSX-only-syntax rule stays
- *    audit-enforced — which docs count as "explicitly about the html method" is
- *    a judgment boundary.
+ *    single-property calls included). JSX is the only example syntax; the
+ *    rule stays audit-enforced.
  *
  * 7. Table delimiter parity — outside code fences, a header row starting with
  *    `|` whose next line is a delimiter row must match its cell count (an
@@ -601,8 +600,8 @@ function checkRegistration(): Finding[] {
  * Mechanics details blocks are gone, alert callouts carry no icon spans and no
  * blockquote warning markers, jsx/tsx fences carry no function-wrapped
  * `class`/`style`/`title`/`href`/`id` attributes, and `css()`/`style()` object
- * arguments are always multiline. The JSX-only-syntax rule stays audit-enforced
- * (the html-method boundary is judgment); each finding names its construct.
+ * arguments are always multiline. JSX is the only example syntax; the rule
+ * stays audit-enforced. Each finding names its construct.
  * @param corpus Every mdx file in scope
  * @returns Findings (one per offending line)
  */

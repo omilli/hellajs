@@ -1,7 +1,7 @@
 import { addComponent } from "./addComponent";
 import { initProject } from "./initProject";
 import { listComponents } from "./listComponents";
-import type { UiFormat, UiLang, UiStyle, UiThemeMode } from "./types";
+import type { UiLang, UiStyle, UiThemeMode } from "./types";
 
 /** Parsed command line: positional words plus recognized flag values. */
 interface ParsedArgs {
@@ -10,7 +10,6 @@ interface ParsedArgs {
   overwrite: boolean;
   force: boolean;
   style?: string;
-  format?: string;
   lang?: string;
   themeMode?: string;
 }
@@ -25,7 +24,6 @@ Commands:
 
 Options:
   --style css|tailwind   registry style to copy on add
-  --format jsx|html      source format to copy on add
   --lang js|ts           output language to copy on add (default ts)
   --theme-mode light|dark  dark-default tokens sheet (css style only)
   --dir <path>           target project root
@@ -46,7 +44,7 @@ function parseArgs(args: string[]): ParsedArgs {
       parsed.overwrite = true;
     } else if (arg === "--force") {
       parsed.force = true;
-    } else if (arg === "--dir" || arg === "--style" || arg === "--format" || arg === "--lang" || arg === "--theme-mode") {
+    } else if (arg === "--dir" || arg === "--style" || arg === "--lang" || arg === "--theme-mode") {
       const value = args[i];
       i++;
       if (value === undefined) {
@@ -54,7 +52,6 @@ function parseArgs(args: string[]): ParsedArgs {
       }
       if (arg === "--dir") parsed.dir = value;
       else if (arg === "--style") parsed.style = value;
-      else if (arg === "--format") parsed.format = value;
       else if (arg === "--theme-mode") parsed.themeMode = value;
       else parsed.lang = value;
     } else if (arg.startsWith("--")) {
@@ -88,7 +85,6 @@ export async function main(argv: string[]): Promise<number> {
       dir: parsed.dir,
       overwrite: parsed.overwrite,
       style: parsed.style as UiStyle,
-      format: parsed.format as UiFormat,
       lang: parsed.lang as UiLang,
       themeMode: parsed.themeMode as UiThemeMode,
     });

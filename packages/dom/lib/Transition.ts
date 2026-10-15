@@ -62,7 +62,12 @@ export function Transition(props: TransitionProps): JSX.Element {
 
         if (current) return;
 
-        current = resolveNode(children, parent, childNamespaceOf(parent));
+        // A single-element children array unwraps to the element (the babel plugin's
+        // compiled component-children convention) — resolveNode maps
+        // arrays to a fragment, and a fragment `current` silently skips every
+        // `instanceof Element` branch below (enter/appear classes, leave removal).
+        const child = Array.isArray(children) && children.length === 1 ? children[0] : children;
+        current = resolveNode(child, parent, childNamespaceOf(parent));
         anchor.parentNode?.insertBefore(current, anchor);
 
         if (isFirst && appear) {

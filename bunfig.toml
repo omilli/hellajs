@@ -1,5 +1,5 @@
 [test]
-preload = "./utils/happydom.js"
+preload = ["./utils/happydom.js", "./utils/jsx.js"]
 
 coveragePathIgnorePatterns = [
   "**/lib/**/**.ts",

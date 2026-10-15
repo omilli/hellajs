@@ -89,7 +89,7 @@ async function openMenu(trigger: HTMLElement) {
 }
 
 describe("menubar", () => {
-  test.each(menubarVariants)("$format/$style opens one menu and closes the first when the second trigger clicks", async (variant) => {
+  test.each(menubarVariants)("$style opens one menu and closes the first when the second trigger clicks", async (variant) => {
     const onValueChange = mock<(value: string) => void>(() => {});
     const bar = renderBar(variant, [
       Menu(variant, { value: "file", content: Item(variant, { children: "Open" }) }),
@@ -110,7 +110,7 @@ describe("menubar", () => {
     expect(onValueChange).toHaveBeenLastCalledWith("edit");
   });
 
-  test.each(menubarVariants)("$format/$style moves focus between triggers with left/right arrows", (variant) => {
+  test.each(menubarVariants)("$style moves focus between triggers with left/right arrows", (variant) => {
     const bar = renderBar(variant, [
       Menu(variant, { value: "file", content: Item(variant, { children: "Open" }) }),
       Menu(variant, { value: "edit", content: Item(variant, { children: "Copy" }) }),
@@ -128,7 +128,7 @@ describe("menubar", () => {
     expect(document.activeElement).toBe(view!);
   });
 
-  test.each(menubarVariants)("$format/$style switches menus with left/right arrows while one is open", async (variant) => {
+  test.each(menubarVariants)("$style switches menus with left/right arrows while one is open", async (variant) => {
     const bar = renderBar(variant, [
       Menu(variant, { value: "file", content: Item(variant, { children: "Open" }) }),
       Menu(variant, { value: "edit", content: Item(variant, { children: "Copy" }) }),
@@ -158,7 +158,7 @@ describe("menubar", () => {
     expect(file!.getAttribute("aria-expanded")).toBe("true");
   });
 
-  test.each(menubarVariants)("$format/$style closes on Escape and returns focus to its trigger", async (variant) => {
+  test.each(menubarVariants)("$style closes on Escape and returns focus to its trigger", async (variant) => {
     const bar = renderBar(variant, [
       Menu(variant, { value: "file", content: Item(variant, { children: "Open" }) }),
     ]);
@@ -170,7 +170,7 @@ describe("menubar", () => {
     expect(document.activeElement).toBe(file!);
   });
 
-  test.each(menubarVariants)("$format/$style opens with ArrowDown on the trigger", async (variant) => {
+  test.each(menubarVariants)("$style opens with ArrowDown on the trigger", async (variant) => {
     const bar = renderBar(variant, [
       Menu(variant, { value: "file", content: Item(variant, { children: "Open" }) }),
     ]);
@@ -181,7 +181,7 @@ describe("menubar", () => {
     expect(document.activeElement).toBe(content.querySelector("[role='menuitem']"));
   });
 
-  test.each(menubarVariants)("$format/$style activates items and closes the whole bar menu", async (variant) => {
+  test.each(menubarVariants)("$style activates items and closes the whole bar menu", async (variant) => {
     const onclick = mock(() => {});
     const bar = renderBar(variant, [
       Menu(variant, { value: "file", content: Item(variant, { children: "Open", "on:click": onclick }) }),
@@ -194,11 +194,11 @@ describe("menubar", () => {
     expect(content.getAttribute("data-state")).toBe("closed");
   });
 
-  test.each(menubarVariants)("$format/$style toggles checkbox items with the check indicator", async (variant) => {
+  test.each(menubarVariants)("$style toggles checkbox items with the check indicator", async (variant) => {
     const onCheckedChange = mock<(checked: boolean) => void>(() => {});
     const bar = renderBar(variant, [
       Menu(variant, {
-        value: "format",
+        value: "edit",
         content: Part(variant, "CheckboxItem")({ children: "Bold", onCheckedChange }),
       }),
     ]);
@@ -214,7 +214,7 @@ describe("menubar", () => {
     expect(checkbox.querySelector("svg")).not.toBeNull();
   });
 
-  test.each(menubarVariants)("$format/$style opens submenus on click and pops them with Escape", async (variant) => {
+  test.each(menubarVariants)("$style opens submenus on click and pops them with Escape", async (variant) => {
     const bar = renderBar(variant, [
       Menu(variant, {
         value: "file",
@@ -236,7 +236,7 @@ describe("menubar", () => {
     expect(document.activeElement).toBe(file!);
   });
 
-  test.each(menubarVariants)("$format/$style dismisses on an outside pointerdown", async (variant) => {
+  test.each(menubarVariants)("$style dismisses on an outside pointerdown", async (variant) => {
     const bar = renderBar(variant, [
       Menu(variant, { value: "file", content: Item(variant, { children: "Open" }) }),
     ]);
@@ -246,7 +246,7 @@ describe("menubar", () => {
     expect(content.getAttribute("data-state")).toBe("closed");
   });
 
-  test.each(menubarVariants)("$format/$style unmounts content through its exit and reopens cleanly", async (variant) => {
+  test.each(menubarVariants)("$style unmounts content through its exit and reopens cleanly", async (variant) => {
     const bar = renderBar(variant, [
       Menu(variant, { value: "file", content: Item(variant, { children: "Open" }) }),
     ]);
@@ -260,7 +260,7 @@ describe("menubar", () => {
     expect(second.getAttribute("data-state")).toBe("open");
   });
 
-  test.each(menubarVariants)("$format/$style reports controlled bar value through the root accessor", async (variant) => {
+  test.each(menubarVariants)("$style reports controlled bar value through the root accessor", async (variant) => {
     const onValueChange = mock<(value: string) => void>(() => {});
     const bar = renderVariant(variant, {
       onValueChange,
@@ -273,7 +273,7 @@ describe("menubar", () => {
     expect(onValueChange).toHaveBeenLastCalledWith("");
   });
 
-  test.each(menubarVariants)("$format/$style focuses the first matching item on typeahead", async (variant) => {
+  test.each(menubarVariants)("$style focuses the first matching item on typeahead", async (variant) => {
     const bar = renderBar(variant, [
       Menu(variant, {
         value: "file",
@@ -287,7 +287,7 @@ describe("menubar", () => {
     expect(document.activeElement).toBe(items[1]!);
   });
 
-  test.each(menubarVariants)("$format/$style radio groups single-select through the items table", async (variant) => {
+  test.each(menubarVariants)("$style radio groups single-select through the items table", async (variant) => {
     const onValueChange = mock<(value: string) => void>(() => {});
     const bar = renderBar(variant, [
       Menu(variant, {
@@ -309,7 +309,7 @@ describe("menubar", () => {
     expect(radios[1]!.getAttribute("aria-checked")).toBe("false");
   });
 
-  test.each(menubarVariants)("$format/$style re-renders a signal radio items list across appends", async (variant) => {
+  test.each(menubarVariants)("$style re-renders a signal radio items list across appends", async (variant) => {
     const liveItems = signal<MenuRadioEntryVariant[]>([{ value: "light", label: "Light" }]);
     const bar = renderBar(variant, [
       Menu(variant, {
@@ -325,7 +325,7 @@ describe("menubar", () => {
     expect(values()).toEqual(["light", "dark"]);
   });
 
-  test.each(menubarVariants)("$format/$style enters submenus with ArrowRight and returns with ArrowLeft", async (variant) => {
+  test.each(menubarVariants)("$style enters submenus with ArrowRight and returns with ArrowLeft", async (variant) => {
     const bar = renderBar(variant, [
       Menu(variant, {
         value: "file",
@@ -348,7 +348,7 @@ describe("menubar", () => {
     expect(content.getAttribute("data-state")).toBe("open");
   });
 
-  test.each(menubarVariants)("$format/$style closes under Tab", async (variant) => {
+  test.each(menubarVariants)("$style closes under Tab", async (variant) => {
     const bar = renderBar(variant, [
       Menu(variant, { value: "file", content: Item(variant, { children: "Open" }) }),
     ]);
@@ -358,7 +358,7 @@ describe("menubar", () => {
     expect(content.getAttribute("data-state")).toBe("closed");
   });
 
-  test.each(menubarVariants)("$format/$style renders inset, destructive, and shortcut item states", async (variant) => {
+  test.each(menubarVariants)("$style renders inset, destructive, and shortcut item states", async (variant) => {
     const bar = renderBar(variant, [
       Menu(variant, {
         value: "file",
@@ -376,7 +376,7 @@ describe("menubar", () => {
     expect(content.querySelector("[data-inset]")!.textContent).toContain("Indented");
   });
 
-  test.each(menubarVariants)("$format/$style blocks activation on disabled items", async (variant) => {
+  test.each(menubarVariants)("$style blocks activation on disabled items", async (variant) => {
     const onclick = mock(() => {});
     const bar = renderBar(variant, [
       Menu(variant, {
@@ -393,7 +393,7 @@ describe("menubar", () => {
     expect(content.getAttribute("data-state")).toBe("open");
   });
 
-  test.each(menubarVariants)("$format/$style roves the content items with wrap and jumps with Home/End", async (variant) => {
+  test.each(menubarVariants)("$style roves the content items with wrap and jumps with Home/End", async (variant) => {
     const bar = renderBar(variant, [
       Menu(variant, {
         value: "file",
@@ -417,7 +417,7 @@ describe("menubar", () => {
     pressKey(content, " ");
   });
 
-  test.each(menubarVariants)("$format/$style sub content roves, activates, and closes under Tab", async (variant) => {
+  test.each(menubarVariants)("$style sub content roves, activates, and closes under Tab", async (variant) => {
     const onclick = mock(() => {});
     const bar = renderBar(variant, [
       Menu(variant, {
@@ -455,7 +455,7 @@ describe("menubar", () => {
     expect(reopenedContent.getAttribute("data-state")).toBe("closed");
   });
 
-  test.each(menubarVariants)("$format/$style opens submenus on hover after the intent delay and keeps them open on re-enter", async (variant) => {
+  test.each(menubarVariants)("$style opens submenus on hover after the intent delay and keeps them open on re-enter", async (variant) => {
     const bar = renderBar(variant, [
       Menu(variant, {
         value: "file",
@@ -486,7 +486,7 @@ describe("menubar", () => {
     expect(subContent.getAttribute("data-state")).toBe("open");
   });
 
-  test.each(menubarVariants)("$format/$style sub-trigger part opens through onOpen from click and hover intent", async (variant) => {
+  test.each(menubarVariants)("$style sub-trigger part opens through onOpen from click and hover intent", async (variant) => {
     const onOpen = mock(() => {});
     const container = setupContainer();
     const handle = mount(Part(variant, "SubTrigger")({ children: ["More"], onOpen }), container);
@@ -504,7 +504,7 @@ describe("menubar", () => {
     handle.unmount();
   });
 
-  test.each(menubarVariants)("$format/$style closes the submenu after leaving the trigger for the close delay", async (variant) => {
+  test.each(menubarVariants)("$style closes the submenu after leaving the trigger for the close delay", async (variant) => {
     const bar = renderBar(variant, [
       Menu(variant, {
         value: "file",
@@ -525,7 +525,7 @@ describe("menubar", () => {
     expect(subTrigger.getAttribute("aria-expanded")).toBe("false");
   });
 
-  test.each(menubarVariants)("$format/$style drops bar and menu wiring on unmount", async (variant) => {
+  test.each(menubarVariants)("$style drops bar and menu wiring on unmount", async (variant) => {
     const container = setupContainer();
     const handle = mount(variant.render({
       children: [Menu(variant, { value: "file", content: Item(variant, { children: "Open" }) })],
@@ -540,30 +540,30 @@ describe("menubar", () => {
     expect(bar.isConnected).toBe(false);
   });
 
-  test.each(menubarVariants)("$format/$style forwards user attrs onto the bar root across all four variants", (variant) => {
+  test.each(menubarVariants)("$style forwards user attrs onto the bar root across both styles", (variant) => {
     const bar = renderVariant(variant, { "aria-label": "main" });
     expect(bar.getAttribute("aria-label")).toBe("main");
   });
 
-  test.each(menubarVariants)("$format/$style fires a user on:click handler on the bar root across all four variants", (variant) => {
+  test.each(menubarVariants)("$style fires a user on:click handler on the bar root across both styles", (variant) => {
     const userClick = mock(() => {});
     const bar = renderVariant(variant, { "on:click": userClick });
     bar.dispatchEvent(new Event("click"));
     expect(userClick).toHaveBeenCalledTimes(1);
   });
 
-  test.each(menubarVariants)("$format/$style merges a user class into the bar root's class across all four variants", (variant) => {
+  test.each(menubarVariants)("$style merges a user class into the bar root's class across both styles", (variant) => {
     const bar = renderVariant(variant, { class: "user-class" });
     expect(classTokens(bar).at(-1)).toBe("user-class");
   });
 
-  test.each(menubarPartVariants.filter((variant) => variant.part === "Content"))("$format/$style content part respects a user-supplied id", (variant) => {
+  test.each(menubarPartVariants.filter((variant) => variant.part === "Content"))("$style content part respects a user-supplied id", (variant) => {
     const container = setupContainer();
     mount(variant.render({ id: "custom-menubar-content", children: [] }), container);
     expect(container.firstElementChild!.getAttribute("id")).toBe("custom-menubar-content");
   });
 
-  test("keeps structural parity across all four variants", () => {
+  test("keeps structural parity across both styles", () => {
     assertStructuralParity(menubarVariants, { children: [] });
     assertStructuralParity(
       menubarPartVariants.filter((variant) => variant.part === "RadioGroup"),
@@ -571,7 +571,7 @@ describe("menubar", () => {
     );
   });
 
-  test("renders every named part with its data-slot across all four variants", () => {
+  test("renders every named part with its data-slot across both styles", () => {
     for (const variant of menubarPartVariants) {
       const container = setupContainer();
       const rendered = variant.render({ children: [] });

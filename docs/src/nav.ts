@@ -80,7 +80,6 @@ export const navigation: Record<NavSection, NavEntry[]> = {
         "mount",
         "hydrate",
         "element",
-        "html",
         "raw",
         "ForEach",
         "Portal",

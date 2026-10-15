@@ -23,7 +23,7 @@ import {
 let now: number;
 let originalNow: () => number;
 
-// resetTestState resets the @hellajs/dom/bundle instance; the compiled registry
+// resetTestState resets the @hellajs/dom instance; the compiled registry
 // components import the bare specifier, whose shared hoverIntent clock and layer
 // stack need the bare instance's own reset.
 beforeEach(() => {
@@ -47,7 +47,7 @@ async function openTooltip(variant: (typeof tooltipVariants)[number], props: Par
 }
 
 describe("tooltip", () => {
-  test.each(tooltipVariants)("$format/$style opens after the open delay", async (variant) => {
+  test.each(tooltipVariants)("$style opens after the open delay", async (variant) => {
     const trigger = renderVariant(variant, { content: "Hi", delayDuration: 5 });
     pointerEnter(trigger);
     expect(newestPortaled("tooltip-content")).toBeUndefined();
@@ -57,7 +57,7 @@ describe("tooltip", () => {
     expect(content.textContent).toBe("Hi");
   });
 
-  test.each(tooltipVariants)("$format/$style opens instantly inside the shared skip-delay window after a recent tooltip", async (variant) => {
+  test.each(tooltipVariants)("$style opens instantly inside the shared skip-delay window after a recent tooltip", async (variant) => {
     const first = await openTooltip(variant);
     pointerDownOutside();
     expect(first.content.getAttribute("data-state")).toBe("closed");
@@ -68,7 +68,7 @@ describe("tooltip", () => {
     expect(secondContent.textContent).toBe("Two");
   });
 
-  test.each(tooltipVariants)("$format/$style delays again once the skip-delay window has passed", async (variant) => {
+  test.each(tooltipVariants)("$style delays again once the skip-delay window has passed", async (variant) => {
     await openTooltip(variant);
     pointerDownOutside();
     const second = renderVariant(variant, { content: "Two", delayDuration: 40 });
@@ -80,7 +80,7 @@ describe("tooltip", () => {
     expect((await awaitPortaled("tooltip-content")).textContent).toBe("Two");
   });
 
-  test.each(tooltipVariants)("$format/$style closes after the close delay", async (variant) => {
+  test.each(tooltipVariants)("$style closes after the close delay", async (variant) => {
     const { trigger, content } = await openTooltip(variant);
     pointerLeave(trigger);
     expect(content.getAttribute("data-state")).toBe("open");
@@ -88,7 +88,7 @@ describe("tooltip", () => {
     expect(content.getAttribute("data-state")).toBe("closed");
   });
 
-  test.each(tooltipVariants)("$format/$style wires aria-describedby to the content id", async (variant) => {
+  test.each(tooltipVariants)("$style wires aria-describedby to the content id", async (variant) => {
     const { trigger, content } = await openTooltip(variant);
     const describedBy = trigger.getAttribute("aria-describedby");
     expect(describedBy).toMatch(/^hella-tooltip-content-/);
@@ -97,7 +97,7 @@ describe("tooltip", () => {
     expect(content.getAttribute("data-slot")).toBe("tooltip-content");
   });
 
-  test.each(tooltipVariants)("$format/$style anchors above the trigger by default", async (variant) => {
+  test.each(tooltipVariants)("$style anchors above the trigger by default", async (variant) => {
     const trigger = renderVariant(variant, { content: "Hi", delayDuration: 5 });
     pinRect(trigger, 100, 50, 200, 20);
     pointerEnter(trigger);
@@ -110,7 +110,7 @@ describe("tooltip", () => {
     expect(content.getAttribute("data-align")).toBe("center");
   });
 
-  test.each(tooltipVariants)("$format/$style anchors below with side bottom and start alignment", async (variant) => {
+  test.each(tooltipVariants)("$style anchors below with side bottom and start alignment", async (variant) => {
     const trigger = renderVariant(variant, { content: "Hi", delayDuration: 5, side: "bottom", align: "start" });
     pinRect(trigger, 100, 50, 200, 20);
     pointerEnter(trigger);
@@ -122,7 +122,7 @@ describe("tooltip", () => {
     expect(content.getAttribute("data-align")).toBe("start");
   });
 
-  test.each(tooltipVariants)("$format/$style opens on focus", async (variant) => {
+  test.each(tooltipVariants)("$style opens on focus", async (variant) => {
     const trigger = renderVariant(variant, { content: "Hi", delayDuration: 5 });
     trigger.dispatchEvent(new FocusEvent("focus"));
     await delay(30);
@@ -130,7 +130,7 @@ describe("tooltip", () => {
     expect(content.getAttribute("data-state")).toBe("open");
   });
 
-  test.each(tooltipVariants)("$format/$style unmounts portal content on disposal", async (variant) => {
+  test.each(tooltipVariants)("$style unmounts portal content on disposal", async (variant) => {
     const container = setupContainer();
     const handle = mount(variant.render({ content: "Hi", delayDuration: 5 }), container);
     const trigger = container.firstElementChild as HTMLElement;
@@ -143,7 +143,7 @@ describe("tooltip", () => {
     expect(trigger.isConnected).toBe(false);
   });
 
-  test.each(tooltipVariants)("$format/$style reopens cleanly across open and close cycles", async (variant) => {
+  test.each(tooltipVariants)("$style reopens cleanly across open and close cycles", async (variant) => {
     const trigger = renderVariant(variant, { content: "Hi", delayDuration: 5 });
     pointerEnter(trigger);
     await delay(30);
@@ -158,7 +158,7 @@ describe("tooltip", () => {
     expect(second.getAttribute("data-state")).toBe("open");
   });
 
-  test.each(tooltipPartVariants.filter((variant) => variant.part === "Content"))("$format/$style content part positions against the anchor and drains its wirings on disposal", (variant) => {
+  test.each(tooltipPartVariants.filter((variant) => variant.part === "Content"))("$style content part positions against the anchor and drains its wirings on disposal", (variant) => {
     const anchor = document.createElement("button");
     document.body.appendChild(anchor);
     pinRect(anchor, 100, 50, 200, 20);
@@ -171,34 +171,34 @@ describe("tooltip", () => {
     expect(content.isConnected).toBe(false);
   });
 
-  test.each(tooltipVariants)("$format/$style forwards user attrs onto the trigger root across all four variants", (variant) => {
+  test.each(tooltipVariants)("$style forwards user attrs onto the trigger root across both styles", (variant) => {
     const trigger = renderVariant(variant, { content: "Hi", "aria-label": "trigger" });
     expect(trigger.getAttribute("aria-label")).toBe("trigger");
   });
 
-  test.each(tooltipVariants)("$format/$style fires a user on:click handler on the trigger root across all four variants", (variant) => {
+  test.each(tooltipVariants)("$style fires a user on:click handler on the trigger root across both styles", (variant) => {
     const userClick = mock(() => {});
     const trigger = renderVariant(variant, { content: "Hi", "on:click": userClick });
     trigger.dispatchEvent(new Event("click"));
     expect(userClick).toHaveBeenCalledTimes(1);
   });
 
-  test.each(tooltipVariants)("$format/$style merges a user class into the trigger root's class across all four variants", (variant) => {
+  test.each(tooltipVariants)("$style merges a user class into the trigger root's class across both styles", (variant) => {
     const trigger = renderVariant(variant, { content: "Hi", class: "user-class" });
     expect(classTokens(trigger).at(-1)).toBe("user-class");
   });
 
-  test.each(tooltipPartVariants.filter((variant) => variant.part === "Content"))("$format/$style content part respects a user-supplied id", (variant) => {
+  test.each(tooltipPartVariants.filter((variant) => variant.part === "Content"))("$style content part respects a user-supplied id", (variant) => {
     const container = setupContainer();
     mount(variant.render({ id: "custom-tooltip", children: [] }), container);
     expect(container.firstElementChild!.getAttribute("id")).toBe("custom-tooltip");
   });
 
-  test("keeps structural parity across all four variants", () => {
+  test("keeps structural parity across both styles", () => {
     assertStructuralParity(tooltipVariants, { content: "Parity" }, ["aria-describedby"]);
   });
 
-  test("renders every named part with its data-slot across all four variants", () => {
+  test("renders every named part with its data-slot across both styles", () => {
     for (const variant of tooltipPartVariants) {
       const container = setupContainer();
       const rendered = variant.render({ children: [] });

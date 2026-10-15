@@ -1,16 +1,12 @@
-import Callout from "@components/Callout.astro";
-
 # Templates
 
 Templates bind reactive values directly to DOM elements, enabling surgical updates without virtual DOM diffing.
 
-## Template Approaches
+## Compiled Templates
 
-Both produce the same internal HellaNode representation, so all reactive features work identically regardless of template syntax.
+JSX is the only template syntax. A build-time plugin (`babel-plugin-hellajs`, wired by the Vite, Rollup, and Astro integrations) compiles each component into plain [`HellaNode`](/reference/dom) objects: the same AST [`mount`](/reference/dom/mount) consumes, built once at module load instead of parsed at runtime. Nothing in the shipped bundle parses markup; the compiler does that work when your app builds.
 
-### JSX
-
-A familiar syntax (with minor differences) for those coming from React or similar libraries.
+Compilation is where reactivity gets wired. The rules below describe what the compiler emits; every rule holds identically on the server, where [`ssr`](/reference/ssr) walks the same AST to a string.
 
 ```jsx
 import { mount } from "@hellajs/dom";
@@ -28,31 +24,9 @@ const App = () => (
 mount(App, "#app");
 ```
 
-### Template Literals
-
-Template literals allow for pure runtime compilation and caching. An optional build-time compile step offers the same speed and size benefits as JSX.
-
-```js
-import { mount, html } from "@hellajs/dom";
-import { signal } from "@hellajs/core";
-
-const count = signal(0);
-
-const App = () => html`
-  <div>
-    <h1>${count}</h1>
-    <button on:click=${() => count(count() + 1)}>Increment</button>
-  </div>
-`;
-
-mount(App, "#app");
-```
-
-## Element Syntax
-
 ### Reactive Bindings
 
-A signal **reference** is the simplest reactive binding. A **compound** expression (arithmetic, conditional, method call) calls the signal and auto-wraps in compiled code. Both update the DOM when their dependencies change.
+A signal **reference** is the simplest reactive binding. A **compound** expression (arithmetic, conditional, method call) calls the signal and the compiler auto-wraps it in a reactive thunk. Both update the DOM when their dependencies change.
 
 ```jsx
 // Signal reference: updates when count changes
@@ -65,18 +39,7 @@ A signal **reference** is the simplest reactive binding. A **compound** expressi
 {count() > 5 && <p>Great job!</p>}
 ```
 
-The compiler auto-wraps compound expressions in compiled `html` templates too.
-
-<Callout variant="error">Runtime `html` requires an explicit `() => …` wrapper as shown below.</Callout> 
-
-```js
-// Runtime html`` (no compiler): reference stays bare, compound wrapped
-html`<div>
-  <h1>${count}</h1>
-  <h2>${() => count() * 2}</h2>
-  ${() => count() > 5 && html`<p>Great job!</p>`}
-</div>
-```
+The auto-wrap applies to element children and element attributes only. Component children and props arrive as plain values; pass an explicit thunk when a component documents a getter prop. An explicit function is never wrapped again, so `{() => count() * 2}` behaves exactly like the auto-wrapped form.
 
 ### Static Values
 
@@ -116,18 +79,15 @@ const isActive = signal(true);
 </div>
 ```
 
-Runtime `html` wraps the whole array instead:
+## Static Hoisting
 
-```js
-const isActive = signal(true);
+A fully-static subtree (lowercase tag, literal-only props, static text and children) hoists to a module-level constant allocated once per site. Every later use mounts that constant via a single clone instead of re-walking construction, so repeated static markup costs one allocation total.
 
-// Runtime: class recomputes as isActive flips
-html`<div class=${() => ["base", isActive() && "active", "always"]}>Tab</div>
-```
+Anything dynamic disqualifies the subtree: expressions, components, spreads, and [`attribute prefixes`](/learn/concepts/attribute-prefixes) (`on:`, `e:`, `hook:`, `error:`), which bind handlers and lifecycle hooks the clone must not share. Static children of a disqualified parent still hoist individually, so one dynamic boundary never flattens the whole tree.
 
 ## SVG and MathML
 
-SVG and MathML mount in their correct namespaces automatically: an `<svg>` root creates in the SVG namespace, descendants inherit it, and a `<math>` root creates in the MathML namespace. Both JSX and `html` behave identically; no wrappers or namespace configuration are needed.
+SVG and MathML mount in their correct namespaces automatically: an `<svg>` root creates in the SVG namespace, descendants inherit it, and a `<math>` root creates in the MathML namespace. No wrappers or namespace configuration are needed.
 
 ```jsx
 import { mount } from "@hellajs/dom";
@@ -144,7 +104,7 @@ Dynamic content works the same way: [`ForEach`](/reference/dom/foreach), [`Lazy`
 
 ### CamelCase Tags
 
-Multi-word SVG and MathML tags are authored camelCase (`clipPath`, `linearGradient`, `feGaussianBlur`), exactly as in hand-written SVG. Both template forms preserve tag case, and cased attributes like `viewBox` and `patternUnits` pass through unchanged.
+Multi-word SVG and MathML tags are authored camelCase (`clipPath`, `linearGradient`, `feGaussianBlur`), exactly as in hand-written SVG. The compiler preserves tag case, and cased attributes like `viewBox` and `patternUnits` pass through unchanged.
 
 ### foreignObject Resets to HTML
 

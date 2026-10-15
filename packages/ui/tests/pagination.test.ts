@@ -15,7 +15,7 @@ beforeEach(() => {
 });
 
 describe("pagination", () => {
-  test.each(paginationVariants)("$format/$style renders the navigation landmark", (variant) => {
+  test.each(paginationVariants)("$style renders the navigation landmark", (variant) => {
     const root = renderVariant(variant, { children: variant.child!("x") });
     expect(root.tagName).toBe("NAV");
     expect(root.getAttribute("role")).toBe("navigation");
@@ -24,7 +24,7 @@ describe("pagination", () => {
     expect(root.textContent).toBe("x");
   });
 
-  test.each(paginationPartVariants.filter((variant) => variant.part === "Content"))("$part $format/$style renders the list", (variant) => {
+  test.each(paginationPartVariants.filter((variant) => variant.part === "Content"))("$part $style renders the list", (variant) => {
     const root = renderVariant(variant, { children: ["x"] });
     expect(root.tagName).toBe("UL");
     expect(root.getAttribute("data-slot")).toBe("pagination-content");
@@ -35,14 +35,14 @@ describe("pagination", () => {
     }
   });
 
-  test.each(paginationPartVariants.filter((variant) => variant.part === "Item"))("$part $format/$style renders a bare list item", (variant) => {
+  test.each(paginationPartVariants.filter((variant) => variant.part === "Item"))("$part $style renders a bare list item", (variant) => {
     const root = renderVariant(variant, { children: ["cell"] });
     expect(root.tagName).toBe("LI");
     expect(root.getAttribute("data-slot")).toBe("pagination-item");
     expect(root.textContent).toBe("cell");
   });
 
-  test.each(paginationPartVariants.filter((variant) => variant.part === "Link"))("$part $format/$style renders the link slot with icon size default", (variant) => {
+  test.each(paginationPartVariants.filter((variant) => variant.part === "Link"))("$part $style renders the link slot with icon size default", (variant) => {
     const root = renderVariant(variant, { children: ["1"] });
     expect(root.tagName).toBe("A");
     expect(root.getAttribute("data-slot")).toBe("pagination-link");
@@ -55,7 +55,7 @@ describe("pagination", () => {
     }
   });
 
-  test.each(paginationPartVariants.filter((variant) => variant.part === "Link"))("$part $format/$style marks the active link", (variant) => {
+  test.each(paginationPartVariants.filter((variant) => variant.part === "Link"))("$part $style marks the active link", (variant) => {
     const root = renderVariant(variant, { isActive: true, children: ["1"] });
     expect(root.getAttribute("aria-current")).toBe("page");
     expect(root.getAttribute("data-active")).toBe("true");
@@ -67,7 +67,7 @@ describe("pagination", () => {
     }
   });
 
-  test.each(paginationPartVariants.filter((variant) => variant.part === "Link"))("$part $format/$style passes href and size through", (variant) => {
+  test.each(paginationPartVariants.filter((variant) => variant.part === "Link"))("$part $style passes href and size through", (variant) => {
     const root = renderVariant(variant, { href: "?page=2", size: "sm", children: ["2"] });
     expect(root.getAttribute("href")).toBe("?page=2");
     if (variant.style === "css") {
@@ -77,13 +77,13 @@ describe("pagination", () => {
     }
   });
 
-  test.each(paginationPartVariants.filter((variant) => variant.part === "Link"))("$part $format/$style renders the inactive link flag when explicitly false", (variant) => {
+  test.each(paginationPartVariants.filter((variant) => variant.part === "Link"))("$part $style renders the inactive link flag when explicitly false", (variant) => {
     const root = renderVariant(variant, { isActive: false, children: ["1"] });
     expect(root.getAttribute("data-active")).toBe("false");
     expect(root.hasAttribute("aria-current")).toBe(false);
   });
 
-  test.each(paginationPartVariants.filter((variant) => variant.part === "Previous" || variant.part === "Next"))("$part $format/$style carries the accessible label, fixed size, and icon", (variant) => {
+  test.each(paginationPartVariants.filter((variant) => variant.part === "Previous" || variant.part === "Next"))("$part $style carries the accessible label, fixed size, and icon", (variant) => {
     const root = renderVariant(variant, {});
     expect(root.tagName).toBe("A");
     expect(root.getAttribute("aria-label")).toBe(variant.part === "Previous" ? "Go to previous page" : "Go to next page");
@@ -98,7 +98,7 @@ describe("pagination", () => {
     }
   });
 
-  test.each(paginationPartVariants.filter((variant) => variant.part === "Ellipsis"))("$part $format/$style renders the more-pages icon and sr-only label", (variant) => {
+  test.each(paginationPartVariants.filter((variant) => variant.part === "Ellipsis"))("$part $style renders the more-pages icon and sr-only label", (variant) => {
     const root = renderVariant(variant, {});
     expect(root.getAttribute("aria-hidden")).toBe("true");
     expect(root.getAttribute("data-slot")).toBe("pagination-ellipsis");
@@ -111,11 +111,11 @@ describe("pagination", () => {
     }
   });
 
-  test("forwards user attrs onto the root across all four variants", () => {
+  test("forwards user attrs onto the root across both styles", () => {
     assertAttrForwarded(paginationVariants, { title: "Hella" }, "title", "Hella");
   });
 
-  test("merges the user class last on the root across all four variants", () => {
+  test("merges the user class last on the root across both styles", () => {
     for (const variant of paginationVariants) {
       const root = renderVariant(variant, { class: "my-pagination", children: variant.child!("x") });
       expect(classTokens(root).at(-1)).toBe("my-pagination");
@@ -138,7 +138,7 @@ describe("pagination", () => {
     }
   });
 
-  test("all four flavors agree on tag and attributes", () => {
+  test("both styles agree on tag and attributes", () => {
     assertStructuralParity(paginationVariants, { children: ["x"] });
     assertStructuralParity(paginationPartVariants.filter((candidate) => candidate.part === "Link"), { isActive: true, children: ["1"] });
   });

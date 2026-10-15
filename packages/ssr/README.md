@@ -20,11 +20,10 @@ npm install @hellajs/dom @hellajs/ssr
 
 ### Basic Usage
 
-```js
-import { html } from '@hellajs/dom';
+```jsx
 import { ssr } from '@hellajs/ssr';
 
-const page = (name) => html`<div><h1>Hello ${name}</h1></div>`;
+const page = (name) => <div><h1>Hello {name}</h1></div>;
 
 const body = ssr(page('World'));
 // body: "<div><h1>Hello World</h1></div>"

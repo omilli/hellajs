@@ -15,7 +15,7 @@ beforeEach(() => {
 });
 
 describe("message", () => {
-  test.each(messageVariants)("$part $format/$style renders the align attribute", (variant) => {
+  test.each(messageVariants)("$part $style renders the align attribute", (variant) => {
     const root = renderVariant(variant, { children: ["x"] });
     expect(root.getAttribute("data-slot")).toBe("message");
     expect(root.getAttribute("data-align")).toBe("start");
@@ -23,7 +23,7 @@ describe("message", () => {
     expect(end.getAttribute("data-align")).toBe("end");
   });
 
-  test.each(messageVariants)("$part $format/$style carries the row-reverse class on end alignment", (variant) => {
+  test.each(messageVariants)("$part $style carries the row-reverse class on end alignment", (variant) => {
     const root = renderVariant(variant, { align: "end", children: ["x"] });
     if (variant.style === "css") {
       expect(classTokens(root)[0]!.startsWith("message")).toBe(true);
@@ -32,13 +32,13 @@ describe("message", () => {
     }
   });
 
-  test.each(messagePartVariants)("$part $format/$style renders its slot", (variant) => {
+  test.each(messagePartVariants)("$part $style renders its slot", (variant) => {
     const root = renderVariant(variant, { children: ["x"] });
     expect(root.getAttribute("data-slot")).toBe(`message-${variant.part.toLowerCase()}`);
     expect(root.textContent).toBe("x");
   });
 
-  test.each(messagePartVariants.filter((variant) => variant.part === "Group"))("$part $format/$style renders the group stack", (variant) => {
+  test.each(messagePartVariants.filter((variant) => variant.part === "Group"))("$part $style renders the group stack", (variant) => {
     const root = renderVariant(variant, { children: ["x"] });
     expect(root.tagName).toBe("DIV");
     if (variant.style === "css") {
@@ -48,7 +48,7 @@ describe("message", () => {
     }
   });
 
-  test.each(messagePartVariants.filter((variant) => variant.part === "Avatar"))("$part $format/$style renders the avatar well", (variant) => {
+  test.each(messagePartVariants.filter((variant) => variant.part === "Avatar"))("$part $style renders the avatar well", (variant) => {
     const root = renderVariant(variant, { children: ["A"] });
     expect(root.textContent).toBe("A");
     if (variant.style === "css") {
@@ -58,7 +58,7 @@ describe("message", () => {
     }
   });
 
-  test.each(messagePartVariants.filter((variant) => variant.part === "Header" || variant.part === "Footer"))("$part $format/$style renders the meta rows", (variant) => {
+  test.each(messagePartVariants.filter((variant) => variant.part === "Header" || variant.part === "Footer"))("$part $style renders the meta rows", (variant) => {
     const root = renderVariant(variant, { children: ["meta"] });
     expect(root.textContent).toBe("meta");
     if (variant.style === "css") {
@@ -68,21 +68,21 @@ describe("message", () => {
     }
   });
 
-  test("all four flavors agree on tag and attributes", () => {
+  test("both styles agree on tag and attributes", () => {
     assertStructuralParity(messageVariants, { align: "end", children: ["x"] });
     assertStructuralParity(messagePartVariants.filter((candidate) => candidate.part === "Avatar"), { children: ["x"] });
   });
 
-  test("forwards user attrs onto the root across all four variants", () => {
+  test("forwards user attrs onto the root across both styles", () => {
     assertAttrForwarded(messageVariants, { title: "Hella" }, "title", "Hella");
   });
 
-  test("fires a user on:click handler across all four variants", () => {
+  test("fires a user on:click handler across both styles", () => {
     const onClick = mock(() => {});
     assertHandlerForwarded(messageVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 
-  test("merges a user class into the root class across all four variants", () => {
+  test("merges a user class into the root class across both styles", () => {
     for (const variant of messageVariants) {
       const root = renderVariant(variant, { class: "my-message", children: ["x"] });
       const tokens = classTokens(root);

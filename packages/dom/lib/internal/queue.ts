@@ -78,7 +78,7 @@ export function scheduleCleanup() {
  * Collects a removed node into the cleanup queue, descending through stateless
  * element children. Returns whether any state-carrying node was queued.
  * A state-carrying text node queues (a fragment root's scope can ride a text child,
- * e.g. `html`<>a b</>``); stateless text — the common case — keeps the cheap skip.
+ * e.g. a JSX fragment `<>a b</>`); stateless text — the common case — keeps the cheap skip.
  * @param node The removed node to collect
  * @returns Whether any state-carrying node was queued
  */

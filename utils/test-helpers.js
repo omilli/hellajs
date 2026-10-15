@@ -1,4 +1,4 @@
-import { resetDom } from "@hellajs/dom/bundle";
+import { resetDom } from "@hellajs/dom";
 import { resetCss, resetVars } from "@hellajs/css/bundle";
 import { resetResource } from "@hellajs/resource/bundle";
 import { resetRouter } from "@hellajs/router/bundle";

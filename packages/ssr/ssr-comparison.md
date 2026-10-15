@@ -41,7 +41,7 @@ Solid's server renderer runs the real reactive system under `sharedConfig.contex
 
 ### Svelte 5
 
-Svelte compiles each component twice (once for the client, once for the server) and the server build emits calls into `svelte/internal/server` block helpers (`element()`, `await_block()`, snippet and html blocks) that push strings into a renderer buffer (svelte 5.56, `src/internal/server/index.js`). `render(component)` from `svelte/server` returns a lazy object whose `html`/`head`/`body` getters trigger the synchronous render, or a thenable that awaits the tree when compiled with `experimental.async` (the `async_mode_flag`, `src/internal/server/renderer.js`). There is no reactive runtime on the server at all (the compiler already flattened reactivity into straight-line code), making Svelte the purest compile-to-string entry in the group, and the only one whose SSR output quality is decided entirely at build time.
+Svelte compiles each component twice (once for the client, once for the server) and the server build emits calls into `svelte/internal/server` block helpers (`element()`, `await_block()`, snippet and html blocks) that push strings into a renderer buffer (svelte 5.56, `src/internal/server/index.js`). `render(component)` from `svelte/server` returns a lazy object whose html, head, and body getters trigger the synchronous render, or a thenable that awaits the tree when compiled with `experimental.async` (the `async_mode_flag`, `src/internal/server/renderer.js`). There is no reactive runtime on the server at all (the compiler already flattened reactivity into straight-line code), making Svelte the purest compile-to-string entry in the group, and the only one whose SSR output quality is decided entirely at build time.
 
 ### React 19
 
@@ -51,7 +51,7 @@ React renders through Fizz, a segment-based renderer: the component tree is cut 
 
 Vue's server renderer walks a vnode tree produced by SSR-compiled render functions (`@vue/compiler-ssr` emits `ssrRender*` code, distinct from the client's DOM codegen). Output is pushed into nested buffers whose `hasAsync` flag controls whether unrolling awaits: `renderToString` always returns a Promise, awaiting `async setup()` and `serverPrefetch`, then resolving teleport buffers into `context.teleports` (@vue/server-renderer 3.5.42, `dist/server-renderer.esm-bundler.js`). Streaming variants (`renderToWebWritable`, `pipeToNodeWritable`) unroll the same buffer in document order. Vue sits between Svelte and React: compiled render code, like Svelte, but running through a vnode layer and runtime component machinery closer to React's model.
 
-**Verdict:** Two camps. Svelte and HellaJS stringify a static artifact (compiled blocks or a plain AST) with no runtime reactivity on the server; Solid, React, and Vue execute live component machinery to produce HTML. HellaJS is alone in the second camp's absence *and* the first camp's flexibility: like Solid's templates it accepts runtime-authored `html` trees with no compiler, yet like Svelte's server build it drags zero framework runtime into the process.
+**Verdict:** Two camps. Svelte and HellaJS stringify a static artifact (compiled blocks or a plain AST) with no runtime reactivity on the server; Solid, React, and Vue execute live component machinery to produce HTML. HellaJS is alone in the second camp's absence, and its build-time story matches Svelte's: JSX compiles to a plain AST ahead of deploy, dragging zero framework runtime into the process.
 
 ---
 
@@ -188,12 +188,11 @@ Vue's stringifier resolves teleports into `context.teleports` and leaves placeme
 
 One namespace, three call shapes, one assembler:
 
-```js
-import { html } from '@hellajs/dom';
+```jsx
 import { ssr, doc } from '@hellajs/ssr';
 
 const user = (id) => fetch(`/api/users/${id}`).then(r => r.text());
-const page = (id) => html`<div><h1>Hello</h1><p>${() => user(id)}</p></div>`;
+const page = (id) => <div><h1>Hello</h1><p>{() => user(id)}</p></div>;
 
 const body = ssr(page(1));                    // sync string
 const asyncBody = await ssr.async(page(1));   // awaits the user() Promise

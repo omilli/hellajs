@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { resetTestState } from "@utils/test-helpers.js";
-import { onSwipe } from "@hellajs/dom/bundle";
+import { onSwipe } from "@hellajs/dom";
 import type { SwipeCommit, SwipeState } from "@hellajs/dom";
 import { pointerDown, pointerMove, pointerUp } from "./helpers";
 

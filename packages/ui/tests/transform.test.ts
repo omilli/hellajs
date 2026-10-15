@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { applyStyleVariant, inlineTypes } from "@hellajs/ui/bundle";
 
 const canonical = [
-  "import { html } from \"@hellajs/dom\";",
+  "import type { HTMLAttributes } from \"@hellajs/dom\";",
   "",
   "// @hella:styles",
   "// @hella:end",
@@ -10,14 +10,14 @@ const canonical = [
   "interface P { class?: string }",
   "",
   "export default function X(p: P) {",
-  "  return html`<p class=\"${",
+  "  return <p class={",
   "    // @hella:compose",
   "    [",
   "      base,",
   "      p.class,",
   "    ]",
   "    // @hella:end",
-  "  }\"></p>`;",
+  "  }></p>;",
   "}",
 ].join("\n");
 
@@ -36,7 +36,7 @@ const tailwindModule = [
 describe("applyStyleVariant", () => {
   test("css pass splices the style module body and keeps the compose array verbatim", () => {
     expect(applyStyleVariant(canonical, cssModule, "css")).toBe([
-      "import { html } from \"@hellajs/dom\";",
+      "import type { HTMLAttributes } from \"@hellajs/dom\";",
       "",
       "import { style } from \"@hellajs/css\";",
       "",
@@ -45,12 +45,12 @@ describe("applyStyleVariant", () => {
       "interface P { class?: string }",
       "",
       "export default function X(p: P) {",
-      "  return html`<p class=\"${",
+      "  return <p class={",
       "    [",
       "      base,",
       "      p.class,",
       "    ]",
-      "  }\"></p>`;",
+      "  }></p>;",
       "}",
     ].join("\n"));
   });
@@ -58,18 +58,18 @@ describe("applyStyleVariant", () => {
   test("tailwind pass wraps the compose array in cn, inlines string consts, and injects the cn import", () => {
     const out = applyStyleVariant(canonical, tailwindModule, "tailwind");
     expect(out).toBe([
-      "import { html } from \"@hellajs/dom\";",
+      "import type { HTMLAttributes } from \"@hellajs/dom\";",
       "import { cn } from \"./cn.js\";",
       "",
       "interface P { class?: string }",
       "",
       "export default function X(p: P) {",
-      "  return html`<p class=\"${",
+      "  return <p class={",
       "    cn(",
       "      \"x-base\",",
       "      p.class,",
       "    )",
-      "  }\"></p>`;",
+      "  }></p>;",
       "}",
     ].join("\n"));
     expect(out.includes("const base")).toBe(false);
@@ -83,11 +83,11 @@ describe("applyStyleVariant", () => {
       "// @hella:end",
       "",
       "export default function X() {",
-      "  return html`<p class=\"${",
+      "  return <p class={",
       "    // @hella:compose",
       "    [base, p.class]",
       "    // @hella:end",
-      "  }\"></p>`;",
+      "  }></p>;",
       "}",
     ].join("\n");
     expect(applyStyleVariant(single, tailwindModule, "tailwind")).toContain("cn(\"x-base\", p.class)");
@@ -137,19 +137,19 @@ describe("applyStyleVariant", () => {
       "// @hella:end",
       "",
       "export function A() {",
-      "  return html`<p class=\"${",
+      "  return <p class={",
       "    // @hella:compose",
       "    [base, a.class]",
       "    // @hella:end",
-      "  }\">...</p>`;",
+      "  }>...</p>;",
       "}",
       "",
       "export function B() {",
-      "  return html`<i class=\"${",
+      "  return <i class={",
       "    // @hella:compose",
       "    [base, b.class]",
       "    // @hella:end",
-      "  }\">...</i>`;",
+      "  }>...</i>;",
       "}",
     ].join("\n");
     const out = applyStyleVariant(multi, cssModule, "css");
@@ -164,19 +164,19 @@ describe("applyStyleVariant", () => {
       "// @hella:end",
       "",
       "export function A() {",
-      "  return html`<p class=\"${",
+      "  return <p class={",
       "    // @hella:compose",
       "    [base, a.class]",
       "    // @hella:end",
-      "  }\">...</p>`;",
+      "  }>...</p>;",
       "}",
       "",
       "export function B() {",
-      "  return html`<i class=\"${",
+      "  return <i class={",
       "    // @hella:compose",
       "    [base, b.class]",
       "    // @hella:end",
-      "  }\">...</i>`;",
+      "  }>...</i>;",
       "}",
     ].join("\n");
     const out = applyStyleVariant(multi, tailwindModule, "tailwind");
@@ -281,19 +281,19 @@ describe("applyStyleVariant", () => {
       "// @hella:styles",
       "// @hella:end",
       "function X() {",
-      "  return html`<p class=\"${",
+      "  return <p class={",
       "    // @hella:compose",
       "    [base]",
       "    // @hella:end",
-      "  }\"></p>`;",
+      "  }></p>;",
       "}",
     ].join("\n");
     expect(applyStyleVariant(indented, tailwindModule, "tailwind")).toBe([
       "import { cn } from \"./cn.js\";",
       "function X() {",
-      "  return html`<p class=\"${",
+      "  return <p class={",
       "    cn(\"x-base\")",
-      "  }\"></p>`;",
+      "  }></p>;",
       "}",
     ].join("\n"));
   });
@@ -308,13 +308,13 @@ describe("applyStyleVariant", () => {
       "",
     ].join("\n");
     const lookup = [
-      "import { html } from \"@hellajs/dom\";",
+      "import type { HTMLAttributes } from \"@hellajs/dom\";",
       "",
       "// @hella:styles",
       "// @hella:end",
       "",
       "export default function X(p: P) {",
-      "  return html`<p class=\"${",
+      "  return <p class={",
       "    // @hella:compose",
       "    [",
       "      base,",
@@ -322,11 +322,11 @@ describe("applyStyleVariant", () => {
       "      p.class,",
       "    ]",
       "    // @hella:end",
-      "  }\"></p>`;",
+      "  }></p>;",
       "}",
     ].join("\n");
     expect(applyStyleVariant(lookup, mixedModule, "tailwind")).toBe([
-      "import { html } from \"@hellajs/dom\";",
+      "import type { HTMLAttributes } from \"@hellajs/dom\";",
       "import { cn } from \"./cn.js\";",
       "",
       "const variants = {",
@@ -334,13 +334,13 @@ describe("applyStyleVariant", () => {
       "};",
       "",
       "export default function X(p: P) {",
-      "  return html`<p class=\"${",
+      "  return <p class={",
       "    cn(",
       "      \"x-base\",",
       "      variants[props.variant ?? \"default\"],",
       "      p.class,",
       "    )",
-      "  }\"></p>`;",
+      "  }></p>;",
       "}",
     ].join("\n"));
   });
@@ -355,14 +355,14 @@ describe("applyStyleVariant", () => {
       "const wrapper = (cls: string) => helper(base, cls);",
       "",
       "export default function X(p: P) {",
-      "  return html`<p class=\"${",
+      "  return <p class={",
       "    // @hella:compose",
       "    [",
       "      base,",
       "      p.class,",
       "    ]",
       "    // @hella:end",
-      "  }\"></p>`;",
+      "  }></p>;",
       "}",
     ].join("\n");
     expect(applyStyleVariant(referencing, tailwindModule, "tailwind")).toBe([
@@ -372,12 +372,12 @@ describe("applyStyleVariant", () => {
       "const wrapper = (cls: string) => helper(\"x-base\", cls);",
       "",
       "export default function X(p: P) {",
-      "  return html`<p class=\"${",
+      "  return <p class={",
       "    cn(",
       "      \"x-base\",",
       "      p.class,",
       "    )",
-      "  }\"></p>`;",
+      "  }></p>;",
       "}",
     ].join("\n"));
   });
@@ -391,14 +391,14 @@ describe("applyStyleVariant", () => {
       "",
       "export default function X(p: P) {",
       "  const base = p.class ?? \"\";",
-      "  return html`<p class=\"${",
+      "  return <p class={",
       "    // @hella:compose",
       "    [",
       "      base,",
       "      p.class,",
       "    ]",
       "    // @hella:end",
-      "  }\"></p>`;",
+      "  }></p>;",
       "}",
     ].join("\n");
     const out = applyStyleVariant(shadowed, tailwindModule, "tailwind");
@@ -409,7 +409,7 @@ describe("applyStyleVariant", () => {
 
   test("a comment mentioning the const name stays verbatim while the const inlines", () => {
     const commented = [
-      "import { html } from \"@hellajs/dom\";",
+      "import type { HTMLAttributes } from \"@hellajs/dom\";",
       "",
       "// @hella:styles",
       "// @hella:end",
@@ -418,11 +418,11 @@ describe("applyStyleVariant", () => {
       "interface P { class?: string }",
       "",
       "export default function X(p: P) {",
-      "  return html`<p class=\"${",
+      "  return <p class={",
       "    // @hella:compose",
       "    [base, p.class]",
       "    // @hella:end",
-      "  }\"></p>`;",
+      "  }></p>;",
       "}",
     ].join("\n");
     const out = applyStyleVariant(commented, tailwindModule, "tailwind");
@@ -433,7 +433,7 @@ describe("applyStyleVariant", () => {
 
   test("an interface member sharing the const name stays verbatim while the const inlines", () => {
     const propTyped = [
-      "import { html } from \"@hellajs/dom\";",
+      "import type { HTMLAttributes } from \"@hellajs/dom\";",
       "",
       "// @hella:styles",
       "// @hella:end",
@@ -444,11 +444,11 @@ describe("applyStyleVariant", () => {
       "}",
       "",
       "export default function X(p: P) {",
-      "  return html`<p class=\"${",
+      "  return <p class={",
       "    // @hella:compose",
       "    [base, p.class]",
       "    // @hella:end",
-      "  }\"></p>`;",
+      "  }></p>;",
       "}",
     ].join("\n");
     const out = applyStyleVariant(propTyped, tailwindModule, "tailwind");
@@ -459,21 +459,21 @@ describe("applyStyleVariant", () => {
 
   test("a JSX tag sharing the const name stays verbatim while the const inlines", () => {
     const tagged = [
-      "import { html } from \"@hellajs/dom\";",
+      "import type { HTMLAttributes } from \"@hellajs/dom\";",
       "",
       "// @hella:styles",
       "// @hella:end",
       "",
       "export default function X(p: P) {",
-      "  return html`<base class=\"${",
+      "  return <base class={",
       "    // @hella:compose",
       "    [base, p.class]",
       "    // @hella:end",
-      "  }\"></base>`;",
+      "  }></base>;",
       "}",
     ].join("\n");
     const out = applyStyleVariant(tagged, tailwindModule, "tailwind");
-    expect(out).toContain("<base class=\"${");
+    expect(out).toContain("<base class={");
     expect(out).toContain("</base>");
     expect(out).toContain("cn(\"x-base\", p.class)");
     expect(out.includes("const base")).toBe(false);
@@ -481,22 +481,22 @@ describe("applyStyleVariant", () => {
 
   test("string content sharing the const name stays verbatim while the const inlines", () => {
     const quoted = [
-      "import { html } from \"@hellajs/dom\";",
+      "import type { HTMLAttributes } from \"@hellajs/dom\";",
       "",
       "// @hella:styles",
       "// @hella:end",
       "",
       "export default function X(p: P) {",
       "  const label = \"the base class\";",
-      "  return html`<p title=\"${label}\" class=\"${",
+      "  return <p title={label} class={",
       "    // @hella:compose",
       "    [base, p.class]",
       "    // @hella:end",
-      "  }\"></p>`;",
+      "  }></p>;",
       "}",
     ].join("\n");
     const out = applyStyleVariant(quoted, tailwindModule, "tailwind");
-    expect(out).toContain("title=\"${label}\"");
+    expect(out).toContain("title={label}");
     expect(out).toContain("cn(\"x-base\", p.class)");
     expect(out.includes("const base")).toBe(false);
   });
@@ -509,11 +509,11 @@ describe("applyStyleVariant", () => {
       "// @hella:end",
       "",
       "export default function X(p: P) {",
-      "  return html`<p class=\"${",
+      "  return <p class={",
       "    // @hella:compose",
       "    [base, p.class]",
       "    // @hella:end",
-      "  }\"></p>`;",
+      "  }></p>;",
       "}",
     ].join("\n");
     const out = applyStyleVariant(imported, tailwindModule, "tailwind");
@@ -522,7 +522,7 @@ describe("applyStyleVariant", () => {
     expect(out.includes("const base")).toBe(false);
   });
 
-  test("a static class attribute collapses to the literal in both flavors", () => {
+  test("a static class attribute collapses to the literal", () => {
     const jsxAttr = [
       "import type { HellaChildren } from \"@hellajs/dom\";",
       "",
@@ -551,28 +551,11 @@ describe("applyStyleVariant", () => {
     const jsxOut = applyStyleVariant(jsxAttr, srModule, "tailwind");
     expect(jsxOut).toContain("<span class=\"sr-only\">");
     expect(jsxOut.includes("srOnly")).toBe(false);
-    const htmlAttr = [
-      "import { html } from \"@hellajs/dom\";",
-      "",
-      "// @hella:styles",
-      "// @hella:end",
-      "",
-      "export default function X() {",
-      "  return html`<span class=\"${",
-      "    // @hella:compose",
-      "    [srOnly]",
-      "    // @hella:end",
-      "  }\"><span class=\"${srOnly}\">More</span></span>` as HellaNode;",
-      "}",
-    ].join("\n");
-    const htmlOut = applyStyleVariant(htmlAttr, srModule, "tailwind");
-    expect(htmlOut).toContain("<span class=\"sr-only\">More</span>");
-    expect(htmlOut.includes("srOnly")).toBe(false);
   });
 
   test("a canonical-level runtime constant inlines at its references and drops with its comment", () => {
     const runtime = [
-      "import { html } from \"@hellajs/dom\";",
+      "import type { HTMLAttributes } from \"@hellajs/dom\";",
       "",
       "// @hella:styles",
       "// @hella:end",
@@ -585,11 +568,11 @@ describe("applyStyleVariant", () => {
       "}",
       "",
       "export default function X(p: P) {",
-      "  return html`<p class=\"${",
+      "  return <p class={",
       "    // @hella:compose",
       "    [base, p.class]",
       "    // @hella:end",
-      "  }\"></p>`;",
+      "  }></p>;",
       "}",
     ].join("\n");
     const out = applyStyleVariant(runtime, tailwindModule, "tailwind");
@@ -605,19 +588,19 @@ describe("applyStyleVariant", () => {
       "// @hella:end",
       "",
       "export function A() {",
-      "  return html`<p class=\"${",
+      "  return <p class={",
       "    // @hella:compose",
       "    [base, a.class]",
       "    // @hella:end",
-      "  }\">...</p>`;",
+      "  }>...</p>;",
       "}",
       "",
       "export function B() {",
-      "  return html`<i class=\"${",
+      "  return <i class={",
       "    // @hella:compose",
       "    [base, b.class]",
       "    // @hella:end",
-      "  }\">...</i>`;",
+      "  }>...</i>;",
       "}",
     ].join("\n");
     const out = applyStyleVariant(multiRegion, tailwindModule, "tailwind");
@@ -637,7 +620,7 @@ describe("applyStyleVariant", () => {
       "",
     ].join("\n");
     expect(applyStyleVariant(canonical, documented, "tailwind")).toBe([
-      "import { html } from \"@hellajs/dom\";",
+      "import type { HTMLAttributes } from \"@hellajs/dom\";",
       "import { cn } from \"./cn.js\";",
       "",
       "/** Variant map. */",
@@ -648,12 +631,12 @@ describe("applyStyleVariant", () => {
       "interface P { class?: string }",
       "",
       "export default function X(p: P) {",
-      "  return html`<p class=\"${",
+      "  return <p class={",
       "    cn(",
       "      \"x-base\",",
       "      p.class,",
       "    )",
-      "  }\"></p>`;",
+      "  }></p>;",
       "}",
     ].join("\n"));
   });

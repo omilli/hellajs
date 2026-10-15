@@ -37,7 +37,7 @@ beforeEach(() => {
 });
 
 describe("table", () => {
-  test.each(tableVariants)("$format/$style wraps the table in the overflow container", (variant) => {
+  test.each(tableVariants)("$style wraps the table in the overflow container", (variant) => {
     const wrapper = renderVariant(variant, { children: variant.child("Rows"), class: "my-table" });
     expect(wrapper.tagName).toBe("DIV");
     expect(wrapper.getAttribute("data-slot")).toBe("table-container");
@@ -60,7 +60,7 @@ describe("table", () => {
     }
   });
 
-  test.each(tablePartVariants)("$format/$style $part renders its tag, data-slot, and classes", (variant) => {
+  test.each(tablePartVariants)("$style $part renders its tag, data-slot, and classes", (variant) => {
     const el = renderVariant(variant, { children: [], class: "my-part" });
     expect(el.tagName).toBe(PART_TAGS[variant.part]!);
     expect(el.getAttribute("data-slot")).toBe(`table-${variant.part.toLowerCase()}`);
@@ -74,7 +74,7 @@ describe("table", () => {
   });
 
   test.each(tablePartVariants.filter((variant) => variant.part === "Head" || variant.part === "Cell"))(
-    "$format/$style $part passes colspan through",
+    "$style $part passes colspan through",
     (variant) => {
       const spanned = renderVariant(variant, { children: [], colspan: 2 });
       expect(spanned.getAttribute("colspan")).toBe("2");
@@ -83,20 +83,20 @@ describe("table", () => {
     },
   );
 
-  test("forwards user attrs onto the table element across all four variants", () => {
+  test("forwards user attrs onto the table element across both styles", () => {
     assertAttrForwarded(tableVariants, { title: "Hella" }, "title", "Hella", (el) => el.querySelector("table")!);
   });
 
-  test("fires a user on:click handler on the table element across all four variants", () => {
+  test("fires a user on:click handler on the table element across both styles", () => {
     const onClick = mock(() => {});
     assertHandlerForwarded(tableVariants, { "on:click": onClick }, "on:click", "click", onClick, (el) => el.querySelector("table")!);
   });
 
-  test("keeps structural parity for the full table across all four variants", () => {
+  test("keeps structural parity for the full table across both styles", () => {
     assertStructuralParity(tableVariants);
   });
 
-  test("keeps structural parity for every part across all four variants", () => {
+  test("keeps structural parity for every part across both styles", () => {
     for (const part of Object.keys(PART_TAGS)) {
       const suites = tablePartVariants.filter((variant) => variant.part === part);
       assertStructuralParity(suites, { children: [] });

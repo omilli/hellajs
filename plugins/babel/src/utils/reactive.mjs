@@ -20,6 +20,11 @@
  */
 export function maybeReactive(t, expr) {
   if (t.isArrowFunctionExpression(expr) || t.isFunctionExpression(expr)) return expr;
+  // A top-level raw() call is a value sentinel (opaque HTML), not a reactive read —
+  // wrapping it would turn the child into a getter region and change both the
+  // marker shape and the ssr classification. Deeper raw calls inside a larger
+  // expression still wrap (the expression's own reactivity wins).
+  if (t.isCallExpression(expr) && t.isIdentifier(expr.callee, { name: "raw" })) return expr;
   return containsCall(t, expr) ? t.arrowFunctionExpression([], expr) : expr;
 }
 

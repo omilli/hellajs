@@ -18,7 +18,7 @@ interface SsrOptions {
 }
 ```
 
-- `node`: A HellaNode AST (produced by [`html`](/reference/dom/html) or JSX) to serialize.
+- `node`: A HellaNode AST (compiled from JSX) to serialize.
 - `options`: Walk options: `head` (a bag from [`ssr.head()`](#head)) collects the tree's head-eligible elements on every member.
 - **Returns**: The rendered HTML string.
 
@@ -34,13 +34,12 @@ declare namespace ssr {
 
 A component may embed server-side async data directly: a getter that returns a `Promise` is awaited, and its resolved value is placed inside a marker-bounded region identical to the sync call. A [`Lazy`](/reference/dom/lazy) loader is awaited the same way: the loaded component renders server-side, and a rejected loader renders `fallback` (or rejects this call when none is provided).
 
-```js
-import { html } from '@hellajs/dom';
+```jsx
 import { ssr } from '@hellajs/ssr';
 
-const user = (id) => fetch(`/api/users/${id}`).then(r => r.text());
+const user = (id: string) => fetch(`/api/users/${id}`).then(r => r.text());
 
-const body = await ssr.async(html`<p>Hello ${() => user(1)}</p>`);
+const body = await ssr.async(<p>Hello {() => user("1")}</p>);
 // body: "<p><!--[-->Ada<!--]--></p>"
 ```
 
@@ -61,12 +60,11 @@ interface StreamOptions extends SsrOptions {
 
 The client receives the static shell before any async value settles. Pipe it into a `Response` for a streaming server handler. Bare Promises are awaited in tree order; a rejected bare Promise errors the stream, while a rejected `<Suspense>` region is isolated (see [Errors Propagate](#errors-propagate)). [`Lazy`](/reference/dom/lazy) loaders are awaited like bare Promises: in-order outside [`<Suspense>`](/reference/dom/suspense), resolved within the staged `<template>` inside one.
 
-```js
-import { html } from '@hellajs/dom';
+```jsx
 import { ssr } from '@hellajs/ssr';
 
-const user = (id) => fetch(`/api/users/${id}`).then(r => r.text());
-const page = (id) => html`<div><h1>Hello</h1><p>${() => user(id)}</p></div>`;
+const user = (id: string) => fetch(`/api/users/${id}`).then(r => r.text());
+const page = (id: string) => <div><h1>Hello</h1><p>{() => user(id)}</p></div>;
 
 Bun.serve({
   port: 3000,
@@ -82,11 +80,10 @@ Bun.serve({
 
 Under a strict `Content-Security-Policy` (no `unsafe-inline`), the browser blocks the inline `<Suspense>` swap scripts. Pass a per-response `nonce` and mirror it in the response header; every script the stream emits (the [`$hs` bootstrap](#in-order-streaming) and each per-region swap script) then carries `nonce="…"`:
 
-```js
-import { html } from '@hellajs/dom';
+```jsx
 import { ssr } from '@hellajs/ssr';
 
-const page = () => html`<div><h1>Hello</h1></div>`;
+const page = () => <div><h1>Hello</h1></div>;
 
 Bun.serve({
   port: 3000,
@@ -119,19 +116,18 @@ declare namespace ssr {
 }
 ```
 
-```js
-import { html } from '@hellajs/dom';
+```jsx
 import { ssr, doc } from '@hellajs/ssr';
 
-const Page = () => html`
+const Page = () => (
   <div>
     <title>Profile - Ada</title>
     <meta name="description" content="Ada's profile" />
     <link rel="canonical" href="/users/1" />
-    <style>.card { border: 1px solid #ccc }</style>
+    <style>{'.card { border: 1px solid #ccc }'}</style>
     <h1>Ada</h1>
   </div>
-`;
+);
 
 const head = ssr.head();
 const body = await ssr.async(Page(), { head });    // the tree's <title>/<meta>/<link>/<style> hoist
@@ -152,16 +148,15 @@ Collection rules:
 
 Render a template to a string and assemble it into a full document. No DOM is required, so `ssr` runs in any server runtime (Bun, Node, Deno, workers).
 
-```js
-import { html } from '@hellajs/dom';
+```jsx
 import { ssr } from '@hellajs/ssr';
 
-const page = (title) => html`
+const page = (title: string) => (
   <section>
-    <h1>${title}</h1>
+    <h1>{title}</h1>
     <p>Welcome.</p>
   </section>
-`;
+);
 
 const body = ssr(page('Hello'));
 // body: "<section><h1>Hello</h1><p>Welcome.</p></section>"
@@ -171,8 +166,7 @@ const body = ssr(page('Hello'));
 
 [`@hellajs/css`](/reference/css) registers styles on both platforms: [`style`](/reference/css/style) returns its class and [`vars`](/reference/css/vars) its `var()` proxy on the server too. Collect the generated text with [`cssText`](/reference/css/csstext) and place it in a `<style>` tag carrying the `hella-css` id, so client hydration adopts the element instead of duplicating its rules. `ssr` never imports `@hellajs/css`; the caller assembles both.
 
-```js
-import { html } from '@hellajs/dom';
+```jsx
 import { style, cssText } from '@hellajs/css';
 import { ssr } from '@hellajs/ssr';
 
@@ -180,20 +174,20 @@ const btn = style({ color: 'red' }, { label: 'btn' });
 // btn === "btn-…"; the class, never text, on the server too
 // `cssText()` holds ".btn-…{color:red}"; on client and server alike
 
-const body = ssr(html`<button class=${btn}>Click</button>`);
+const body = ssr(<button class={btn}>Click</button>);
 const page = `<style id="hella-css">${cssText()}</style><div id="app">${body}</div>`;
 ```
 
 ## Key Concepts
 
-### Works with `html` or JSX
+### Works with Any HellaNode
 
-`ssr` consumes any `HellaNode` (produced by the `html` tag or JSX) identically, whichever member renders it. The babel/vite/rollup plugin compiles JSX to the same AST, so a JSX component renders the same HTML as the equivalent `html` template.
+`ssr` consumes any `HellaNode` identically, whichever member renders it. The babel/vite/rollup plugin compiles JSX to the AST at build time, so the same component tree serializes on the server and hydrates on the client.
 
 ```jsx
 import { ssr } from '@hellajs/ssr';
 
-// JSX compiles to the same HellaNode as the html tag
+// JSX compiles to a HellaNode tree
 const App = ({ name }: { name: string }) => <div><h1>Hello {name}</h1></div>;
 const body = ssr(<App name="World" />);
 ```
@@ -208,13 +202,12 @@ The plugin must run on the **server** entry; it is a compile-time transform, so 
 
 `ssr()` wraps every dynamic region (a reactive child, a [`raw`](/reference/dom/raw) child, a [`ForEach`](/reference/dom/foreach) / [`Transition`](/reference/dom/transition) / [`Portal`](/reference/dom/portal) / [`Lazy`](/reference/dom/lazy) / [`Suspense`](/reference/dom/suspense), or a nested fragment) in `<!--[-->…<!--]-->` comment markers. The browser parses these to `Comment` nodes that [`hydrate`](/reference/dom/hydrate) (`@hellajs/dom`) locates to bind each region in place, without structural inference and without rebuilding coalesced text. Static elements and text are emitted unwrapped (matched by position), so the marker payload stays minimal.
 
-```js
+```jsx
 import { signal } from '@hellajs/core';
-import { html } from '@hellajs/dom';
 import { ssr } from '@hellajs/ssr';
 
 const count = signal(5);
-const body = ssr(html`<p>Count: ${count}</p>`);
+const body = ssr(<p>Count: {count}</p>);
 // body: "<p>Count: <!--[-->5<!--]--></p>"
 ```
 

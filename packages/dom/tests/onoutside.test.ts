@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { resetTestState } from "@utils/test-helpers.js";
-import { onOutside } from "@hellajs/dom/bundle";
+import { onOutside } from "@hellajs/dom";
 import { setupButtons, pointerDown } from "./helpers";
 
 describe("onOutside", () => {

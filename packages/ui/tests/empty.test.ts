@@ -46,7 +46,7 @@ beforeEach(() => {
 });
 
 describe("empty", () => {
-  test.each(emptyVariants)("$format/$style renders the empty root with its data-slot and class merge", (variant) => {
+  test.each(emptyVariants)("$style renders the empty root with its data-slot and class merge", (variant) => {
     const empty = renderVariant(variant, { children: variant.child("No results"), class: "my-empty" });
     expect(empty.tagName).toBe("DIV");
     expect(empty.getAttribute("data-slot")).toBe("empty");
@@ -60,7 +60,7 @@ describe("empty", () => {
     }
   });
 
-  test.each(emptyPartVariants)("$format/$style $part renders with its data-slot and classes", (variant) => {
+  test.each(emptyPartVariants)("$style $part renders with its data-slot and classes", (variant) => {
     const el = renderVariant(variant, { children: [], class: "my-part" });
     expect(el.getAttribute("data-slot")).toBe(PART_SLOTS[variant.part]!);
     const tokens = classTokens(el);
@@ -72,9 +72,9 @@ describe("empty", () => {
     }
   });
 
-  test.each(emptyVariants)("$format/$style renders EmptyMedia's icon variant with its data-variant", (variant) => {
+  test.each(emptyVariants)("$style renders EmptyMedia's icon variant with its data-variant", (variant) => {
     const media = renderVariant(
-      emptyPartVariants.filter((suite) => suite.part === "Media" && suite.style === variant.style && suite.format === variant.format)[0]!,
+      emptyPartVariants.filter((suite) => suite.part === "Media" && suite.style === variant.style)[0]!,
       { children: [], variant: "icon", class: "my-media" } as EmptyMediaVariantProps,
     );
     expect(media.getAttribute("data-variant")).toBe("icon");
@@ -87,9 +87,9 @@ describe("empty", () => {
     }
   });
 
-  test.each(emptyVariants)("$format/$style keeps the default media variant unstyled to bg-transparent", (variant) => {
+  test.each(emptyVariants)("$style keeps the default media variant unstyled to bg-transparent", (variant) => {
     const media = renderVariant(
-      emptyPartVariants.filter((suite) => suite.part === "Media" && suite.style === variant.style && suite.format === variant.format)[0]!,
+      emptyPartVariants.filter((suite) => suite.part === "Media" && suite.style === variant.style)[0]!,
       { children: [] } as EmptyMediaVariantProps,
     );
     expect(media.getAttribute("data-variant")).toBe("default");
@@ -100,20 +100,20 @@ describe("empty", () => {
     }
   });
 
-  test("keeps structural parity across all four variants", () => {
+  test("keeps structural parity across both styles", () => {
     assertStructuralParity(emptyVariants);
   });
 
-  test("forwards user attrs onto the root across all four variants", () => {
+  test("forwards user attrs onto the root across both styles", () => {
     assertAttrForwarded(emptyVariants, { title: "Hella" }, "title", "Hella");
   });
 
-  test("fires a user on:click handler across all four variants", () => {
+  test("fires a user on:click handler across both styles", () => {
     const onClick = mock(() => {});
     assertHandlerForwarded(emptyVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 
-  test("keeps structural parity for every part across all four variants", () => {
+  test("keeps structural parity for every part across both styles", () => {
     for (const part of Object.keys(PART_SLOTS)) {
       const suites = emptyPartVariants.filter((variant) => variant.part === part);
       assertStructuralParity(suites, { children: [] });

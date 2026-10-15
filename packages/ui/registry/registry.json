@@ -25,7 +25,7 @@
       }
     },
     "button": {
-      "files": ["button.tsx", "button-html.ts"],
+      "files": ["button.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -38,7 +38,7 @@
       }
     },
     "card": {
-      "files": ["card.tsx", "card-html.ts"],
+      "files": ["card.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -51,7 +51,7 @@
       }
     },
     "input": {
-      "files": ["input.tsx", "input-html.ts"],
+      "files": ["input.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -64,7 +64,7 @@
       }
     },
     "dialog": {
-      "files": ["dialog.tsx", "dialog-html.ts"],
+      "files": ["dialog.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -77,7 +77,7 @@
       }
     },
     "tabs": {
-      "files": ["tabs.tsx", "tabs-html.ts"],
+      "files": ["tabs.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -90,7 +90,7 @@
       }
     },
     "badge": {
-      "files": ["badge.tsx", "badge-html.ts"],
+      "files": ["badge.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -103,7 +103,7 @@
       }
     },
     "alert": {
-      "files": ["alert.tsx", "alert-html.ts"],
+      "files": ["alert.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -116,7 +116,7 @@
       }
     },
     "kbd": {
-      "files": ["kbd.tsx", "kbd-html.ts"],
+      "files": ["kbd.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -129,7 +129,7 @@
       }
     },
     "separator": {
-      "files": ["separator.tsx", "separator-html.ts"],
+      "files": ["separator.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -142,7 +142,7 @@
       }
     },
     "skeleton": {
-      "files": ["skeleton.tsx", "skeleton-html.ts"],
+      "files": ["skeleton.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -155,7 +155,7 @@
       }
     },
     "spinner": {
-      "files": ["spinner.tsx", "spinner-html.ts"],
+      "files": ["spinner.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -168,7 +168,7 @@
       }
     },
     "empty": {
-      "files": ["empty.tsx", "empty-html.ts"],
+      "files": ["empty.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -181,7 +181,7 @@
       }
     },
     "label": {
-      "files": ["label.tsx", "label-html.ts"],
+      "files": ["label.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -194,7 +194,7 @@
       }
     },
     "textarea": {
-      "files": ["textarea.tsx", "textarea-html.ts"],
+      "files": ["textarea.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -207,7 +207,7 @@
       }
     },
     "native-select": {
-      "files": ["native-select.tsx", "native-select-html.ts"],
+      "files": ["native-select.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -220,7 +220,7 @@
       }
     },
     "aspect-ratio": {
-      "files": ["aspect-ratio.tsx", "aspect-ratio-html.ts"],
+      "files": ["aspect-ratio.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -233,7 +233,7 @@
       }
     },
     "avatar": {
-      "files": ["avatar.tsx", "avatar-html.ts"],
+      "files": ["avatar.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -246,7 +246,7 @@
       }
     },
     "progress": {
-      "files": ["progress.tsx", "progress-html.ts"],
+      "files": ["progress.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -259,7 +259,7 @@
       }
     },
     "table": {
-      "files": ["table.tsx", "table-html.ts"],
+      "files": ["table.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -272,7 +272,7 @@
       }
     },
     "button-group": {
-      "files": ["button-group.tsx", "button-group-html.ts"],
+      "files": ["button-group.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -285,7 +285,7 @@
       }
     },
     "input-group": {
-      "files": ["input-group.tsx", "input-group-html.ts"],
+      "files": ["input-group.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -298,7 +298,7 @@
       }
     },
     "field": {
-      "files": ["field.tsx", "field-html.ts"],
+      "files": ["field.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -311,7 +311,7 @@
       }
     },
     "pagination": {
-      "files": ["pagination.tsx", "pagination-html.ts"],
+      "files": ["pagination.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -324,7 +324,7 @@
       }
     },
     "item": {
-      "files": ["item.tsx", "item-html.ts"],
+      "files": ["item.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -337,7 +337,7 @@
       }
     },
     "marker": {
-      "files": ["marker.tsx", "marker-html.ts"],
+      "files": ["marker.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -350,7 +350,7 @@
       }
     },
     "direction": {
-      "files": ["direction.tsx", "direction-html.ts"],
+      "files": ["direction.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -363,7 +363,7 @@
       }
     },
     "bubble": {
-      "files": ["bubble.tsx", "bubble-html.ts"],
+      "files": ["bubble.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -376,7 +376,7 @@
       }
     },
     "message": {
-      "files": ["message.tsx", "message-html.ts"],
+      "files": ["message.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -389,7 +389,7 @@
       }
     },
     "message-scroller": {
-      "files": ["message-scroller.tsx", "message-scroller-html.ts"],
+      "files": ["message-scroller.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -402,7 +402,7 @@
       }
     },
     "attachment": {
-      "files": ["attachment.tsx", "attachment-html.ts"],
+      "files": ["attachment.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -415,7 +415,7 @@
       }
     },
     "collapsible": {
-      "files": ["collapsible.tsx", "collapsible-html.ts"],
+      "files": ["collapsible.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -428,7 +428,7 @@
       }
     },
     "accordion": {
-      "files": ["accordion.tsx", "accordion-html.ts"],
+      "files": ["accordion.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -441,7 +441,7 @@
       }
     },
     "checkbox": {
-      "files": ["checkbox.tsx", "checkbox-html.ts"],
+      "files": ["checkbox.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -454,7 +454,7 @@
       }
     },
     "radio-group": {
-      "files": ["radio-group.tsx", "radio-group-html.ts"],
+      "files": ["radio-group.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -467,7 +467,7 @@
       }
     },
     "switch": {
-      "files": ["switch.tsx", "switch-html.ts"],
+      "files": ["switch.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -480,7 +480,7 @@
       }
     },
     "toggle": {
-      "files": ["toggle.tsx", "toggle-html.ts"],
+      "files": ["toggle.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -493,7 +493,7 @@
       }
     },
     "toggle-group": {
-      "files": ["toggle-group.tsx", "toggle-group-html.ts"],
+      "files": ["toggle-group.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -506,7 +506,7 @@
       }
     },
     "slider": {
-      "files": ["slider.tsx", "slider-html.ts"],
+      "files": ["slider.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -519,7 +519,7 @@
       }
     },
     "resizable": {
-      "files": ["resizable.tsx", "resizable-html.ts"],
+      "files": ["resizable.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -532,7 +532,7 @@
       }
     },
     "tooltip": {
-      "files": ["tooltip.tsx", "tooltip-html.ts"],
+      "files": ["tooltip.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -545,7 +545,7 @@
       }
     },
     "hover-card": {
-      "files": ["hover-card.tsx", "hover-card-html.ts"],
+      "files": ["hover-card.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -558,7 +558,7 @@
       }
     },
     "popover": {
-      "files": ["popover.tsx", "popover-html.ts"],
+      "files": ["popover.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -571,7 +571,7 @@
       }
     },
     "dropdown-menu": {
-      "files": ["dropdown-menu.tsx", "dropdown-menu-html.ts"],
+      "files": ["dropdown-menu.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -584,7 +584,7 @@
       }
     },
     "context-menu": {
-      "files": ["context-menu.tsx", "context-menu-html.ts"],
+      "files": ["context-menu.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -597,7 +597,7 @@
       }
     },
     "menubar": {
-      "files": ["menubar.tsx", "menubar-html.ts"],
+      "files": ["menubar.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -610,7 +610,7 @@
       }
     },
     "navigation-menu": {
-      "files": ["navigation-menu.tsx", "navigation-menu-html.ts"],
+      "files": ["navigation-menu.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -623,7 +623,7 @@
       }
     },
     "breadcrumb": {
-      "files": ["breadcrumb.tsx", "breadcrumb-html.ts"],
+      "files": ["breadcrumb.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -636,7 +636,7 @@
       }
     },
     "select": {
-      "files": ["select.tsx", "select-html.ts"],
+      "files": ["select.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -649,7 +649,7 @@
       }
     },
     "combobox": {
-      "files": ["combobox.tsx", "combobox-html.ts"],
+      "files": ["combobox.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -662,7 +662,7 @@
       }
     },
     "command": {
-      "files": ["command.tsx", "command-html.ts"],
+      "files": ["command.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -675,7 +675,7 @@
       }
     },
     "alert-dialog": {
-      "files": ["alert-dialog.tsx", "alert-dialog-html.ts"],
+      "files": ["alert-dialog.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -688,7 +688,7 @@
       }
     },
     "sheet": {
-      "files": ["sheet.tsx", "sheet-html.ts"],
+      "files": ["sheet.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -701,7 +701,7 @@
       }
     },
     "drawer": {
-      "files": ["drawer.tsx", "drawer-html.ts"],
+      "files": ["drawer.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -714,7 +714,7 @@
       }
     },
     "sonner": {
-      "files": ["sonner.tsx", "sonner-html.ts"],
+      "files": ["sonner.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -727,7 +727,7 @@
       }
     },
     "scroll-area": {
-      "files": ["scroll-area.tsx", "scroll-area-html.ts"],
+      "files": ["scroll-area.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -740,7 +740,7 @@
       }
     },
     "calendar": {
-      "files": ["calendar.tsx", "calendar-html.ts"],
+      "files": ["calendar.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -753,7 +753,7 @@
       }
     },
     "input-otp": {
-      "files": ["input-otp.tsx", "input-otp-html.ts"],
+      "files": ["input-otp.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -766,7 +766,7 @@
       }
     },
     "form": {
-      "files": ["form.tsx", "form-html.ts"],
+      "files": ["form.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
@@ -779,7 +779,7 @@
       }
     },
     "sidebar": {
-      "files": ["sidebar.tsx", "sidebar-html.ts"],
+      "files": ["sidebar.tsx"],
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {

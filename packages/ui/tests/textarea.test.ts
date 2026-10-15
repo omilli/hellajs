@@ -18,7 +18,7 @@ beforeEach(() => {
 });
 
 describe("textarea", () => {
-  test.each(textareaVariants)("$format/$style renders the textarea root with its attributes", (variant) => {
+  test.each(textareaVariants)("$style renders the textarea root with its attributes", (variant) => {
     const textarea = renderVariant(variant, {
       placeholder: "Tell us more",
       id: "bio-field",
@@ -33,12 +33,12 @@ describe("textarea", () => {
     expect(textarea.getAttribute("rows")).toBe("4");
   });
 
-  test.each(textareaVariants)("$format/$style renders a static value into the value property", (variant) => {
+  test.each(textareaVariants)("$style renders a static value into the value property", (variant) => {
     const textarea = renderVariant(variant, { value: "hello" }) as HTMLTextAreaElement;
     expect(textarea.value).toBe("hello");
   });
 
-  test.each(textareaVariants)("$format/$style updates the value when a bare signal changes", (variant) => {
+  test.each(textareaVariants)("$style updates the value when a bare signal changes", (variant) => {
     const value = signal("first");
     const textarea = renderVariant(variant, { value }) as HTMLTextAreaElement;
     expect(textarea.value).toBe("first");
@@ -47,7 +47,7 @@ describe("textarea", () => {
     expect(textarea.value).toBe("second");
   });
 
-  test.each(textareaVariants)("$format/$style passes the typed value to on:input via e.target", (variant) => {
+  test.each(textareaVariants)("$style passes the typed value to on:input via e.target", (variant) => {
     const onInput = mock((e: Event) => (e.target as HTMLTextAreaElement).value);
     const textarea = renderVariant(variant, { "on:input": onInput }) as HTMLTextAreaElement;
     textarea.value = "typed";
@@ -56,7 +56,7 @@ describe("textarea", () => {
     expect(onInput.mock.results[0]!.value).toBe("typed");
   });
 
-  test.each(textareaVariants)("$format/$style composes base, focus, and invalid classes", (variant) => {
+  test.each(textareaVariants)("$style composes base, focus, and invalid classes", (variant) => {
     const textarea = renderVariant(variant, {});
     const tokens = classTokens(textarea);
     if (variant.style === "css") {
@@ -72,28 +72,28 @@ describe("textarea", () => {
     }
   });
 
-  test.each(textareaVariants)("$format/$style renders aria-invalid from the kebab attribute", (variant) => {
+  test.each(textareaVariants)("$style renders aria-invalid from the kebab attribute", (variant) => {
     const invalid = renderVariant(variant, { "aria-invalid": "true" });
     expect(invalid.getAttribute("aria-invalid")).toBe("true");
     const valid = renderVariant(variant, {});
     expect(valid.hasAttribute("aria-invalid")).toBe(false);
   });
 
-  test.each(textareaVariants)("$format/$style merges props.class into the class attribute", (variant) => {
+  test.each(textareaVariants)("$style merges props.class into the class attribute", (variant) => {
     const textarea = renderVariant(variant, { class: "my-textarea" });
     expect(classTokens(textarea).at(-1)).toBe("my-textarea");
   });
 
-  test("forwards user attrs onto the root across all four variants", () => {
+  test("forwards user attrs onto the root across both styles", () => {
     assertAttrForwarded(textareaVariants, { title: "Hella" }, "title", "Hella");
   });
 
-  test("fires a user on:click handler across all four variants", () => {
+  test("fires a user on:click handler across both styles", () => {
     const onClick = mock(() => {});
     assertHandlerForwarded(textareaVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 
-  test("keeps structural parity across all four variants", () => {
+  test("keeps structural parity across both styles", () => {
     assertStructuralParity(textareaVariants, { placeholder: "Parity" });
   });
 });

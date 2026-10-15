@@ -27,8 +27,8 @@ export type HellaPrimitive<T = unknown> = string | string[] | number | boolean |
 export type HellaChild = HellaNode | HellaRaw | HellaPrimitive | Node | null | undefined;
 
 /**
- * Children for a component's props. JSX compiles component children to an
- * array, the `html` runtime to a single child, so both shapes are accepted.
+ * Children for a component's props. Compiled JSX children arrive as an array;
+ * direct `component` calls may pass a single child or an array.
  */
 export type HellaChildren = HellaChild | HellaChild[];
 
@@ -100,7 +100,7 @@ export interface HellaNode<T extends HTMLTagName = HTMLTagName> {
   hooks?: ElementHooks;
   /** The children of the node. */
   children?: HellaChild[];
-  /** Template cache optimization marker — set during parsing on subtrees with zero placeholder dependencies. */
+  /** Template hoisting marker — set by the babel plugin on hoisted fully-static subtrees. */
   static?: true;
   /** Component scope dispose function. */
   componentScope?: () => void;
@@ -338,7 +338,7 @@ export interface ForEachProps<T> {
 export interface TransitionProps {
   /** Controls visibility. Boolean or reactive function returning boolean. */
   show: boolean | (() => boolean);
-  /** Content to render when visible. Accepts a single child or an array (JSX/html compile component children to an array). */
+  /** Content to render when visible. Accepts a single child or an array (compiled JSX children arrive as an array). */
   children?: HellaChild | HellaChild[];
   /** CSS class for enter animation (e.g., "fade-in" with animation: fadeIn .3s). */
   enter?: string;
@@ -375,6 +375,6 @@ export interface LazyProps {
 export interface SuspenseProps {
   /** Content rendered while children are unresolved (shown during ssr.stream streaming + on a client fresh mount while a Promise child is pending; dropped under `ssr`/`ssr.async`). */
   fallback?: HellaChild;
-  /** The boundary's content. Accepts a single child (`html`) or an array — JSX and `html` compile component children to an array. A Promise-returning child suspends (client + server); sync children render directly. For reactive re-fetching, pair `resource` with a reactive child that branches on its getters. */
+  /** The boundary's content. Compiled JSX children arrive as an array; direct `component` calls may pass a single child. A Promise-returning child suspends (client + server); sync children render directly. For reactive re-fetching, pair `resource` with a reactive child that branches on its getters. */
   children?: HellaChild | HellaChild[];
 }

@@ -6,14 +6,13 @@ Render HellaNode templates to HTML strings on the server, then enhance them on t
 
 `ssr` walks a [`HellaNode`](/reference/dom) AST and emits an HTML string. It mirrors the attribute rules of dom's internal `renderProp` (the reconciliation `key` prop omitted, falsy attributes omitted, boolean attributes bare, arrays space-joined) and escapes interpolated text and attribute values. Static template text is emitted raw; resolved interpolation values are escaped. Every dynamic region (a reactive child, a [`raw`](/reference/dom/raw) child, a control-flow component, or a nested fragment) is wrapped in `<!--[-->…<!--]-->` markers that [`hydrate`](/reference/dom/hydrate) reads; static elements and text are unwrapped (matched by position), keeping the payload minimal.
 
-```js
+```jsx
 import { signal } from '@hellajs/core';
-import { html } from '@hellajs/dom';
 import { ssr } from '@hellajs/ssr';
 
 // A resolved interpolation value (here a signal) is escaped and marker-wrapped.
 const markup = signal('<b>');
-const body = ssr(html`<div class="card">${markup}</div>`);
+const body = ssr(<div class="card">{markup}</div>);
 // body: "<div class=\"card\"><!--[-->&lt;b&gt;<!--]--></div>"
 ```
 
@@ -31,11 +30,11 @@ Because no DOM is involved, `ssr` runs in Bun, Node, Deno, and workers alike.
 
 `raw` wraps an HTML string as an opaque child: `ssr` emits it verbatim (unescaped), marker-wrapped, and `hydrate` adopts the region without binding anything inside. Use it to embed pre-rendered HTML (e.g. a meta-framework's slot output); never pass unsanitized user input (XSS).
 
-```js
-import { html, raw } from '@hellajs/dom';
+```jsx
+import { raw } from '@hellajs/dom';
 import { ssr } from '@hellajs/ssr';
 
-ssr(html`<main>${raw('<h1>Hi</h1>')}</main>`);
+ssr(<main>{raw('<h1>Hi</h1>')}</main>);
 // => "<main><!--[--><h1>Hi</h1><!--]--></main>"
 ```
 
@@ -47,18 +46,20 @@ The shipped HTML is the source of truth. The client can either hydrate the full 
 - Bind individual existing server-rendered nodes into reactivity with [`$ref`](/reference/dom/$ref) and [`$collection`](/reference/dom/$collection).
 - Mount a reactive island into an empty placeholder the template left for it.
 
-```js
-import { html, hydrate } from '@hellajs/dom';
+```jsx
+import { hydrate } from '@hellajs/dom';
 import { ssr } from '@hellajs/ssr';
 
-// Server renders the whole app
-const body = ssr(html`<${App} />`);
+const App = () => <h1>Hello</h1>;
+
+// Server renders the whole app (the plugin compiles the server entry too)
+const body = ssr(<App />);
 // page: <div id="app">${body}</div>
 ```
 
-```js
-// Client hydrates it in place
-hydrate(html`<${App} />`, '#app');
+```jsx
+// Client hydrates it in place (the plugin wraps App automatically)
+hydrate(<App />, '#app');
 ```
 
 Server-fetched values ride along via [`doc`](/reference/ssr/doc)'s `data` option: the data ships as a JSON payload the client reads in one line, seeding a [`resource`](/reference/resource/resource) with `initialData`:

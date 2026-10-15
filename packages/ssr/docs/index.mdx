@@ -10,13 +10,12 @@ npm install @hellajs/dom @hellajs/ssr
 
 ### Example
 
-```js
+```jsx
 import { signal } from '@hellajs/core';
-import { html } from '@hellajs/dom';
 import { ssr, doc } from '@hellajs/ssr';
 
 const count = signal(5);
-const greet = (name) => html`<div><h1>Hello ${name}</h1><p>Count: ${count}</p></div>`;
+const greet = (name: string) => <div><h1>Hello {name}</h1><p>Count: {count}</p></div>;
 
 const body = ssr(greet('World'));
 // body: "<div><h1>Hello World</h1><p>Count: <!--[-->5<!--]--></p></div>"

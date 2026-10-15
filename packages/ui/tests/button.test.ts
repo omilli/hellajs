@@ -59,7 +59,7 @@ beforeEach(() => {
 });
 
 describe("button", () => {
-  test.each(buttonVariants)("$format/$style renders a button element with its data-slot attributes", (variant) => {
+  test.each(buttonVariants)("$style renders a button element with its data-slot attributes", (variant) => {
     const btn = renderVariant(variant, propsOf(variant, { variant: "ghost", size: "lg" }));
     expect(btn.tagName).toBe("BUTTON");
     expect(btn.getAttribute("data-slot")).toBe("button");
@@ -67,26 +67,26 @@ describe("button", () => {
     expect(btn.getAttribute("data-size")).toBe("lg");
   });
 
-  test.each(buttonVariants)("$format/$style fires a user on:click handler on click", (variant) => {
+  test.each(buttonVariants)("$style fires a user on:click handler on click", (variant) => {
     const onClick = mock(() => {});
     const btn = renderVariant(variant, propsOf(variant, { "on:click": onClick }));
     btn.dispatchEvent(new Event("click"));
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 
-  test.each(buttonVariants)("$format/$style forwards user attrs onto the root", (variant) => {
+  test.each(buttonVariants)("$style forwards user attrs onto the root", (variant) => {
     const btn = renderVariant(variant, propsOf(variant, { title: "Hella" }));
     expect(btn.getAttribute("title")).toBe("Hella");
   });
 
-  test.each(buttonVariants)("$format/$style spreads disabled onto the root", (variant) => {
+  test.each(buttonVariants)("$style spreads disabled onto the root", (variant) => {
     const disabled = renderVariant(variant, propsOf(variant, { disabled: true }));
     expect(disabled.hasAttribute("disabled")).toBe(true);
     const enabled = renderVariant(variant, propsOf(variant, {}));
     expect(enabled.hasAttribute("disabled")).toBe(false);
   });
 
-  test.each(buttonVariants)("$format/$style applies every variant's tokens at a representative size", (variant) => {
+  test.each(buttonVariants)("$style applies every variant's tokens at a representative size", (variant) => {
     for (const option of VARIANT_OPTIONS) {
       const btn = renderVariant(variant, propsOf(variant, { variant: option, size: "lg" }));
       const tokens = classTokens(btn);
@@ -107,7 +107,7 @@ describe("button", () => {
     }
   });
 
-  test.each(buttonVariants)("$format/$style applies every size's tokens at the default variant", (variant) => {
+  test.each(buttonVariants)("$style applies every size's tokens at the default variant", (variant) => {
     for (const option of SIZE_OPTIONS) {
       const btn = renderVariant(variant, propsOf(variant, { size: option }));
       const tokens = classTokens(btn);
@@ -127,7 +127,7 @@ describe("button", () => {
     }
   });
 
-  test.each(buttonVariants)("$format/$style defaults to the default variant and size", (variant) => {
+  test.each(buttonVariants)("$style defaults to the default variant and size", (variant) => {
     const btn = renderVariant(variant, propsOf(variant, {}));
     const tokens = classTokens(btn);
     expect(btn.getAttribute("data-variant")).toBe("default");
@@ -141,14 +141,14 @@ describe("button", () => {
     }
   });
 
-  test.each(buttonVariants)("$format/$style renders aria-invalid from the kebab attribute", (variant) => {
+  test.each(buttonVariants)("$style renders aria-invalid from the kebab attribute", (variant) => {
     const invalid = renderVariant(variant, propsOf(variant, { "aria-invalid": "true" }));
     expect(invalid.getAttribute("aria-invalid")).toBe("true");
     const valid = renderVariant(variant, propsOf(variant, {}));
     expect(valid.hasAttribute("aria-invalid")).toBe(false);
   });
 
-  test.each(buttonVariants)("$format/$style merges props.class into the class attribute", (variant) => {
+  test.each(buttonVariants)("$style merges props.class into the class attribute", (variant) => {
     const btn = renderVariant(variant, propsOf(variant, { class: "my-btn" }));
     const tokens = classTokens(btn);
     if (variant.style === "css") {
@@ -164,7 +164,7 @@ describe("button", () => {
     }
   });
 
-  test.each(buttonVariants)("$format/$style renders bare-signal children reactively", (variant) => {
+  test.each(buttonVariants)("$style renders bare-signal children reactively", (variant) => {
     const label = signal("Save");
     const btn = renderVariant(variant, propsOf(variant, { children: variant.child(label) }));
     expect(btn.textContent).toBe("Save");
@@ -173,7 +173,7 @@ describe("button", () => {
     expect(btn.textContent).toBe("Saved");
   });
 
-  test("keeps structural parity across all four variants", () => {
+  test("keeps structural parity across both styles", () => {
     assertStructuralParity(buttonVariants);
   });
 });

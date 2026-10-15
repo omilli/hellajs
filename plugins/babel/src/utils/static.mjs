@@ -1,6 +1,6 @@
 // Static-subtree hoisting.
 //
-// A fully-static JSX / html`` subtree (lowercase tag, literal-only props, no
+// A fully-static JSX subtree (lowercase tag, literal-only props, no
 // on:/e:/hook:/error: attributes, static text + static element children) is
 // hoisted to a module-level constant tagged `static: true`. dom's `staticDom`
 // WeakMap then mounts every later use of that constant via a single
@@ -17,9 +17,6 @@ import { processAttributes } from "../processors/attributes.mjs";
 import { filterEmptyChildren } from "../processors/children.mjs";
 import { buildHellaNode } from "../builders/vnode.mjs";
 import { FRAGMENT_TAG } from "../constants.mjs";
-
-/** Attribute buckets a hoisted node must never carry. */
-const STATE_BEARING_KEYS = new Set(["on", "e", "hooks", "error"]);
 
 /**
  * True if an emitted (Babel) value is a plain literal safe to embed in a shared
@@ -96,72 +93,6 @@ export function tryBuildStaticJSX(t, node) {
 }
 
 /**
- * True if an emitted Babel ObjectExpression is a fully-static HellaNode:
- * `tag` string literal, no state-bearing buckets, literal-only props, and
- * children that are static text or other fully-static vnodes. Slots and
- * components have already been substituted with arbitrary expressions by the
- * time this runs, so they fail the literal checks naturally.
- * @param {typeof import("@babel/core").types} t
- * @param {import("@babel/core").Node} node
- * @returns {boolean}
- */
-function isStaticVNodeExpr(t, node) {
-  if (!t.isObjectExpression(node)) return false;
-
-  let hasTag = false;
-  const properties = node.properties;
-  let i = 0;
-  const len = properties.length;
-  while (i < len) {
-    const prop = properties[i++];
-    if (!t.isObjectProperty(prop)) return false;
-
-    const key = t.isIdentifier(prop.key) ? prop.key.name : t.isStringLiteral(prop.key) ? prop.key.value : null;
-    if (key === null) return false;
-
-    if (key === "tag") {
-      if (!t.isStringLiteral(prop.value)) return false;
-      hasTag = true;
-      continue;
-    }
-    if (key === "static") continue;
-
-    if (STATE_BEARING_KEYS.has(key)) return false;
-
-    if (key === "children") {
-      if (!t.isArrayExpression(prop.value)) return false;
-      const elements = prop.value.elements;
-      let ei = 0;
-      const eLen = elements.length;
-      while (ei < eLen) {
-        const element = elements[ei++];
-        if (element === null) return false;
-        if (t.isStringLiteral(element)) continue;
-        if (isStaticVNodeExpr(t, element)) continue;
-        return false;
-      }
-      continue;
-    }
-
-    // props (and any unknown bucket) — literal values only
-    if (t.isObjectExpression(prop.value)) {
-      const innerProps = prop.value.properties;
-      let pi = 0;
-      const pLen = innerProps.length;
-      while (pi < pLen) {
-        const inner = innerProps[pi++];
-        if (!t.isObjectProperty(inner)) return false;
-        if (!isLiteralValue(t, inner.value)) return false;
-      }
-      continue;
-    }
-    return false;
-  }
-
-  return hasTag;
-}
-
-/**
  * Hoist a static vnode object expression to a module-level `const` and return
  * the referencing Identifier.
  * @param {typeof import("@babel/core").types} t
@@ -173,52 +104,6 @@ function hoistVNode(t, program, vnode) {
   const id = program.scope.generateUidIdentifier("hellaStatic");
   program.scope.push({ id, init: vnode, kind: "const" });
   return id;
-}
-
-/**
- * Hoist every fully-static subtree inside an emitted `html`` expression:
- * the whole expression when static, otherwise each static child subtree
- * (recursively). Returns the (possibly rewritten) expression.
- * @param {typeof import("@babel/core").types} t
- * @param {import("@babel/core").NodePath} program
- * @param {import("@babel/core").Expression} node
- * @returns {import("@babel/core").Expression}
- */
-export function hoistStaticSubtrees(t, program, node) {
-  if (!t.isObjectExpression(node)) return node;
-
-  if (isStaticVNodeExpr(t, node)) {
-    const withFlag = t.cloneNode(node);
-    withFlag.properties.push(t.objectProperty(t.identifier("static"), t.booleanLiteral(true)));
-    return hoistVNode(t, program, withFlag);
-  }
-
-  const properties = node.properties;
-  let i = 0;
-  const len = properties.length;
-  while (i < len) {
-    const prop = properties[i++];
-    if (!t.isObjectProperty(prop) || !t.isArrayExpression(prop.value)) continue;
-    const key = t.isIdentifier(prop.key) ? prop.key.name : null;
-    if (key !== "children") continue;
-
-    const elements = prop.value.elements;
-    let ei = 0;
-    const eLen = elements.length;
-    while (ei < eLen) {
-      const element = elements[ei];
-      if (element && t.isObjectExpression(element) && isStaticVNodeExpr(t, element)) {
-        const withFlag = t.cloneNode(element);
-        withFlag.properties.push(t.objectProperty(t.identifier("static"), t.booleanLiteral(true)));
-        elements[ei] = hoistVNode(t, program, withFlag);
-      } else if (element && t.isObjectExpression(element)) {
-        hoistStaticSubtrees(t, program, element);
-      }
-      ei++;
-    }
-  }
-
-  return node;
 }
 
 /**

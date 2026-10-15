@@ -22,7 +22,7 @@ beforeEach(() => {
 const emailValidator = (v: string): string | null => (v.includes("@") ? null : "Invalid email");
 
 describe("form", () => {
-  test.each(formApiVariants)("$format/$style createForm seeds the initial values", ({ createForm }) => {
+  test.each(formApiVariants)("$style createForm seeds the initial values", ({ createForm }) => {
     const form = createForm({ email: "", name: "Ada" });
     expect(form.values.email()).toBe("");
     expect(form.values.name()).toBe("Ada");
@@ -31,13 +31,13 @@ describe("form", () => {
     expect(form.dirty()).toBe(false);
   });
 
-  test.each(formApiVariants)("$format/$style createForm updates the field value on setField", ({ createForm }) => {
+  test.each(formApiVariants)("$style createForm updates the field value on setField", ({ createForm }) => {
     const form = createForm({ email: "" });
     form.setField("email", "ada@lovelace.dev");
     expect(form.values.email()).toBe("ada@lovelace.dev");
   });
 
-  test.each(formApiVariants)("$format/$style createForm validates a field on blur", ({ createForm }) => {
+  test.each(formApiVariants)("$style createForm validates a field on blur", ({ createForm }) => {
     const form = createForm({ email: "" }, { validators: { email: emailValidator } });
     form.blur("email");
     expect(form.touched().email).toBe(true);
@@ -47,7 +47,7 @@ describe("form", () => {
     expect(form.errors().email).toBeUndefined();
   });
 
-  test.each(formApiVariants)("$format/$style createForm revalidates on setField only after the field is touched", ({ createForm }) => {
+  test.each(formApiVariants)("$style createForm revalidates on setField only after the field is touched", ({ createForm }) => {
     const form = createForm({ email: "" }, { validators: { email: emailValidator } });
     form.setField("email", "not-an-email");
     expect(form.errors().email).toBeUndefined();
@@ -58,7 +58,7 @@ describe("form", () => {
     expect(form.errors().email).toBeUndefined();
   });
 
-  test.each(formApiVariants)("$format/$style createForm aggregates validate() over every field", ({ createForm }) => {
+  test.each(formApiVariants)("$style createForm aggregates validate() over every field", ({ createForm }) => {
     const form = createForm(
       { email: "", name: "" },
       {
@@ -78,7 +78,7 @@ describe("form", () => {
     expect(form.errors()).toEqual({});
   });
 
-  test.each(formApiVariants)("$format/$style createForm clears values, errors, and touched on reset", ({ createForm }) => {
+  test.each(formApiVariants)("$style createForm clears values, errors, and touched on reset", ({ createForm }) => {
     const form = createForm({ email: "seed@hellajs.dev" }, { validators: { email: emailValidator } });
     form.setField("email", "edited");
     form.blur("email");
@@ -90,7 +90,7 @@ describe("form", () => {
     expect(form.dirty()).toBe(false);
   });
 
-  test.each(formApiVariants)("$format/$style createForm tracks dirty against the initial values", ({ createForm }) => {
+  test.each(formApiVariants)("$style createForm tracks dirty against the initial values", ({ createForm }) => {
     const form = createForm({ email: "" });
     form.setField("email", "typed");
     expect(form.dirty()).toBe(true);
@@ -98,7 +98,7 @@ describe("form", () => {
     expect(form.dirty()).toBe(false);
   });
 
-  test.each(formApiVariants)("$format/$style createForm marks all touched and skips onValid when invalid", ({ createForm }) => {
+  test.each(formApiVariants)("$style createForm marks all touched and skips onValid when invalid", ({ createForm }) => {
     const form = createForm(
       { email: "", name: "" },
       { validators: { email: emailValidator } },
@@ -111,7 +111,7 @@ describe("form", () => {
     expect(form.errors().email).toBe("Invalid email");
   });
 
-  test.each(formApiVariants)("$format/$style createForm calls onValid with the values when clean", ({ createForm }) => {
+  test.each(formApiVariants)("$style createForm calls onValid with the values when clean", ({ createForm }) => {
     const form = createForm(
       { email: "", name: "Ada" },
       { validators: { email: emailValidator } },
@@ -125,14 +125,14 @@ describe("form", () => {
     expect(onValid).toHaveBeenCalledWith({ email: "ada@lovelace.dev", name: "Ada" });
   });
 
-  test.each(formApiVariants)("$format/$style createForm preventDefaults the submitted event", ({ createForm }) => {
+  test.each(formApiVariants)("$style createForm preventDefaults the submitted event", ({ createForm }) => {
     const form = createForm({ email: "ada@lovelace.dev" });
     const event = { preventDefault: mock(() => {}) } as unknown as Event;
     form.handleSubmit(() => {})(event);
     expect(event.preventDefault).toHaveBeenCalledTimes(1);
   });
 
-  test.each(formPartVariants.filter((variant) => variant.part === "Item"))("$part $format/$style renders data-error and the item tokens", (variant) => {
+  test.each(formPartVariants.filter((variant) => variant.part === "Item"))("$part $style renders data-error and the item tokens", (variant) => {
     const clean = renderVariant(variant, { children: ["x"] });
     expect(clean.getAttribute("data-error")).toBe("false");
     const invalid = renderVariant(variant, { error: true, children: ["x"] });
@@ -145,12 +145,12 @@ describe("form", () => {
     }
   });
 
-  test.each(formPartVariants.filter((variant) => variant.part === "Item"))("$part $format/$style reads the error accessor", (variant) => {
+  test.each(formPartVariants.filter((variant) => variant.part === "Item"))("$part $style reads the error accessor", (variant) => {
     const root = renderVariant(variant, { error: () => true, children: ["x"] });
     expect(root.getAttribute("data-error")).toBe("true");
   });
 
-  test.each(formPartVariants.filter((variant) => variant.part === "Label"))("$part $format/$style carries the label error variant", (variant) => {
+  test.each(formPartVariants.filter((variant) => variant.part === "Label"))("$part $style carries the label error variant", (variant) => {
     const clean = renderVariant(variant, { children: ["Email"] });
     expect(clean.getAttribute("data-error")).toBe("false");
     expect(clean.hasAttribute("aria-invalid")).toBe(false);
@@ -165,13 +165,13 @@ describe("form", () => {
     }
   });
 
-  test.each(formPartVariants.filter((variant) => variant.part === "Label"))("$part $format/$style renders the required hook and the for target", (variant) => {
+  test.each(formPartVariants.filter((variant) => variant.part === "Label"))("$part $style renders the required hook and the for target", (variant) => {
     const root = renderVariant(variant, { required: true, for: "email", children: ["Email"] });
     expect(root.getAttribute("data-required")).toBe("true");
     expect(root.getAttribute("for")).toBe("email");
   });
 
-  test.each(formPartVariants.filter((variant) => variant.part === "Control"))("$part $format/$style wires aria-invalid and aria-describedby", (variant) => {
+  test.each(formPartVariants.filter((variant) => variant.part === "Control"))("$part $style wires aria-invalid and aria-describedby", (variant) => {
     const bare = renderVariant(variant, { children: ["x"] });
     expect(bare.getAttribute("data-slot")).toBe("form-control");
     expect(bare.hasAttribute("aria-invalid")).toBe(false);
@@ -181,7 +181,7 @@ describe("form", () => {
     expect(wired.getAttribute("aria-describedby")).toBe("email-desc");
   });
 
-  test.each(formPartVariants.filter((variant) => variant.part === "Description"))("$part $format/$style renders the describedby id", (variant) => {
+  test.each(formPartVariants.filter((variant) => variant.part === "Description"))("$part $style renders the describedby id", (variant) => {
     const root = renderVariant(variant, { id: "email-desc", children: ["We only use this for login."] });
     expect(root.getAttribute("id")).toBe("email-desc");
     expect(root.tagName).toBe("P");
@@ -192,7 +192,7 @@ describe("form", () => {
     }
   });
 
-  test.each(formPartVariants.filter((variant) => variant.part === "Message"))("$part $format/$style renders the first error with the alert role", (variant) => {
+  test.each(formPartVariants.filter((variant) => variant.part === "Message"))("$part $style renders the first error with the alert role", (variant) => {
     const root = renderVariant(variant, { errors: ["Invalid email", "Also short"] });
     expect(root.getAttribute("role")).toBe("alert");
     expect(root.textContent).toBe("Invalid email");
@@ -204,7 +204,7 @@ describe("form", () => {
     }
   });
 
-  test.each(formPartVariants.filter((variant) => variant.part === "Message"))("$part $format/$style hides when clean and renders fallback children", (variant) => {
+  test.each(formPartVariants.filter((variant) => variant.part === "Message"))("$part $style hides when clean and renders fallback children", (variant) => {
     const empty = renderVariant(variant, {});
     expect(empty.hasAttribute("hidden")).toBe(true);
     const fallback = renderVariant(variant, { children: ["All good"] });
@@ -212,7 +212,7 @@ describe("form", () => {
     expect(fallback.textContent).toBe("All good");
   });
 
-  test.each(formPartVariants.filter((variant) => variant.part === "Message"))("$part $format/$style reads the errors accessor", (variant) => {
+  test.each(formPartVariants.filter((variant) => variant.part === "Message"))("$part $style reads the errors accessor", (variant) => {
     const root = renderVariant(variant, { errors: () => ["From the accessor"] });
     expect(root.textContent).toBe("From the accessor");
   });
@@ -221,7 +221,7 @@ describe("form", () => {
     const { createForm } = formApiVariants[0]!;
     const form = createForm({ email: "" }, { validators: { email: emailValidator } });
     const part = (name: string) =>
-      formPartVariants.find((candidate) => candidate.part === name && candidate.style === "css" && candidate.format === "jsx")!;
+      formPartVariants.find((candidate) => candidate.part === name && candidate.style === "css")!;
     const message = part("Message").render({
       errors: () => (form.errors().email ? [form.errors().email!] : []),
     });
@@ -241,18 +241,18 @@ describe("form", () => {
     throw new Error("form message never rendered the validation error");
   });
 
-  test("forwards user attrs onto the parts across all four variants", () => {
+  test("forwards user attrs onto the parts across both styles", () => {
     for (const part of FORM_PARTS) {
       assertAttrForwarded(formPartVariants.filter((candidate) => candidate.part === part), { title: "Hella" }, "title", "Hella");
     }
   });
 
-  test("fires a user on:click handler on the label across all four variants", () => {
+  test("fires a user on:click handler on the label across both styles", () => {
     const onClick = mock(() => {});
     assertHandlerForwarded(formPartVariants.filter((candidate) => candidate.part === "Label"), { "on:click": onClick }, "on:click", "click", onClick);
   });
 
-  test("merges the user class last on the parts across all four variants", () => {
+  test("merges the user class last on the parts across both styles", () => {
     for (const part of FORM_PARTS) {
       for (const variant of formPartVariants.filter((candidate) => candidate.part === part)) {
         const root = renderVariant(variant, { class: "my-form-part", children: ["x"] });
@@ -261,7 +261,7 @@ describe("form", () => {
     }
   });
 
-  test("all four flavors agree on tag and attributes", () => {
+  test("both styles agree on tag and attributes", () => {
     for (const part of FORM_PARTS) {
       assertStructuralParity(formPartVariants.filter((candidate) => candidate.part === part), { children: ["x"] });
     }

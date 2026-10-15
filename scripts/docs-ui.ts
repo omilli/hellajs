@@ -1,6 +1,6 @@
 // Regenerates the docs ui section's generated sources — two outputs, both
 // canonical PUBLIC `addComponent` output. Per entry × variant (css-jsx,
-// css-html, tailwind-jsx, tailwind-html) it copies the entry's own canonical
+// tailwind-jsx) it copies the entry's own canonical
 // file into `docs/src/ui-install/<variant>/` for the InstallSection
 // Manual tab; one css-jsx `addComponent` call over the full name list writes
 // the live component set — every `<name>.tsx` + `tokens.ts` — into
@@ -11,12 +11,10 @@ import { join } from "node:path";
 import { addComponent, loadRegistry } from "../packages/ui/dist/index.js";
 import { ensureDir, logger, projectRoot, writeJson } from "./utils/index.js";
 
-/** Generated variants: style x format combos addComponent produces a canonical file for. */
+/** Generated variants: style combos addComponent produces a canonical file for. */
 const variants = [
-  { style: "css", format: "jsx", dir: "css-jsx", file: (name: string) => `${name}.tsx` },
-  { style: "css", format: "html", dir: "css-html", file: (name: string) => `${name}.ts` },
-  { style: "tailwind", format: "jsx", dir: "tailwind-jsx", file: (name: string) => `${name}.tsx` },
-  { style: "tailwind", format: "html", dir: "tailwind-html", file: (name: string) => `${name}.ts` },
+  { style: "css", dir: "css-jsx", file: (name: string) => `${name}.tsx` },
+  { style: "tailwind", dir: "tailwind-jsx", file: (name: string) => `${name}.tsx` },
 ] as const;
 
 /**
@@ -57,7 +55,7 @@ function resolveNames(args: string[]): string[] {
  */
 async function generateEntry(name: string, scratchDir: string, outRoot: string): Promise<void> {
   for (const variant of variants) {
-    addComponent([name], { dir: scratchDir, style: variant.style, format: variant.format, overwrite: true });
+    addComponent([name], { dir: scratchDir, style: variant.style, overwrite: true });
     const targetDir = join(outRoot, variant.dir);
     await ensureDir(targetDir);
     copyFileSync(join(scratchDir, "src/components", variant.file(name)), join(targetDir, variant.file(name)));
@@ -107,7 +105,7 @@ async function main(): Promise<void> {
     // each scratch `<name>.tsx` is the css-jsx canonical (tailwind-jsx's
     // earlier copy is overwritten); mirror every `<name>.tsx` plus `tokens.ts`
     // out of scratch byte-exact — no post-copy edits, ever.
-    addComponent(names, { dir: scratchDir, style: "css", format: "jsx", overwrite: true });
+    addComponent(names, { dir: scratchDir, style: "css", overwrite: true });
     await ensureDir(uiDir);
     for (const name of names) {
       copyFileSync(join(scratchDir, "src/components", `${name}.tsx`), join(uiDir, `${name}.tsx`));

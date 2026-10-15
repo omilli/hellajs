@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { onLongPress } from "@hellajs/dom/bundle";
+import { onLongPress } from "@hellajs/dom";
 import { pointerDown, pointerMove, pointerUp, pointerCancel } from "./helpers";
 
 describe("onLongPress", () => {

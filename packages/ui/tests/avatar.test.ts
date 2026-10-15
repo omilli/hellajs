@@ -40,7 +40,7 @@ beforeEach(() => {
 });
 
 describe("avatar", () => {
-  test.each(avatarVariants)("$format/$style renders the avatar root with its data-slot and data-size", (variant) => {
+  test.each(avatarVariants)("$style renders the avatar root with its data-slot and data-size", (variant) => {
     const avatar = renderVariant(variant, { children: variant.child("JD"), class: "my-avatar" });
     expect(avatar.getAttribute("data-slot")).toBe("avatar");
     expect(avatar.getAttribute("data-size")).toBe("default");
@@ -57,9 +57,9 @@ describe("avatar", () => {
     }
   });
 
-  test.each(avatarVariants)("$format/$style renders AvatarImage with src and alt, hidden until loaded", (variant) => {
+  test.each(avatarVariants)("$style renders AvatarImage with src and alt, hidden until loaded", (variant) => {
     const image = renderVariant(
-      avatarPartVariants.filter((suite) => suite.part === "Image" && suite.style === variant.style && suite.format === variant.format)[0]!,
+      avatarPartVariants.filter((suite) => suite.part === "Image" && suite.style === variant.style)[0]!,
       { src: "avatar.png", alt: "Avatar of JD" } as AvatarImageVariantProps,
     );
     expect(image.tagName).toBe("IMG");
@@ -69,16 +69,16 @@ describe("avatar", () => {
     expect(image.hasAttribute("hidden")).toBe(true);
   });
 
-  test.each(avatarVariants)("$format/$style keeps the fallback visible until the shared loaded signal flips", (variant) => {
+  test.each(avatarVariants)("$style keeps the fallback visible until the shared loaded signal flips", (variant) => {
     const loaded = signal(false);
     const container = document.createElement("div");
     document.body.appendChild(container);
     const image = renderVariant(
-      avatarPartVariants.filter((suite) => suite.part === "Image" && suite.style === variant.style && suite.format === variant.format)[0]!,
+      avatarPartVariants.filter((suite) => suite.part === "Image" && suite.style === variant.style)[0]!,
       { src: "avatar.png", loaded } as AvatarImageVariantProps,
     );
     const fallback = renderVariant(
-      avatarPartVariants.filter((suite) => suite.part === "Fallback" && suite.style === variant.style && suite.format === variant.format)[0]!,
+      avatarPartVariants.filter((suite) => suite.part === "Fallback" && suite.style === variant.style)[0]!,
       { loaded, children: [] },
     );
     expect(fallback.hasAttribute("hidden")).toBe(false);
@@ -92,13 +92,13 @@ describe("avatar", () => {
     expect(fallback.hasAttribute("hidden")).toBe(false);
   });
 
-  test.each(avatarVariants)("$format/$style renders group and group-count parts", (variant) => {
+  test.each(avatarVariants)("$style renders group and group-count parts", (variant) => {
     const group = renderVariant(
-      avatarPartVariants.filter((suite) => suite.part === "Group" && suite.style === variant.style && suite.format === variant.format)[0]!,
+      avatarPartVariants.filter((suite) => suite.part === "Group" && suite.style === variant.style)[0]!,
       { children: [] },
     );
     const count = renderVariant(
-      avatarPartVariants.filter((suite) => suite.part === "GroupCount" && suite.style === variant.style && suite.format === variant.format)[0]!,
+      avatarPartVariants.filter((suite) => suite.part === "GroupCount" && suite.style === variant.style)[0]!,
       { children: variant.child("+3") },
     );
     expect(group.getAttribute("data-slot")).toBe("avatar-group");
@@ -106,7 +106,7 @@ describe("avatar", () => {
     expect(count.textContent).toBe("+3");
   });
 
-  test.each(avatarPartVariants)("$format/$style $part renders its tag, data-slot, and classes", (variant) => {
+  test.each(avatarPartVariants)("$style $part renders its tag, data-slot, and classes", (variant) => {
     const el = renderVariant(variant, { children: [], class: "my-part" });
     expect(el.tagName).toBe(PART_TAGS[variant.part]!);
     expect(el.getAttribute("data-slot")).toBe(`avatar-${kebab(variant.part)}`);
@@ -119,20 +119,20 @@ describe("avatar", () => {
     }
   });
 
-  test("keeps structural parity across all four variants", () => {
+  test("keeps structural parity across both styles", () => {
     assertStructuralParity(avatarVariants);
   });
 
-  test("forwards user attrs onto the root across all four variants", () => {
+  test("forwards user attrs onto the root across both styles", () => {
     assertAttrForwarded(avatarVariants, { title: "Hella" }, "title", "Hella");
   });
 
-  test("fires a user on:click handler across all four variants", () => {
+  test("fires a user on:click handler across both styles", () => {
     const onClick = mock(() => {});
     assertHandlerForwarded(avatarVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 
-  test("keeps structural parity for every part across all four variants", () => {
+  test("keeps structural parity for every part across both styles", () => {
     for (const part of AVATAR_PARTS) {
       const suites = avatarPartVariants.filter((variant) => variant.part === part);
       assertStructuralParity(suites, { children: [], src: "avatar.png", alt: "Parity" });

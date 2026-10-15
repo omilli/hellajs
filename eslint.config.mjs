@@ -100,7 +100,7 @@ export default tseslint.config(
 	{
 		// Banned test APIs (guides/tests.md §Anti-Patterns) — bun:test only:
 		// test() for cases, mock() for call tracking.
-		files: ["packages/*/tests/**/*.test.ts", "plugins/*/tests/**/*.test.ts"],
+		files: ["packages/*/tests/**/*.test.{ts,tsx}", "plugins/*/tests/**/*.test.ts"],
 		rules: {
 			"no-restricted-syntax": ["error", {
 				selector: "CallExpression[callee.name='it'], CallExpression[callee.object.name='test'][callee.property.name='skip'], CallExpression[callee.object.name=/^(jest|vi)$/]",
@@ -120,6 +120,7 @@ export default tseslint.config(
 			globals: {
 				...globals.node,
 				document: "readonly",
+				Bun: "readonly",
 			},
 		},
 	},
@@ -134,9 +135,9 @@ export default tseslint.config(
 		},
 	},
 	{
-		// SSR server entries (Bun.serve) and Vite build configs run in Node/Bun —
-		// not browser app code — so they get the Node runtime + Bun globals.
-		files: ["examples/**/server.js", "examples/**/vite.config.js"],
+		// SSR server entries, Vite build configs, and esbuild build glue run in
+		// Node/Bun — not browser app code — so they get the Node runtime + Bun globals.
+		files: ["examples/**/server.js", "examples/**/vite.config.js", "examples/**/build.mjs"],
 		languageOptions: {
 			globals: {
 				...globals.node,

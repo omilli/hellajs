@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { resetTestState } from "@utils/test-helpers.js";
-import { onEscape } from "@hellajs/dom/bundle";
+import { onEscape } from "@hellajs/dom";
 import { setupButtons, pressKey } from "./helpers";
 
 describe("onEscape", () => {

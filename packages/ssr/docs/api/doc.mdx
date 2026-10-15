@@ -31,13 +31,12 @@ function doc(options: DocOptions & { body: ReadableStream<string> }): ReadableSt
 
 Render a template with [`ssr`](/reference/ssr/ssr), collect the CSS text from [`@hellajs/css`](/reference/css) via [`cssText`](/reference/css/csstext), and assemble both into a document. `mount` emits the wrapper `hydrate` targets.
 
-```js
-import { html } from '@hellajs/dom';
+```jsx
 import { style, cssText } from '@hellajs/css';
 import { ssr, doc } from '@hellajs/ssr';
 
 const card = style({ border: '1px solid #ccc' }, { label: 'card' });
-const body = ssr(html`<div class=${card}>Hi</div>`);
+const body = ssr(<div class={card}>Hi</div>);
 
 const page = doc({
   lang: 'en',
@@ -93,13 +92,12 @@ In the streaming mode the suffix (`</div></body></html>`) is emitted only after 
 
 `data` is the server→client data channel: the value is `JSON.stringify`-ed and shipped inside the document as `<script type="application/json" id="hella-data">…</script>`, after the mount wrapper, before `</body>`, in both modes (flushing with the suffix in the streaming mode, after every staged swap). Every `<` in the payload is escaped (`\u003c`), so no string can break out of the element; `JSON.parse` un-escapes it transparently.
 
-```js
-import { html } from '@hellajs/dom';
+```jsx
 import { ssr, doc } from '@hellajs/ssr';
 
 // Server: the fetched user ships with the markup
 const user = await fetch('/api/users/1').then(r => r.json());
-const page = doc({ mount: '#app', data: { user }, body: ssr(html`<h1>Hello ${user.name}</h1>`) });
+const page = doc({ mount: '#app', data: { user }, body: ssr(<h1>Hello {user.name}</h1>) });
 ```
 
 ```js

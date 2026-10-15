@@ -15,7 +15,7 @@ beforeEach(() => {
 });
 
 describe("marker", () => {
-  test.each(markerVariants)("$format/$style renders the marker root with the default variant", (variant) => {
+  test.each(markerVariants)("$style renders the marker root with the default variant", (variant) => {
     const root = renderVariant(variant, { children: variant.child!("text") });
     expect(root.getAttribute("data-slot")).toBe("marker");
     expect(root.getAttribute("data-variant")).toBe("default");
@@ -28,7 +28,7 @@ describe("marker", () => {
     }
   });
 
-  test.each(markerVariants)("$format/$style renders the separator variant with its rule pseudo-elements", (variant) => {
+  test.each(markerVariants)("$style renders the separator variant with its rule pseudo-elements", (variant) => {
     const root = renderVariant(variant, { variant: "separator", children: variant.child!("text") });
     expect(root.getAttribute("data-variant")).toBe("separator");
     if (variant.style === "css") {
@@ -40,7 +40,7 @@ describe("marker", () => {
     }
   });
 
-  test.each(markerVariants)("$format/$style renders the border variant", (variant) => {
+  test.each(markerVariants)("$style renders the border variant", (variant) => {
     const root = renderVariant(variant, { variant: "border", children: variant.child!("text") });
     expect(root.getAttribute("data-variant")).toBe("border");
     if (variant.style === "css") {
@@ -50,7 +50,7 @@ describe("marker", () => {
     }
   });
 
-  test.each(markerPartVariants)("$part $format/$style renders its slot and aria", (variant) => {
+  test.each(markerPartVariants)("$part $style renders its slot and aria", (variant) => {
     const root = renderVariant(variant, { children: ["x"] });
     expect(root.getAttribute("data-slot")).toBe(`marker-${variant.part.toLowerCase()}`);
     if (variant.part === "Icon") {
@@ -59,7 +59,7 @@ describe("marker", () => {
     expect(root.textContent).toBe("x");
   });
 
-  test.each(markerPartVariants.filter((variant) => variant.part === "Icon"))("$part $format/$style sizes the icon wrapper", (variant) => {
+  test.each(markerPartVariants.filter((variant) => variant.part === "Icon"))("$part $style sizes the icon wrapper", (variant) => {
     const root = renderVariant(variant, { children: ["x"] });
     if (variant.style === "css") {
       expect(classTokens(root)[0]!.startsWith("marker-icon")).toBe(true);
@@ -68,7 +68,7 @@ describe("marker", () => {
     }
   });
 
-  test("all four flavors agree on tag and attributes", () => {
+  test("both styles agree on tag and attributes", () => {
     assertStructuralParity(markerVariants, { variant: "separator", children: ["text"] });
     assertStructuralParity(markerVariants, { variant: "border", children: ["text"] });
     for (const part of ["Icon", "Content"] as const) {
@@ -76,16 +76,16 @@ describe("marker", () => {
     }
   });
 
-  test("forwards user attrs onto the root across all four variants", () => {
+  test("forwards user attrs onto the root across both styles", () => {
     assertAttrForwarded(markerVariants, { title: "Hella" }, "title", "Hella");
   });
 
-  test("fires a user on:click handler across all four variants", () => {
+  test("fires a user on:click handler across both styles", () => {
     const onClick = mock(() => {});
     assertHandlerForwarded(markerVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 
-  test("merges a user class into the root class across all four variants", () => {
+  test("merges a user class into the root class across both styles", () => {
     for (const variant of markerVariants) {
       const root = renderVariant(variant, { class: "my-marker", children: variant.child!("text") });
       const tokens = classTokens(root);

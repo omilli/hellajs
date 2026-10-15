@@ -22,7 +22,7 @@ beforeEach(() => {
 /** Resolves one compiled NavigationMenu part (full export name) at the variant's flavor. */
 function part<P extends NavigationMenuPartVariantProps>(variant: ComponentVariant<NavigationMenuVariantProps>, name: string, props: P): HellaNode {
   const found = navigationMenuPartVariants.find(
-    (candidate) => candidate.part === name && candidate.style === variant.style && candidate.format === variant.format,
+    (candidate) => candidate.part === name && candidate.style === variant.style,
   )!;
   return (found.render as unknown as (bag: P) => HellaNode)(props);
 }
@@ -96,7 +96,7 @@ function buildNav(variant: ComponentVariant<NavigationMenuVariantProps>): NavFix
 }
 
 describe("navigation-menu", () => {
-  test.each(navigationMenuVariants)("$format/$style renders the trigger into the list with data-viewport on the bar", (variant) => {
+  test.each(navigationMenuVariants)("$style renders the trigger into the list with data-viewport on the bar", (variant) => {
     const { bar, learnTrigger } = buildNav(variant);
     expect(bar.getAttribute("data-slot")).toBe("navigation-menu");
     expect(bar.getAttribute("data-viewport")).toBe("true");
@@ -109,7 +109,7 @@ describe("navigation-menu", () => {
     expect(bar.querySelector("[data-slot='navigation-menu-viewport']")).not.toBeNull();
   });
 
-  test.each(navigationMenuVariants)("$format/$style activates a trigger and renders its content into the viewport slot", async (variant) => {
+  test.each(navigationMenuVariants)("$style activates a trigger and renders its content into the viewport slot", async (variant) => {
     const { bar, value, onValueChange, learnTrigger, clickTrigger } = buildNav(variant);
     const content = await clickTrigger(learnTrigger);
     const viewport = bar.querySelector("[data-slot='navigation-menu-viewport']")!;
@@ -123,7 +123,7 @@ describe("navigation-menu", () => {
     expect(learnTrigger().getAttribute("aria-expanded")).toBe("true");
   });
 
-  test.each(navigationMenuVariants)("$format/$style swaps the viewport content when the second trigger activates", async (variant) => {
+  test.each(navigationMenuVariants)("$style swaps the viewport content when the second trigger activates", async (variant) => {
     const { bar, value, learnTrigger, referenceTrigger, clickTrigger } = buildNav(variant);
     const first = await clickTrigger(learnTrigger);
     const second = await clickTrigger(referenceTrigger);
@@ -138,7 +138,7 @@ describe("navigation-menu", () => {
     expect(viewport.contains(first)).toBe(false);
   });
 
-  test.each(navigationMenuVariants)("$format/$style closes on a second activation of the open trigger", async (variant) => {
+  test.each(navigationMenuVariants)("$style closes on a second activation of the open trigger", async (variant) => {
     const { value, learnTrigger, clickTrigger } = buildNav(variant);
     await clickTrigger(learnTrigger);
     learnTrigger().dispatchEvent(new Event("click", { bubbles: true }));
@@ -146,7 +146,7 @@ describe("navigation-menu", () => {
     expect(learnTrigger().getAttribute("data-state")).toBe("closed");
   });
 
-  test.each(navigationMenuVariants)("$format/$style toggles the viewport data-state with the bar store", (variant) => {
+  test.each(navigationMenuVariants)("$style toggles the viewport data-state with the bar store", (variant) => {
     const { bar, value, learnTrigger } = buildNav(variant);
     const viewport = bar.querySelector("[data-slot='navigation-menu-viewport']")!;
     expect(viewport.getAttribute("data-state")).toBe("closed");
@@ -155,7 +155,7 @@ describe("navigation-menu", () => {
     expect(learnTrigger().getAttribute("data-state")).toBe("open");
   });
 
-  test.each(navigationMenuVariants)("$format/$style renders the indicator and transitions it between trigger positions", async (variant) => {
+  test.each(navigationMenuVariants)("$style renders the indicator and transitions it between trigger positions", async (variant) => {
     const { bar, learnTrigger, referenceTrigger, clickTrigger } = buildNav(variant);
     const indicator = bar.querySelector("[data-slot='navigation-menu-indicator']") as HTMLElement;
     expect(indicator).not.toBeNull();
@@ -172,7 +172,7 @@ describe("navigation-menu", () => {
     expect(indicator.style.transform).toBe("translateX(150px)");
   });
 
-  test.each(navigationMenuVariants)("$format/$style marks the active link with data-active", (variant) => {
+  test.each(navigationMenuVariants)("$style marks the active link with data-active", (variant) => {
     const container = setupContainer();
     const rendered = part(variant, "Link", { href: "#docs", active: true, children: "Docs" });
     mount(typeof rendered === "function" ? rendered : rendered, container);
@@ -181,7 +181,7 @@ describe("navigation-menu", () => {
     expect(link.getAttribute("href")).toBe("#docs");
   });
 
-  test.each(navigationMenuVariants)("$format/$style supports manual viewport wiring through viewport={false} and explicit selectors", async (variant) => {
+  test.each(navigationMenuVariants)("$style supports manual viewport wiring through viewport={false} and explicit selectors", async (variant) => {
     const value = signal("");
     const slot = document.createElement("div");
     slot.setAttribute("data-slot", "navigation-menu-viewport");
@@ -215,7 +215,7 @@ describe("navigation-menu", () => {
     slot.remove();
   });
 
-  test.each(navigationMenuVariants)("$format/$style indicator follows announcements without an anchor and re-measures on resize", async (variant) => {
+  test.each(navigationMenuVariants)("$style indicator follows announcements without an anchor and re-measures on resize", async (variant) => {
     const value = signal("");
     const toggle = (id: string): void => value(value() === id ? "" : id);
     const bar = renderVariant(variant, {
@@ -250,7 +250,7 @@ describe("navigation-menu", () => {
     expect(indicator.getAttribute("data-state")).toBe("hidden");
   });
 
-  test.each(navigationMenuVariants)("$format/$style dismisses the exit fallback when a panel reopens mid-exit", async (variant) => {
+  test.each(navigationMenuVariants)("$style dismisses the exit fallback when a panel reopens mid-exit", async (variant) => {
     const value = signal("");
     const bar = renderVariant(variant, {
       children: [
@@ -277,7 +277,7 @@ describe("navigation-menu", () => {
     expect(first.isConnected).toBe(true);
   });
 
-  test.each(navigationMenuVariants)("$format/$style drops the indicator and resize wiring on unmount", (variant) => {
+  test.each(navigationMenuVariants)("$style drops the indicator and resize wiring on unmount", (variant) => {
     const value = signal("");
     const container = setupContainer();
     const rendered = variant.render({
@@ -293,34 +293,34 @@ describe("navigation-menu", () => {
     expect(() => window.dispatchEvent(new Event("resize"))).not.toThrow();
   });
 
-  test.each(navigationMenuVariants)("$format/$style forwards user attrs onto the bar root across all four variants", (variant) => {
+  test.each(navigationMenuVariants)("$style forwards user attrs onto the bar root across both styles", (variant) => {
     const bar = renderVariant(variant, { "aria-label": "site" });
     expect(bar.getAttribute("aria-label")).toBe("site");
   });
 
-  test.each(navigationMenuVariants)("$format/$style fires a user on:click handler on the bar root across all four variants", (variant) => {
+  test.each(navigationMenuVariants)("$style fires a user on:click handler on the bar root across both styles", (variant) => {
     const userClick = mock(() => {});
     const bar = renderVariant(variant, { "on:click": userClick });
     bar.dispatchEvent(new Event("click"));
     expect(userClick).toHaveBeenCalledTimes(1);
   });
 
-  test.each(navigationMenuVariants)("$format/$style merges a user class into the bar root's class across all four variants", (variant) => {
+  test.each(navigationMenuVariants)("$style merges a user class into the bar root's class across both styles", (variant) => {
     const bar = renderVariant(variant, { class: "user-class" });
     expect(classTokens(bar).at(-1)).toBe("user-class");
   });
 
-  test.each(navigationMenuPartVariants.filter((variant) => variant.part === "Viewport"))("$format/$style viewport part re-emits a user-supplied id onto the slot", (variant) => {
+  test.each(navigationMenuPartVariants.filter((variant) => variant.part === "Viewport"))("$style viewport part re-emits a user-supplied id onto the slot", (variant) => {
     const container = setupContainer();
     mount(variant.render({ id: "custom-viewport", active: () => false }), container);
     expect(container.querySelector("[data-slot='navigation-menu-viewport']")!.getAttribute("id")).toBe("custom-viewport");
   });
 
-  test("keeps structural parity across all four variants", () => {
+  test("keeps structural parity across both styles", () => {
     assertStructuralParity(navigationMenuVariants, { children: [] });
   });
 
-  test("renders every named part with its data-slot across all four variants", () => {
+  test("renders every named part with its data-slot across both styles", () => {
     const slot = document.createElement("div");
     slot.setAttribute("data-slot", "navigation-menu-viewport");
     document.body.appendChild(slot);

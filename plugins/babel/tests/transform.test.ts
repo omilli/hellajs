@@ -112,96 +112,6 @@ describe("babel", () => {
     });
   });
 
-  describe("html template transformation", () => {
-    test("simple element", () => {
-      const output = transformJSX("const node = html`<div>content</div>`;");
-      expect(normalize(output)).toBe('const _hellaStatic = { tag: "div", children: ["content"], static: true }; const node = _hellaStatic;');
-    });
-
-    test("with expression", () => {
-      const output = transformJSX("const node = html`<div>${expr}</div>`;");
-      expect(normalize(output)).toBe('const node = { tag: "div", children: [expr] };');
-    });
-
-    test("multiple expressions", () => {
-      const output = transformJSX("const node = html`<div>${a}${b}</div>`;");
-      expect(normalize(output)).toBe('const node = { tag: "div", children: [a, b] };');
-    });
-
-    test("nested elements", () => {
-      const output = transformJSX("const node = html`<div><span>nested</span></div>`;");
-      expect(normalize(output)).toBe('const _hellaStatic = { tag: "div", children: [{ tag: "span", children: ["nested"] }], static: true }; const node = _hellaStatic;');
-    });
-
-    test("fragment in template", () => {
-      const output = transformJSX("const node = html`<><span>a</span><span>b</span></>`;");
-      expect(normalize(output)).toBe('const _hellaStatic = { tag: "$", children: [{ tag: "span", children: ["a"] }, { tag: "span", children: ["b"] }], static: true }; const node = _hellaStatic;');
-    });
-
-    test("self-closing element", () => {
-      const output = transformJSX('const node = html`<input type="text" />`;');
-      expect(normalize(output)).toBe('const _hellaStatic = { tag: "input", props: { type: "text" }, static: true }; const node = _hellaStatic;');
-    });
-
-    test("unclosed void element compiles following text as sibling", () => {
-      const output = transformJSX("const node = html`<div><br>text</div>`;");
-      expect(normalize(output)).toBe('const _hellaStatic = { tag: "div", children: [{ tag: "br" }, "text"], static: true }; const node = _hellaStatic;');
-    });
-
-    test("component in template", () => {
-      const output = transformJSX("const node = html`<Button>text</Button>`;");
-      expect(normalize(output)).toBe('import { component } from "@hellajs/dom"; const node = component(Button, { children: ["text"] });');
-    });
-
-    test("dynamic component", () => {
-      const output = transformJSX("const node = html`<${Comp}>text</${Comp}>`;");
-      expect(normalize(output)).toBe('import { component } from "@hellajs/dom"; const node = component(Comp, { children: ["text"] });');
-    });
-
-    test("plain element in template", () => {
-      const output = transformJSX("const node = html`<div></div>`;");
-      expect(normalize(output)).toBe('const _hellaStatic = { tag: "div", static: true }; const node = _hellaStatic;');
-    });
-
-    test("html template with single-quoted attribute", () => {
-      const output = transformJSX("const node = html`<div class='container'></div>`;");
-      expect(normalize(output)).toBe('const _hellaStatic = { tag: "div", props: { class: "container" }, static: true }; const node = _hellaStatic;');
-    });
-
-    test("html template with unquoted attribute", () => {
-      const output = transformJSX("const node = html`<div class=container></div>`;");
-      expect(normalize(output)).toBe('const _hellaStatic = { tag: "div", props: { class: "container" }, static: true }; const node = _hellaStatic;');
-    });
-
-    test("html template with mixed quotes on attributes", () => {
-      const output = transformJSX("const node = html`<div id=\"main\" class='content'></div>`;");
-      expect(normalize(output)).toBe('const _hellaStatic = { tag: "div", props: { id: "main", class: "content" }, static: true }; const node = _hellaStatic;');
-    });
-
-    test("html template with HTML comment is stripped", () => {
-      const output = transformJSX("const node = html`<div><!-- comment --><span>visible</span></div>`;");
-      expect(normalize(output)).toBe('const _hellaStatic = { tag: "div", children: [{ tag: "span", children: ["visible"] }], static: true }; const node = _hellaStatic;');
-    });
-
-    test("html template with DOCTYPE is stripped", () => {
-      const output = transformJSX("const node = html`<!DOCTYPE html><div>content</div>`;");
-      expect(normalize(output)).toBe('const _hellaStatic = { tag: "div", children: ["content"], static: true }; const node = _hellaStatic;');
-    });
-
-    test("html template with multi-line content", () => {
-      const output = transformJSX(`
-        const node = html\`
-          <div id="root">
-            <span>nested</span>
-          </div>
-        \`;
-      `);
-      expect(normalize(output)).toContain('tag: "div"');
-      expect(normalize(output)).toContain('props: { id: "root" }');
-      expect(normalize(output)).toContain('tag: "span"');
-    });
-  });
-
   describe("import injection", () => {
     test("uppercase component injects component import", () => {
       const imports = getNamedImports("<Button />", "@hellajs/dom");
@@ -285,19 +195,6 @@ describe("babel", () => {
       expect(normalize(output)).toBe('const _hellaStatic = { tag: "span", children: ["text"], static: true }; import { component } from "@hellajs/dom"; ({ tag: "div", children: [component(Button, { children: ["Click"] }), _hellaStatic] });');
     });
 
-    test("mixed content in html``", () => {
-      const output = transformJSX(`
-        const node = html\`
-          <div>
-            text \${expr} <span>nested</span>
-          </div>
-        \`;
-      `);
-      expect(normalize(output)).toContain('tag: "div"');
-      expect(output).toContain("expr");
-      expect(output).toContain('tag: "span"');
-    });
-
     test("passthrough with component children", () => {
       const output = transformJSX(`
         <ForEach each={items} use={item => <Item data={item} />} />
@@ -352,20 +249,6 @@ describe("babel", () => {
       expect(normalize(output)).toBe('({ tag: "button", props: { id: "btn", class: "primary" }, e: { click: handler }, children: ["Click"] });');
     });
 
-    test("html template parsing with e: prefix", () => {
-      const output = transformJSX("const node = html`<button e:click=${fn}>Click</button>`;");
-      expect(normalize(output)).toBe('const node = { tag: "button", e: { click: fn }, children: ["Click"] };');
-    });
-
-    test("html template with e: and on: on same element", () => {
-      const output = transformJSX("const node = html`<button e:click=${direct} on:click=${delegated}>Click</button>`;");
-      expect(normalize(output)).toBe('const node = { tag: "button", on: { click: delegated }, e: { click: direct }, children: ["Click"] };');
-    });
-
-    test("html template with multiple e: handlers", () => {
-      const output = transformJSX("const node = html`<input e:click=${fn} e:input=${handler} />`;");
-      expect(normalize(output)).toBe('const node = { tag: "input", e: { click: fn, input: handler } };');
-    });
   });
 
   describe("static hoisting", () => {
@@ -419,18 +302,6 @@ describe("babel", () => {
     test("numeric and boolean prop literals hoist", () => {
       const output = transformJSX("<input tabIndex={3} disabled={true} />");
       expect(normalize(output)).toBe('const _hellaStatic = { tag: "input", props: { tabIndex: 3, disabled: true }, static: true }; _hellaStatic;');
-    });
-
-    test("html`` mixed template hoists the static child subtree", () => {
-      const output = transformJSX("const node = html`<div class=${c()}><b>static</b></div>`;");
-      const normalized = normalize(output);
-      expect(normalized).toContain('const _hellaStatic = { tag: "b", children: ["static"], static: true }');
-      expect(normalized).toContain('const node = { tag: "div", props: { class: () => c() }, children: [_hellaStatic] };');
-    });
-
-    test("html`` template with a slot does not hoist the root", () => {
-      const output = transformJSX("const node = html`<div>${expr}</div>`;");
-      expect(normalize(output)).toBe('const node = { tag: "div", children: [expr] };');
     });
 
     test("two static sites hoist to distinct consts", () => {
@@ -514,34 +385,11 @@ describe("babel", () => {
       expect(normalize(output)).toBe('import { component } from "@hellajs/dom"; component(Comp, { children: [foo()] });');
     });
 
-    test("html element child with a call is wrapped", () => {
-      const output = transformJSX("const node = html`<div>${fn()}</div>`;");
-      expect(normalize(output)).toBe('const node = { tag: "div", children: [() => fn()] };');
-    });
-
-    test("html element child bare identifier is not wrapped", () => {
-      const output = transformJSX("const node = html`<div>${x}</div>`;");
-      expect(normalize(output)).toBe('const node = { tag: "div", children: [x] };');
-    });
-
-    test("html mixed-content attribute with a call is wrapped", () => {
-      const output = transformJSX("const node = html`<div class=\"a-${fn()}-b\">${y}</div>`;");
-      expect(normalize(output)).toBe('const node = { tag: "div", props: { class: () => "a-" + fn() + "-b" }, children: [y] };');
-    });
-
-    test("html element array attribute with a call is wrapped", () => {
-      const output = transformJSX("const node = html`<div class=\"${[signal(), 'x']}\">${y}</div>`;");
-      expect(normalize(output)).toBe('const node = { tag: "div", props: { class: () => [signal(), \'x\'] }, children: [y] };');
-    });
-
-    test("html component prop is not wrapped", () => {
-      const output = transformJSX("const node = html`<${Comp} class=\"${fn()}\"></${Comp}>`;");
-      expect(normalize(output)).toBe('import { component } from "@hellajs/dom"; const node = component(Comp, { class: fn() });');
-    });
-
-    test("html component child is NOT wrapped", () => {
-      const output = transformJSX("const node = html`<${Comp}>${foo()}</${Comp}>`;");
-      expect(normalize(output)).toBe('import { component } from "@hellajs/dom"; const node = component(Comp, { children: [foo()] });');
+  });
+  describe("html passthrough (inert)", () => {
+    test("html`` source passes through untransformed (no visitor exists for the tag)", () => {
+      const output = transformJSX("const node = html`<div/>`;");
+      expect(normalize(output)).toBe("const node = html`<div/>`;");
     });
   });
 });

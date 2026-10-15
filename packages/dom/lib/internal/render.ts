@@ -83,8 +83,8 @@ function rawToFragment(html: string): DocumentFragment {
 
 /**
  * @internal
- * Resolves a HellaChild to a DOM Node with reactive support. A `HellaChild[]` (JSX and `html`
- * compile component children to an array) mounts each child into a `DocumentFragment`, mirroring the
+ * Resolves a HellaChild to a DOM Node with reactive support. A `HellaChild[]` (compiled JSX
+ * children arrive as an array) mounts each child into a `DocumentFragment`, mirroring the
  * ssr `walkChildren` array branch.
  * @param value The value to resolve (HellaChild, array of children, function, or primitive)
  * @param parent Optional parent element for effect registration
@@ -166,7 +166,7 @@ export function mountNode(node: HellaNode, boundaryElement?: Element, ns?: strin
     appendToParent(fragment as unknown as HellaElement, children, boundaryElement, ns);
     // The fragment is ephemeral — insertBefore/appendChild move its children out
     // and discard it — so the scope rides its LAST child (chained: the child can
-    // already carry an inner component's scope, e.g. html`<${B} /> tail`). Mount-side
+    // already carry an inner component's scope, e.g. a compiled fragment `<>text<${B} /></>`). Mount-side
     // anchors trail their content (every reactive/dynamic child appends its persistent
     // anchor before inserting rendered nodes ahead of it), so the last node survives
     // every child swap; a static tail persists until subtree removal. An empty

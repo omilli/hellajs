@@ -15,7 +15,7 @@ beforeEach(() => {
 });
 
 describe("button-group", () => {
-  test.each(buttonGroupVariants)("$format/$style renders the group role and slot", (variant) => {
+  test.each(buttonGroupVariants)("$style renders the group role and slot", (variant) => {
     const root = renderVariant(variant, { children: variant.child!("x") });
     expect(root.getAttribute("data-slot")).toBe("button-group");
     expect(root.getAttribute("role")).toBe("group");
@@ -23,7 +23,7 @@ describe("button-group", () => {
     expect(root.textContent).toBe("x");
   });
 
-  test.each(buttonGroupVariants)("$format/$style renders the orientation attribute per variant", (variant) => {
+  test.each(buttonGroupVariants)("$style renders the orientation attribute per variant", (variant) => {
     const vertical = renderVariant(variant, { orientation: "vertical", children: variant.child!("x") });
     expect(vertical.getAttribute("data-orientation")).toBe("vertical");
     if (variant.style === "css") {
@@ -34,7 +34,7 @@ describe("button-group", () => {
     }
   });
 
-  test.each(buttonGroupVariants)("$format/$style composes the group base and orientation classes", (variant) => {
+  test.each(buttonGroupVariants)("$style composes the group base and orientation classes", (variant) => {
     const root = renderVariant(variant, { children: variant.child!("x") });
     const tokens = classTokens(root);
     if (variant.style === "css") {
@@ -46,7 +46,7 @@ describe("button-group", () => {
     }
   });
 
-  test.each(buttonGroupPartVariants)("$part $format/$style renders its slot and class composition", (variant) => {
+  test.each(buttonGroupPartVariants)("$part $style renders its slot and class composition", (variant) => {
     const root = variant.part === "Text"
       ? renderVariant(variant, { children: ["label"] })
       : renderVariant(variant, { orientation: "vertical" });
@@ -74,21 +74,21 @@ describe("button-group", () => {
     }
   });
 
-  test.each(buttonGroupVariants)("$format/$style merges props.class last", (variant) => {
+  test.each(buttonGroupVariants)("$style merges props.class last", (variant) => {
     const root = renderVariant(variant, { class: "my-group", children: variant.child!("x") });
     expect(classTokens(root).at(-1)).toBe("my-group");
   });
 
-  test("forwards user attrs onto the root across all four variants", () => {
+  test("forwards user attrs onto the root across both styles", () => {
     assertAttrForwarded(buttonGroupVariants, { title: "Hella" }, "title", "Hella");
   });
 
-  test("fires a user on:click handler across all four variants", () => {
+  test("fires a user on:click handler across both styles", () => {
     const onClick = mock(() => {});
     assertHandlerForwarded(buttonGroupVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 
-  test("all four flavors agree on tag and attributes", () => {
+  test("both styles agree on tag and attributes", () => {
     assertStructuralParity(buttonGroupVariants, { orientation: "horizontal", children: ["x"] });
     assertStructuralParity(buttonGroupVariants, { orientation: "vertical", children: ["x"] });
     assertStructuralParity(buttonGroupPartVariants.filter((candidate) => candidate.part === "Text"), { children: ["x"] });

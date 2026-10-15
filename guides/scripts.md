@@ -45,7 +45,7 @@ Performance is **off the list**. Scripts are not hot paths. `for…of`, temporar
 | Shared helper | `scripts/utils/[concern].ts` | Single noun (`fs`, `exec`, `logger`, `paths`) |
 | Shared cross-pipeline concern | `scripts/[concern]/` | Multi-file infra consumed by 2+ pipelines, no CLI entry (e.g. `agent/`) |
 | Utils barrel | `scripts/utils/index.ts` | Re-exports every helper; the only import path scripts use |
-| Test preload | `utils/happydom.js` | Non-scripts JS exceptions: this preload only |
+| Test preload | `utils/happydom.js`, `utils/jsx.js` | Non-scripts JS exceptions: the two test preloads only |
 
 `scripts/utils/common.js` (the backward-compat re-export shim) is dead weight once `index.ts` exists — do not recreate it. One barrel, one import path.
 
@@ -116,7 +116,7 @@ A script that re-implements what a util already does is a DRY violation and a dr
 Run this when holding a scripts file (`scripts/**/*.ts`, `utils/**/*.ts`). Each item is a yes/no or a command.
 
 **Structure**
-- [ ] File is `.ts`, not `.mjs` / `.js` (test preload `utils/happydom.js` excepted)
+- [ ] File is `.ts`, not `.mjs` / `.js` (test preloads `utils/happydom.js` + `utils/jsx.js` excepted)
 - [ ] One concern per file; CLI entries are thin (parse → call → report → exit)
 - [ ] No `globalThis` mutations for inter-script data
 - [ ] A file over ~300 lines is split on a concern seam

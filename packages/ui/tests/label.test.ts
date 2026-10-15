@@ -17,7 +17,7 @@ beforeEach(() => {
 });
 
 describe("label", () => {
-  test.each(labelVariants)("$format/$style renders the label root with its data-slot and class merge", (variant) => {
+  test.each(labelVariants)("$style renders the label root with its data-slot and class merge", (variant) => {
     const label = renderVariant(variant, { children: variant.child("Email"), class: "my-label" });
     expect(label.tagName).toBe("LABEL");
     expect(label.getAttribute("data-slot")).toBe("label");
@@ -31,22 +31,22 @@ describe("label", () => {
     }
   });
 
-  test.each(labelVariants)("$format/$style passes the for attribute through to the label element", (variant) => {
+  test.each(labelVariants)("$style passes the for attribute through to the label element", (variant) => {
     const labeled = renderVariant(variant, { children: variant.child("Email"), for: "email" });
     expect(labeled.getAttribute("for")).toBe("email");
     const unlabeled = renderVariant(variant, { children: variant.child("Email") });
     expect(unlabeled.getAttribute("for")).toBeNull();
   });
 
-  test("keeps structural parity across all four variants", () => {
+  test("keeps structural parity across both styles", () => {
     assertStructuralParity(labelVariants);
   });
 
-  test("forwards user attrs onto the root across all four variants", () => {
+  test("forwards user attrs onto the root across both styles", () => {
     assertAttrForwarded(labelVariants, { title: "Hella" }, "title", "Hella");
   });
 
-  test("fires a user on:click handler across all four variants", () => {
+  test("fires a user on:click handler across both styles", () => {
     const onClick = mock(() => {});
     assertHandlerForwarded(labelVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });

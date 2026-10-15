@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { computeAnchorPosition } from "@hellajs/dom/bundle";
+import { computeAnchorPosition } from "@hellajs/dom";
 import type { Placement } from "@hellajs/dom";
 
 const viewport = { width: 400, height: 300 };

@@ -31,8 +31,6 @@ const items = signal(["Apple", "Banana", "Cherry"]);
 </ul>
 ```
 
-The same list renders in [`html`](/reference/dom/html#list-rendering) template syntax via the dynamic-tag form.
-
 ## Key Concepts
 
 ### Key-Based Optimization
@@ -84,7 +82,7 @@ Key resolution order:
 
 ### Fragment Items
 
-A `use` renderer may return multiple root nodes - a `html` template with several roots, or `<>…</>`.
+A `use` renderer may return multiple root nodes as a fragment: `<>…</>`.
 
 ```jsx
 import { signal } from "@hellajs/core";

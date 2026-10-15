@@ -1,0 +1,48 @@
+import { describe, test, expect, beforeEach } from "bun:test";
+import { flush, signal } from "@hellajs/core";
+import { resetTestState } from "@utils/test-helpers.js";
+import { mount } from "@hellajs/dom";
+
+beforeEach(() => {
+  resetTestState();
+});
+
+describe("dom", () => {
+  describe("mount binding", () => {
+    test("value set via direct property with falsy fallback", () => {
+      const inputValue = signal("hello");
+
+      mount(<div><input id="val-input" value={inputValue} /></div>);
+
+      const valInput = document.getElementById("val-input") as HTMLInputElement;
+
+      expect(valInput.value).toBe("hello");
+
+      inputValue("");
+      flush();
+
+      expect(valInput.value).toBe("");
+
+      inputValue("restored");
+      flush();
+      expect(valInput.value).toBe("restored");
+    });
+
+    test("innerHTML set via direct property with falsy fallback", () => {
+      const content = signal<string | null>("<b>bold</b>");
+
+      mount(<div id="html-div" innerHTML={content}></div>);
+
+      const el = document.getElementById("html-div")!;
+      expect(el.querySelector("b")?.textContent).toBe("bold");
+
+      content(null);
+      flush();
+      expect(el.innerHTML).toBe("");
+
+      content("<i>italic</i>");
+      flush();
+      expect(el.querySelector("i")?.textContent).toBe("italic");
+    });
+  });
+});

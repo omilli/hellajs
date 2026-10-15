@@ -27,7 +27,7 @@ beforeEach(() => {
 });
 
 describe("card", () => {
-  test.each(cardVariants)("$format/$style renders the default Card with its data-slot and class merge", (variant) => {
+  test.each(cardVariants)("$style renders the default Card with its data-slot and class merge", (variant) => {
     const card = renderVariant(variant, { children: variant.child("Content"), class: "my-card" });
     expect(card.tagName).toBe("DIV");
     expect(card.getAttribute("data-slot")).toBe("card");
@@ -41,13 +41,13 @@ describe("card", () => {
     }
   });
 
-  test.each(cardVariants)("$format/$style renders children directly with no inner wrapper", (variant) => {
+  test.each(cardVariants)("$style renders children directly with no inner wrapper", (variant) => {
     const card = renderVariant(variant, { children: variant.child("Content") });
     expect(card.textContent).toBe("Content");
     expect(card.children).toHaveLength(0);
   });
 
-  test.each(cardPartVariants)("$format/$style $part renders with its data-slot and classes", (variant) => {
+  test.each(cardPartVariants)("$style $part renders with its data-slot and classes", (variant) => {
     const el = renderVariant(variant, { children: [], class: "my-part" });
     expect(el.getAttribute("data-slot")).toBe(`card-${variant.part.toLowerCase()}`);
     const tokens = classTokens(el);
@@ -59,20 +59,20 @@ describe("card", () => {
     }
   });
 
-  test("keeps structural parity across all four variants", () => {
+  test("keeps structural parity across both styles", () => {
     assertStructuralParity(cardVariants);
   });
 
-  test("forwards user attrs onto the root across all four variants", () => {
+  test("forwards user attrs onto the root across both styles", () => {
     assertAttrForwarded(cardVariants, { title: "Hella" }, "title", "Hella");
   });
 
-  test("fires a user on:click handler across all four variants", () => {
+  test("fires a user on:click handler across both styles", () => {
     const onClick = mock(() => {});
     assertHandlerForwarded(cardVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 
-  test("keeps structural parity for every part across all four variants", () => {
+  test("keeps structural parity for every part across both styles", () => {
     for (const part of ["Header", "Title", "Description", "Action", "Content", "Footer"]) {
       const suites = cardPartVariants.filter((variant) => variant.part === part);
       assertStructuralParity(suites, { children: [] } as Partial<CardPartProps> as CardPartProps);

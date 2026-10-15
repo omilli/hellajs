@@ -15,25 +15,13 @@ import path from "node:path";
 import { ensureDir, execCommandInherited, projectRoot } from "../utils/index.js";
 
 const VARIANT_SCRIPTS: Record<BenchVariant, string> = {
-  html: "bundle",
   jsx: "bundle:j",
-  ts: "bundle:t",
 };
 
-export type BenchVariant = "html" | "jsx" | "ts";
+export type BenchVariant = "jsx";
 
 const examplesBenchDir = path.join(projectRoot, "examples", "bench");
 const stageDir = path.join(projectRoot, ".bench", "current");
-
-/**
- * Check whether a CLI value names a buildable bench variant.
- *
- * @param value The raw `--variant` value.
- * @returns True when `value` is `html`, `jsx`, or `ts`.
- */
-export function isBenchVariant(value: string): value is BenchVariant {
-  return value in VARIANT_SCRIPTS;
-}
 
 /**
  * Run one build step, enriching failures with the command that failed.

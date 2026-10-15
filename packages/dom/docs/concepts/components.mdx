@@ -4,7 +4,7 @@ Components are simple functions that return elements. They compose naturally thr
 
 ## Component Syntax
 
-Components use uppercase names in JSX. For html template literals, use `<${Component}>` syntax.
+Components use uppercase names in JSX.
 
 ```jsx
 import type { HellaChildren } from "@hellajs/dom";
@@ -16,8 +16,6 @@ const MyComponent = ({ title, children }: { title: string; children?: HellaChild
 // JSX
 <MyComponent title="Hi">Content</MyComponent>
 ```
-
-In [`html`](/reference/dom/html#components) template literals, the same component uses the dynamic-tag form: `<${MyComponent} title="Hi">Content</${MyComponent}>`.
 
 ## Component Composition
 
@@ -64,18 +62,7 @@ const Button = ({ variant = "primary", children, ...rest }: HTMLAttributes<"butt
 // <Button disabled on:click={fn} on:focusin={fn} />
 ```
 
-In the html flavor, the counterpart of `{...rest}` is attribute-position spread: destructure the rest object and write `...${rest}` on the root element, after any declared attributes so caller attrs win:
-
-```js
-import type { HTMLAttributes } from "@hellajs/dom";
-import { html } from "@hellajs/dom";
-
-const Button = ({ variant = "primary", children, ...rest }: HTMLAttributes<"button"> & { variant?: string }) => html`
-  <button class=${`btn btn-${variant}`} ...${rest}>${children}</button>
-`;
-
-// <${Button} disabled on:click=${fn} on:focusin=${fn} /> forwards every key
-```
+Caller attributes override the component's own defaults: `{...rest}` spreads last, after any declared attributes, so a caller's `disabled` or `on:click` wins over the `class` the component sets.
 
 ## Component Data Flow
 
@@ -153,6 +140,6 @@ const Timer = () => {
 mount(Timer, "#app");
 ```
 
-The low-level [`component`](/reference/dom/component) function wraps component functions with automatic scope management. JSX and html templates wrap components automatically. Dynamic components (ForEach, Portal, Lazy, Transition, Suspense) bypass this wrapper since they manage their own scope.
+The low-level [`component`](/reference/dom/component) function wraps component functions with automatic scope management. JSX wraps components automatically. Dynamic components (ForEach, Portal, Lazy, Transition, Suspense) bypass this wrapper since they manage their own scope.
 
 Render errors (thrown during component execution) are dispatched through the error system and return an empty fragment. See [Error Handling](/learn/concepts/error-handling) for details.

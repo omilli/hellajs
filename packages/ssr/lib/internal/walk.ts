@@ -119,6 +119,8 @@ async function* walkChildGen(child: HellaChild, pending?: PendingSwap[], head?: 
         if (meta) yield* renderDynamicGen(meta, pending, head);
       } else if (Array.isArray(resolved)) {
         yield* walkChildrenGen(resolved, pending, head);                     // reactive getter returning an array of children — walk each (parity with dom resolveNode)
+      } else if (resolved !== null && typeof resolved === "object" && "raw" in resolved) {
+        yield (resolved as { raw: string }).raw;                             // reactive getter resolving to a raw region — verbatim inside the open region (parity with sync walkChild)
       } else if (resolved !== null && typeof resolved === "object" && (resolved as HellaNode).tag !== undefined) {
         yield* ssrNodeGen(resolved as HellaNode, pending, head);
       } else {

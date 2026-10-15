@@ -3,7 +3,7 @@ import { fileURLToPath, URL } from "node:url";
 import { frontmatterCss } from "./frontmatter.mjs";
 
 /**
- * Astro integration for HellaJS. Wires the HellaJS Vite plugin (JSX + `html` → HellaNode),
+ * Astro integration for HellaJS. Wires the HellaJS Vite plugin (JSX → HellaNode),
  * extracts statically foldable `css()`/`style()`/`keyframes()` frontmatter calls into
  * page-scoped CSS through Astro's own pipeline, and registers a framework renderer so
  * `.jsx`/`.tsx` components render server-side via `@hellajs/ssr` and hydrate on the client

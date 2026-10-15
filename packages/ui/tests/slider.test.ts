@@ -59,7 +59,7 @@ function press(thumb: HTMLElement, key: string): void {
 }
 
 describe("slider", () => {
-  test.each(sliderVariants)("$format/$style renders one thumb spanning min to max by default", (variant) => {
+  test.each(sliderVariants)("$style renders one thumb spanning min to max by default", (variant) => {
     const root = renderVariant(variant, {}) as HTMLElement;
     const thumbs = Array.from(root.querySelectorAll("[data-slot='slider-thumb']")) as HTMLElement[];
     expect(thumbs.length).toBe(2);
@@ -74,7 +74,7 @@ describe("slider", () => {
     expect(thumbs[0]!.getAttribute("tabindex")).toBe("0");
   });
 
-  test.each(sliderVariants)("$format/$style renders multi-thumb positions and aria from the value array", (variant) => {
+  test.each(sliderVariants)("$style renders multi-thumb positions and aria from the value array", (variant) => {
     const root = renderVariant(variant, { value: [25, 75] }) as HTMLElement;
     const thumbs = Array.from(root.querySelectorAll("[data-slot='slider-thumb']")) as HTMLElement[];
     const range = root.querySelector("[data-slot='slider-range']") as HTMLElement;
@@ -86,7 +86,7 @@ describe("slider", () => {
     expect(inlineStyles(range)).toContain("width:50%");
   });
 
-  test.each(sliderVariants)("$format/$style maps pointer drags to the nearest thumb through onValueChange", async (variant) => {
+  test.each(sliderVariants)("$style maps pointer drags to the nearest thumb through onValueChange", async (variant) => {
     const onValueChange = mock((value: number[]) => value);
     const root = renderVariant(variant, { value: [50], onValueChange }) as HTMLElement;
     await awaitWiring(root);
@@ -101,7 +101,7 @@ describe("slider", () => {
     expect(thumb.getAttribute("aria-valuenow")).toBe("30");
   });
 
-  test.each(sliderVariants)("$format/$style quantizes pointer values onto the step grid", async (variant) => {
+  test.each(sliderVariants)("$style quantizes pointer values onto the step grid", async (variant) => {
     const onValueChange = mock((value: number[]) => value);
     const root = renderVariant(variant, { value: [0], min: 0, max: 100, step: 5, onValueChange }) as HTMLElement;
     await awaitWiring(root);
@@ -111,7 +111,7 @@ describe("slider", () => {
     expect(onValueChange.mock.calls[0]).toEqual([[20]]);
   });
 
-  test.each(sliderVariants)("$format/$style enforces minStepsBetweenThumbs against the neighbor", async (variant) => {
+  test.each(sliderVariants)("$style enforces minStepsBetweenThumbs against the neighbor", async (variant) => {
     const onValueChange = mock((value: number[]) => value);
     const root = renderVariant(variant, { value: [30, 70], minStepsBetweenThumbs: 10, onValueChange }) as HTMLElement;
     await awaitWiring(root);
@@ -122,7 +122,7 @@ describe("slider", () => {
     expect(onValueChange.mock.calls[1]).toEqual([[60, 70]]);
   });
 
-  test.each(sliderVariants)("$format/$style fires onValueCommit on drag end with the committed values", async (variant) => {
+  test.each(sliderVariants)("$style fires onValueCommit on drag end with the committed values", async (variant) => {
     const onValueCommit = mock((value: number[]) => value);
     const root = renderVariant(variant, { value: [50], onValueCommit }) as HTMLElement;
     await awaitWiring(root);
@@ -132,7 +132,7 @@ describe("slider", () => {
     expect(onValueCommit.mock.calls[0]).toEqual([[70]]);
   });
 
-  test.each(sliderVariants)("$format/$style steps by keyboard with Home/End clamps and PageUp/PageDown jumps", (variant) => {
+  test.each(sliderVariants)("$style steps by keyboard with Home/End clamps and PageUp/PageDown jumps", (variant) => {
     const onValueChange = mock((value: number[]) => value);
     const root = renderVariant(variant, { value: [50], min: 0, max: 100, step: 10, onValueChange }) as HTMLElement;
     const thumb = root.querySelector("[data-slot='slider-thumb']") as HTMLElement;
@@ -156,7 +156,7 @@ describe("slider", () => {
     expect(onValueChange).toHaveBeenCalledTimes(8);
   });
 
-  test.each(sliderVariants)("$format/$style maps vertical drags and keys from the bottom edge", async (variant) => {
+  test.each(sliderVariants)("$style maps vertical drags and keys from the bottom edge", async (variant) => {
     const onValueChange = mock((value: number[]) => value);
     const root = renderVariant(variant, { value: [40], orientation: "vertical", onValueChange }) as HTMLElement;
     await awaitWiring(root);
@@ -175,7 +175,7 @@ describe("slider", () => {
     expect(onValueChange.mock.calls[2]).toEqual([[70]]);
   });
 
-  test.each(sliderVariants)("$format/$style lands user min/max/step overrides on the root and drives the range math", async (variant) => {
+  test.each(sliderVariants)("$style lands user min/max/step overrides on the root and drives the range math", async (variant) => {
     const onValueChange = mock((value: number[]) => value);
     const root = renderVariant(variant, { value: [50], min: 20, max: 80, step: 10, onValueChange }) as HTMLElement;
     await awaitWiring(root);
@@ -191,7 +191,7 @@ describe("slider", () => {
     expect(onValueChange.mock.calls[0]).toEqual([[40]]);
   });
 
-  test.each(sliderVariants)("$format/$style blocks drags and keys while disabled", async (variant) => {
+  test.each(sliderVariants)("$style blocks drags and keys while disabled", async (variant) => {
     const onValueChange = mock((value: number[]) => value);
     const root = renderVariant(variant, { value: [50], disabled: true, onValueChange }) as HTMLElement;
     await awaitWiring(root);
@@ -204,7 +204,7 @@ describe("slider", () => {
     expect(onValueChange).not.toHaveBeenCalled();
   });
 
-  test.each(sliderVariants)("$format/$style re-renders positions when a controlled value() signal writes", async (variant) => {
+  test.each(sliderVariants)("$style re-renders positions when a controlled value() signal writes", async (variant) => {
     const values = signal<number[]>([25]);
     const root = renderVariant(variant, { value: () => values() }) as HTMLElement;
     const thumb = root.querySelector("[data-slot='slider-thumb']") as HTMLElement;
@@ -215,7 +215,7 @@ describe("slider", () => {
     expect(inlineStyles(thumb)).toContain("left:80%");
   });
 
-  test.each(sliderVariants)("$format/$style carries the ring focus classes for the thumb on both flavors", (variant) => {
+  test.each(sliderVariants)("$style carries the ring focus classes for the thumb on both styles", (variant) => {
     const root = renderVariant(variant, { value: [50] }) as HTMLElement;
     const thumb = root.querySelector("[data-slot='slider-thumb']") as HTMLElement;
     if (variant.style === "tailwind") {
@@ -227,7 +227,7 @@ describe("slider", () => {
     }
   });
 
-  test.each(sliderVariants)("$format/$style disposes the drag wiring when the root unmounts", async (variant) => {
+  test.each(sliderVariants)("$style disposes the drag wiring when the root unmounts", async (variant) => {
     const onValueChange = mock((value: number[]) => value);
     const root = renderVariant(variant, { value: [50], onValueChange }) as HTMLElement;
     await awaitWiring(root);
@@ -243,21 +243,21 @@ describe("slider", () => {
     expect(onValueChange).not.toHaveBeenCalled();
   });
 
-  test("forwards user attrs onto the root across all four variants", () => {
+  test("forwards user attrs onto the root across both styles", () => {
     assertAttrForwarded(sliderVariants, { title: "Hella" }, "title", "Hella");
   });
 
-  test("fires a user on:click handler across all four variants", () => {
+  test("fires a user on:click handler across both styles", () => {
     const onClick = mock(() => {});
     assertHandlerForwarded(sliderVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 
-  test.each(sliderVariants)("$format/$style merges props.class into the class attribute", (variant) => {
+  test.each(sliderVariants)("$style merges props.class into the class attribute", (variant) => {
     const root = renderVariant(variant, { class: "my-slider" }) as HTMLElement;
     expect(classTokens(root).at(-1)).toBe("my-slider");
   });
 
-  test("keeps structural parity across all four variants", () => {
+  test("keeps structural parity across both styles", () => {
     assertStructuralParity(sliderVariants, { value: [25, 75] });
     assertStructuralParity(sliderVariants, { value: [50], orientation: "vertical", disabled: true });
   });

@@ -62,7 +62,7 @@ A file name that is only a category (`features-*.test.ts`, `unit-*.test.ts`) sig
 
 ## Anti-Patterns
 
-- Import reactive primitives (`signal`, `effect`, `computed`, `batch`, `untracked`, `flush`, `scope`) from `@hellajs/core`; `onError` from `@hellajs/dom/bundle`; test helpers (`delay`, `suppressConsole`, `setupContainer`, `resetTestState`) from `@utils/test-helpers.js`. Never import a symbol whose module isn't listed — a needed primitive joins the existing `@hellajs/core` import, never a duplicate.
+- Import reactive primitives (`signal`, `effect`, `computed`, `batch`, `untracked`, `flush`, `scope`) from `@hellajs/core`; `onError` from `@hellajs/dom`; test helpers (`delay`, `suppressConsole`, `setupContainer`, `resetTestState`) from `@utils/test-helpers.js`. Never import a symbol whose module isn't listed — a needed primitive joins the existing `@hellajs/core` import, never a duplicate.
 - Never `jest.fn()` / `jest.spyOn()` / `vi.fn()` — `mock()` from `bun:test`.
 - Never `any` — `unknown` only. Never `it()` or `test.skip()` — always `test()`.
 - Never two behaviors in one test (exception: sequential lifecycle tests, §Test Structure). Never AAA pattern. Never placeholder tests. Never mock reactive primitives — use real ones.
@@ -94,14 +94,14 @@ expect(callback).toHaveBeenCalledTimes(1);
 ## Test Framework
 
 - `bun:test` only. Double quotes, semicolons always.
-- Import order: `bun:test` → `@hellajs/core` (reactive primitives, if needed) → `@utils/test-helpers.js` → package under test (`@hellajs/dom/bundle`) → `import type` (bare path, last) → local helpers (`./helpers`), if present.
+- Import order: `bun:test` → `@hellajs/core` (reactive primitives, if needed) → `@utils/test-helpers.js` → package under test (`@hellajs/dom`) → `import type` (bare path, last) → local helpers (`./helpers`), if present.
 - Separate `import type` statement — never inline.
 
 ```typescript
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { signal } from "@hellajs/core";
 import { delay, suppressConsole, setupContainer, resetTestState } from "@utils/test-helpers.js";
-import { mount, html, onError } from "@hellajs/dom/bundle";
+import { mount, onError } from "@hellajs/dom";
 import type { HellaNode } from "@hellajs/dom";
 import { fallbackHandler } from "./helpers";
 ```
@@ -190,7 +190,7 @@ Any test reassigning a global (`window.scrollTo = ...`, `global.window = {...}`,
 
 ### Package-Exported Testing Utilities
 
-Imported from `@hellajs/dom/bundle` (re-exports of `internal/` state accessors — fair game per §Test Coverage). Prefer over waiting for the scoped MutationObserver:
+Imported from `@hellajs/dom` (re-exports of `internal/` state accessors — fair game per §Test Coverage). Prefer over waiting for the scoped MutationObserver:
 
 | Utility | Purpose |
 |---------|---------|
@@ -254,7 +254,7 @@ expect(document.getElementById("test")?.textContent).toBe("value");
 ## Code Style
 
 - Semicolons always; arrow functions for inline helpers.
-- Zero-arg fn/signal bindings bare in mounted templates (`${toggle}`, `show=${visible}`) — never `${() => toggle()}` (guides/code.md §Code Rules → Templates); a wrapper only when it consumes a param or composes.
+- Zero-arg fn/signal bindings bare in JSX children/attributes (`{toggle}`, `show={visible}`) — never `{() => toggle()}` (guides/code.md §Code Rules → Templates); a wrapper only when it consumes a param or composes.
 - `unknown` only — never `any`. No AAA pattern — interleave setup, action, assertion.
 - `test.each()` for parameterized tests; intentionally invalid inputs via `@ts-expect-error` or a cast to the accepted type (`42 as unknown as number[]`) — match the file's existing idiom; an invalid input against an overloaded function casts to one concrete overload shape (`undefined as unknown as DocOptions & { body: string }`) — a bare options-type cast fails TS2769 before the runtime throw runs.
 
@@ -262,7 +262,8 @@ expect(document.getElementById("test")?.textContent).toBe("value");
 
 - 100% of public API. Real-world integration patterns, not internals. Error and edge cases alongside happy paths. Each behavior tested exactly once in the most relevant file.
 - **Barrel rule**: when `index.ts` re-exports a utility (type guard, predicate, env-probe, iterator helper), the authoring package **must** cover it — even if consumers also exercise it. The barrel defines the public surface; coverage follows the barrel. Consumer coverage doesn't protect the author from silent contract drift (a predicate whose name suggests general semantics but whose implementation is narrow).
-- **Compile-shape rule**: when testing component-child handling (`Suspense`/`Lazy`/`ForEach`/`Portal`/`Transition`, or anything reading `props.children`), cover BOTH compile shapes — the `html` tagged template (single child) AND JSX (`component(Comp, { children: [child] })`, an **array**). babel compiles JSX component children to an array while the `html` template passes a single child; a fix that passes for one shape can stringify or drop the other. Concrete miss: a `<Suspense>` fix that handled a bare function child passed every `html`-template test but still rendered `[object Promise]` for JSX — the array wasn't unwrapped before evaluation.
+- **Compile-shape rule**: when testing component-child handling (`Suspense`/`Lazy`/`ForEach`/`Portal`/`Transition`, or anything reading `props.children`), cover both child shapes — the compiled JSX array (`<Comp>{child}</Comp>`, `children: [child]`) and the direct-call single child (`component(Comp, { children: child })`). babel compiles JSX component children to an array; the single-child form survives only as a direct public call; a fix that passes for one shape can stringify or drop the other. Concrete miss: a `<Suspense>` fix that handled a bare function child passed every single-child test but still rendered `[object Promise]` for the compiled array — the array wasn't unwrapped before evaluation.
+- **JSX authoring rule**: test markup is JSX — `.test.tsx` files, transformed at load by the `utils/jsx.js` bun preload registered alongside `utils/happydom.js` in `bunfig.toml` `[test] preload`. No `html` tagged literals exist in tests; markup reads as JSX (`<div id="x">{value}</div>`), compiled by `babel-plugin-hellajs` at test time — the same compiled path production code ships through.
 - **Discrimination rule**: a scenario encoding a bug — the plan states today's broken behavior — is shown to FAIL against the pre-fix code before its DoD ticks: stash the fix, rebuild the bundle, run the scenario, restore (expected fail → pass). A timing-sequenced race scenario additionally places each step by causal order, not delay magnitude: the joining fetch lands after the superseded request's settle while the surviving request is still in flight. Concrete miss: a force-supersede dedup scenario joined before the prefetch settled — it passed against both the fixed and unfixed bundle, ticking a DoD it never verified; only the pre-fix run exposed it.
 - Never import non-public APIs: functions/types not exported from `index.ts` are internal; exports from `index.ts` (including testing utilities from `internal/` modules) are fair game.
 - **Carveout — `plugins/**`**: plugin internals (`src/**/*.mjs`) may be imported directly in unit tests when (a) the helpers are pure functions whose edge cases are impractical to reach through the public transform surface (single default export or visitor), and (b) no `index.ts` barrel exists to re-export them. Narrow: runtime packages keep the strict barrel-exclusive rule; `plugins/**` is the only scope where isolated parser/util tests outweigh the internal-import cost.
@@ -271,11 +272,11 @@ expect(document.getElementById("test")?.textContent).toBe("value");
 
 How test gates are run and triaged. `bun coverage` (§Scripts) is the single verification gate; these rules govern its scoped form and failure handling.
 
-- **No bare `bun test` for verification.** Tests import from `dist/` bundles; `bun test` never rebuilds them and silently tests stale code. Mid-flight iteration uses the triage form: `bun bundle <package> --quiet && bun test packages/<package>/tests[/<file>.test.ts]` (explicit rebuild + scoped tests). The green baseline and final gate are always `bun coverage <package>`.
+- **No bare `bun test` for verification.** Tests import from `dist/` bundles; `bun test` never rebuilds them and silently tests stale code. Mid-flight iteration uses the triage form: `bun bundle <package> --quiet && bun test packages/<package>/tests[/<file>.test.tsx]` (explicit rebuild + scoped tests). The green baseline and final gate are always `bun coverage <package>`.
 - **Scoped-run scoping.** `bun coverage <package>` scopes tests + eslint to the target package; its `tsc` and guard stages stay repo-wide. A scoped run failing on a file OUTSIDE the target is foreign, not yours: confirm your package clean (`bunx eslint packages/<pkg>`), report the foreign failure, move on — CI's unscoped `bun coverage` owns the full-repo gate.
 - **Bundle-stage foreign block.** `bundle.ts --quiet` builds ALL packages before scoped tests run, so a foreign bundle failure blocks the target's own tests. Verify via `bun bundle <package>` (explicit rebuild — honors no-stale-dist) followed by the scoped test command coverage runs internally (`bun test --parallel packages/<package>/tests --coverage`); report the foreign failure.
 - **Gate-failure attribution.** A check failing on files outside your diff → `git status -sb` first; verify the files carry no edits of yours (concurrent user changes) before debugging your own work. Re-run the gate after the foreign change settles.
-- **Plugin exception.** `bun coverage <plugin>` fails — `isValidPackage` resolves under `packages/` only. For plugins, use `bun test plugins/<p>/tests` + `bun lint`. Plugin tests import source, not `dist/` — except `plugins/babel/tests/parity.test.ts`, whose runtime side imports the `@hellajs/dom` dist bundle: `bun bundle dom --quiet` first when dom's template parsing changes. No scheduled gate runs plugin suites: a `packages/` change breaking them (serializer output, runtime contracts a plugin test asserts) surfaces only when a plugin unit executes — run the affected `bun test plugins/*/tests` before declaring done when the change reaches what they assert.
+- **Plugin exception.** `bun coverage <plugin>` fails — `isValidPackage` resolves under `packages/` only. For plugins, use `bun test plugins/<p>/tests` + `bun lint`. Plugin tests import source, not `dist/`. No scheduled gate runs plugin suites: a `packages/` change breaking them (serializer output, runtime contracts a plugin test asserts) surfaces only when a plugin unit executes — run the affected `bun test plugins/*/tests` before declaring done when the change reaches what they assert.
 - **Coverage blind spots.** `bun coverage` runs tsc + eslint + tests; eslint covers only the mechanical subset (`for…of`/`for…in` and raw typeof in `packages/*/lib`, banned test APIs in `*.test.ts`). Everything else — `guides/code.md`'s thin-wrapper ban, `lib/internal/` placement, single-callsite <30-line extraction, `@internal` visibility, and most of §Anti-Patterns — has no lint counterpart. A new file, file structure, or shared test helper → run `audit-tests` as part of verification.
 - **Measurement target.** Coverage instruments built bundles (`dist/`), not `lib/` — `lib/` is truth, the bundle is the measurement. A reading is point-in-time: re-run `bun coverage` immediately before reporting coverage findings.
 
@@ -285,8 +286,8 @@ Run this when holding a Tests file (`*.test.ts` / `*.spec.ts`). Each item is a y
 
 **Framework & imports**
 - [ ] `bun:test` only; double quotes, semicolons always
-- [ ] All imports from correct sources: reactive primitives from `@hellajs/core`, `onError` from `@hellajs/dom/bundle`, test helpers from `@utils/test-helpers.js`
-- [ ] Import order: `bun:test` → `@hellajs/core` → `@utils/test-helpers.js` → package under test (`/bundle` suffix) → `import type` (bare path, last) → local helpers (e.g. `./helpers`), if present
+- [ ] All imports from correct sources: reactive primitives from `@hellajs/core`, `onError` from `@hellajs/dom`, test helpers from `@utils/test-helpers.js`
+- [ ] Import order: `bun:test` → `@hellajs/core` → `@utils/test-helpers.js` → package under test (bare specifier) → `import type` (bare path, last) → local helpers (e.g. `./helpers`), if present
 - [ ] Separate `import type` statement; never inline
 
 **File & structure**
@@ -300,7 +301,7 @@ Run this when holding a Tests file (`*.test.ts` / `*.spec.ts`). Each item is a y
 - [ ] `async` only when it `await`s; structure is act → await → assert
 
 **Anti-patterns (none present)**
-- [ ] No `{() => fn()}` wrapper bindings — zero-arg fns/signals bind bare (`${fn}`, `{fn}`)
+- [ ] No `{() => fn()}` wrapper bindings — zero-arg fns/signals bind bare (`{fn}`)
 - [ ] No `jest.fn` / `jest.spyOn` / `vi.fn` — `mock()` from `bun:test` (eslint-enforced)
 - [ ] No `any` (`unknown` only)
 - [ ] No invalid-input call against an overloaded function cast to the bare options type — cast to one concrete overload shape (TS2769 otherwise)
@@ -320,7 +321,8 @@ Run this when holding a Tests file (`*.test.ts` / `*.spec.ts`). Each item is a y
 - [ ] Every test asserts a behavior the source actually exposes (cross-checked against `lib/index.ts`)
 - [ ] No test imports a symbol not exported from `lib/index.ts`
 - [ ] `bun coverage` shows 100% on the relevant source lines; overall not lower than baseline
-- [ ] Component-child handling covered in BOTH compile shapes — `html` template (single child) and JSX (`children: [child]` array)
+- [ ] Component-child handling covered in BOTH child shapes — compiled JSX array (`children: [child]`) and direct-call single child (`children: child`)
+- [ ] Markup authored as JSX in `.test.tsx` files (compiled by the `utils/jsx.js` preload, registered in `bunfig.toml` beside `utils/happydom.js`) — no `html` tagged literals
 - [ ] Bug-encoding scenario verified to fail against pre-fix code (stash → rebuild → run) before the DoD tick (§Test Coverage, Discrimination rule)
 
 **Gate usage (§Triage & Gate Semantics)**

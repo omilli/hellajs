@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { $collection, checkMultiSelectors, multiSelectors, getState } from "@hellajs/dom/bundle";
+import { $collection, checkMultiSelectors, multiSelectors, getState } from "@hellajs/dom";
 import type { DomWrapper } from "@hellajs/dom";
 
 beforeEach(() => {

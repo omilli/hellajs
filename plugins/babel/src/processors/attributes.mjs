@@ -1,13 +1,5 @@
 import { maybeReactive } from "../utils/reactive.mjs";
 
-// Forward declaration - will be injected by builder/ast.mjs to avoid circular dependency
-let componentNodeToBabel = null;
-
-/** @param {(t: typeof import("@babel/core").types, node: import("../parsers/html.mjs").HtmlNode, expressions: import("@babel/core").Expression[]) => import("@babel/core").Expression} fn */
-export function setComponentNodeToBabel(fn) {
-  componentNodeToBabel = fn;
-}
-
 /**
  * Categorize JSX attributes into five typed arrays.
  * @param {typeof import("@babel/core").types} t
@@ -89,85 +81,3 @@ export function processAttributes(t, attributes, isComponent) {
   return { props, on, hooks, e, error };
 }
 
-
-/**
- * Categorize html`` component attributes into five typed arrays.
- * @param {typeof import("@babel/core").types} t
- * @param {Record<string, boolean | string | { __slot: number } | { __spread: number } | Array<string | { __slot: number }>>} props
- * @param {import("@babel/core").Expression[]} expressions
- * @param {boolean} isComponent When false (element), call-containing values are
- *   auto-wrapped into arrow thunks for reactivity; when true (component), values
- *   pass through unwrapped (components may treat a prop as a plain value, not a
- *   function).
- * @returns {{ props: import("@babel/core").ObjectProperty[], on: import("@babel/core").ObjectProperty[], hooks: import("@babel/core").ObjectProperty[], e: import("@babel/core").ObjectProperty[], error: import("@babel/core").ObjectProperty[] }}
- */
-export function processComponentAttributes(t, props, expressions, isComponent) {
-  const propsArray = [], onArray = [], hooksArray = [], eArray = [], errorArray = [];
-
-  const keys = Object.keys(props);
-  let i = 0;
-  const len = keys.length;
-  while (i < len) {
-    const key = keys[i++];
-    const value = props[key];
-    let processedValue;
-
-    // Spread sentinel: emit a positional spreadElement, byte-shape equivalent
-    // to the JSX flavor's `props: { ...attrs, ... }` (unwrapped on both paths).
-    if (value.__spread !== undefined) {
-      propsArray.push(t.spreadElement(expressions[value.__spread]));
-      continue;
-    }
-
-    if (value === true) {
-      processedValue = t.booleanLiteral(true);
-    } else if (value.__slot !== undefined) {
-      const slotExpr = expressions[value.__slot];
-      processedValue = isComponent ? slotExpr : maybeReactive(t, slotExpr);
-    } else if (Array.isArray(value)) {
-      const concat = componentNodeToBabel(t, value, expressions);
-      processedValue = isComponent ? concat : maybeReactive(t, concat);
-    } else {
-      processedValue = t.stringLiteral(String(value));
-    }
-
-    // Component calls keep prefixed keys verbatim in props (see processAttributes).
-    if (isComponent && /^(error|hook|e|on):/.test(key)) {
-      propsArray.push(t.objectProperty(t.stringLiteral(key), processedValue));
-    }
-    else if (key.startsWith("error:")) {
-      const errorKey = key.slice(6);
-      errorArray.push(t.objectProperty(t.identifier(errorKey), processedValue));
-    }
-    else if (key.startsWith("hook:")) {
-      const hookName = key.slice(5);
-      hooksArray.push(t.objectProperty(t.identifier(hookName), processedValue));
-    }
-    // e: prefix for direct (non-delegated) event handlers
-    else if (key.startsWith("e:")) {
-      const eventName = key.slice(2);
-      eArray.push(t.objectProperty(t.identifier(eventName), processedValue));
-    }
-    else if (key.startsWith("on:")) {
-      const eventName = key.slice(3);
-      onArray.push(t.objectProperty(t.identifier(eventName), processedValue));
-    }
-    else {
-      // Handle kebab-case for data/aria
-      let propKey = key;
-      if (/^(data|aria)[A-Z]/.test(key)) {
-        propKey = key.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
-      }
-
-      const needsQuoting = /[-:]/.test(propKey);
-      propsArray.push(
-        t.objectProperty(
-          needsQuoting ? t.stringLiteral(propKey) : t.identifier(propKey),
-          processedValue
-        )
-      );
-    }
-  }
-
-  return { props: propsArray, on: onArray, hooks: hooksArray, e: eArray, error: errorArray };
-}

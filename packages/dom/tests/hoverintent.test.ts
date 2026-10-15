@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { hoverIntent } from "@hellajs/dom/bundle";
+import { hoverIntent } from "@hellajs/dom";
 import { pointerDown, pointerEnter, pointerLeave } from "./helpers";
 
 describe("hoverIntent", () => {

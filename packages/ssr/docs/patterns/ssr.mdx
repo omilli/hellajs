@@ -6,11 +6,10 @@ Copy-paste recipes for server rendering with [`@hellajs/ssr`](/reference/ssr/ssr
 
 Render a template to a string and return a full document via [`doc`](/reference/ssr/doc).
 
-```js
-import { html } from '@hellajs/dom';
+```jsx
 import { ssr, doc } from '@hellajs/ssr';
 
-const page = (name) => html`<div><h1>Hello ${name}</h1></div>`;
+const page = (name: string) => <div><h1>Hello {name}</h1></div>;
 
 Bun.serve({
   port: 3000,
@@ -23,7 +22,7 @@ Bun.serve({
 
 ### Render from JSX
 
-`ssr` consumes any [`HellaNode`](/reference/dom): the [`html`](/reference/dom/html) tag and JSX compile to the same AST, so render a JSX component exactly like a template.
+`ssr` consumes the [`HellaNode`](/reference/dom) AST the plugin compiles JSX to, so render a JSX component exactly like any template.
 
 ```jsx
 import { ssr } from '@hellajs/ssr';
@@ -39,12 +38,11 @@ The babel/vite/rollup plugin must run on the **server** entry; without the compi
 
 [`@hellajs/css`](/reference/css) registers styles on both platforms; collect the generated text with [`cssText`](/reference/css/csstext) and pass it to [`doc`](/reference/ssr/doc)'s `styles` to emit a single `<style>` tag per response.
 
-```js
-import { html } from '@hellajs/dom';
+```jsx
 import { style, cssText } from '@hellajs/css';
 import { ssr, doc } from '@hellajs/ssr';
 const card = style({ border: '1px solid #ccc' }, { label: 'card' });
-const body = ssr(html`<div class=${card}>Content</div>`);
+const body = ssr(<div class={card}>Content</div>);
 const page = doc({ head: { title: 'Card', styles: [cssText()] }, body });
 ```
 
@@ -52,14 +50,13 @@ const page = doc({ head: { title: 'Card', styles: [cssText()] }, body });
 
 Use `ssr` inside any Node framework; the stringifier is framework-agnostic, with the document assembled via [`doc`](/reference/ssr/doc).
 
-```js
+```jsx
 import express from 'express';
-import { html } from '@hellajs/dom';
 import { ssr, doc } from '@hellajs/ssr';
 
 const app = express();
 app.get('/', (req, res) => {
-  const body = ssr(html`<div><h1>Hello ${req.query.name ?? 'World'}</h1></div>`);
+  const body = ssr(<div><h1>Hello {req.query.name ?? 'World'}</h1></div>);
   res.send(doc({ head: { title: 'Hello' }, body }));
 });
 app.listen(3000);
@@ -69,14 +66,13 @@ app.listen(3000);
 
 Use `ssr` with Hono: the app is a fetch handler, so the same code serves under Bun, Node, Deno, workers, and edge runtimes unchanged.
 
-```js
+```jsx
 import { Hono } from 'hono';
-import { html } from '@hellajs/dom';
 import { ssr, doc } from '@hellajs/ssr';
 
 const app = new Hono();
 app.get('/', (c) => {
-  const body = ssr(html`<div><h1>Hello ${c.req.query('name') ?? 'World'}</h1></div>`);
+  const body = ssr(<div><h1>Hello {c.req.query('name') ?? 'World'}</h1></div>);
   return c.html(doc({ head: { title: 'Hello' }, body }));
 });
 export default app; // mount anywhere: Bun.serve({ fetch: app.fetch }), @hono/node-server, Deno, workers
@@ -86,12 +82,11 @@ export default app; // mount anywhere: Bun.serve({ fetch: app.fetch }), @hono/no
 
 Enhance server-rendered HTML by binding an existing node into reactivity on the client.
 
-```js
-import { html } from '@hellajs/dom';
+```jsx
 import { ssr } from '@hellajs/ssr';
 
 // Server
-const body = ssr(html`<div id="app"><span id="count">0</span></div>`);
+const body = ssr(<div id="app"><span id="count">0</span></div>);
 ```
 
 ```typescript
@@ -107,21 +102,20 @@ span.bind(() => String(count()));
 
 Leave an empty placeholder on the server and mount a reactive island into it on the client.
 
-```js
-import { html } from '@hellajs/dom';
+```jsx
 import { ssr } from '@hellajs/ssr';
 
 // Server leaves an empty slot
-const body = ssr(html`<div><h1>Post</h1><div id="slot"></div></div>`);
+const body = ssr(<div><h1>Post</h1><div id="slot"></div></div>);
 ```
 
-```js
+```jsx
 import { signal } from '@hellajs/core';
-import { html, mount } from '@hellajs/dom';
+import { mount } from '@hellajs/dom';
 // Client mounts an interactive island
 const Counter = () => {
   const clicks = signal(0);
-  return html`<button on:click=${() => clicks(clicks() + 1)}>${clicks}</button>`;
+  return <button on:click={() => clicks(clicks() + 1)}>{clicks}</button>;
 };
 mount(Counter, '#slot');
 ```
@@ -130,32 +124,32 @@ mount(Counter, '#slot');
 
 Re-execute the full component tree against the existing server DOM to make the entire page interactive without replacing any nodes.
 
-```js
-import { html } from '@hellajs/dom';
+```jsx
 import { ssr } from '@hellajs/ssr';
 
+const App = () => <h1>Profile</h1>;
+
 // Server renders the whole app into the target element
-const body = ssr(html`<${App} />`);
+const body = ssr(<App />);
 ```
 
-```js
-import { hydrate, html } from '@hellajs/dom';
+```jsx
+import { hydrate } from '@hellajs/dom';
 
 // Client attaches effects/handlers to the existing nodes
-hydrate(html`<${App} />`, '#app');
+hydrate(<App />, '#app');
 ```
 
 ### Async data fetching
 
 Fetch server-side data directly in the tree with [`ssr.async`](/reference/ssr/ssr#async): a getter that returns a Promise is awaited.
 
-```js
-import { html } from '@hellajs/dom';
+```jsx
 import { ssr } from '@hellajs/ssr';
 
-const user = (id) => fetch(`/api/users/${id}`).then(r => r.text());
-const App = (id) => html`<p>Hello ${() => user(id)}</p>`;
-const body = await ssr.async(App(1));
+const user = (id: string) => fetch(`/api/users/${id}`).then(r => r.text());
+const view = (id: string) => <p>Hello {() => user(id)}</p>;
+const body = await ssr.async(view("1"));
 // body: "<p><!--[-->Ada<!--]--></p>"
 ```
 
@@ -163,13 +157,12 @@ const body = await ssr.async(App(1));
 
 Fetch on the server, render it, and send the data with the markup: [`doc`](/reference/ssr/doc)'s `data` option serializes it into a JSON payload script the client reads back to seed [`resource`](/reference/resource/resource) with `initialData`, so the server's fetch is the fetch.
 
-```js
-import { html } from '@hellajs/dom';
+```jsx
 import { ssr, doc } from '@hellajs/ssr';
 
 // Server: one fetch feeds both the markup and the payload
 const user = await fetch('/api/users/1').then(r => r.json());
-const body = ssr(html`<h1>Hello ${user.name}</h1>`);
+const body = ssr(<h1>Hello {user.name}</h1>);
 const page = doc({ mount: '#app', data: { user }, body });
 // <body><div id="app">…</div><script type="application/json" id="hella-data">{"user":…}</script></body>
 ```
@@ -187,17 +180,16 @@ userResource.isLoading(); // false; initialData counts as data
 
 Let each route component carry its own `<title>`/`<meta>` instead of assembling the head at the handler: [`ssr.head()`](/reference/ssr/ssr#head) creates the bag, the walk hoists the tree's head tags into it, and [`doc`](/reference/ssr/doc) emits them.
 
-```js
-import { html } from '@hellajs/dom';
+```jsx
 import { ssr, doc } from '@hellajs/ssr';
-const Profile = (user) => html`
+const Profile = (user: { name: string; tagline: string; id: string }) => (
   <div>
-    <title>${user.name} - Profile</title>
-    <meta name="description" content=${user.tagline} />
-    <link rel="canonical" href=${`/users/${user.id}`} />
-    <h1>${user.name}</h1>
+    <title>{user.name} - Profile</title>
+    <meta name="description" content={user.tagline} />
+    <link rel="canonical" href={`/users/${user.id}`} />
+    <h1>{user.name}</h1>
   </div>
-`;
+);
 Bun.serve({
   port: 3000,
   async fetch() {
@@ -218,11 +210,10 @@ With the [Routing](/learn/patterns/routing) SSR recipes, each route view owns it
 
 Stream HTML to the client as it renders with [`ssr.stream`](/reference/ssr/ssr#stream): the static shell flushes before async values resolve.
 
-```js
-import { html } from '@hellajs/dom';
+```jsx
 import { ssr } from '@hellajs/ssr';
-const user = (id) => fetch(`/api/users/${id}`).then(r => r.text());
-const page = (id) => html`<div><h1>Hello</h1><p>${() => user(id)}</p></div>`;
+const user = (id: string) => fetch(`/api/users/${id}`).then(r => r.text());
+const page = (id: string) => <div><h1>Hello</h1><p>{() => user(id)}</p></div>;
 Bun.serve({
   port: 3000,
   fetch: (req) => {
@@ -237,11 +228,10 @@ Bun.serve({
 
 Wrap the stream in a full document with [`doc`](/reference/ssr/doc): the shell (head, `lang`, the `mount` wrapper) flushes first and the closing tags land only after the body closes, so nothing is collected:
 
-```js
-import { html } from '@hellajs/dom';
+```jsx
 import { ssr, doc } from '@hellajs/ssr';
-const user = (id) => fetch(`/api/users/${id}`).then(r => r.text());
-const page = (id) => html`<div><h1>Hello</h1><p>${() => user(id)}</p></div>`;
+const user = (id: string) => fetch(`/api/users/${id}`).then(r => r.text());
+const page = (id: string) => <div><h1>Hello</h1><p>{() => user(id)}</p></div>;
 Bun.serve({
   port: 3000,
   fetch: (req) => {
@@ -263,49 +253,49 @@ Bun.serve({
 
 Wrap async data in [`<Suspense>`](/reference/dom/suspense) so the shell and a `fallback` flush immediately while the children resolve; a slow fetch no longer blocks the rest of the page.
 
-```js
-import { html, Suspense } from '@hellajs/dom';
+```jsx
+import { Suspense } from '@hellajs/dom';
 import { ssr } from '@hellajs/ssr';
-const user = (id) => fetch(`/api/users/${id}`).then(r => r.text());
-const App = () => html`
+const user = (id: string) => fetch(`/api/users/${id}`).then(r => r.text());
+const App = () => (
   <div>
     <h1>Profile</h1>
-    <${Suspense} fallback=${html`<p>Loading…</p>`}>${() => user(1).then(name => html`<p>${name}</p>`)}</${Suspense}>
+    <Suspense fallback={<p>Loading…</p>}>
+      {() => user("1").then(name => <p>{name}</p>)}
+    </Suspense>
   </div>
-`;
+);
 
 // Shell + fallback flush first; each resolved region streams in as a <template> + an inline $hs swap script; hydrate later adopts
-const stream = ssr.stream(html`<${App} />`);
+const stream = ssr.stream(<App />);
 ```
 
 ### Error handling
 
 `ssr`, [`ssr.async`](/reference/ssr/ssr#async), and [`ssr.stream`](/reference/ssr/ssr#stream) propagate render failures instead of swallowing them: a throwing child, function-ref prop getter, or `use` callback surfaces to the caller (see [Errors Propagate](/reference/ssr/ssr#errors-propagate)). Catch the failure at the server handler: render a fallback page for the sync/async renderers (`await` the render inside the `try` for `ssr.async`), or catch at the stream consumer for `ssr.stream`.
 
-```js
-import { html } from '@hellajs/dom';
+```jsx
 import { ssr } from '@hellajs/ssr';
-const Profile = (user) => html`<h1>${() => user.name.toUpperCase()}</h1>`;
-const ErrorPage = (msg) => html`<div class="error">Render failed: ${msg}</div>`;
+const Profile = (user: { name: string }) => <h1>{() => user.name.toUpperCase()}</h1>;
+const ErrorPage = (msg: string) => <div class="error">Render failed: {msg}</div>;
 
-function render(user) {
+function render(user: { name: string }) {
   try {
     return ssr(Profile(user));
   } catch (err) {
-    return ssr(ErrorPage(err.message));
+    return ssr(ErrorPage(err instanceof Error ? err.message : String(err)));
   }
 }
-render({ name: 'Ada' });   // "<h1><!--[-->ADA<!--]--></h1>"
-render({});                 // "<div class=\"error\">Render failed: ...</div>"
+render({ name: 'Ada' });        // "<h1><!--[-->ADA<!--]--></h1>"
+render({} as { name: string });  // a runtime shape lie: toUpperCase throws; the catch renders the fallback
 ```
 
-```js
-import { html } from '@hellajs/dom';
+```jsx
 import { ssr } from '@hellajs/ssr';
 const fetchName = () => fetch('/api/missing').then(r => r.json()).then(d => d.name);
 
 async function respond() {
-  const stream = ssr.stream(html`<p>${fetchName}</p>`).pipeThrough(new TextEncoderStream());
+  const stream = ssr.stream(<p>{fetchName}</p>).pipeThrough(new TextEncoderStream());
   try {
     for await (const chunk of stream) { /* write chunk to the response body */ }
   } catch (err) {

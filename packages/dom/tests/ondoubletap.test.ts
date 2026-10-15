@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { onDoubleTap } from "@hellajs/dom/bundle";
+import { onDoubleTap } from "@hellajs/dom";
 import { pointerDown, pointerUp, pointerCancel } from "./helpers";
 
 describe("onDoubleTap", () => {

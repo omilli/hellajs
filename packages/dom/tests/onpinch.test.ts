@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { resetTestState } from "@utils/test-helpers.js";
-import { onPinch } from "@hellajs/dom/bundle";
+import { onPinch } from "@hellajs/dom";
 import type { PinchState } from "@hellajs/dom";
 
 const pinchDown = (target: Node, pointerId: number, x = 0, y = 0): void => {

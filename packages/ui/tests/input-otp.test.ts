@@ -114,7 +114,7 @@ function suites(): Suite[] {
 }
 
 describe("input-otp", () => {
-  test.each(inputOtpVariants)("$format/$style renders the composed slots and hides the control input", (variant) => {
+  test.each(inputOtpVariants)("$style renders the composed slots and hides the control input", (variant) => {
     const root = renderVariant(variant, { length: 6, children: code() }) as HTMLElement;
     expect(slotsOf(root).length).toBe(6);
     expect(slotsOf(root).map((slot) => slot.getAttribute("data-index"))).toEqual(["0", "1", "2", "3", "4", "5"]);
@@ -127,7 +127,7 @@ describe("input-otp", () => {
     expect(separator.querySelector("path")?.getAttribute("d")).toBe("M5 12h14");
   });
 
-  test.each(inputOtpVariants)("$format/$style fills slots sequentially while typing and tracks the caret slot", async (variant) => {
+  test.each(inputOtpVariants)("$style fills slots sequentially while typing and tracks the caret slot", async (variant) => {
     const onChange = mock((value: string) => value);
     const root = renderVariant(variant, { length: 6, children: code(), onChange }) as HTMLElement;
     await awaitWiring(root);
@@ -146,7 +146,7 @@ describe("input-otp", () => {
     expect(inlineStyles(caretWrap).includes("display:none")).toBe(true);
   });
 
-  test.each(inputOtpVariants)("$format/$style places the caret on the next empty slot at focus and clears it on blur", async (variant) => {
+  test.each(inputOtpVariants)("$style places the caret on the next empty slot at focus and clears it on blur", async (variant) => {
     const root = renderVariant(variant, { length: 6, children: code(), value: "12" }) as HTMLElement;
     await awaitWiring(root);
     expect(slotsOf(root)[0]!.textContent).toBe("1");
@@ -156,7 +156,7 @@ describe("input-otp", () => {
     expect(activeSlot(root)).toBe(-1);
   });
 
-  test.each(inputOtpVariants)("$format/$style clears the active slot on backspace and moves the highlight back", async (variant) => {
+  test.each(inputOtpVariants)("$style clears the active slot on backspace and moves the highlight back", async (variant) => {
     const onChange = mock((value: string) => value);
     const root = renderVariant(variant, { length: 6, children: code(), onChange }) as HTMLElement;
     await awaitWiring(root);
@@ -172,7 +172,7 @@ describe("input-otp", () => {
     expect(onChange.mock.calls[3]).toEqual(["12"]);
   });
 
-  test.each(inputOtpVariants)("$format/$style moves the active slot with arrows, Home, and End", async (variant) => {
+  test.each(inputOtpVariants)("$style moves the active slot with arrows, Home, and End", async (variant) => {
     const root = renderVariant(variant, { length: 6, children: code(), value: "1234" }) as HTMLElement;
     await awaitWiring(root);
     focusInput(root);
@@ -194,7 +194,7 @@ describe("input-otp", () => {
     expect(activeSlot(root)).toBe(4);
   });
 
-  test.each(inputOtpVariants)("$format/$style fills from the caret on paste and clips to length", async (variant) => {
+  test.each(inputOtpVariants)("$style fills from the caret on paste and clips to length", async (variant) => {
     const onChange = mock((value: string) => value);
     const onComplete = mock((value: string) => value);
     const root = renderVariant(variant, { length: 6, children: code(), value: "12", onChange, onComplete }) as HTMLElement;
@@ -210,7 +210,7 @@ describe("input-otp", () => {
     expect(onComplete.mock.calls[0]).toEqual(["123456"]);
   });
 
-  test.each(inputOtpVariants)("$format/$style rejects edits that break the pattern mask and re-emits the pattern attribute", async (variant) => {
+  test.each(inputOtpVariants)("$style rejects edits that break the pattern mask and re-emits the pattern attribute", async (variant) => {
     const onChange = mock((value: string) => value);
     const root = renderVariant(variant, { length: 4, children: code(), pattern: "^\\d+$", onChange }) as HTMLElement;
     await awaitWiring(root);
@@ -225,7 +225,7 @@ describe("input-otp", () => {
     expect(onChange.mock.calls[0]).toEqual(["1"]);
   });
 
-  test.each(inputOtpVariants)("$format/$style reports every accepted step through onChange", async (variant) => {
+  test.each(inputOtpVariants)("$style reports every accepted step through onChange", async (variant) => {
     const onChange = mock((value: string) => value);
     const root = renderVariant(variant, { length: 6, children: code(), onChange }) as HTMLElement;
     await awaitWiring(root);
@@ -236,7 +236,7 @@ describe("input-otp", () => {
     expect(onChange.mock.calls.map((call) => call[0])).toEqual(["1", "12", "123"]);
   });
 
-  test.each(inputOtpVariants)("$format/$style fires onComplete exactly on the transition to full", async (variant) => {
+  test.each(inputOtpVariants)("$style fires onComplete exactly on the transition to full", async (variant) => {
     const onComplete = mock((value: string) => value);
     const root = renderVariant(variant, { length: 6, children: code(), onComplete }) as HTMLElement;
     await awaitWiring(root);
@@ -254,7 +254,7 @@ describe("input-otp", () => {
     expect(onComplete).toHaveBeenCalledTimes(2);
   });
 
-  test.each(inputOtpVariants)("$format/$style re-renders slots when a controlled value() writes from outside", async (variant) => {
+  test.each(inputOtpVariants)("$style re-renders slots when a controlled value() writes from outside", async (variant) => {
     const external = signal("12");
     const root = renderVariant(variant, { length: 6, children: code(), value: () => external() }) as HTMLElement;
     await awaitWiring(root);
@@ -266,7 +266,7 @@ describe("input-otp", () => {
     expect(control(root).value).toBe("998877");
   });
 
-  test.each(inputOtpVariants)("$format/$style blocks edits and paste while disabled", async (variant) => {
+  test.each(inputOtpVariants)("$style blocks edits and paste while disabled", async (variant) => {
     const onChange = mock((value: string) => value);
     const root = renderVariant(variant, { length: 6, children: code(), disabled: true, onChange }) as HTMLElement;
     await awaitWiring(root);
@@ -278,7 +278,7 @@ describe("input-otp", () => {
     expect(slotsOf(root)[0]!.textContent).toBe("");
   });
 
-  test.each(inputOtpVariants)("$format/$style carries the component classes for both flavors", (variant) => {
+  test.each(inputOtpVariants)("$style carries the component classes for both styles", (variant) => {
     const root = renderVariant(variant, { length: 6, children: flavoredCode(variant) }) as HTMLElement;
     const slotEl = slotsOf(root)[0]!;
     if (variant.style === "tailwind") {
@@ -292,7 +292,7 @@ describe("input-otp", () => {
     }
   });
 
-  test.each(inputOtpVariants)("$format/$style disposes the selection wiring when the root unmounts", async (variant) => {
+  test.each(inputOtpVariants)("$style disposes the selection wiring when the root unmounts", async (variant) => {
     const onChange = mock((value: string) => value);
     const root = renderVariant(variant, { length: 6, children: code(), onChange }) as HTMLElement;
     await awaitWiring(root);
@@ -306,21 +306,21 @@ describe("input-otp", () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  test("forwards user attrs onto the root across all four variants", () => {
+  test("forwards user attrs onto the root across both styles", () => {
     assertAttrForwarded(suites(), { title: "Hella" }, "title", "Hella");
   });
 
-  test("fires a user on:click handler across all four variants", () => {
+  test("fires a user on:click handler across both styles", () => {
     const onClick = mock(() => {});
     assertHandlerForwarded(suites(), { "on:click": onClick }, "on:click", "click", onClick);
   });
 
-  test.each(inputOtpVariants)("$format/$style merges props.class into the class attribute", (variant) => {
+  test.each(inputOtpVariants)("$style merges props.class into the class attribute", (variant) => {
     const root = renderVariant(variant, { length: 6, children: code(), class: "my-otp" }) as HTMLElement;
     expect(classTokens(root).at(-1)).toBe("my-otp");
   });
 
-  test("keeps structural parity across all four variants", () => {
+  test("keeps structural parity across both styles", () => {
     assertStructuralParity(suites(), { length: 6 });
     assertStructuralParity(suites(), { length: 4, disabled: true, class: "tracking-widest" });
   });

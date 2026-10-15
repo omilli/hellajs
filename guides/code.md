@@ -29,7 +29,7 @@ Every `index.ts` / `lib/` reference resolves against these locations. The public
 |---|---|---|
 | Public barrel | `lib/index.ts` | Arbiter of the public surface — read it to decide "is this symbol public?" |
 | Public function | `lib/{name}.ts` | filename = export name verbatim |
-| JSX/html component | `lib/{Name}.ts` | PascalCase |
+| JSX component | `lib/{Name}.ts` | PascalCase |
 | $-ref API | `lib/${name}.ts` | $-prefix |
 | Internal helper | `lib/internal/{concern}.ts` | single noun/gerund (`dedupe`, `polling`, `retry`) |
 | Public type | `lib/types/*.d.ts` (or `lib/types.d.ts` for single-file packages like core) | wholesale-re-exported via `export type *` |
@@ -46,7 +46,7 @@ Traverse when deciding where a new symbol lives. Derived from §Package File Str
 New symbol?
 ├─ Re-exported by lib/index.ts (public)
 │   ├─ Function → lib/{name}.ts (filename = export verbatim)
-│   │   ├─ JSX/html component → PascalCase (ForEach.ts)
+│   │   ├─ JSX component → PascalCase (ForEach.ts)
 │   │   └─ $-ref API → $-prefix ($ref.ts)
 │   ├─ Type consumers import → lib/types/*.d.ts
 │   └─ Barrel re-export from internal/ (utils, env) → stays in lib/internal/, re-exported by index.ts
@@ -131,8 +131,7 @@ import { value } from "./internal/module";
 
 ### Templates
 
-- html`` dynamic components close only as `</${Component}>` (interpolated) or self-closing `<${Component} prop=${v} />` — the bare short form `<//>` is not a tag (the template tokenizer matches `\w-` names only, `packages/dom/lib/internal/template.ts`), so `//>` leaks into the DOM as literal text
-- Zero-arg function and signal bindings are bare — `{fn}` (JSX prop, handler, child), `attr=${fn}` or `attr="${fn}"` (html`` full slot) — never `{() => fn()}`. Every consumption path calls function values with zero args (`resolveDeep` for children, the `mountNode` prop effect for props — `packages/dom/lib/internal/{utils,render}.ts`; ssr mirrors both), so the wrapper is a dead closure. Keep a wrapper only when it does work: consuming a parameter (`oninput={(v) => url(v)}` — a bare handler receives the event), preserving a receiver (`() => obj.method()`), or composing (`() => !open()`)
+- Zero-arg function and signal bindings are bare — `{fn}` (JSX prop, handler, child) — never `{() => fn()}`. Every consumption path calls function values with zero args (`resolveDeep` for children, the `mountNode` prop effect for props — `packages/dom/lib/internal/{utils,render}.ts`; ssr mirrors both), so the wrapper is a dead closure. Keep a wrapper only when it does work: consuming a parameter (`oninput={(v) => url(v)}` — a bare handler receives the event), preserving a receiver (`() => obj.method()`), or composing (`() => !open()`)
 - Mixed-string attribute values keep call syntax (`class="btn ${variant()}"`): the concat stringifies a bare function — bare bindings are full-slot only
 
 ### Types
@@ -257,7 +256,7 @@ Enforcement: eslint `no-restricted-syntax` bans the typeof forms in `packages/*/
 ### Functions
 
 - **Single word** for public API functions (they appear in user code)
-- **PascalCase** multi-word JSX/html component exports (`ForEach`, `Lazy`) — they appear as JSX tags
+- **PascalCase** multi-word component exports (`ForEach`, `Lazy`) — they appear as JSX tags
 - **`$`-prefixed** DOM reference APIs (`$ref`, `$collection`)
 - **Verb-first** internal names:
 
@@ -368,8 +367,7 @@ Run this when holding a Code file (`.ts`/`.tsx`/`.mjs` under `lib/`, `scripts/`,
 - [ ] No external runtime dependency (type-only from `.d.ts`-only packages excepted)
 
 **Templates**
-- [ ] `html` dynamic components closed by `</${Component}>` or self-closing `<${Component} />`; no `<//>` short form
-- [ ] Zero-arg fn/signal bindings bare (`{fn}`, `=${fn}`, `="${fn}"`) — no `{() => fn()}`; wrappers only when they consume a param, preserve a receiver, or compose; mixed-string attribute values keep call syntax
+- [ ] Zero-arg fn/signal bindings bare (`{fn}`) — no `{() => fn()}`; wrappers only when they consume a param, preserve a receiver, or compose; mixed-string attribute values keep call syntax
 
 **Types**
 - [ ] `interface` for object shapes; `type` for unions/mapped/conditional

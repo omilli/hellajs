@@ -1,36 +1,30 @@
 <babel-plugin>
 
-Build-time Babel transform (`babel-plugin-hellajs`) that compiles JSX and `html` tagged templates into HellaNode object expressions and `component(...)` calls. Entry point: `index.mjs` — `babelHellaJS()` returns `{ inherits: jsxSyntax, visitor }`. **No config options**; signature takes no parameters.
+Build-time Babel transform (`babel-plugin-hellajs`) that compiles JSX into HellaNode object expressions and `component(...)` calls. Entry point: `index.mjs` — `babelHellaJS()` returns `{ inherits: jsxSyntax, visitor }`. **No config options**; signature takes no parameters.
 
 ## Mental model
 
 - **JSX path**: `JSXElement` / `JSXFragment` visitors walk Babel's parsed JSX AST and `path.replaceWith` either a HellaNode object expression, a `component(Tag, props)` call, or a passthrough `Tag(props)` call.
-- **`html` path**: `TaggedTemplateExpression` visitor (only when `tag.name === 'html'`) parses the template string into an intermediate AST, then converts it to the same Babel AST the JSX path emits. Single regex tokenizer + stack-based parser; expressions become `__SLOT_N__` markers during parsing and are substituted during AST conversion.
-- **Attribute categorization is shared** by both paths but splits into **five** categories (see table below).
+- **Attribute categorization** splits into **five** categories (see table below).
 - **Components are wrapped with `component(Tag, props)`** — `component` is auto-imported from `@hellajs/dom`. Three passthrough components (`ForEach`, `Portal`, `Lazy`) bypass the wrapper and call `Tag(props)` directly.
 
 ## Files
 
 | File | Responsibility |
 |---|---|
-| `index.mjs` | Plugin entry; merges JSX + component visitors; inherits `@babel/plugin-syntax-jsx`. |
+| `index.mjs` | Plugin entry; spreads the JSX visitors; inherits `@babel/plugin-syntax-jsx`. |
 | `src/transformers/jsx.mjs` | `JSXElement` + `JSXFragment` visitors; tag-type dispatch (component / element / fragment). |
-| `src/transformers/component.mjs` | `TaggedTemplateExpression` visitor for `html`; orchestrates parse → ensure imports → convert → replace. |
-| `src/parsers/html.mjs` | `parseHTML` + `parseHTMLComponent`: strip comments/DOCTYPE/CDATA, tokenize via single regex, stack-based nest tracking (void elements, ancestor-match closers, EOF flush; mirrored by `packages/dom/lib/internal/template.ts`, parity corpus in `tests/parity.test.ts`), fragment normalization. |
-| `src/parsers/attributes.mjs` | `parseAttributes`: regex over attribute string; handles double/single/unquoted values + `__SLOT_N__` markers + mixed-content arrays + `...${expr}` spread (ordered `__SPREAD_N__` sentinel). |
-| `src/parsers/text.mjs` | `parseTextContent`: splits text on `__SLOT_N__` markers, preserving text before/after/between. |
-| `src/processors/attributes.mjs` | `processAttributes` (JSX) + `processComponentAttributes` (html\`\``); prefix categorization, `JSXExpressionContainer` unwrap, camelCase→kebab conversion, positional `spreadElement` emission for spread sentinels. |
+| `src/processors/attributes.mjs` | `processAttributes`: prefix categorization, `JSXExpressionContainer` unwrap, camelCase→kebab conversion, element-path `maybeReactive` application. |
 | `src/processors/children.mjs` | `filterEmptyChildren`: drops empty/whitespace text + JSXEmptyExpression, normalizes whitespace, marks bare `props.children` as a SpreadElement. |
 | `src/builders/children.mjs` | `buildChildrenValue`: children list → array expression (joined when all-static); any SpreadElement flips the whole list to an `[].concat(...)` call so passthrough children are safe for every `HellaChildren` shape. |
 | `src/builders/vnode.mjs` | `buildHellaNode`: emits object expression with `tag` + non-empty category fields + `buildChildrenValue` children. |
 | `src/builders/component.mjs` | `buildComponentCall`: emits `component(Tag, props)` or passthrough `Tag(props)`; merges children into props. |
-| `src/builders/ast.mjs` | `componentNodeToBabel`: intermediate AST → Babel AST; resolves slots, joins mixed content via `+`, recurses. |
 | `src/utils/imports.mjs` | `ensureNamedImport` + helpers (`ensureCreateComponentImport`, `ensureForEachImport`, `ensurePortalImport`, `ensureLazyImport`). |
-| `src/utils/traversal.mjs` | `findPassthroughComponents` (Set) + `containsComponent(node, excludeNames)`; recurses through intermediate AST. |
+| `src/utils/passthrough.mjs` | `PASSTHROUGH_INJECTORS` map: passthrough tag name → its `ensure*Import` helper, keyed off `PASSTHROUGH_NAMES`. |
 | `src/utils/babel.mjs` | `getTagCallee`: JSXIdentifier → Identifier; JSXMemberExpression → MemberExpression (recursive); throws otherwise. |
-| `src/constants.mjs` | `FRAGMENT_TAG = '$'`, `VOID_TAGS` (void-element set shared semantics with dom's local copy), `PASSTHROUGH_NAMES`. |
-| `src/utils/reactive.mjs` | `maybeReactive(t, expr)` + `containsCall`: auto-wrap heuristic — wraps a call-containing expression in `() => expr` for reactivity (skip if top-level is already a function = the double-wrap guard). Applied to element children and element attribute values. |
-| `src/utils/static.mjs` | Static-subtree hoisting: `tryBuildStaticJSX` (raw-JSX predicate + builder, reuses `processAttributes`/`filterEmptyChildren` for normalization parity), `hoistStaticJSX`, `hoistStaticSubtrees` (Babel-AST pass for the `html` output), `hoistVNode` (`program.scope.push` const). |
+| `src/constants.mjs` | `FRAGMENT_TAG = '$'`, `PASSTHROUGH_NAMES`. |
+| `src/utils/reactive.mjs` | `maybeReactive(t, expr)` + `containsCall`: auto-wrap heuristic — wraps a call-containing expression in `() => expr` for reactivity (skip if top-level is already a function = the double-wrap guard; skip a top-level `raw()` call — a value sentinel, not a reactive read). Applied to element children and element attribute values. |
+| `src/utils/static.mjs` | Static-subtree hoisting: `tryBuildStaticJSX` (raw-JSX predicate + builder, reuses `processAttributes`/`filterEmptyChildren` for normalization parity), `hoistStaticJSX`, `hoistVNode` (`program.scope.push` const). |
 
 ## Visitor pipeline
 
@@ -45,21 +39,14 @@ Build-time Babel transform (`babel-plugin-hellajs`) that compiles JSX and `html`
    - **Component** — find program parent. If `tagName ∈ {ForEach, Portal, Lazy}` inject matching import and emit `Tag(props)` via `buildComponentCall` (passthrough). Otherwise inject `component` from `@hellajs/dom` and emit `component(Tag, props)`. **All five category arrays are flattened back into a single props object** — components never receive `on` / `hooks` / `e` / `error` fields.
    - **Element** — **static-hoist first**: `hoistStaticJSX` attempts to build the whole subtree as a `static: true` object literal; on success it is pushed to a module-level `_hellaStatic` const (via `program.scope.push`, declared before first use) and the JSX is replaced by the identifier — the normal pipeline (and the children traversal) is skipped entirely. Otherwise `buildHellaNode(t, tag, props, on, e, hooks, children, error)`. `<style>` is a regular element (tag: `"style"`), not special-cased.
 
-**Static-hoist safety rules** (both paths): lowercase string tag (element or `$` fragment); NO `on:`/`e:`/`hook:`/`error:` attributes at all; props limited to string/number/boolean literals (no spreads, no expressions); children limited to static text and other fully-static elements. Components, member-expression tags, dynamic `<${Comp}>`, slots, and anything `maybeReactive` would wrap are excluded by construction. Static children of a disqualified parent hoist individually at their own visit (JSX) or via the `hoistStaticSubtrees` recursion (`html`). Both root kinds dispose correctly: `component()` spreads a `static` root into a fresh per-invocation node and chains its scope onto any inner scope the node carries, and the scope is wired into every mount — element roots onto the element, `$` fragment roots onto a swap-stable carrier: the last child on the mount paths (mount anchors trail their content) and the first region node on hydrate adopt (hydrate anchors lead; staticDom clone included; empty fragments dispose at mount).
+**Static-hoist safety rules**: lowercase string tag (element or `$` fragment); NO `on:`/`e:`/`hook:`/`error:` attributes at all; props limited to string/number/boolean literals (no spreads, no expressions); children limited to static text and other fully-static elements. Components, member-expression tags, slots, and anything `maybeReactive` would wrap are excluded by construction. Static children of a disqualified parent hoist individually at their own visit. Both root kinds dispose correctly: `component()` spreads a `static` root into a fresh per-invocation node and chains its scope onto any inner scope the node carries, and the scope is wired into every mount — element roots onto the element, `$` fragment roots onto a swap-stable carrier: the last child on the mount paths (mount anchors trail their content) and the first region node on hydrate adopt (hydrate anchors lead; staticDom clone included; empty fragments dispose at mount).
 
 **`JSXFragment`** (JSXFragment visitor in `createJSXTransformers`, `src/transformers/jsx.mjs`) — `buildHellaNode(t, '$', [], [], [], [], children, [])`. Fragment nodes have no attributes (empty props/on/e/hooks/error).
-
-**`TaggedTemplateExpression`** (visitor in `componentTransformer`, `src/transformers/component.mjs`) — only fires when `path.node.tag.name === 'html'`:
-
-1. `parseHTMLComponent(quasis, expressions)` → intermediate AST (single node, or fragment `$` wrapping multiple roots, or bare `{ __slot }` if the entire template is one expression).
-2. `findPassthroughComponents(ast)` → Set of `{ForEach, Portal, Lazy}` tag names present; ensure each import.
-3. `containsComponent(ast, passthroughNames)` → if any uppercase or `__SLOT_N__` tag remains, `ensureCreateComponentImport`.
-4. `componentNodeToBabel(t, ast, expressions)` → Babel AST; `hoistStaticSubtrees(t, program, babelAST)` hoists fully-static subtrees (whole root, or nested static children of a dynamic root) to `_hellaStatic` module consts; `path.replaceWith`.
 </visitor-pipeline>
 
 ## Attribute categories
 
-Five prefixes route attrs into five arrays. The `processAttributes` check order is `error:` → `hook:` → `e:` → `on:` → props (prefixes are mutually exclusive lexically; order only matters for documentation). `processComponentAttributes` (html\`\``) checks in a slightly different order but produces the same partition.
+Five prefixes route attrs into five arrays. The `processAttributes` check order is `error:` → `hook:` → `e:` → `on:` → props (prefixes are mutually exclusive lexically; order only matters for documentation).
 
 | JSX prefix | Output object key (element / component) | Strip prefix | Semantics |
 |---|---|---|---|
@@ -72,7 +59,7 @@ Five prefixes route attrs into five arrays. The `processAttributes` check order 
 
 ## Component detection and wrapping
 
-- **Detection** — first-letter uppercase (`/^[A-Z]/`) OR `JSXMemberExpression` OR (html\`\`` only) tag matches `/^__SLOT_\d+__$/` (dynamic `<${Comp}>`).
+- **Detection** — first-letter uppercase (`/^[A-Z]/`) OR `JSXMemberExpression`.
 - **Wrap** — every non-passthrough component emits `component(Tag, props)` and triggers `ensureCreateComponentImport` (`import { component } from "@hellajs/dom"`). The wrapper manages automatic scope cleanup at runtime.
 - **Passthroughs** — `ForEach`, `Portal`, `Lazy` emit `Tag(props)` directly (no `component(...)` wrap); each triggers its own named import from `@hellajs/dom`.
 
@@ -83,24 +70,6 @@ Five prefixes route attrs into five arrays. The `processAttributes` check order 
 | `<ForEach ... />` | `ForEach({...})` | `ForEach` |
 | `<Portal>...</Portal>` | `Portal({...})` | `Portal` |
 | `<Lazy ... />` | `Lazy({...})` | `Lazy` |
-| `html\`<${Comp}>...</${Comp}>\`` | `component(Comp, {...})` | `component` |
-
-## Intermediate AST and slot resolution
-
-<intermediate-ast>
-A node is one of:
-
-- `{ tag: string, props?: Record<string, any>, children?: HtmlNode[] }` — element/component.
-- `{ __slot: number }` — slot marker (resolved to `expressions[N]` during conversion).
-- `string` — text leaf (converted to `t.stringLiteral`).
-- `Array<...>` — mixed content in an attribute value (joined with `binaryExpression('+', ...)`).
-
-**Slot lifecycle** — `parseHTMLComponent` interleaves quasis with literal `__SLOT_N__` text markers, the regex parser leaves them in place, `parseAttributes` / `parseTextContent` produce `{ __slot: N }` objects, and `componentNodeToBabel` (`src/builders/ast.mjs`) resolves them to `expressions[N]`. Slot markers never reach the final Babel AST.
-
-**Single-slot short-circuit** — if the entire template (trimmed) is `__SLOT_N__`, `parseHTML` returns `[{ __slot: N }]` directly so `html\`${expr}\`` becomes the bare expression, not a HellaNode.
-
-**Multi-root wrapping** — multiple top-level elements are wrapped in `{ tag: '$', children: [...] }`.
-</intermediate-ast>
 
 ## HellaNode output shape
 
@@ -141,34 +110,24 @@ Grounded in tests — verify any change against these:
 - **Component props flatten** — `<Button on:click={h} x={s} hook:mount={m} error:fallback={f} e:click={d} id="x" />` produces a single `props` object with `click`, `x`, `mount`, `fallback`, `click`, `id` keys (no nested `on`/`hooks`/etc.).
 - **HellaNode field order** — `tag, props, on, e, hooks, error, children`; only `tag` is always present.
 - **Static-children join** — when every child of an element or component is a `StringLiteral`, they are concatenated into one string inside a one-element array (vnode.mjs, component.mjs).
-- **Auto-wrap of reactive expressions** — element **children AND attribute values** that contain a call (signal read, method call, derived array/ternary) are auto-wrapped into `() => expr` so dom's effect machinery tracks them (SolidJS-style compiled reactivity). For attributes this makes `class={signal()}`, `class={[active(), "base"]}`, and `class={cond() ? "a" : "b"}` reactive. **Excluded** (never wrapped): component children/props (a component may treat `props.x` as a plain value, not a function); prefixed keys (`on:` / `e:` / `hook:` / `error:` — handlers/hooks expect a function reference or render-time value, routed before the props branch); and any expression already a function at top level (double-wrap guard — an explicit `() => foo()` is emitted verbatim, else dom would stringify the inner arrow). Heuristic: `src/utils/reactive.mjs`; applied in `processors/children.mjs` (JSX children, gated on `isComponent`), `processors/attributes.mjs` (JSX element props, props branch only, gated on `isComponent`), and `builders/ast.mjs` (compiled-`html` element children + element attributes, gated on `isComponent`). Runtime `html` (`packages/dom/lib/html.ts`) receives evaluated values and cannot wrap — explicit `() => …` wrappers remain required there. Bare signal refs (`{signal}`) and bare identifiers are not call-containing and pass through unwrapped; static values and static arrays (no call) are likewise untouched.
+- **Auto-wrap of reactive expressions** — element **children AND attribute values** that contain a call (signal read, method call, derived array/ternary) are auto-wrapped into `() => expr` so dom's effect machinery tracks them (SolidJS-style compiled reactivity). For attributes this makes `class={signal()}`, `class={[active(), "base"]}`, and `class={cond() ? "a" : "b"}` reactive. **Excluded** (never wrapped): component children/props (a component may treat `props.x` as a plain value, not a function); prefixed keys (`on:` / `e:` / `hook:` / `error:` — handlers/hooks expect a function reference or render-time value, routed before the props branch); and any expression already a function at top level (double-wrap guard — an explicit `() => foo()` is emitted verbatim, else dom would stringify the inner arrow), or a top-level `raw()` call (a value sentinel — wrapping would turn the child into a getter region and change the marker shape and ssr classification; deeper `raw()` calls inside a larger expression still wrap). Heuristic: `src/utils/reactive.mjs`; applied in `processors/children.mjs` (JSX children, gated on `isComponent`) and `processors/attributes.mjs` (JSX element props, props branch only, gated on `isComponent`). Bare signal refs (`{signal}`) and bare identifiers are not call-containing and pass through unwrapped; static values and static arrays (no call) are likewise untouched.
 - **`props.children` concat emission** — a bare `{props.children}` arrives as a SpreadElement marker (`filterEmptyChildren`); `buildChildrenValue` then emits the WHOLE children list as one `[].concat(parts…)` call (`props.children` splices flat, non-array children wrap as one-element arrays). Concat is contract-critical: a spread would split string children per-character (duplicating trailing siblings under hydration) and throw on single-vnode/null children. Plain lists keep the plain array form.
-- **Whitespace normalization** — JSX text is whitespace-collapsed (`\s+` → single space) and dropped if `.trim()` is empty; HTML text is trimmed.
+- **Whitespace normalization** — JSX text is whitespace-collapsed (`\s+` → single space) and dropped if `.trim()` is empty.
 - **camelCase `data`/`aria`** — `dataTestId` → `"data-test-id"`, `ariaLabel` → `"aria-label"`; the kebab form is always emitted as a quoted string key.
 - **Namespaced JSX names** — `xml:lang`, `xlink:href` become a single quoted string key (`"xml:lang"`).
-- **HTML parser strips** — `<!-- … -->`, `<!DOCTYPE …>`, `<![CDATA[…]]>` removed before tokenizing.
-- **HTML fragment syntax** — `<>…</>` rewritten to `<__fragment__>…</__fragment__>` then back to `tag: '$'`; fragment nodes get `props: {}` (no `parseAttributes` call).
-- **HTML attribute quotes** — double, single, and unquoted values all parse; mixed content (`"prefix-${suffix}-tail"`) produces a `binaryExpression('+')` chain.
 - **Boolean attrs** — `<input required />` → `required: true`; explicit `={false}` stays `false`.
 - **Member-expression tags** — `<UI.Button>` and arbitrarily nested `<A.B.C>` are components (recursive `getTagCallee`).
-- **Dynamic components in `html`** — `<${Comp}>` becomes a node with `tag: "__SLOT_N__"`; `componentNodeToBabel` resolves it to the actual expression and wraps with `component(...)`.
-- **Self-closing parsing** — `/>` with optional leading space (`<br />`).
-- **Close semantics (shared with the runtime parser)** — void elements (`VOID_TAGS` in `constants.mjs`) and self-closed tags append as leaves and never push to the stack, so following content is a sibling. A closing tag closes the nearest open ancestor with a matching tag, implicitly closing everything above it; a closer with no match is stray and dropped. Dynamic-component closers (`</__SLOT_N__>`) close the nearest open dynamic component: the open and close markers are distinct expressions, so their indices never agree. Unclosed elements flush at EOF via a single `result.push(stack[0])`: children were parented at their open, so only the outermost open element becomes a root. Identical algorithm in `packages/dom/lib/internal/template.ts` `parseHTML`; `tests/parity.test.ts` runs a shared corpus through both paths.
-- **Multi-root `html`** — multiple top-level elements auto-wrapped in a `$` fragment.
 
 ## Tests
 
-Seven files under `tests/`: `transform.test.ts` (full pipeline), `processor.test.ts` (attribute/child processing), `builder.test.ts` (`buildHellaNode`, `buildComponentCall`, `componentNodeToBabel`), `parser.test.ts` (`parseHTML`, `parseHTMLComponent`, `parseAttributes`, `parseTextContent`), `parity.test.ts` (parse-corpus parity against dom's runtime parser), `tag-callee.test.ts` (`getTagCallee`), `traversal.test.ts` (`findPassthroughComponents`, `containsComponent`).
+Four files under `tests/`: `transform.test.ts` (full pipeline + the negative pin: `html` tagged-template source passes through untransformed — no visitor exists for it), `processor.test.ts` (attribute/child processing), `builder.test.ts` (`buildHellaNode`, `buildComponentCall`), `tag-callee.test.ts` (`getTagCallee`).
 
 - **Helpers** — `transformJSX(code)` runs `babel.transformSync` with `configFile: false` and the plugin; `normalize(output)` collapses whitespace for full-output equality asserts; `getNamedImports(code, source)` regex-extracts specifier names.
 - **Style** — integration-style: most tests exercise the full transform and assert either `toContain` on substrings or `toBe` on `normalize()` output. Some tests import internals directly from `src/**/*.mjs` — a documented carveout (`guides/tests.md` §Test Coverage, `plugins/**` rule).
-- **Run** — `bun test plugins/babel/tests` (tests import from source `index.mjs`, not `dist/`; the exception is `tests/parity.test.ts`, which imports the `@hellajs/dom` **dist** bundle for the runtime side of the parity corpus — run `bun bundle dom --quiet` first when dom's template parsing changes). `bun lint` covers typecheck + eslint. **NEVER run `bun test` alone against the full repo without scoping to the plugin path.**
+- **Run** — `bun test plugins/babel/tests` (tests import from source `index.mjs`, not `dist/`). `bun lint` covers typecheck + eslint. **NEVER run `bun test` alone against the full repo without scoping to the plugin path.**
 
 ## Performance notes (verified)
 
-- Single-regex tokenizer for HTML (`/<(\/)?([\w-]*)([^>]*?)(\s*\/)?>|([^<]+)/g`); stack-based nesting (no recursion in the parser itself; recursion only in `componentNodeToBabel`).
 - `len` cached in `while` loops; static-string children joined into one literal at build time (avoids runtime array of strings).
-- Intermediate AST is built once and converted in a single pass; slot markers defer expression resolution so the parser never touches Babel nodes.
+- Fully-static subtrees hoist to a single module const, allocated once per site instead of per call.
 - All hot paths avoid `JSON.parse` / `eval` / closures-per-node.
-
-</babel-plugin>

@@ -90,7 +90,7 @@ export function Suspense(props: SuspenseProps): JSX.Element {
         return;
       }
       // hydrate: existingNodes holds the (swapped) resolved children; hydrate each child against them.
-      // JSX/html compile component children to an array — pass it flat so hydrateSequence binds each.
+      // Compiled JSX children arrive as an array — pass it flat so hydrateSequence binds each.
       const children = Array.isArray(props.children) ? props.children : [props.children];
       hydrateSequence(parent as unknown as HellaElement, children, hctx.existingNodes[0] ?? null, undefined);
       return;
@@ -101,7 +101,7 @@ export function Suspense(props: SuspenseProps): JSX.Element {
     // fallback is pending-only and is removed once the suspense resolves.
     const anchor = document.createTextNode("");
     parent.appendChild(anchor);
-    // JSX wraps a single child in an array (`children: [child]`); `html`` passes it single.
+    // Compiled JSX wraps a single child in an array (`children: [child]`).
     // Unwrap a length-1 array so an async producer is evaluated, not stringified by resolveNode.
     const child = Array.isArray(props.children) && props.children.length === 1 ? props.children[0] : props.children;
     const value = isFunction(child) ? (child as () => HellaChild | HellaChild[])() : child;

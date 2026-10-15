@@ -16,7 +16,7 @@ beforeEach(() => {
 });
 
 describe("item", () => {
-  test.each(itemPartVariants)("$part $format/$style renders its slot", (variant) => {
+  test.each(itemPartVariants)("$part $style renders its slot", (variant) => {
     const bare = variant.part === "Separator";
     const root = renderVariant(variant, bare ? {} : { children: ["x"] });
     if (bare) {
@@ -29,7 +29,7 @@ describe("item", () => {
     expect(root.textContent).toBe("x");
   });
 
-  test.each(itemVariants)("$part $format/$style renders variant and size attributes with matching classes", (variant) => {
+  test.each(itemVariants)("$part $style renders variant and size attributes with matching classes", (variant) => {
     const muted = renderVariant(variant, { variant: "muted", size: "sm", children: ["x"] });
     expect(muted.getAttribute("data-variant")).toBe("muted");
     expect(muted.getAttribute("data-size")).toBe("sm");
@@ -44,7 +44,7 @@ describe("item", () => {
     }
   });
 
-  test.each(itemVariants)("$part $format/$style renders selected state from a static boolean", (variant) => {
+  test.each(itemVariants)("$part $style renders selected state from a static boolean", (variant) => {
     const unselected = renderVariant(variant, { children: ["x"] });
     expect(unselected.getAttribute("data-selected")).toBe("false");
     expect(unselected.getAttribute("aria-selected")).toBe("false");
@@ -53,7 +53,7 @@ describe("item", () => {
     expect(selected.getAttribute("aria-selected")).toBe("true");
   });
 
-  test.each(itemVariants)("$part $format/$style tracks a reactive selected() signal", (variant) => {
+  test.each(itemVariants)("$part $style tracks a reactive selected() signal", (variant) => {
     const selected = signal(true);
     const root = renderVariant(variant, { selected: () => selected(), children: ["x"] });
     expect(root.getAttribute("data-selected")).toBe("true");
@@ -64,7 +64,7 @@ describe("item", () => {
     expect(root.getAttribute("aria-selected")).toBe("false");
   });
 
-  test.each(itemPartVariants.filter((variant) => variant.part === "Media"))("$part $format/$style renders media variants", (variant) => {
+  test.each(itemPartVariants.filter((variant) => variant.part === "Media"))("$part $style renders media variants", (variant) => {
     const icon = renderVariant(variant, { variant: "icon", children: ["x"] });
     expect(icon.getAttribute("data-variant")).toBe("icon");
     if (variant.style === "css") {
@@ -76,7 +76,7 @@ describe("item", () => {
     expect(image.getAttribute("data-variant")).toBe("image");
   });
 
-  test.each(itemPartVariants.filter((variant) => variant.part === "Title" || variant.part === "Description"))("$part $format/$style renders the text parts", (variant) => {
+  test.each(itemPartVariants.filter((variant) => variant.part === "Title" || variant.part === "Description"))("$part $style renders the text parts", (variant) => {
     const root = renderVariant(variant, { children: ["content"] });
     expect(root.textContent).toBe("content");
     if (variant.part === "Description") {
@@ -86,23 +86,23 @@ describe("item", () => {
     }
   });
 
-  test("forwards user attrs onto the root across all four variants", () => {
+  test("forwards user attrs onto the root across both styles", () => {
     assertAttrForwarded(itemVariants, { title: "Hella" }, "title", "Hella");
   });
 
-  test("fires a user on:click handler on the root across all four variants", () => {
+  test("fires a user on:click handler on the root across both styles", () => {
     const onClick = mock(() => {});
     assertHandlerForwarded(itemVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 
-  test("merges the user class last on the root across all four variants", () => {
+  test("merges the user class last on the root across both styles", () => {
     for (const variant of itemVariants) {
       const root = renderVariant(variant, { class: "my-item", children: ["x"] });
       expect(classTokens(root).at(-1)).toBe("my-item");
     }
   });
 
-  test("all four flavors agree on tag and attributes", () => {
+  test("both styles agree on tag and attributes", () => {
     assertStructuralParity(itemVariants, { selected: true, variant: "outline", size: "sm", children: ["x"] });
     assertStructuralParity(itemPartVariants.filter((candidate) => candidate.part === "Media"), { variant: "icon", children: ["x"] });
   });

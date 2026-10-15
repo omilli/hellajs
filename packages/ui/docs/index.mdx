@@ -9,7 +9,7 @@ npx @hellajs/ui init
 # bunx @hellajs/ui init
 ```
 
-No install step is required; run the CLI through your package runner. `init` writes `hella.ui.json` (style and format defaults) and adds the shared `theme` entry; `add` copies components into `src/components/`.
+No install step is required; run the CLI through your package runner. `init` writes `hella.ui.json` (style defaults) and adds the shared `theme` entry; `add` copies components into `src/components/`.
 
 ### Example
 
@@ -32,7 +32,7 @@ The copied file is yours to edit; the style declarations ride inside it, so noth
 
 ### Registry
 
-Sixty-one entries: fifty-nine components plus `theme` and `cn`, the shared entries every project themes and composes through. Every component follows one shape: `<name>.tsx` plus `<name>.ts` (html format) copied per `add`, css adds `@hellajs/css`, tailwind adds `clsx` and `tailwind-merge`, and registry dependencies copy recursively alongside.
+Sixty-one entries: fifty-nine components plus `theme` and `cn`, the shared entries every project themes and composes through. Every component copies as one canonical `<name>.tsx` file per `add`, css adds `@hellajs/css`, tailwind adds `clsx` and `tailwind-merge`, and registry dependencies copy recursively alongside.
 
 | Entry | Styles | Copied files | Extra peers |
 |---|---|---|---|
@@ -65,14 +65,14 @@ The component catalog, grouped by family:
 
 The package's interface is the CLI:
 
-- **`init`**: writes `hella.ui.json` with style and format defaults, then adds the theme entry for the configured style.
-- **`add`**: copies registry entries into `componentsDir`, splicing the chosen style's declarations into the file; `--style`, `--format`, `--dir`, and `--overwrite` override the config per call.
+- **`init`**: writes `hella.ui.json` with style defaults, then adds the theme entry for the configured style.
+- **`add`**: copies registry entries into `componentsDir`, splicing the chosen style's declarations into the file; `--style`, `--lang`, `--dir`, and `--overwrite` override the config per call.
 - **`list`**: prints every entry name in the registry.
 
 ### Concepts
 
-- **[Installation](/ui/installation)**: initialize a project, what lands on disk, the styles and formats, and the theme entry
+- **[Installation](/ui/installation)**: initialize a project, what lands on disk, the styles, and the theme entry
 - **[Theming](/ui/theming)**: the two theme artifacts, the override contract, and dark mode
 - **[CLI](/ui/cli)**: every command and flag, the config file, dependency resolution, splicing, and peer checking
 - **[Styling](/learn/concepts/styling)**: how the css flavor's scoped classes and style options build on `@hellajs/css`
-- **Plain JavaScript**: copying registry source as plain `.jsx`/`.js` for JS-only toolchains and no-build browser pages, and when to skip the flag (Bun and Deno)
+- **Plain JavaScript**: copying registry source as plain `.jsx`/`.js` for JS-only toolchains, the compile plugin the `.jsx` copies still require, and when to skip the flag (Bun and Deno)

@@ -79,7 +79,7 @@ function caption(root: HTMLElement): string {
 }
 
 describe("calendar", () => {
-  test.each(calendarVariants)("$format/$style renders caption, nav aria-labels, weekday header, and the grid", (variant) => {
+  test.each(calendarVariants)("$style renders caption, nav aria-labels, weekday header, and the grid", (variant) => {
     const root = calendarRoot(variant, { defaultMonth: MAR_2025 });
     expect(root.getAttribute("data-slot")).toBe("calendar");
     expect(caption(root)).toBe("March 2025");
@@ -90,7 +90,7 @@ describe("calendar", () => {
     expect(weekdays.map((th) => th.textContent)).toEqual(["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]);
   });
 
-  test.each(calendarVariants)("$format/$style builds month grids: 31/30/28/29-day months, offsets, fixedWeeks, leap and century years", (variant) => {
+  test.each(calendarVariants)("$style builds month grids: 31/30/28/29-day months, offsets, fixedWeeks, leap and century years", (variant) => {
     const cases: [props: CalendarVariantProps, cells: number, first: string, last: string, outside: number][] = [
       [{ defaultMonth: JAN_2024 }, 35, "2023-12-31", "2024-02-03", 4],
       [{ defaultMonth: FEB_2024 }, 35, "2024-01-28", "2024-03-02", 6],
@@ -109,7 +109,7 @@ describe("calendar", () => {
     }
   });
 
-  test.each(calendarVariants)("$format/$style drops february 29th in non-leap years and keeps it in leap years", (variant) => {
+  test.each(calendarVariants)("$style drops february 29th in non-leap years and keeps it in leap years", (variant) => {
     const century = calendarRoot(variant, { defaultMonth: FEB_2100 });
     expect(dayCell(century, "2100-02-29")).toBeNull();
     expect(dayCell(century, "2100-02-28")).not.toBeNull();
@@ -117,7 +117,7 @@ describe("calendar", () => {
     expect(dayCell(leap, "2024-02-29")).not.toBeNull();
   });
 
-  test.each(calendarVariants)("$format/$style tags outside days as disabled and hides them when showOutsideDays is false", (variant) => {
+  test.each(calendarVariants)("$style tags outside days as disabled and hides them when showOutsideDays is false", (variant) => {
     const root = calendarRoot(variant, { defaultMonth: JAN_2024 });
     const first = dayCell(root, "2023-12-31")!;
     const inner = dayCell(root, "2024-01-15")!;
@@ -131,7 +131,7 @@ describe("calendar", () => {
     expect(dayCell(hidden, "2024-01-15")!.hasAttribute("data-hidden")).toBe(false);
   });
 
-  test.each(calendarVariants)("$format/$style navigates months from the nav buttons, over the december boundary, with controlled month winning", async (variant) => {
+  test.each(calendarVariants)("$style navigates months from the nav buttons, over the december boundary, with controlled month winning", async (variant) => {
     let reported: Date | undefined;
     const root = calendarRoot(variant, { defaultMonth: MAR_2025, onMonthChange: (month) => { reported = month; } });
     root.querySelector("[data-slot='calendar-next']")!.dispatchEvent(new Event("click", { bubbles: true }));
@@ -158,7 +158,7 @@ describe("calendar", () => {
     expect(caption(controlled)).toBe("June 2025");
   });
 
-  test.each(calendarVariants)("$format/$style selects, keeps, and replaces a single date", (variant) => {
+  test.each(calendarVariants)("$style selects, keeps, and replaces a single date", (variant) => {
     const onSelect = mock<(selected: unknown) => void>(() => undefined);
     const root = calendarRoot(variant, { defaultMonth: MAR_2025, onSelect });
     click(root, "2025-03-14");
@@ -178,7 +178,7 @@ describe("calendar", () => {
     expect(dayCell(root, "2025-03-20")!.getAttribute("data-selected")).toBe("true");
   });
 
-  test.each(calendarVariants)("$format/$style toggles multiple membership in stable order", (variant) => {
+  test.each(calendarVariants)("$style toggles multiple membership in stable order", (variant) => {
     let latest: Date[] = [];
     const root = calendarRoot(variant, {
       defaultMonth: MAR_2025,
@@ -195,7 +195,7 @@ describe("calendar", () => {
     expect(dayButton(root, "2025-03-20").getAttribute("data-selected-single")).toBe("true");
   });
 
-  test.each(calendarVariants)("$format/$style builds a range with ordering, reorders a backwards second click, and resets on the third", (variant) => {
+  test.each(calendarVariants)("$style builds a range with ordering, reorders a backwards second click, and resets on the third", (variant) => {
     let latest: { from?: Date; to?: Date } = {};
     const root = calendarRoot(variant, {
       defaultMonth: MAR_2025,
@@ -231,7 +231,7 @@ describe("calendar", () => {
     expect(dayCell(backwards, "2025-03-10")!.hasAttribute("data-range-start")).toBe(false);
   });
 
-  test.each(calendarVariants)("$format/$style previews the dangling range end on hover and clears it on leave", (variant) => {
+  test.each(calendarVariants)("$style previews the dangling range end on hover and clears it on leave", (variant) => {
     const root = calendarRoot(variant, { defaultMonth: MAR_2025, mode: "range" });
     click(root, "2025-03-10");
     const hoverButton = dayButton(root, "2025-03-20");
@@ -243,7 +243,7 @@ describe("calendar", () => {
     expect(dayCell(root, "2025-03-15")!.hasAttribute("data-range-middle")).toBe(false);
   });
 
-  test.each(calendarVariants)("$format/$style marks today with data-today, aria-current, and the locale data-day", (variant) => {
+  test.each(calendarVariants)("$style marks today with data-today, aria-current, and the locale data-day", (variant) => {
     const now = new Date();
     const root = calendarRoot(variant, { defaultMonth: new Date(now.getFullYear(), now.getMonth(), 1) });
     const month = `${now.getMonth() + 1}`.padStart(2, "0");
@@ -255,7 +255,7 @@ describe("calendar", () => {
     expect(cell.querySelector("button")!.getAttribute("data-day")).toBe(new Date(now.getFullYear(), now.getMonth(), now.getDate()).toLocaleDateString());
   });
 
-  test.each(calendarVariants)("$format/$style blocks selection on disabled days and reports nothing", (variant) => {
+  test.each(calendarVariants)("$style blocks selection on disabled days and reports nothing", (variant) => {
     const onSelect = mock<(selected: unknown) => void>(() => undefined);
     const root = calendarRoot(variant, {
       defaultMonth: MAR_2025,
@@ -272,13 +272,13 @@ describe("calendar", () => {
     expect(onSelect).toHaveBeenCalledTimes(1);
   });
 
-  test.each(calendarVariants)("$format/$style omits the navigation when hideNavigation is set", (variant) => {
+  test.each(calendarVariants)("$style omits the navigation when hideNavigation is set", (variant) => {
     const root = calendarRoot(variant, { defaultMonth: MAR_2025, hideNavigation: true });
     expect(root.querySelector("[data-slot='calendar-nav']")).toBeNull();
     expect(root.querySelector("[data-slot='calendar-previous']")).toBeNull();
   });
 
-  test.each(calendarVariants)("$format/$style roves focus with arrows across week wrap and month spill, jumps by page and week bounds, and selects with Enter", async (variant) => {
+  test.each(calendarVariants)("$style roves focus with arrows across week wrap and month spill, jumps by page and week bounds, and selects with Enter", async (variant) => {
     const root = calendarRoot(variant, { defaultMonth: MAR_2025 });
 
     // Roving tabindex: exactly one day button is a tab stop (today in-month, else the first).
@@ -315,7 +315,7 @@ describe("calendar", () => {
     expect(dayCell(root, "2025-04-19")!.hasAttribute("data-selected")).toBe(false);
   });
 
-  test.each(calendarVariants)("$format/$style merges the class hooks and root class into the composed parts", (variant) => {
+  test.each(calendarVariants)("$style merges the class hooks and root class into the composed parts", (variant) => {
     const root = calendarRoot(variant, {
       defaultMonth: MAR_2025,
       class: "outer",
@@ -333,7 +333,7 @@ describe("calendar", () => {
     }
   });
 
-  test.each(calendarDayButtonVariants)("$format/$style renders the manual day part with static flags, data-day, and aria semantics", (variant) => {
+  test.each(calendarDayButtonVariants)("$style renders the manual day part with static flags, data-day, and aria semantics", (variant) => {
     const el = renderVariant(variant, { day: new Date(2025, 2, 14), selectedSingle: true, focused: true, today: true }) as HTMLElement;
     expect(el.tagName).toBe("BUTTON");
     expect(el.getAttribute("data-slot")).toBe("calendar-day-button");
@@ -349,14 +349,14 @@ describe("calendar", () => {
     expect(idle.tabIndex).toBe(-1);
   });
 
-  test("keeps structural parity across all four variants", () => {
+  test("keeps structural parity across both styles", () => {
     assertStructuralParity(calendarVariants, { defaultMonth: MAR_2025 });
     assertStructuralParity(calendarVariants, { defaultMonth: MAR_2025, mode: "range" });
     assertStructuralParity(calendarVariants, { defaultMonth: MAR_2025, hideNavigation: true });
     assertStructuralParity(calendarDayButtonVariants, { day: new Date(2025, 2, 14), selectedSingle: true }, ["data-day"]);
   });
 
-  test("day-cell user on:click fires alongside the owned date-select across all four variants", () => {
+  test("day-cell user on:click fires alongside the owned date-select across both styles", () => {
     for (const variant of calendarVariants) {
       const userClick = mock(() => {});
       const root = calendarRoot(variant, { defaultMonth: MAR_2025, "on:click": userClick });
@@ -367,11 +367,11 @@ describe("calendar", () => {
     }
   });
 
-  test("forwards user attrs onto the calendar root across all four variants", () => {
+  test("forwards user attrs onto the calendar root across both styles", () => {
     assertAttrForwarded(calendarVariants, { defaultMonth: MAR_2025, title: "Hella" } as never, "title", "Hella");
   });
 
-  test("merges a user class into the calendar root class across all four variants", () => {
+  test("merges a user class into the calendar root class across both styles", () => {
     for (const variant of calendarVariants) {
       const root = calendarRoot(variant, { defaultMonth: MAR_2025, class: "my-calendar" });
       const tokens = classTokens(root);
@@ -380,7 +380,7 @@ describe("calendar", () => {
     }
   });
 
-  test("manual day button spreads a user on:click handler across all four variants", () => {
+  test("manual day button spreads a user on:click handler across both styles", () => {
     for (const variant of calendarDayButtonVariants) {
       const userClick = mock(() => {});
       const root = renderVariant(variant, { day: new Date(2025, 2, 14), "on:click": userClick });

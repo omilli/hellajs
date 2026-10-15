@@ -3,12 +3,10 @@ import { resetTestState, delay } from "@utils/test-helpers.js";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components import the bare
 // specifier, so the harness mount shares one dom instance with the components.
 import { peekState } from "@hellajs/dom";
-// The group under test composes real part nodes per flavor, so these tests import the same
-// compiled modules helpers/variants.ts does.
+// The group under test composes real part nodes per style, so these tests import the same
+// compiled modules helpers/variants.tsx does.
 import * as ResizableCssJsx from "../dist/registry/resizable/css/resizable";
-import * as ResizableCssHtml from "../dist/registry/resizable/css/resizable-html";
 import * as ResizableTailwindJsx from "../dist/registry/resizable/tailwind/resizable";
-import * as ResizableTailwindHtml from "../dist/registry/resizable/tailwind/resizable-html";
 import {
   assertAttrForwarded,
   assertHandlerForwarded,
@@ -59,14 +57,12 @@ function press(handle: HTMLElement, key: string): void {
   handle.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
 }
 
-/** Builds a disabled-handle stack from the variant's own flavor modules (the suite wrapper has no disabled variant). */
+/** Builds a disabled-handle stack from the variant's own style modules (the suite wrapper has no disabled variant). */
 function disabledStack(variant: ComponentVariant<ResizableVariantProps>): HellaChild[] {
   const mods = {
-    "css/jsx": ResizableCssJsx,
-    "css/html": ResizableCssHtml,
-    "tailwind/jsx": ResizableTailwindJsx,
-    "tailwind/html": ResizableTailwindHtml,
-  }[`${variant.style}/${variant.format}` as const]!;
+    css: ResizableCssJsx,
+    tailwind: ResizableTailwindJsx,
+  }[variant.style];
   return [
     mods.ResizablePanel({ defaultSize: 50, children: "A" }),
     mods.ResizableHandle({ disabled: true }),
@@ -74,14 +70,12 @@ function disabledStack(variant: ComponentVariant<ResizableVariantProps>): HellaC
   ];
 }
 
-/** Builds a withHandle stack from the variant's own flavor modules. */
+/** Builds a withHandle stack from the variant's own style modules. */
 function gripStack(variant: ComponentVariant<ResizableVariantProps>): HellaChild[] {
   const mods = {
-    "css/jsx": ResizableCssJsx,
-    "css/html": ResizableCssHtml,
-    "tailwind/jsx": ResizableTailwindJsx,
-    "tailwind/html": ResizableTailwindHtml,
-  }[`${variant.style}/${variant.format}` as const]!;
+    css: ResizableCssJsx,
+    tailwind: ResizableTailwindJsx,
+  }[variant.style];
   return [
     mods.ResizablePanel({ defaultSize: 50, children: "A" }),
     mods.ResizableHandle({ withHandle: true }),
@@ -90,7 +84,7 @@ function gripStack(variant: ComponentVariant<ResizableVariantProps>): HellaChild
 }
 
 describe("resizable", () => {
-  test.each(resizableVariants)("$format/$style seeds both panels with the default flex-grow split", async (variant) => {
+  test.each(resizableVariants)("$style seeds both panels with the default flex-grow split", async (variant) => {
     const root = renderVariant(variant, { children: variant.child!("A") }) as HTMLElement;
     await awaitWiring(root);
     const panels = Array.from(root.querySelectorAll("[data-slot='resizable-panel']")) as HTMLElement[];
@@ -106,7 +100,7 @@ describe("resizable", () => {
     expect(handle.getAttribute("aria-orientation")).toBe("horizontal");
   });
 
-  test.each(resizableVariants)("$format/$style shifts the adjacent pair on handle drag", async (variant) => {
+  test.each(resizableVariants)("$style shifts the adjacent pair on handle drag", async (variant) => {
     const onLayout = mock((sizes: number[]) => sizes);
     const root = renderVariant(variant, { children: variant.child!("A"), onLayout }) as HTMLElement;
     await awaitWiring(root);
@@ -121,7 +115,7 @@ describe("resizable", () => {
     expect(panels[1]!.style.flexGrow).toBe("35");
   });
 
-  test.each(resizableVariants)("$format/$style clamps pair resizing at the panels' min/max", async (variant) => {
+  test.each(resizableVariants)("$style clamps pair resizing at the panels' min/max", async (variant) => {
     const onLayout = mock((sizes: number[]) => sizes);
     const root = renderVariant(variant, { children: variant.child!("A"), onLayout }) as HTMLElement;
     await awaitWiring(root);
@@ -135,7 +129,7 @@ describe("resizable", () => {
     expect(onLayout.mock.calls[1]).toEqual([[45, 55]]);
   });
 
-  test.each(resizableVariants)("$format/$style moves the pair by 5% per keyboard arrow", async (variant) => {
+  test.each(resizableVariants)("$style moves the pair by 5% per keyboard arrow", async (variant) => {
     const onLayout = mock((sizes: number[]) => sizes);
     const root = renderVariant(variant, { children: variant.child!("A"), onLayout }) as HTMLElement;
     await awaitWiring(root);
@@ -155,7 +149,7 @@ describe("resizable", () => {
     expect(onLayout).toHaveBeenCalledTimes(5);
   });
 
-  test.each(resizableVariants)("$format/$style sizes vertical drags against the group height", async (variant) => {
+  test.each(resizableVariants)("$style sizes vertical drags against the group height", async (variant) => {
     const onLayout = mock((sizes: number[]) => sizes);
     const root = renderVariant(variant, { children: variant.child!("A"), direction: "vertical", onLayout }) as HTMLElement;
     await awaitWiring(root);
@@ -167,7 +161,7 @@ describe("resizable", () => {
     expect(onLayout.mock.calls[0]).toEqual([[60, 40]]);
   });
 
-  test.each(resizableVariants)("$format/$style ignores drags and keys on a disabled handle", async (variant) => {
+  test.each(resizableVariants)("$style ignores drags and keys on a disabled handle", async (variant) => {
     const onLayout = mock((sizes: number[]) => sizes);
     const root = renderVariant(variant, { children: disabledStack(variant), onLayout }) as HTMLElement;
     await awaitWiring(root);
@@ -180,7 +174,7 @@ describe("resizable", () => {
     expect(onLayout).not.toHaveBeenCalled();
   });
 
-  test.each(resizableVariants)("$format/$style renders the grip icon inside the handle when withHandle is set", (variant) => {
+  test.each(resizableVariants)("$style renders the grip icon inside the handle when withHandle is set", (variant) => {
     const root = renderVariant(variant, { children: gripStack(variant) }) as HTMLElement;
     const handle = root.querySelector("[data-slot='resizable-handle']") as HTMLElement;
     const wrap = handle.querySelector("div") as HTMLElement;
@@ -190,7 +184,7 @@ describe("resizable", () => {
     expect(svg.querySelectorAll("circle").length).toBe(6);
   });
 
-  test.each(resizableVariants)("$format/$style carries the handle classes on both flavors", (variant) => {
+  test.each(resizableVariants)("$style carries the handle classes on both styles", (variant) => {
     const root = renderVariant(variant, { children: variant.child!("A") }) as HTMLElement;
     const handle = root.querySelector("[data-slot='resizable-handle']") as HTMLElement;
     if (variant.style === "tailwind") {
@@ -201,7 +195,7 @@ describe("resizable", () => {
     }
   });
 
-  test.each(resizableVariants)("$format/$style disposes the handle wiring when the root unmounts", async (variant) => {
+  test.each(resizableVariants)("$style disposes the handle wiring when the root unmounts", async (variant) => {
     const onLayout = mock((sizes: number[]) => sizes);
     const root = renderVariant(variant, { children: variant.child!("A"), onLayout }) as HTMLElement;
     await awaitWiring(root);
@@ -219,23 +213,23 @@ describe("resizable", () => {
     expect(onLayout).not.toHaveBeenCalled();
   });
 
-  test("forwards user attrs onto the root across all four variants", () => {
+  test("forwards user attrs onto the root across both styles", () => {
     assertAttrForwarded(resizableVariants, { title: "Hella" }, "title", "Hella");
   });
 
-  test("fires a user on:click handler on the root across all four variants", () => {
+  test("fires a user on:click handler on the root across both styles", () => {
     const onClick = mock(() => {});
     assertHandlerForwarded(resizableVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 
-  test("spreads user attrs onto the handle part across all four flavors", () => {
+  test("spreads user attrs onto the handle part across both styles", () => {
     assertAttrForwarded(resizablePartVariants.filter((candidate) => candidate.part === "Handle"), { title: "Hella" }, "title", "Hella");
   });
 
-  test("keeps structural parity across all four variants", () => {
+  test("keeps structural parity across both styles", () => {
     assertStructuralParity(resizableVariants);
-    // Each part parity's against its own four flavors; the panel's inline flex style serializes
-    // differently per flavor (object form drops the space after the colon) — value asserted above.
+    // Each part parity's against its own style set; the panel's inline flex style serializes
+    // differently per style (object form drops the space after the colon) — value asserted above.
     assertStructuralParity(resizablePartVariants.filter((candidate) => candidate.part === "Panel"), { defaultSize: 50 }, ["style"]);
     assertStructuralParity(resizablePartVariants.filter((candidate) => candidate.part === "Handle"), { withHandle: true, disabled: true });
   });

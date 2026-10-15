@@ -100,4 +100,4 @@ const Row = () => _hellaStatic;
 
 The runtime keeps a prototype DOM subtree per static node, so every mount of the constant is a single native `cloneNode(true)` instead of re-walking construction. Repeated renders of the same site (list rows, re-mounted panels) share one object instead of allocating per call. Static children of a dynamic parent hoist individually.
 
-Because these constants are shared, mutating a returned node is unsafe: the same caveat the runtime `html`` ` template cache has always carried.
+Because these constants are shared, mutating a returned node is unsafe: every mount of the same site reuses the one object.

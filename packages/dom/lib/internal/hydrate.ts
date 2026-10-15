@@ -186,7 +186,32 @@ function adoptReactiveRegion(parent: HellaElement, child: HellaChild, anchor: No
     const actualParent = anchor.parentNode;
     if (!actualParent) return;
     try {
-      const resolved = resolveDeep(child);
+      const deep = resolveDeep(child);
+      // A getter may return an array of getters (the compiled single-child wrap of a
+      // component slot). Drill them inside the effect so their signal reads track — a
+      // stalled element would leave the region with no dependency, inert on every run.
+      // The mount-side resolveNode array branch instead builds a per-element sub-region
+      // (what keeps text-region node identity there); only the hydrate adopt drills.
+      let resolved = deep;
+      if (Array.isArray(deep)) {
+        let di = 0;
+        let drills = false;
+        const dLen = deep.length;
+        while (di < dLen) {
+          const el: unknown = deep[di++];
+          if (isFunction(el) && !(el as RenderFn).isDynamic) { drills = true; break; }
+        }
+        if (drills) {
+          const drilled = deep.slice();
+          di = 0;
+          while (di < dLen) {
+            const el: unknown = drilled[di];
+            if (isFunction(el) && !(el as RenderFn).isDynamic) drilled[di] = resolveDeep(el);
+            di++;
+          }
+          resolved = drilled;
+        }
+      }
       const isDyn = isFunction(resolved) && (resolved as RenderFn).isDynamic;
       if (firstRun && !isDyn) {
         firstRun = false;

@@ -30,7 +30,7 @@ async function openPopover(variant: (typeof popoverVariants)[number]) {
 }
 
 describe("popover", () => {
-  test.each(popoverVariants)("$format/$style opens on click with data-state and aria-expanded on the trigger", async (variant) => {
+  test.each(popoverVariants)("$style opens on click with data-state and aria-expanded on the trigger", async (variant) => {
     const { trigger, content } = await openPopover(variant);
     expect(content.getAttribute("data-state")).toBe("open");
     expect(content.textContent).toBe("Body");
@@ -39,26 +39,26 @@ describe("popover", () => {
     expect(content.getAttribute("role")).toBe("dialog");
   });
 
-  test.each(popoverVariants)("$format/$style closes on a pointerdown outside the content", async (variant) => {
+  test.each(popoverVariants)("$style closes on a pointerdown outside the content", async (variant) => {
     const { trigger, content } = await openPopover(variant);
     pointerDownOutside();
     expect(content.getAttribute("data-state")).toBe("closed");
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
   });
 
-  test.each(popoverVariants)("$format/$style closes on Escape", async (variant) => {
+  test.each(popoverVariants)("$style closes on Escape", async (variant) => {
     const { content } = await openPopover(variant);
     pressEscape();
     expect(content.getAttribute("data-state")).toBe("closed");
   });
 
-  test.each(popoverVariants)("$format/$style toggles closed when the trigger is clicked again", async (variant) => {
+  test.each(popoverVariants)("$style toggles closed when the trigger is clicked again", async (variant) => {
     const { trigger, content } = await openPopover(variant);
     trigger.dispatchEvent(new Event("click"));
     expect(content.getAttribute("data-state")).toBe("closed");
   });
 
-  test.each(popoverVariants)("$format/$style closes only the top layer of stacked popovers on Escape", async (variant) => {
+  test.each(popoverVariants)("$style closes only the top layer of stacked popovers on Escape", async (variant) => {
     const first = await openPopover(variant);
     const second = renderVariant(variant, { content: "Top" });
     second.dispatchEvent(new Event("click"));
@@ -71,7 +71,7 @@ describe("popover", () => {
     expect(first.content.getAttribute("data-state")).toBe("closed");
   });
 
-  test.each(popoverVariants)("$format/$style positions against the injected anchor rect", async (variant) => {
+  test.each(popoverVariants)("$style positions against the injected anchor rect", async (variant) => {
     const trigger = renderVariant(variant, { content: "Body" });
     pinRect(trigger, 100, 50, 200, 20);
     trigger.dispatchEvent(new Event("click"));
@@ -82,18 +82,18 @@ describe("popover", () => {
     expect(content.getAttribute("data-align")).toBe("center");
   });
 
-  test.each(popoverVariants)("$format/$style reports toggles through onOpenChange", async (variant) => {
+  test.each(popoverVariants)("$style reports toggles through onOpenChange", async (variant) => {
     const { onOpenChange } = await openPopover(variant);
     expect(onOpenChange).toHaveBeenCalledWith(true);
   });
 
-  test.each(popoverVariants)("$format/$style moves focus to the content on open", async (variant) => {
+  test.each(popoverVariants)("$style moves focus to the content on open", async (variant) => {
     const { content } = await openPopover(variant);
     expect(document.activeElement).toBe(content);
     expect(content.getAttribute("tabindex")).toBe("-1");
   });
 
-  test.each(popoverVariants)("$format/$style unmounts portal content on disposal", async (variant) => {
+  test.each(popoverVariants)("$style unmounts portal content on disposal", async (variant) => {
     const container = setupContainer();
     const handle = mount(variant.render({ content: "Body" }), container);
     const trigger = container.firstElementChild as HTMLElement;
@@ -105,7 +105,7 @@ describe("popover", () => {
     expect(trigger.isConnected).toBe(false);
   });
 
-  test.each(popoverVariants)("$format/$style reopens cleanly across open and close cycles", async (variant) => {
+  test.each(popoverVariants)("$style reopens cleanly across open and close cycles", async (variant) => {
     const trigger = renderVariant(variant, { content: "Body" });
     trigger.dispatchEvent(new Event("click"));
     const first = await awaitPortaled("popover-content");
@@ -119,7 +119,7 @@ describe("popover", () => {
     expect(second.getAttribute("data-state")).toBe("open");
   });
 
-  test.each(popoverPartVariants.filter((variant) => variant.part === "Content"))("$format/$style content part positions with sideOffset and alignOffset, takes focus, and drains its wirings on disposal", (variant) => {
+  test.each(popoverPartVariants.filter((variant) => variant.part === "Content"))("$style content part positions with sideOffset and alignOffset, takes focus, and drains its wirings on disposal", (variant) => {
     const anchor = document.createElement("button");
     document.body.appendChild(anchor);
     pinRect(anchor, 100, 50, 200, 20);
@@ -138,12 +138,12 @@ describe("popover", () => {
     expect(content.isConnected).toBe(false);
   });
 
-  test.each(popoverVariants)("$format/$style forwards user attrs onto the trigger root across all four variants", (variant) => {
+  test.each(popoverVariants)("$style forwards user attrs onto the trigger root across both styles", (variant) => {
     const trigger = renderVariant(variant, { content: "Body", "aria-label": "trigger" });
     expect(trigger.getAttribute("aria-label")).toBe("trigger");
   });
 
-  test.each(popoverVariants)("$format/$style chains a user on:click with the owned toggle across all four variants", (variant) => {
+  test.each(popoverVariants)("$style chains a user on:click with the owned toggle across both styles", (variant) => {
     const userClick = mock(() => {});
     const onOpenChange = mock<(open: boolean) => void>(() => {});
     const trigger = renderVariant(variant, { content: "Body", onOpenChange, "on:click": userClick });
@@ -152,27 +152,27 @@ describe("popover", () => {
     expect(onOpenChange).toHaveBeenCalledWith(true);
   });
 
-  test.each(popoverVariants)("$format/$style merges a user class into the trigger root's class across all four variants", (variant) => {
+  test.each(popoverVariants)("$style merges a user class into the trigger root's class across both styles", (variant) => {
     const trigger = renderVariant(variant, { content: "Body", class: "user-class" });
     expect(classTokens(trigger).at(-1)).toBe("user-class");
   });
 
-  test.each(popoverVariants)("$format/$style wires aria-controls to the generated content id", async (variant) => {
+  test.each(popoverVariants)("$style wires aria-controls to the generated content id", async (variant) => {
     const { trigger, content } = await openPopover(variant);
     expect(trigger.getAttribute("aria-controls")).toBe(content.id);
   });
 
-  test.each(popoverPartVariants.filter((variant) => variant.part === "Content"))("$format/$style content part respects a user-supplied id", (variant) => {
+  test.each(popoverPartVariants.filter((variant) => variant.part === "Content"))("$style content part respects a user-supplied id", (variant) => {
     const container = setupContainer();
     mount(variant.render({ id: "custom-popover", children: [] }), container);
     expect(container.firstElementChild!.getAttribute("id")).toBe("custom-popover");
   });
 
-  test("keeps structural parity across all four variants", () => {
+  test("keeps structural parity across both styles", () => {
     assertStructuralParity(popoverVariants, { content: "Parity" }, ["aria-controls"]);
   });
 
-  test("renders every named part with its data-slot across all four variants", () => {
+  test("renders every named part with its data-slot across both styles", () => {
     for (const variant of popoverPartVariants) {
       const container = setupContainer();
       const rendered = variant.render({ children: [] });

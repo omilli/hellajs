@@ -27,7 +27,6 @@ npx @hellajs/ui init
 {
   "componentsDir": "src/components",
   "style": "css",
-  "format": "jsx",
   "themeMode": "light",
   "lang": "ts"
 }
@@ -47,11 +46,11 @@ Css components import the theme's `tokens` map (each key evaluates to the same `
 ### Basic Usage
 
 ```bash
-# add a component using your configured style and format
+# add a component using your configured style
 npx @hellajs/ui add button
 
-# override the style and format for a single add
-npx @hellajs/ui add button --style tailwind --format html
+# override the style for a single add
+npx @hellajs/ui add button --style tailwind
 
 # list every component in the registry
 npx @hellajs/ui list
@@ -60,7 +59,7 @@ npx @hellajs/ui list
 | Flag | Applies to | Meaning |
 |---|---|---|
 | `--style css\|tailwind` | `add` | Registry style to copy. |
-| `--format jsx\|html` | `add` | Source format: `.tsx` for JSX, `*-html.ts` (copied as `<name>.ts`) for runtime `html` templates. |
+| `--lang js\|ts` | `add` | Output language: `ts` (default) copies verbatim, `js` strips types (`.tsx` becomes `.jsx`). |
 | `--theme-mode light\|dark` | `init`, `add` | Theme palette: `dark` copies the dark-only tokens sheet (css style only). |
 | `--dir <path>` | `add`, `init` | Target project root; defaults to the current directory. |
 | `--overwrite` | `add` | Replace existing files instead of skipping them. |
@@ -70,7 +69,7 @@ Copied source imports `@hellajs/core` and `@hellajs/dom` as regular packages; `a
 
 ## Components
 
-Fifty-nine components cover the full shadcn new-york-v4 catalog, chart excepted. Each is styled byte-faithfully: same structure, same variants, same class strings (tailwind flavor) or their 1:1 style-map translations (css flavor), same `@theme inline` palette, same enter/exit dialog animations. Dark mode is the `dark` class on `<html>` or any ancestor; dark-only projects copy the dark-default tokens sheet instead through `themeMode: "dark"`.
+Fifty-nine components cover the full shadcn new-york-v4 catalog, chart excepted. Each is styled byte-faithfully: same structure, same variants, same class strings (tailwind style) or their 1:1 style-map translations (css style), same `@theme inline` palette, same enter/exit dialog animations. Dark mode is the `dark` class on `<html>` or any ancestor; dark-only projects copy the dark-default tokens sheet instead through `themeMode: "dark"`.
 
 | Family | Components |
 |---|---|
@@ -90,7 +89,7 @@ Fifty-nine components cover the full shadcn new-york-v4 catalog, chart excepted.
 | Calendar | `calendar` |
 | Layout shells | `sidebar` |
 
-Each copied canonical carries marker regions the CLI splices at `add` time: exactly one `@hella:styles` (the style module's declarations land there) and one `@hella:compose` per styled part (the live class array). The markers never ship - they are consumed by the copy step. Style modules export one lowerCamel binding per styled part that carries classes (`header`, `title`, ...); a part with no classes gets no binding, and an empty-string export appears only as a css/tailwind flavor bridge (an empty binding in one flavor mirrors a live binding in the other). `variants`/`sizes` maps appear only where a component actually has them.
+Each copied canonical carries marker regions the CLI splices at `add` time: exactly one `@hella:styles` (the style module's declarations land there) and one `@hella:compose` per styled part (the live class array). The markers never ship - they are consumed by the copy step. Style modules export one lowerCamel binding per styled part that carries classes (`header`, `title`, ...); a part with no classes gets no binding, and an empty-string export appears only as a css/tailwind style bridge (an empty binding in one style mirrors a live binding in the other). `variants`/`sizes` maps appear only where a component actually has them.
 
 ## License
 

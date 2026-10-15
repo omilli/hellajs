@@ -8,12 +8,12 @@ Jump to the [Complete Code](#complete-code) for the finished application.
 
 ## What You'll Learn
 
-- **[`ssr`](/reference/ssr/ssr)**: Serialize a template to an HTML string on the server
+- **[`ssr`](/reference/ssr/ssr)**: Serialize a view tree to an HTML string on the server
 - **[`doc`](/reference/ssr/doc)**: Wrap rendered HTML into a full document with a stylesheet and script tag
 - **[`css`](/reference/css/css)**: Register styles on both platforms, collected by [`cssText`](/reference/css/csstext) for `doc()` to emit
 - **[`mount`](/reference/dom/mount)**: Mount a reactive island into an empty slot the server left open
 
-This example runs on [Node](https://nodejs.org) with [Hono](https://hono.dev): `@hono/node-server` serves the shell and esbuild bundles the client at startup: one runtime, one command, no separate build step. The [`html`](/reference/dom/html) tag parses templates at runtime, so no compile-time plugin is needed.
+This example runs on [Node](https://nodejs.org) with [Hono](https://hono.dev): `@hono/node-server` serves the shell, and an esbuild build step compiles both entries (the client for the browser, the server for node) through `babel-plugin-hellajs`, the same compile pass every HellaJS app uses to turn JSX into [`HellaNode`](/reference/dom/component) objects.
 
 ## Project Setup
 
@@ -25,12 +25,12 @@ Create a project folder and install the packages. This tutorial requires [Node](
 mkdir ssr-islands && cd ssr-islands
 npm init -y
 npm install @hellajs/core @hellajs/dom @hellajs/css @hellajs/ssr
-npm install -D hono @hono/node-server esbuild
+npm install -D hono @hono/node-server esbuild @babel/core @babel/preset-typescript babel-plugin-hellajs
 ```
 
 ### Configuration
 
-`package.json` marks the project as an ES module and adds the run scripts. esbuild handles the client bundle at server startup, so there is no `build` script and no second tool.
+`package.json` marks the project as an ES module and adds the run scripts. `dev` runs the build in watch mode (it also restarts the built server on change); `start` builds once and boots.
 
 ```json
 {
@@ -39,21 +39,102 @@ npm install -D hono @hono/node-server esbuild
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "node --watch src/server.js",
-    "start": "node src/server.js"
+    "build": "node build.mjs",
+    "dev": "node build.mjs --watch",
+    "start": "node build.mjs && node dist/server.mjs"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.28.6",
+    "@babel/preset-typescript": "^7.28.6",
+    "@hono/node-server": "^2.1.3",
+    "esbuild": "^0.28.2",
+    "hono": "^4.13.12"
   }
 }
 ```
 
-## The App Template
-
-The shared module exports two things: the page's collected styles and a static shell template (a heading plus an empty slot for the island). Both are pure data, no DOM. The server renders the template with [`ssr`](/reference/ssr/ssr) and emits the styles via [`doc`](/reference/ssr/doc); the client mounts an island into the slot by selector.
-
-Create `src/app.js`:
+JSX cannot run under raw `node`, so both entries compile up front. Create `build.mjs`:
 
 ```js
-// src/app.js
-import { html } from '@hellajs/dom';
+// build.mjs
+import { build, context } from 'esbuild';
+import { transformAsync } from '@babel/core';
+import babelPluginHellajs from 'babel-plugin-hellajs';
+import presetTypeScript from '@babel/preset-typescript';
+import { readFile } from 'node:fs/promises';
+import { spawn } from 'node:child_process';
+
+const hellajsJsx = {
+  name: 'hellajs-jsx',
+  setup(build) {
+    build.onLoad({ filter: /\.tsx$/ }, async (args) => {
+      if (args.path.includes('node_modules')) return undefined;
+      const source = await readFile(args.path, 'utf8');
+      const result = await transformAsync(source, {
+        filename: args.path,
+        plugins: [babelPluginHellajs],
+        presets: [presetTypeScript],
+        sourceType: 'module',
+        babelrc: false,
+        configFile: false,
+      });
+      return { contents: result.code, loader: 'js' };
+    });
+  },
+};
+
+const client = {
+  entryPoints: ['src/client.tsx'],
+  bundle: true,
+  format: 'esm',
+  platform: 'browser',
+  outfile: 'dist/client.js',
+  plugins: [hellajsJsx],
+};
+
+const server = {
+  entryPoints: ['src/server.tsx'],
+  bundle: true,
+  format: 'esm',
+  platform: 'node',
+  outfile: 'dist/server.mjs',
+  external: ['@hellajs/*', 'hono', '@hono/node-server'],
+  plugins: [hellajsJsx],
+};
+
+const watch = process.argv.includes('--watch');
+
+if (watch) {
+  const clientCtx = await context(client);
+  const serverCtx = await context(server);
+  await clientCtx.rebuild();
+  await serverCtx.rebuild();
+  await clientCtx.watch();
+  await serverCtx.watch();
+  spawn('node', ['--watch', 'dist/server.mjs'], { stdio: 'inherit' });
+} else {
+  // `build()` tears esbuild's service down when done; `context()` would keep
+  // the process alive for incremental rebuilds.
+  await build(client);
+  await build(server);
+}
+```
+
+**Code Explanation**
+
+- **`hellajsJsx`**: An esbuild plugin whose `onLoad` runs every `.tsx` file through [`transformAsync`](https://babel.dev/docs/babel-core) with `babel-plugin-hellajs`, the compiler that turns JSX into HellaNode objects. `@babel/preset-typescript` strips the TypeScript annotations in the same pass
+- **`client`**: Bundles `src/client.tsx` for the browser. esbuild resolves the bare `@hellajs/*` specifiers itself and inlines the runtime into `dist/client.js`
+- **`server`**: Bundles `src/server.tsx` for node (`platform: "node"`) but keeps `@hellajs/*` and hono `external`, so the built server resolves them from `node_modules` at runtime and stays current with your installed versions
+- **`--watch`**: Switches both entries to esbuild's incremental `context().watch()` and spawns `node --watch` on the built server, so a source edit rebuilds and restarts in one step
+
+## The App Template
+
+The shared module exports two things: the page's collected styles and a static shell (a heading plus an empty slot for the island). Both are pure data, no DOM. The server renders the view with [`ssr`](/reference/ssr/ssr) and emits the styles via [`doc`](/reference/ssr/doc); the client mounts an island into the slot by selector.
+
+Create `src/app.tsx`:
+
+```tsx
+// src/app.tsx
 import { css, cssText } from '@hellajs/css';
 
 // css() registers the rules on both platforms; cssText() collects the generated text
@@ -78,44 +159,42 @@ css({
 // The registered rule text, collected after the css() call above.
 export const styles = cssText();
 
-export const App = () => html`
+export const App = () => (
   <div>
     <h1>SSR Islands</h1>
     <div id="slot"></div>
   </div>
-`;
+);
 ```
 
 **Code Explanation**
 
-- **[`html`](/reference/dom/html)**: A tagged template that parses to a HellaNode AST at runtime (no build step). Interpolations become reactive bindings
-- **[`css`](/reference/css/css)`({ ... })`**: Registers the rules on both platforms (state-only on the server). [`cssText`](/reference/css/csstext)`()` collects the generated text, exported as `styles` so the server can emit it through `doc()`
 - **`<div id="slot"></div>`**: An empty placeholder. The client mounts a reactive island here
+- **[`css`](/reference/css/css)`({ ... })`**: Registers the rules on both platforms (state-only on the server). [`cssText`](/reference/css/csstext)`()` collects the generated text, exported as `styles` so the server can emit it through `doc()`
+- **`App`**: A component returning JSX. The build step compiles it to a HellaNode tree; nothing parses at runtime
 
 ## Server Rendering
 
-The server stringifies the template with [`ssr`](/reference/ssr/ssr) and wraps it into a full document with [`doc`](/reference/ssr/doc). It imports the collected `styles` from `app.js` and passes them to `doc()`'s `styles` to emit a single `<style>` tag. A [Hono](https://hono.dev) app serves the document, and esbuild bundles the client once at startup, resolving the bare `@hellajs/*` specifiers the browser can't.
+The server stringifies the view with [`ssr`](/reference/ssr/ssr) and wraps it into a full document with [`doc`](/reference/ssr/doc). It imports the collected `styles` from `app.tsx` and passes them to `doc()`'s `styles` to emit a single `<style>` tag. A [Hono](https://hono.dev) app serves the document plus the client bundle `build.mjs` emitted.
 
-Create `src/server.js`:
+Create `src/server.tsx`:
 
-```js
-// src/server.js
+```tsx
+// src/server.tsx
+import { readFileSync } from 'node:fs';
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
-import { build } from 'esbuild';
 import { ssr, doc } from '@hellajs/ssr';
 import { App, styles } from './app.js';
 
-
-// Bundle the client once at startup. esbuild resolves the bare `@hellajs/*`
-// specifiers the browser can't; the bundle is held in memory, so there is no
-// separate build step and no dist/.
-const result = await build({ entryPoints: ['src/client.js'], bundle: true, write: false, format: 'esm' });
-const client = result.outputFiles[0].text;
+// Serve the client bundle emitted by build.mjs. The server no longer bundles at
+// startup: JSX cannot run under raw `node`, so build.mjs compiles both entries
+// (client + server) before this file ever boots.
+const client = readFileSync(new URL('../dist/client.js', import.meta.url), 'utf8');
 
 const app = new Hono();
 
-// Serve the in-memory client bundle.
+// Serve the client bundle from disk.
 app.get('/client.js', (c) => c.body(client, 200, { 'content-type': 'text/javascript; charset=utf-8' }));
 
 app.get('*', (c) => c.html(doc({
@@ -124,7 +203,7 @@ app.get('*', (c) => c.html(doc({
     styles: [styles],
     scripts: [{ src: '/client.js', type: 'module' }],
   },
-  // `ssr()` walks the template to an HTML string; `doc()` wraps it into a full
+  // `ssr()` walks the view tree to an HTML string; `doc()` wraps it into a full
   // document and injects the stylesheet and the client script.
   body: ssr(App()),
 })));
@@ -134,10 +213,10 @@ serve({ fetch: app.fetch, port: 3000 });
 
 **Code Explanation**
 
-- **`import { App, styles } from './app.js'`**: Pulls the template and the collected CSS text from the shared module
-- **[`ssr`](/reference/ssr/ssr)`(App())`**: Walks the template AST to an HTML string. `App()` runs server-side; `html` parsing is DOM-free
-- **`build({ entryPoints, bundle, write: false, format: 'esm' })`**: Bundles `src/client.js` once at startup, resolving the bare specifiers. Held in memory; no `dist/` to manage. Edit the client and restart to re-bundle
-- **`app.get(path, handler)`**: Registers a Hono route. `/client.js` serves the in-memory bundle; the catch-all renders the document
+- **`import { App, styles } from './app.js'`**: Pulls the view and the collected CSS text from the shared module. esbuild resolves the `.js` specifier to `app.tsx` the same way TypeScript projects do
+- **`readFileSync(new URL('../dist/client.js', import.meta.url))`**: Loads the client bundle `build.mjs` emitted, relative to this file inside `dist/`
+- **`app.get(path, handler)`**: Registers a Hono route. `/client.js` serves the bundle from disk; the catch-all renders the document
+- **[`ssr`](/reference/ssr/ssr)`(App())`**: Walks the view tree to an HTML string. `App()` runs server-side; the compiled output is DOM-free
 - **[`serve`](https://hono.dev/docs/getting-started/nodejs)`({ fetch: app.fetch, port: 3000 })`**: Runs the Hono app on Node's HTTP server
 - **[`doc`](/reference/ssr/doc)`({ head, body })`**: Assembles a full document. `styles` joins into one `<style>` tag; `scripts` emits each tag
 
@@ -145,21 +224,23 @@ serve({ fetch: app.fetch, port: 3000 });
 
 The client mounts a reactive `Counter` island into the empty `#slot` the server left open. The island owns the count (a `<p>` bound to the signal plus an Increment button), so the server shell needs no full re-render.
 
-Create `src/client.js`:
+Create `src/client.tsx`:
 
-```js
-// src/client.js
+```tsx
+// src/client.tsx
 import { signal } from '@hellajs/core';
-import { html, mount } from '@hellajs/dom';
+import { mount } from '@hellajs/dom';
 
 const count = signal(0);
 
-const Counter = () => html`
-  <p>Count: ${count}</p>
-  <button on:click=${() => count(count() + 1)}>
-    Increment
-  </button>
-`;
+const Counter = () => (
+  <>
+    <p>Count: {count}</p>
+    <button on:click={() => count(count() + 1)}>
+      Increment
+    </button>
+  </>
+);
 
 mount(Counter, '#slot');
 ```
@@ -167,25 +248,25 @@ mount(Counter, '#slot');
 **Code Explanation**
 
 - **[`signal`](/reference/core/signal)`(0)`**: Holds the click count
-- **`<p>Count: ${count}</p>`**: A reactive text binding. Interpolating the signal creates a node that updates automatically when `count` changes
-- **`on:click=${() => count(count() + 1)}`**: Updates the signal value on click
+- **`<p>Count: {count}</p>`**: A reactive text binding. Interpolating the signal creates a node that updates automatically when `count` changes
+- **`on:click={() => count(count() + 1)}`**: Updates the signal value on click
 - **[`mount`](/reference/dom/mount)`(Counter, '#slot')`**: Renders the island into the empty slot. The server left `#slot` empty, so nothing is wiped
 
 <Callout variant="error">mount calls replaceChildren on its target: pointing it at any element the server already populated wipes that HTML. Always mount into an empty slot.</Callout>
 
 **Good:** Target the empty server slot
-```js
+```tsx
 mount(Counter, '#slot');
 ```
 
 **Bad:** Target a populated container (wipes its contents)
-```js
+```tsx
 mount(Counter, 'body'); // replaceChildren destroys the server HTML
 ```
 
 ## Run the App
 
-Start the dev server. It bundles the client at startup and serves both the rendered HTML and the client bundle.
+Start the dev build. `build.mjs` compiles both entries, watches them, and restarts the built server when a rebuild lands.
 
 ```bash
 npm run dev
@@ -210,10 +291,9 @@ The island-mount pattern (server HTML plus one reactive slot) is the baseline. T
 
 ## Complete Code
 
-### `src/app.js`
+### `src/app.tsx`
 
-```js
-import { html } from '@hellajs/dom';
+```tsx
 import { css, cssText } from '@hellajs/css';
 
 // css() registers the rules on both platforms; cssText() collects the generated text
@@ -239,34 +319,33 @@ css({
 // The registered rule text, collected after the css() call above.
 export const styles = cssText();
 
-// Shared template: a static shell with a server-rendered count and an empty
-// island slot. Pure data; no DOM. `ssr()` stringifies it to HTML on the server.
-export const App = () => html`
+// Shared view: a static shell with an empty island slot. Pure data; no DOM.
+// `ssr()` stringifies it to HTML on the server.
+export const App = () => (
   <div>
     <h1>SSR Islands</h1>
     <div id="slot"></div>
   </div>
-`;
+);
 ```
-### `src/server.js`
 
-```js
+### `src/server.tsx`
+
+```tsx
+import { readFileSync } from 'node:fs';
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
-import { build } from 'esbuild';
 import { ssr, doc } from '@hellajs/ssr';
 import { App, styles } from './app.js';
 
-
-// Bundle the client once at startup. esbuild resolves the bare `@hellajs/*`
-// specifiers the browser can't; the bundle is held in memory, so there is no
-// separate build step and no dist/.
-const result = await build({ entryPoints: ['src/client.js'], bundle: true, write: false, format: 'esm' });
-const client = result.outputFiles[0].text;
+// Serve the client bundle emitted by build.mjs. The server no longer bundles at
+// startup: JSX cannot run under raw `node`, so build.mjs compiles both entries
+// (client + server) before this file ever boots.
+const client = readFileSync(new URL('../dist/client.js', import.meta.url), 'utf8');
 
 const app = new Hono();
 
-// Serve the in-memory client bundle.
+// Serve the client bundle from disk.
 app.get('/client.js', (c) => c.body(client, 200, { 'content-type': 'text/javascript; charset=utf-8' }));
 
 app.get('*', (c) => c.html(doc({
@@ -275,30 +354,33 @@ app.get('*', (c) => c.html(doc({
     styles: [styles],
     scripts: [{ src: '/client.js', type: 'module' }],
   },
-  // `ssr()` walks the template to an HTML string; `doc()` wraps it into a full
+  // `ssr()` walks the view tree to an HTML string; `doc()` wraps it into a full
   // document and injects the stylesheet and the client script.
   body: ssr(App()),
 })));
 
 serve({ fetch: app.fetch, port: 3000 });
 ```
-### `src/client.js`
 
-```js
+### `src/client.tsx`
+
+```tsx
 import { signal } from '@hellajs/core';
-import { html, mount } from '@hellajs/dom';
+import { mount } from '@hellajs/dom';
 
 const count = signal(0);
 
 // Mount a reactive island into the empty <div id="slot"> the server left open.
 // `mount` calls `replaceChildren`, so target the empty slot; pointing it at the
 // populated shell would wipe the server-rendered HTML.
-const Counter = () => html`
-  <p>Count: ${count}</p>
-  <button on:click=${() => count(count() + 1)}>
-    Increment
-  </button>
-`;
+const Counter = () => (
+  <>
+    <p>Count: {count}</p>
+    <button on:click={() => count(count() + 1)}>
+      Increment
+    </button>
+  </>
+);
 
 mount(Counter, '#slot');
 ```

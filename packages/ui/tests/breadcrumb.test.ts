@@ -21,13 +21,13 @@ beforeEach(() => {
 /** Resolves one compiled Breadcrumb part (full export name) at the variant's flavor. */
 function part(variant: ComponentVariant<BreadcrumbVariantProps>, name: string, props: Record<string, unknown> = {}): HellaNode {
   const found = breadcrumbPartVariants.find(
-    (candidate) => candidate.part === name && candidate.style === variant.style && candidate.format === variant.format,
+    (candidate) => candidate.part === name && candidate.style === variant.style,
   )!;
   return (found.render as unknown as (bag: Record<string, unknown>) => HellaNode)(props);
 }
 
 describe("breadcrumb", () => {
-  test.each(breadcrumbVariants)("$format/$style renders the full trail structure with separators", (variant) => {
+  test.each(breadcrumbVariants)("$style renders the full trail structure with separators", (variant) => {
     const nav = renderVariant(variant, {
       children: [part(variant, "List", {
         children: [
@@ -57,7 +57,7 @@ describe("breadcrumb", () => {
     expect(links[0]!.getAttribute("href")).toBe("/");
   });
 
-  test.each(breadcrumbVariants)("$format/$style carries the page semantics on BreadcrumbPage", (variant) => {
+  test.each(breadcrumbVariants)("$style carries the page semantics on BreadcrumbPage", (variant) => {
     const container = setupContainer();
     const rendered = part(variant, "Page", { children: "Here" });
     mount(typeof rendered === "function" ? rendered : rendered, container);
@@ -68,7 +68,7 @@ describe("breadcrumb", () => {
     expect(page.textContent).toBe("Here");
   });
 
-  test.each(breadcrumbVariants)("$format/$style renders the ellipsis with its icon and sr-only label", (variant) => {
+  test.each(breadcrumbVariants)("$style renders the ellipsis with its icon and sr-only label", (variant) => {
     const container = setupContainer();
     const rendered = part(variant, "Ellipsis");
     mount(typeof rendered === "function" ? rendered : rendered, container);
@@ -81,7 +81,7 @@ describe("breadcrumb", () => {
     expect(sr.className).not.toBe("");
   });
 
-  test.each(breadcrumbVariants)("$format/$style lets custom separator children replace the chevron", (variant) => {
+  test.each(breadcrumbVariants)("$style lets custom separator children replace the chevron", (variant) => {
     const container = setupContainer();
     const rendered = part(variant, "Separator", { children: "/" });
     mount(typeof rendered === "function" ? rendered : rendered, container);
@@ -111,24 +111,24 @@ describe("breadcrumb", () => {
     expect(content.getAttribute("data-state")).toBe("open");
   });
 
-  test.each(breadcrumbVariants)("$format/$style forwards user attrs onto the nav root across all four variants", (variant) => {
+  test.each(breadcrumbVariants)("$style forwards user attrs onto the nav root across both styles", (variant) => {
     const nav = renderVariant(variant, { title: "Hella", children: [] });
     expect(nav.getAttribute("title")).toBe("Hella");
   });
 
-  test.each(breadcrumbVariants)("$format/$style fires a user on:click handler on the nav root across all four variants", (variant) => {
+  test.each(breadcrumbVariants)("$style fires a user on:click handler on the nav root across both styles", (variant) => {
     const userClick = mock(() => {});
     const nav = renderVariant(variant, { "on:click": userClick, children: [] });
     nav.dispatchEvent(new Event("click"));
     expect(userClick).toHaveBeenCalledTimes(1);
   });
 
-  test.each(breadcrumbVariants)("$format/$style merges a user class into the nav root's class across all four variants", (variant) => {
+  test.each(breadcrumbVariants)("$style merges a user class into the nav root's class across both styles", (variant) => {
     const nav = renderVariant(variant, { class: "user-class", children: [] });
     expect(classTokens(nav).at(-1)).toBe("user-class");
   });
 
-  test.each(breadcrumbPartVariants.filter((variant) => variant.part === "Link"))("$format/$style link part forwards user attrs beside href", (variant) => {
+  test.each(breadcrumbPartVariants.filter((variant) => variant.part === "Link"))("$style link part forwards user attrs beside href", (variant) => {
     const container = setupContainer();
     const rendered = variant.render({ href: "/", title: "Home", children: ["Home"] });
     mount(typeof rendered === "function" ? rendered : rendered, container);
@@ -137,11 +137,11 @@ describe("breadcrumb", () => {
     expect(link.getAttribute("title")).toBe("Home");
   });
 
-  test("keeps structural parity across all four variants", () => {
+  test("keeps structural parity across both styles", () => {
     assertStructuralParity(breadcrumbVariants, { children: "Parity" });
   });
 
-  test("renders every named part with its data-slot across all four variants", () => {
+  test("renders every named part with its data-slot across both styles", () => {
     for (const variant of breadcrumbPartVariants) {
       const container = setupContainer();
       const rendered = variant.render({ children: [] });

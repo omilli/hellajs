@@ -4,10 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "node --watch src/server.js",
-    "start": "node src/server.js"
+    "build": "node build.mjs",
+    "dev": "node build.mjs --watch",
+    "start": "node build.mjs && node dist/server.mjs"
   },
   "devDependencies": {
+    "@babel/core": "^7.28.6",
+    "@babel/preset-typescript": "^7.28.6",
     "@hono/node-server": "^2.1.3",
     "esbuild": "^0.28.2",
     "hono": "^4.13.12"

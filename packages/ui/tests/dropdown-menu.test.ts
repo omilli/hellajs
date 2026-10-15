@@ -73,7 +73,7 @@ async function openMenu(variant: ComponentVariant<DropdownMenuVariantProps>, con
 }
 
 describe("dropdown-menu", () => {
-  test.each(dropdownMenuVariants)("$format/$style opens on click with data-state and aria state on the trigger", async (variant) => {
+  test.each(dropdownMenuVariants)("$style opens on click with data-state and aria state on the trigger", async (variant) => {
     const { trigger, content } = await openMenu(variant);
     expect(content.getAttribute("data-state")).toBe("open");
     expect(content.getAttribute("role")).toBe("menu");
@@ -83,7 +83,7 @@ describe("dropdown-menu", () => {
     expect(trigger.getAttribute("aria-haspopup")).toBe("menu");
   });
 
-  test.each(dropdownMenuVariants)("$format/$style closes on Escape and restores focus to the trigger", async (variant) => {
+  test.each(dropdownMenuVariants)("$style closes on Escape and restores focus to the trigger", async (variant) => {
     const { trigger, content } = await openMenu(variant);
     pressEscape();
     expect(content.getAttribute("data-state")).toBe("closed");
@@ -91,25 +91,25 @@ describe("dropdown-menu", () => {
     expect(document.activeElement).toBe(trigger);
   });
 
-  test.each(dropdownMenuVariants)("$format/$style closes on a pointerdown outside the content", async (variant) => {
+  test.each(dropdownMenuVariants)("$style closes on a pointerdown outside the content", async (variant) => {
     const { trigger, content } = await openMenu(variant);
     pointerDownOutside();
     expect(content.getAttribute("data-state")).toBe("closed");
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
   });
 
-  test.each(dropdownMenuVariants)("$format/$style toggles closed when the trigger is clicked again", async (variant) => {
+  test.each(dropdownMenuVariants)("$style toggles closed when the trigger is clicked again", async (variant) => {
     const { trigger, content } = await openMenu(variant);
     trigger.dispatchEvent(new Event("click"));
     expect(content.getAttribute("data-state")).toBe("closed");
   });
 
-  test.each(dropdownMenuVariants)("$format/$style reports flips through onOpenChange", async (variant) => {
+  test.each(dropdownMenuVariants)("$style reports flips through onOpenChange", async (variant) => {
     const { onOpenChange } = await openMenu(variant);
     expect(onOpenChange).toHaveBeenCalledWith(true);
   });
 
-  test.each(dropdownMenuVariants)("$format/$style opens with ArrowDown on the trigger and focuses the first item", async (variant) => {
+  test.each(dropdownMenuVariants)("$style opens with ArrowDown on the trigger and focuses the first item", async (variant) => {
     const onOpenChange = mock<(open: boolean) => void>(() => {});
     const trigger = renderVariant(variant, { content: Item(variant, { children: "One" }), onOpenChange });
     pressKey(trigger, "ArrowDown");
@@ -118,7 +118,7 @@ describe("dropdown-menu", () => {
     expect(document.activeElement).toBe(content.querySelector("[role='menuitem']"));
   });
 
-  test.each(dropdownMenuVariants)("$format/$style roves arrows with wrap and jumps with Home/End", async (variant) => {
+  test.each(dropdownMenuVariants)("$style roves arrows with wrap and jumps with Home/End", async (variant) => {
     const { content } = await openMenu(variant, [
       Item(variant, { children: "Alpha" }),
       Item(variant, { children: "Beta" }),
@@ -140,7 +140,7 @@ describe("dropdown-menu", () => {
     expect(document.activeElement).toBe(items[2]!);
   });
 
-  test.each(dropdownMenuVariants)("$format/$style activates items on Enter and Space", async (variant) => {
+  test.each(dropdownMenuVariants)("$style activates items on Enter and Space", async (variant) => {
     const onclick = mock(() => {});
     const { content } = await openMenu(variant, [
       Item(variant, { children: "Alpha", "on:click": onclick }),
@@ -160,7 +160,7 @@ describe("dropdown-menu", () => {
     expect(second.content.getAttribute("data-state")).toBe("closed");
   });
 
-  test.each(dropdownMenuVariants)("$format/$style closes the menu when an item activates", async (variant) => {
+  test.each(dropdownMenuVariants)("$style closes the menu when an item activates", async (variant) => {
     const { content } = await openMenu(variant, [
       Item(variant, { children: "Alpha" }),
       Item(variant, { children: "Beta" }),
@@ -170,7 +170,7 @@ describe("dropdown-menu", () => {
     expect(content.getAttribute("data-state")).toBe("closed");
   });
 
-  test.each(dropdownMenuVariants)("$format/$style renders destructive, inset, and shortcut item states", async (variant) => {
+  test.each(dropdownMenuVariants)("$style renders destructive, inset, and shortcut item states", async (variant) => {
     const { content } = await openMenu(variant, [
       Item(variant, { children: "Delete", destructive: true, shortcut: "⌫" }),
       Item(variant, { children: "Indented", inset: true }),
@@ -186,7 +186,7 @@ describe("dropdown-menu", () => {
     expect(rename.querySelector("[data-slot='dropdown-menu-shortcut']")!.textContent).toBe("⌘R");
   });
 
-  test.each(dropdownMenuVariants)("$format/$style blocks activation on disabled items", async (variant) => {
+  test.each(dropdownMenuVariants)("$style blocks activation on disabled items", async (variant) => {
     const onclick = mock(() => {});
     const onOpenChange = mock<(open: boolean) => void>(() => {});
     const trigger = renderVariant(variant, {
@@ -203,7 +203,7 @@ describe("dropdown-menu", () => {
     expect(onOpenChange).toHaveBeenCalledTimes(1);
   });
 
-  test.each(dropdownMenuVariants)("$format/$style roving and typeahead skip disabled items", async (variant) => {
+  test.each(dropdownMenuVariants)("$style roving and typeahead skip disabled items", async (variant) => {
     const { content } = await openMenu(variant, [
       Item(variant, { children: "Alpha" }),
       Item(variant, { children: "Hidden", disabled: true }),
@@ -216,7 +216,7 @@ describe("dropdown-menu", () => {
     expect(document.activeElement).toBe(items[2]!);
   });
 
-  test.each(dropdownMenuVariants)("$format/$style focuses the first matching item on typeahead", async (variant) => {
+  test.each(dropdownMenuVariants)("$style focuses the first matching item on typeahead", async (variant) => {
     const { content } = await openMenu(variant, [
       Item(variant, { children: "Cut" }),
       Item(variant, { children: "Select All" }),
@@ -227,7 +227,7 @@ describe("dropdown-menu", () => {
     expect(document.activeElement).toBe(items[1]!);
   });
 
-  test.each(dropdownMenuVariants)("$format/$style toggles checkbox items with the check icon and closes on select", async (variant) => {
+  test.each(dropdownMenuVariants)("$style toggles checkbox items with the check icon and closes on select", async (variant) => {
     const onCheckedChange = mock<(checked: boolean) => void>(() => {});
     const CheckboxItem = menuModulePart<{ children?: HellaChildren; checked?: boolean | (() => boolean); onCheckedChange?: (checked: boolean) => void }>(
       dropdownMenuModules, variant, "DropdownMenuCheckboxItem",
@@ -244,7 +244,7 @@ describe("dropdown-menu", () => {
     expect(content.getAttribute("data-state")).toBe("closed");
   });
 
-  test.each(dropdownMenuVariants)("$format/$style radio groups single-select through the items table", async (variant) => {
+  test.each(dropdownMenuVariants)("$style radio groups single-select through the items table", async (variant) => {
     const onValueChange = mock<(value: string) => void>(() => {});
     const RadioGroup = menuModulePart<{ items?: Array<{ value: string; label?: HellaChildren }>; onValueChange?: (value: string) => void }>(
       dropdownMenuModules, variant, "DropdownMenuRadioGroup",
@@ -263,7 +263,7 @@ describe("dropdown-menu", () => {
     expect(content.getAttribute("data-state")).toBe("closed");
   });
 
-  test.each(dropdownMenuVariants)("$format/$style re-renders a signal radio items list across append, remove, and reorder", async (variant) => {
+  test.each(dropdownMenuVariants)("$style re-renders a signal radio items list across append, remove, and reorder", async (variant) => {
     const RadioGroup = menuModulePart<RadioGroupProps>(dropdownMenuModules, variant, "DropdownMenuRadioGroup");
     const liveItems = signal<MenuRadioEntryVariant[]>([{ value: "light", label: "Light" }, { value: "dark", label: "Dark" }]);
     const { content } = await openMenu(variant, RadioGroup({ items: liveItems }));
@@ -277,7 +277,7 @@ describe("dropdown-menu", () => {
     expect(values()).toEqual(["system", "light"]);
   });
 
-  test.each(dropdownMenuVariants)("$format/$style reuses the checked radio item's node through a reorder when keyBy is value", async (variant) => {
+  test.each(dropdownMenuVariants)("$style reuses the checked radio item's node through a reorder when keyBy is value", async (variant) => {
     const RadioGroup = menuModulePart<RadioGroupProps>(dropdownMenuModules, variant, "DropdownMenuRadioGroup");
     const liveItems = signal<MenuRadioEntryVariant[]>([{ value: "light", label: "Light" }, { value: "dark", label: "Dark" }]);
     const { content } = await openMenu(variant, RadioGroup({ items: liveItems, keyBy: "value", value: () => "light" }));
@@ -292,7 +292,7 @@ describe("dropdown-menu", () => {
     expect(lightAfter.getAttribute("data-state")).toBe("checked");
   });
 
-  test.each(dropdownMenuVariants)("$format/$style keeps the reconciliation key out of the markup when keyBy is value", async (variant) => {
+  test.each(dropdownMenuVariants)("$style keeps the reconciliation key out of the markup when keyBy is value", async (variant) => {
     const RadioGroup = menuModulePart<RadioGroupProps>(dropdownMenuModules, variant, "DropdownMenuRadioGroup");
     const { content } = await openMenu(variant, RadioGroup({
       items: [{ value: "light", label: "Light" }, { value: "dark", label: "Dark" }],
@@ -301,7 +301,7 @@ describe("dropdown-menu", () => {
     expect(content.outerHTML).not.toContain("key=");
   });
 
-  test.each(dropdownMenuVariants)("$format/$style opens submenus on hover after the intent delay", async (variant) => {
+  test.each(dropdownMenuVariants)("$style opens submenus on hover after the intent delay", async (variant) => {
     const { content } = await openMenu(variant, Sub(variant, {
       children: "More",
       content: Item(variant, { children: "Deep" }),
@@ -314,7 +314,7 @@ describe("dropdown-menu", () => {
     expect(subTrigger.getAttribute("aria-expanded")).toBe("true");
   });
 
-  test.each(dropdownMenuVariants)("$format/$style cancels the hover intent when the pointer leaves early", async (variant) => {
+  test.each(dropdownMenuVariants)("$style cancels the hover intent when the pointer leaves early", async (variant) => {
     const { content } = await openMenu(variant, Sub(variant, {
       children: "More",
       content: Item(variant, { children: "Deep" }),
@@ -326,7 +326,7 @@ describe("dropdown-menu", () => {
     expect(subTrigger.getAttribute("aria-expanded")).toBe("false");
   });
 
-  test.each(dropdownMenuVariants)("$format/$style enters submenus with ArrowRight and returns with ArrowLeft", async (variant) => {
+  test.each(dropdownMenuVariants)("$style enters submenus with ArrowRight and returns with ArrowLeft", async (variant) => {
     const { content } = await openMenu(variant, [
       Sub(variant, { children: "More", content: Item(variant, { children: "Deep" }) }),
       Item(variant, { children: "Plain" }),
@@ -342,7 +342,7 @@ describe("dropdown-menu", () => {
     expect(content.getAttribute("data-state")).toBe("open");
   });
 
-  test.each(dropdownMenuVariants)("$format/$style pops one level per Escape while submenus are open", async (variant) => {
+  test.each(dropdownMenuVariants)("$style pops one level per Escape while submenus are open", async (variant) => {
     const { content } = await openMenu(variant, [
       Sub(variant, { children: "More", content: Item(variant, { children: "Deep" }) }),
     ]);
@@ -356,7 +356,7 @@ describe("dropdown-menu", () => {
     expect(content.getAttribute("data-state")).toBe("closed");
   });
 
-  test.each(dropdownMenuVariants)("$format/$style closes every layer when a submenu item selects", async (variant) => {
+  test.each(dropdownMenuVariants)("$style closes every layer when a submenu item selects", async (variant) => {
     const { content, onOpenChange } = await openMenu(variant, [
       Sub(variant, { children: "More", content: Item(variant, { children: "Deep" }) }),
     ]);
@@ -370,7 +370,7 @@ describe("dropdown-menu", () => {
     expect(onOpenChange).toHaveBeenLastCalledWith(false);
   });
 
-  test.each(dropdownMenuVariants)("$format/$style keeps the submenu open when the pointer re-enters the trigger or the content", async (variant) => {
+  test.each(dropdownMenuVariants)("$style keeps the submenu open when the pointer re-enters the trigger or the content", async (variant) => {
     const { content } = await openMenu(variant, [
       Sub(variant, { children: "More", content: Item(variant, { children: "Deep" }) }),
     ]);
@@ -389,7 +389,7 @@ describe("dropdown-menu", () => {
     expect(subContent.getAttribute("data-state")).toBe("open");
   });
 
-  test.each(dropdownMenuVariants)("$format/$style unmounts the sub-content through its exit animationend", async (variant) => {
+  test.each(dropdownMenuVariants)("$style unmounts the sub-content through its exit animationend", async (variant) => {
     const { content } = await openMenu(variant, [
       Sub(variant, { children: "More", content: Item(variant, { children: "Deep" }) }),
     ]);
@@ -403,7 +403,7 @@ describe("dropdown-menu", () => {
     expect(content.getAttribute("data-state")).toBe("open");
   });
 
-  test.each(dropdownMenuVariants)("$format/$style anchors submenu content against the sub-trigger", async (variant) => {
+  test.each(dropdownMenuVariants)("$style anchors submenu content against the sub-trigger", async (variant) => {
     const { content } = await openMenu(variant, [
       Sub(variant, { children: "More", content: Item(variant, { children: "Deep" }) }),
     ]);
@@ -417,7 +417,7 @@ describe("dropdown-menu", () => {
     expect(subContent.getAttribute("data-align")).toBe("start");
   });
 
-  test.each(dropdownMenuVariants)("$format/$style positions content against the trigger rect", async (variant) => {
+  test.each(dropdownMenuVariants)("$style positions content against the trigger rect", async (variant) => {
     const onOpenChange = mock<(open: boolean) => void>(() => {});
     const trigger = renderVariant(variant, { content: Item(variant, { children: "One" }), onOpenChange });
     pinRect(trigger, 50, 100, 200, 20);
@@ -429,7 +429,7 @@ describe("dropdown-menu", () => {
     expect(content.getAttribute("data-align")).toBe("start");
   });
 
-  test.each(dropdownMenuVariants)("$format/$style respects a controlled open accessor", async (variant) => {
+  test.each(dropdownMenuVariants)("$style respects a controlled open accessor", async (variant) => {
     const open = signal(false);
     const onOpenChange = mock<(open: boolean) => void>(() => {});
     const trigger = renderVariant(variant, {
@@ -449,13 +449,13 @@ describe("dropdown-menu", () => {
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
   });
 
-  test.each(dropdownMenuVariants)("$format/$style closes under Tab", async (variant) => {
+  test.each(dropdownMenuVariants)("$style closes under Tab", async (variant) => {
     const { content } = await openMenu(variant);
     pressKey(content, "Tab");
     expect(content.getAttribute("data-state")).toBe("closed");
   });
 
-  test.each(dropdownMenuVariants)("$format/$style unmounts all layers on disposal", async (variant) => {
+  test.each(dropdownMenuVariants)("$style unmounts all layers on disposal", async (variant) => {
     const container = setupContainer();
     const handle = mount(variant.render({
       content: Sub(variant, { children: "More", content: Item(variant, { children: "Deep" }) }),
@@ -477,7 +477,7 @@ describe("dropdown-menu", () => {
     expect(content.isConnected).toBe(false);
   });
 
-  test.each(dropdownMenuVariants)("$format/$style reopens cleanly across open and close cycles", async (variant) => {
+  test.each(dropdownMenuVariants)("$style reopens cleanly across open and close cycles", async (variant) => {
     const trigger = renderVariant(variant, { content: Item(variant, { children: "One" }) });
     trigger.dispatchEvent(new Event("click"));
     const first = await awaitPortaled("dropdown-menu-content");
@@ -491,30 +491,30 @@ describe("dropdown-menu", () => {
     expect(second.getAttribute("data-state")).toBe("open");
   });
 
-  test.each(dropdownMenuVariants)("$format/$style forwards user attrs onto the trigger root across all four variants", (variant) => {
+  test.each(dropdownMenuVariants)("$style forwards user attrs onto the trigger root across both styles", (variant) => {
     const trigger = renderVariant(variant, { content: "Inspect", "aria-label": "actions" });
     expect(trigger.getAttribute("aria-label")).toBe("actions");
   });
 
-  test.each(dropdownMenuVariants)("$format/$style fires a user on:click handler on the trigger root across all four variants", (variant) => {
+  test.each(dropdownMenuVariants)("$style fires a user on:click handler on the trigger root across both styles", (variant) => {
     const userClick = mock(() => {});
     const trigger = renderVariant(variant, { content: "Inspect", "on:click": userClick });
     trigger.dispatchEvent(new Event("click"));
     expect(userClick).toHaveBeenCalledTimes(1);
   });
 
-  test.each(dropdownMenuVariants)("$format/$style merges a user class into the trigger root's class across all four variants", (variant) => {
+  test.each(dropdownMenuVariants)("$style merges a user class into the trigger root's class across both styles", (variant) => {
     const trigger = renderVariant(variant, { content: "Inspect", class: "user-class" });
     expect(classTokens(trigger).at(-1)).toBe("user-class");
   });
 
-  test.each(dropdownMenuPartVariants.filter((variant) => variant.part === "Content"))("$format/$style content part respects a user-supplied id", (variant) => {
+  test.each(dropdownMenuPartVariants.filter((variant) => variant.part === "Content"))("$style content part respects a user-supplied id", (variant) => {
     const container = setupContainer();
     mount(variant.render({ id: "custom-menu", children: [] }), container);
     expect(container.firstElementChild!.getAttribute("id")).toBe("custom-menu");
   });
 
-  test("keeps structural parity across all four variants", () => {
+  test("keeps structural parity across both styles", () => {
     assertStructuralParity(dropdownMenuVariants, { content: "Parity" }, ["aria-controls"]);
     assertStructuralParity(
       dropdownMenuPartVariants.filter((variant) => variant.part === "RadioGroup"),
@@ -522,7 +522,7 @@ describe("dropdown-menu", () => {
     );
   });
 
-  test("renders every named part with its data-slot across all four variants", () => {
+  test("renders every named part with its data-slot across both styles", () => {
     for (const variant of dropdownMenuPartVariants) {
       const container = setupContainer();
       const rendered = variant.render({ children: [] });
@@ -538,7 +538,7 @@ describe("dropdown-menu", () => {
     }
   });
 
-  test.each(dropdownMenuPartVariants.filter((variant) => variant.part === "Content"))("$format/$style content part anchors, takes focus, and drains its wirings on disposal", (variant) => {
+  test.each(dropdownMenuPartVariants.filter((variant) => variant.part === "Content"))("$style content part anchors, takes focus, and drains its wirings on disposal", (variant) => {
     const anchor = document.createElement("button");
     document.body.appendChild(anchor);
     pinRect(anchor, 100, 50, 200, 20);
@@ -556,7 +556,7 @@ describe("dropdown-menu", () => {
     expect(content.isConnected).toBe(false);
   });
 
-  test.each(dropdownMenuPartVariants.filter((variant) => variant.part === "SubTrigger"))("$format/$style sub-trigger part opens through onOpen from click and hover intent", async (variant) => {
+  test.each(dropdownMenuPartVariants.filter((variant) => variant.part === "SubTrigger"))("$style sub-trigger part opens through onOpen from click and hover intent", async (variant) => {
     const onOpen = mock(() => {});
     const container = setupContainer();
     const handle = mount(variant.render({ children: "More", onOpen }), container);

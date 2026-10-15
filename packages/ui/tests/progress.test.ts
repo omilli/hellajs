@@ -15,7 +15,7 @@ beforeEach(() => {
 });
 
 describe("progress", () => {
-  test.each(progressVariants)("$format/$style renders the progressbar role and aria values", (variant) => {
+  test.each(progressVariants)("$style renders the progressbar role and aria values", (variant) => {
     const root = renderVariant(variant, { value: 50 });
     expect(root.getAttribute("data-slot")).toBe("progress");
     expect(root.getAttribute("role")).toBe("progressbar");
@@ -26,13 +26,13 @@ describe("progress", () => {
     expect(indicator.getAttribute("aria-valuenow")).toBeNull();
   });
 
-  test.each(progressVariants)("$format/$style drives the indicator transform from the value", (variant) => {
+  test.each(progressVariants)("$style drives the indicator transform from the value", (variant) => {
     const root = renderVariant(variant, { value: 25 });
     const indicator = root.querySelector("[data-slot='progress-indicator']")!;
     expect(indicator.getAttribute("style")).toContain("translateX(-75%)");
   });
 
-  test.each(progressVariants)("$format/$style renders the indeterminate state without aria-valuenow", (variant) => {
+  test.each(progressVariants)("$style renders the indeterminate state without aria-valuenow", (variant) => {
     const root = renderVariant(variant, {});
     expect(root.getAttribute("data-state")).toBe("indeterminate");
     expect(root.hasAttribute("aria-valuenow")).toBe(false);
@@ -41,7 +41,7 @@ describe("progress", () => {
     expect(indicator.getAttribute("style")).toContain("translateX(-100%)");
   });
 
-  test.each(progressVariants)("$format/$style carries the animation class in the css flavor", (variant) => {
+  test.each(progressVariants)("$style carries the animation class in the css flavor", (variant) => {
     const root = renderVariant(variant, { value: null });
     const indicator = root.querySelector("[data-slot='progress-indicator']")!;
     const tokens = classTokens(indicator);
@@ -53,13 +53,13 @@ describe("progress", () => {
     }
   });
 
-  test.each(progressVariants)("$format/$style completes at the max value", (variant) => {
+  test.each(progressVariants)("$style completes at the max value", (variant) => {
     const root = renderVariant(variant, { value: 100 });
     expect(root.getAttribute("data-state")).toBe("complete");
     expect(root.querySelector("[data-slot='progress-indicator']")!.getAttribute("style")).toContain("translateX(-0%)");
   });
 
-  test.each(progressVariants)("$format/$style updates the width when a reactive value changes", (variant) => {
+  test.each(progressVariants)("$style updates the width when a reactive value changes", (variant) => {
     const value = signal(20);
     const root = renderVariant(variant, { value: () => value() });
     const indicator = root.querySelector("[data-slot='progress-indicator']")!;
@@ -71,7 +71,7 @@ describe("progress", () => {
     expect(indicator.getAttribute("style")).toContain("translateX(-30%)");
   });
 
-  test.each(progressVariants)("$format/$style merges props.class into the root class attribute", (variant) => {
+  test.each(progressVariants)("$style merges props.class into the root class attribute", (variant) => {
     const root = renderVariant(variant, { class: "my-progress" });
     expect(classTokens(root).at(-1)).toBe("my-progress");
     if (variant.style === "css") {
@@ -81,15 +81,15 @@ describe("progress", () => {
     }
   });
 
-  test("keeps structural parity across all four variants", () => {
+  test("keeps structural parity across both styles", () => {
     assertStructuralParity(progressVariants, { value: 50 });
   });
 
-  test("forwards user attrs onto the root across all four variants", () => {
+  test("forwards user attrs onto the root across both styles", () => {
     assertAttrForwarded(progressVariants, { title: "Hella" }, "title", "Hella");
   });
 
-  test("fires a user on:click handler across all four variants", () => {
+  test("fires a user on:click handler across both styles", () => {
     const onClick = mock(() => {});
     assertHandlerForwarded(progressVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });

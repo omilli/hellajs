@@ -1,7 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import babel from "@babel/core";
-import { processComponentAttributes } from "../src/processors/attributes.mjs";
-import { transformJSX, normalize } from "./helpers";
+import { transformJSX } from "./helpers";
 
 
 describe("babel", () => {
@@ -166,87 +164,4 @@ describe("babel", () => {
     });
   });
 
-  describe("html`` attribute processing", () => {
-    test("on: in template", () => {
-      const output = transformJSX('const node = html`<div on:click="${handler}"></div>`;');
-      expect(output).toContain("on: {");
-      expect(output).toContain("click: handler");
-    });
-
-    test("hook: in template", () => {
-      const output = transformJSX('const node = html`<div hook:mount="${callback}"></div>`;');
-      expect(output).toContain("hooks: {");
-      expect(output).toContain("mount: callback");
-    });
-
-    test("error: in template", () => {
-      const output = transformJSX('const node = html`<div error:fallback="${handleError}" error:category="modal"></div>`;');
-      expect(output).toContain("error: {");
-      expect(output).toContain("fallback: handleError");
-      expect(output).toContain('category: "modal"');
-    });
-
-    test("mixed prefixes in template", () => {
-      const output = transformJSX(`
-      const node = html\`
-        <div
-          id="test"
-          on:click="\${handler}"
-          hook:mount="\${callback}"
-        ></div>
-      \`;
-    `);
-      expect(output).toContain('id: "test"');
-      expect(output).toContain("on: {");
-      expect(output).toContain("hooks: {");
-    });
-
-    test("boolean attributes in template", () => {
-      const output = transformJSX("const node = html`<input required disabled></input>`;");
-      expect(output).toContain("required: true");
-      expect(output).toContain("disabled: true");
-    });
-
-    test("kebab-case attributes in template", () => {
-      const output = transformJSX('const node = html`<div data-value="test" aria-label="label"></div>`;');
-      expect(output).toContain('"data-value": "test"');
-      expect(output).toContain('"aria-label": "label"');
-    });
-
-    test("spread in template emits a positional spreadElement inside props", () => {
-      const output = transformJSX('const node = html`<button class="a" ...${attrs} id="b"></button>`;');
-      // Spread lands at its source position: byte-shape equivalent to the JSX
-      // flavor's `props: { ...attrs }` (statics before stay before, after stay after).
-      expect(normalize(output)).toContain('props: { class: "a", ...attrs, id: "b" }');
-
-      const spreadOnly = transformJSX("const node = html`<div ...${attrs}></div>`;");
-      expect(normalize(spreadOnly)).toContain("props: { ...attrs }");
-    });
-
-    test("component with static attribute in template", () => {
-      // Test that component attributes are processed correctly in html`` templates
-      const output = transformJSX('const node = html`<Button id="test">text</Button>`;');
-      expect(output).toContain("component(Button");
-      expect(output).toContain('id: "test"');
-    });
-
-    test("processComponentAttributes with mixed content array", () => {
-      // This tests line 90: componentNodeToBabel(t, value, expressions) when value is an array
-      // This happens when a component attribute has mixed content (text + slot markers)
-      const props = {
-        id: "test",
-        class: ["prefix-", { __slot: 0 }, "-suffix"]
-      };
-      const expressions = [babel.types.identifier("dynamicValue")];
-
-      // Mixed-content array (text + slot markers) builds a binary `+` concat.
-      // isComponent=false exercises the new element path (maybeReactive is a no-op
-      // here: dynamicValue is an identifier, not a call).
-      const result = processComponentAttributes(babel.types, props, expressions, false);
-      // The mixed content should be processed
-      expect(result.props).toHaveLength(2); // id and class
-      expect(result.props[0]?.key?.name).toBe("id");
-      expect(result.props[1]?.key?.name).toBe("class");
-    });
-  });
 });

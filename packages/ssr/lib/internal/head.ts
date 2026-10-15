@@ -1,5 +1,5 @@
 import { serializeProp, escapeHtml } from "./serialize";
-import { resolveValue, resolveAsync, isPromise, SYNC_PROMISE_WARN } from "./resolve";
+import { resolveValue, resolveAsync, resolveDeep, resolveAsyncDeep, isPromise, SYNC_PROMISE_WARN } from "./resolve";
 import type { HeadOptions, MetaTag, LinkTag } from "../types";
 import type { HellaNode } from "@hellajs/dom";
 
@@ -136,7 +136,10 @@ export function hoistHead(node: HellaNode, head: HeadOptions): boolean {
     let i = 0;
     const len = children.length;
     while (i < len) {
-      const resolved = resolveValue(children[i]!);
+      // deep-resolve: the compiled JSX wrap delivers `{signal("x")}` as `() => signal("x")` —
+      // one call surfaces the signal itself, and a stalled function would wrongly keep the
+      // tag in place; the walker's child classification uses the deep resolver too.
+      const resolved = resolveDeep(children[i]!);
       i++;
       if (resolved === null || resolved === undefined || typeof resolved === "boolean") continue;
       if (typeof resolved === "string" || typeof resolved === "number") { text += resolved; continue; }
@@ -186,7 +189,8 @@ export async function hoistHeadAsync(node: HellaNode, head: HeadOptions): Promis
     let i = 0;
     const len = children.length;
     while (i < len) {
-      const resolved = await resolveAsync(children[i]!);
+      // deep-resolve — parity with the sync hoist (see the sync loop's note)
+      const resolved = await resolveAsyncDeep(children[i]!);
       i++;
       if (resolved === null || resolved === undefined || typeof resolved === "boolean") continue;
       if (typeof resolved === "string" || typeof resolved === "number") { text += resolved; continue; }

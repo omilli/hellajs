@@ -37,14 +37,14 @@ describe("main", () => {
 
   test("init writes defaults and theme tokens, warns and keeps an existing config, and --force rewrites it", async () => {
     expect(await main(["init", "--dir", root])).toBe(0);
-    expect(readConfig(root)).toEqual({ componentsDir: "src/components", style: "css", format: "jsx", themeMode: "light", lang: "ts" });
+    expect(readConfig(root)).toEqual({ componentsDir: "src/components", style: "css", themeMode: "light", lang: "ts" });
     expect(existsSync(join(componentsDir, "tokens.ts"))).toBe(true);
     writeFileSync(join(root, "hella.ui.json"), JSON.stringify({ style: "tailwind" }));
     await main(["init", "--dir", root]);
     expect(warnings.join("\n")).toContain("[ui] initProject: hella.ui.json already exists");
-    expect(readConfig(root)).toEqual({ componentsDir: "src/components", style: "tailwind", format: "jsx", themeMode: "light", lang: "ts" });
+    expect(readConfig(root)).toEqual({ componentsDir: "src/components", style: "tailwind", themeMode: "light", lang: "ts" });
     expect(await main(["init", "--force", "--dir", root])).toBe(0);
-    expect(readConfig(root)).toEqual({ componentsDir: "src/components", style: "css", format: "jsx", themeMode: "light", lang: "ts" });
+    expect(readConfig(root)).toEqual({ componentsDir: "src/components", style: "css", themeMode: "light", lang: "ts" });
   });
 
   test("--theme-mode parses in space-value form for init and add, and a value-less flag errors", async () => {
@@ -63,13 +63,13 @@ describe("main", () => {
     expect(existsSync(join(root, "hella.ui.json"))).toBe(false);
   });
 
-  test("add dispatches html format with lang js into button.js and theme.css, and --overwrite repeats clean", async () => {
-    expect(await main(["add", "button", "--style", "tailwind", "--format", "html", "--lang", "js", "--dir", root])).toBe(0);
-    expect(existsSync(join(componentsDir, "button.js"))).toBe(true);
-    expect(existsSync(join(componentsDir, "button.ts"))).toBe(false);
+  test("add with lang js strips the canonical into button.jsx and theme.css, and --overwrite repeats clean", async () => {
+    expect(await main(["add", "button", "--style", "tailwind", "--lang", "js", "--dir", root])).toBe(0);
+    expect(existsSync(join(componentsDir, "button.jsx"))).toBe(true);
     expect(existsSync(join(componentsDir, "button.tsx"))).toBe(false);
+    expect(existsSync(join(componentsDir, "button.ts"))).toBe(false);
     expect(existsSync(join(componentsDir, "theme.css"))).toBe(true);
-    expect(await main(["add", "button", "--style", "tailwind", "--format", "html", "--lang", "js", "--overwrite", "--dir", root])).toBe(0);
+    expect(await main(["add", "button", "--style", "tailwind", "--lang", "js", "--overwrite", "--dir", root])).toBe(0);
   });
 
   test("a value-less flag rejects with the requires-a-value contract", async () => {

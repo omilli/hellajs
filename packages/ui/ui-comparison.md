@@ -10,14 +10,14 @@ A ground-up comparison based on the actual source code of `@hellajs/ui` v2. Ever
 |---|---|---|---|---|
 | Distribution model | CLI copies owned source; the package is the CLI (`lib/main.ts`) | CLI copies owned source from a registry platform | Traditional npm package, imported at runtime | CLI or docs copy of owned source |
 | Importable runtime surface | None; the copied file is the component (`lib/addComponent.ts`) | None for components; Radix primitives install as packages | The library itself is the runtime | None for components; Ark UI + Panda CSS install as packages |
-| Styling approach | Two flavors: `@hellajs/css` layered maps or plain Tailwind strings, spliced at copy time (`lib/internal/transform.ts`) | Tailwind v4 + CSS variables | Unstyled, bring your own CSS | Panda CSS recipes |
+| Styling approach | Two styles: `@hellajs/css` layered maps or plain Tailwind strings, spliced at copy time (`lib/internal/transform.ts`) | Tailwind v4 + CSS variables | Unstyled, bring your own CSS | Panda CSS recipes |
 | Behavior primitives | `hook:` wiring to `@hellajs/dom` behaviors, no querySelector (`registry/dialog/dialog.tsx`) | Radix UI or Base UI or React Aria (`--base` choice) | Its own headless primitives are the product | Ark UI (headless machines) |
-| Framework | Framework-agnostic source: JSX and runtime `html` formats (`lib/types.d.ts`) | React primary; other frameworks via ports | React only | React, Vue, Solid via Ark UI |
+| Framework | HellaJS source: one JSX canonical per component, compiled by the HellaJS babel plugin (`lib/types.d.ts`) | React primary; other frameworks via ports | React only | React, Vue, Solid via Ark UI |
 | Theming | Split theme: `tokens.ts` (css) or `theme.css` (tailwind), the css sheets plain unlayered output and the tailwind sheet's element reset in tailwind's `base` layer, plus a dark-default `tokens.dark.ts` sheet selected by `themeMode` (`registry/theme/`) | CSS variables + Tailwind theme | None (unstyled) | Panda CSS presets and themes |
 | Catalog | 59 components + theme + cn: full shadcn new-york-v4 parity minus chart (`registry/registry.json`) | 50+ components, blocks, charts | 30+ headless components | 40+ components |
 | Config file | `hella.ui.json` (`lib/internal/config.ts`) | `components.json` | none needed | `park-ui.json` |
 
-HellaJS ui applies the copy/paste distribution model to its own framework-neutral component source: the npm package contains a CLI and a registry of canonical component files, and `add` splices the chosen style flavor into the chosen markup format before writing one owned file per component. shadcn/ui is the same distribution idea at a far larger ecosystem scale (blocks, charts, theme registry, MCP integration), backed by Radix or Base UI primitives and Tailwind. Park UI is the closest styling-architecture sibling (owned source over headless machines), but couples to Panda CSS and Ark UI. Base UI is the deliberate counterpoint: nothing is copied and nothing is styled; you import headless primitives and write every style yourself.
+HellaJS ui applies the copy/paste distribution model to its own framework-neutral component source: the npm package contains a CLI and a registry of canonical component files, and `add` splices the chosen style into the canonical source before writing one owned file per component. shadcn/ui is the same distribution idea at a far larger ecosystem scale (blocks, charts, theme registry, MCP integration), backed by Radix or Base UI primitives and Tailwind. Park UI is the closest styling-architecture sibling (owned source over headless machines), but couples to Panda CSS and Ark UI. Base UI is the deliberate counterpoint: nothing is copied and nothing is styled; you import headless primitives and write every style yourself.
 
 ---
 
@@ -46,7 +46,7 @@ HellaJS ui applies the copy/paste distribution model to its own framework-neutra
 - Components distribute as source through the CLI or direct copy from the docs, the same ownership model as shadcn and HellaJS ui (`park-ui.com/docs`).
 - Every component composes Ark UI headless parts with Panda CSS recipes; the copied source depends on both runtimes, and theming flows through Panda CSS presets rather than raw CSS.
 
-**Verdict:** HellaJS ui, shadcn/ui, and Park UI share the ownership thesis (the copied file is yours), while Base UI anchors the import-and-style counterpoint that makes the trade-offs visible. HellaJS ui's differentiator inside that shared model is economy: the registry ships one canonical file per markup format plus one style module per flavor, the CLI splices them at copy time, and the result imports nothing the CLI did not copy or check. shadcn/ui and Park UI copy richer, multi-file component structures that keep depending on their primitive runtimes (Radix/Base UI/Aria and Ark UI respectively) after installation.
+**Verdict:** HellaJS ui, shadcn/ui, and Park UI share the ownership thesis (the copied file is yours), while Base UI anchors the import-and-style counterpoint that makes the trade-offs visible. HellaJS ui's differentiator inside that shared model is economy: the registry ships one canonical file per component plus one style module per style, the CLI splices them at copy time, and the result imports nothing the CLI did not copy or check. shadcn/ui and Park UI copy richer, multi-file component structures that keep depending on their primitive runtimes (Radix/Base UI/Aria and Ark UI respectively) after installation.
 
 ---
 
@@ -62,8 +62,8 @@ Dependency facts come from each package's `package.json` (HellaJS: `packages/ui/
 | Dev-only helper deps | `clsx`, `tailwind-merge` (typecheck only, never peers) | runtime deps of the copied file | n/a | n/a |
 
 - HellaJS ui's own dependency list is empty by design: `lib/` uses only node builtins, so the CLI bundles standalone (`packages/ui/AGENTS.md`, §Non-obvious). The peers exist for the copied source, and `checkPeers` names exactly the missing packages with an install hint (`lib/internal/peers.ts`).
-- The tailwind flavor's `cn.ts` imports `clsx` and `tailwind-merge` in the user's project; those two packages are devDependencies here only so the registry source typechecks with real types (`packages/ui/AGENTS.md`, §Registry gotchas).
-- All three copy/paste systems converge on the same helper stack for Tailwind projects: `clsx` plus `tailwind-merge`, wrapped in a `cn` function. HellaJS ui's css flavor needs neither, because class composition is a plain array and precedence is delegated to cascade layers.
+- The tailwind style's `cn.ts` imports `clsx` and `tailwind-merge` in the user's project; those two packages are devDependencies here only so the registry source typechecks with real types (`packages/ui/AGENTS.md`, §Registry gotchas).
+- All three copy/paste systems converge on the same helper stack for Tailwind projects: `clsx` plus `tailwind-merge`, wrapped in a `cn` function. HellaJS ui's css style needs neither, because class composition is a plain array and precedence is delegated to cascade layers.
 
 ---
 
@@ -71,10 +71,10 @@ Dependency facts come from each package's `package.json` (HellaJS: `packages/ui/
 
 ### HellaJS ui
 
-- The css flavor splices `style()` maps into the copied file; every declaration emits as a plain unlayered rule (`registry/button/button-css.ts`). Class composition is a plain array in the `class` attribute, joined by dom's renderProp.
-- The tailwind flavor inlines every string constant at its use site inside `cn(...)` and drops the declaration; only keyed variant/size maps stay at the top of the file, and the `cn` import injects (`registry/button/button-tailwind.ts`, `lib/internal/transform.ts`).
-- Theming is split by flavor: css projects get `tokens.ts`, a `vars()` sheet collected by `cssText()` for SSR that also exports its `tokens` map (camelCase keys resolving to `var(--*)` references) for the copied components to import; tailwind projects get `theme.css`, shadcn's own new-york-v4 theme (the `@theme inline` block, `:root`/`.dark` palettes, `@layer base` reset, and a `tw-animate-css` import) with zero JavaScript beyond the copied utilities. Both artifacts carry the same component-consumed token values; the css sheets register as plain unlayered `:root` CSS while the tailwind sheet's element reset sits in tailwind's `base` layer (`registry/theme/`). A `themeMode: "dark"` config (or `--theme-mode dark`) swaps the css flavor's sheet for `tokens.dark.ts`, which registers the `.dark` remap values on `:root` with no class remap - the same token names, dark by default (`registry/theme/tokens.dark.ts`).
-- Component styling is byte-faithful to shadcn's new-york-v4: the tailwind modules carry shadcn's class strings verbatim, emitted inline at each element rather than as file-level consts (full Button variant/size set, Dialog enter/exit `animate-in`/`animate-out` utilities), and the css flavor translates the same declarations 1:1 into `style()` maps with hand-rolled keyframes (`registry/button/*`, `registry/dialog/dialog-css.ts`).
+- The css style splices `style()` maps into the copied file; every declaration emits as a plain unlayered rule (`registry/button/button-css.ts`). Class composition is a plain array in the `class` attribute, joined by dom's renderProp.
+- The tailwind style inlines every string constant at its use site inside `cn(...)` and drops the declaration; only keyed variant/size maps stay at the top of the file, and the `cn` import injects (`registry/button/button-tailwind.ts`, `lib/internal/transform.ts`).
+- Theming is split by style: css projects get `tokens.ts`, a `vars()` sheet collected by `cssText()` for SSR that also exports its `tokens` map (camelCase keys resolving to `var(--*)` references) for the copied components to import; tailwind projects get `theme.css`, shadcn's own new-york-v4 theme (the `@theme inline` block, `:root`/`.dark` palettes, `@layer base` reset, and a `tw-animate-css` import) with zero JavaScript beyond the copied utilities. Both artifacts carry the same component-consumed token values; the css sheets register as plain unlayered `:root` CSS while the tailwind sheet's element reset sits in tailwind's `base` layer (`registry/theme/`). A `themeMode: "dark"` config (or `--theme-mode dark`) swaps the css style's sheet for `tokens.dark.ts`, which registers the `.dark` remap values on `:root` with no class remap - the same token names, dark by default (`registry/theme/tokens.dark.ts`).
+- Component styling is byte-faithful to shadcn's new-york-v4: the tailwind modules carry shadcn's class strings verbatim, emitted inline at each element rather than as file-level consts (full Button variant/size set, Dialog enter/exit `animate-in`/`animate-out` utilities), and the css style translates the same declarations 1:1 into `style()` maps with hand-rolled keyframes (`registry/button/*`, `registry/dialog/dialog-css.ts`).
 
 ### shadcn/ui
 
@@ -89,7 +89,7 @@ Dependency facts come from each package's `package.json` (HellaJS: `packages/ui/
 
 - Panda CSS recipes generate typed, variant-aware class strings at build time; the copied components call those recipes. Theming flows through Panda CSS presets (`@park-ui/panda-preset`), and token overrides happen in Panda configuration rather than in raw CSS.
 
-**Verdict:** HellaJS ui is the only one of the three copy/paste systems whose css flavor removes the override problem by construction: everything the registry emits sits in one cascade layer, so unlayered author CSS wins without `tailwind-merge`, `!important`, or source-order tricks. Its tailwind flavor, meanwhile, is shadcn's own look - the copied class strings, theme block, and animation utilities are shadcn's verbatim - so a tailwind project gets shadcn parity without React. shadcn/ui and Park UI still push variants through typed recipe systems (cva and Panda respectively) that are more powerful than HellaJS ui's baked maps, and both add a runtime or build-time dependency to every project. Base UI sits outside the comparison by offering no styles at all.
+**Verdict:** HellaJS ui is the only one of the three copy/paste systems whose css style removes the override problem by construction: everything the registry emits sits in one cascade layer, so unlayered author CSS wins without `tailwind-merge`, `!important`, or source-order tricks. Its tailwind style, meanwhile, is shadcn's own look - the copied class strings, theme block, and animation utilities are shadcn's verbatim - so a tailwind project gets shadcn parity without React. shadcn/ui and Park UI still push variants through typed recipe systems (cva and Panda respectively) that are more powerful than HellaJS ui's baked maps, and both add a runtime or build-time dependency to every project. Base UI sits outside the comparison by offering no styles at all.
 
 ---
 
@@ -120,12 +120,12 @@ Dependency facts come from each package's `package.json` (HellaJS: `packages/ui/
 
 ## 6. Customization Path
 
-- **HellaJS ui**: edit the copied file. The style maps live inside it, the compose array names its members explicitly, and the user's `class` lands last as its final member (`registry/button/button.tsx`). For the css flavor, retheming without editing is the ordinary cascade: later custom-property registration at equal specificity, or a more specific selector, retints the whole registry (`docs/concepts/theming.mdx`).
+- **HellaJS ui**: edit the copied file. The style maps live inside it, the compose array names its members explicitly, and the user's `class` lands last as its final member (`registry/button/button.tsx`). For the css style, retheming without editing is the ordinary cascade: later custom-property registration at equal specificity, or a more specific selector, retints the whole registry (`docs/concepts/theming.mdx`).
 - **shadcn/ui**: edit the copied wrapper, or restyle through CSS variables and `cn()` overrides; variant structure comes from the cva recipe inside the file.
 - **Base UI**: restyle from scratch; there is nothing to edit, which is the point. Customization means composing hooks and parts with your own CSS.
 - **Park UI**: edit the copied component or its recipe; theme-level changes flow through Panda presets and tokens.
 
-HellaJS ui's override contract is the strongest story for css projects: precedence between registry CSS and user CSS is decided by the cascade, not by a class-merging utility, and the same contract covers both themes and one-off tweaks (`docs/concepts/theming.mdx`). The tailwind flavor deliberately gives that power up and rejoins the `cn()` convention the rest of the Tailwind ecosystem expects.
+HellaJS ui's override contract is the strongest story for css projects: precedence between registry CSS and user CSS is decided by the cascade, not by a class-merging utility, and the same contract covers both themes and one-off tweaks (`docs/concepts/theming.mdx`). The tailwind style deliberately gives that power up and rejoins the `cn()` convention the rest of the Tailwind ecosystem expects.
 
 ---
 
@@ -137,21 +137,20 @@ HellaJS ui's override contract is the strongest story for css projects: preceden
 | Config file with defaults | `hella.ui.json` (`lib/internal/config.ts`) | `components.json` | n/a | `park-ui.json` |
 | Recursive registry dependencies | yes, with cycle guard (`lib/internal/registry.ts`) | yes (registry dependencies) | n/a | yes |
 | Peer/package check at add time | yes, names missing packages (`lib/internal/peers.ts`) | yes (installs or warns on deps) | n/a | yes |
-| Two markup formats per component | yes: jsx and runtime `html` templates (`lib/types.d.ts`) | no (React JSX) | no (React JSX) | React, Vue, Solid variants |
-| Two styling flavors per component | yes: css and tailwind, spliced per choice (`lib/internal/transform.ts`) | one styling system (Tailwind + CSS vars) | unstyled | one styling system (Panda CSS) |
+| One canonical source file per component | yes: one `.tsx` JSX file (`lib/types.d.ts`) | no (React JSX) | no (React JSX) | React, Vue, Solid variants |
+| Two styling styles per component | yes: css and tailwind, spliced per choice (`lib/internal/transform.ts`) | one styling system (Tailwind + CSS vars) | unstyled | one styling system (Panda CSS) |
 | Missing-file overwrite handling | skip with warning, or `--overwrite` (`lib/internal/copy.ts`) | `--overwrite`, `--diff` | n/a | overwrite prompts |
 | Dark mode | both palettes remap under the `.dark` class, or the dark-only `tokens.dark.ts` sheet via `themeMode: "dark"` (`registry/theme/`) | CSS variables + class strategy | bring your own | Panda theme presets |
-| SSR-friendly styling | css flavor collects through `cssText()` (`registry/theme/tokens.ts`) | Tailwind build output (static CSS) | n/a | Panda static extraction |
-| Enter/exit animations | Dialog ships both flavors: hand-rolled keyframes (css) or `tw-animate-css` utilities (tailwind) (`registry/dialog/dialog-css.ts`) | `tw-animate-css` utilities | bring your own | Panda canned animations |
+| SSR-friendly styling | css style collects through `cssText()` (`registry/theme/tokens.ts`) | Tailwind build output (static CSS) | n/a | Panda static extraction |
+| Enter/exit animations | Dialog ships both styles: hand-rolled keyframes (css) or `tw-animate-css` utilities (tailwind) (`registry/dialog/dialog-css.ts`) | `tw-animate-css` utilities | bring your own | Panda canned animations |
 | Component catalog | 59 components, new-york-v4 parity minus chart | 50+ components, blocks, charts | 30+ headless components | 40+ components |
 | Ecosystem tooling (presets, registries, MCP) | none | extensive | shadcn integration only | themes, Figma kit |
 
 ### Notable HellaJS differentiators
 
 - Unlayered registry contract: every component declaration registers without a cascade layer (`registry/button/button-css.ts`), so equal-specificity ties resolve by registration order (the registry's own `css()` overrides sit after the `style()` calls in the same module) and author stylesheets loaded after the registry theme win without class-merging utilities.
-- Zero-runtime css flavor: styles are static maps collected for SSR through `cssText()`, with no CSS-in-JS cost after hydration and no `cn` dependency (`registry/button/button-css.ts`).
-- Dual markup formats per component: the same component copies as a JSX file or a runtime `html` template file, renamed so imports resolve identically (`lib/internal/copy.ts` rename map, `lib/addComponent.ts`).
-- Style splice at copy time: one canonical source per format serves both flavors, so css and tailwind stay two splices of one truth rather than parallel trees (`lib/internal/transform.ts`).
+- Zero-runtime css style: styles are static maps collected for SSR through `cssText()`, with no CSS-in-JS cost after hydration and no `cn` dependency (`registry/button/button-css.ts`).
+- One canonical per component: a single `.tsx` JSX source serves both styles, so css and tailwind stay two splices of one truth rather than parallel trees (`lib/internal/transform.ts`, `lib/addComponent.ts`).
 - Framework peers over framework lock-in: copied source depends only on `@hellajs/*` peers the CLI checks for, never on the registry or package (`lib/internal/peers.ts`).
 
 ---
@@ -174,19 +173,19 @@ import { Button } from './components/button';
 <Button variant="outline" size="lg" class="w-full">Deploy</Button>
 ```
 
-Compared with the competitors: shadcn/ui's `add` has the same shape but richer options (`--diff`, presets, registry URLs) and a much larger catalog behind it; Park UI's CLI is equivalent for its frameworks; Base UI skips the step entirely, trading install-time ergonomics for zero ownership overhead. HellaJS ui's `--format jsx|html` switch is unique: it is the only one of the four that can hand you the same component as a runtime `html` template for projects that never touch a JSX transpiler.
+Compared with the competitors: shadcn/ui's `add` has the same shape but richer options (`--diff`, presets, registry URLs) and a much larger catalog behind it; Park UI's CLI is equivalent for its frameworks; Base UI skips the step entirely, trading install-time ergonomics for zero ownership overhead. HellaJS ui copies one JSX canonical per component; the `--lang js` strip serves JS-only toolchains, and the compile plugin the copies require is documented up front.
 
 ---
 
 ## Bottom Line
 
-HellaJS ui applies the shadcn/ui distribution model to HellaJS's framework-neutral source with an unusually small dependency footprint: one canonical file per markup format, one style module per flavor, a splice engine that makes both flavors two views of one truth, and an override contract (plain cascade precedence, no layers) that removes the class-merging machinery the Tailwind-flavored competitors treat as load-bearing. Behavior rides `hook:` attributes to `@hellajs/dom` behaviors instead of a headless component runtime, keeping the copied file self-contained.
+HellaJS ui applies the shadcn/ui distribution model to HellaJS's framework-neutral source with an unusually small dependency footprint: one canonical file per component, one style module per style, a splice engine that makes both styles two views of one truth, and an override contract (plain cascade precedence, no layers) that removes the class-merging machinery the Tailwind-styled competitors treat as load-bearing. Behavior rides `hook:` attributes to `@hellajs/dom` behaviors instead of a headless component runtime, keeping the copied file self-contained.
 
 What sets HellaJS ui apart, and no single competitor matches all of:
 
 1. **Cascade-layer override contract** (registry CSS and user CSS resolve by cascade construction, with no `tailwind-merge`, `!important`, or source-order management) (`registry/button/button-css.ts`).
-2. **Two styling flavors and two markup formats from one canonical source** (css and tailwind, JSX and runtime `html`, all spliced or copied from a single file per component) (`lib/internal/transform.ts`).
-3. **Zero package runtime** (the copied file imports only framework peers the CLI checked; the css flavor adds no runtime library at all beyond the framework itself) (`lib/internal/peers.ts`).
+2. **Two styles from one canonical source** (css and tailwind, both spliced from a single `.tsx` file per component) (`lib/internal/transform.ts`).
+3. **Zero package runtime** (the copied file imports only framework peers the CLI checked; the css style adds no runtime library at all beyond the framework itself) (`lib/internal/peers.ts`).
 4. **Behavior as owned inline wiring** (focus trap, escape, outside close, and roving tabindex are visible in the copied markup through `hook:` attributes rather than hidden inside an imported primitive) (`registry/dialog/dialog.tsx`).
 
 Its gaps are real: no chart and no blocks against shadcn's platform breadth; the accessibility guarantee surface (no scroll locking, no composite-widget machinery, no screen-reader-tested primitives) is a fraction of Radix, Base UI, or Ark UI; there is no ecosystem tooling (no preset marketplace, registry platform, MCP server, or Figma kit); and the project is new, so the "no bug reports, fix it in your codebase" ownership trade carries all of the maintenance itself. Against shadcn/ui specifically, HellaJS ui now matches the new-york-v4 component catalog (chart and blocks excepted) and competes on architecture purity and runtime economy rather than ecosystem reach.

@@ -4,7 +4,7 @@ import Callout from "@components/Callout.astro";
 
 Wraps a component function with automatic effect cleanup scope.
 
-<Callout variant="info">This is a low-level API used internally by the Babel plugin and `html` template system. You only need this when building components with raw HellaNode AST objects.</Callout>
+<Callout variant="info">This is a low-level API used internally by the Babel plugin. You only need this when building components with raw HellaNode AST objects.</Callout>
 
 ## API
 
@@ -18,7 +18,7 @@ function component(componentFn: ComponentFn, props: Record<string, unknown>): He
 
 ## Basic Usage
 
-When manually constructing component trees, wrap component calls with `component()`. You don't need `component()` if you're using JSX syntax or `html` templates; the Babel plugin and template system handle it automatically.
+When manually constructing component trees, wrap component calls with `component()`. You don't need `component()` with JSX syntax; the Babel plugin handles it automatically.
 
 ```js
 import { signal } from "@hellajs/core";
@@ -61,8 +61,6 @@ const Counter = ({ initial }: { initial: number }) => <div>Count: {initial}</div
 // Babel transforms this to component(Counter, { initial: 5 })
 <Counter initial={5} />
 ```
-
-**With html`` (automatic):** the template system wraps in `component()` automatically: `<${Counter} initial=${5} />`.
 
 **With raw AST (manual):**
 

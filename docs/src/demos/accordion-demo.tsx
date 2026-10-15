@@ -1,4 +1,4 @@
-import { ForEach, html } from "@hellajs/dom";
+import { ForEach } from "@hellajs/dom";
 import {
   Accordion,
   AccordionContent,
@@ -22,16 +22,7 @@ export function AccordionDemo() {
     },
   ];
 
-  // JSX
   return <Accordion type="single" collapsible open="shipping" items={faq} />;
-
-  // html
-  return html`<${Accordion}
-    type="single"
-    collapsible
-    open="shipping"
-    items=${faq}
-  />`;
 }
 
 export function AccordionMultipleDemo() {
@@ -48,11 +39,7 @@ export function AccordionMultipleDemo() {
     },
   ];
 
-  // JSX
   return <Accordion type="multiple" items={specs} />;
-
-  // html
-  return html`<${Accordion} type="multiple" items=${specs} />`;
 }
 
 export function AccordionDisabledDemo() {
@@ -70,11 +57,7 @@ export function AccordionDisabledDemo() {
     },
   ];
 
-  // JSX
   return <Accordion type="single" items={plans} />;
-
-  // html
-  return html`<${Accordion} type="single" items=${plans} />`;
 }
 
 export function AccordionManualDemo() {

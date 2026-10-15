@@ -9,16 +9,10 @@ interface Props {
 
 const { entry } = Astro.props;
 
-// All four variants are real `add`-output files written by `bun
+// Both variants are real `add`-output files written by `bun
 // docs-ui` — the Manual tab shows exactly what the CLI writes, as
 // real greppable files, with no ui-package import anywhere in site code.
 const cssJsx = import.meta.glob("../ui-install/css-jsx/*.tsx", {
-  query: "?raw",
-  import: "default",
-  eager: true,
-}) as Record<string, string>;
-
-const cssHtml = import.meta.glob("../ui-install/css-html/*.ts", {
   query: "?raw",
   import: "default",
   eager: true,
@@ -29,23 +23,14 @@ const tailwindJsx = import.meta.glob(
   { query: "?raw", import: "default", eager: true },
 ) as Record<string, string>;
 
-const tailwindHtml = import.meta.glob(
-  "../ui-install/tailwind-html/*.ts",
-  { query: "?raw", import: "default", eager: true },
-) as Record<string, string>;
-
 const sourceMaps: Record<string, Record<string, string>> = {
-  "css-jsx": cssJsx,
-  "css-html": cssHtml,
-  "tailwind-jsx": tailwindJsx,
-  "tailwind-html": tailwindHtml,
+  css: cssJsx,
+  tailwind: tailwindJsx,
 };
 
 const sourceKeys: Record<string, string> = {
-  "css-jsx": `../ui-install/css-jsx/${entry}.tsx`,
-  "css-html": `../ui-install/css-html/${entry}.ts`,
-  "tailwind-jsx": `../ui-install/tailwind-jsx/${entry}.tsx`,
-  "tailwind-html": `../ui-install/tailwind-html/${entry}.ts`,
+  css: `../ui-install/css-jsx/${entry}.tsx`,
+  tailwind: `../ui-install/tailwind-jsx/${entry}.tsx`,
 };
 
 // Vite normalizes glob keys relative to this file, so match by anchored
@@ -171,42 +156,18 @@ css({
           tailwind
         </button>
       </div>
-      <div class="install-picker" role="group" aria-label="Format">
-        <button
-          type="button"
-          class="install-pick is-active"
-          data-pick-format="jsx"
-        >
-          jsx
-        </button>
-        <button type="button" class="install-pick" data-pick-format="html">
-          html
-        </button>
-      </div>
     </div>
 
     <div class="install-source-frame">
-      <template data-install-template="css-jsx">
+      <template data-install-template="css">
         <div class="install-code">
-          <Code code={sources["css-jsx"]} lang="tsx" theme="github-dark" />
+          <Code code={sources["css"]} lang="tsx" theme="github-dark" />
         </div>
       </template>
 
-      <template data-install-template="css-html">
+      <template data-install-template="tailwind">
         <div class="install-code">
-          <Code code={sources["css-html"]} lang="ts" theme="github-dark" />
-        </div>
-      </template>
-
-      <template data-install-template="tailwind-jsx">
-        <div class="install-code">
-          <Code code={sources["tailwind-jsx"]} lang="tsx" theme="github-dark" />
-        </div>
-      </template>
-
-      <template data-install-template="tailwind-html">
-        <div class="install-code">
-          <Code code={sources["tailwind-html"]} lang="ts" theme="github-dark" />
+          <Code code={sources["tailwind"]} lang="tsx" theme="github-dark" />
         </div>
       </template>
 
@@ -229,21 +190,17 @@ css({
     const stylePicks = Array.from(
       section.querySelectorAll("[data-pick-style]"),
     );
-    const formatPicks = Array.from(
-      section.querySelectorAll("[data-pick-format]"),
-    );
     const liveSlot = section.querySelector("[data-install-live]");
     const copyButton = section.querySelector("[data-install-copy]");
     let style = "css";
-    let format = "jsx";
 
-    // The four variants render as inert <template>s; the live slot holds the
-    // one clone matching the picker state — three of four never enter layout.
+    // The two variants render as inert <template>s; the live slot holds the
+    // one clone matching the picker state — one of two never enters layout.
     const syncSource = () => {
       if (!liveSlot) return;
       liveSlot.replaceChildren();
       const template = section.querySelector<HTMLTemplateElement>(
-        `template[data-install-template="${style}-${format}"]`,
+        `template[data-install-template="${style}"]`,
       );
       if (template) {
         liveSlot.appendChild(template.content.cloneNode(true));
@@ -274,14 +231,6 @@ css({
       pick.addEventListener("click", () => {
         style = pick.getAttribute("data-pick-style") ?? "css";
         syncPicks(stylePicks, "data-pick-style", style);
-        syncSource();
-      });
-    });
-
-    formatPicks.forEach((pick) => {
-      pick.addEventListener("click", () => {
-        format = pick.getAttribute("data-pick-format") ?? "jsx";
-        syncPicks(formatPicks, "data-pick-format", format);
         syncSource();
       });
     });

@@ -18,8 +18,6 @@ Decision index — jump to the section for the decision you are making. This gui
 | Overloaded function? | §API Section → Overloaded Functions |
 | Callable namespace member (`ssr.async`)? | §API Section → Callable Namespaces |
 | Language tag for a code block? | §Code Examples → Language Tags |
-| Both JSX and html in one example? | §Example Syntax (JSX Default) → Never Mix in One Block |
-| Closing a dynamic component in an html block? | §Example Syntax (JSX Default) → Dynamic Component Closes |
 | Import style? | §Code Examples → Import Style |
 | Example code style (attribute values, prop types, children type, css layout)? | §Code Examples → Example Code Style |
 | Cross-reference link format? | §Cross-References |
@@ -427,7 +425,7 @@ declare namespace ssr {
 }
 
 // ✅ Call site — a real expression
-const body = await ssr.async(html`<p>Hello ${() => user(1)}</p>`);
+const body = await ssr.async(<p>Hello {() => user(1)}</p>);
 ```
 
 ```typescript
@@ -475,9 +473,9 @@ For exports with very large API surfaces (25+ options), inline TypeScript interf
 
 ### Language Tags
 
-- **Pure API code** (no JSX/html templates): `typescript`
+- **Pure API code** (no JSX, no TypeScript annotations beyond parameters): `typescript`
 - **JSX code blocks**: `jsx`
-- **html template code blocks**: `js` (html templates use tagged literals, not JSX)
+- **Plain JavaScript** (no type annotations, no JSX: config files, small call snippets): `js`
 - **CSS with JSX**: `jsx`
 - **CSS with TypeScript features**: `tsx`
 - **Config files**: file type (`js` for vite.config.js, `json` for tsconfig.json, `bash` for shell commands)
@@ -597,42 +595,7 @@ One block per doc carries `export` lines. `bun doc-snippets` concatenates a doc'
 
 ## Example Syntax (JSX Default)
 
-JSX is the only example syntax in every package, `dom` included. Write every example as JSX.
-
-The `html` tagged-literal syntax appears in docs whose subject is the `html` method itself (`packages/dom/docs/api/html.mdx`) and in recipe blocks targeting a build-free runtime: server entries pairing `router({ url })` with `ssr`, and ui concept docs' html-format usage fences (the copied `<name>.ts` is consumed from templates with no JSX build step), where no build plugin transpiles JSX. Those blocks keep the `js` language tag (§Language Tags unchanged). Mixing the two syntaxes in one fenced block stays banned (§Never Mix in One Block unchanged).
-
-### Never Mix in One Block
-
-A single fenced block never mixes the two syntaxes: no `html` tagged literal inside a `jsx`-tagged block, no JSX inside a `js`-tagged template block. The language tag promises one syntax (§Language Tags); a mixed block breaks that contract and teaches neither form in isolation.
-
-```jsx
-// ❌ jsx-tagged block carrying an html`` body — mixed syntax
-onError(() => html`<div class="error">Something went wrong</div>`);
-```
-
-```jsx
-// ✅ jsx block — JSX only
-onError(() => <div class="error">Something went wrong</div>);
-```
-
-```js
-// ✅ js block — html`` template only
-onError(() => html`<div class="error">Something went wrong</div>`);
-```
-
-### Dynamic Component Closes
-
-In an `html` tagged-literal block, close a dynamic component with the interpolated form `</${Component}>`, or self-close a childless component (`<${Component} prop=${v} />`). The bare short form `<//>` never parses as a tag — the template tokenizer matches `\w-` names only, so `//>` lands in the rendered DOM as literal text.
-
-```js
-// ❌ bare short form — `<//>` is not a tag; `//>` leaks into the DOM
-mount(html`<${Button}>Save<//>`, "#app");
-```
-
-```js
-// ✅ interpolated closer
-mount(html`<${Button}>Save</${Button}>`, "#app");
-```
+JSX is the only example syntax in every package, `dom` included. Write every example as JSX. There is no second syntax: no tagged-template fallback, no build-free-recipe exception.
 
 ## Cross-References
 
@@ -731,7 +694,7 @@ Rewrites must not change meaning, link targets, identifiers, or fenced code sema
 
 Headings at every level (`#`, `##`, `###`, `####`) must describe their specific topic. Generic labels — `Overview`, `Summary`, `Comparison`, `Implementation`, `Lifecycle`, `Details` — communicate nothing to a reader scanning the table of contents and are **banned**. Internal implementation mechanics are not documented at all — no source dumps and no internals sections. Name the subject directly or cut the content.
 
-Name the subject directly: `### JSX vs html vs Raw AST` instead of `### Comparison`; `### Connection, Disconnection, and Reconnection` instead of `### Lifecycle`.
+Name the subject directly: `### JSX vs Raw AST` instead of `### Comparison`; `### Connection, Disconnection, and Reconnection` instead of `### Lifecycle`.
 
 ## Length Targets
 
@@ -770,11 +733,10 @@ Run this when holding a Docs file (`.mdx` / `.md`). Each item is a yes/no or a c
 - [ ] Interface blocks carry no trailing member comments (doc-snippets signature-only detector; type imports from skipped signature blocks are discarded)
 
 **Code examples**
-- [ ] `typescript` for pure API; `jsx` for JSX; `js` for html templates; correct tag per §Language Tags
-- [ ] JSX is the only example syntax — `html` tagged literals appear only in `html`-method docs (`api/html.mdx`), build-free-runtime recipe blocks, or ui html-format usage fences (§Example Syntax (JSX Default)); no fenced block mixes the two; audit-enforced, deliberately outside `bun lint:structure` — the html-method boundary is judgment (§Example Syntax (JSX Default))
+- [ ] `typescript` for annotated API code; `js` for plain JavaScript; `jsx` for JSX; correct tag per §Language Tags
+- [ ] JSX is the only example syntax in every fenced block (§Example Syntax (JSX Default)); audit-enforced, deliberately outside `bun lint:structure` — example syntax is judgment
 - [ ] No upstream-catalog references (shadcn, Radix, "the ref") in component docs — provenance lives in `packages/ui/README.md` and `ui-comparison.md` (§Concept Docs → Rules)
-- [ ] `html` blocks close dynamic components with `</${Component}>` (childless: self-closing `<${Component} />`); never the `<//>` short form — audit-enforced (§Example Syntax (JSX Default) → Dynamic Component Closes)
-- [ ] Attribute values written directly, never function-wrapped — function-wrapping only in `html`-method docs; `bun lint:structure` bans function-wrapped `class`/`style`/`title`/`href`/`id` inside jsx/tsx fences (§Code Examples → Example Code Style)
+- [ ] Attribute values written directly, never function-wrapped — `bun lint:structure` bans function-wrapped `class`/`style`/`title`/`href`/`id` inside jsx/tsx fences (§Code Examples → Example Code Style)
 - [ ] Zero-arg fn/signal bindings bare (`{fn}`, `="${fn}"`) — never `{() => fn()}`; wrappers only when they consume a param, preserve a receiver, or compose; mixed-string attribute values keep call syntax (§Code Examples → Example Code Style)
 - [ ] Multi-prop component prop types extracted to a named `type` declared above the component; audit-policed — inline multi-prop types are not mechanically detectable, so `bun lint:structure` skips them (§Code Examples → Example Code Style)
 - [ ] No `unknown` annotation on any `children` prop — always `HellaChildren` from `@hellajs/dom`; enforced by `bun lint:structure` (`children??: unknown` banned) (§Code Examples → Example Code Style)

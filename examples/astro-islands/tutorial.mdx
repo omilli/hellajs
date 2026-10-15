@@ -2,7 +2,7 @@ import Callout from "@components/Callout.astro";
 
 # Build an Astro Islands App
 
-Run HellaJS components as first-class islands in an [Astro](https://astro.build) project: one page, three islands, three integration modes. A server-rendered JSX counter hydrates in place, a client-only `html` template tracks the cursor, and a `$ref` island binds reactive state to HTML that Astro itself rendered.
+Run HellaJS components as first-class islands in an [Astro](https://astro.build) project: one page, three islands, three integration modes. A server-rendered JSX counter hydrates in place, a client-only JSX island tracks the cursor, and a `$ref` island binds reactive state to HTML that Astro itself rendered.
 
 Jump to the [Complete Code](#complete-code) for the finished application.
 
@@ -10,7 +10,6 @@ Jump to the [Complete Code](#complete-code) for the finished application.
 
 - **[Astro integration](/plugins/astro)**: Register the renderer and reach HellaJS components from `.astro` pages with `client:*` directives
 - **[`hydrate`](/reference/dom/hydrate)**: Adopt server-rendered HTML in place on the client
-- **[`html`](/reference/dom/html)**: Build client-only islands from tagged templates in plain `.ts` files
 - **[`$ref`](/reference/dom/$ref)**: Bind reactive state to DOM nodes Astro rendered outside any island
 - **[`style`](/reference/css/style)**: Declare scoped, content-hashed island classes right next to the markup that uses them
 - **[Frontmatter styles](/plugins/astro)**: Fold page-level [`css`](/reference/css/css) calls at build into page-scoped CSS that Astro delivers itself
@@ -31,7 +30,7 @@ npm install astro astro-plugin-hellajs @hellajs/core @hellajs/dom @hellajs/css
 
 ### Configuration
 
-`astro.config.mjs` registers the integration. It wires the HellaJS Vite plugin (JSX and `html` templates compile to HellaNode objects) and adds a framework renderer named `astro-hellajs`.
+`astro.config.mjs` registers the integration. It wires the HellaJS Vite plugin (JSX compiles to HellaNode objects) and adds a framework renderer named `astro-hellajs`.
 
 ```js
 // astro.config.mjs
@@ -144,17 +143,16 @@ npm run dev
 
 The app serves at `http://localhost:4321`. View the page source: the button arrives with its initial label already inside it, wrapped in `<!--[-->` markers within an `<astro-island>` element.
 
-## Client-Only Island with `html`
+## Client-Only Island
 
 Cursor tracking has nothing worth server-rendering: the coordinates start at zero and only matter once a mouse is present. Mount the next island with `client:only="astro-hellajs"` and it never runs on the server: Astro emits an empty island, and `hydrate` renders fresh into it on the client.
 
-Create `src/components/MouseTracker.ts`. Note the `.ts` extension: the Vite plugin transforms plain TypeScript files too, so `html` templates work without JSX.
+Create `src/components/MouseTracker.tsx`:
 
-```ts
-// src/components/MouseTracker.ts
+```tsx
+// src/components/MouseTracker.tsx
 import { signal } from "@hellajs/core";
 import { style } from "@hellajs/css";
-import { html } from "@hellajs/dom";
 
 export const tracker = style({
   marginTop: "1rem",
@@ -170,14 +168,14 @@ export default function MouseTracker() {
   const pointerX = signal(0);
   const pointerY = signal(0);
 
-  return html`
-    <div class=${tracker} on:mousemove=${(event: MouseEvent) => {
+  return (
+    <div class={tracker} on:mousemove={(event: MouseEvent) => {
       pointerX(event.clientX);
       pointerY(event.clientY);
     }}>
-      Move your cursor here. Pointer: ${pointerX}, ${pointerY}
+      Move your cursor here. Pointer: {pointerX}, {pointerY}
     </div>
-  `;
+  );
 }
 ```
 
@@ -186,20 +184,19 @@ Add the import and the island to `src/pages/index.astro`:
 ```astro
 ---
 //... existing imports
-import MouseTracker from '../components/MouseTracker.ts';
+import MouseTracker from '../components/MouseTracker';
 ---
 <!-- ... -->
-<!-- Island 2: client-only html template, rendered fresh on the client -->
+<!-- Island 2: client-only JSX island, rendered fresh on the client -->
 <MouseTracker client:only="astro-hellajs" />
 ```
 
 **Code Explanation**
 
-- **[`html`](/reference/dom/html)**: Tagged template parsed into a HellaNode tree. Interpolations become reactive bindings
-- **`${pointerX}, ${pointerY}`**: Interpolating the signals themselves (not calling them) creates live text bindings that update as the cursor moves
-- **`on:mousemove`**: The same event prefix as JSX, usable inside `html` templates
+- **`{pointerX}, {pointerY}`**: Interpolating the signals themselves (not calling them) creates live text bindings that update as the cursor moves
+- **`on:mousemove`**: The HellaJS event prefix. Handlers attach through global event delegation after hydration
 - **`client:only="astro-hellajs"`**: Skips the server entirely. The value is the renderer name registered by the integration; Astro requires it because it cannot detect which framework a `client:only` component belongs to
-- **`tracker`**: The island's own class, declared the same way as the counter's and applied to the box through `class=${tracker}`
+- **`tracker`**: The island's own class, declared the same way as the counter's and applied to the box through `class={tracker}`
 
 ## Binding Astro's HTML with `$ref`
 
@@ -208,7 +205,7 @@ The third mode needs no island markup of its own: `$ref` reaches into HTML that 
 ```astro
 ---
 //... existing imports
-import NameSync from '../components/NameSync.ts';
+import NameSync from '../components/NameSync';
 ---
 <!-- ... -->
 <!-- Plain Astro-rendered HTML that island 3 binds to from the outside -->
@@ -220,13 +217,13 @@ import NameSync from '../components/NameSync.ts';
 <NameSync client:only="astro-hellajs" />
 ```
 
-Create `src/components/NameSync.ts`:
+Create `src/components/NameSync.tsx`:
 
-```ts
-// src/components/NameSync.ts
+```tsx
+// src/components/NameSync.tsx
 import { signal } from "@hellajs/core";
 import { style } from "@hellajs/css";
-import { $ref, html } from "@hellajs/dom";
+import { $ref } from "@hellajs/dom";
 
 export const note = style({
   color: "#6b7280",
@@ -243,9 +240,7 @@ export default function NameSync() {
   });
   $ref("#greeting").bind(() => `Hello, ${name()}!`);
 
-  return html`
-    <p class=${note}>Typing in the input above updates the greeting through a $ref binding.</p>
-  `;
+  return <p class={note}>Typing in the input above updates the greeting through a $ref binding.</p>;
 }
 ```
 
@@ -254,7 +249,7 @@ export default function NameSync() {
 - **[`$ref`](/reference/dom/$ref)`("#name-input")`**: Queries `document` at call time and wraps the first match in a chainable reference
 - **`.on("input", ...)`**: Attaches a delegated listener. Every keystroke writes the field's value into the `name` signal
 - **`.bind(() => ...)`**: Binds a reactive function to the element's text. The greeting updates whenever `name` changes
-- **The returned `html` node**: Gives the island a small visible root; the real work happens through the two `$ref` bindings
+- **The returned JSX root**: Gives the island a small visible root; the real work happens through the two `$ref` bindings
 - **`note`**: The island's own class, declared inline like the others and applied to the returned paragraph
 
 <Callout variant="error">$ref queries document at call time. It throws on the server (no document exists), so keep $ref calls in client:only islands or client scripts. A client:load component body executes during server rendering, which is why NameSync is client:only.</Callout>
@@ -380,7 +375,7 @@ css({
     <!-- Island 1: server-rendered JSX, adopted in place by hydrate() -->
     <Counter client:load initial={0} />
 
-    <!-- Island 2: client-only html template, rendered fresh on the client -->
+    <!-- Island 2: client-only JSX island, rendered fresh on the client -->
     <MouseTracker client:only="astro-hellajs" />
 
     <!-- Plain Astro-rendered HTML that island 3 binds to from the outside -->
@@ -418,13 +413,12 @@ export default function Counter({ initial = 0 }: { initial?: number }) {
 }
 ```
 
-### `src/components/MouseTracker.ts`
+### `src/components/MouseTracker.tsx`
 
-```ts
-// src/components/MouseTracker.ts
+```tsx
+// src/components/MouseTracker.tsx
 import { signal } from "@hellajs/core";
 import { style } from "@hellajs/css";
-import { html } from "@hellajs/dom";
 
 export const tracker = style({
   marginTop: "1rem",
@@ -440,24 +434,24 @@ export default function MouseTracker() {
   const pointerX = signal(0);
   const pointerY = signal(0);
 
-  return html`
-    <div class=${tracker} on:mousemove=${(event: MouseEvent) => {
+  return (
+    <div class={tracker} on:mousemove={(event: MouseEvent) => {
       pointerX(event.clientX);
       pointerY(event.clientY);
     }}>
-      Move your cursor here. Pointer: ${pointerX}, ${pointerY}
+      Move your cursor here. Pointer: {pointerX}, {pointerY}
     </div>
-  `;
+  );
 }
 ```
 
-### `src/components/NameSync.ts`
+### `src/components/NameSync.tsx`
 
-```ts
-// src/components/NameSync.ts
+```tsx
+// src/components/NameSync.tsx
 import { signal } from "@hellajs/core";
 import { style } from "@hellajs/css";
-import { $ref, html } from "@hellajs/dom";
+import { $ref } from "@hellajs/dom";
 
 export const note = style({
   color: "#6b7280",
@@ -474,8 +468,6 @@ export default function NameSync() {
   });
   $ref("#greeting").bind(() => `Hello, ${name()}!`);
 
-  return html`
-    <p class=${note}>Typing in the input above updates the greeting through a $ref binding.</p>
-  `;
+  return <p class={note}>Typing in the input above updates the greeting through a $ref binding.</p>;
 }
 ```

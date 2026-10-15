@@ -24,7 +24,7 @@ beforeEach(() => {
 });
 
 describe("alert", () => {
-  test.each(alertVariants)("$format/$style renders the alert root with role and class merge", (variant) => {
+  test.each(alertVariants)("$style renders the alert root with role and class merge", (variant) => {
     const alert = renderVariant(variant, { children: variant.child("Heads up"), class: "my-alert" });
     expect(alert.tagName).toBe("DIV");
     expect(alert.getAttribute("data-slot")).toBe("alert");
@@ -40,7 +40,7 @@ describe("alert", () => {
     }
   });
 
-  test.each(alertVariants)("$format/$style renders the destructive variant's token set", (variant) => {
+  test.each(alertVariants)("$style renders the destructive variant's token set", (variant) => {
     const alert = renderVariant(variant, { children: variant.child("Error"), variant: "destructive" });
     const tokens = classTokens(alert);
     if (variant.style === "css") {
@@ -50,13 +50,13 @@ describe("alert", () => {
     }
   });
 
-  test.each(alertVariants)("$format/$style renders children directly with no inner wrapper", (variant) => {
+  test.each(alertVariants)("$style renders children directly with no inner wrapper", (variant) => {
     const alert = renderVariant(variant, { children: variant.child("Heads up") });
     expect(alert.textContent).toBe("Heads up");
     expect(alert.children).toHaveLength(0);
   });
 
-  test.each(alertPartVariants)("$format/$style $part renders with its data-slot and classes", (variant) => {
+  test.each(alertPartVariants)("$style $part renders with its data-slot and classes", (variant) => {
     const el = renderVariant(variant, { children: [], class: "my-part" });
     expect(el.getAttribute("data-slot")).toBe(`alert-${variant.part.toLowerCase()}`);
     const tokens = classTokens(el);
@@ -69,20 +69,20 @@ describe("alert", () => {
     }
   });
 
-  test("keeps structural parity across all four variants", () => {
+  test("keeps structural parity across both styles", () => {
     assertStructuralParity(alertVariants);
   });
 
-  test("forwards user attrs onto the root across all four variants", () => {
+  test("forwards user attrs onto the root across both styles", () => {
     assertAttrForwarded(alertVariants, { title: "Hella" }, "title", "Hella");
   });
 
-  test("fires a user on:click handler across all four variants", () => {
+  test("fires a user on:click handler across both styles", () => {
     const onClick = mock(() => {});
     assertHandlerForwarded(alertVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 
-  test("keeps structural parity for every part across all four variants", () => {
+  test("keeps structural parity for every part across both styles", () => {
     for (const part of ["Title", "Description"]) {
       const suites = alertPartVariants.filter((variant) => variant.part === part);
       assertStructuralParity(suites, { children: [] });

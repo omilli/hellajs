@@ -60,13 +60,13 @@ function dragThumb(thumb: HTMLElement, deltas: { dx?: number; dy?: number }[]): 
   thumb.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, cancelable: true }));
 }
 
-/** The ScrollBar variant compiled from the same style × format module as the given ScrollArea variant. */
-function pairedBar(variant: { style: string; format: string }) {
-  return scrollBarVariants.find((bar) => bar.style === variant.style && bar.format === variant.format)!;
+/** The ScrollBar variant compiled from the same style's module as the given ScrollArea variant. */
+function pairedBar(variant: { style: string }) {
+  return scrollBarVariants.find((bar) => bar.style === variant.style)!;
 }
 
 describe("scroll-area", () => {
-  test.each(scrollAreaVariants)("$format/$style renders the viewport, children, default vertical bar, and corner", (variant) => {
+  test.each(scrollAreaVariants)("$style renders the viewport, children, default vertical bar, and corner", (variant) => {
     const root = renderVariant(variant, { children: ["Content"] }) as HTMLElement;
     expect(root.getAttribute("data-slot")).toBe("scroll-area");
     const view = root.querySelector("[data-slot='scroll-area-viewport']") as HTMLElement;
@@ -87,7 +87,7 @@ describe("scroll-area", () => {
     }
   });
 
-  test.each(scrollAreaVariants)("$format/$style sizes the thumb to the content-to-viewport ratio", async (variant) => {
+  test.each(scrollAreaVariants)("$style sizes the thumb to the content-to-viewport ratio", async (variant) => {
     const root = renderVariant(variant, { children: ["Content"] }) as HTMLElement;
     const bar = root.querySelector("[data-slot='scroll-area-scrollbar']") as HTMLElement;
     await awaitWiring(bar);
@@ -101,7 +101,7 @@ describe("scroll-area", () => {
     expect(inlineStyles(thumb)).toContain("transform:translateY(0px)");
   });
 
-  test.each(scrollAreaVariants)("$format/$style clamps the thumb to the 20px minimum on very long content", async (variant) => {
+  test.each(scrollAreaVariants)("$style clamps the thumb to the 20px minimum on very long content", async (variant) => {
     const root = renderVariant(variant, { children: ["Content"] }) as HTMLElement;
     const bar = root.querySelector("[data-slot='scroll-area-scrollbar']") as HTMLElement;
     await awaitWiring(bar);
@@ -114,7 +114,7 @@ describe("scroll-area", () => {
     expect(inlineStyles(thumb)).toContain("height:20px");
   });
 
-  test.each(scrollAreaVariants)("$format/$style positions the thumb at the scroll fraction", async (variant) => {
+  test.each(scrollAreaVariants)("$style positions the thumb at the scroll fraction", async (variant) => {
     const root = renderVariant(variant, { children: ["Content"] }) as HTMLElement;
     const bar = root.querySelector("[data-slot='scroll-area-scrollbar']") as HTMLElement;
     await awaitWiring(bar);
@@ -127,7 +127,7 @@ describe("scroll-area", () => {
     expect(inlineStyles(thumb)).toContain("transform:translateY(25px)");
   });
 
-  test.each(scrollAreaVariants)("$format/$style maps thumb drags to viewport scrollTop through the track span", async (variant) => {
+  test.each(scrollAreaVariants)("$style maps thumb drags to viewport scrollTop through the track span", async (variant) => {
     const root = renderVariant(variant, { children: ["Content"] }) as HTMLElement;
     const bar = root.querySelector("[data-slot='scroll-area-scrollbar']") as HTMLElement;
     await awaitWiring(bar);
@@ -141,7 +141,7 @@ describe("scroll-area", () => {
     expect(view.scrollTop).toBe(200);
   });
 
-  test.each(scrollAreaVariants)("$format/$style mirrors the thumb math and drag mapping on the horizontal axis", async (variant) => {
+  test.each(scrollAreaVariants)("$style mirrors the thumb math and drag mapping on the horizontal axis", async (variant) => {
     const barNode = pairedBar(variant).render({ orientation: "horizontal" });
     const root = renderVariant(variant, { children: [barNode, "Content"] }) as HTMLElement;
     const horizontalBar = root.querySelector("[data-slot='scroll-area-scrollbar'][data-orientation='horizontal']") as HTMLElement;
@@ -160,7 +160,7 @@ describe("scroll-area", () => {
     expect(view.scrollLeft).toBe(200);
   });
 
-  test.each(scrollAreaVariants)("$format/$style keeps vertical and horizontal thumbs measuring their own axes", async (variant) => {
+  test.each(scrollAreaVariants)("$style keeps vertical and horizontal thumbs measuring their own axes", async (variant) => {
     const barNode = pairedBar(variant).render({ orientation: "horizontal" });
     const root = renderVariant(variant, { children: [barNode, "Content"] }) as HTMLElement;
     await awaitWiring(root.querySelector("[data-slot='scroll-area-scrollbar'][data-orientation='vertical']")!);
@@ -177,7 +177,7 @@ describe("scroll-area", () => {
     expect(root.querySelectorAll("[data-slot='scroll-area-corner']").length).toBe(1);
   });
 
-  test.each(scrollAreaVariants)("$format/$style re-measures the thumb when content grows through the injected watcher", async (variant) => {
+  test.each(scrollAreaVariants)("$style re-measures the thumb when content grows through the injected watcher", async (variant) => {
     let grow: (() => void) | undefined;
     const observe: ScrollerObserve = (_target, onGrow) => {
       grow = onGrow;
@@ -199,7 +199,7 @@ describe("scroll-area", () => {
     expect(inlineStyles(thumb)).toContain("height:25px");
   });
 
-  test.each(scrollAreaVariants)("$format/$style disposes the scroll, drag, and watcher wiring when the root unmounts", async (variant) => {
+  test.each(scrollAreaVariants)("$style disposes the scroll, drag, and watcher wiring when the root unmounts", async (variant) => {
     const dispose = mock(() => {});
     const observe: ScrollerObserve = () => dispose;
     const root = renderVariant(variant, { children: ["Content"], observe }) as HTMLElement;
@@ -225,16 +225,16 @@ describe("scroll-area", () => {
     expect(view.scrollTop).toBe(0);
   });
 
-  test("forwards user attrs onto the root across all four variants", () => {
+  test("forwards user attrs onto the root across both styles", () => {
     assertAttrForwarded(scrollAreaVariants, { title: "Hella" }, "title", "Hella");
   });
 
-  test("fires a user on:click handler on the root across all four variants", () => {
+  test("fires a user on:click handler on the root across both styles", () => {
     const onClick = mock(() => {});
     assertHandlerForwarded(scrollAreaVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 
-  test("keeps structural parity across all four variants", () => {
+  test("keeps structural parity across both styles", () => {
     assertStructuralParity(scrollAreaVariants, { children: ["Content"] });
     assertStructuralParity(scrollBarVariants, {});
     assertStructuralParity(scrollBarVariants, { orientation: "horizontal" });

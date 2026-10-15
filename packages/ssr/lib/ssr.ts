@@ -72,6 +72,8 @@ function walkChild(child: HellaChild, options?: SsrOptions): string {
         body = meta ? renderDynamic(meta, options) : "";
       } else if (Array.isArray(resolved)) {
         body = walkChildren(resolved, options);                                 // reactive getter returning an array of children — walk each (parity with dom resolveNode)
+      } else if (resolved !== null && typeof resolved === "object" && "raw" in resolved) {
+        body = (resolved as { raw: string }).raw;                              // reactive getter resolving to a raw region — verbatim inside the open region
       } else if (resolved !== null && typeof resolved === "object" && (resolved as HellaNode).tag !== undefined) {
         body = ssr(resolved as HellaNode, options);
       } else {

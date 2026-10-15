@@ -34,7 +34,7 @@ css({
     <!-- Island 1: server-rendered JSX, adopted in place by hydrate() -->
     <Counter client:load initial={0} />
 
-    <!-- Island 2: client-only html template, rendered fresh on the client -->
+    <!-- Island 2: client-only JSX island, rendered fresh on the client -->
     <MouseTracker client:only="astro-hellajs" />
 
     <!-- Plain Astro-rendered HTML that island 3 binds to from the outside -->

@@ -18,7 +18,7 @@ beforeEach(() => {
 });
 
 describe("separator", () => {
-  test.each(separatorVariants)("$format/$style renders the horizontal default with separator semantics", (variant) => {
+  test.each(separatorVariants)("$style renders the horizontal default with separator semantics", (variant) => {
     const separator = renderVariant(variant, { children: variant.child(""), class: "my-sep" });
     expect(separator.tagName).toBe("DIV");
     expect(separator.getAttribute("data-slot")).toBe("separator");
@@ -35,7 +35,7 @@ describe("separator", () => {
     }
   });
 
-  test.each(separatorVariants)("$format/$style reflects the vertical orientation on both data attributes", (variant) => {
+  test.each(separatorVariants)("$style reflects the vertical orientation on both data attributes", (variant) => {
     const separator = renderVariant(variant, { children: variant.child(""), orientation: "vertical" });
     expect(separator.getAttribute("data-orientation")).toBe("vertical");
     expect(separator.getAttribute("aria-orientation")).toBe("vertical");
@@ -45,19 +45,19 @@ describe("separator", () => {
     }
   });
 
-  test("keeps structural parity across all four variants", () => {
+  test("keeps structural parity across both styles", () => {
     assertStructuralParity(separatorVariants);
   });
 
-  test("keeps structural parity for the vertical orientation across all four variants", () => {
+  test("keeps structural parity for the vertical orientation across both styles", () => {
     assertStructuralParity(separatorVariants, { orientation: "vertical" } as SeparatorVariantProps);
   });
 
-  test("forwards user attrs onto the root across all four variants", () => {
+  test("forwards user attrs onto the root across both styles", () => {
     assertAttrForwarded(separatorVariants, { title: "Hella" }, "title", "Hella");
   });
 
-  test("fires a user on:click handler across all four variants", () => {
+  test("fires a user on:click handler across both styles", () => {
     const onClick = mock(() => {});
     assertHandlerForwarded(separatorVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });

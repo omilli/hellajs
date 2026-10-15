@@ -21,7 +21,7 @@ beforeEach(() => {
 });
 
 describe("badge", () => {
-  test.each(badgeVariants)("$format/$style renders the span root with its data-slot and class merge", (variant) => {
+  test.each(badgeVariants)("$style renders the span root with its data-slot and class merge", (variant) => {
     const badge = renderVariant(variant, { children: variant.child("New"), class: "my-badge" });
     expect(badge.tagName).toBe("SPAN");
     expect(badge.getAttribute("data-slot")).toBe("badge");
@@ -37,7 +37,7 @@ describe("badge", () => {
     }
   });
 
-  test.each(badgeVariants)("$format/$style renders every variant's token set and data-variant", (variant) => {
+  test.each(badgeVariants)("$style renders every variant's token set and data-variant", (variant) => {
     for (const [name, tokens] of Object.entries(VARIANT_TOKENS)) {
       const badge = renderVariant(variant, { children: variant.child("X"), variant: name as BadgeVariantProps["variant"] });
       expect(badge.getAttribute("data-variant")).toBe(name);
@@ -50,21 +50,21 @@ describe("badge", () => {
     }
   });
 
-  test.each(badgeVariants)("$format/$style renders aria-invalid from the kebab attribute", (variant) => {
+  test.each(badgeVariants)("$style renders aria-invalid from the kebab attribute", (variant) => {
     const badge = renderVariant(variant, { children: variant.child("X"), "aria-invalid": "true" });
     expect(badge.getAttribute("aria-invalid")).toBe("true");
   });
 
-  test("forwards user attrs onto the root across all four variants", () => {
+  test("forwards user attrs onto the root across both styles", () => {
     assertAttrForwarded(badgeVariants, { title: "Hella" }, "title", "Hella");
   });
 
-  test("fires a user on:click handler across all four variants", () => {
+  test("fires a user on:click handler across both styles", () => {
     const onClick = mock(() => {});
     assertHandlerForwarded(badgeVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 
-  test("keeps structural parity across all four variants", () => {
+  test("keeps structural parity across both styles", () => {
     assertStructuralParity(badgeVariants);
   });
 });

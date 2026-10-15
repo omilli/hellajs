@@ -1,9 +1,6 @@
 /** Registry style copied on `add`: `css` composes through `@hellajs/css` scoped classes, `tailwind` through the shared `cn` helper. */
 export type UiStyle = "css" | "tailwind";
 
-/** Source format copied on `add`: `.tsx` for JSX, `*-html.ts` for runtime `html` templates. */
-export type UiFormat = "jsx" | "html";
-
 /** Output language copied on `add`: `ts` copies TypeScript source verbatim, `js` strips types at copy time for plain JavaScript. */
 export type UiLang = "js" | "ts";
 
@@ -15,8 +12,6 @@ export interface UiConfig {
   componentsDir: string;
   /** Registry style copied on `add` when the command passes none. Default "css". */
   style: UiStyle;
-  /** Source format copied on `add` when the command passes none. Default "jsx". */
-  format: UiFormat;
   /** Theme palette copied for the theme entry. Default "light". */
   themeMode: UiThemeMode;
   /** Output language copied on `add` when the command passes none. Default "ts". */
@@ -30,8 +25,6 @@ export interface AddOptions {
   overwrite?: boolean;
   /** Registry style; overrides hella.ui.json. */
   style?: UiStyle;
-  /** Source format; overrides hella.ui.json. */
-  format?: UiFormat;
   /** Theme palette for the theme entry; overrides hella.ui.json. */
   themeMode?: UiThemeMode;
   /** Output language; overrides hella.ui.json. */

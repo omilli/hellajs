@@ -23,9 +23,9 @@ function typesModuleOf(entryName: string, entry: RegistryEntry): string | undefi
   return (entry.files ?? []).length > 0 ? `${entryName}-types.ts` : undefined;
 }
 
-/** A component entry's canonical files: the copied jsx/html sources. */
+/** A component entry's canonical files: the copied JSX source. */
 function canonicalsOf(entry: RegistryEntry): string[] {
-  return (entry.files ?? []).filter((file) => file.endsWith(".tsx") || file.endsWith("-html.ts"));
+  return (entry.files ?? []).filter((file) => file.endsWith(".tsx"));
 }
 
 /** Files on disk as `[entryName, fileName]` pairs; registry.json excluded. */
@@ -271,7 +271,7 @@ describe("registry", () => {
 
   const sweepCases = Object.entries(manifest.entries).flatMap(([entryName, entry]) =>
     (entry.files ?? [])
-      .filter((file) => file.endsWith(".tsx") || file.endsWith("-html.ts"))
+      .filter((file) => file.endsWith(".tsx"))
       .map((file) => [`${entryName}/${file}`, entryName, file] as const));
 
   test.each(sweepCases)("%s tailwind add output inlines every string constant", (_label, entryName, file) => {

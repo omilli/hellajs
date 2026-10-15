@@ -8,6 +8,17 @@ description: Test patterns for HellaJS applications covering cleanup, lifecycle 
 
 Common test patterns for applications built with HellaJS. Every pattern works with any test framework (`bun:test`, `vitest`, `jest`) using only public package imports.
 
+### Author Tests as JSX
+
+Test markup is JSX. Test files are `.test.tsx`, compiled at load by the `utils/jsx.js` Bun plugin registered beside the HappyDOM preload in `bunfig.toml`:
+
+```toml
+[test]
+preload = ["./utils/happydom.js", "./utils/jsx.js"]
+```
+
+The plugin transforms test entries and their imports, so mounted JSX compiles through the same `babel-plugin-hellajs` pass production code ships through.
+
 ### Isolate Tests with Reset Functions
 
 Reset shared state between tests so each test runs in a clean environment. Import per-package reset functions and call them in `beforeEach`:
@@ -52,10 +63,10 @@ export function resetTestState() {
 
 DOM mutations (mounting, attribute changes, style injection) are batched in a microtask. Drain the queue with `await Promise.resolve()` to assert on the resulting DOM:
 
-```typescript
-import { mount, html } from "@hellajs/dom";
+```jsx
+import { mount } from "@hellajs/dom";
 
-const app = mount(html`<p>Hello</p>`);
+const app = mount(<p>Hello</p>);
 
 await Promise.resolve(); // Drain the microtask queue
 
@@ -73,15 +84,12 @@ await wait(100); // Wait 100ms real time
 
 `mount()` returns a handle with `flush()` and `unmount()`. `afterMount` fires during `mount()` itself; `flush()` drains the cleanup queue synchronously, so you can assert on `afterDestroy` without awaiting microtasks:
 
-```typescript
+```jsx
 import { signal } from "@hellajs/core";
-import { mount, html } from "@hellajs/dom";
+import { mount } from "@hellajs/dom";
 
 const visible = signal(true);
-const render = () => {
-  const node = visible() ? html`<p>Visible</p>` : html``;
-  return typeof node === "function" ? node() : node;
-};
+const render = () => (visible() ? <p>Visible</p> : <></>);
 const app = mount(render);
 // afterMount already fired during mount(); no flush() needed
 console.log(document.body.textContent); // "Visible"

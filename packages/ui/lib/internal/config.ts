@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import type { UiConfig, UiFormat, UiLang, UiStyle, UiThemeMode } from "../types";
+import type { UiConfig, UiLang, UiStyle, UiThemeMode } from "../types";
 
 /**
  * Config written by `init` and read when no explicit value is given.
@@ -9,7 +9,6 @@ import type { UiConfig, UiFormat, UiLang, UiStyle, UiThemeMode } from "../types"
 export const DEFAULT_CONFIG: UiConfig = {
   componentsDir: "src/components",
   style: "css",
-  format: "jsx",
   themeMode: "light",
   lang: "ts",
 };
@@ -32,12 +31,6 @@ export const UI_STYLES: UiStyle[] = ["css", "tailwind"];
 export const UI_THEME_MODES: UiThemeMode[] = ["light", "dark"];
 
 /**
- * Valid source formats, shared by config and add validation.
- * @internal
- */
-export const UI_FORMATS: UiFormat[] = ["jsx", "html"];
-
-/**
  * Valid output languages, shared by config and add validation. `ts` copies
  * TypeScript source verbatim; `js` strips types at copy time through esbuild.
  * @internal
@@ -58,7 +51,7 @@ export function resolveRoot(dir?: string): string {
  * Reads hella.ui.json from the project root, falling back to defaults per field.
  * @param dir Project root. Process cwd when absent.
  * @returns The merged config.
- * @throws {Error} When the file holds invalid JSON or an invalid style, format, themeMode, or lang.
+ * @throws {Error} When the file holds invalid JSON or an invalid style, themeMode, or lang.
  */
 export function readConfig(dir?: string): UiConfig {
   const configPath = join(resolveRoot(dir), "hella.ui.json");
@@ -72,14 +65,10 @@ export function readConfig(dir?: string): UiConfig {
     throw new Error(`[ui] readConfig: invalid JSON in ${configPath}: ${(error as Error).message}`, { cause: error });
   }
   const style = raw.style ?? DEFAULT_CONFIG.style;
-  const format = raw.format ?? DEFAULT_CONFIG.format;
   const themeMode = raw.themeMode ?? DEFAULT_CONFIG.themeMode;
   const lang = raw.lang ?? DEFAULT_CONFIG.lang;
   if (!UI_STYLES.includes(style)) {
     throw new Error(`[ui] readConfig: style must be one of css, tailwind, received "${String(raw.style)}"`);
-  }
-  if (!UI_FORMATS.includes(format)) {
-    throw new Error(`[ui] readConfig: format must be jsx or html, received "${String(raw.format)}"`);
   }
   if (!UI_THEME_MODES.includes(themeMode)) {
     throw new Error(`[ui] readConfig: themeMode must be light or dark, received "${String(raw.themeMode)}"`);
@@ -90,7 +79,6 @@ export function readConfig(dir?: string): UiConfig {
   return {
     componentsDir: raw.componentsDir ?? DEFAULT_CONFIG.componentsDir,
     style,
-    format,
     themeMode,
     lang,
   };

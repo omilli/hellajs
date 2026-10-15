@@ -21,7 +21,7 @@ beforeEach(() => {
 });
 
 describe("kbd", () => {
-  test.each(kbdVariants)("$format/$style renders the kbd root with its data-slot and class merge", (variant) => {
+  test.each(kbdVariants)("$style renders the kbd root with its data-slot and class merge", (variant) => {
     const kbd = renderVariant(variant, { children: variant.child("⌘K"), class: "my-kbd" });
     expect(kbd.tagName).toBe("KBD");
     expect(kbd.getAttribute("data-slot")).toBe("kbd");
@@ -35,12 +35,12 @@ describe("kbd", () => {
     }
   });
 
-  test.each(kbdVariants)("$format/$style renders children directly", (variant) => {
+  test.each(kbdVariants)("$style renders children directly", (variant) => {
     const kbd = renderVariant(variant, { children: variant.child("⌘K") });
     expect(kbd.textContent).toBe("⌘K");
   });
 
-  test.each(kbdPartVariants)("$format/$style KbdGroup renders its data-slot and classes", (variant) => {
+  test.each(kbdPartVariants)("$style KbdGroup renders its data-slot and classes", (variant) => {
     const group = renderVariant(variant, { children: [], class: "my-group" });
     expect(group.tagName).toBe("KBD");
     expect(group.getAttribute("data-slot")).toBe("kbd-group");
@@ -53,20 +53,20 @@ describe("kbd", () => {
     }
   });
 
-  test("keeps structural parity across all four variants", () => {
+  test("keeps structural parity across both styles", () => {
     assertStructuralParity(kbdVariants);
   });
 
-  test("forwards user attrs onto the root across all four variants", () => {
+  test("forwards user attrs onto the root across both styles", () => {
     assertAttrForwarded(kbdVariants, { title: "Hella" }, "title", "Hella");
   });
 
-  test("fires a user on:click handler across all four variants", () => {
+  test("fires a user on:click handler across both styles", () => {
     const onClick = mock(() => {});
     assertHandlerForwarded(kbdVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 
-  test("keeps structural parity for KbdGroup across all four variants", () => {
+  test("keeps structural parity for KbdGroup across both styles", () => {
     const suites = kbdPartVariants.filter((variant) => variant.part === "Group");
     assertStructuralParity(suites, { children: [] });
   });

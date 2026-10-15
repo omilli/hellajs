@@ -6,7 +6,7 @@ const STRIP_OPTIONS = { format: "esm", target: "esnext" } as const;
  * Strips TypeScript syntax from registry source for `--lang js` delivery,
  * keyed by extension: `.tsx` compiles with `jsx: "preserve"` so the copied
  * `.jsx` keeps JSX for the user's own transpiler, `.ts` compiles to plain
- * JavaScript (the runtime `html` template survives), and any other extension
+ * JavaScript, and any other extension
  * (`theme.css`) returns verbatim. Shared options never downlevel
  * modern syntax; esbuild's output formatting may churn across minors, so
  * consumers assert structural invariants, never byte-golden text.
