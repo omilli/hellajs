@@ -6,7 +6,7 @@ import {
   execCommandInherited,
   getAllPackages,
   getPackagePath,
-} from "./utils/index.js";
+} from "./utils/index.ts";
 
 interface UpdateResult {
   changed: boolean;
@@ -22,8 +22,7 @@ function updatePeerDependencies(
   dryRun = false,
 ): UpdateResult {
   const packageJsonPath = path.join(packagePath, "package.json");
-  if (!fs.existsSync(packageJsonPath))
-    return { changed: false, changes: [] };
+  if (!fs.existsSync(packageJsonPath)) return { changed: false, changes: [] };
 
   const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
   let changed = false;
@@ -31,10 +30,7 @@ function updatePeerDependencies(
 
   for (const [depName, newVersion] of Object.entries(updates)) {
     // Update peer dependencies
-    if (
-      packageJson.peerDependencies &&
-      packageJson.peerDependencies[depName]
-    ) {
+    if (packageJson.peerDependencies && packageJson.peerDependencies[depName]) {
       const oldVersion = packageJson.peerDependencies[depName];
       const newVersionSpec = `^${newVersion}`;
 
@@ -52,10 +48,7 @@ function updatePeerDependencies(
     }
 
     // Update regular dependencies (for plugins depending on babel-plugin-hellajs)
-    if (
-      packageJson.dependencies &&
-      packageJson.dependencies[depName]
-    ) {
+    if (packageJson.dependencies && packageJson.dependencies[depName]) {
       const oldVersion = packageJson.dependencies[depName];
       const newVersionSpec = `^${newVersion}`;
 
@@ -74,10 +67,7 @@ function updatePeerDependencies(
   }
 
   if (changed && !dryRun) {
-    fs.writeFileSync(
-      packageJsonPath,
-      JSON.stringify(packageJson, null, 2) + "\n",
-    );
+    fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2) + "\n");
   }
 
   return { changed, changes };
@@ -93,16 +83,12 @@ async function publish(): Promise<void> {
   logger.info("🚀 Starting HellaJS publishing...");
 
   const allPackages = getAllPackages();
-  const packageVersions = new Map(
-    allPackages.map((p) => [p.name, p.version]),
-  );
+  const packageVersions = new Map(allPackages.map((p) => [p.name, p.version]));
 
   // Update peer dependencies with new versions
   if (packageVersions.has("@hellajs/core")) {
     const coreVersion = packageVersions.get("@hellajs/core")!;
-    logger.info(
-      `Updating @hellajs/core peer dependencies to v${coreVersion}...`,
-    );
+    logger.info(`Updating @hellajs/core peer dependencies to v${coreVersion}...`);
 
     const coreDepPackages = [
       "@hellajs/dom",
@@ -121,14 +107,9 @@ async function publish(): Promise<void> {
 
   if (packageVersions.has("babel-plugin-hellajs")) {
     const babelVersion = packageVersions.get("babel-plugin-hellajs")!;
-    logger.info(
-      `Updating babel-plugin-hellajs dependencies to v${babelVersion}...`,
-    );
+    logger.info(`Updating babel-plugin-hellajs dependencies to v${babelVersion}...`);
 
-    const pluginDepPackages = [
-      "vite-plugin-hellajs",
-      "rollup-plugin-hellajs",
-    ];
+    const pluginDepPackages = ["vite-plugin-hellajs", "rollup-plugin-hellajs"];
     for (const pkgName of pluginDepPackages) {
       const pkgPath = getPackagePath(pkgName);
       if (pkgPath) {
@@ -147,7 +128,12 @@ async function publish(): Promise<void> {
       // CI runners have no git identity; automation commits get the bot's.
       // Local runs keep each invoker's own config (never override it).
       if (process.env.CI) {
-        await execCommand("git", ["config", "--local", "user.email", "41898282+github-actions[bot]@users.noreply.github.com"]);
+        await execCommand("git", [
+          "config",
+          "--local",
+          "user.email",
+          "41898282+github-actions[bot]@users.noreply.github.com",
+        ]);
         await execCommand("git", ["config", "--local", "user.name", "github-actions[bot]"]);
       }
       await execCommand("git", ["add", "./**/package.json"]);
@@ -171,10 +157,7 @@ async function publish(): Promise<void> {
       logger.info("No peer dependency changes to commit.");
     }
   } catch (error) {
-    logger.warn(
-      "⚠️  Failed to commit peer dependency updates.",
-      error as Error,
-    );
+    logger.warn("⚠️  Failed to commit peer dependency updates.", error as Error);
     // Don't exit - continue with publishing
   }
 
@@ -190,6 +173,6 @@ async function publish(): Promise<void> {
 }
 
 // CLI execution
-if (import.meta.main) {
+if (process.argv[1] === import.meta.filename) {
   await publish();
 }

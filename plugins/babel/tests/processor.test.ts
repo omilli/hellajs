@@ -1,6 +1,5 @@
-import { describe, test, expect } from "bun:test";
+import { describe, test, expect } from "vite-plus/test";
 import { transformJSX } from "./helpers";
-
 
 describe("babel", () => {
   describe("attribute processing", () => {
@@ -163,5 +162,4 @@ describe("babel", () => {
       expect(output).toContain("children: [");
     });
   });
-
 });

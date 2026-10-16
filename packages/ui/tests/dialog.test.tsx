@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { signal } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components import the bare
@@ -29,14 +29,25 @@ function newestPanel(): HTMLElement | undefined {
  * (earlier tests can leave stale panels attached) that has finished the
  * observer-driven mount walk.
  */
-function mountDialog(variant: DialogVariant, props: Partial<DialogVariantProps> & { onClose: () => void }) {
+function mountDialog(
+  variant: DialogVariant,
+  props: Partial<DialogVariantProps> & { onClose: () => void },
+) {
   const open = signal(false);
   const container = setupContainer();
-  mount(<div>{variant.render({ ...props, open: () => open(), children: props.children ?? [] })}</div>, container);
+  mount(
+    <div>{variant.render({ ...props, open: () => open(), children: props.children ?? [] })}</div>,
+    container,
+  );
   const panel = async (): Promise<HTMLElement> => {
     for (let i = 0; i < 50; i++) {
       const newest = newestPanel();
-      if (newest !== undefined && peekState(newest)?.isMounted && newest.getAttribute("aria-modal") === "true") return newest;
+      if (
+        newest !== undefined &&
+        peekState(newest)?.isMounted &&
+        newest.getAttribute("aria-modal") === "true"
+      )
+        return newest;
       await delay();
     }
     throw new Error("dialog panel never mounted");
@@ -63,33 +74,36 @@ describe("dialog", () => {
     expect(dlg).toBeDefined();
   });
 
-  test.each(dialogVariants)("$style portals the overlay and panel as body siblings with data-state open and wired titles", async (variant) => {
-    const dlg = mountDialog(variant, {
-      onClose: () => {},
-      title: "Confirm",
-      description: "Proceed with the action",
-    });
-    dlg.open(true);
-    const panel = await dlg.panel();
-    expect(panel.parentElement).toBe(document.body);
-    const overlay = panel.previousElementSibling!;
-    expect(overlay.getAttribute("data-slot")).toBe("dialog-overlay");
-    expect(panel.getAttribute("aria-modal")).toBe("true");
-    expect(panel.getAttribute("data-state")).toBe("open");
-    const titleId = panel.getAttribute("aria-labelledby")!;
-    const title = panel.querySelector("h2")!;
-    expect(title.id).toBe(titleId);
-    expect(title.getAttribute("data-slot")).toBe("dialog-title");
-    expect(title.textContent).toBe("Confirm");
-    const descriptionId = panel.getAttribute("aria-describedby")!;
-    const description = panel.querySelector("p")!;
-    expect(description.id).toBe(descriptionId);
-    expect(description.getAttribute("data-slot")).toBe("dialog-description");
-    expect(description.textContent).toBe("Proceed with the action");
-  });
+  test.each(dialogVariants)(
+    "$style portals the overlay and panel as body siblings with data-state open and wired titles",
+    async (variant) => {
+      const dlg = mountDialog(variant, {
+        onClose: () => {},
+        title: "Confirm",
+        description: "Proceed with the action",
+      });
+      dlg.open(true);
+      const panel = await dlg.panel();
+      expect(panel.parentElement).toBe(document.body);
+      const overlay = panel.previousElementSibling!;
+      expect(overlay.getAttribute("data-slot")).toBe("dialog-overlay");
+      expect(panel.getAttribute("aria-modal")).toBe("true");
+      expect(panel.getAttribute("data-state")).toBe("open");
+      const titleId = panel.getAttribute("aria-labelledby")!;
+      const title = panel.querySelector("h2")!;
+      expect(title.id).toBe(titleId);
+      expect(title.getAttribute("data-slot")).toBe("dialog-title");
+      expect(title.textContent).toBe("Confirm");
+      const descriptionId = panel.getAttribute("aria-describedby")!;
+      const description = panel.querySelector("p")!;
+      expect(description.id).toBe(descriptionId);
+      expect(description.getAttribute("data-slot")).toBe("dialog-description");
+      expect(description.textContent).toBe("Proceed with the action");
+    },
+  );
 
   test.each(dialogVariants)("$style closes on Escape by default", async (variant) => {
-    const onClose = mock(() => {});
+    const onClose = vi.fn(() => {});
     const dlg = mountDialog(variant, { onClose, title: "Confirm" });
     dlg.open(true);
     const panel = await dlg.panel();
@@ -97,53 +111,69 @@ describe("dialog", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  test.each(dialogVariants)("$style suppresses Escape when closeOnEscape is false", async (variant) => {
-    const onClose = mock(() => {});
-    const dlg = mountDialog(variant, { onClose, title: "Confirm", closeOnEscape: false });
-    dlg.open(true);
-    const panel = await dlg.panel();
-    panel.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
-    expect(onClose).not.toHaveBeenCalled();
-  });
+  test.each(dialogVariants)(
+    "$style suppresses Escape when closeOnEscape is false",
+    async (variant) => {
+      const onClose = vi.fn(() => {});
+      const dlg = mountDialog(variant, { onClose, title: "Confirm", closeOnEscape: false });
+      dlg.open(true);
+      const panel = await dlg.panel();
+      panel.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+      expect(onClose).not.toHaveBeenCalled();
+    },
+  );
 
-  test.each(dialogVariants)("$style closes through the close button with its sr-only label", async (variant) => {
-    const onClose = mock(() => {});
-    const dlg = mountDialog(variant, { onClose, title: "Confirm" });
-    dlg.open(true);
-    const panel = await dlg.panel();
-    const close = panel.querySelector('[data-slot="dialog-close"]')!;
-    expect(close.tagName).toBe("BUTTON");
-    expect(close.querySelector("span")!.textContent).toBe("Close");
-    close.dispatchEvent(new Event("click"));
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
+  test.each(dialogVariants)(
+    "$style closes through the close button with its sr-only label",
+    async (variant) => {
+      const onClose = vi.fn(() => {});
+      const dlg = mountDialog(variant, { onClose, title: "Confirm" });
+      dlg.open(true);
+      const panel = await dlg.panel();
+      const close = panel.querySelector('[data-slot="dialog-close"]')!;
+      expect(close.tagName).toBe("BUTTON");
+      expect(close.querySelector("span")!.textContent).toBe("Close");
+      close.dispatchEvent(new Event("click"));
+      expect(onClose).toHaveBeenCalledTimes(1);
+    },
+  );
 
-  test.each(dialogVariants)("$style omits the close button when showCloseButton is false", async (variant) => {
-    const dlg = mountDialog(variant, { onClose: () => {}, title: "Confirm", showCloseButton: false });
-    dlg.open(true);
-    const panel = await dlg.panel();
-    expect(panel.querySelector('[data-slot="dialog-close"]')).toBeNull();
-  });
+  test.each(dialogVariants)(
+    "$style omits the close button when showCloseButton is false",
+    async (variant) => {
+      const dlg = mountDialog(variant, {
+        onClose: () => {},
+        title: "Confirm",
+        showCloseButton: false,
+      });
+      dlg.open(true);
+      const panel = await dlg.panel();
+      expect(panel.querySelector('[data-slot="dialog-close"]')).toBeNull();
+    },
+  );
 
-  test.each(dialogVariants)("$style wraps Tab from the last focusable to the first", async (variant) => {
-    const dlg = mountDialog(variant, {
-      onClose: () => {},
-      title: "Confirm",
-      children: [<button id="dlg-first">First</button>],
-    });
-    dlg.open(true);
-    const panel = await dlg.panel();
-    const first = document.getElementById("dlg-first")!;
-    const close = panel.querySelector('[data-slot="dialog-close"]') as HTMLElement;
-    close.focus();
-    close.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab" }));
-    expect(document.activeElement).toBe(first);
-    first.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", shiftKey: true }));
-    expect(document.activeElement).toBe(close);
-  });
+  test.each(dialogVariants)(
+    "$style wraps Tab from the last focusable to the first",
+    async (variant) => {
+      const dlg = mountDialog(variant, {
+        onClose: () => {},
+        title: "Confirm",
+        children: [<button id="dlg-first">First</button>],
+      });
+      dlg.open(true);
+      const panel = await dlg.panel();
+      const first = document.getElementById("dlg-first")!;
+      const close = panel.querySelector('[data-slot="dialog-close"]') as HTMLElement;
+      close.focus();
+      close.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab" }));
+      expect(document.activeElement).toBe(first);
+      first.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", shiftKey: true }));
+      expect(document.activeElement).toBe(close);
+    },
+  );
 
   test.each(dialogVariants)("$style closes on pointerdown outside the panel", async (variant) => {
-    const onClose = mock(() => {});
+    const onClose = vi.fn(() => {});
     const dlg = mountDialog(variant, { onClose, title: "Confirm" });
     dlg.open(true);
     const panel = await dlg.panel();
@@ -152,109 +182,151 @@ describe("dialog", () => {
     expect(panel.isConnected).toBe(true);
   });
 
-  test.each(dialogVariants)("$style suppresses outside pointerdown when closeOnOutside is false", async (variant) => {
-    const onClose = mock(() => {});
-    const dlg = mountDialog(variant, { onClose, title: "Confirm", closeOnOutside: false });
-    dlg.open(true);
-    await dlg.panel();
-    document.body.dispatchEvent(new Event("pointerdown"));
-    expect(onClose).not.toHaveBeenCalled();
-  });
+  test.each(dialogVariants)(
+    "$style suppresses outside pointerdown when closeOnOutside is false",
+    async (variant) => {
+      const onClose = vi.fn(() => {});
+      const dlg = mountDialog(variant, { onClose, title: "Confirm", closeOnOutside: false });
+      dlg.open(true);
+      await dlg.panel();
+      document.body.dispatchEvent(new Event("pointerdown"));
+      expect(onClose).not.toHaveBeenCalled();
+    },
+  );
 
-  test.each(dialogVariants)("$style stays mounted under data-state closed until the panel's animationend", async (variant) => {
-    const onClose = mock(() => {});
-    const dlg = mountDialog(variant, { onClose, title: "Confirm" });
-    dlg.open(true);
-    const panel = await dlg.panel();
-    dlg.open(false);
-    expect(panel.getAttribute("data-state")).toBe("closed");
-    expect(panel.isConnected).toBe(true);
-    panel.dispatchEvent(new Event("animationend"));
-    await awaitUnmounted(panel);
-  });
+  test.each(dialogVariants)(
+    "$style stays mounted under data-state closed until the panel's animationend",
+    async (variant) => {
+      const onClose = vi.fn(() => {});
+      const dlg = mountDialog(variant, { onClose, title: "Confirm" });
+      dlg.open(true);
+      const panel = await dlg.panel();
+      dlg.open(false);
+      expect(panel.getAttribute("data-state")).toBe("closed");
+      expect(panel.isConnected).toBe(true);
+      panel.dispatchEvent(new Event("animationend"));
+      await awaitUnmounted(panel);
+    },
+  );
 
-  test.each(dialogVariants)("$style unmounts through the 250ms fallback when no animationend fires", async (variant) => {
-    const dlg = mountDialog(variant, { onClose: () => {}, title: "Confirm" });
-    dlg.open(true);
-    const panel = await dlg.panel();
-    dlg.open(false);
-    const budget = Date.now();
-    while (panel.isConnected && Date.now() - budget < 450) {
-      await delay(null, 20);
-    }
-    // Wall clock, not loop iterations: per-iteration lag under load must not read as an early unmount.
-    expect(Date.now() - budget).toBeGreaterThanOrEqual(200);
-    expect(panel.isConnected).toBe(false);
-  });
+  test.each(dialogVariants)(
+    "$style unmounts through the 250ms fallback when no animationend fires",
+    async (variant) => {
+      const dlg = mountDialog(variant, { onClose: () => {}, title: "Confirm" });
+      dlg.open(true);
+      const panel = await dlg.panel();
+      dlg.open(false);
+      const budget = Date.now();
+      while (panel.isConnected && Date.now() - budget < 450) {
+        await delay(null, 20);
+      }
+      // Wall clock, not loop iterations: per-iteration lag under load must not read as an early unmount.
+      expect(Date.now() - budget).toBeGreaterThanOrEqual(200);
+      expect(panel.isConnected).toBe(false);
+    },
+  );
 
-  test.each(dialogVariants)("$style runs the exit unwired: no dismissal while leaving", async (variant) => {
-    const onClose = mock(() => {});
-    const dlg = mountDialog(variant, { onClose, title: "Confirm" });
-    dlg.open(true);
-    const panel = await dlg.panel();
-    dlg.open(false);
-    expect(panel.getAttribute("data-state")).toBe("closed");
-    panel.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
-    document.body.dispatchEvent(new Event("pointerdown"));
-    expect(onClose).not.toHaveBeenCalled();
-    panel.dispatchEvent(new Event("animationend"));
-    await awaitUnmounted(panel);
-  });
+  test.each(dialogVariants)(
+    "$style runs the exit unwired: no dismissal while leaving",
+    async (variant) => {
+      const onClose = vi.fn(() => {});
+      const dlg = mountDialog(variant, { onClose, title: "Confirm" });
+      dlg.open(true);
+      const panel = await dlg.panel();
+      dlg.open(false);
+      expect(panel.getAttribute("data-state")).toBe("closed");
+      panel.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+      document.body.dispatchEvent(new Event("pointerdown"));
+      expect(onClose).not.toHaveBeenCalled();
+      panel.dispatchEvent(new Event("animationend"));
+      await awaitUnmounted(panel);
+    },
+  );
 
-  test.each(dialogVariants)("$style restores focus to the pre-open element after the exit", async (variant) => {
-    const outside = document.createElement("button");
-    outside.id = "dlg-outside";
-    document.body.appendChild(outside);
-    const dlg = mountDialog(variant, {
-      onClose: () => {},
-      title: "Confirm",
-      children: [<button id="dlg-only">Only</button>],
-    });
-    outside.focus();
-    dlg.open(true);
-    const panel = await dlg.panel();
-    dlg.open(false);
-    panel.dispatchEvent(new Event("animationend"));
-    await awaitUnmounted(panel);
-    expect(document.activeElement).toBe(outside);
-  });
+  test.each(dialogVariants)(
+    "$style restores focus to the pre-open element after the exit",
+    async (variant) => {
+      const outside = document.createElement("button");
+      outside.id = "dlg-outside";
+      document.body.appendChild(outside);
+      const dlg = mountDialog(variant, {
+        onClose: () => {},
+        title: "Confirm",
+        children: [<button id="dlg-only">Only</button>],
+      });
+      outside.focus();
+      dlg.open(true);
+      const panel = await dlg.panel();
+      dlg.open(false);
+      panel.dispatchEvent(new Event("animationend"));
+      await awaitUnmounted(panel);
+      expect(document.activeElement).toBe(outside);
+    },
+  );
 
-  test.each(dialogVariants)("$style forwards user attrs onto the portaled panel across both styles", async (variant) => {
-    const dlg = mountDialog(variant, { onClose: () => {}, title: "Forward", "aria-label": "panel" });
-    dlg.open(true);
-    const panel = await dlg.panel();
-    expect(panel.getAttribute("aria-label")).toBe("panel");
-  });
+  test.each(dialogVariants)(
+    "$style forwards user attrs onto the portaled panel across both styles",
+    async (variant) => {
+      const dlg = mountDialog(variant, {
+        onClose: () => {},
+        title: "Forward",
+        "aria-label": "panel",
+      });
+      dlg.open(true);
+      const panel = await dlg.panel();
+      expect(panel.getAttribute("aria-label")).toBe("panel");
+    },
+  );
 
-  test.each(dialogVariants)("$style fires a user on:click handler on the portaled panel across both styles", async (variant) => {
-    const onPanelClick = mock(() => {});
-    const dlg = mountDialog(variant, { onClose: () => {}, title: "Forward", "on:click": onPanelClick });
-    dlg.open(true);
-    const panel = await dlg.panel();
-    panel.dispatchEvent(new Event("click"));
-    expect(onPanelClick).toHaveBeenCalledTimes(1);
-  });
+  test.each(dialogVariants)(
+    "$style fires a user on:click handler on the portaled panel across both styles",
+    async (variant) => {
+      const onPanelClick = vi.fn(() => {});
+      const dlg = mountDialog(variant, {
+        onClose: () => {},
+        title: "Forward",
+        "on:click": onPanelClick,
+      });
+      dlg.open(true);
+      const panel = await dlg.panel();
+      panel.dispatchEvent(new Event("click"));
+      expect(onPanelClick).toHaveBeenCalledTimes(1);
+    },
+  );
 
-  test.each(dialogVariants)("$style merges a user class into the portaled panel's class across both styles", async (variant) => {
-    const dlg = mountDialog(variant, { onClose: () => {}, title: "Forward", class: "user-class" });
-    dlg.open(true);
-    const panel = await dlg.panel();
-    expect(classTokens(panel).at(-1)).toBe("user-class");
-  });
+  test.each(dialogVariants)(
+    "$style merges a user class into the portaled panel's class across both styles",
+    async (variant) => {
+      const dlg = mountDialog(variant, {
+        onClose: () => {},
+        title: "Forward",
+        class: "user-class",
+      });
+      dlg.open(true);
+      const panel = await dlg.panel();
+      expect(classTokens(panel).at(-1)).toBe("user-class");
+    },
+  );
 
-  test.each(dialogPartVariants.filter((entry) => entry.part === "Close"))("$style Close chains a user on:click with its owned dismiss", (variant) => {
-    const onClose = mock(() => {});
-    const userClick = mock(() => {});
-    const close = renderPart(variant, { onClose, "on:click": userClick });
-    close.dispatchEvent(new Event("click"));
-    expect(userClick).toHaveBeenCalledTimes(1);
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
+  test.each(dialogPartVariants.filter((entry) => entry.part === "Close"))(
+    "$style Close chains a user on:click with its owned dismiss",
+    (variant) => {
+      const onClose = vi.fn(() => {});
+      const userClick = vi.fn(() => {});
+      const close = renderPart(variant, { onClose, "on:click": userClick });
+      close.dispatchEvent(new Event("click"));
+      expect(userClick).toHaveBeenCalledTimes(1);
+      expect(onClose).toHaveBeenCalledTimes(1);
+    },
+  );
 
-  test.each(dialogPartVariants.filter((entry) => entry.part === "Content"))("$style content part forwards the manual aria wiring attrs", (variant) => {
-    const el = renderPart(variant, { "aria-labelledby": "wired-title" });
-    expect(el.getAttribute("aria-labelledby")).toBe("wired-title");
-  });
+  test.each(dialogPartVariants.filter((entry) => entry.part === "Content"))(
+    "$style content part forwards the manual aria wiring attrs",
+    (variant) => {
+      const el = renderPart(variant, { "aria-labelledby": "wired-title" });
+      expect(el.getAttribute("aria-labelledby")).toBe("wired-title");
+    },
+  );
 
   test("keeps structural parity across both styles", () => {
     assertStructuralParity(
@@ -287,10 +359,16 @@ describe("dialog", () => {
 });
 
 /** Renders one dialog part and resolves its mounted root (the panel part is a plain element). */
-function renderPart(variant: (typeof dialogPartVariants)[number], extra: Record<string, unknown> = {}): Element {
+function renderPart(
+  variant: (typeof dialogPartVariants)[number],
+  extra: Record<string, unknown> = {},
+): Element {
   const container = setupContainer();
   const rendered = variant.render({ children: [], ...extra } as unknown as Record<string, never>);
   // A reactive fn root cannot pass through mount's resolve-once unwrap — wrap it like the harness does.
-  mount(typeof rendered === "function" ? <div>{rendered as never}</div> : rendered as never, container);
+  mount(
+    typeof rendered === "function" ? <div>{rendered as never}</div> : (rendered as never),
+    container,
+  );
   return container.firstElementChild!;
 }

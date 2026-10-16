@@ -2,7 +2,9 @@ import { keyframes, style } from "@hellajs/css";
 import { tokens } from "../theme/tokens.js";
 
 const inTop = keyframes({ from: { opacity: "0", transform: "translateY(0.5rem) scale(0.95)" } });
-const inBottom = keyframes({ from: { opacity: "0", transform: "translateY(-0.5rem) scale(0.95)" } });
+const inBottom = keyframes({
+  from: { opacity: "0", transform: "translateY(-0.5rem) scale(0.95)" },
+});
 const inLeft = keyframes({ from: { opacity: "0", transform: "translateX(0.5rem) scale(0.95)" } });
 const inRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem) scale(0.95)" } });
 const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
@@ -21,7 +23,8 @@ export const base = style("select-trigger", {
   outlineStyle: "none",
   paddingBlock: "0.5rem",
   paddingInline: "0.75rem",
-  transition: "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
+  transition:
+    "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   whiteSpace: "nowrap",
   width: "fit-content",
   "&[data-placeholder]": {

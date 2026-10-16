@@ -39,7 +39,7 @@ export function scope(fn: () => void): () => void {
   if (!scopeState.effects) return NOOP;
 
   return () => {
-    scopeState.effects!.forEach(cleanup => cleanup());
+    scopeState.effects!.forEach((cleanup) => cleanup());
     scopeState.effects!.clear();
   };
 }

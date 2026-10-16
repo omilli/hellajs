@@ -110,8 +110,7 @@ export const BENCH_OPS: readonly BenchOp[] = [
   {
     id: "remove",
     setup: ["#run"],
-    capture:
-      'document.querySelector("tbody tr:nth-child(6) td")?.textContent?.trim() ?? ""',
+    capture: 'document.querySelector("tbody tr:nth-child(6) td")?.textContent?.trim() ?? ""',
     click: "tbody tr:nth-child(6) .remove",
     predicate: `(() => {
       const rows = document.querySelectorAll("tbody tr");

@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { hydrate, onError, raw, Suspense } from "@hellajs/dom";
@@ -15,7 +15,12 @@ describe("dom", () => {
       container.innerHTML = "<section><span>server</span></section>";
 
       const { warnings } = suppressWarn(() => {
-        hydrate(<div id="s"><span>server</span></div>, container);
+        hydrate(
+          <div id="s">
+            <span>server</span>
+          </div>,
+          container,
+        );
       });
 
       expect(container.querySelector("div#s")?.textContent).toBe("server");
@@ -25,10 +30,17 @@ describe("dom", () => {
 
     test("routes a throwing function-ref prop through the boundary fallback on hydrate", () => {
       const shouldThrow = signal(false);
-      const App = () => <div error:fallback={(() => <span>Caught</span>)}><span id="p" data-x={() => {
-            if (shouldThrow()) throw new Error("prop");
-            return "ok";
-          }}></span></div>;
+      const App = () => (
+        <div error:fallback={() => <span>Caught</span>}>
+          <span
+            id="p"
+            data-x={() => {
+              if (shouldThrow()) throw new Error("prop");
+              return "ok";
+            }}
+          ></span>
+        </div>
+      );
       const container = ssrContainer(<App></App>);
       hydrate(<App></App>, container);
       expect(container.querySelector("#p")?.getAttribute("data-x")).toBe("ok");
@@ -46,7 +58,7 @@ describe("dom", () => {
       const container = ssrContainer(<App></App>);
       hydrate(<App></App>, container);
 
-      const accessedNodeType = mock(() => {});
+      const accessedNodeType = vi.fn(() => {});
       const Dyn = ((parent: Element) => {
         const nodeType = (parent as unknown as { nodeType: number }).nodeType;
         if (nodeType !== undefined) accessedNodeType();
@@ -64,15 +76,19 @@ describe("dom", () => {
 
     test("dispatches a hydrated reactive region that throws on re-run", () => {
       const shouldThrow = signal(false);
-      const App = () => <div>{() => {
+      const App = () => (
+        <div>
+          {() => {
             if (shouldThrow()) throw new Error("region");
             return "ok";
-          }}</div>;
+          }}
+        </div>
+      );
       const container = ssrContainer(<App></App>);
       hydrate(<App></App>, container);
       expect(container.textContent).toBe("ok");
 
-      const handler = mock(() => null);
+      const handler = vi.fn(() => null);
       onError(handler);
       shouldThrow(true);
       flush();
@@ -121,7 +137,12 @@ describe("dom", () => {
       container.innerHTML = '<div id="dh"></div>';
 
       const { warnings } = suppressWarn(() => {
-        hydrate(<div id="dh"><Dyn></Dyn></div>, container);
+        hydrate(
+          <div id="dh">
+            <Dyn></Dyn>
+          </div>,
+          container,
+        );
       });
 
       expect(container.querySelector("#dh em")?.textContent).toBe("dyn");
@@ -129,8 +150,17 @@ describe("dom", () => {
     });
 
     test("gathers nested regions depth-aware when a fragment contains a direct reactive child", () => {
-      const Frag = () => <>{() => "a"}<i>b</i></>;
-      const App = () => <div id="ng"><Frag></Frag></div>;
+      const Frag = () => (
+        <>
+          {() => "a"}
+          <i>b</i>
+        </>
+      );
+      const App = () => (
+        <div id="ng">
+          <Frag></Frag>
+        </div>
+      );
       const container = ssrContainer(<App></App>);
 
       hydrate(<App></App>, container);
@@ -150,7 +180,11 @@ describe("dom", () => {
     });
 
     test("re-suspends on the client when a suspense stage template never arrived", async () => {
-      const App = () => <div><Suspense fallback={(<p>loading</p>)}>{(() => Promise.resolve(<b>resolved</b>))}</Suspense></div>;
+      const App = () => (
+        <div>
+          <Suspense fallback={<p>loading</p>}>{() => Promise.resolve(<b>resolved</b>)}</Suspense>
+        </div>
+      );
       const container = await streamContainer(<App></App>);
       container.querySelector("template")?.remove();
 
@@ -168,11 +202,17 @@ describe("dom", () => {
 
     test("bubbles a degradation rejection to onError and drops the fallback", async () => {
       let failNow = false;
-      const App = () => <div><Suspense fallback={(<p>loading</p>)}>{(() => (failNow ? Promise.reject(new Error("stage boom")) : Promise.resolve(<b>ok</b>)))}</Suspense></div>;
+      const App = () => (
+        <div>
+          <Suspense fallback={<p>loading</p>}>
+            {() => (failNow ? Promise.reject(new Error("stage boom")) : Promise.resolve(<b>ok</b>))}
+          </Suspense>
+        </div>
+      );
       const container = await streamContainer(<App></App>);
       container.querySelector("template")?.remove();
 
-      const handler = mock(() => null);
+      const handler = vi.fn(() => null);
       onError(handler);
       failNow = true;
       suppressWarn(() => {
@@ -189,7 +229,11 @@ describe("dom", () => {
     });
 
     test("adopts inline children without re-suspending under non-streamed ssr", () => {
-      const App = () => <div><Suspense fallback={(<p>loading</p>)}>{(<b id="nb">inline</b>)}</Suspense></div>;
+      const App = () => (
+        <div>
+          <Suspense fallback={<p>loading</p>}>{<b id="nb">inline</b>}</Suspense>
+        </div>
+      );
       const container = ssrContainer(<App></App>);
 
       const { warnings } = suppressWarn(() => {
@@ -206,7 +250,12 @@ describe("dom", () => {
       container.innerHTML = "<section><span>server</span></section>";
 
       const { warnings } = suppressWarn(() => {
-        hydrate(<div id="ns"><span>{() => "client"}</span></div>, container);
+        hydrate(
+          <div id="ns">
+            <span>{() => "client"}</span>
+          </div>,
+          container,
+        );
       });
 
       expect(container.querySelector("div#ns")).not.toBeNull();
@@ -215,11 +264,18 @@ describe("dom", () => {
     });
 
     test("dispatches a throwing beforeMount hook during hydrate and continues mounting", () => {
-      const handler = mock(() => null);
+      const handler = vi.fn(() => null);
       onError(handler);
-      const App = () => <div id="bm" hook:beforeMount={() => {
-        throw new Error("beforeMount hydrate");
-      }}>x</div>;
+      const App = () => (
+        <div
+          id="bm"
+          hook:beforeMount={() => {
+            throw new Error("beforeMount hydrate");
+          }}
+        >
+          x
+        </div>
+      );
       const container = ssrContainer(<App></App>);
 
       hydrate(<App></App>, container);
@@ -230,8 +286,17 @@ describe("dom", () => {
     });
 
     test("warns and adopts children in place when a fragment's markers are missing", () => {
-      const Frag = () => <><i>a</i><i>b</i></>;
-      const App = () => <div id="fg"><Frag></Frag></div>;
+      const Frag = () => (
+        <>
+          <i>a</i>
+          <i>b</i>
+        </>
+      );
+      const App = () => (
+        <div id="fg">
+          <Frag></Frag>
+        </div>
+      );
       const container = setupContainer();
       container.innerHTML = '<div id="fg"><i>a</i><i>b</i></div>';
 
@@ -245,9 +310,10 @@ describe("dom", () => {
 
     test("unmount before an async hydrate attaches cancels the late resolution", async () => {
       let resolveHydrate: () => void = () => {};
-      const slow = () => new Promise<void>((resolve) => {
-        resolveHydrate = resolve;
-      }).then(() => <div id="hlate">late</div>);
+      const slow = () =>
+        new Promise<void>((resolve) => {
+          resolveHydrate = resolve;
+        }).then(() => <div id="hlate">late</div>);
       const container = setupContainer();
       container.innerHTML = "<div>server</div>";
 

@@ -4,7 +4,12 @@ import type { SeparatorProps } from "./separator-types.js";
 declare const base: string;
 // @hella:end
 
-export function Separator({ orientation, children, class: cls, ...attrs }: SeparatorProps): JSX.Element {
+export function Separator({
+  orientation,
+  children,
+  class: cls,
+  ...attrs
+}: SeparatorProps): JSX.Element {
   return (
     <div
       data-slot="separator"

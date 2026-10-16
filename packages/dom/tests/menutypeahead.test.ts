@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { delay, resetTestState } from "@utils/test-helpers.js";
 import { menuTypeahead } from "@hellajs/dom";
 import { pressKey } from "./helpers";
@@ -11,7 +11,7 @@ describe("menuTypeahead", () => {
   });
 
   test("selects the first startsWith match", () => {
-    const onSelect = mock(() => {});
+    const onSelect = vi.fn(() => {});
     const container = document.createElement("div");
     document.body.append(container);
     const items = [item("About"), item("Alpha"), item("Beta")];
@@ -24,7 +24,7 @@ describe("menuTypeahead", () => {
   });
 
   test("buffers consecutive keystrokes into one query", () => {
-    const onSelect = mock(() => {});
+    const onSelect = vi.fn(() => {});
     const container = document.createElement("div");
     document.body.append(container);
     const items = [item("Apple"), item("Avocado"), item("Banana")];
@@ -38,7 +38,7 @@ describe("menuTypeahead", () => {
   });
 
   test("resets the buffer after 500ms", async () => {
-    const onSelect = mock(() => {});
+    const onSelect = vi.fn(() => {});
     const container = document.createElement("div");
     document.body.append(container);
     const items = [item("Apple"), item("Grape")];
@@ -53,7 +53,7 @@ describe("menuTypeahead", () => {
   });
 
   test("wraps around on substring matches when no item starts with the query", async () => {
-    const onSelect = mock(() => {});
+    const onSelect = vi.fn(() => {});
     const container = document.createElement("div");
     document.body.append(container);
     const items = [item("Apple"), item("Grape"), item("Pear")];
@@ -75,13 +75,15 @@ describe("menuTypeahead", () => {
   });
 
   test("ignores modifier and non-printable keys", () => {
-    const onSelect = mock(() => {});
+    const onSelect = vi.fn(() => {});
     const container = document.createElement("div");
     document.body.append(container);
     const items = [item("About")];
     const dispose = menuTypeahead(container, () => items, onSelect);
 
-    container.dispatchEvent(new KeyboardEvent("keydown", { key: "a", ctrlKey: true, bubbles: true }));
+    container.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "a", ctrlKey: true, bubbles: true }),
+    );
     pressKey(container, "ArrowDown");
     pressKey(container, "Enter");
     expect(onSelect).not.toHaveBeenCalled();
@@ -91,8 +93,14 @@ describe("menuTypeahead", () => {
   test("requires container, resolveItems, and onSelect", () => {
     const el = document.createElement("div");
     const items = () => [item("a")];
-    expect(() => menuTypeahead(null as never, items, () => {})).toThrow("[dom] menuTypeahead: container is required");
-    expect(() => menuTypeahead(el, null as never, () => {})).toThrow("[dom] menuTypeahead: resolveItems is required");
-    expect(() => menuTypeahead(el, items, null as never)).toThrow("[dom] menuTypeahead: onSelect is required");
+    expect(() => menuTypeahead(null as never, items, () => {})).toThrow(
+      "[dom] menuTypeahead: container is required",
+    );
+    expect(() => menuTypeahead(el, null as never, () => {})).toThrow(
+      "[dom] menuTypeahead: resolveItems is required",
+    );
+    expect(() => menuTypeahead(el, items, null as never)).toThrow(
+      "[dom] menuTypeahead: onSelect is required",
+    );
   });
 });

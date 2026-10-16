@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { delay, resetTestState, suppressConsole } from "@utils/test-helpers.js";
 import { mount, Lazy } from "@hellajs/dom";
 import type { HellaNode, LazyOptions } from "@hellajs/dom";
@@ -10,10 +10,12 @@ beforeEach(() => {
 describe("dom", () => {
   describe("lazy", () => {
     test("throws when loader is not a function", () => {
-      expect(() => Lazy(
-        // @ts-expect-error — intentionally invalid: loader is not a function
-        { loader: "not a function" }
-      )).toThrow("[dom] Lazy: loader must be a function");
+      expect(() =>
+        Lazy(
+          // @ts-expect-error — intentionally invalid: loader is not a function
+          { loader: "not a function" },
+        ),
+      ).toThrow("[dom] Lazy: loader must be a function");
     });
 
     test("async component functions render via mount", async () => {
@@ -26,13 +28,17 @@ describe("dom", () => {
 
     test("shows loading state while loading, then success content", async () => {
       let resolveComponent!: (component: () => HellaNode) => void;
-      const successPromise = new Promise(resolve => {
+      const successPromise = new Promise((resolve) => {
         resolveComponent = resolve;
       });
       const AsyncComponent = () => <div>Success</div>;
       const loading = <div>Loading...</div>;
 
-      mount(<div id="container"><Lazy loader={() => successPromise.then(() => AsyncComponent)} loading={loading}></Lazy></div>);
+      mount(
+        <div id="container">
+          <Lazy loader={() => successPromise.then(() => AsyncComponent)} loading={loading}></Lazy>
+        </div>,
+      );
 
       const container = document.getElementById("container")!;
 
@@ -48,12 +54,16 @@ describe("dom", () => {
 
     test("shows success content after async component loads", async () => {
       let resolveComponent!: (component: () => HellaNode) => void;
-      const successPromise = new Promise(resolve => {
+      const successPromise = new Promise((resolve) => {
         resolveComponent = resolve;
       });
       const AsyncComponent = () => <div>Success</div>;
 
-      mount(<div id="container"><Lazy loader={() => successPromise.then(() => AsyncComponent)}></Lazy></div>);
+      mount(
+        <div id="container">
+          <Lazy loader={() => successPromise.then(() => AsyncComponent)}></Lazy>
+        </div>,
+      );
 
       const container = document.getElementById("container")!;
       expect(container.textContent).toBe("");
@@ -69,7 +79,11 @@ describe("dom", () => {
       const errorLoader = () => Promise.reject(new Error("Failed"));
       const fallback = <div>Fallback</div>;
 
-      mount(<div id="container"><Lazy loader={errorLoader} fallback={fallback}></Lazy></div>);
+      mount(
+        <div id="container">
+          <Lazy loader={errorLoader} fallback={fallback}></Lazy>
+        </div>,
+      );
 
       const container = document.getElementById("container")!;
       expect(container.textContent).toBe("");
@@ -82,7 +96,11 @@ describe("dom", () => {
     test("logs and renders nothing when the loader rejects with no fallback", async () => {
       const suppressed = suppressConsole();
       try {
-        mount(<div id="container"><Lazy loader={() => Promise.reject(new Error("boom"))}></Lazy></div>);
+        mount(
+          <div id="container">
+            <Lazy loader={() => Promise.reject(new Error("boom"))}></Lazy>
+          </div>,
+        );
 
         const container = document.getElementById("container")!;
         expect(container.textContent).toBe("");
@@ -102,13 +120,23 @@ describe("dom", () => {
     test("forwards props to loaded component", async () => {
       const ProfileComponent = (props: Record<string, unknown>) => {
         const { userId, theme } = props as { userId: number; theme: string };
-        return <div id="profile" class={theme}>User: {userId}</div>;
+        return (
+          <div id="profile" class={theme}>
+            User: {userId}
+          </div>
+        );
       };
 
       let resolveLoader!: (comp: typeof ProfileComponent) => void;
-      const loaderPromise = new Promise<typeof ProfileComponent>(r => { resolveLoader = r; });
+      const loaderPromise = new Promise<typeof ProfileComponent>((r) => {
+        resolveLoader = r;
+      });
 
-      mount(<div id="container"><Lazy loader={() => loaderPromise} props={{ userId: 42, theme: "dark" }}></Lazy></div>);
+      mount(
+        <div id="container">
+          <Lazy loader={() => loaderPromise} props={{ userId: 42, theme: "dark" }}></Lazy>
+        </div>,
+      );
 
       resolveLoader(ProfileComponent);
       await loaderPromise;
@@ -123,7 +151,15 @@ describe("dom", () => {
       const loading = <div id="loading-indicator">Loading...</div>;
       const fallback = <div id="error-fallback">Error!</div>;
 
-      mount(<div id="container"><Lazy loader={() => Promise.reject(new Error("load failed"))} loading={loading} fallback={fallback}></Lazy></div>);
+      mount(
+        <div id="container">
+          <Lazy
+            loader={() => Promise.reject(new Error("load failed"))}
+            loading={loading}
+            fallback={fallback}
+          ></Lazy>
+        </div>,
+      );
 
       const container = document.getElementById("container")!;
       expect(container.textContent).toContain("Loading...");
@@ -138,9 +174,15 @@ describe("dom", () => {
 
     test("bare minimum with no loading or fallback", async () => {
       let resolveComponent!: () => void;
-      const promise = new Promise<void>(r => { resolveComponent = r; });
+      const promise = new Promise<void>((r) => {
+        resolveComponent = r;
+      });
 
-      mount(<div id="container"><Lazy loader={(() => promise.then(() => <span>Done</span> as HellaNode))}></Lazy></div>);
+      mount(
+        <div id="container">
+          <Lazy loader={() => promise.then(() => (<span>Done</span>) as HellaNode)}></Lazy>
+        </div>,
+      );
 
       const container = document.getElementById("container")!;
       expect(container.textContent).toBe("");
@@ -154,12 +196,16 @@ describe("dom", () => {
 
     test("prevents rendering when unmounted during load", async () => {
       let resolveComponent!: (val: () => HellaNode) => void;
-      const pendingPromise = new Promise<() => HellaNode>(resolve => {
+      const pendingPromise = new Promise<() => HellaNode>((resolve) => {
         resolveComponent = resolve;
       });
       const AsyncComponent = () => <div>Should not render</div>;
 
-      const app = mount(<div id="container"><Lazy loader={() => pendingPromise} loading={(<div>Loading</div>)}></Lazy></div>);
+      const app = mount(
+        <div id="container">
+          <Lazy loader={() => pendingPromise} loading={<div>Loading</div>}></Lazy>
+        </div>,
+      );
 
       const container = document.getElementById("container")!;
       expect(container.textContent).toContain("Loading");
@@ -182,7 +228,15 @@ describe("dom", () => {
         rejectLoader = reject;
       });
 
-      const app = mount(<div id="container"><Lazy loader={() => pendingPromise} loading={(<div>Loading</div>)} fallback={(<div>Fallback</div>)}></Lazy></div>);
+      const app = mount(
+        <div id="container">
+          <Lazy
+            loader={() => pendingPromise}
+            loading={<div>Loading</div>}
+            fallback={<div>Fallback</div>}
+          ></Lazy>
+        </div>,
+      );
 
       const container = document.getElementById("container")!;
       expect(container.textContent).toContain("Loading");
@@ -199,15 +253,22 @@ describe("dom", () => {
     test("passes abort signal to loader and aborts on cleanup", async () => {
       let receivedSignal: AbortSignal | undefined;
       let resolveComponent!: (val: () => HellaNode) => void;
-      const pendingPromise = new Promise<() => HellaNode>(resolve => {
+      const pendingPromise = new Promise<() => HellaNode>((resolve) => {
         resolveComponent = resolve;
       });
       const AsyncComponent = () => <div>Content</div>;
 
-      const app = mount(<div id="container"><Lazy loader={(options?: LazyOptions) => {
-            receivedSignal = options?.signal;
-            return pendingPromise;
-          }} loading={(<div>Loading</div>)}></Lazy></div>);
+      const app = mount(
+        <div id="container">
+          <Lazy
+            loader={(options?: LazyOptions) => {
+              receivedSignal = options?.signal;
+              return pendingPromise;
+            }}
+            loading={<div>Loading</div>}
+          ></Lazy>
+        </div>,
+      );
 
       expect(receivedSignal).toBeDefined();
       expect(receivedSignal!.aborted).toBe(false);

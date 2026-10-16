@@ -1,5 +1,12 @@
 import { signal } from "./core";
-import type { GlobalHooks, RouteValue, Redirect, HistoryMode, ScrollBehavior, RouterConfig } from "../types";
+import type {
+  GlobalHooks,
+  RouteValue,
+  Redirect,
+  HistoryMode,
+  ScrollBehavior,
+  RouterConfig,
+} from "../types";
 
 /**
  * Signal containing the current route map.

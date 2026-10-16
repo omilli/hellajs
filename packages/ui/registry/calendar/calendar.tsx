@@ -1,6 +1,13 @@
 import { effect, signal, untracked } from "@hellajs/core";
 import { ForEach } from "@hellajs/dom";
-import type { CalendarRange, CalendarSelection, CalendarProps, CalendarDayButtonProps, CalendarCell, DayCellProps } from "./calendar-types.js";
+import type {
+  CalendarRange,
+  CalendarSelection,
+  CalendarProps,
+  CalendarDayButtonProps,
+  CalendarCell,
+  DayCellProps,
+} from "./calendar-types.js";
 
 // @hella:styles
 declare const base: string;
@@ -44,7 +51,11 @@ function startOfMonth(date: Date): Date {
 
 function addMonths(date: Date, amount: number): Date {
   const target = new Date(date.getFullYear(), date.getMonth() + amount, 1);
-  return new Date(target.getFullYear(), target.getMonth(), Math.min(date.getDate(), daysInMonth(target.getFullYear(), target.getMonth())));
+  return new Date(
+    target.getFullYear(),
+    target.getMonth(),
+    Math.min(date.getDate(), daysInMonth(target.getFullYear(), target.getMonth())),
+  );
 }
 
 function addDays(date: Date, amount: number): Date {
@@ -52,7 +63,11 @@ function addDays(date: Date, amount: number): Date {
 }
 
 function isSameDay(a: Date, b: Date): boolean {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
 }
 
 function isSameMonth(a: Date, b: Date): boolean {
@@ -78,7 +93,11 @@ function weekdayLabels(weekStartsOn: number): string[] {
   const labels: string[] = [];
   let i = 0;
   while (i < WEEKDAY_COUNT) {
-    labels.push(new Date(2024, 0, 7 + ((weekStartsOn + i) % WEEKDAY_COUNT)).toLocaleDateString(LOCALE, { weekday: "short" }));
+    labels.push(
+      new Date(2024, 0, 7 + ((weekStartsOn + i) % WEEKDAY_COUNT)).toLocaleDateString(LOCALE, {
+        weekday: "short",
+      }),
+    );
     i++;
   }
   return labels;
@@ -86,7 +105,12 @@ function weekdayLabels(weekStartsOn: number): string[] {
 
 /** One grid day: `key` is the stable ISO identity used for focus, selection, and range math. */
 
-function buildMonth(anchor: Date, weekStartsOn: number, fixedWeeks: boolean, disabled: ((date: Date) => boolean) | undefined): CalendarCell[][] {
+function buildMonth(
+  anchor: Date,
+  weekStartsOn: number,
+  fixedWeeks: boolean,
+  disabled: ((date: Date) => boolean) | undefined,
+): CalendarCell[][] {
   const monthStart = startOfMonth(anchor);
   const gridStart = startOfWeek(monthStart, weekStartsOn);
   const days = daysInMonth(anchor.getFullYear(), anchor.getMonth());
@@ -135,7 +159,8 @@ function defaultFocusKey(rows: CalendarCell[][]): string | undefined {
   return fallback;
 }
 
-const resolveFlag = (value: boolean | (() => boolean) | undefined): boolean => (typeof value === "function" ? value() : value === true);
+const resolveFlag = (value: boolean | (() => boolean) | undefined): boolean =>
+  typeof value === "function" ? value() : value === true;
 
 const chevronLeftIcon = (): JSX.Element => (
   <svg
@@ -187,7 +212,18 @@ const chevronRightIcon = (): JSX.Element => (
  * accessors, so a composed calendar drives them live while a standalone call
  * passes static values.
  */
-export function CalendarDayButton({ day: dayProp, selectedSingle, rangeStart, rangeEnd, rangeMiddle, disabled, focused, today, class: cls, ...attrs }: CalendarDayButtonProps): JSX.Element {
+export function CalendarDayButton({
+  day: dayProp,
+  selectedSingle,
+  rangeStart,
+  rangeEnd,
+  rangeMiddle,
+  disabled,
+  focused,
+  today,
+  class: cls,
+  ...attrs
+}: CalendarDayButtonProps): JSX.Element {
   const selected = (): boolean => resolveFlag(selectedSingle);
   return (
     <button
@@ -198,8 +234,14 @@ export function CalendarDayButton({ day: dayProp, selectedSingle, rangeStart, ra
       data-range-start={resolveFlag(rangeStart) ? "true" : undefined}
       data-range-end={resolveFlag(rangeEnd) ? "true" : undefined}
       data-range-middle={resolveFlag(rangeMiddle) ? "true" : undefined}
-      aria-selected={selected() || resolveFlag(rangeStart) || resolveFlag(rangeEnd) || resolveFlag(rangeMiddle) ? "true" : "false"}
-      aria-disabled={resolveFlag(disabled as boolean | (() => boolean) | undefined) ? "true" : undefined}
+      aria-selected={
+        selected() || resolveFlag(rangeStart) || resolveFlag(rangeEnd) || resolveFlag(rangeMiddle)
+          ? "true"
+          : "false"
+      }
+      aria-disabled={
+        resolveFlag(disabled as boolean | (() => boolean) | undefined) ? "true" : undefined
+      }
       aria-current={today === true ? "date" : undefined}
       tabindex={resolveFlag(focused) ? 0 : -1}
       class={
@@ -208,13 +250,16 @@ export function CalendarDayButton({ day: dayProp, selectedSingle, rangeStart, ra
         // @hella:end
       }
       {...attrs}
-    >{dayProp.getDate()}</button>
+    >
+      {dayProp.getDate()}
+    </button>
   );
 }
 
 /** One grid cell: the td carries the today/outside/disabled/range data attributes, the day button the aria semantics. */
 function DayCell(props: DayCellProps): JSX.Element {
-  const selectedSingle = (): boolean => props.selected() && !props.rangeStart() && !props.rangeEnd() && !props.rangeMiddle();
+  const selectedSingle = (): boolean =>
+    props.selected() && !props.rangeStart() && !props.rangeEnd() && !props.rangeMiddle();
   return (
     <td
       role="gridcell"
@@ -260,13 +305,30 @@ function DayCell(props: DayCellProps): JSX.Element {
  * previous/next month navigation. `numberOfMonths > 1`, `fromDate`/`toDate`
  * bounds, custom `formatters`, and week numbers are out of scope.
  */
-export function Calendar({ mode: modeProp, selected, onSelect, month: monthProp, onMonthChange, defaultMonth, disabled, showOutsideDays, fixedWeeks, weekStartsOn: weekStartProp, hideNavigation, classNames, class: cls, ...attrs }: CalendarProps): JSX.Element {
+export function Calendar({
+  mode: modeProp,
+  selected,
+  onSelect,
+  month: monthProp,
+  onMonthChange,
+  defaultMonth,
+  disabled,
+  showOutsideDays,
+  fixedWeeks,
+  weekStartsOn: weekStartProp,
+  hideNavigation,
+  classNames,
+  class: cls,
+  ...attrs
+}: CalendarProps): JSX.Element {
   const mode = modeProp ?? "single";
   const weekStartsOn = weekStartProp ?? 0;
 
   const view = signal(startOfMonth(defaultMonth ?? monthProp?.() ?? new Date()));
   const selection = signal<CalendarSelection>(
-    mode === "multiple" ? (selected as Date[] | undefined ?? []) : (selected as CalendarSelection),
+    mode === "multiple"
+      ? ((selected as Date[] | undefined) ?? [])
+      : (selected as CalendarSelection),
   );
   const hoverKey = signal<string | undefined>(undefined);
   const focusedKey = signal<string | undefined>(undefined);
@@ -321,7 +383,8 @@ export function Calendar({ mode: modeProp, selected, onSelect, month: monthProp,
   const isSelected = (date: Date): boolean => {
     const value = selection();
     if (mode === "single") return value !== undefined && isSameDay(value as Date, date);
-    if (mode === "multiple") return (value as Date[]).some((dateValue) => isSameDay(dateValue, date));
+    if (mode === "multiple")
+      return (value as Date[]).some((dateValue) => isSameDay(dateValue, date));
     const range = (value as CalendarRange) ?? {};
     if (range.from === undefined) return false;
     if (range.to === undefined) return isSameDay(range.from, date);
@@ -430,7 +493,8 @@ export function Calendar({ mode: modeProp, selected, onSelect, month: monthProp,
     else if (event.key === "PageDown") nextDate = addMonths(cell.date, 1);
     else if (event.key === "PageUp") nextDate = addMonths(cell.date, -1);
     else if (event.key === "Home") nextDate = startOfWeek(cell.date, weekStartsOn);
-    else if (event.key === "End") nextDate = addDays(startOfWeek(cell.date, weekStartsOn), WEEKDAY_COUNT - 1);
+    else if (event.key === "End")
+      nextDate = addDays(startOfWeek(cell.date, weekStartsOn), WEEKDAY_COUNT - 1);
     if (nextDate === undefined) return;
     event.preventDefault();
     focusDay(nextDate);
@@ -478,7 +542,9 @@ export function Calendar({ mode: modeProp, selected, onSelect, month: monthProp,
                 [captionLabel, classNames?.caption_label]
                 // @hella:end
               }
-            >{monthLabel(view())}</div>
+            >
+              {monthLabel(view())}
+            </div>
           </div>
           {hideNavigation === true ? undefined : (
             <nav
@@ -541,46 +607,58 @@ export function Calendar({ mode: modeProp, selected, onSelect, month: monthProp,
                 {weekdayLabels(weekStartsOn).map((label, index) => (
                   <th
                     scope="col"
-                    abbr={new Date(2024, 0, 7 + ((weekStartsOn + index) % WEEKDAY_COUNT)).toLocaleDateString(LOCALE, { weekday: "long" })}
+                    abbr={new Date(
+                      2024,
+                      0,
+                      7 + ((weekStartsOn + index) % WEEKDAY_COUNT),
+                    ).toLocaleDateString(LOCALE, { weekday: "long" })}
                     data-slot="calendar-weekday"
                     class={
                       // @hella:compose
                       [weekday, classNames?.weekday]
                       // @hella:end
                     }
-                  >{label}</th>
+                  >
+                    {label}
+                  </th>
                 ))}
               </tr>
             </thead>
             <tbody data-slot="calendar-body">
-              <ForEach each={weeks} use={(row: CalendarCell[]) => (
-                <tr
-                  role="row"
-                  data-slot="calendar-week"
-                  class={
-                    // @hella:compose
-                    [week, classNames?.week]
-                    // @hella:end
-                  }
-                >
-                  <ForEach each={row} use={(cell: CalendarCell) => (
-                    <DayCell
-                      cell={cell}
-                      selected={() => isSelected(cell.date)}
-                      rangeStart={() => rangeEdge(cell, "start")}
-                      rangeMiddle={() => rangeEdge(cell, "middle")}
-                      rangeEnd={() => rangeEdge(cell, "end")}
-                      focused={() => focusedKey() === cell.key}
-                      hidden={showOutsideDays === false && cell.outside}
-                      dayClass={classNames?.day}
-                      buttonClass={classNames?.day_button}
-                      onSelect={selectDay}
-                      onHover={onDayHover}
-                      onLeave={() => hoverKey(undefined)}
+              <ForEach
+                each={weeks}
+                use={(row: CalendarCell[]) => (
+                  <tr
+                    role="row"
+                    data-slot="calendar-week"
+                    class={
+                      // @hella:compose
+                      [week, classNames?.week]
+                      // @hella:end
+                    }
+                  >
+                    <ForEach
+                      each={row}
+                      use={(cell: CalendarCell) => (
+                        <DayCell
+                          cell={cell}
+                          selected={() => isSelected(cell.date)}
+                          rangeStart={() => rangeEdge(cell, "start")}
+                          rangeMiddle={() => rangeEdge(cell, "middle")}
+                          rangeEnd={() => rangeEdge(cell, "end")}
+                          focused={() => focusedKey() === cell.key}
+                          hidden={showOutsideDays === false && cell.outside}
+                          dayClass={classNames?.day}
+                          buttonClass={classNames?.day_button}
+                          onSelect={selectDay}
+                          onHover={onDayHover}
+                          onLeave={() => hoverKey(undefined)}
+                        />
+                      )}
                     />
-                  )} />
-                </tr>
-              )} />
+                  </tr>
+                )}
+              />
             </tbody>
           </table>
         </div>

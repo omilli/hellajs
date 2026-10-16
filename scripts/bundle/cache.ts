@@ -2,41 +2,32 @@ import { createHash } from "node:crypto";
 import fsStat from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { ensureDir, scanDirRecursive, logger, execCommand, projectRoot } from "../utils/index.js";
-import { BUILD_CONFIG } from "./config.js";
+import { ensureDir, scanDirRecursive, logger, execCommand, projectRoot } from "../utils/index.ts";
+import { BUILD_CONFIG } from "./config.ts";
 
 /**
  * Calculate SHA256 hash of file contents for cache invalidation.
  * @param filePath Absolute path to the file
  * @returns Hex digest string, or null if the file cannot be read
  */
-export async function calculateFileHash(
-  filePath: string,
-): Promise<string | null> {
+export async function calculateFileHash(filePath: string): Promise<string | null> {
   try {
     const content = await fs.readFile(filePath);
     return createHash("sha256").update(content).digest("hex");
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
-      logger.warn(
-        `Warning: Failed to hash ${filePath}: ${(error as Error).message}`,
-      );
+      logger.warn(`Warning: Failed to hash ${filePath}: ${(error as Error).message}`);
     }
     return null;
   }
 }
 
 async function getAllSourceFiles(packageDir: string): Promise<string[]> {
-  const coreFiles = [
-    path.join(packageDir, "package.json"),
-    path.join(packageDir, "tsconfig.json"),
-  ];
+  const coreFiles = [path.join(packageDir, "package.json"), path.join(packageDir, "tsconfig.json")];
   const sourceFiles = coreFiles.filter(fsStat.existsSync);
   const libDir = path.join(packageDir, "lib");
   if (fsStat.existsSync(libDir)) {
-    sourceFiles.push(
-      ...(await scanDirRecursive(libDir, /\.(ts|tsx|js|jsx)$/)),
-    );
+    sourceFiles.push(...(await scanDirRecursive(libDir, /\.(ts|tsx|js|jsx)$/)));
   }
   const registryDir = path.join(packageDir, "registry");
   if (fsStat.existsSync(registryDir)) {
@@ -49,11 +40,9 @@ async function getAllSourceFiles(packageDir: string): Promise<string[]> {
 
 async function getGitStatus(packageDir: string): Promise<string | null> {
   try {
-    const result = await execCommand("git", [
-      "status",
-      "--porcelain",
-      packageDir,
-    ], { cwd: projectRoot });
+    const result = await execCommand("git", ["status", "--porcelain", packageDir], {
+      cwd: projectRoot,
+    });
     return result.stdout.trim();
   } catch {
     return null;
@@ -75,15 +64,12 @@ export async function isCacheValid(
     if (!fsStat.existsSync(cacheFile)) return false;
 
     const cacheData = JSON.parse(await fs.readFile(cacheFile, "utf8"));
-    if (!cacheData?.hashes || typeof cacheData.hashes !== "object")
-      return false;
+    if (!cacheData?.hashes || typeof cacheData.hashes !== "object") return false;
 
     const currentGitStatus = await getGitStatus(packageDir);
     if (currentGitStatus !== cacheData.gitStatus) return false;
 
-    const currentFiles = (await getAllSourceFiles(packageDir)).filter(
-      fsStat.existsSync,
-    );
+    const currentFiles = (await getAllSourceFiles(packageDir)).filter(fsStat.existsSync);
     const cachedFiles = Object.keys(cacheData.hashes);
 
     if (cachedFiles.length !== currentFiles.length) return false;
@@ -91,10 +77,7 @@ export async function isCacheValid(
     if (cachedFiles.some((f) => !fsStat.existsSync(f))) return false;
 
     const hashResults = await Promise.all(
-      currentFiles.map(
-        async (file) =>
-          (await calculateFileHash(file)) === cacheData.hashes[file],
-      ),
+      currentFiles.map(async (file) => (await calculateFileHash(file)) === cacheData.hashes[file]),
     );
 
     return hashResults.every(Boolean);
@@ -112,9 +95,7 @@ export async function cleanCache(cacheDir: string): Promise<void> {
     }
     await ensureDir(cacheDir);
   } catch (error) {
-    logger.warn(
-      `Failed to clean cache directory: ${cacheDir} - ${(error as Error).message}`,
-    );
+    logger.warn(`Failed to clean cache directory: ${cacheDir} - ${(error as Error).message}`);
   }
 }
 
@@ -156,9 +137,7 @@ export async function updateCache(
   } catch (error) {
     logger.warn(`Failed to update cache: ${(error as Error).message}`);
     cleanCache(cacheDir).catch((cleanError) =>
-      logger.warn(
-        `Failed to clean cache: ${(cleanError as Error).message}`,
-      ),
+      logger.warn(`Failed to clean cache: ${(cleanError as Error).message}`),
     );
   }
 }

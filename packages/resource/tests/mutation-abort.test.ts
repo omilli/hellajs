@@ -1,6 +1,6 @@
-import { describe, test, expect, mock, beforeEach } from "bun:test";
+import { describe, test, expect, vi, beforeEach } from "vite-plus/test";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { resource } from "@hellajs/resource/bundle";
+import { resource } from "@hellajs/resource";
 import { expectAbortError } from "./helpers";
 
 describe("resource", () => {
@@ -25,7 +25,7 @@ describe("resource", () => {
     });
 
     test("handles abort during execution", async () => {
-      const promise = new Promise<string>(() => { });
+      const promise = new Promise<string>(() => {});
 
       const r = resource(() => promise);
 
@@ -40,9 +40,9 @@ describe("resource", () => {
     });
 
     test("onSettled is not called when mutation is aborted after onMutate ran", async () => {
-      const promise = new Promise<string>(() => { });
-      const onMutate = mock(() => "context");
-      const onSettled = mock(() => {});
+      const promise = new Promise<string>(() => {});
+      const onMutate = vi.fn(() => "context");
+      const onSettled = vi.fn(() => {});
 
       const r = resource(() => promise, { onMutate, onSettled });
 
@@ -67,7 +67,7 @@ describe("resource", () => {
     });
 
     test("clears isFetching when mutation is aborted by timeout", async () => {
-      const r = resource(() => new Promise(() => { }), { timeout: 30 });
+      const r = resource(() => new Promise(() => {}), { timeout: 30 });
 
       await expectAbortError(r.mutate("input"));
 
@@ -79,7 +79,7 @@ describe("resource", () => {
 
     test("clears isFetching when mutation is aborted by external signal", async () => {
       const controller = new AbortController();
-      const r = resource(() => new Promise(() => { }), { abortSignal: controller.signal });
+      const r = resource(() => new Promise(() => {}), { abortSignal: controller.signal });
 
       setTimeout(() => controller.abort(), 10);
 
@@ -92,7 +92,7 @@ describe("resource", () => {
     });
 
     test("clears isFetching when mutation is aborted via abort()", async () => {
-      const r = resource(() => new Promise(() => { }));
+      const r = resource(() => new Promise(() => {}));
 
       const mutationPromise = r.mutate("input");
       await delay(1);
@@ -108,8 +108,8 @@ describe("resource", () => {
     });
 
     test("aborts during a mutation retry delay without settling", async () => {
-      const fetcher = mock(() => Promise.reject(new Error("x")));
-      const onSettled = mock(() => { });
+      const fetcher = vi.fn(() => Promise.reject(new Error("x")));
+      const onSettled = vi.fn(() => {});
       const r = resource(fetcher, { retry: 10, retryDelay: 1000, onSettled });
 
       const mutation = r.mutate("input");

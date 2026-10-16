@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { logger, packagesDir, pluginsDir, changesetDir, projectRoot } from "./utils/index.js";
+import { logger, packagesDir, pluginsDir, changesetDir, projectRoot } from "./utils/index.ts";
 
 /** Ban set: em dash (U+2014), en dash (U+2013), and their HTML entities. Case-insensitive. */
 const DASH_PATTERN = /—|–|&mdash;|&ndash;|&#8212;|&#8213;|&#x2014;|&#x2013;/i;
@@ -131,7 +131,7 @@ async function main(): Promise<void> {
   }
 }
 
-if (import.meta.main) {
+if (process.argv[1] === import.meta.filename) {
   main().catch((error: Error) => {
     logger.error("Fatal error:", error);
     process.exit(1);

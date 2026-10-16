@@ -1,9 +1,9 @@
-import { describe, test, expect, mock } from "bun:test";
+import { describe, test, expect, vi } from "vite-plus/test";
 import { effect, flush } from "@hellajs/core";
-import { store } from "@hellajs/store/bundle";
+import { store } from "@hellajs/store";
 
 function expectUnwritten(read: () => unknown, update: () => void): void {
-  const tracker = mock(() => { });
+  const tracker = vi.fn(() => {});
   effect(() => {
     read();
     tracker();
@@ -20,21 +20,26 @@ describe("store", () => {
       const data = store({ timestamp: new Date("2024-01-15T12:00:00Z") });
       const original = data.timestamp();
 
-      data.$update(draft => {
-        draft.timestamp.setHours(0, 0, 0, 0);
+      data.$update((draft) => {
+        draft.timestamp.setUTCHours(0, 0, 0, 0);
       });
 
       expect(data.timestamp()).toBeInstanceOf(Date);
       expect(data.timestamp()).not.toBe(original);
-      expect(data.timestamp().getHours()).toBe(0);
-      expect(original.getHours()).toBe(12);
+      expect(data.timestamp().getUTCHours()).toBe(0);
+      expect(original.getUTCHours()).toBe(12);
     });
 
     test("clones Map in draft update", () => {
-      const data = store({ lookup: new Map([["a", 1], ["b", 2]]) });
+      const data = store({
+        lookup: new Map([
+          ["a", 1],
+          ["b", 2],
+        ]),
+      });
       const original = data.lookup();
 
-      data.$update(draft => {
+      data.$update((draft) => {
         draft.lookup.set("c", 3);
       });
 
@@ -48,7 +53,7 @@ describe("store", () => {
       const data = store({ tags: new Set(["a", "b"]) });
       const original = data.tags();
 
-      data.$update(draft => {
+      data.$update((draft) => {
         draft.tags.add("c");
       });
 
@@ -62,7 +67,7 @@ describe("store", () => {
       const data = store({ pattern: /old/ });
       const original = data.pattern();
 
-      data.$update(draft => {
+      data.$update((draft) => {
         draft.pattern = new RegExp("new", "g");
       });
 
@@ -74,10 +79,10 @@ describe("store", () => {
 
     test("clones deeply nested Map values in draft update", () => {
       const data = store({
-        lookup: new Map<string, { name: string }>([["k", { name: "Alice" }]])
+        lookup: new Map<string, { name: string }>([["k", { name: "Alice" }]]),
       });
 
-      data.$update(draft => {
+      data.$update((draft) => {
         draft.lookup.get("k")!.name = "Bob";
       });
 
@@ -91,7 +96,7 @@ describe("store", () => {
       const data = store({ timestamp: new Date("2024-01-15T12:00:00Z"), count: 0 });
       const original = data.timestamp();
 
-      data.$update(draft => {
+      data.$update((draft) => {
         draft.count = 1;
       });
 
@@ -102,7 +107,7 @@ describe("store", () => {
       const data = store({ items: [{ id: 1 }, { id: 2 }], count: 0 });
       const original = data.items();
 
-      data.$update(draft => {
+      data.$update((draft) => {
         draft.count = 1;
       });
 
@@ -117,12 +122,12 @@ describe("store", () => {
       const data = store({
         lookup: new Map([["a", 1]]),
         tags: new Set(["x"]),
-        count: 0
+        count: 0,
       });
       const originalMap = data.lookup();
       const originalSet = data.tags();
 
-      data.$update(draft => {
+      data.$update((draft) => {
         draft.count = 1;
       });
 
@@ -136,7 +141,7 @@ describe("store", () => {
       const data = store({ members: new Set([{ id: 1 }, { id: 2 }]), count: 0 });
       const original = Array.from(data.members());
 
-      data.$update(draft => {
+      data.$update((draft) => {
         draft.count = 1;
       });
 
@@ -150,45 +155,54 @@ describe("store", () => {
     test("rewrites a Set when an object member is mutated", () => {
       const data = store({ members: new Set([{ id: 1 }, { id: 2 }]) });
 
-      data.$update(draft => {
+      data.$update((draft) => {
         for (const member of draft.members) {
-          if (member.id === 1) { member.id = 99; }
+          if (member.id === 1) {
+            member.id = 99;
+          }
         }
       });
 
       expect(data.members()).toBeInstanceOf(Set);
       // Contract change (deep collections): object members are element stores;
       // a whole-Set reconcile installs fresh stores for every member
-      expect(Array.from(data.members()).some(member => member.id() === 99)).toBe(true);
+      expect(Array.from(data.members()).some((member) => member.id() === 99)).toBe(true);
     });
 
     test("writes through duplicate-content Set swap in draft update", () => {
       const data = store({ tags: new Set<Record<string, number>>([{ x: 1 }, { x: 1 }]) });
 
-      data.$update(draft => {
+      data.$update((draft) => {
         draft.tags = new Set<Record<string, number>>([{ x: 1 }, { y: 2 }]);
       });
 
-      expect(Array.from(data.$snapshot().tags as Set<Record<string, number>>)).toEqual([{ x: 1 }, { y: 2 }]);
+      expect(Array.from(data.$snapshot().tags as Set<Record<string, number>>)).toEqual([
+        { x: 1 },
+        { y: 2 },
+      ]);
     });
 
     test("writes through reversed duplicate-content Set swap in draft update", () => {
       const data = store({ tags: new Set<Record<string, number>>([{ x: 1 }, { y: 2 }]) });
 
-      data.$update(draft => {
+      data.$update((draft) => {
         draft.tags = new Set([{ x: 1 }, { x: 1 }]);
       });
 
-      expect(Array.from(data.$snapshot().tags as Set<Record<string, number>>)).toEqual([{ x: 1 }, { x: 1 }]);
+      expect(Array.from(data.$snapshot().tags as Set<Record<string, number>>)).toEqual([
+        { x: 1 },
+        { x: 1 },
+      ]);
     });
 
     test("leaves identical-content Set swap unwritten", () => {
       const data = store({ tags: new Set([{ x: 1 }, { x: 1 }]) });
       expectUnwritten(
         () => data.tags(),
-        () => data.$update(draft => {
-          draft.tags = new Set([{ x: 1 }, { x: 1 }]);
-        })
+        () =>
+          data.$update((draft) => {
+            draft.tags = new Set([{ x: 1 }, { x: 1 }]);
+          }),
       );
     });
 
@@ -196,20 +210,23 @@ describe("store", () => {
       const data = store({ tags: new Set([Number.NaN, { x: 1 }]) });
       expectUnwritten(
         () => data.tags(),
-        () => data.$update(draft => {
-          draft.tags = new Set([Number.NaN, { x: 1 }]);
-        })
+        () =>
+          data.$update((draft) => {
+            draft.tags = new Set([Number.NaN, { x: 1 }]);
+          }),
       );
     });
 
     test("preserves class instance prototype when the draft mutates it", () => {
       class Point {
         x: number;
-        constructor(x: number) { this.x = x; }
+        constructor(x: number) {
+          this.x = x;
+        }
       }
       const data = store({ point: new Point(1), count: 0 });
 
-      data.$update(draft => {
+      data.$update((draft) => {
         draft.point.x = 5;
       });
 
@@ -221,9 +238,10 @@ describe("store", () => {
       const data = store({ timestamp: new Date(1000), count: 0 });
       expectUnwritten(
         () => data.timestamp(),
-        () => data.$update(draft => {
-          draft.count = 1;
-        })
+        () =>
+          data.$update((draft) => {
+            draft.count = 1;
+          }),
       );
       expect(data.count()).toBe(1);
     });

@@ -1,4 +1,11 @@
-import type { BreadcrumbProps, BreadcrumbPartProps, BreadcrumbLinkProps, BreadcrumbPageProps, BreadcrumbSeparatorProps, BreadcrumbEllipsisProps } from "./breadcrumb-types.js";
+import type {
+  BreadcrumbProps,
+  BreadcrumbPartProps,
+  BreadcrumbLinkProps,
+  BreadcrumbPageProps,
+  BreadcrumbSeparatorProps,
+  BreadcrumbEllipsisProps,
+} from "./breadcrumb-types.js";
 
 // @hella:styles
 declare const ellipsis: string;
@@ -28,7 +35,11 @@ export function Breadcrumb({ children, class: cls, ...attrs }: BreadcrumbProps):
   );
 }
 
-export function BreadcrumbList({ children, class: cls, ...attrs }: BreadcrumbPartProps): JSX.Element {
+export function BreadcrumbList({
+  children,
+  class: cls,
+  ...attrs
+}: BreadcrumbPartProps): JSX.Element {
   return (
     <ol
       data-slot="breadcrumb-list"
@@ -44,7 +55,11 @@ export function BreadcrumbList({ children, class: cls, ...attrs }: BreadcrumbPar
   );
 }
 
-export function BreadcrumbItem({ children, class: cls, ...attrs }: BreadcrumbPartProps): JSX.Element {
+export function BreadcrumbItem({
+  children,
+  class: cls,
+  ...attrs
+}: BreadcrumbPartProps): JSX.Element {
   return (
     <li
       data-slot="breadcrumb-item"
@@ -60,7 +75,11 @@ export function BreadcrumbItem({ children, class: cls, ...attrs }: BreadcrumbPar
   );
 }
 
-export function BreadcrumbLink({ children, class: cls, ...attrs }: BreadcrumbLinkProps): JSX.Element {
+export function BreadcrumbLink({
+  children,
+  class: cls,
+  ...attrs
+}: BreadcrumbLinkProps): JSX.Element {
   return (
     <a
       data-slot="breadcrumb-link"
@@ -76,7 +95,11 @@ export function BreadcrumbLink({ children, class: cls, ...attrs }: BreadcrumbLin
   );
 }
 
-export function BreadcrumbPage({ children, class: cls, ...attrs }: BreadcrumbPageProps): JSX.Element {
+export function BreadcrumbPage({
+  children,
+  class: cls,
+  ...attrs
+}: BreadcrumbPageProps): JSX.Element {
   return (
     <span
       data-slot="breadcrumb-page"
@@ -95,7 +118,11 @@ export function BreadcrumbPage({ children, class: cls, ...attrs }: BreadcrumbPag
   );
 }
 
-export function BreadcrumbSeparator({ children, class: cls, ...attrs }: BreadcrumbSeparatorProps): JSX.Element {
+export function BreadcrumbSeparator({
+  children,
+  class: cls,
+  ...attrs
+}: BreadcrumbSeparatorProps): JSX.Element {
   return (
     <li
       data-slot="breadcrumb-separator"
@@ -108,22 +135,24 @@ export function BreadcrumbSeparator({ children, class: cls, ...attrs }: Breadcru
       }
       {...attrs}
     >
-      {() => children ?? (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <path d="m9 18 6-6-6-6" />
-        </svg>
-      )}
+      {() =>
+        children ?? (
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+        )
+      }
     </li>
   );
 }

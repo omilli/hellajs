@@ -1,96 +1,96 @@
-import { describe, test, expect, mock } from "bun:test";
+import { describe, test, expect, vi } from "vite-plus/test";
 import { effect } from "@hellajs/core";
-import { store } from "@hellajs/store/bundle";
+import { store } from "@hellajs/store";
 import { spyCleanup } from "./helpers";
 
 describe("store", () => {
-describe("cleanup", () => {
-  test("calls nested store cleanup methods", () => {
-    const data = store({
-      level1: { level2: { value: "deep" } }
+  describe("cleanup", () => {
+    test("calls nested store cleanup methods", () => {
+      const data = store({
+        level1: { level2: { value: "deep" } },
+      });
+
+      const level1Cleaned = spyCleanup(data.level1);
+      const level2Cleaned = spyCleanup(data.level1.level2);
+
+      data.$cleanup();
+
+      expect(level1Cleaned).toHaveBeenCalledTimes(1);
+      expect(level2Cleaned).toHaveBeenCalledTimes(1);
     });
 
-    const level1Cleaned = spyCleanup(data.level1);
-    const level2Cleaned = spyCleanup(data.level1.level2);
+    test("signals remain usable after cleanup", () => {
+      const data = store({ count: 0, nested: { value: "a" } });
 
-    data.$cleanup();
+      data.$cleanup();
 
-    expect(level1Cleaned).toHaveBeenCalledTimes(1);
-    expect(level2Cleaned).toHaveBeenCalledTimes(1);
-  });
-
-  test("signals remain usable after cleanup", () => {
-    const data = store({ count: 0, nested: { value: "a" } });
-
-    data.$cleanup();
-
-    data.count(99);
-    expect(data.count()).toBe(99);
-  });
-
-  test("cleanup does not dispose individual signals: effects still fire", () => {
-    const data = store({ nested: { count: 0 } });
-    const tracker = mock(() => { });
-
-    effect(() => {
-      data.nested.count();
-      tracker();
+      data.count(99);
+      expect(data.count()).toBe(99);
     });
 
-    expect(tracker).toHaveBeenCalledTimes(1);
+    test("cleanup does not dispose individual signals: effects still fire", () => {
+      const data = store({ nested: { count: 0 } });
+      const tracker = vi.fn(() => {});
 
-    data.nested.count(1);
-    expect(tracker).toHaveBeenCalledTimes(2);
+      effect(() => {
+        data.nested.count();
+        tracker();
+      });
 
-    // Cleanup only disposes nested store references, not individual signals
-    data.$cleanup();
+      expect(tracker).toHaveBeenCalledTimes(1);
 
-    data.nested.count(2);
-    // Signal still works: effect still fires
-    expect(tracker).toHaveBeenCalledTimes(3);
-  });
+      data.nested.count(1);
+      expect(tracker).toHaveBeenCalledTimes(2);
 
-  test("cleanup is idempotent", () => {
-    const data = store({ nested: { value: "a" } });
-
-    expect(() => {
+      // Cleanup only disposes nested store references, not individual signals
       data.$cleanup();
-      data.$cleanup();
-      data.$cleanup();
-    }).not.toThrow();
-  });
 
-  test("cleanup on flat (non-nested) store", () => {
-    const data = store({ x: 1, y: 2 });
-    expect(() => data.$cleanup()).not.toThrow();
-    expect(data.x()).toBe(1);
-  });
-
-  test("external reassignment of nested store properties throws TypeError", () => {
-    const data = store({ nested: { count: 0 } });
-
-    expect(() => {
-      // @ts-expect-error nested-store properties are non-writable — reassignment would drop reactivity
-      data.nested = { group: { cleanup: () => {} } };
-    }).toThrow(TypeError);
-
-    expect(data.nested.count()).toBe(0);
-  });
-
-  test("cleanup recurses into plain object values defined via defineProperty", () => {
-    const innerCleaned = mock(() => {});
-    const data = store({ nested: { count: 0 } });
-
-    Object.defineProperty(data, "nested", {
-      value: { group: { $cleanup: innerCleaned } },
-      writable: false,
-      enumerable: true,
-      configurable: true
+      data.nested.count(2);
+      // Signal still works: effect still fires
+      expect(tracker).toHaveBeenCalledTimes(3);
     });
 
-    data.$cleanup();
+    test("cleanup is idempotent", () => {
+      const data = store({ nested: { value: "a" } });
 
-    expect(innerCleaned).toHaveBeenCalledTimes(1);
+      expect(() => {
+        data.$cleanup();
+        data.$cleanup();
+        data.$cleanup();
+      }).not.toThrow();
+    });
+
+    test("cleanup on flat (non-nested) store", () => {
+      const data = store({ x: 1, y: 2 });
+      expect(() => data.$cleanup()).not.toThrow();
+      expect(data.x()).toBe(1);
+    });
+
+    test("external reassignment of nested store properties throws TypeError", () => {
+      const data = store({ nested: { count: 0 } });
+
+      expect(() => {
+        // @ts-expect-error nested-store properties are non-writable — reassignment would drop reactivity
+        data.nested = { group: { cleanup: () => {} } };
+      }).toThrow(TypeError);
+
+      expect(data.nested.count()).toBe(0);
+    });
+
+    test("cleanup recurses into plain object values defined via defineProperty", () => {
+      const innerCleaned = vi.fn(() => {});
+      const data = store({ nested: { count: 0 } });
+
+      Object.defineProperty(data, "nested", {
+        value: { group: { $cleanup: innerCleaned } },
+        writable: false,
+        enumerable: true,
+        configurable: true,
+      });
+
+      data.$cleanup();
+
+      expect(innerCleaned).toHaveBeenCalledTimes(1);
+    });
   });
-});
 });

@@ -1,10 +1,23 @@
 import { existsSync } from "node:fs";
 import { basename, join, relative } from "node:path";
-import { logger, projectRoot } from "../utils/index.js";
-import { dialogHook, driveAgent, installSigint, makeRelay } from "../agent/driver.js";
-import type { Relay } from "../agent/relay.js";
-import { carrierTicked, parseWorktreeList, worktreeScript, WT_ROOT, type WorktreeEntry } from "../agent/worktree.js";
-import { countTicks, isTicked, listPlanUnits, partitionComponents, setSlug, type PlanUnit } from "./set.js";
+import { logger, projectRoot } from "../utils/index.ts";
+import { dialogHook, driveAgent, installSigint, makeRelay } from "../agent/driver.ts";
+import type { Relay } from "../agent/relay.ts";
+import {
+  carrierTicked,
+  parseWorktreeList,
+  worktreeScript,
+  WT_ROOT,
+  type WorktreeEntry,
+} from "../agent/worktree.ts";
+import {
+  countTicks,
+  isTicked,
+  listPlanUnits,
+  partitionComponents,
+  setSlug,
+  type PlanUnit,
+} from "./set.ts";
 
 /** Default model pattern for worker instances (`--model` overrides). */
 const DEFAULT_WORKER_MODEL = "glm-5.3-flash";
@@ -52,7 +65,12 @@ interface Venue {
  * @param continuation True on passes after the first.
  * @returns The prompt text.
  */
-function buildUnitPrompt(wtUnitPath: string, wtSetDir: string, slug: string, continuation: boolean): string {
+function buildUnitPrompt(
+  wtUnitPath: string,
+  wtSetDir: string,
+  slug: string,
+  continuation: boolean,
+): string {
   const lines = [
     `/skill:worker Execute the plan unit at ${wtUnitPath}. Set context lives in ${join(wtSetDir, "index.md")} — read it first for shared scope.`,
     `Your target worktree slug is "${slug}": provision it or re-enter the existing one per the Provision step (never a duplicate), then execute every step inside that worktree — ticks land on the worktree copy named above.`,
@@ -158,12 +176,22 @@ export async function runSet(options: RunSetOptions): Promise<number> {
   if (inventory !== "" && !inventory.includes("(no protocol worktrees)")) {
     logger.info(`existing protocol worktrees:\n${inventory.trimEnd()}`);
   }
-  const carriers = parseWorktreeList(inventory).filter((entry: WorktreeEntry): boolean => entry.plans === relSetDir);
-  const { venues, skips } = deriveVenues(units, carriers, relSetDir, setSlug(options.setDir), options.mode);
+  const carriers = parseWorktreeList(inventory).filter(
+    (entry: WorktreeEntry): boolean => entry.plans === relSetDir,
+  );
+  const { venues, skips } = deriveVenues(
+    units,
+    carriers,
+    relSetDir,
+    setSlug(options.setDir),
+    options.mode,
+  );
   for (const skip of skips) {
     logger.info(`skip ${skip.unit.name} (${skip.detail})`);
   }
-  logger.info(`plan set ${setName} · ${units.length} unit(s) · mode ${options.mode} · ${venues.length} venue(s)`);
+  logger.info(
+    `plan set ${setName} · ${units.length} unit(s) · mode ${options.mode} · ${venues.length} venue(s)`,
+  );
   const records: UnitRecord[] = [...skips];
   let halted = false;
   for (const venue of venues) {
@@ -173,19 +201,26 @@ export async function runSet(options: RunSetOptions): Promise<number> {
       break;
     }
     if (outcome.failedCount > 0) {
-      logger.warn(`component ${venue.slug} incomplete — standing for plan rework (merge would refuse it)`);
+      logger.warn(
+        `component ${venue.slug} incomplete — standing for plan rework (merge would refuse it)`,
+      );
       continue;
     }
-    logger.success(`component ${venue.slug} complete — standing for review (merge is user-invoked)`);
+    logger.success(
+      `component ${venue.slug} complete — standing for review (merge is user-invoked)`,
+    );
   }
   printSummary(records, halted);
-  const standing = inventory.split("\n").filter((line: string): boolean => line.includes(`plans=${relSetDir}`));
+  const standing = inventory
+    .split("\n")
+    .filter((line: string): boolean => line.includes(`plans=${relSetDir}`));
   if (standing.length > 0) {
     logger.info(
       `outstanding worktrees of this set — review, then run \`bun merge ${relSetDir}\`:\n${standing.join("\n")}`,
     );
   }
-  const complete = !halted && records.every((record: UnitRecord): boolean => record.status !== "failed");
+  const complete =
+    !halted && records.every((record: UnitRecord): boolean => record.status !== "failed");
   return complete ? 0 : 1;
 }
 
@@ -228,7 +263,9 @@ export function deriveVenues(
   mode: WorktreeMode,
 ): { venues: Venue[]; skips: UnitRecord[] } {
   const holding = (unit: PlanUnit): WorktreeEntry | undefined =>
-    carriers.find((entry: WorktreeEntry): boolean => carrierTicked(entry.slug, relSetDir, unit.name));
+    carriers.find((entry: WorktreeEntry): boolean =>
+      carrierTicked(entry.slug, relSetDir, unit.name),
+    );
   const groups = mode === "split" ? partitionComponents(units) : [units];
   const venues: Venue[] = [];
   const skips: UnitRecord[] = [];
@@ -236,7 +273,12 @@ export function deriveVenues(
     const pending: PlanUnit[] = [];
     for (const unit of group) {
       if (isTicked(unit.path)) {
-        skips.push({ unit, status: "skipped", detail: "main-tree marker [x] — already merged", session: null });
+        skips.push({
+          unit,
+          status: "skipped",
+          detail: "main-tree marker [x] — already merged",
+          session: null,
+        });
         continue;
       }
       const carrier = holding(unit);
@@ -255,7 +297,8 @@ export function deriveVenues(
       continue;
     }
     const adopting = carriers.filter((entry: WorktreeEntry): boolean =>
-      group.some((unit: PlanUnit): boolean => carrierTicked(entry.slug, relSetDir, unit.name)));
+      group.some((unit: PlanUnit): boolean => carrierTicked(entry.slug, relSetDir, unit.name)),
+    );
     const derived =
       mode === "split"
         ? `${slugBase}-${pending[0]?.name.replace(/\.md$/, "") ?? "component"}`
@@ -298,7 +341,15 @@ async function runVenue(
       continue;
     }
     const wtUnitPath = join(wtSetDir, unit.name);
-    const outcome = await runUnitWithGate(wtUnitPath, wtSetDir, venue.slug, unit, options, relay, setName);
+    const outcome = await runUnitWithGate(
+      wtUnitPath,
+      wtSetDir,
+      venue.slug,
+      unit,
+      options,
+      relay,
+      setName,
+    );
     records.push(outcome.record);
     if (outcome.action === "halted") {
       return { failedCount: failedCount + 1, halted: true };
@@ -365,7 +416,12 @@ async function runUnitWithGate(
     console.log(`\n── worker report (${unit.name}) ──\n${report}\n`);
     if (worktreeTicked(wtUnitPath)) {
       return {
-        record: { unit, status: "done", detail: `attempt ${attempt} (worktree ${slug})`, session: sessionName },
+        record: {
+          unit,
+          status: "done",
+          detail: `attempt ${attempt} (worktree ${slug})`,
+          session: sessionName,
+        },
         action: "done",
       };
     }
@@ -393,7 +449,11 @@ async function runUnitWithGate(
     }
     if (gate === "abandon") {
       const cleaned = await worktreeScript(["clean", slug]);
-      logger.info(cleaned === null ? `abandon: clean failed — worktree ${slug} still stands` : `abandon: ${cleaned.trimEnd()}`);
+      logger.info(
+        cleaned === null
+          ? `abandon: clean failed — worktree ${slug} still stands`
+          : `abandon: ${cleaned.trimEnd()}`,
+      );
       return {
         record: {
           unit,
@@ -405,7 +465,12 @@ async function runUnitWithGate(
       };
     }
     return {
-      record: { unit, status: "failed", detail: `gate: halted after ${attempt} attempt(s)`, session: sessionName },
+      record: {
+        unit,
+        status: "failed",
+        detail: `gate: halted after ${attempt} attempt(s)`,
+        session: sessionName,
+      },
       action: "halted",
     };
   }
@@ -418,10 +483,15 @@ async function runUnitWithGate(
  * @param unitName Unit filename, for the prompt text.
  * @returns The chosen operator action.
  */
-async function askGate(relay: Relay, unitName: string): Promise<"retry" | "deliver" | "abandon" | "halt"> {
+async function askGate(
+  relay: Relay,
+  unitName: string,
+): Promise<"retry" | "deliver" | "abandon" | "halt"> {
   for (;;) {
     const line = (
-      await relay.askOrchestrator(`${unitName}: top marker not flipped — retry / deliver-incomplete / abandon / halt?`)
+      await relay.askOrchestrator(
+        `${unitName}: top marker not flipped — retry / deliver-incomplete / abandon / halt?`,
+      )
     )
       .trim()
       .toLowerCase();

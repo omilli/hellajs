@@ -1,20 +1,36 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync } from "node:fs";
+import { describe, test, expect, beforeEach, afterEach, vi } from "vite-plus/test";
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  statSync,
+} from "node:fs";
 import { join } from "node:path";
-import { addComponent, applyStyleVariant, loadRegistry } from "@hellajs/ui/bundle";
+import { addComponent, applyStyleVariant, loadRegistry } from "@hellajs/ui";
 import type { RegistryEntry, UiStyle } from "@hellajs/ui";
 
-const registryDir = join(import.meta.dir, "..", "registry");
+const registryDir = join(import.meta.dirname, "..", "registry");
 const manifest = loadRegistry();
 
 /** Shared, per-style, and dark-substitution files of an entry at a style slot. */
 function filesAt(entry: RegistryEntry, style: UiStyle): string[] {
   const styled = entry.styles?.[style];
-  return [...(entry.files ?? []), ...(styled?.files ?? []), ...Object.values(styled?.darkFiles ?? {})];
+  return [
+    ...(entry.files ?? []),
+    ...(styled?.files ?? []),
+    ...Object.values(styled?.darkFiles ?? {}),
+  ];
 }
 
 /** The conventionally named style module of an entry at a style, when it has canonicals. */
-function styleModuleOf(entryName: string, entry: RegistryEntry, style: UiStyle): string | undefined {
+function styleModuleOf(
+  entryName: string,
+  entry: RegistryEntry,
+  style: UiStyle,
+): string | undefined {
   return (entry.files ?? []).length > 0 ? `${entryName}-${style}.ts` : undefined;
 }
 
@@ -46,14 +62,18 @@ function readEntryFile(entryName: string, file: string): string {
   return readFileSync(join(registryDir, entryName, file), "utf8");
 }
 
-/** Whether text binds `binding` as a non-empty export or non-empty top-level map entry. */
+/** Whether text binds `binding` as a non-empty export or non-empty top-level map entry (value on one line or printWidth-wrapped to the next). */
 function bindsNonEmpty(text: string, binding: string): boolean {
-  return new RegExp(`^export const ${binding} = ".+";$`, "m").test(text)
-    || new RegExp(`^  ${binding}: ".+"[,;]?$`, "m").test(text);
+  return (
+    new RegExp(`^export const ${binding} = ".+";$`, "m").test(text) ||
+    new RegExp(`^export const ${binding} =\\n\\s*".+";$`, "m").test(text) ||
+    new RegExp(`^  ${binding}: ".+"[,;]?$`, "m").test(text) ||
+    new RegExp(`^  ${binding}:$\\n\\s*".+"[,;]?$`, "m").test(text)
+  );
 }
 
 describe("registry", () => {
-  const darkRoot = join(import.meta.dir, ".tmp", "registry-dark");
+  const darkRoot = join(import.meta.dirname, ".tmp", "registry-dark");
   const darkComponentsDir = join(darkRoot, "src", "components");
   let originalWarn: typeof console.warn;
   let warnings: string[];
@@ -61,10 +81,15 @@ describe("registry", () => {
   beforeEach(() => {
     rmSync(darkRoot, { recursive: true, force: true });
     mkdirSync(darkRoot, { recursive: true });
-    cpSync(join(import.meta.dir, "fixtures", "empty-app", "package.json"), join(darkRoot, "package.json"));
+    cpSync(
+      join(import.meta.dirname, "fixtures", "empty-app", "package.json"),
+      join(darkRoot, "package.json"),
+    );
     originalWarn = console.warn;
     warnings = [];
-    console.warn = mock((...args: unknown[]) => { warnings.push(args.join(" ")); }) as typeof console.warn;
+    console.warn = vi.fn((...args: unknown[]) => {
+      warnings.push(args.join(" "));
+    }) as typeof console.warn;
   });
 
   afterEach(() => {
@@ -82,9 +107,12 @@ describe("registry", () => {
   test("every canonical imports its entry's shared types module exactly once, as a type import", () => {
     for (const [name, entry] of Object.entries(manifest.entries)) {
       for (const file of canonicalsOf(entry)) {
-        const lines = readEntryFile(name, file).split("\n").filter((line) => line.includes(`./${name}-types.js`));
-        expect(lines).toHaveLength(1);
-        expect(lines[0]!.trim().startsWith("import type")).toBe(true);
+        // Statement-scoped: a printWidth-wrapped import spans lines, so the
+        // whole `import type { … } from …` statement matches as one unit.
+        const imports = readEntryFile(name, file).match(
+          new RegExp(`import type \\{[^}]*\\} from "\\./${name}-types\\.js";`, "g"),
+        );
+        expect(imports).toHaveLength(1);
       }
     }
   });
@@ -109,11 +137,13 @@ describe("registry", () => {
     for (const [entryName, file] of diskFiles()) {
       const entry = manifest.entries[entryName];
       expect(entry).toBeDefined();
-      const listed = Object.keys(entry!.styles ?? {}).some((style) => {
-        return filesAt(entry!, style as UiStyle).includes(file)
-          || styleModuleOf(entryName, entry!, style as UiStyle) === file;
-      })
-        || typesModuleOf(entryName, entry!) === file;
+      const listed =
+        Object.keys(entry!.styles ?? {}).some((style) => {
+          return (
+            filesAt(entry!, style as UiStyle).includes(file) ||
+            styleModuleOf(entryName, entry!, style as UiStyle) === file
+          );
+        }) || typesModuleOf(entryName, entry!) === file;
       expect(listed).toBe(true);
     }
   });
@@ -148,7 +178,9 @@ describe("registry", () => {
         const styleFile = styleModuleOf(name, entry, style);
         if (styleFile === undefined) continue;
         const text = readEntryFile(name, styleFile);
-        const names = [...text.matchAll(/export const ([A-Za-z0-9]+)/g)].map(([, symbol]) => symbol!);
+        const names = [...text.matchAll(/export const ([A-Za-z0-9]+)/g)].map(
+          ([, symbol]) => symbol!,
+        );
         for (const symbol of names) expect(symbol).toMatch(/^[a-z][a-zA-Z0-9]*$/);
       }
     }
@@ -170,9 +202,10 @@ describe("registry", () => {
         const siblingStyle: UiStyle = style === "css" ? "tailwind" : "css";
         const sibling = styleModuleOf(name, entry, siblingStyle);
         for (const binding of empties) {
-          const bridged = sibling !== undefined
-            && existsSync(join(registryDir, name, sibling))
-            && bindsNonEmpty(readEntryFile(name, sibling), binding);
+          const bridged =
+            sibling !== undefined &&
+            existsSync(join(registryDir, name, sibling)) &&
+            bindsNonEmpty(readEntryFile(name, sibling), binding);
           if (!bridged) unbridged.push(`${name}/${styleFile}: "${binding}"`);
         }
       }
@@ -212,7 +245,9 @@ describe("registry", () => {
       visiting.delete(name);
       done.add(name);
     };
-    expect(() => { for (const name of Object.keys(manifest.entries)) visit(name); }).not.toThrow();
+    expect(() => {
+      for (const name of Object.keys(manifest.entries)) visit(name);
+    }).not.toThrow();
   });
 
   test("theme and cn style slots agree with their files", () => {
@@ -272,11 +307,15 @@ describe("registry", () => {
   const sweepCases = Object.entries(manifest.entries).flatMap(([entryName, entry]) =>
     (entry.files ?? [])
       .filter((file) => file.endsWith(".tsx"))
-      .map((file) => [`${entryName}/${file}`, entryName, file] as const));
+      .map((file) => [`${entryName}/${file}`, entryName, file] as const),
+  );
 
-  test.each(sweepCases)("%s tailwind add output inlines every string constant", (_label, entryName, file) => {
-    const canonical = readEntryFile(entryName, file);
-    const styleModule = readEntryFile(entryName, `${entryName}-tailwind.ts`);
-    expect(keptStringDecls(applyStyleVariant(canonical, styleModule, "tailwind"))).toEqual([]);
-  });
+  test.each(sweepCases)(
+    "%s tailwind add output inlines every string constant",
+    (_label, entryName, file) => {
+      const canonical = readEntryFile(entryName, file);
+      const styleModule = readEntryFile(entryName, `${entryName}-tailwind.ts`);
+      expect(keptStringDecls(applyStyleVariant(canonical, styleModule, "tailwind"))).toEqual([]);
+    },
+  );
 });

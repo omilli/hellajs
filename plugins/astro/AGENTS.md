@@ -40,6 +40,6 @@ Astro 7 framework-renderer integration (`astro-plugin-hellajs`). Wires `vite-plu
 
 ## Testing approach (`tests/`)
 
-- **Plugin carveout** — tests import from source (`../server.mjs`), NOT `dist/`. Run via `bun test plugins/astro/tests` + `bun lint` (NOT `bun coverage astro` — `isValidPackage` resolves under `packages/` only; per root `AGENTS.md` plugin exception, mirroring `plugins/babel`).
+- **Plugin carveout** — tests import from source (`../server.mjs`), NOT `dist/`. Run via `vp run coverage astro` + `vp run lint` (the scoped plugin gate — bundles first, then tests `plugins/astro/tests`, mirroring `plugins/babel`).
 - **Server entry is unit-tested directly** — it's a pure `(Component, props, slots) → { html }` over already-transformed source; testable without an Astro build, HappyDOM-only. Asserts verbatim slot passthrough (full marker-wrapped strings), named-slot mapping, `check`, and reactive-state SSR.
 - **Client entry is NOT unit-tested here** — `hydrate()` needs a live DOM + server HTML and is exercised by `examples/astro-islands` / a manual smoke test. Its behavior (marker adoption) is covered by `packages/dom/tests/` (incl. `raw.test.ts` from Unit A).

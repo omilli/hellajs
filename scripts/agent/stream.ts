@@ -1,4 +1,4 @@
-import type { RpcFrame } from "./rpc.js";
+import type { RpcFrame } from "./rpc.ts";
 
 /** Longest args summary or result line rendered on a tool one-liner. */
 const MAX_SUMMARY = 120;
@@ -90,7 +90,9 @@ function summarizeArgs(args: unknown): string {
     }
   }
   if (value === undefined) {
-    value = Object.values(record).find((candidate: unknown): boolean => typeof candidate === "string");
+    value = Object.values(record).find(
+      (candidate: unknown): boolean => typeof candidate === "string",
+    );
   }
   return typeof value === "string" ? flatten(value) : "";
 }

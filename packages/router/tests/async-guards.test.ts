@@ -1,7 +1,7 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, vi } from "vite-plus/test";
 import { effect } from "@hellajs/core";
 import { delay, suppressConsole } from "@utils/test-helpers.js";
-import { router, navigate, route } from "@hellajs/router/bundle";
+import { router, navigate, route } from "@hellajs/router";
 import { setupRouterEnv, expectLoggedError } from "./helpers";
 
 describe("router", () => {
@@ -20,18 +20,20 @@ describe("router", () => {
     /** A guard verdict held in flight until the test releases it. */
     const hold = (): { promise: Promise<unknown>; release: (v: unknown) => void } => {
       let release!: (v: unknown) => void;
-      const promise = new Promise<unknown>((res) => { release = res; });
+      const promise = new Promise<unknown>((res) => {
+        release = res;
+      });
       return { promise, release };
     };
 
     test("async before resolving false cancels the navigation after resolution", async () => {
       const held = hold();
-      const handler = mock(() => {});
+      const handler = vi.fn(() => {});
       router({
         routes: {
           "/": () => {},
-          "/secret": { before: () => held.promise, handler }
-        }
+          "/secret": { before: () => held.promise, handler },
+        },
       });
 
       navigate("/");
@@ -52,14 +54,14 @@ describe("router", () => {
 
     test("async before resolving a string redirects via replace after resolution", async () => {
       const held = hold();
-      const secretHandler = mock(() => {});
-      const loginHandler = mock(() => {});
+      const secretHandler = vi.fn(() => {});
+      const loginHandler = vi.fn(() => {});
       router({
         routes: {
           "/": () => {},
           "/secret": { before: () => held.promise, handler: secretHandler },
-          "/login": loginHandler
-        }
+          "/login": loginHandler,
+        },
       });
 
       navigate("/");
@@ -78,15 +80,17 @@ describe("router", () => {
 
     test("async pass commits exactly once with one history entry", async () => {
       const held = hold();
-      const handler = mock(() => {});
+      const handler = vi.fn(() => {});
       router({
         routes: {
           "/": () => {},
-          "/x": { before: () => held.promise, handler }
-        }
+          "/x": { before: () => held.promise, handler },
+        },
       });
 
-      const tracker = mock(() => { route().path; });
+      const tracker = vi.fn(() => {
+        route().path;
+      });
       effect(tracker);
       tracker.mockClear();
       const len = history.length;
@@ -114,9 +118,9 @@ describe("router", () => {
               const path = route().path;
               return path === "/" ? first.promise : second.promise;
             },
-            handler: () => {}
-          }
-        }
+            handler: () => {},
+          },
+        },
       });
 
       expect(route().pending).toBe(false);
@@ -135,14 +139,14 @@ describe("router", () => {
 
     test("a newer navigation during flight supersedes the deferred one", async () => {
       const held = hold();
-      const aHandler = mock(() => {});
-      const bHandler = mock(() => {});
+      const aHandler = vi.fn(() => {});
+      const bHandler = vi.fn(() => {});
       router({
         routes: {
           "/": () => {},
           "/a": { before: () => held.promise, handler: aHandler },
-          "/b": bHandler
-        }
+          "/b": bHandler,
+        },
       });
 
       const len = history.length;
@@ -167,8 +171,8 @@ describe("router", () => {
       router({
         routes: {
           "/": () => {},
-          "/secret": { before: () => held.promise, handler: () => {} }
-        }
+          "/secret": { before: () => held.promise, handler: () => {} },
+        },
       });
 
       navigate("/");
@@ -189,17 +193,17 @@ describe("router", () => {
     test("server url mode proceeds on async guards and logs rejections", async () => {
       const saved = globalThis.window;
       (globalThis as unknown as { window: unknown }).window = undefined;
-      const handler = mock(() => {});
+      const handler = vi.fn(() => {});
       let info: ReturnType<typeof router>;
       try {
         info = router({
           routes: {
             "/x": {
               before: () => Promise.reject(new Error("server nope")),
-              handler
-            }
+              handler,
+            },
           },
-          url: "/x"
+          url: "/x",
         });
       } finally {
         (globalThis as unknown as { window: unknown }).window = saved;
@@ -214,14 +218,14 @@ describe("router", () => {
     });
 
     test("cross-await redirect loops cap at 20 async hops and cancel", async () => {
-      const aHandler = mock(() => {});
-      const bHandler = mock(() => {});
+      const aHandler = vi.fn(() => {});
+      const bHandler = vi.fn(() => {});
       router({
         routes: {
           "/": () => {},
           "/a": { before: async () => "/b", handler: aHandler },
-          "/b": { before: async () => "/a", handler: bHandler }
-        }
+          "/b": { before: async () => "/a", handler: bHandler },
+        },
       });
 
       navigate("/a");
@@ -236,15 +240,15 @@ describe("router", () => {
 
     test("handler and after hooks run only after the deferred commit", async () => {
       const held = hold();
-      const handler = mock(() => {});
-      const after = mock(() => {});
-      const globalAfter = mock(() => {});
+      const handler = vi.fn(() => {});
+      const after = vi.fn(() => {});
+      const globalAfter = vi.fn(() => {});
       router({
         routes: {
           "/": () => {},
-          "/x": { before: () => held.promise, handler, after }
+          "/x": { before: () => held.promise, handler, after },
         },
-        hooks: { after: globalAfter }
+        hooks: { after: globalAfter },
       });
 
       navigate("/x");
@@ -265,12 +269,12 @@ describe("router", () => {
 
     test("async leave guard blocks the navigation until resolution", async () => {
       const held = hold();
-      const dashHandler = mock(() => {});
+      const dashHandler = vi.fn(() => {});
       router({
         routes: {
           "/editor": { leave: () => held.promise, handler: () => {} },
-          "/dashboard": dashHandler
-        }
+          "/dashboard": dashHandler,
+        },
       });
 
       navigate("/editor");

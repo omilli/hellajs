@@ -12,8 +12,8 @@ The self-improvement loop: AGENTS.md, `guides/`, and `.agents/skills/` govern th
 
 Ground truth before recall — run the thread scan (skip only when the handoff gate just produced the report):
 
-    bun .agents/skills/feedback/scripts/scan.ts        # this thread's session
-    bun .agents/skills/feedback/scripts/scan.ts --all  # every session + cross-run recurrence
+    node .agents/skills/feedback/scripts/scan.ts        # this thread's session
+    node .agents/skills/feedback/scripts/scan.ts --all  # every session + cross-run recurrence
 
 No session file resolves → say so and evaluate from run awareness alone. Classify every scan hit before judging rows:
 

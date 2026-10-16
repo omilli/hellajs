@@ -16,9 +16,7 @@ import type { StyleObject } from "../types";
  * @returns The scoped class name
  */
 export function scopedClassName(obj: StyleObject, label?: string): string {
-  const sanitized = label
-    ? label.replace(/[^a-zA-Z0-9-]/g, "-").replace(/^-+|-+$/g, "")
-    : "";
+  const sanitized = label ? label.replace(/[^a-zA-Z0-9-]/g, "-").replace(/^-+|-+$/g, "") : "";
   return `${sanitized}${sanitized ? "-" : ""}${hash(stringify(obj))}`;
 }
 
@@ -69,6 +67,11 @@ export function scopedRule(obj: StyleObject, options: ScopedRuleOptions = {}): S
   // deeper per wrapper already applied.
   const baseIndent = (options.media ? 1 : 0) + (options.layer ? 1 : 0);
   const text = process(obj, `.${cls}`, false, baseIndent);
-  const mediaText = options.media ? wrapBlock(`@media ${options.media}`, text, options.layer ? 1 : 0) : text;
-  return { cls, cssText: options.layer ? wrapBlock(`@layer ${options.layer}`, mediaText) : mediaText };
+  const mediaText = options.media
+    ? wrapBlock(`@media ${options.media}`, text, options.layer ? 1 : 0)
+    : text;
+  return {
+    cls,
+    cssText: options.layer ? wrapBlock(`@layer ${options.layer}`, mediaText) : mediaText,
+  };
 }

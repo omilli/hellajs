@@ -63,7 +63,7 @@ export function onPinch(el: HTMLElement, handlers: PinchHandlers): () => void {
     handlers.onMove({
       scale: Math.hypot(second.x - first.x, second.y - first.y) / baselineDistance,
       dx: (first.x + second.x) / 2 - baseX,
-      dy: (first.y + second.y) / 2 - baseY
+      dy: (first.y + second.y) / 2 - baseY,
     });
   };
   const onPointerEnd = (event: PointerEvent): void => {

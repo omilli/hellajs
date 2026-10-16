@@ -1,6 +1,21 @@
-import type { HellaNode, HellaChild, HellaElement, RenderFn, ErrorConfig, ElementMountFn, DirectListenerSpec } from "../types/nodes";
+import type {
+  HellaNode,
+  HellaChild,
+  HellaElement,
+  RenderFn,
+  ErrorConfig,
+  ElementMountFn,
+  DirectListenerSpec,
+} from "../types/nodes";
 import { isFunction, isString, isNumber, isObject, objectLoop } from "./core";
-import { renderProp, toText, resolveDeep, chainScopes, wireFragmentScope, routePrefixedProps } from "./utils";
+import {
+  renderProp,
+  toText,
+  resolveDeep,
+  chainScopes,
+  wireFragmentScope,
+  routePrefixedProps,
+} from "./utils";
 import { setNodeHandler, setDirectHandler } from "./events";
 import { dispatchError, toError } from "./dispatch";
 import { registry } from "../registry";
@@ -118,7 +133,7 @@ export function resolveNode(value: HellaChild | HellaChild[], parent?: Node, ns?
     const effectNode = parent || anchor;
     const renderedNodes: Node[] = [];
     registry.addEffect(effectNode, () =>
-      runReactiveChild(anchor, renderedNodes, value, effectNode, undefined, ns)
+      runReactiveChild(anchor, renderedNodes, value, effectNode, undefined, ns),
     );
     return carrier;
   }
@@ -135,7 +150,11 @@ export function resolveNode(value: HellaChild | HellaChild[], parent?: Node, ns?
  * @param ns Optional namespace URI inherited from the insertion parent
  * @returns The mounted DOM element or fragment
  */
-export function mountNode(node: HellaNode, boundaryElement?: Element, ns?: string): HellaElement | DocumentFragment {
+export function mountNode(
+  node: HellaNode,
+  boundaryElement?: Element,
+  ns?: string,
+): HellaElement | DocumentFragment {
   if (node.static) {
     const cached = staticDom.get(node);
     if (cached) {
@@ -182,12 +201,20 @@ export function mountNode(node: HellaNode, boundaryElement?: Element, ns?: strin
   } else if (tag === "math") {
     element = document.createElementNS(MATHML_NS, tag as string) as HellaElement;
   } else {
-    element = (ns ? document.createElementNS(ns, tag as string) : document.createElement(tag as string)) as HellaElement;
+    element = (
+      ns ? document.createElementNS(ns, tag as string) : document.createElement(tag as string)
+    ) as HellaElement;
   }
 
   // Prefixed props keys ("on:click" from a component's rest-forwarding) slice
   // into their live buckets before wiring; other props render as attributes.
-  const routed = routePrefixedProps(props as Record<string, unknown>, on as Record<string, unknown>, e as Record<string, unknown>, hooks, error);
+  const routed = routePrefixedProps(
+    props as Record<string, unknown>,
+    on as Record<string, unknown>,
+    e as Record<string, unknown>,
+    hooks,
+    error,
+  );
 
   if (componentScope || routed.error) {
     const state = getState(element);
@@ -202,11 +229,16 @@ export function mountNode(node: HellaNode, boundaryElement?: Element, ns?: strin
 
   if (routed.hooks) {
     routed.hooks.beforeMount && registry.addHook(element, "beforeMount", routed.hooks.beforeMount);
-    routed.hooks.afterMount && registry.addHook(element, "afterMount", routed.hooks.afterMount as ElementMountFn);
-    routed.hooks.beforeDestroy && registry.addHook(element, "beforeDestroy", routed.hooks.beforeDestroy as ElementMountFn);
-    routed.hooks.afterDestroy && registry.addHook(element, "afterDestroy", routed.hooks.afterDestroy);
-    routed.hooks.beforeUpdate && registry.addHook(element, "beforeUpdate", routed.hooks.beforeUpdate as ElementMountFn);
-    routed.hooks.afterUpdate && registry.addHook(element, "afterUpdate", routed.hooks.afterUpdate as ElementMountFn);
+    routed.hooks.afterMount &&
+      registry.addHook(element, "afterMount", routed.hooks.afterMount as ElementMountFn);
+    routed.hooks.beforeDestroy &&
+      registry.addHook(element, "beforeDestroy", routed.hooks.beforeDestroy as ElementMountFn);
+    routed.hooks.afterDestroy &&
+      registry.addHook(element, "afterDestroy", routed.hooks.afterDestroy);
+    routed.hooks.beforeUpdate &&
+      registry.addHook(element, "beforeUpdate", routed.hooks.beforeUpdate as ElementMountFn);
+    routed.hooks.afterUpdate &&
+      registry.addHook(element, "afterUpdate", routed.hooks.afterUpdate as ElementMountFn);
 
     if (routed.hooks.beforeMount) {
       try {
@@ -238,12 +270,12 @@ export function mountNode(node: HellaNode, boundaryElement?: Element, ns?: strin
   });
 
   objectLoop(routed.on, (eventName, handler) =>
-    setNodeHandler(element, eventName, handler as EventListener)
+    setNodeHandler(element, eventName, handler as EventListener),
   );
 
   if (routed.e) {
     objectLoop(routed.e, (eventName, handler) =>
-      setDirectHandler(element, eventName, handler as EventListener | DirectListenerSpec)
+      setDirectHandler(element, eventName, handler as EventListener | DirectListenerSpec),
     );
   }
 
@@ -261,7 +293,13 @@ export function mountNode(node: HellaNode, boundaryElement?: Element, ns?: strin
  * @param currentBoundary The nearest error boundary element (for error propagation during construction)
  * @param ns Namespace inherited from the insertion context — used when `parent` is a DocumentFragment
  */
-function appendToParent(parent: HellaElement, children?: HellaChild[], currentBoundary?: Element, ns?: string, topLevel = true) {
+function appendToParent(
+  parent: HellaElement,
+  children?: HellaChild[],
+  currentBoundary?: Element,
+  ns?: string,
+  topLevel = true,
+) {
   if (!children || children.length === 0) return;
 
   if (topLevel && children.length === 1 && isString(children[0])) {
@@ -303,7 +341,7 @@ function appendToParent(parent: HellaElement, children?: HellaChild[], currentBo
       const renderedNodes: Node[] = [];
 
       registry.addEffect(parent, () =>
-        runReactiveChild(anchor, renderedNodes, child, parent, currentBoundary, childNs)
+        runReactiveChild(anchor, renderedNodes, child, parent, currentBoundary, childNs),
       );
 
       continue;
@@ -344,7 +382,14 @@ function appendToParent(parent: HellaElement, children?: HellaChild[], currentBo
  * @param currentBoundary The nearest error boundary element, or undefined when unknown
  * @param ns The namespace URI inherited at the insertion site
  */
-function runReactiveChild(anchor: Node, renderedNodes: Node[], child: unknown, parent: Node, currentBoundary: Element | undefined, ns?: string): void {
+function runReactiveChild(
+  anchor: Node,
+  renderedNodes: Node[],
+  child: unknown,
+  parent: Node,
+  currentBoundary: Element | undefined,
+  ns?: string,
+): void {
   const actualParent = anchor.parentNode as HellaElement;
   if (!actualParent) return;
 
@@ -365,7 +410,7 @@ function runReactiveChild(anchor: Node, renderedNodes: Node[], child: unknown, p
           }
           const val = (target as unknown as Record<string, unknown>)[prop as string];
           return isFunction(val) ? (val as (...args: unknown[]) => unknown).bind(target) : val;
-        }
+        },
       });
       (resolved as RenderFn)(proxyParent as HellaElement);
       return;

@@ -2,7 +2,17 @@ import type { Reactive, Link } from "./links";
 import type { EffectState } from "../effect";
 import type { SignalState } from "../signal";
 import type { ComputedState } from "../computed";
-import { CLEAN, GUARDED, TRACKING, DIRTY, PENDING, EFFECT_DEP, SIGNAL_DEPS, SCHEDULED, WRITABLE } from "./flags";
+import {
+  CLEAN,
+  GUARDED,
+  TRACKING,
+  DIRTY,
+  PENDING,
+  EFFECT_DEP,
+  SIGNAL_DEPS,
+  SCHEDULED,
+  WRITABLE,
+} from "./flags";
 import { setCurrentSub } from "./context";
 import { endTracking } from "./tracking";
 import { removeLink } from "./links";
@@ -22,7 +32,8 @@ interface Stack<T> {
 const effectQueue: (EffectState | undefined)[] = [];
 
 /** Index of next effect to process and total count of queued effects. */
-let queueIndex = 0, effectCount = 0;
+let queueIndex = 0,
+  effectCount = 0;
 
 /**
  * Schedules an effect to be run synchronously during the next flush.
@@ -125,7 +136,8 @@ export function propagateChange(link: Link): void {
  * @returns True if the subscriber is stale.
  */
 export function validateStale(link: Link, subscriber: Reactive): boolean {
-  let stack: Stack<Link> | undefined, depth = 0; // Stack for nested validation traversal
+  let stack: Stack<Link> | undefined,
+    depth = 0; // Stack for nested validation traversal
   let isStale = !!(subscriber.rf & DIRTY); // Staleness is carried, not re-derived — subscribers only gain DIRTY from this walk's own propagate calls
 
   do {
@@ -185,7 +197,6 @@ export function validateStale(link: Link, subscriber: Reactive): boolean {
     }
 
     return isStale; // Return final staleness result
-
   } while (true);
 }
 
@@ -197,8 +208,8 @@ export function validateStale(link: Link, subscriber: Reactive): boolean {
 function executeEffect(effectValue: EffectState, flags: number): void {
   // Execute if dirty or pending with stale dependencies
   if (
-    flags & DIRTY // Definitely dirty
-    || (flags & PENDING && validateStale(effectValue.rd!, effectValue)) // Maybe dirty - validate
+    flags & DIRTY || // Definitely dirty
+    (flags & PENDING && validateStale(effectValue.rd!, effectValue)) // Maybe dirty - validate
   ) {
     // Call cleanup return value from previous execution
     effectValue.ec?.();
@@ -234,7 +245,7 @@ function executeEffect(effectValue: EffectState, flags: number): void {
       const { ls, lnd } = rd;
       const { rf } = ls;
       // Execute scheduled dependencies recursively
-      rf & SCHEDULED && executeEffect(ls as EffectState, ls.rf = rf & ~SCHEDULED);
+      rf & SCHEDULED && executeEffect(ls as EffectState, (ls.rf = rf & ~SCHEDULED));
       rd = lnd; // Move to next dependency
     }
   }

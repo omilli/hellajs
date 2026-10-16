@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { resetTestState } from "@utils/test-helpers.js";
-import { css, style, removeStyle, removeCss, vars, removeVars, cssText } from "@hellajs/css/bundle";
+import { css, style, removeStyle, removeCss, vars, removeVars, cssText } from "@hellajs/css";
 import { getCssSheet, getVarsSheet } from "./helpers";
 
 /**
@@ -49,7 +49,10 @@ describe("sheet adoption", () => {
   });
 
   test("claims every sub-rule of a multi-rule registration at its delivered index", () => {
-    const input = { ".base": { color: "red" }, "@media (min-width: 500px)": { ".m": { color: "blue" } } };
+    const input = {
+      ".base": { color: "red" },
+      "@media (min-width: 500px)": { ".m": { color: "blue" } },
+    };
     css(input);
     const delivered = cssText();
     resetTestState();
@@ -132,7 +135,10 @@ describe("sheet adoption", () => {
   });
 
   test("rebases claims when a claimed rule is removed before a later claim", () => {
-    seedSsr("hella-css", ".a {\n  color: red;\n}\n\n.b {\n  color: green;\n}\n\n.c {\n  color: blue;\n}");
+    seedSsr(
+      "hella-css",
+      ".a {\n  color: red;\n}\n\n.b {\n  color: green;\n}\n\n.c {\n  color: blue;\n}",
+    );
 
     css({ ".a": { color: "red" } });
     removeCss({ ".a": { color: "red" } });
@@ -161,7 +167,10 @@ describe("sheet adoption", () => {
     // probe rejects the same segment, so accepted segments align with the
     // parsed rules minus it and claims seed at post-drop indexes instead of
     // draining.
-    seedSsr("hella-css", '.a {\n  color: red;\n}\n\n@layer base {\n  .b {\n    color: blue;\n  }\n}\n\n.c {\n  color: green;\n}');
+    seedSsr(
+      "hella-css",
+      ".a {\n  color: red;\n}\n\n@layer base {\n  .b {\n    color: blue;\n  }\n}\n\n.c {\n  color: green;\n}",
+    );
     expect(getCssSheet().cssRules.length).toBe(2);
 
     css({ ".a": { color: "red" } });

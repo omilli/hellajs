@@ -22,14 +22,21 @@ export function checkPeers(dir: string, deps: string[]): void {
   try {
     manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as typeof manifest;
   } catch (error) {
-    throw new Error(`[ui] checkPeers: invalid JSON in ${manifestPath}: ${(error as Error).message}`, { cause: error });
+    throw new Error(
+      `[ui] checkPeers: invalid JSON in ${manifestPath}: ${(error as Error).message}`,
+      { cause: error },
+    );
   }
-  const installed = { ...manifest.dependencies, ...manifest.devDependencies, ...manifest.peerDependencies };
+  const installed = {
+    ...manifest.dependencies,
+    ...manifest.devDependencies,
+    ...manifest.peerDependencies,
+  };
   const missing = deps.filter((dep) => !Object.hasOwn(installed, dep));
   if (missing.length > 0) {
     console.warn(`[ui] checkPeers: missing packages the copied source imports: ${missing.join(", ")}
 install them before building:
 
-  bun add ${missing.join(" ")}`);
+  npm install ${missing.join(" ")}`);
   }
 }

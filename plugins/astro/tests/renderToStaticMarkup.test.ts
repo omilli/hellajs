@@ -1,4 +1,4 @@
-import { describe, test, expect } from "bun:test";
+import { describe, test, expect } from "vite-plus/test";
 import { signal } from "@hellajs/core";
 import server from "../server.mjs";
 import type { HellaNode } from "@hellajs/dom";
@@ -14,13 +14,19 @@ describe("astro", () => {
     });
 
     test("maps the default slot to props.children as verbatim raw HTML", async () => {
-      const App = (props: Record<string, unknown>): HellaNode => ({ tag: "main", children: props.children as HellaNode[] });
+      const App = (props: Record<string, unknown>): HellaNode => ({
+        tag: "main",
+        children: props.children as HellaNode[],
+      });
       const { html } = await renderToStaticMarkup(App, {}, { default: "<h1>Hi</h1><p>slot</p>" });
       expect(html).toBe("<main><!--[--><h1>Hi</h1><p>slot</p><!--]--></main>");
     });
 
     test("maps a named slot to a verbatim raw prop", async () => {
-      const App = (props: Record<string, unknown>): HellaNode => ({ tag: "main", children: props.header as HellaNode[] });
+      const App = (props: Record<string, unknown>): HellaNode => ({
+        tag: "main",
+        children: props.header as HellaNode[],
+      });
       const { html } = await renderToStaticMarkup(App, {}, { header: "<b>Title</b>" });
       expect(html).toBe("<main><!--[--><b>Title</b><!--]--></main>");
     });
@@ -38,7 +44,10 @@ describe("astro", () => {
     });
 
     test("passes slot HTML containing < and > through unescaped", async () => {
-      const App = (props: Record<string, unknown>): HellaNode => ({ tag: "div", children: props.children as HellaNode[] });
+      const App = (props: Record<string, unknown>): HellaNode => ({
+        tag: "div",
+        children: props.children as HellaNode[],
+      });
       const { html } = await renderToStaticMarkup(App, {}, { default: "<b>x</b>" });
       expect(html).toBe("<div><!--[--><b>x</b><!--]--></div>");
     });

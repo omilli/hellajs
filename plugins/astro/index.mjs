@@ -20,14 +20,14 @@ export default function hellajs() {
     hooks: {
       "astro:config:setup"({ updateConfig, addRenderer }) {
         updateConfig({
-          vite: { plugins: [viteHellaJS(), frontmatterCss()] }
+          vite: { plugins: [viteHellaJS(), frontmatterCss()] },
         });
         addRenderer({
           name: "astro-hellajs",
           clientEntrypoint: fileURLToPath(new URL("./client.mjs", import.meta.url)),
           serverEntrypoint: fileURLToPath(new URL("./server.mjs", import.meta.url)),
         });
-      }
-    }
+      },
+    },
   };
 }

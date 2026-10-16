@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState } from "@utils/test-helpers.js";
 import {
@@ -9,8 +9,24 @@ import {
 } from "./helpers/variants";
 import type { ButtonVariantProps } from "./helpers/variants";
 
-const VARIANT_OPTIONS = ["default", "destructive", "outline", "secondary", "ghost", "link"] as const;
-const SIZE_OPTIONS = ["default", "xs", "sm", "lg", "icon", "icon-xs", "icon-sm", "icon-lg"] as const;
+const VARIANT_OPTIONS = [
+  "default",
+  "destructive",
+  "outline",
+  "secondary",
+  "ghost",
+  "link",
+] as const;
+const SIZE_OPTIONS = [
+  "default",
+  "xs",
+  "sm",
+  "lg",
+  "icon",
+  "icon-xs",
+  "icon-sm",
+  "icon-lg",
+] as const;
 
 /** Discriminating tailwind utility tokens per variant option (first token is unique per option). */
 const VARIANT_TOKENS: Record<(typeof VARIANT_OPTIONS)[number], string[]> = {
@@ -50,7 +66,10 @@ function hasLabel(token: string | undefined, label: string): boolean {
 }
 
 /** The children bag every render needs. */
-function propsOf(variant: (typeof buttonVariants)[number], extra: Partial<ButtonVariantProps>): ButtonVariantProps {
+function propsOf(
+  variant: (typeof buttonVariants)[number],
+  extra: Partial<ButtonVariantProps>,
+): ButtonVariantProps {
   return { children: variant.child("Save"), ...extra };
 }
 
@@ -59,16 +78,19 @@ beforeEach(() => {
 });
 
 describe("button", () => {
-  test.each(buttonVariants)("$style renders a button element with its data-slot attributes", (variant) => {
-    const btn = renderVariant(variant, propsOf(variant, { variant: "ghost", size: "lg" }));
-    expect(btn.tagName).toBe("BUTTON");
-    expect(btn.getAttribute("data-slot")).toBe("button");
-    expect(btn.getAttribute("data-variant")).toBe("ghost");
-    expect(btn.getAttribute("data-size")).toBe("lg");
-  });
+  test.each(buttonVariants)(
+    "$style renders a button element with its data-slot attributes",
+    (variant) => {
+      const btn = renderVariant(variant, propsOf(variant, { variant: "ghost", size: "lg" }));
+      expect(btn.tagName).toBe("BUTTON");
+      expect(btn.getAttribute("data-slot")).toBe("button");
+      expect(btn.getAttribute("data-variant")).toBe("ghost");
+      expect(btn.getAttribute("data-size")).toBe("lg");
+    },
+  );
 
   test.each(buttonVariants)("$style fires a user on:click handler on click", (variant) => {
-    const onClick = mock(() => {});
+    const onClick = vi.fn(() => {});
     const btn = renderVariant(variant, propsOf(variant, { "on:click": onClick }));
     btn.dispatchEvent(new Event("click"));
     expect(onClick).toHaveBeenCalledTimes(1);
@@ -86,46 +108,52 @@ describe("button", () => {
     expect(enabled.hasAttribute("disabled")).toBe(false);
   });
 
-  test.each(buttonVariants)("$style applies every variant's tokens at a representative size", (variant) => {
-    for (const option of VARIANT_OPTIONS) {
-      const btn = renderVariant(variant, propsOf(variant, { variant: option, size: "lg" }));
-      const tokens = classTokens(btn);
-      if (variant.style === "css") {
-        expect(tokens[1]!.startsWith(`button-${option}-`)).toBe(true);
-        expect(tokens[2]!.startsWith("button-size-lg-")).toBe(true);
-      } else {
-        for (const token of VARIANT_TOKENS[option]) expect(tokens).toContain(token);
-      }
-      for (const other of VARIANT_OPTIONS) {
-        if (other === option) continue;
+  test.each(buttonVariants)(
+    "$style applies every variant's tokens at a representative size",
+    (variant) => {
+      for (const option of VARIANT_OPTIONS) {
+        const btn = renderVariant(variant, propsOf(variant, { variant: option, size: "lg" }));
+        const tokens = classTokens(btn);
         if (variant.style === "css") {
-          expect(hasLabel(tokens[1], `button-${other}`)).toBe(false);
+          expect(tokens[1]!.startsWith(`button-${option}-`)).toBe(true);
+          expect(tokens[2]!.startsWith("button-size-lg-")).toBe(true);
         } else {
-          expect(tokens).not.toContain(VARIANT_UNIQUE[other]);
+          for (const token of VARIANT_TOKENS[option]) expect(tokens).toContain(token);
+        }
+        for (const other of VARIANT_OPTIONS) {
+          if (other === option) continue;
+          if (variant.style === "css") {
+            expect(hasLabel(tokens[1], `button-${other}`)).toBe(false);
+          } else {
+            expect(tokens).not.toContain(VARIANT_UNIQUE[other]);
+          }
         }
       }
-    }
-  });
+    },
+  );
 
-  test.each(buttonVariants)("$style applies every size's tokens at the default variant", (variant) => {
-    for (const option of SIZE_OPTIONS) {
-      const btn = renderVariant(variant, propsOf(variant, { size: option }));
-      const tokens = classTokens(btn);
-      if (variant.style === "css") {
-        expect(hasLabel(tokens[2], `button-size-${option}`)).toBe(true);
-      } else {
-        for (const token of SIZE_TOKENS[option]) expect(tokens).toContain(token);
-      }
-      for (const other of SIZE_OPTIONS) {
-        if (other === option) continue;
+  test.each(buttonVariants)(
+    "$style applies every size's tokens at the default variant",
+    (variant) => {
+      for (const option of SIZE_OPTIONS) {
+        const btn = renderVariant(variant, propsOf(variant, { size: option }));
+        const tokens = classTokens(btn);
         if (variant.style === "css") {
-          expect(hasLabel(tokens[2], `button-size-${other}`)).toBe(false);
+          expect(hasLabel(tokens[2], `button-size-${option}`)).toBe(true);
         } else {
-          expect(tokens).not.toContain(SIZE_TOKENS[other][0]!);
+          for (const token of SIZE_TOKENS[option]) expect(tokens).toContain(token);
+        }
+        for (const other of SIZE_OPTIONS) {
+          if (other === option) continue;
+          if (variant.style === "css") {
+            expect(hasLabel(tokens[2], `button-size-${other}`)).toBe(false);
+          } else {
+            expect(tokens).not.toContain(SIZE_TOKENS[other][0]!);
+          }
         }
       }
-    }
-  });
+    },
+  );
 
   test.each(buttonVariants)("$style defaults to the default variant and size", (variant) => {
     const btn = renderVariant(variant, propsOf(variant, {}));

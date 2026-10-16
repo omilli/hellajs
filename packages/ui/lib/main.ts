@@ -76,7 +76,11 @@ export async function main(argv: string[]): Promise<number> {
   const [command = "", ...args] = argv;
   if (command === "init") {
     const parsed = parseArgs(args);
-    initProject({ dir: parsed.dir, force: parsed.force, themeMode: parsed.themeMode as UiThemeMode });
+    initProject({
+      dir: parsed.dir,
+      force: parsed.force,
+      themeMode: parsed.themeMode as UiThemeMode,
+    });
     return 0;
   }
   if (command === "add") {

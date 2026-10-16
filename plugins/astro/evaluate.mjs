@@ -6,8 +6,20 @@ import { css, cssText, cva, cx, keyframes, resetCss, resetVars, style, vars } fr
 const CSS_PACKAGE = "@hellajs/css";
 const CREATORS = new Set(["css", "style", "keyframes", "vars"]);
 const FOLDABLE_IMPORTS = new Set(["css", "style", "keyframes", "cx", "cva"]);
-const REAL_FNS = new Map([["css", css], ["style", style], ["keyframes", keyframes], ["cx", cx], ["cva", cva]]);
-const FN_NAMES = new Map([[css, "css"], [style, "style"], [keyframes, "keyframes"], [cx, "cx"], [cva, "cva"]]);
+const REAL_FNS = new Map([
+  ["css", css],
+  ["style", style],
+  ["keyframes", keyframes],
+  ["cx", cx],
+  ["cva", cva],
+]);
+const FN_NAMES = new Map([
+  [css, "css"],
+  [style, "style"],
+  [keyframes, "keyframes"],
+  [cx, "cx"],
+  [cva, "cva"],
+]);
 const MODULE_EXTENSIONS = [".mjs", ".js", ".ts", ".tsx", ".jsx"];
 
 /**
@@ -105,7 +117,10 @@ function collectPatternNames(node, names) {
     const len = node.properties.length;
     while (i < len) {
       const property = node.properties[i++];
-      collectPatternNames(property.type === "RestElement" ? property.argument : property.value, names);
+      collectPatternNames(
+        property.type === "RestElement" ? property.argument : property.value,
+        names,
+      );
     }
   }
   if (node.type === "ArrayPattern") {
@@ -151,7 +166,8 @@ function analyzeModule(ast, id) {
         else if (spec.type === "ImportDefaultSpecifier") imported = "default";
         importMap.set(spec.local.name, { source: stmt.source.value, imported });
         imports.push({ local: spec.local.name, imported, source: stmt.source.value });
-        if (stmt.source.value === CSS_PACKAGE && imported === "cssText") cssTextLocals.add(spec.local.name);
+        if (stmt.source.value === CSS_PACKAGE && imported === "cssText")
+          cssTextLocals.add(spec.local.name);
       }
       continue;
     }
@@ -181,7 +197,8 @@ function analyzeModule(ast, id) {
       while (s < specs.length) {
         const spec = specs[s++];
         const exported = spec.exported.name ?? spec.exported.value;
-        if (stmt.source) reexports.set(exported, { source: stmt.source.value, imported: spec.local.name });
+        if (stmt.source)
+          reexports.set(exported, { source: stmt.source.value, imported: spec.local.name });
         else exportLocals.set(exported, spec.local.name);
       }
       continue;
@@ -207,7 +224,18 @@ function analyzeModule(ast, id) {
       if (node.type === "CatchClause" && node.param) collectPatternNames(node.param, declared);
     });
   }
-  return { id, imports, importMap, declared, cssTextLocals, bindings: new Map(), exportLocals, reexports, defaultLocal, ast };
+  return {
+    id,
+    imports,
+    importMap,
+    declared,
+    cssTextLocals,
+    bindings: new Map(),
+    exportLocals,
+    reexports,
+    defaultLocal,
+    ast,
+  };
 }
 
 /**
@@ -252,7 +280,8 @@ function referencesCssText(mod) {
     if (node.type === "ImportDeclaration") return false;
     if (node.type === "Identifier") return mod.cssTextLocals.has(node.name);
     if (node.type === "MemberExpression" && !node.computed) return scan(node.object);
-    if ((node.type === "ObjectProperty" || node.type === "ObjectMethod") && !node.computed) return scan(node.value);
+    if ((node.type === "ObjectProperty" || node.type === "ObjectMethod") && !node.computed)
+      return scan(node.value);
     for (const key of Object.keys(node)) {
       if (key === "loc" || key === "leadingComments" || key === "trailingComments") continue;
       if (scan(node[key])) return true;
@@ -316,13 +345,14 @@ export function extractFrontmatter({ code, id, resolve = defaultResolve, load = 
    * @param {string} name Identifier name
    * @param {object} owner Module record being evaluated
    * @returns {unknown} Folded value
-     */
+   */
   const lookup = (name, owner) => {
     if (owner.bindings.has(name)) return owner.bindings.get(name);
     const imported = owner.importMap.get(name);
     if (!imported) throw NONFOLD;
     if (imported.source === CSS_PACKAGE) {
-      if (imported.imported !== null && FOLDABLE_IMPORTS.has(imported.imported)) return REAL_FNS.get(imported.imported);
+      if (imported.imported !== null && FOLDABLE_IMPORTS.has(imported.imported))
+        return REAL_FNS.get(imported.imported);
       throw NONFOLD;
     }
     throw NONFOLD;
@@ -389,7 +419,7 @@ export function extractFrontmatter({ code, id, resolve = defaultResolve, load = 
           if (property.type !== "ObjectProperty" || property.method) throw NONFOLD;
           const key = property.computed
             ? evaluate(property.key, owner, isMain, descend)
-            : property.key.name ?? property.key.value;
+            : (property.key.name ?? property.key.value);
           out[key] = evaluate(property.value, owner, isMain, descend);
         }
         return out;
@@ -424,33 +454,56 @@ export function extractFrontmatter({ code, id, resolve = defaultResolve, load = 
         const left = evaluate(node.left, owner, isMain, descend);
         const right = evaluate(node.right, owner, isMain, descend);
         switch (node.operator) {
-          case "+": return left + right;
-          case "-": return left - right;
-          case "*": return left * right;
-          case "/": return left / right;
-          case "%": return left % right;
-          case "**": return left ** right;
-          case "==": return left == right;
-          case "!=": return left != right;
-          case "===": return left === right;
-          case "!==": return left !== right;
-          case "<": return left < right;
-          case "<=": return left <= right;
-          case ">": return left > right;
-          case ">=": return left >= right;
-          case "&": return left & right;
-          case "|": return left | right;
-          case "^": return left ^ right;
-          case "<<": return left << right;
-          case ">>": return left >> right;
-          case ">>>": return left >>> right;
-          default: throw NONFOLD;
+          case "+":
+            return left + right;
+          case "-":
+            return left - right;
+          case "*":
+            return left * right;
+          case "/":
+            return left / right;
+          case "%":
+            return left % right;
+          case "**":
+            return left ** right;
+          case "==":
+            return left == right;
+          case "!=":
+            return left != right;
+          case "===":
+            return left === right;
+          case "!==":
+            return left !== right;
+          case "<":
+            return left < right;
+          case "<=":
+            return left <= right;
+          case ">":
+            return left > right;
+          case ">=":
+            return left >= right;
+          case "&":
+            return left & right;
+          case "|":
+            return left | right;
+          case "^":
+            return left ^ right;
+          case "<<":
+            return left << right;
+          case ">>":
+            return left >> right;
+          case ">>>":
+            return left >>> right;
+          default:
+            throw NONFOLD;
         }
       }
       case "LogicalExpression": {
         const left = evaluate(node.left, owner, isMain, descend);
-        if (node.operator === "&&") return left ? evaluate(node.right, owner, isMain, descend) : left;
-        if (node.operator === "||") return left ? left : evaluate(node.right, owner, isMain, descend);
+        if (node.operator === "&&")
+          return left ? evaluate(node.right, owner, isMain, descend) : left;
+        if (node.operator === "||")
+          return left ? left : evaluate(node.right, owner, isMain, descend);
         if (node.operator === "??") return left ?? evaluate(node.right, owner, isMain, descend);
         throw NONFOLD;
       }
@@ -477,7 +530,8 @@ export function extractFrontmatter({ code, id, resolve = defaultResolve, load = 
         const object = evaluate(node.object, owner, isMain, descend);
         if (object === null || typeof object !== "object") throw NONFOLD;
         const key = node.property.name;
-        if (typeof key !== "string" || !Object.prototype.hasOwnProperty.call(object, key)) throw NONFOLD;
+        if (typeof key !== "string" || !Object.prototype.hasOwnProperty.call(object, key))
+          throw NONFOLD;
         return object[key];
       }
       default:
@@ -508,7 +562,9 @@ export function extractFrontmatter({ code, id, resolve = defaultResolve, load = 
       // bindings alone; only import positions take the full lookup.
       let value;
       try {
-        value = owner.declared.has(callee.name) ? owner.bindings.get(callee.name) : lookup(callee.name, owner);
+        value = owner.declared.has(callee.name)
+          ? owner.bindings.get(callee.name)
+          : lookup(callee.name, owner);
       } catch (error) {
         if (error !== NONFOLD) throw error;
         value = undefined;
@@ -537,7 +593,9 @@ export function extractFrontmatter({ code, id, resolve = defaultResolve, load = 
     }
 
     if (fnName === "vars" && isMain) {
-      throw new Error("[astro-hellajs] frontmatter vars() is dead server-side — move reactive vars to an island module");
+      throw new Error(
+        "[astro-hellajs] frontmatter vars() is dead server-side — move reactive vars to an island module",
+      );
     }
 
     const args = [];
@@ -549,7 +607,10 @@ export function extractFrontmatter({ code, id, resolve = defaultResolve, load = 
       } catch (error) {
         if (error !== NONFOLD) throw error;
         if (!isMain || !CREATORS.has(fnName)) throw NONFOLD;
-        throw new Error(`[astro-hellajs] frontmatter ${fnName}() requires statically evaluable arguments — move dynamic styles to a module and collect with cssText()`, { cause: error });
+        throw new Error(
+          `[astro-hellajs] frontmatter ${fnName}() requires statically evaluable arguments — move dynamic styles to a module and collect with cssText()`,
+          { cause: error },
+        );
       }
     }
 
@@ -625,7 +686,8 @@ export function extractFrontmatter({ code, id, resolve = defaultResolve, load = 
       case "ForStatement":
       case "ForOfStatement":
       case "WhileStatement": {
-        if (stmt.type === "IfStatement" && stmt.alternate) walkStatement(stmt.alternate, owner, isMain, descend);
+        if (stmt.type === "IfStatement" && stmt.alternate)
+          walkStatement(stmt.alternate, owner, isMain, descend);
         const body = stmt.body ?? stmt.consequent;
         if (Array.isArray(body)) walkStatementsList(body, owner, isMain, descend);
         else if (isNode(body)) walkStatement(body, owner, isMain, descend);
@@ -635,7 +697,11 @@ export function extractFrontmatter({ code, id, resolve = defaultResolve, load = 
         if (stmt.declaration) walkStatement(stmt.declaration, owner, isMain, descend);
         return;
       case "ExportDefaultDeclaration":
-        if (isNode(stmt.declaration) && stmt.declaration.type !== "FunctionDeclaration" && stmt.declaration.type !== "ClassDeclaration") {
+        if (
+          isNode(stmt.declaration) &&
+          stmt.declaration.type !== "FunctionDeclaration" &&
+          stmt.declaration.type !== "ClassDeclaration"
+        ) {
           try {
             evaluate(stmt.declaration, owner, isMain, descend);
           } catch (error) {

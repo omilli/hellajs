@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, vi } from "vite-plus/test";
 import { delay, suppressConsole } from "@utils/test-helpers.js";
-import { router, navigate, route } from "@hellajs/router/bundle";
+import { router, navigate, route } from "@hellajs/router";
 import { setupRouterEnv, expectLoggedError } from "./helpers";
 
 describe("router", () => {
@@ -17,12 +17,12 @@ describe("router", () => {
     });
 
     test("before returning false cancels navigation with no history change", () => {
-      const handler = mock(() => {});
+      const handler = vi.fn(() => {});
       router({
         routes: {
           "/": () => {},
-          "/secret": { before: () => false, handler }
-        }
+          "/secret": { before: () => false, handler },
+        },
       });
 
       navigate("/");
@@ -39,8 +39,8 @@ describe("router", () => {
       router({
         routes: {
           "/a": { before: () => "/b" },
-          "/b": { before: () => "/a" }
-        }
+          "/b": { before: () => "/a" },
+        },
       });
 
       navigate("/safe");
@@ -53,15 +53,15 @@ describe("router", () => {
     });
 
     test("before returning a string redirects via replace", () => {
-      const secretHandler = mock(() => {});
-      const loginHandler = mock(() => {});
+      const secretHandler = vi.fn(() => {});
+      const loginHandler = vi.fn(() => {});
       const len = history.length;
 
       router({
         routes: {
           "/secret": { before: () => "/login", handler: secretHandler },
-          "/login": loginHandler
-        }
+          "/login": loginHandler,
+        },
       });
 
       navigate("/secret");
@@ -73,7 +73,7 @@ describe("router", () => {
     });
 
     test("before returning true proceeds", () => {
-      const handler = mock(() => {});
+      const handler = vi.fn(() => {});
       router({ routes: { "/x": { before: () => true, handler } } });
 
       navigate("/x");
@@ -83,7 +83,7 @@ describe("router", () => {
     });
 
     test("before returning void proceeds", () => {
-      const handler = mock(() => {});
+      const handler = vi.fn(() => {});
       router({ routes: { "/x": { before: () => {}, handler } } });
 
       navigate("/x");
@@ -92,7 +92,7 @@ describe("router", () => {
     });
 
     test("before returning a truthy non-string proceeds", () => {
-      const handler = mock(() => {});
+      const handler = vi.fn(() => {});
       router({ routes: { "/x": { before: () => ({ allowed: true }), handler } } });
 
       navigate("/x");
@@ -101,7 +101,7 @@ describe("router", () => {
     });
 
     test("before returning a falsy non-false value proceeds", () => {
-      const handler = mock(() => {});
+      const handler = vi.fn(() => {});
       router({ routes: { "/x": { before: () => 0, handler } } });
 
       navigate("/x");
@@ -110,12 +110,17 @@ describe("router", () => {
     });
 
     test("before throwing cancels navigation and logs", () => {
-      const handler = mock(() => {});
+      const handler = vi.fn(() => {});
       router({
         routes: {
           "/": () => {},
-          "/x": { before: () => { throw new Error("nope"); }, handler }
-        }
+          "/x": {
+            before: () => {
+              throw new Error("nope");
+            },
+            handler,
+          },
+        },
       });
 
       navigate("/");
@@ -128,14 +133,14 @@ describe("router", () => {
     });
 
     test("before returning a rejected Promise defers then cancels and logs", async () => {
-      const handler = mock(() => {});
+      const handler = vi.fn(() => {});
       router({
         routes: {
           "/x": {
             before: () => Promise.reject(new Error("async nope")),
-            handler
-          }
-        }
+            handler,
+          },
+        },
       });
 
       navigate("/x");
@@ -149,11 +154,11 @@ describe("router", () => {
     });
 
     test("global before returning false cancels before per-route before runs", () => {
-      const routeBefore = mock(() => {});
-      const handler = mock(() => {});
+      const routeBefore = vi.fn(() => {});
+      const handler = vi.fn(() => {});
       router({
         hooks: { before: () => false },
-        routes: { "/x": { before: routeBefore, handler } }
+        routes: { "/x": { before: routeBefore, handler } },
       });
 
       navigate("/x");
@@ -163,7 +168,7 @@ describe("router", () => {
     });
 
     test("global before returning a string redirects over per-route before", () => {
-      const routeBefore = mock(() => {});
+      const routeBefore = vi.fn(() => {});
       let redirected = false;
       router({
         hooks: {
@@ -171,12 +176,12 @@ describe("router", () => {
             if (redirected) return;
             redirected = true;
             return "/login";
-          }
+          },
         },
         routes: {
           "/x": { before: routeBefore, handler: () => {} },
-          "/login": () => {}
-        }
+          "/login": () => {},
+        },
       });
 
       navigate("/x");
@@ -186,15 +191,15 @@ describe("router", () => {
     });
 
     test("nested parent before returning false short-circuits child and handler", () => {
-      const childBefore = mock(() => {});
-      const handler = mock(() => {});
+      const childBefore = vi.fn(() => {});
+      const handler = vi.fn(() => {});
       router({
         routes: {
           "/parent": {
             before: () => false,
-            children: { "/child": { before: childBefore, handler } }
-          }
-        }
+            children: { "/child": { before: childBefore, handler } },
+          },
+        },
       });
 
       navigate("/parent/child");
@@ -204,15 +209,15 @@ describe("router", () => {
     });
 
     test("nested child before returning false cancels after parent proceeds", () => {
-      const parentBefore = mock(() => {});
-      const handler = mock(() => {});
+      const parentBefore = vi.fn(() => {});
+      const handler = vi.fn(() => {});
       router({
         routes: {
           "/parent": {
             before: parentBefore,
-            children: { "/child": { before: () => false, handler } }
-          }
-        }
+            children: { "/child": { before: () => false, handler } },
+          },
+        },
       });
 
       navigate("/parent/child");
@@ -222,15 +227,15 @@ describe("router", () => {
     });
 
     test("nested parent before returning a string redirects and skips child", () => {
-      const childBefore = mock(() => {});
+      const childBefore = vi.fn(() => {});
       router({
         routes: {
           "/parent": {
             before: () => "/login",
-            children: { "/child": { before: childBefore, handler: () => {} } }
+            children: { "/child": { before: childBefore, handler: () => {} } },
           },
-          "/login": () => {}
-        }
+          "/login": () => {},
+        },
       });
 
       navigate("/parent/child");
@@ -244,10 +249,10 @@ describe("router", () => {
         routes: {
           "/parent": {
             before: () => {},
-            children: { "/child": { before: () => "/login", handler: () => {} } }
+            children: { "/child": { before: () => "/login", handler: () => {} } },
           },
-          "/login": () => {}
-        }
+          "/login": () => {},
+        },
       });
 
       navigate("/parent/child");
@@ -259,8 +264,8 @@ describe("router", () => {
       router({
         routes: {
           "/": () => {},
-          "/secret": { before: () => false, handler: () => {} }
-        }
+          "/secret": { before: () => false, handler: () => {} },
+        },
       });
 
       navigate("/");
@@ -277,8 +282,8 @@ describe("router", () => {
         routes: {
           "/": () => {},
           "/secret": { before: () => "/login", handler: () => {} },
-          "/login": () => {}
-        }
+          "/login": () => {},
+        },
       });
 
       navigate("/");
@@ -294,8 +299,8 @@ describe("router", () => {
         mode: "hash",
         routes: {
           "/": () => {},
-          "/secret": { before: () => false, handler: () => {} }
-        }
+          "/secret": { before: () => false, handler: () => {} },
+        },
       });
 
       navigate("/");

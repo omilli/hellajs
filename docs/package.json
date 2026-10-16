@@ -16,7 +16,7 @@
     "@iconify/iconify": "^3.1.1",
     "astro": "7.2.0",
     "astro-icon": "^1.1.5",
-    "astro-pagefind": "^1.8.5",
+    "astro-pagefind": "^2.0.1",
     "typeit": "^8.8.7"
   }
 }

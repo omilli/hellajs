@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState } from "@utils/test-helpers.js";
 import { mount, ForEach } from "@hellajs/dom";
@@ -43,7 +43,11 @@ describe("dom", () => {
     test("renders and updates a list through the html ForEach syntax", () => {
       const items = signal(["a", "b", "c"]);
 
-      mount(<ul><ForEach each={items} use={((item: string) => <li>{item}</li>)}></ForEach></ul>);
+      mount(
+        <ul>
+          <ForEach each={items} use={(item: string) => <li>{item}</li>}></ForEach>
+        </ul>,
+      );
 
       expect(getListTexts()).toEqual(["a", "b", "c"]);
 
@@ -54,7 +58,11 @@ describe("dom", () => {
 
     test("updates list with keyless items using index fallback", () => {
       const items = signal(["a", "b", "c"]);
-      mount(<ul><ForEach each={items} use={((item: string) => <li>{item}</li>)}></ForEach></ul>);
+      mount(
+        <ul>
+          <ForEach each={items} use={(item: string) => <li>{item}</li>}></ForEach>
+        </ul>,
+      );
 
       expect(getListTexts()).toEqual(["a", "b", "c"]);
 
@@ -71,15 +79,17 @@ describe("dom", () => {
       const items = signal<number[]>([]);
       mount(() => createList(items));
 
-      const commentsBefore = Array.from(document.querySelector("ul")!.childNodes)
-        .filter(n => n.nodeType === Node.COMMENT_NODE).length;
+      const commentsBefore = Array.from(document.querySelector("ul")!.childNodes).filter(
+        (n) => n.nodeType === Node.COMMENT_NODE,
+      ).length;
       expect(commentsBefore).toBe(0);
 
       items([]);
       flush();
 
-      const commentsAfter = Array.from(document.querySelector("ul")!.childNodes)
-        .filter(n => n.nodeType === Node.COMMENT_NODE).length;
+      const commentsAfter = Array.from(document.querySelector("ul")!.childNodes).filter(
+        (n) => n.nodeType === Node.COMMENT_NODE,
+      ).length;
       expect(commentsAfter).toBe(0);
       expect(document.querySelectorAll("li").length).toBe(0);
     });
@@ -145,7 +155,11 @@ describe("dom", () => {
       const bob = { id: 2, name: signal("Bob") };
       const items = signal([alice, bob]);
 
-      mount(<ul><ForEach each={items} use={(item: typeof alice) => item.name}></ForEach></ul>);
+      mount(
+        <ul>
+          <ForEach each={items} use={(item: typeof alice) => item.name}></ForEach>
+        </ul>,
+      );
 
       expect(document.querySelector("ul")?.textContent).toBe("AliceBob");
 
@@ -157,7 +171,11 @@ describe("dom", () => {
 
     test("updates non-HellaNode keyless items using index fallback", () => {
       const items = signal(["a", "b", "c"]);
-      mount(<ul><ForEach each={items} use={(item: string) => item}></ForEach></ul>);
+      mount(
+        <ul>
+          <ForEach each={items} use={(item: string) => item}></ForEach>
+        </ul>,
+      );
 
       expect(document.querySelector("ul")?.textContent).toBe("abc");
 
@@ -171,17 +189,27 @@ describe("dom", () => {
     });
 
     test("replacement fast paths handle complete and zero-overlap swaps", () => {
-      const items = signal<TestItem[]>([{ id: 1, name: "A" }, { id: 2, name: "B" }]);
+      const items = signal<TestItem[]>([
+        { id: 1, name: "A" },
+        { id: 2, name: "B" },
+      ]);
       const renderer = (item: TestItem) => <li key={item.id}>{item.name}</li>;
 
       mount(() => createList(items, renderer));
       expect(getListTexts()).toEqual(["A", "B"]);
 
-      items([{ id: 10, name: "X" }, { id: 20, name: "Y" }, { id: 30, name: "Z" }]);
+      items([
+        { id: 10, name: "X" },
+        { id: 20, name: "Y" },
+        { id: 30, name: "Z" },
+      ]);
       flush();
       expect(getListTexts()).toEqual(["X", "Y", "Z"]);
 
-      items([{ id: 100, name: "P" }, { id: 200, name: "Q" }]);
+      items([
+        { id: 100, name: "P" },
+        { id: 200, name: "Q" },
+      ]);
       flush();
       expect(getListTexts()).toEqual(["P", "Q"]);
     });
@@ -208,7 +236,18 @@ describe("dom", () => {
         Array.from({ length: count }, (_, i) => ({ id: start + i, label: `Item ${start + i}` }));
 
       const items = signal(buildData(1, 100));
-      mount(<div><ForEach each={items} use={((item: TestItem) => <div key={item.id} class="item">{item.label}</div>)}></ForEach></div>);
+      mount(
+        <div>
+          <ForEach
+            each={items}
+            use={(item: TestItem) => (
+              <div key={item.id} class="item">
+                {item.label}
+              </div>
+            )}
+          ></ForEach>
+        </div>,
+      );
 
       expect(document.querySelectorAll(".item").length).toBe(100);
 
@@ -224,13 +263,23 @@ describe("dom", () => {
     test("key-only reconciliation reuses DOM nodes and preserves signal children", () => {
       const name1 = signal("Alice");
       const name2 = signal("Bob");
-      interface ReactiveItem { id: number; name: typeof name1; }
+      interface ReactiveItem {
+        id: number;
+        name: typeof name1;
+      }
       const items = signal<ReactiveItem[]>([
         { id: 1, name: name1 },
-        { id: 2, name: name2 }
+        { id: 2, name: name2 },
       ]);
 
-      mount(<ul><ForEach each={items} use={((item: ReactiveItem) => <li key={item.id}>{item.name}</li>)}></ForEach></ul>);
+      mount(
+        <ul>
+          <ForEach
+            each={items}
+            use={(item: ReactiveItem) => <li key={item.id}>{item.name}</li>}
+          ></ForEach>
+        </ul>,
+      );
 
       expect(getListTexts()).toEqual(["Alice", "Bob"]);
       const firstNodes = Array.from(document.querySelectorAll("li"));
@@ -239,7 +288,10 @@ describe("dom", () => {
       flush();
       expect(getListTexts()).toEqual(["ALICE", "Bob"]);
 
-      items([{ id: 1, name: name1 }, { id: 2, name: name2 }]);
+      items([
+        { id: 1, name: name1 },
+        { id: 2, name: name2 },
+      ]);
       flush();
 
       const reusedNodes = Array.from(document.querySelectorAll("li"));
@@ -252,11 +304,14 @@ describe("dom", () => {
     });
 
     test("renders explicit-key items without a key attribute and reuses nodes through prepend and reorder", () => {
-      interface KeyedItem { uid: number; name: string; }
+      interface KeyedItem {
+        uid: number;
+        name: string;
+      }
       const items = signal<KeyedItem[]>([
         { uid: 1, name: "A" },
         { uid: 2, name: "B" },
-        { uid: 3, name: "C" }
+        { uid: 3, name: "C" },
       ]);
       const renderer = (item: KeyedItem) => <li key={item.uid}>{item.name}</li>;
 
@@ -264,16 +319,26 @@ describe("dom", () => {
       expect(getListTexts()).toEqual(["A", "B", "C"]);
       expect(document.querySelector("li")!.outerHTML).toBe("<li>A</li>");
       const mountedNodes = Array.from(document.querySelectorAll("li"));
-      const nodeByName = new Map(mountedNodes.map(li => [li.textContent, li]));
+      const nodeByName = new Map(mountedNodes.map((li) => [li.textContent, li]));
 
-      items([{ uid: 0, name: "Z" }, { uid: 1, name: "A" }, { uid: 2, name: "B" }, { uid: 3, name: "C" }]);
+      items([
+        { uid: 0, name: "Z" },
+        { uid: 1, name: "A" },
+        { uid: 2, name: "B" },
+        { uid: 3, name: "C" },
+      ]);
       flush();
       expect(getListTexts()).toEqual(["Z", "A", "B", "C"]);
       const afterPrepend = Array.from(document.querySelectorAll("li"));
       expect(afterPrepend[1]).toBe(nodeByName.get("A"));
       expect(afterPrepend[3]).toBe(nodeByName.get("C"));
 
-      items([{ uid: 3, name: "C" }, { uid: 0, name: "Z" }, { uid: 2, name: "B" }, { uid: 1, name: "A" }]);
+      items([
+        { uid: 3, name: "C" },
+        { uid: 0, name: "Z" },
+        { uid: 2, name: "B" },
+        { uid: 1, name: "A" },
+      ]);
       flush();
       expect(getListTexts()).toEqual(["C", "Z", "B", "A"]);
       const afterReorder = Array.from(document.querySelectorAll("li"));
@@ -282,10 +347,13 @@ describe("dom", () => {
     });
 
     test("renders a spread-carried key without an attribute and reuses nodes by key", () => {
-      interface KeyedItem { uid: number; name: string; }
+      interface KeyedItem {
+        uid: number;
+        name: string;
+      }
       const items = signal<KeyedItem[]>([
         { uid: 1, name: "A" },
-        { uid: 2, name: "B" }
+        { uid: 2, name: "B" },
       ]);
       const renderer = (item: KeyedItem) => {
         const attrs = { key: item.uid, class: "item" };
@@ -294,25 +362,38 @@ describe("dom", () => {
 
       mount(() => createList(items, renderer));
       expect(getListTexts()).toEqual(["A", "B"]);
-      expect(document.querySelector("li")!.outerHTML).toBe("<li class=\"item\">A</li>");
+      expect(document.querySelector("li")!.outerHTML).toBe('<li class="item">A</li>');
       const nodeA = Array.from(document.querySelectorAll("li"))[0];
 
-      items([{ uid: 2, name: "B" }, { uid: 1, name: "A" }]);
+      items([
+        { uid: 2, name: "B" },
+        { uid: 1, name: "A" },
+      ]);
       flush();
       expect(getListTexts()).toEqual(["B", "A"]);
       expect(Array.from(document.querySelectorAll("li"))[1]).toBe(nodeA);
     });
 
     test("renders no key attribute for a keyed element mounted outside ForEach", () => {
-      mount(<div id="solo" key="solo-key">x</div>);
-      expect(document.getElementById("solo")!.outerHTML).toBe("<div id=\"solo\">x</div>");
+      mount(
+        <div id="solo" key="solo-key">
+          x
+        </div>,
+      );
+      expect(document.getElementById("solo")!.outerHTML).toBe('<div id="solo">x</div>');
     });
 
     test("preserves sibling elements during updates", () => {
       const items = signal([1, 2]);
       const showEmpty = signal(false);
 
-      mount(<div class="wrapper"><ForEach each={items} use={((item: number) => <div class="item">{item}</div>)}></ForEach><p class="footer">Always visible</p>{(() => showEmpty() && <p class="empty">No items</p>)}</div>);
+      mount(
+        <div class="wrapper">
+          <ForEach each={items} use={(item: number) => <div class="item">{item}</div>}></ForEach>
+          <p class="footer">Always visible</p>
+          {() => showEmpty() && <p class="empty">No items</p>}
+        </div>,
+      );
 
       expect(document.querySelectorAll(".item").length).toBe(2);
       expect(document.querySelector(".footer")?.textContent).toBe("Always visible");
@@ -328,7 +409,11 @@ describe("dom", () => {
 
     test("dynamic signals update independently", () => {
       const signals = [signal("A"), signal("B")];
-      mount(<span><ForEach each={signals} use={(item: typeof signals[0]) => item}></ForEach></span>);
+      mount(
+        <span>
+          <ForEach each={signals} use={(item: (typeof signals)[0]) => item}></ForEach>
+        </span>,
+      );
 
       expect(document.querySelector("span")?.textContent).toBe("AB");
 
@@ -338,17 +423,21 @@ describe("dom", () => {
     });
 
     test("throws when each is missing", () => {
-      expect(() => ForEach(
-        // @ts-expect-error — intentionally invalid: missing each
-        { use: (item: unknown) => item }
-      )).toThrow("[dom] ForEach: each is required");
+      expect(() =>
+        ForEach(
+          // @ts-expect-error — intentionally invalid: missing each
+          { use: (item: unknown) => item },
+        ),
+      ).toThrow("[dom] ForEach: each is required");
     });
 
     test("throws when use is not a function", () => {
-      expect(() => ForEach(
-        // @ts-expect-error — intentionally invalid: use is not a function
-        { each: [], use: "not a function" }
-      )).toThrow("[dom] ForEach: use must be a function");
+      expect(() =>
+        ForEach(
+          // @ts-expect-error — intentionally invalid: use is not a function
+          { each: [], use: "not a function" },
+        ),
+      ).toThrow("[dom] ForEach: use must be a function");
     });
 
     test("swap operations with reactive content", () => {
@@ -358,11 +447,29 @@ describe("dom", () => {
       }
       const rows = signal<ReactiveRow[]>([
         { id: 1, label: signal("Item 1") },
-        { id: 2, label: signal("Item 2") }
+        { id: 2, label: signal("Item 2") },
       ]);
       const selected = signal<number | undefined>(undefined);
 
-      mount(<table><tbody><ForEach each={rows} use={((row: ReactiveRow) => <tr key={row.id}><td>{row.id}</td><td><a class="lbl" on:click={() => selected(row.id)}>{row.label}</a></td></tr>)}></ForEach></tbody></table>);
+      mount(
+        <table>
+          <tbody>
+            <ForEach
+              each={rows}
+              use={(row: ReactiveRow) => (
+                <tr key={row.id}>
+                  <td>{row.id}</td>
+                  <td>
+                    <a class="lbl" on:click={() => selected(row.id)}>
+                      {row.label}
+                    </a>
+                  </td>
+                </tr>
+              )}
+            ></ForEach>
+          </tbody>
+        </table>,
+      );
 
       (document.querySelector(".lbl") as HTMLElement).click();
       flush();

@@ -1,7 +1,7 @@
 ---
 name: audit-tests
 description: >
-  Check or grade test files (*.test.ts) against `guides/tests.md` — framework, imports, structure, assertion patterns, §Anti-Patterns, §Triage & Gate Semantics — and report grounded findings: each a runnable check or a quoted rule, never taste. The enforcement point for test anti-patterns `bun coverage` cannot see (new files, shared test helpers, DOM-access and naming rules). Use ONLY for rule-grounded review of test files — source → `audit-code`, md/mdx and package AGENTS.md → `audit-docs`, scripts/** and utils/** → `audit-scripts`, judgment critique → `audit-code` (its cost-gated lenses).
+  Check or grade test files (*.test.ts) against `guides/tests.md` — framework, imports, structure, assertion patterns, §Anti-Patterns, §Triage & Gate Semantics — and report grounded findings: each a runnable check or a quoted rule, never taste. The enforcement point for test anti-patterns `vp run coverage` cannot see (new files, shared test helpers, DOM-access and naming rules). Use ONLY for rule-grounded review of test files — source → `audit-code`, md/mdx and package AGENTS.md → `audit-docs`, scripts/** and utils/** → `audit-scripts`, judgment critique → `audit-code` (its cost-gated lenses).
 ---
 
 # Audit-tests
@@ -10,17 +10,17 @@ Review test files against `guides/tests.md`; report grounded findings. Rules are
 
 ## Step 1 — Read the rule set (not generic best practice)
 
-- Root AGENTS.md (§Testing — the `bun coverage` gate, never bare `bun test`) + the target package's `AGENTS.md` test sections for context.
+- Root AGENTS.md (§Testing — the `vp run coverage` gate, never bare `vp test`) + the target package's `AGENTS.md` test sections for context.
 - `guides/tests.md` — a decision procedure: §Assertion Patterns through §Code Style, then tick §Verification Checklist. Tick the checklist, don't reconstruct rules from prose.
-- `bunfig.toml` (HappyDOM preload) — the runtime tests assume; §Triage & Gate Semantics is the vocabulary for scoped runs and foreign failures, though triage itself is the runner's job, not this skill's product.
+- The root `vite.config.ts` test setup (happy-dom env + JSX transform) — the runtime tests assume; §Triage & Gate Semantics is the vocabulary for scoped runs and foreign failures, though triage itself is the runner's job, not this skill's product.
 
-`bun coverage` enforces neither the guide's structural rules nor its anti-patterns (§Anti-Patterns) — this skill is the enforcement point for exactly those. Audit is mandatory for new test files and new shared test helpers. Rule absent for the case at hand → note the gap, don't substitute taste.
+`vp run coverage` enforces neither the guide's structural rules nor its anti-patterns (§Anti-Patterns) — this skill is the enforcement point for exactly those. Audit is mandatory for new test files and new shared test helpers. Rule absent for the case at hand → note the gap, don't substitute taste.
 
 ## Step 2 — Ground every finding
 
 Each finding is exactly one of:
 
-- **A runnable check** — exact command, expected, actual. "Fails `bun coverage dom` on the multi-hop chain: the assertion runs before the second hop resolves" not "flaky test."
+- **A runnable check** — exact command, expected, actual. "Fails `vp run coverage dom` on the multi-hop chain: the assertion runs before the second hop resolves" not "flaky test."
 - **A quoted rule** — file + section + rule verbatim + the violation. "`guides/tests.md` §Code Style requires one behavior per test; `signals.test.ts` `it()` at line of `describe('merge')` asserts both write and subscription effects."
 
 Neither → taste, drop. Severity (blocker / should-fix / nit) + one clause naming the blast radius (which suites/coverage gates it risks).

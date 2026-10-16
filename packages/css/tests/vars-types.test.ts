@@ -1,6 +1,6 @@
-import { describe, expect, test, beforeEach } from "bun:test";
+import { describe, expect, test, beforeEach } from "vite-plus/test";
 import { resetTestState } from "@utils/test-helpers.js";
-import { vars } from "@hellajs/css/bundle";
+import { vars } from "@hellajs/css";
 
 beforeEach(() => {
   resetTestState();

@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { resetTestState } from "@utils/test-helpers.js";
 import {
   assertAttrForwarded,
@@ -17,19 +17,25 @@ beforeEach(() => {
 });
 
 describe("skeleton", () => {
-  test.each(skeletonVariants)("$style renders the pulse div with its data-slot and class merge", (variant) => {
-    const skeleton = renderVariant(variant, { children: variant.child(""), class: "my-skeleton" });
-    expect(skeleton.tagName).toBe("DIV");
-    expect(skeleton.getAttribute("data-slot")).toBe("skeleton");
-    const tokens = classTokens(skeleton);
-    expect(tokens.at(-1)).toBe("my-skeleton");
-    if (variant.style === "css") {
-      expect(tokens).toHaveLength(2);
-      expect(tokens[0]!.startsWith("skeleton-")).toBe(true);
-    } else {
-      for (const token of BASE_TOKENS) expect(tokens).toContain(token);
-    }
-  });
+  test.each(skeletonVariants)(
+    "$style renders the pulse div with its data-slot and class merge",
+    (variant) => {
+      const skeleton = renderVariant(variant, {
+        children: variant.child(""),
+        class: "my-skeleton",
+      });
+      expect(skeleton.tagName).toBe("DIV");
+      expect(skeleton.getAttribute("data-slot")).toBe("skeleton");
+      const tokens = classTokens(skeleton);
+      expect(tokens.at(-1)).toBe("my-skeleton");
+      if (variant.style === "css") {
+        expect(tokens).toHaveLength(2);
+        expect(tokens[0]!.startsWith("skeleton-")).toBe(true);
+      } else {
+        for (const token of BASE_TOKENS) expect(tokens).toContain(token);
+      }
+    },
+  );
 
   test("keeps structural parity across both styles", () => {
     assertStructuralParity(skeletonVariants);
@@ -40,7 +46,7 @@ describe("skeleton", () => {
   });
 
   test("fires a user on:click handler across both styles", () => {
-    const onClick = mock(() => {});
+    const onClick = vi.fn(() => {});
     assertHandlerForwarded(skeletonVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 });

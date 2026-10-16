@@ -1,5 +1,5 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
-import {delay, resetTestState} from "@utils/test-helpers.js";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
+import { delay, resetTestState } from "@utils/test-helpers.js";
 import { mount, peekState } from "@hellajs/dom";
 
 beforeEach(() => {
@@ -9,26 +9,38 @@ beforeEach(() => {
 describe("dom", () => {
   describe("delegated events", () => {
     test("delegated click handler fires on target element", () => {
-      const clickHandler = mock(() => {});
+      const clickHandler = vi.fn(() => {});
 
-      mount(<div id="event-container"><button id="btn" on:click={clickHandler}>Click</button></div>);
+      mount(
+        <div id="event-container">
+          <button id="btn" on:click={clickHandler}>
+            Click
+          </button>
+        </div>,
+      );
 
       document.getElementById("btn")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
       expect(clickHandler).toHaveBeenCalledTimes(1);
     });
 
     test("delegated handler fires via event bubbling", () => {
-      const delegatedHandler = mock(() => {});
+      const delegatedHandler = vi.fn(() => {});
 
-      mount(<div id="event-container"><div id="parent" on:click={delegatedHandler}><span id="child">Child</span></div></div>);
+      mount(
+        <div id="event-container">
+          <div id="parent" on:click={delegatedHandler}>
+            <span id="child">Child</span>
+          </div>
+        </div>,
+      );
 
       document.getElementById("child")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
       expect(delegatedHandler).toHaveBeenCalledTimes(1);
     });
 
     test("multiple delegated event types on same element", () => {
-      const clickHandler = mock(() => {});
-      const hoverHandler = mock(() => {});
+      const clickHandler = vi.fn(() => {});
+      const hoverHandler = vi.fn(() => {});
 
       mount(<div id="multi" on:click={clickHandler} on:mouseenter={hoverHandler}></div>);
       const multi = document.getElementById("multi")!;
@@ -40,8 +52,17 @@ describe("dom", () => {
     });
 
     test("remaining delegated handler fires after sibling element removal", async () => {
-      const clickHandler = mock(() => {});
-      mount(<div><button id="a" on:click={clickHandler}>A</button><button id="b" on:click={clickHandler}>B</button></div>);
+      const clickHandler = vi.fn(() => {});
+      mount(
+        <div>
+          <button id="a" on:click={clickHandler}>
+            A
+          </button>
+          <button id="b" on:click={clickHandler}>
+            B
+          </button>
+        </div>,
+      );
 
       document.getElementById("a")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
       document.getElementById("b")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
@@ -56,8 +77,12 @@ describe("dom", () => {
     });
 
     test("element state cleans up when last delegated handler element is removed", async () => {
-      const dragHandler = mock(() => {});
-      mount(<div id="drag-el" on:drag={dragHandler}>Drag</div>);
+      const dragHandler = vi.fn(() => {});
+      mount(
+        <div id="drag-el" on:drag={dragHandler}>
+          Drag
+        </div>,
+      );
 
       const el = document.getElementById("drag-el")!;
       el.dispatchEvent(new Event("drag", { bubbles: true }));
@@ -70,22 +95,37 @@ describe("dom", () => {
     });
 
     test("delegated handler on permanent node remains active after unrelated cleanup", async () => {
-      const clickHandler = mock(() => {});
-      const dragHandler = mock(() => {});
+      const clickHandler = vi.fn(() => {});
+      const dragHandler = vi.fn(() => {});
 
-      mount(<><div id="permanent" on:click={clickHandler}>Permanent</div><div id="temporary" on:drag={dragHandler}>Temporary</div></>);
+      mount(
+        <>
+          <div id="permanent" on:click={clickHandler}>
+            Permanent
+          </div>
+          <div id="temporary" on:drag={dragHandler}>
+            Temporary
+          </div>
+        </>,
+      );
 
       const temp = document.getElementById("temporary")!;
       temp.remove();
       await delay();
 
-      document.getElementById("permanent")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      document
+        .getElementById("permanent")!
+        .dispatchEvent(new MouseEvent("click", { bubbles: true }));
       expect(clickHandler).toHaveBeenCalledTimes(1);
     });
 
     test("events of removed delegated handler type do not crash", async () => {
-      const dragHandler = mock(() => {});
-      mount(<div id="drag-el" on:drag={dragHandler}>Drag</div>);
+      const dragHandler = vi.fn(() => {});
+      mount(
+        <div id="drag-el" on:drag={dragHandler}>
+          Drag
+        </div>,
+      );
 
       const el = document.getElementById("drag-el")!;
       el.remove();
@@ -96,12 +136,18 @@ describe("dom", () => {
     });
 
     test("stopPropagation in delegated handler prevents ancestor handler from firing", () => {
-      const backdropHandler = mock(() => {});
-      const dialogHandler = mock((event: Event) => {
+      const backdropHandler = vi.fn(() => {});
+      const dialogHandler = vi.fn((event: Event) => {
         event.stopPropagation();
       });
 
-      mount(<div id="backdrop" on:click={backdropHandler}><div id="dialog" on:click={dialogHandler}>Dialog</div></div>);
+      mount(
+        <div id="backdrop" on:click={backdropHandler}>
+          <div id="dialog" on:click={dialogHandler}>
+            Dialog
+          </div>
+        </div>,
+      );
 
       document.getElementById("dialog")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
       expect(dialogHandler).toHaveBeenCalledTimes(1);
@@ -110,29 +156,41 @@ describe("dom", () => {
 
     test("delegated handlers fire target-first without stopPropagation", () => {
       const order: string[] = [];
-      const outerHandler = mock(() => {
+      const outerHandler = vi.fn(() => {
         order.push("outer");
       });
-      const innerHandler = mock(() => {
+      const innerHandler = vi.fn(() => {
         order.push("inner");
       });
 
-      mount(<div id="outer" on:click={outerHandler}><div id="inner" on:click={innerHandler}>Inner</div></div>);
+      mount(
+        <div id="outer" on:click={outerHandler}>
+          <div id="inner" on:click={innerHandler}>
+            Inner
+          </div>
+        </div>,
+      );
 
       document.getElementById("inner")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
       expect(order).toEqual(["inner", "outer"]);
     });
 
     test("stopImmediatePropagation prevents ancestor delegated handler from firing", () => {
-      const backdropHandler = mock(() => {});
+      const backdropHandler = vi.fn(() => {});
       // stopImmediatePropagation + stopPropagation: real browsers set cancelBubble for both;
       // HappyDOM only for stopPropagation, so the test sets both flags as a browser would.
-      const dialogHandler = mock((event: Event) => {
+      const dialogHandler = vi.fn((event: Event) => {
         event.stopImmediatePropagation();
         event.stopPropagation();
       });
 
-      mount(<div id="backdrop" on:click={backdropHandler}><div id="dialog" on:click={dialogHandler}>Dialog</div></div>);
+      mount(
+        <div id="backdrop" on:click={backdropHandler}>
+          <div id="dialog" on:click={dialogHandler}>
+            Dialog
+          </div>
+        </div>,
+      );
 
       document.getElementById("dialog")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
       expect(dialogHandler).toHaveBeenCalledTimes(1);

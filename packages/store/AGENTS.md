@@ -116,16 +116,16 @@ Passing an existing store as a value inside another store's initial object: the 
 
 ## Testing
 
-Tests live in `tests/` (16 files: `data`, `equals`, `functions`, `future`, `update`, `snapshot`, `nested`, `cleanup`, `readonly`, `middleware`, `draft`, `reserved`, `subscribe`, `collections`, `persist`, `persist-adaptors`) and import `store`/`persistStore`/adaptors from `@hellajs/store/bundle`. Shared test helpers live in `tests/helpers.ts` (`spyCleanup`, `withoutWindow`). Generic conventions live in `guides/tests.md`.
+Tests live in `tests/` (16 behavior files: `data`, `equals`, `functions`, `future`, `update`, `snapshot`, `nested`, `cleanup`, `readonly`, `middleware`, `draft`, `reserved`, `subscribe`, `collections`, `persist`, `persist-adaptors`) and import `store`/`persistStore`/adaptors from the bare entry `@hellajs/store`; `tests/bundle.test.ts` is the one `/bundle` loader, pinning export parity with the entry. Shared test helpers live in `tests/helpers.ts` (`spyCleanup`, `withoutWindow`). Generic conventions live in `guides/tests.md`.
 
 - Cover each `update` path (partial, draft, middleware) independently.
 - Snapshot reactivity tested flat and deeply nested.
 - Cleanup: nested disposed, signals stay alive, idempotent.
 - Readonly: setter calls and `$update()` throw; propagates deep into nested plain objects (composed stores keep their own config).
-- Track effect runs with `mock()` from `bun:test`.
+- Track effect runs with `vi.fn()` from `vite-plus/test`.
 - Future keys (`future.test.ts`): one behavior per test (materialization, nested stores, draft path, snapshot invalidation, every add-path throw, subscribe before/after, no middleware on added keys, cleanup); hydration of stored extra keys lives in `persist.test.ts`; the externally-replaced unknown-key throw lives in both `future.test.ts` and `update.test.ts`'s neighborhood.
 
-Run with `bun coverage store`.
+Run with `vp run coverage store`.
 
 Style cross-refs: `guides/code.md` (source/types), `guides/tests.md` (tests), `guides/docs.md` (docs).
 </store-package>

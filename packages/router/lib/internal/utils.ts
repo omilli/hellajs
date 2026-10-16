@@ -54,7 +54,10 @@ export function getHashPath(): string {
  * @param b Second route entry.
  * @returns Sort comparison result.
  */
-export function sortRoutesBySpecificity([patternA]: [string, unknown], [patternB]: [string, unknown]): number {
+export function sortRoutesBySpecificity(
+  [patternA]: [string, unknown],
+  [patternB]: [string, unknown],
+): number {
   const aHasWildcard = patternA.includes("*");
   const bHasWildcard = patternB.includes("*");
   if (aHasWildcard && !bHasWildcard) {
@@ -100,9 +103,11 @@ export function getCachedRouteEntries(routeMap: Routes): RouteEntryCache {
   if (!cache) {
     const raw = Object.entries(routeMap);
     cache = {
-      nested: raw.filter(([, value]) => !isString(value) && hasChildren(value)).sort(sortRoutesBySpecificity),
+      nested: raw
+        .filter(([, value]) => !isString(value) && hasChildren(value))
+        .sort(sortRoutesBySpecificity),
       child: raw.filter(([, value]) => !isString(value)).sort(sortRoutesBySpecificity),
-      raw
+      raw,
     };
     entryCache.set(routeMap, cache);
   }

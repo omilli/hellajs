@@ -48,8 +48,8 @@ export type DOMEventMap = {
  */
 type PrefixedEventHandlers = {
   [K in keyof DOMEventMap as `on:${K}`]?: K extends "error"
-  ? string | ((this: HTMLElement, event: DOMEventMap[K]) => void)
-  : (this: HTMLElement, event: DOMEventMap[K]) => void;
+    ? string | ((this: HTMLElement, event: DOMEventMap[K]) => void)
+    : (this: HTMLElement, event: DOMEventMap[K]) => void;
 };
 
 /**
@@ -60,7 +60,7 @@ type PrefixedEventHandlers = {
  */
 type DirectEventHandlers = {
   [K in keyof DOMEventMap as `e:${K}`]?:
-    ((this: HTMLElement, event: DOMEventMap[K]) => void)
+    | ((this: HTMLElement, event: DOMEventMap[K]) => void)
     | DirectListenerSpec<DOMEventMap[K]>;
 };
 
@@ -110,10 +110,14 @@ interface CoreHTMLAttributes {
   "aria-colindex"?: HellaPrimitive<number>;
   "aria-colspan"?: HellaPrimitive<number>;
   "aria-controls"?: HellaPrimitive;
-  "aria-current"?: HellaPrimitive<boolean | "true" | "false" | "page" | "step" | "location" | "date" | "time">;
+  "aria-current"?: HellaPrimitive<
+    boolean | "true" | "false" | "page" | "step" | "location" | "date" | "time"
+  >;
   "aria-disabled"?: HellaPrimitive<boolean | "true" | "false">;
   "aria-expanded"?: HellaPrimitive<boolean | "true" | "false">;
-  "aria-haspopup"?: HellaPrimitive<boolean | "true" | "false" | "menu" | "listbox" | "tree" | "grid" | "dialog">;
+  "aria-haspopup"?: HellaPrimitive<
+    boolean | "true" | "false" | "menu" | "listbox" | "tree" | "grid" | "dialog"
+  >;
   "aria-hidden"?: HellaPrimitive<boolean | "true" | "false">;
   "aria-invalid"?: HellaPrimitive<boolean | "true" | "false" | "grammar" | "spelling">;
   "aria-keyshortcuts"?: HellaPrimitive;
@@ -145,7 +149,8 @@ interface CoreHTMLAttributes {
 /**
  * Global HTML attributes that apply to all elements.
  */
-export interface GlobalHTMLAttributes extends CoreHTMLAttributes, PrefixedEventHandlers, DirectEventHandlers, PrefixedHooks {
+export interface GlobalHTMLAttributes
+  extends CoreHTMLAttributes, PrefixedEventHandlers, DirectEventHandlers, PrefixedHooks {
   // HTML5 custom data attributes (data-*)
   [key: `data-${string}`]: HellaPrimitive;
   // Index signature to allow arbitrary string keys
@@ -166,11 +171,11 @@ interface AnchorHTMLAttributes extends GlobalHTMLAttributes {
   hreflang?: HellaPrimitive;
   type?: HellaPrimitive;
   referrerpolicy?: HellaPrimitive<
-    "no-referrer" |
-    "no-referrer-when-downgrade" |
-    "origin" |
-    "origin-when-cross-origin" |
-    "unsafe-url"
+    | "no-referrer"
+    | "no-referrer-when-downgrade"
+    | "origin"
+    | "origin-when-cross-origin"
+    | "unsafe-url"
   >;
   ping?: HellaPrimitive;
 }
@@ -191,28 +196,28 @@ interface ButtonHTMLAttributes extends GlobalHTMLAttributes {
 
 interface InputHTMLAttributes extends GlobalHTMLAttributes {
   type?: HellaPrimitive<
-    "button" |
-    "checkbox" |
-    "color" |
-    "date" |
-    "datetime-local" |
-    "email" |
-    "file" |
-    "hidden" |
-    "image" |
-    "month" |
-    "number" |
-    "password" |
-    "radio" |
-    "range" |
-    "reset" |
-    "search" |
-    "submit" |
-    "tel" |
-    "text" |
-    "time" |
-    "url" |
-    "week"
+    | "button"
+    | "checkbox"
+    | "color"
+    | "date"
+    | "datetime-local"
+    | "email"
+    | "file"
+    | "hidden"
+    | "image"
+    | "month"
+    | "number"
+    | "password"
+    | "radio"
+    | "range"
+    | "reset"
+    | "search"
+    | "submit"
+    | "tel"
+    | "text"
+    | "time"
+    | "url"
+    | "week"
   >;
   name?: HellaPrimitive;
   value?: HellaPrimitive;
@@ -527,9 +532,7 @@ interface TimeHTMLAttributes extends GlobalHTMLAttributes {
 
 interface TrackHTMLAttributes extends GlobalHTMLAttributes {
   default?: HellaPrimitive<boolean>;
-  kind?: HellaPrimitive<
-    "subtitles" | "captions" | "descriptions" | "chapters" | "metadata"
-  >;
+  kind?: HellaPrimitive<"subtitles" | "captions" | "descriptions" | "chapters" | "metadata">;
   label?: HellaPrimitive;
   src?: HellaPrimitive;
   srclang?: HellaPrimitive;
@@ -550,20 +553,20 @@ interface VideoHTMLAttributes extends GlobalHTMLAttributes {
 }
 
 // Define interfaces for other elements that only use global attributes
-interface DivHTMLAttributes extends GlobalHTMLAttributes { }
-interface SpanHTMLAttributes extends GlobalHTMLAttributes { }
-interface ParagraphHTMLAttributes extends GlobalHTMLAttributes { }
-interface HeaderHTMLAttributes extends GlobalHTMLAttributes { }
-interface FooterHTMLAttributes extends GlobalHTMLAttributes { }
-interface MainHTMLAttributes extends GlobalHTMLAttributes { }
-interface SectionHTMLAttributes extends GlobalHTMLAttributes { }
-interface ArticleHTMLAttributes extends GlobalHTMLAttributes { }
-interface AsideHTMLAttributes extends GlobalHTMLAttributes { }
-interface NavHTMLAttributes extends GlobalHTMLAttributes { }
-interface HeadingHTMLAttributes extends GlobalHTMLAttributes { }
-interface HrHTMLAttributes extends GlobalHTMLAttributes { }
-interface BrHTMLAttributes extends GlobalHTMLAttributes { }
-interface UlHTMLAttributes extends GlobalHTMLAttributes { }
+interface DivHTMLAttributes extends GlobalHTMLAttributes {}
+interface SpanHTMLAttributes extends GlobalHTMLAttributes {}
+interface ParagraphHTMLAttributes extends GlobalHTMLAttributes {}
+interface HeaderHTMLAttributes extends GlobalHTMLAttributes {}
+interface FooterHTMLAttributes extends GlobalHTMLAttributes {}
+interface MainHTMLAttributes extends GlobalHTMLAttributes {}
+interface SectionHTMLAttributes extends GlobalHTMLAttributes {}
+interface ArticleHTMLAttributes extends GlobalHTMLAttributes {}
+interface AsideHTMLAttributes extends GlobalHTMLAttributes {}
+interface NavHTMLAttributes extends GlobalHTMLAttributes {}
+interface HeadingHTMLAttributes extends GlobalHTMLAttributes {}
+interface HrHTMLAttributes extends GlobalHTMLAttributes {}
+interface BrHTMLAttributes extends GlobalHTMLAttributes {}
+interface UlHTMLAttributes extends GlobalHTMLAttributes {}
 
 /**
  * Map of HTML tag names to their specific attribute interfaces.
@@ -688,5 +691,4 @@ export interface HTMLAttributeMap {
  * Utility type to get attributes for a specific element.
  * @template K
  */
-export type HTMLAttributes<K extends keyof HTMLAttributeMap> =
-  HTMLAttributeMap[K];
+export type HTMLAttributes<K extends keyof HTMLAttributeMap> = HTMLAttributeMap[K];

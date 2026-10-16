@@ -13,22 +13,20 @@ export type ExtractParams<T extends string> = PatternSegments<T>;
 /**
  * Splits a pattern into `/`-separated segments and intersects their params.
  */
-type PatternSegments<T extends string> =
-  T extends `${infer Head}/${infer Rest}`
-    ? SegmentParams<Head> & PatternSegments<Rest>
-    : SegmentParams<T>;
+type PatternSegments<T extends string> = T extends `${infer Head}/${infer Rest}`
+  ? SegmentParams<Head> & PatternSegments<Rest>
+  : SegmentParams<T>;
 
 /**
  * Extracts params from one pattern segment: `:param`, `:param?`, or `*`.
  */
-type SegmentParams<S extends string> =
-  S extends `:${infer Param}?`
-    ? { [K in Param]?: string }
-    : S extends `:${infer Param}`
-      ? { [K in Param]: string }
-      : S extends "*"
-        ? { "*": string }
-        : {};
+type SegmentParams<S extends string> = S extends `:${infer Param}?`
+  ? { [K in Param]?: string }
+  : S extends `:${infer Param}`
+    ? { [K in Param]: string }
+    : S extends "*"
+      ? { "*": string }
+      : {};
 
 /**
  * Function type for route handlers and hooks. Declare the full
@@ -65,7 +63,11 @@ export type ScrollBehavior =
   | "auto"
   | "top"
   | "preserve"
-  | ((to: string, from: string, savedPosition: { top: number; left: number } | null) => { top: number; left?: number } | null);
+  | ((
+      to: string,
+      from: string,
+      savedPosition: { top: number; left: number } | null,
+    ) => { top: number; left?: number } | null);
 
 /**
  * Type-safe route map with string keys and route values.
@@ -77,9 +79,7 @@ export interface Routes {
 /**
  * Union type representing possible route values.
  */
-export type RouteValue =
-  | Handler
-  | RouteWithHooks;
+export type RouteValue = Handler | RouteWithHooks;
 
 /**
  * Route definition with optional hooks and nested children.
@@ -251,4 +251,3 @@ export interface Crumb {
   /** Inherited parameters through this level */
   readonly params: Params;
 }
-

@@ -1,5 +1,12 @@
 import { serializeProp, escapeHtml } from "./serialize";
-import { resolveValue, resolveAsync, resolveDeep, resolveAsyncDeep, isPromise, SYNC_PROMISE_WARN } from "./resolve";
+import {
+  resolveValue,
+  resolveAsync,
+  resolveDeep,
+  resolveAsyncDeep,
+  isPromise,
+  SYNC_PROMISE_WARN,
+} from "./resolve";
 import type { HeadOptions, MetaTag, LinkTag } from "../types";
 import type { HellaNode } from "@hellajs/dom";
 
@@ -81,10 +88,14 @@ export function buildHead(head: HeadOptions | undefined): string {
     while (i < len) {
       const script = head.scripts[i]!;
       // inline content wins: drop `src` too — a `<script src=…>` ignores its body, so emitting both would silently suppress the inline script
-      const scriptAttrs = buildAttrs(script, script.content !== undefined ? ["content", "src"] : "content");
-      headHtml += script.content !== undefined
-        ? `<script${scriptAttrs}>${script.content}</script>`
-        : `<script${scriptAttrs}></script>`;
+      const scriptAttrs = buildAttrs(
+        script,
+        script.content !== undefined ? ["content", "src"] : "content",
+      );
+      headHtml +=
+        script.content !== undefined
+          ? `<script${scriptAttrs}>${script.content}</script>`
+          : `<script${scriptAttrs}></script>`;
       i++;
     }
   }
@@ -120,8 +131,8 @@ export function hoistHead(node: HellaNode, head: HeadOptions): boolean {
         const key = keys[i]!;
         i++;
         const value = resolveValue(props[key]);
-        if (isPromise(value)) console.warn(SYNC_PROMISE_WARN);   // sync hoist cannot await — parity with ssrImpl's props loop
-        if (value !== false && value !== null && value !== undefined) attrs[key] = `${value}`;   // falsy dropped — buildHead's buildAttrs omits these
+        if (isPromise(value)) console.warn(SYNC_PROMISE_WARN); // sync hoist cannot await — parity with ssrImpl's props loop
+        if (value !== false && value !== null && value !== undefined) attrs[key] = `${value}`; // falsy dropped — buildHead's buildAttrs omits these
       }
     }
     if (tag === "meta") (head.meta ??= []).push(attrs);
@@ -130,7 +141,7 @@ export function hoistHead(node: HellaNode, head: HeadOptions): boolean {
   }
   if (tag !== "title" && tag !== "style") return false;
   let text = "";
-  let isText = true;                     // every child resolves to text — otherwise the tag stays in place (only text hoists)
+  let isText = true; // every child resolves to text — otherwise the tag stays in place (only text hoists)
   const children = node.children;
   if (children !== undefined) {
     let i = 0;
@@ -142,14 +153,17 @@ export function hoistHead(node: HellaNode, head: HeadOptions): boolean {
       const resolved = resolveDeep(children[i]!);
       i++;
       if (resolved === null || resolved === undefined || typeof resolved === "boolean") continue;
-      if (typeof resolved === "string" || typeof resolved === "number") { text += resolved; continue; }
+      if (typeof resolved === "string" || typeof resolved === "number") {
+        text += resolved;
+        continue;
+      }
       isText = false;
       break;
     }
   }
   if (!isText) return false;
-  if (tag === "title") head.title = text;        // last title wins
-  else (head.styles ??= []).push(text);          // CSS text, raw — buildHead emits styles unescaped
+  if (tag === "title") head.title = text; // last title wins
+  else (head.styles ??= []).push(text); // CSS text, raw — buildHead emits styles unescaped
   return true;
 }
 
@@ -174,7 +188,7 @@ export async function hoistHeadAsync(node: HellaNode, head: HeadOptions): Promis
         const key = keys[i]!;
         i++;
         const value = await resolveAsync(props[key]);
-        if (value !== false && value !== null && value !== undefined) attrs[key] = `${value}`;   // falsy dropped — buildHead's buildAttrs omits these
+        if (value !== false && value !== null && value !== undefined) attrs[key] = `${value}`; // falsy dropped — buildHead's buildAttrs omits these
       }
     }
     if (tag === "meta") (head.meta ??= []).push(attrs);
@@ -183,7 +197,7 @@ export async function hoistHeadAsync(node: HellaNode, head: HeadOptions): Promis
   }
   if (tag !== "title" && tag !== "style") return false;
   let text = "";
-  let isText = true;                     // every child resolves to text — otherwise the tag stays in place (only text hoists)
+  let isText = true; // every child resolves to text — otherwise the tag stays in place (only text hoists)
   const children = node.children;
   if (children !== undefined) {
     let i = 0;
@@ -193,13 +207,16 @@ export async function hoistHeadAsync(node: HellaNode, head: HeadOptions): Promis
       const resolved = await resolveAsyncDeep(children[i]!);
       i++;
       if (resolved === null || resolved === undefined || typeof resolved === "boolean") continue;
-      if (typeof resolved === "string" || typeof resolved === "number") { text += resolved; continue; }
+      if (typeof resolved === "string" || typeof resolved === "number") {
+        text += resolved;
+        continue;
+      }
       isText = false;
       break;
     }
   }
   if (!isText) return false;
-  if (tag === "title") head.title = text;        // last title wins
-  else (head.styles ??= []).push(text);          // CSS text, raw — buildHead emits styles unescaped
+  if (tag === "title") head.title = text; // last title wins
+  else (head.styles ??= []).push(text); // CSS text, raw — buildHead emits styles unescaped
   return true;
 }

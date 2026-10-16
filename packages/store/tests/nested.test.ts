@@ -1,6 +1,6 @@
-import { describe, test, expect, mock } from "bun:test";
+import { describe, test, expect, vi } from "vite-plus/test";
 import { effect } from "@hellajs/core";
-import { store } from "@hellajs/store/bundle";
+import { store } from "@hellajs/store";
 import { spyCleanup } from "./helpers";
 
 describe("store", () => {
@@ -11,18 +11,18 @@ describe("store", () => {
         email: "john@example.com",
         preferences: {
           theme: "dark",
-          language: "en"
-        }
+          language: "en",
+        },
       });
 
       const uiStore = store({
         sidebarOpen: false,
-        activeTab: "dashboard"
+        activeTab: "dashboard",
       });
 
       const appStore = store({
         user: userStore,
-        ui: uiStore
+        ui: uiStore,
       });
 
       expect(appStore.user.name()).toBe("John Doe");
@@ -36,17 +36,17 @@ describe("store", () => {
       const userStore = store({
         name: "John Doe",
         preferences: {
-          theme: "dark"
-        }
+          theme: "dark",
+        },
       });
 
       const uiStore = store({
-        sidebarOpen: false
+        sidebarOpen: false,
       });
 
       const appStore = store({
         user: userStore,
-        ui: uiStore
+        ui: uiStore,
       });
 
       appStore.user.name("Jane Doe");
@@ -63,11 +63,11 @@ describe("store", () => {
 
     test("writes propagate from original store to composed store", () => {
       const userStore = store({
-        email: "john@example.com"
+        email: "john@example.com",
       });
 
       const appStore = store({
-        user: userStore
+        user: userStore,
       });
 
       userStore.email("jane@example.com");
@@ -80,7 +80,7 @@ describe("store", () => {
 
       const appStore = store({
         user: userStore,
-        settings: settingsStore
+        settings: settingsStore,
       });
 
       const snap = appStore.$snapshot();
@@ -106,7 +106,7 @@ describe("store", () => {
       const userStore = store({ name: "Alice" });
       const appStore = store({ user: userStore });
 
-      appStore.$update(draft => {
+      appStore.$update((draft) => {
         draft.user.name = "Bob";
       });
 
@@ -158,7 +158,7 @@ describe("store", () => {
     test("snapshot is reactive across composed stores", () => {
       const userStore = store({ name: "Alice" });
       const appStore = store({ user: userStore });
-      const tracker = mock(() => {});
+      const tracker = vi.fn(() => {});
 
       effect(() => {
         appStore.$snapshot();

@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { resetTestState } from "@utils/test-helpers.js";
 import { onDrag } from "@hellajs/dom";
 import { pointerDown, pointerMove, pointerUp, pointerCancel } from "./helpers";
@@ -9,8 +9,10 @@ describe("onDrag", () => {
   });
 
   test("emits cumulative deltas from the drag start", () => {
-    const onStart = mock<(event: PointerEvent) => void>(() => {});
-    const onMove = mock<(delta: { dx: number; dy: number; event: PointerEvent }) => void>(() => {});
+    const onStart = vi.fn<(event: PointerEvent) => void>(() => {});
+    const onMove = vi.fn<(delta: { dx: number; dy: number; event: PointerEvent }) => void>(
+      () => {},
+    );
     const el = document.createElement("div");
     document.body.append(el);
     const dispose = onDrag(el, { onStart, onMove });
@@ -26,8 +28,8 @@ describe("onDrag", () => {
   });
 
   test("fires onEnd on pointerup", () => {
-    const onEnd = mock(() => {});
-    const onMove = mock(() => {});
+    const onEnd = vi.fn(() => {});
+    const onMove = vi.fn(() => {});
     const el = document.createElement("div");
     document.body.append(el);
     const dispose = onDrag(el, { onMove, onEnd });
@@ -42,7 +44,7 @@ describe("onDrag", () => {
   });
 
   test("fires onEnd on pointercancel", () => {
-    const onEnd = mock(() => {});
+    const onEnd = vi.fn(() => {});
     const el = document.createElement("div");
     document.body.append(el);
     const dispose = onDrag(el, { onMove: () => {}, onEnd });
@@ -54,9 +56,9 @@ describe("onDrag", () => {
   });
 
   test("stops all wiring after dispose", () => {
-    const onStart = mock(() => {});
-    const onMove = mock(() => {});
-    const onEnd = mock(() => {});
+    const onStart = vi.fn(() => {});
+    const onMove = vi.fn(() => {});
+    const onEnd = vi.fn(() => {});
     const el = document.createElement("div");
     document.body.append(el);
     const dispose = onDrag(el, { onStart, onMove, onEnd });
@@ -71,7 +73,7 @@ describe("onDrag", () => {
   });
 
   test("ignores move events before a drag starts", () => {
-    const onMove = mock(() => {});
+    const onMove = vi.fn(() => {});
     const el = document.createElement("div");
     document.body.append(el);
     const dispose = onDrag(el, { onMove });
@@ -82,8 +84,8 @@ describe("onDrag", () => {
   });
 
   test("ignores non-primary buttons", () => {
-    const onStart = mock(() => {});
-    const onMove = mock(() => {});
+    const onStart = vi.fn(() => {});
+    const onMove = vi.fn(() => {});
     const el = document.createElement("div");
     document.body.append(el);
     const dispose = onDrag(el, { onStart, onMove });
@@ -96,8 +98,8 @@ describe("onDrag", () => {
   });
 
   test("ignores pointerdown on disabled descendants", () => {
-    const onStart = mock(() => {});
-    const onMove = mock(() => {});
+    const onStart = vi.fn(() => {});
+    const onMove = vi.fn(() => {});
     const el = document.createElement("div");
     const disabled = document.createElement("button");
     disabled.disabled = true;
@@ -114,7 +116,9 @@ describe("onDrag", () => {
 
   test("requires el, handlers, and onMove", () => {
     const el = document.createElement("div");
-    expect(() => onDrag(null as never, { onMove: () => {} })).toThrow("[dom] onDrag: el is required");
+    expect(() => onDrag(null as never, { onMove: () => {} })).toThrow(
+      "[dom] onDrag: el is required",
+    );
     expect(() => onDrag(el, null as never)).toThrow("[dom] onDrag: handlers is required");
     expect(() => onDrag(el, {} as never)).toThrow("[dom] onDrag: onMove is required");
   });

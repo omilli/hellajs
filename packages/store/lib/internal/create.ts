@@ -1,5 +1,12 @@
 import { signal, computed, effect, untracked, isFunction, isPlainObject, isObject } from "./core";
-import type { Store, Snapshot, PartialDeep, StoreOptions, StoreMiddleware, StoreEquals } from "../types";
+import type {
+  Store,
+  Snapshot,
+  PartialDeep,
+  StoreOptions,
+  StoreMiddleware,
+  StoreEquals,
+} from "../types";
 import { deepClone, extractChanges, structurallyEqual } from "./draft";
 import { installCollection, plainify, cleanupMembers } from "./deep";
 import {
@@ -8,7 +15,7 @@ import {
   isStore,
   applyUpdate,
   wrapWithMiddleware,
-  defineStoreProperty
+  defineStoreProperty,
 } from "./utils";
 
 /**
@@ -35,7 +42,7 @@ const settableRegistry = Symbol("hellajs.store.settableKeys");
  */
 export function createStore<T extends Record<string, unknown>>(
   initial: T,
-  options?: StoreOptions<T>
+  options?: StoreOptions<T>,
 ): Store<T, never> {
   const readonlyAll = options?.readonly === true;
   const readonlyKeys = Array.isArray(options?.readonly) ? options.readonly : [];
@@ -56,7 +63,10 @@ export function createStore<T extends Record<string, unknown>>(
     const len = keys.length;
     while (i < len) {
       const key = keys[i]!;
-      if (reservedKeys.has(key)) { i++; continue; }
+      if (reservedKeys.has(key)) {
+        i++;
+        continue;
+      }
       const value = result[key as keyof T];
       const originalValue = initial[key as keyof T];
 
@@ -81,7 +91,7 @@ export function createStore<T extends Record<string, unknown>>(
 
   const initialIsStore = isStore(initial);
   const sourceSettable = initialIsStore
-    ? ((initial as Record<symbol, Set<string> | undefined>)[settableRegistry])
+    ? (initial as Record<symbol, Set<string> | undefined>)[settableRegistry]
     : undefined;
 
   /**
@@ -98,7 +108,9 @@ export function createStore<T extends Record<string, unknown>>(
   const materializeKey = (key: string, value: unknown, applyMiddleware: boolean) => {
     if (isFunction(value)) {
       defineStoreProperty(result, key, value);
-      if (sourceSettable?.has(key)) { settableKeys.add(key); }
+      if (sourceSettable?.has(key)) {
+        settableKeys.add(key);
+      }
       return;
     }
 
@@ -106,15 +118,19 @@ export function createStore<T extends Record<string, unknown>>(
       const nestedMiddleware = middlewares?.[key as keyof T];
       const nestedEquals = equalsOptions?.[key as keyof T] as StoreEquals<typeof value> | undefined;
       if (nestedEquals !== undefined && !isPlainObject(nestedEquals)) {
-        throw new Error(`[store] store: equals for "${key}" must be a nested equals map, received ${typeof nestedEquals}`);
+        throw new Error(
+          `[store] store: equals for "${key}" must be a nested equals map, received ${typeof nestedEquals}`,
+        );
       }
       const nestedReadonly = readonlyAll || readonlyKeys.includes(key as PropertyKey);
       const nestedOptions: StoreOptions<typeof value> | undefined =
         nestedReadonly || nestedMiddleware || nestedEquals
           ? {
               ...(nestedReadonly && { readonly: true }),
-              ...(nestedMiddleware && { middleware: nestedMiddleware as StoreMiddleware<typeof value> }),
-              ...(nestedEquals && { equals: nestedEquals })
+              ...(nestedMiddleware && {
+                middleware: nestedMiddleware as StoreMiddleware<typeof value>,
+              }),
+              ...(nestedEquals && { equals: nestedEquals }),
             }
           : undefined;
       defineStoreProperty(result, key, createStore(value, nestedOptions), { writable: false });
@@ -124,12 +140,15 @@ export function createStore<T extends Record<string, unknown>>(
     if (Array.isArray(value) || value instanceof Map || value instanceof Set) {
       const equalsOpt = equalsOptions?.[key as keyof T];
       if (equalsOpt !== undefined && equalsOpt !== "structural" && !isFunction(equalsOpt)) {
-        throw new Error(`[store] store: equals for "${key}" must be a function or "structural", received ${typeof equalsOpt}`);
+        throw new Error(
+          `[store] store: equals for "${key}" must be a function or "structural", received ${typeof equalsOpt}`,
+        );
       }
       // For collection keys the comparator applies per element (each child signal)
-      const elementEquals = equalsOpt === "structural"
-        ? structurallyEqual
-        : equalsOpt as ((previous: unknown, next: unknown) => boolean) | undefined;
+      const elementEquals =
+        equalsOpt === "structural"
+          ? structurallyEqual
+          : (equalsOpt as ((previous: unknown, next: unknown) => boolean) | undefined);
       defineStoreProperty(
         result,
         key,
@@ -137,9 +156,9 @@ export function createStore<T extends Record<string, unknown>>(
           key,
           readonly: readonlyAll || readonlyKeys.includes(key as PropertyKey),
           ...(elementEquals && { equals: elementEquals }),
-          middleware: middlewares?.[key as keyof T] as ((value: unknown) => unknown) | undefined
+          middleware: middlewares?.[key as keyof T] as ((value: unknown) => unknown) | undefined,
         }),
-        { writable: false }
+        { writable: false },
       );
       settableKeys.add(key);
       return;
@@ -147,19 +166,20 @@ export function createStore<T extends Record<string, unknown>>(
 
     const equalsOpt = equalsOptions?.[key as keyof T];
     if (equalsOpt !== undefined && equalsOpt !== "structural" && !isFunction(equalsOpt)) {
-      throw new Error(`[store] store: equals for "${key}" must be a function or "structural", received ${typeof equalsOpt}`);
+      throw new Error(
+        `[store] store: equals for "${key}" must be a function or "structural", received ${typeof equalsOpt}`,
+      );
     }
     // Equality runs inside the signal, after middleware: wrapWithMiddleware writes sig(mw(value)).
-    const equalsFn = equalsOpt === "structural"
-      ? structurallyEqual
-      : equalsOpt as ((previous: typeof value, next: typeof value) => boolean) | undefined;
+    const equalsFn =
+      equalsOpt === "structural"
+        ? structurallyEqual
+        : (equalsOpt as ((previous: typeof value, next: typeof value) => boolean) | undefined);
     const middleware = middlewares?.[key as keyof T];
-    const processed = applyMiddleware && middleware
-      ? (middleware as (val: unknown) => unknown)(value)
-      : value;
-    const sig = equalsFn === undefined
-      ? signal(processed)
-      : signal(processed, { equals: equalsFn });
+    const processed =
+      applyMiddleware && middleware ? (middleware as (val: unknown) => unknown)(value) : value;
+    const sig =
+      equalsFn === undefined ? signal(processed) : signal(processed, { equals: equalsFn });
     const wrapped = middleware
       ? wrapWithMiddleware(sig, middleware as (val: unknown) => unknown)
       : sig;
@@ -175,7 +195,7 @@ export function createStore<T extends Record<string, unknown>>(
           }
           return ro();
         },
-        { writable: false }
+        { writable: false },
       );
     } else {
       defineStoreProperty(result, key, wrapped, { writable: false });
@@ -210,14 +230,23 @@ export function createStore<T extends Record<string, unknown>>(
       while (i < len) {
         const [key, value] = entries[i]!;
         const current = this[key as keyof T];
-        if (isPlainObject(value) && current && isObject(current) && Object.hasOwn(current, "$update")) {
-          (current as unknown as Store<Record<string, unknown>>).$update(value as Record<string, unknown>);
+        if (
+          isPlainObject(value) &&
+          current &&
+          isObject(current) &&
+          Object.hasOwn(current, "$update")
+        ) {
+          (current as unknown as Store<Record<string, unknown>>).$update(
+            value as Record<string, unknown>,
+          );
         } else if (settableKeys.has(key)) {
           applyUpdate(current, value, middlewares, key as string);
         } else if (reservedKeys.has(key)) {
           throw new Error(`[store] $update: reserved key "${key}"`);
         } else if (Object.hasOwn(initial, key) && isFunction(initial[key as keyof T])) {
-          throw new Error(`[store] $update: "${key}" is a function property, not state — assign it directly`);
+          throw new Error(
+            `[store] $update: "${key}" is a function property, not state — assign it directly`,
+          );
         } else if (isObject(current) && Object.hasOwn(current, "$update")) {
           throw new Error(`[store] $update: store key "${key}" requires an object value`);
         } else if (current === undefined) {
@@ -240,7 +269,7 @@ export function createStore<T extends Record<string, unknown>>(
 
       return this;
     },
-    { writable: false }
+    { writable: false },
   );
 
   /**
@@ -258,7 +287,10 @@ export function createStore<T extends Record<string, unknown>>(
         const len = objKeys.length;
         while (i < len) {
           const key = objKeys[i]!;
-          if (reservedKeys.has(key)) { i++; continue; }
+          if (reservedKeys.has(key)) {
+            i++;
+            continue;
+          }
           const value = (obj as Record<string, unknown>)[key];
           if (isFunction(value)) {
             // Settable function members are signals (no members to clean) and
@@ -268,7 +300,10 @@ export function createStore<T extends Record<string, unknown>>(
               cleanupMembers(value as () => unknown);
             }
           } else if (value && isObject(value)) {
-            if (Object.hasOwn(value, "$cleanup") && isFunction((value as Record<"$cleanup", unknown>).$cleanup)) {
+            if (
+              Object.hasOwn(value, "$cleanup") &&
+              isFunction((value as Record<"$cleanup", unknown>).$cleanup)
+            ) {
               (value as Record<"$cleanup", () => void>).$cleanup();
             } else {
               deepCleanup(value);
@@ -279,7 +314,7 @@ export function createStore<T extends Record<string, unknown>>(
       };
       deepCleanup(this);
     },
-    { writable: false }
+    { writable: false },
   );
 
   /**
@@ -306,11 +341,13 @@ export function createStore<T extends Record<string, unknown>>(
           started = true;
           return;
         }
-        untracked(() => { callback(next as T[K], prev as T[K]); });
+        untracked(() => {
+          callback(next as T[K], prev as T[K]);
+        });
         prev = next;
       });
     },
-    { writable: false }
+    { writable: false },
   );
 
   const initialEntries = Object.entries(initial);
@@ -319,7 +356,10 @@ export function createStore<T extends Record<string, unknown>>(
   while (i < len) {
     const [key, value] = initialEntries[i]!;
     if (reservedKeys.has(key)) {
-      if (initialIsStore) { i++; continue; }
+      if (initialIsStore) {
+        i++;
+        continue;
+      }
       throw new Error(`[store] store: reserved key collision, received "${key}"`);
     }
 

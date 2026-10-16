@@ -1,7 +1,24 @@
 import { effect, signal } from "@hellajs/core";
 import { anchorPosition, ForEach, layerDismissal, menuTypeahead, Portal } from "@hellajs/dom";
 import type { Placement } from "@hellajs/dom";
-import type { AnchorSide, AnchorAlign, MenubarTriggerProps, MenubarContentProps, MenubarPartProps, MenubarItemProps, MenubarCheckboxItemProps, MenubarRadioGroupProps, MenubarRadioItemProps, MenubarLabelProps, MenubarShortcutProps, MenubarSubTriggerProps, MenubarSubContentProps, MenubarSubProps, MenubarMenuProps, MenubarProps } from "./menubar-types.js";
+import type {
+  AnchorSide,
+  AnchorAlign,
+  MenubarTriggerProps,
+  MenubarContentProps,
+  MenubarPartProps,
+  MenubarItemProps,
+  MenubarCheckboxItemProps,
+  MenubarRadioGroupProps,
+  MenubarRadioItemProps,
+  MenubarLabelProps,
+  MenubarShortcutProps,
+  MenubarSubTriggerProps,
+  MenubarSubContentProps,
+  MenubarSubProps,
+  MenubarMenuProps,
+  MenubarProps,
+} from "./menubar-types.js";
 
 // @hella:styles
 declare const base: string;
@@ -70,7 +87,13 @@ function menuOpenState(props: { open?: () => boolean; onOpenChange?: (open: bool
       fallback = setTimeout(finishExit, 250);
     }
   });
-  return { isOpen, setOpen, state: (): "open" | "closed" => (isOpen() ? "open" : "closed"), visible, finishExit };
+  return {
+    isOpen,
+    setOpen,
+    state: (): "open" | "closed" => (isOpen() ? "open" : "closed"),
+    visible,
+    finishExit,
+  };
 }
 
 /** The menu's activatable items in DOM order, disabled entries excluded (roving, typeahead, and focus-first share this). */
@@ -99,49 +122,52 @@ const menuEntries = (node: ParentNode): { node: HTMLElement; text: string }[] =>
 };
 
 /** The content-owned keyboard model shared by the bar menu and its submenus: roving arrows with wrap, Home/End, Enter/Space activation, Tab close-all, and optional horizontal-arrow handoffs (the bar menu reports both outward for open-then-move; a submenu reports ArrowLeft to close). */
-const menuKeyDown = (handlers: { onArrowLeft?: () => void; onArrowRight?: () => void } = {}) => (node: HTMLElement) => (event: Event): void => {
-  const e = event as KeyboardEvent;
-  const items = menuItems(node);
-  const current = items.indexOf(document.activeElement as HTMLElement);
-  if (e.key === "Tab") {
-    closeAllMenus();
-    return;
-  }
-  if (e.key === "Enter" || e.key === " ") {
-    if (current === -1) return;
-    e.preventDefault();
-    items[current]!.dispatchEvent(new Event("click", { bubbles: true }));
-    return;
-  }
-  const rtl = getComputedStyle(node).direction === "rtl";
-  const enterKey = rtl ? "ArrowLeft" : "ArrowRight";
-  const exitKey = rtl ? "ArrowRight" : "ArrowLeft";
-  if (e.key === enterKey && current !== -1) {
-    const el = items[current]!;
-    if (el.getAttribute("aria-haspopup") === "menu") {
-      e.preventDefault();
-      el.dispatchEvent(new Event("click", { bubbles: true }));
-    } else if (handlers.onArrowRight) {
-      e.preventDefault();
-      handlers.onArrowRight();
+const menuKeyDown =
+  (handlers: { onArrowLeft?: () => void; onArrowRight?: () => void } = {}) =>
+  (node: HTMLElement) =>
+  (event: Event): void => {
+    const e = event as KeyboardEvent;
+    const items = menuItems(node);
+    const current = items.indexOf(document.activeElement as HTMLElement);
+    if (e.key === "Tab") {
+      closeAllMenus();
+      return;
     }
-    return;
-  }
-  if (e.key === exitKey && handlers.onArrowLeft) {
+    if (e.key === "Enter" || e.key === " ") {
+      if (current === -1) return;
+      e.preventDefault();
+      items[current]!.dispatchEvent(new Event("click", { bubbles: true }));
+      return;
+    }
+    const rtl = getComputedStyle(node).direction === "rtl";
+    const enterKey = rtl ? "ArrowLeft" : "ArrowRight";
+    const exitKey = rtl ? "ArrowRight" : "ArrowLeft";
+    if (e.key === enterKey && current !== -1) {
+      const el = items[current]!;
+      if (el.getAttribute("aria-haspopup") === "menu") {
+        e.preventDefault();
+        el.dispatchEvent(new Event("click", { bubbles: true }));
+      } else if (handlers.onArrowRight) {
+        e.preventDefault();
+        handlers.onArrowRight();
+      }
+      return;
+    }
+    if (e.key === exitKey && handlers.onArrowLeft) {
+      e.preventDefault();
+      handlers.onArrowLeft();
+      return;
+    }
+    if (e.key !== "ArrowDown" && e.key !== "ArrowUp" && e.key !== "Home" && e.key !== "End") return;
+    if (items.length === 0) return;
     e.preventDefault();
-    handlers.onArrowLeft();
-    return;
-  }
-  if (e.key !== "ArrowDown" && e.key !== "ArrowUp" && e.key !== "Home" && e.key !== "End") return;
-  if (items.length === 0) return;
-  e.preventDefault();
-  let target: number;
-  if (e.key === "Home") target = 0;
-  else if (e.key === "End") target = items.length - 1;
-  else if (current === -1) target = e.key === "ArrowDown" ? 0 : items.length - 1;
-  else target = (current + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
-  items[target]!.focus();
-};
+    let target: number;
+    if (e.key === "Home") target = 0;
+    else if (e.key === "End") target = items.length - 1;
+    else if (current === -1) target = e.key === "ArrowDown" ? 0 : items.length - 1;
+    else target = (current + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
+    items[target]!.focus();
+  };
 
 /** The check icon (refs/icons/check.svg), created per call so reactive swaps never share nodes between clones. */
 const checkIcon = (): JSX.Element => (
@@ -213,7 +239,11 @@ const chevronIcon = (): JSX.Element => (
 );
 
 /** The manual trigger button; the composed Menubar renders the same shape wired to toggle + aria state. */
-export function MenubarTrigger({ children, class: cls, ...attrs }: MenubarTriggerProps): JSX.Element {
+export function MenubarTrigger({
+  children,
+  class: cls,
+  ...attrs
+}: MenubarTriggerProps): JSX.Element {
   return (
     <button
       type="button"
@@ -231,7 +261,21 @@ export function MenubarTrigger({ children, class: cls, ...attrs }: MenubarTrigge
   );
 }
 
-export function MenubarContent({ state, id, side: sideProp, align: alignProp, sideOffset, alignOffset: alignOffsetProp, anchor, onDismiss, onExited, onArrow, children, class: cls, ...attrs }: MenubarContentProps): JSX.Element {
+export function MenubarContent({
+  state,
+  id,
+  side: sideProp,
+  align: alignProp,
+  sideOffset,
+  alignOffset: alignOffsetProp,
+  anchor,
+  onDismiss,
+  onExited,
+  onArrow,
+  children,
+  class: cls,
+  ...attrs
+}: MenubarContentProps): JSX.Element {
   const side = sideProp ?? "bottom";
   const align = alignProp ?? "start";
   const alignOffset = alignOffsetProp ?? -4;
@@ -266,11 +310,18 @@ export function MenubarContent({ state, id, side: sideProp, align: alignProp, si
       hook:afterMount={(node) => {
         if (!(node instanceof HTMLElement)) return;
         const anchorEl = anchor?.();
-        if (anchorEl != null) wirings.push(anchorPosition(anchorEl, node, { placement: placementOf(side, align), offset: sideOffset ?? 8 }));
+        if (anchorEl != null)
+          wirings.push(
+            anchorPosition(anchorEl, node, {
+              placement: placementOf(side, align),
+              offset: sideOffset ?? 8,
+            }),
+          );
         if (alignOffset !== 0) {
           // Cross-axis shift over the placed coordinates; the placement axis
           // stays owned by anchorPosition's left/top writes.
-          node.style.translate = side === "top" || side === "bottom" ? `${alignOffset}px 0` : `0 ${alignOffset}px`;
+          node.style.translate =
+            side === "top" || side === "bottom" ? `${alignOffset}px 0` : `0 ${alignOffset}px`;
         }
         if (onDismiss) {
           wirings.push(layerDismissal(() => [node, anchorEl ?? null], onDismiss));
@@ -278,8 +329,18 @@ export function MenubarContent({ state, id, side: sideProp, align: alignProp, si
           document.addEventListener(SELECT_EVENT, onSelect);
           wirings.push(() => document.removeEventListener(SELECT_EVENT, onSelect));
         }
-        wirings.push(menuTypeahead(node, () => menuEntries(node), (entry) => entry.node.focus()));
-        const onKey = menuKeyDown(onArrow ? { onArrowLeft: () => onArrow("left"), onArrowRight: () => onArrow("right") } : {})(node);
+        wirings.push(
+          menuTypeahead(
+            node,
+            () => menuEntries(node),
+            (entry) => entry.node.focus(),
+          ),
+        );
+        const onKey = menuKeyDown(
+          onArrow
+            ? { onArrowLeft: () => onArrow("left"), onArrowRight: () => onArrow("right") }
+            : {},
+        )(node);
         node.addEventListener("keydown", onKey);
         wirings.push(() => node.removeEventListener("keydown", onKey));
         // Focus moves to the first activatable item on open (the content
@@ -321,7 +382,16 @@ export function MenubarGroup({ children, class: cls, ...attrs }: MenubarPartProp
   );
 }
 
-export function MenubarItem({ destructive, inset, disabled, "on:click": userClick, shortcut: shortcutSlot, children, class: cls, ...attrs }: MenubarItemProps): JSX.Element {
+export function MenubarItem({
+  destructive,
+  inset,
+  disabled,
+  "on:click": userClick,
+  shortcut: shortcutSlot,
+  children,
+  class: cls,
+  ...attrs
+}: MenubarItemProps): JSX.Element {
   return (
     <div
       role="menuitem"
@@ -344,12 +414,21 @@ export function MenubarItem({ destructive, inset, disabled, "on:click": userClic
       {...attrs}
     >
       {children}
-      {() => (shortcutSlot !== undefined ? <MenubarShortcut>{shortcutSlot}</MenubarShortcut> : null)}
+      {() =>
+        shortcutSlot !== undefined ? <MenubarShortcut>{shortcutSlot}</MenubarShortcut> : null
+      }
     </div>
   );
 }
 
-export function MenubarCheckboxItem({ checked: checkedProp, onCheckedChange, disabled, children, class: cls, ...attrs }: MenubarCheckboxItemProps): JSX.Element {
+export function MenubarCheckboxItem({
+  checked: checkedProp,
+  onCheckedChange,
+  disabled,
+  children,
+  class: cls,
+  ...attrs
+}: MenubarCheckboxItemProps): JSX.Element {
   const accessor = typeof checkedProp === "function" ? checkedProp : undefined;
   const internal = signal(typeof checkedProp === "boolean" ? checkedProp : false);
   const checked = (): boolean => (accessor ? accessor() : internal());
@@ -392,7 +471,15 @@ export function MenubarCheckboxItem({ checked: checkedProp, onCheckedChange, dis
   );
 }
 
-export function MenubarRadioGroup({ items, keyBy, value: valueProp, onValueChange, children, class: cls, ...attrs }: MenubarRadioGroupProps): JSX.Element {
+export function MenubarRadioGroup({
+  items,
+  keyBy,
+  value: valueProp,
+  onValueChange,
+  children,
+  class: cls,
+  ...attrs
+}: MenubarRadioGroupProps): JSX.Element {
   const internal = signal("");
   const current = (): string => (valueProp !== undefined ? valueProp() : internal());
   const select = (value: string): void => {
@@ -428,9 +515,17 @@ export function MenubarRadioGroup({ items, keyBy, value: valueProp, onValueChang
   );
 }
 
-export function MenubarRadioItem({ value, checked: checkedProp, onSelect, disabled, children, class: cls, ...attrs }: MenubarRadioItemProps): JSX.Element {
+export function MenubarRadioItem({
+  value,
+  checked: checkedProp,
+  onSelect,
+  disabled,
+  children,
+  class: cls,
+  ...attrs
+}: MenubarRadioItemProps): JSX.Element {
   const checked = (): boolean =>
-    typeof checkedProp === "function" ? checkedProp() : checkedProp ?? false;
+    typeof checkedProp === "function" ? checkedProp() : (checkedProp ?? false);
   return (
     <div
       role="menuitemradio"
@@ -468,7 +563,12 @@ export function MenubarRadioItem({ value, checked: checkedProp, onSelect, disabl
   );
 }
 
-export function MenubarLabel({ inset, children, class: cls, ...attrs }: MenubarLabelProps): JSX.Element {
+export function MenubarLabel({
+  inset,
+  children,
+  class: cls,
+  ...attrs
+}: MenubarLabelProps): JSX.Element {
   return (
     <div
       data-slot="menubar-label"
@@ -500,7 +600,11 @@ export function MenubarSeparator({ class: cls, ...attrs }: MenubarPartProps): JS
   );
 }
 
-export function MenubarShortcut({ children, class: cls, ...attrs }: MenubarShortcutProps): JSX.Element {
+export function MenubarShortcut({
+  children,
+  class: cls,
+  ...attrs
+}: MenubarShortcutProps): JSX.Element {
   return (
     <span
       data-slot="menubar-shortcut"
@@ -516,7 +620,14 @@ export function MenubarShortcut({ children, class: cls, ...attrs }: MenubarShort
   );
 }
 
-export function MenubarSubTrigger({ inset, state, onOpen, children, class: cls, ...attrs }: MenubarSubTriggerProps): JSX.Element {
+export function MenubarSubTrigger({
+  inset,
+  state,
+  onOpen,
+  children,
+  class: cls,
+  ...attrs
+}: MenubarSubTriggerProps): JSX.Element {
   const stateOf = (): "open" | "closed" => state?.() ?? "closed";
   const teardown: (() => void)[] = [];
   return (
@@ -569,7 +680,20 @@ export function MenubarSubTrigger({ inset, state, onOpen, children, class: cls, 
   );
 }
 
-export function MenubarSubContent({ state, side: sideProp, align: alignProp, sideOffset, anchor, onDismiss, onExited, onArrowLeft, onPointerEnter, children, class: cls, ...attrs }: MenubarSubContentProps): JSX.Element {
+export function MenubarSubContent({
+  state,
+  side: sideProp,
+  align: alignProp,
+  sideOffset,
+  anchor,
+  onDismiss,
+  onExited,
+  onArrowLeft,
+  onPointerEnter,
+  children,
+  class: cls,
+  ...attrs
+}: MenubarSubContentProps): JSX.Element {
   const side = sideProp ?? "right";
   const align = alignProp ?? "start";
   const stateOf = (): "open" | "closed" => state?.() ?? "open";
@@ -602,7 +726,13 @@ export function MenubarSubContent({ state, side: sideProp, align: alignProp, sid
       hook:afterMount={(node) => {
         if (!(node instanceof HTMLElement)) return;
         const anchorEl = anchor?.();
-        if (anchorEl != null) wirings.push(anchorPosition(anchorEl, node, { placement: placementOf(side, align), offset: sideOffset ?? 0 }));
+        if (anchorEl != null)
+          wirings.push(
+            anchorPosition(anchorEl, node, {
+              placement: placementOf(side, align),
+              offset: sideOffset ?? 0,
+            }),
+          );
         if (onDismiss) {
           // Submenu layers register their own dismissal: Escape pops one
           // level, an outside pointerdown closes the sub before the parent.
@@ -611,7 +741,13 @@ export function MenubarSubContent({ state, side: sideProp, align: alignProp, sid
           document.addEventListener(SELECT_EVENT, onSelect);
           wirings.push(() => document.removeEventListener(SELECT_EVENT, onSelect));
         }
-        wirings.push(menuTypeahead(node, () => menuEntries(node), (entry) => entry.node.focus()));
+        wirings.push(
+          menuTypeahead(
+            node,
+            () => menuEntries(node),
+            (entry) => entry.node.focus(),
+          ),
+        );
         const onKey = menuKeyDown(onArrowLeft ? { onArrowLeft } : {})(node);
         node.addEventListener("keydown", onKey);
         wirings.push(() => node.removeEventListener("keydown", onKey));
@@ -639,7 +775,12 @@ export function MenubarSubContent({ state, side: sideProp, align: alignProp, sid
   );
 }
 
-export function MenubarSub({ content: contentSlot, children, class: cls, ...attrs }: MenubarSubProps): JSX.Element {
+export function MenubarSub({
+  content: contentSlot,
+  children,
+  class: cls,
+  ...attrs
+}: MenubarSubProps): JSX.Element {
   const s = menuOpenState({});
   let triggerNode: HTMLElement | undefined;
   let openTimer: ReturnType<typeof setTimeout> | null = null;
@@ -708,31 +849,41 @@ export function MenubarSub({ content: contentSlot, children, class: cls, ...attr
     >
       {children}
       {chevronIcon()}
-      {() => s.visible() && (
-        <Portal to="body">
-          <MenubarSubContent
-            state={s.state}
-            anchor={() => triggerNode}
-            onDismiss={() => s.setOpen(false)}
-            onExited={s.finishExit}
-            onArrowLeft={() => s.setOpen(false)}
-            onPointerEnter={() => {
-              if (closeTimer !== null) {
-                clearTimeout(closeTimer);
-                closeTimer = null;
-              }
-            }}
-            children={contentSlot}
-          />
-        </Portal>
-      )}
+      {() =>
+        s.visible() && (
+          <Portal to="body">
+            <MenubarSubContent
+              state={s.state}
+              anchor={() => triggerNode}
+              onDismiss={() => s.setOpen(false)}
+              onExited={s.finishExit}
+              onArrowLeft={() => s.setOpen(false)}
+              onPointerEnter={() => {
+                if (closeTimer !== null) {
+                  clearTimeout(closeTimer);
+                  closeTimer = null;
+                }
+              }}
+              children={contentSlot}
+            />
+          </Portal>
+        )
+      }
     </div>
   );
 }
 
 let menubarMenuCount = 0;
 
-export function MenubarMenu({ value, open, onOpenChange, content: contentSlot, children, class: cls, ...attrs }: MenubarMenuProps): JSX.Element {
+export function MenubarMenu({
+  value,
+  open,
+  onOpenChange,
+  content: contentSlot,
+  children,
+  class: cls,
+  ...attrs
+}: MenubarMenuProps): JSX.Element {
   const s = menuOpenState({ open, onOpenChange });
   const menuId = value ?? `hella-menubar-menu-${++menubarMenuCount}`;
   const contentId = `${menuId}-content`;
@@ -775,12 +926,12 @@ export function MenubarMenu({ value, open, onOpenChange, content: contentSlot, c
   const onArrow = (direction: "left" | "right"): void => {
     if (!triggerNode) return;
     const bar = triggerNode.closest("[data-slot='menubar']");
-    const triggers = bar
-      ? Array.from(bar.querySelectorAll("[data-slot='menubar-trigger']"))
-      : [];
+    const triggers = bar ? Array.from(bar.querySelectorAll("[data-slot='menubar-trigger']")) : [];
     const index = triggers.indexOf(triggerNode);
     if (index === -1 || triggers.length < 2) return;
-    const next = triggers[(index + (direction === "right" ? 1 : -1) + triggers.length) % triggers.length] as HTMLElement;
+    const next = triggers[
+      (index + (direction === "right" ? 1 : -1) + triggers.length) % triggers.length
+    ] as HTMLElement;
     next.focus();
     next.dispatchEvent(new Event("click", { bubbles: true }));
   };
@@ -795,7 +946,8 @@ export function MenubarMenu({ value, open, onOpenChange, content: contentSlot, c
         // @hella:end
       }
       hook:afterMount={(node) => {
-        if (node instanceof HTMLElement) triggerNode = node.querySelector("[data-slot='menubar-trigger']") ?? undefined;
+        if (node instanceof HTMLElement)
+          triggerNode = node.querySelector("[data-slot='menubar-trigger']") ?? undefined;
         document.addEventListener(OPEN_EVENT, onSiblingOpen);
         wirings.push(() => document.removeEventListener(OPEN_EVENT, onSiblingOpen));
       }}
@@ -826,24 +978,32 @@ export function MenubarMenu({ value, open, onOpenChange, content: contentSlot, c
       >
         {children}
       </button>
-      {() => s.visible() && (
-        <Portal to="body">
-          <MenubarContent
-            state={s.state}
-            id={contentId}
-            anchor={() => triggerNode}
-            onDismiss={() => s.setOpen(false)}
-            onExited={s.finishExit}
-            onArrow={onArrow}
-            children={contentSlot}
-          />
-        </Portal>
-      )}
+      {() =>
+        s.visible() && (
+          <Portal to="body">
+            <MenubarContent
+              state={s.state}
+              id={contentId}
+              anchor={() => triggerNode}
+              onDismiss={() => s.setOpen(false)}
+              onExited={s.finishExit}
+              onArrow={onArrow}
+              children={contentSlot}
+            />
+          </Portal>
+        )
+      }
     </div>
   );
 }
 
-export function Menubar({ value: valueProp, onValueChange, children, class: cls, ...attrs }: MenubarProps): JSX.Element {
+export function Menubar({
+  value: valueProp,
+  onValueChange,
+  children,
+  class: cls,
+  ...attrs
+}: MenubarProps): JSX.Element {
   const internal = signal("");
   const active = (): string => (valueProp !== undefined ? valueProp() : internal());
   const setActive = (value: string): void => {
@@ -869,7 +1029,9 @@ export function Menubar({ value: valueProp, onValueChange, children, class: cls,
   const onKeyDown = (event: Event): void => {
     const e = event as KeyboardEvent;
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
-    const focused = document.activeElement?.closest?.("[data-slot='menubar-trigger']") as HTMLElement | null;
+    const focused = document.activeElement?.closest?.(
+      "[data-slot='menubar-trigger']",
+    ) as HTMLElement | null;
     if (!focused || focused.getAttribute("data-state") === "open") return;
     const bar = focused.closest("[data-slot='menubar']");
     if (!bar || bar !== barNode) return;
@@ -878,7 +1040,9 @@ export function Menubar({ value: valueProp, onValueChange, children, class: cls,
     const current = triggers.indexOf(focused);
     if (current === -1) return;
     e.preventDefault();
-    const next = triggers[(current + (e.key === "ArrowRight" ? 1 : -1) + triggers.length) % triggers.length] as HTMLElement;
+    const next = triggers[
+      (current + (e.key === "ArrowRight" ? 1 : -1) + triggers.length) % triggers.length
+    ] as HTMLElement;
     next.focus();
   };
 

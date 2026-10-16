@@ -294,25 +294,25 @@ The island-mount pattern (server HTML plus one reactive slot) is the baseline. T
 ### `src/app.tsx`
 
 ```tsx
-import { css, cssText } from '@hellajs/css';
+import { css, cssText } from "@hellajs/css";
 
 // css() registers the rules on both platforms; cssText() collects the generated text
 // for the server (after the registration below). Pass it to `doc()`'s `styles` to emit
 // one <style> tag.
 css({
   body: {
-    fontFamily: 'sans-serif',
-    margin: '2rem',
-    color: '#333',
+    fontFamily: "sans-serif",
+    margin: "2rem",
+    color: "#333",
   },
-  '#slot button': {
-    marginTop: '1rem',
-    padding: '0.5rem 1rem',
-    fontSize: '1rem',
-    cursor: 'pointer',
-    borderRadius: '0.375rem',
-    border: '1px solid #2563eb',
-    backgroundColor: '#fff',
+  "#slot button": {
+    marginTop: "1rem",
+    padding: "0.5rem 1rem",
+    fontSize: "1rem",
+    cursor: "pointer",
+    borderRadius: "0.375rem",
+    border: "1px solid #2563eb",
+    backgroundColor: "#fff",
   },
 });
 
@@ -332,32 +332,38 @@ export const App = () => (
 ### `src/server.tsx`
 
 ```tsx
-import { readFileSync } from 'node:fs';
-import { Hono } from 'hono';
-import { serve } from '@hono/node-server';
-import { ssr, doc } from '@hellajs/ssr';
-import { App, styles } from './app.js';
+import { readFileSync } from "node:fs";
+import { Hono } from "hono";
+import { serve } from "@hono/node-server";
+import { ssr, doc } from "@hellajs/ssr";
+import { App, styles } from "./app.js";
 
 // Serve the client bundle emitted by build.mjs. The server no longer bundles at
 // startup: JSX cannot run under raw `node`, so build.mjs compiles both entries
 // (client + server) before this file ever boots.
-const client = readFileSync(new URL('../dist/client.js', import.meta.url), 'utf8');
+const client = readFileSync(new URL("../dist/client.js", import.meta.url), "utf8");
 
 const app = new Hono();
 
 // Serve the client bundle from disk.
-app.get('/client.js', (c) => c.body(client, 200, { 'content-type': 'text/javascript; charset=utf-8' }));
+app.get("/client.js", (c) =>
+  c.body(client, 200, { "content-type": "text/javascript; charset=utf-8" }),
+);
 
-app.get('*', (c) => c.html(doc({
-  head: {
-    title: 'SSR Islands',
-    styles: [styles],
-    scripts: [{ src: '/client.js', type: 'module' }],
-  },
-  // `ssr()` walks the view tree to an HTML string; `doc()` wraps it into a full
-  // document and injects the stylesheet and the client script.
-  body: ssr(App()),
-})));
+app.get("*", (c) =>
+  c.html(
+    doc({
+      head: {
+        title: "SSR Islands",
+        styles: [styles],
+        scripts: [{ src: "/client.js", type: "module" }],
+      },
+      // `ssr()` walks the view tree to an HTML string; `doc()` wraps it into a full
+      // document and injects the stylesheet and the client script.
+      body: ssr(App()),
+    }),
+  ),
+);
 
 serve({ fetch: app.fetch, port: 3000 });
 ```
@@ -365,8 +371,8 @@ serve({ fetch: app.fetch, port: 3000 });
 ### `src/client.tsx`
 
 ```tsx
-import { signal } from '@hellajs/core';
-import { mount } from '@hellajs/dom';
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
 
 const count = signal(0);
 
@@ -376,11 +382,9 @@ const count = signal(0);
 const Counter = () => (
   <>
     <p>Count: {count}</p>
-    <button on:click={() => count(count() + 1)}>
-      Increment
-    </button>
+    <button on:click={() => count(count() + 1)}>Increment</button>
   </>
 );
 
-mount(Counter, '#slot');
+mount(Counter, "#slot");
 ```

@@ -31,12 +31,12 @@ function renderDynamic(meta: SsrMeta, options?: SsrOptions): string {
     case "portal":
       return "";
     case "lazy":
-      return props.loading !== undefined ? walkChild(props.loading as HellaChild, options) : "";   // sync cannot await the loader — loading-only; the async pair (`walkChildGen` case "lazy") awaits it
+      return props.loading !== undefined ? walkChild(props.loading as HellaChild, options) : ""; // sync cannot await the loader — loading-only; the async pair (`walkChildGen` case "lazy") awaits it
     case "suspense":
-      return props.children !== undefined ? walkChild(props.children as HellaChild, options) : "";   // sync — render children, fallback dropped (no async)
+      return props.children !== undefined ? walkChild(props.children as HellaChild, options) : ""; // sync — render children, fallback dropped (no async)
     default:
       console.warn(`[ssr] unknown isDynamic kind: ${String(meta.kind)}`);
-      return "";                       // unknown kind — render nothing, never call the RenderFn
+      return ""; // unknown kind — render nothing, never call the RenderFn
   }
 }
 
@@ -57,41 +57,47 @@ function walkChild(child: HellaChild, options?: SsrOptions): string {
   // Adding a new child classification or `SsrMeta.kind` requires a new entry in `tests/helpers.ts`
   // (`parityCases`/`attributeCases`), or the async pair can diverge silently.
   if (child === null || child === undefined || child === false) return "";
-  if (Array.isArray(child)) return walkChildren(child, options);              // array (e.g. JSX component children) — iterate
-  if (typeof child === "string") return child;                       // static template text — raw
+  if (Array.isArray(child)) return walkChildren(child, options); // array (e.g. JSX component children) — iterate
+  if (typeof child === "string") return child; // static template text — raw
   if (typeof child === "number") return escapeHtml(`${child}`);
   if (typeof child === "function") {
     let body: string;
     if ((child as DynamicFn).isDynamic) {
       const meta = (child as DynamicFn).ssr;
-      body = meta ? renderDynamic(meta, options) : "";       // no ssr meta (user-authored isDynamic fn) — empty region, parity with walkChildGen
+      body = meta ? renderDynamic(meta, options) : ""; // no ssr meta (user-authored isDynamic fn) — empty region, parity with walkChildGen
     } else {
-      const resolved = resolveDeep(child);                            // reactive — deep-resolve fn chains, then classify (parity with dom resolveDeep)
+      const resolved = resolveDeep(child); // reactive — deep-resolve fn chains, then classify (parity with dom resolveDeep)
       if (typeof resolved === "function" && (resolved as DynamicFn).isDynamic) {
-        const meta = (resolved as DynamicFn).ssr;                      // reactive getter returning an isDynamic component — dispatch on its descriptor
+        const meta = (resolved as DynamicFn).ssr; // reactive getter returning an isDynamic component — dispatch on its descriptor
         body = meta ? renderDynamic(meta, options) : "";
       } else if (Array.isArray(resolved)) {
-        body = walkChildren(resolved, options);                                 // reactive getter returning an array of children — walk each (parity with dom resolveNode)
+        body = walkChildren(resolved, options); // reactive getter returning an array of children — walk each (parity with dom resolveNode)
       } else if (resolved !== null && typeof resolved === "object" && "raw" in resolved) {
-        body = (resolved as { raw: string }).raw;                              // reactive getter resolving to a raw region — verbatim inside the open region
-      } else if (resolved !== null && typeof resolved === "object" && (resolved as HellaNode).tag !== undefined) {
+        body = (resolved as { raw: string }).raw; // reactive getter resolving to a raw region — verbatim inside the open region
+      } else if (
+        resolved !== null &&
+        typeof resolved === "object" &&
+        (resolved as HellaNode).tag !== undefined
+      ) {
         body = ssr(resolved as HellaNode, options);
       } else {
-        if (isPromise(resolved)) console.warn(SYNC_PROMISE_WARN);   // sync cannot await a resolved Promise — [object Promise] emitted as today
-        body = escapeHtml(resolved === false || resolved === null || resolved === undefined ? "" : `${resolved}`);
+        if (isPromise(resolved)) console.warn(SYNC_PROMISE_WARN); // sync cannot await a resolved Promise — [object Promise] emitted as today
+        body = escapeHtml(
+          resolved === false || resolved === null || resolved === undefined ? "" : `${resolved}`,
+        );
       }
     }
-    return MARK_OPEN + body + MARK_CLOSE;          // wrap every dynamic region
+    return MARK_OPEN + body + MARK_CLOSE; // wrap every dynamic region
   }
   if (typeof child === "object" && "raw" in child) {
-    return MARK_OPEN + child.raw + MARK_CLOSE;   // raw HTML region — verbatim, marker-bounded (opaque to hydrate)
+    return MARK_OPEN + child.raw + MARK_CLOSE; // raw HTML region — verbatim, marker-bounded (opaque to hydrate)
   }
   if (typeof child === "object" && (child as HellaNode).tag !== undefined) {
     const node = child as HellaNode;
-    if (node.tag === "$") return MARK_OPEN + walkChildren(node.children, options) + MARK_CLOSE;  // fragment — extent marker
-    return ssr(node, options);                              // element — bounded, no marker
+    if (node.tag === "$") return MARK_OPEN + walkChildren(node.children, options) + MARK_CLOSE; // fragment — extent marker
+    return ssr(node, options); // element — bounded, no marker
   }
-  return "";                                       // true / DOM Node / unknown — nothing in v1
+  return ""; // true / DOM Node / unknown — nothing in v1
 }
 
 /** Concatenates walked children into HTML. */
@@ -179,14 +185,18 @@ interface SsrFn {
  * response; `ssr.head()` creates the head collection bag any member accepts as `{ head }`. Each member's
  * full contract lives on `SsrFn`.
  */
-export const ssr: SsrFn = Object.assign(ssrImpl, { async: ssrAsync, stream: ssrStream, head: ssrHead });
+export const ssr: SsrFn = Object.assign(ssrImpl, {
+  async: ssrAsync,
+  stream: ssrStream,
+  head: ssrHead,
+});
 
 /** Sync walk — the base call target of the `ssr` namespace (see `SsrFn` for the public contract). */
 function ssrImpl(node: HellaNode, options?: SsrOptions): string {
   assertNode(node, "ssr");
   const tag = node.tag;
-  if (tag === "$") return walkChildren(node.children, options);               // fragment — concatenate, no markers
-  if (options?.head !== undefined && hoistHead(node, options.head)) return "";   // head-eligible element collected into the bag — omitted from the body
+  if (tag === "$") return walkChildren(node.children, options); // fragment — concatenate, no markers
+  if (options?.head !== undefined && hoistHead(node, options.head)) return ""; // head-eligible element collected into the bag — omitted from the body
   let open = `<${tag}`;
   if (node.props) {
     const keys = Object.keys(node.props);
@@ -196,17 +206,22 @@ function ssrImpl(node: HellaNode, options?: SsrOptions): string {
       const key = keys[i]!;
       // Prefixed props keys ("on:click" forwarded through a component) are
       // DOM/runtime-only — routed to live buckets at mount, never emitted.
-      if (key.startsWith("on:") || key.startsWith("e:") || key.startsWith("hook:") || key.startsWith("error:")) {
+      if (
+        key.startsWith("on:") ||
+        key.startsWith("e:") ||
+        key.startsWith("hook:") ||
+        key.startsWith("error:")
+      ) {
         i++;
         continue;
       }
       const value = resolveValue((node.props as Record<string, unknown>)[key]);
-      if (isPromise(value)) console.warn(SYNC_PROMISE_WARN);        // sync cannot await a function-ref prop's Promise — stringified as today
+      if (isPromise(value)) console.warn(SYNC_PROMISE_WARN); // sync cannot await a function-ref prop's Promise — stringified as today
       open += serializeProp(key, value);
       i++;
     }
   }
   // on:/e:/hooks/error: bucket fields and prefixed props keys are DOM/runtime-only — not emitted
-  if (VOID.has(tag as string)) return `${open}>`;                    // void element — no body, no closing tag
+  if (VOID.has(tag as string)) return `${open}>`; // void element — no body, no closing tag
   return `${open}>${walkChildren(node.children, options)}</${tag}>`;
 }

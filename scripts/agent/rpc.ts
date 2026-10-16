@@ -1,5 +1,6 @@
+import type {} from "bun";
 import { randomUUID } from "node:crypto";
-import { logger, projectRoot } from "../utils/index.js";
+import { logger, projectRoot } from "../utils/index.ts";
 
 /** A parsed JSON frame (command response or event) from the pi RPC stream. */
 export type RpcFrame = Record<string, unknown>;
@@ -190,10 +191,12 @@ export class PiRpc {
    */
   private send(frame: Record<string, unknown>): Promise<RpcFrame> {
     const id = randomUUID();
-    return new Promise<RpcFrame>((resolve: (f: RpcFrame) => void, reject: (e: Error) => void): void => {
-      this.pendingCommands.set(id, { command: String(frame["type"]), resolve, reject });
-      this.write({ ...frame, id });
-    });
+    return new Promise<RpcFrame>(
+      (resolve: (f: RpcFrame) => void, reject: (e: Error) => void): void => {
+        this.pendingCommands.set(id, { command: String(frame["type"]), resolve, reject });
+        this.write({ ...frame, id });
+      },
+    );
   }
 
   /** Serialize a frame as one LF-terminated JSON line. */
@@ -218,7 +221,9 @@ export class PiRpc {
   /** Reject unless a response frame reports success. */
   private expectSuccess(response: RpcFrame, command: string): void {
     if (response["success"] !== true) {
-      throw new Error(`pi command "${command}" failed: ${String(response["error"] ?? "unknown error")}`);
+      throw new Error(
+        `pi command "${command}" failed: ${String(response["error"] ?? "unknown error")}`,
+      );
     }
   }
 

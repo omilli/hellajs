@@ -57,7 +57,8 @@ export function structurallyEqual(a: unknown, b: unknown): boolean {
   if (!isObject(a) || !isObject(b)) return false;
 
   if (a instanceof Date && b instanceof Date) return a.getTime() === b.getTime();
-  if (a instanceof RegExp && b instanceof RegExp) return a.source === b.source && a.flags === b.flags;
+  if (a instanceof RegExp && b instanceof RegExp)
+    return a.source === b.source && a.flags === b.flags;
 
   if (a instanceof Map && b instanceof Map) {
     if (a.size !== b.size) return false;
@@ -82,7 +83,11 @@ export function structurallyEqual(a: unknown, b: unknown): boolean {
       let ri = 0;
       while (ri < remaining.length) {
         const candidate = remaining[ri]!;
-        if (candidate === member || (candidate !== candidate && member !== member) || structurallyEqual(member, candidate)) {
+        if (
+          candidate === member ||
+          (candidate !== candidate && member !== member) ||
+          structurallyEqual(member, candidate)
+        ) {
           matched = true;
           remaining.splice(ri, 1);
           break;
@@ -113,7 +118,10 @@ export function structurallyEqual(a: unknown, b: unknown): boolean {
   while (ki < aKeys.length) {
     const key = aKeys[ki]!;
     if (!Object.hasOwn(b, key)) return false;
-    if (!structurallyEqual((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key])) return false;
+    if (
+      !structurallyEqual((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key])
+    )
+      return false;
     ki++;
   }
   return true;
@@ -126,7 +134,7 @@ export function structurallyEqual(a: unknown, b: unknown): boolean {
  */
 export function extractChanges<T extends Record<string, unknown>>(
   original: T,
-  draft: T
+  draft: T,
 ): Partial<T> {
   const changes: Partial<T> = {};
 
@@ -145,7 +153,7 @@ export function extractChanges<T extends Record<string, unknown>>(
       } else {
         const nestedChanges = extractChanges(
           origVal as Record<string, unknown>,
-          draftVal as Record<string, unknown>
+          draftVal as Record<string, unknown>,
         );
         if (Object.keys(nestedChanges).length > 0) {
           changes[key] = nestedChanges as T[Extract<keyof T, string>];

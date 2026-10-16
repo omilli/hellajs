@@ -38,10 +38,18 @@ export function computed<T>(computedFn: (previousValue?: T) => T): () => T;
  * @returns A function that returns the computed value.
  * @throws {Error} When computedFn is not a function, or `options.equals` is present and not a function.
  */
-export function computed<T>(computedFn: (previousValue?: T) => T, options: EqualsOptions<T>): () => T;
-export function computed<T>(computedFn: (previousValue?: T) => T, options?: EqualsOptions<T>): () => T {
+export function computed<T>(
+  computedFn: (previousValue?: T) => T,
+  options: EqualsOptions<T>,
+): () => T;
+export function computed<T>(
+  computedFn: (previousValue?: T) => T,
+  options?: EqualsOptions<T>,
+): () => T {
   if (!isFunction(computedFn)) {
-    throw new Error(`[core] computed: computedFn must be a function, received ${typeof computedFn}`);
+    throw new Error(
+      `[core] computed: computedFn must be a function, received ${typeof computedFn}`,
+    );
   }
   const ce = options?.equals;
   if (ce !== undefined && !isFunction(ce)) {
@@ -65,9 +73,12 @@ export function computed<T>(computedFn: (previousValue?: T) => T, options?: Equa
     // executeComputed rebuilds the flag word (PENDING already gone); when it does not,
     // the comma arm clears it from the snapshot — which never carries DIRTY here (the
     // DIRTY arm short-circuits first), so a fresh-clean rf is never clobbered stale
-    (rf & DIRTY
-      || (rf & PENDING && (validateStale(rd!, computedState) || (computedState.rf = rf & ~PENDING, false)))
-    ) && executeComputed(computedState) && rs && propagate(rs);
+    (rf & DIRTY ||
+      (rf & PENDING &&
+        (validateStale(rd!, computedState) || ((computedState.rf = rf & ~PENDING), false)))) &&
+      executeComputed(computedState) &&
+      rs &&
+      propagate(rs);
     // Track this computed as a dependency if we're inside a reactive context
     currentValue && createLink(computedState, currentValue);
 

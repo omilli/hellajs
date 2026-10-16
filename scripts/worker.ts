@@ -1,7 +1,8 @@
-import { logger } from "./utils/index.js";
-import { isThinkingLevel } from "./agent/rpc.js";
-import { resolveSetFolder } from "./worker/set.js";
-import { type WorktreeMode, runProbe, runSet } from "./worker/run.js";
+import type {} from "bun";
+import { logger } from "./utils/index.ts";
+import { isThinkingLevel } from "./agent/rpc.ts";
+import { resolveSetFolder } from "./worker/set.ts";
+import { type WorktreeMode, runProbe, runSet } from "./worker/run.ts";
 
 /** Parsed CLI configuration. */
 interface PlansArgs {
@@ -59,7 +60,9 @@ function parseArgs(argv: string[]): PlansArgs {
 
 /** Print the usage line. */
 function printUsage(): void {
-  logger.error("usage: bun worker <set-folder> [--wt=single|split] [--model=<provider/id>] [--thinking=<level>]");
+  logger.error(
+    "usage: bun worker <set-folder> [--wt=single|split] [--model=<provider/id>] [--thinking=<level>]",
+  );
   logger.error("       bun worker --probe [--model=<provider/id>] [--thinking=<level>]");
 }
 
@@ -75,7 +78,9 @@ async function main(): Promise<void> {
       process.exit(1);
     }
     const setDir = resolveSetFolder(args.setFolder);
-    process.exit(await runSet({ setDir, model: args.model, thinking: args.thinking, mode: args.mode }));
+    process.exit(
+      await runSet({ setDir, model: args.model, thinking: args.thinking, mode: args.mode }),
+    );
   } catch (error) {
     logger.error(`worker failed: ${(error as Error).message}`);
     process.exit(1);

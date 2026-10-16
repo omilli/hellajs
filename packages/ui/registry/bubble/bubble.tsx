@@ -1,4 +1,9 @@
-import type { BubbleGroupProps, BubbleProps, BubbleContentProps, BubbleReactionsProps } from "./bubble-types.js";
+import type {
+  BubbleGroupProps,
+  BubbleProps,
+  BubbleContentProps,
+  BubbleReactionsProps,
+} from "./bubble-types.js";
 
 // @hella:styles
 declare const base: string;
@@ -26,7 +31,13 @@ export function BubbleGroup({ children, class: cls, ...attrs }: BubbleGroupProps
   );
 }
 
-export function Bubble({ variant, align, children, class: cls, ...attrs }: BubbleProps): JSX.Element {
+export function Bubble({
+  variant,
+  align,
+  children,
+  class: cls,
+  ...attrs
+}: BubbleProps): JSX.Element {
   return (
     <div
       data-slot="bubble"
@@ -60,7 +71,13 @@ export function BubbleContent({ children, class: cls, ...attrs }: BubbleContentP
   );
 }
 
-export function BubbleReactions({ side, align, children, class: cls, ...attrs }: BubbleReactionsProps): JSX.Element {
+export function BubbleReactions({
+  side,
+  align,
+  children,
+  class: cls,
+  ...attrs
+}: BubbleReactionsProps): JSX.Element {
   return (
     <div
       data-slot="bubble-reactions"

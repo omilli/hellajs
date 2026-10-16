@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
-import {delay, resetTestState} from "@utils/test-helpers.js";
+import { delay, resetTestState } from "@utils/test-helpers.js";
 import { mount, registry } from "@hellajs/dom";
 import type { HellaElement } from "@hellajs/dom";
 
@@ -12,12 +12,19 @@ describe("dom", () => {
   describe("registry", () => {
     test("effect is disposed when element is removed from DOM", () => {
       const count = signal(0);
-      const effectRuns = mock(() => { });
+      const effectRuns = vi.fn(() => {});
 
-      const app = mount(<div id="container"><span id="target">0</span></div>);
+      const app = mount(
+        <div id="container">
+          <span id="target">0</span>
+        </div>,
+      );
 
       const target = document.getElementById("target")! as HellaElement;
-      registry.addEffect(target, () => { effectRuns(); count(); });
+      registry.addEffect(target, () => {
+        effectRuns();
+        count();
+      });
 
       expect(effectRuns).toHaveBeenCalledTimes(1);
 
@@ -35,14 +42,20 @@ describe("dom", () => {
     test("multiple effects on element all dispose on cleanup", () => {
       const countA = signal(0);
       const countB = signal(0);
-      const runsA = mock(() => { });
-      const runsB = mock(() => { });
+      const runsA = vi.fn(() => {});
+      const runsB = vi.fn(() => {});
 
       const app = mount(<div id="multi-effect">Content</div>);
       const el = document.getElementById("multi-effect")! as HellaElement;
 
-      registry.addEffect(el, () => { runsA(); countA(); });
-      registry.addEffect(el, () => { runsB(); countB(); });
+      registry.addEffect(el, () => {
+        runsA();
+        countA();
+      });
+      registry.addEffect(el, () => {
+        runsB();
+        countB();
+      });
 
       expect(runsA).toHaveBeenCalledTimes(1);
       expect(runsB).toHaveBeenCalledTimes(1);
@@ -72,11 +85,15 @@ describe("dom", () => {
     });
 
     test("update hooks fire when registered after a hook-free mount", () => {
-      const beforeUpdate = mock(() => { });
-      const afterUpdate = mock(() => { });
+      const beforeUpdate = vi.fn(() => {});
+      const afterUpdate = vi.fn(() => {});
       const count = signal(0);
 
-      mount(<div id="late-hooks"><span id="late-target">{() => String(count())}</span></div>);
+      mount(
+        <div id="late-hooks">
+          <span id="late-target">{() => String(count())}</span>
+        </div>,
+      );
       const el = document.getElementById("late-target")! as HellaElement;
 
       registry.addHook(el, "beforeUpdate", beforeUpdate);
@@ -109,7 +126,9 @@ describe("dom", () => {
       const app2 = mount(<div id="hook-arg">Content</div>);
       const el = document.getElementById("hook-arg")! as HellaElement;
 
-      registry.addHook(el, "afterMount", (node) => { receivedEl = node; });
+      registry.addHook(el, "afterMount", (node) => {
+        receivedEl = node;
+      });
 
       app2.flush();
 
@@ -117,23 +136,37 @@ describe("dom", () => {
     });
 
     test("beforeMount hook receives no argument", () => {
-      const fn = mock(() => { });
+      const fn = vi.fn(() => {});
 
-      mount(<div id="before-mount-no-arg" hook:beforeMount={fn}>Content</div>);
+      mount(
+        <div id="before-mount-no-arg" hook:beforeMount={fn}>
+          Content
+        </div>,
+      );
 
       // beforeMount was already called synchronously during mount, with no defined arguments
-      const definedArgs = (fn.mock.calls[0] ?? []).filter(a => a !== undefined);
+      const definedArgs = (fn.mock.calls[0] ?? []).filter((a) => a !== undefined);
       expect(definedArgs).toHaveLength(0);
     });
 
     test("moved elements are not cleaned up", async () => {
-      const runsEffect = mock(() => { });
+      const runsEffect = vi.fn(() => {});
       const count = signal(0);
 
-      mount(<div><div id="source"><span id="moveable">Content</span></div><div id="dest"></div></div>);
+      mount(
+        <div>
+          <div id="source">
+            <span id="moveable">Content</span>
+          </div>
+          <div id="dest"></div>
+        </div>,
+      );
 
       const moveable = document.getElementById("moveable")! as HellaElement;
-      registry.addEffect(moveable, () => { runsEffect(); count(); });
+      registry.addEffect(moveable, () => {
+        runsEffect();
+        count();
+      });
 
       expect(runsEffect).toHaveBeenCalledTimes(1);
 
@@ -150,17 +183,27 @@ describe("dom", () => {
     });
 
     test("cleanup traverses descendants", () => {
-      const parentCalls = mock(() => { });
-      const childCalls = mock(() => { });
+      const parentCalls = vi.fn(() => {});
+      const childCalls = vi.fn(() => {});
       const count = signal(0);
 
-      const app = mount(<div id="parent-clean"><span id="child-clean">Content</span></div>);
+      const app = mount(
+        <div id="parent-clean">
+          <span id="child-clean">Content</span>
+        </div>,
+      );
 
       const parent = document.getElementById("parent-clean")! as HellaElement;
       const child = document.getElementById("child-clean")! as HellaElement;
 
-      registry.addEffect(parent, () => { parentCalls(); count(); });
-      registry.addEffect(child, () => { childCalls(); count(); });
+      registry.addEffect(parent, () => {
+        parentCalls();
+        count();
+      });
+      registry.addEffect(child, () => {
+        childCalls();
+        count();
+      });
 
       expect(parentCalls).toHaveBeenCalledTimes(1);
       expect(childCalls).toHaveBeenCalledTimes(1);
@@ -174,9 +217,15 @@ describe("dom", () => {
     });
 
     test("afterMount fires at mount; flush() is idempotent", () => {
-      const afterMountCalls = mock(() => { });
+      const afterMountCalls = vi.fn(() => {});
 
-      const app3 = mount(<div><span id="mount-queue-test" hook:afterMount={afterMountCalls}>Content</span></div>);
+      const app3 = mount(
+        <div>
+          <span id="mount-queue-test" hook:afterMount={afterMountCalls}>
+            Content
+          </span>
+        </div>,
+      );
 
       // afterMount fires during mount() — flush() is an optional no-op escape hatch
       expect(afterMountCalls).toHaveBeenCalledTimes(1);
@@ -186,9 +235,13 @@ describe("dom", () => {
     });
 
     test("explicit flush() after mount does not re-fire afterMount (idempotent)", () => {
-      const afterMountCalls = mock(() => { });
+      const afterMountCalls = vi.fn(() => {});
 
-      const app4 = mount(<div id="idempotent-test" hook:afterMount={afterMountCalls}>Content</div>);
+      const app4 = mount(
+        <div id="idempotent-test" hook:afterMount={afterMountCalls}>
+          Content
+        </div>,
+      );
 
       // afterMount fired once during mount(); repeated flush() must not re-fire it
       expect(afterMountCalls).toHaveBeenCalledTimes(1);

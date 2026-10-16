@@ -5,7 +5,13 @@ import type { StageSwapResult } from "./hydrate";
  * Adopter for a marker-bounded region — `adoptRegion` from `internal/hydrate.ts`, received via
  * {@link setDeferredAdopters} so this module never imports hydrate.ts values (cycle break).
  */
-type AdoptRegionFn = (parent: HellaElement, child: RenderFn, anchor: Node, existing: Node[], stageMissing?: boolean) => void;
+type AdoptRegionFn = (
+  parent: HellaElement,
+  child: RenderFn,
+  anchor: Node,
+  existing: Node[],
+  stageMissing?: boolean,
+) => void;
 
 /**
  * Stage swapper — `swapSuspenseStage` from `internal/hydrate.ts`, received via
@@ -131,7 +137,7 @@ function bufferReplayEvent(event: Event): void {
   if (isReplaying || deferredRegions.length === 0) return;
   if (!REPLAY_EVENT_TYPES.has(event.type)) return;
   const target = event.target;
-  if (!(target instanceof Node)) return;   // platform-invoked listener — untrusted target
+  if (!(target instanceof Node)) return; // platform-invoked listener — untrusted target
   const path = event.composedPath();
   let ri = 0;
   const rLen = deferredRegions.length;
@@ -168,7 +174,8 @@ function recheckDeferredRegions(): void {
     let adopted: Node[] | null = null;
     if (region.sentinel.isConnected) {
       const staged = document.getElementById(region.sentinel.nodeValue!);
-      if (staged && staged.tagName === "TEMPLATE") {   // arm 1 — stage arrived
+      if (staged && staged.tagName === "TEMPLATE") {
+        // arm 1 — stage arrived
         adopted = swapStageFn(region.nodes, region.anchor).nodes;
         adoptRegionFn(region.parent, region.child, region.anchor, adopted);
       }
@@ -183,7 +190,8 @@ function recheckDeferredRegions(): void {
           break;
         }
       }
-      if (!live) {   // arm 2 — adopt whatever now occupies the region's slot
+      if (!live) {
+        // arm 2 — adopt whatever now occupies the region's slot
         adopted = [];
         let node = region.anchor.nextSibling;
         while (node && node !== region.next) {
@@ -209,14 +217,16 @@ function recheckDeferredRegions(): void {
         let live: Node | null = entry.target;
         if (!live.isConnected) {
           let root: Node | null = live;
-          while (root && root.parentNode) root = root.parentNode;   // detached subtree root
+          while (root && root.parentNode) root = root.parentNode; // detached subtree root
           const counterpart = adopted[region.nodes.indexOf(root)];
           live = counterpart && counterpart.isConnected ? counterpart : null;
         }
         if (!live) continue;
         isReplaying = true;
         try {
-          live.dispatchEvent(new Event(entry.type, { bubbles: true, cancelable: true, composed: true }));
+          live.dispatchEvent(
+            new Event(entry.type, { bubbles: true, cancelable: true, composed: true }),
+          );
         } finally {
           isReplaying = false;
         }

@@ -42,18 +42,19 @@ export function EmptyHeader({ children, class: cls, ...attrs }: EmptyPartProps):
   );
 }
 
-export function EmptyMedia({ variant, children, class: cls, ...attrs }: EmptyMediaProps): JSX.Element {
+export function EmptyMedia({
+  variant,
+  children,
+  class: cls,
+  ...attrs
+}: EmptyMediaProps): JSX.Element {
   return (
     <div
       data-slot="empty-icon"
       data-variant={variant ?? "default"}
       class={
         // @hella:compose
-        [
-          media,
-          mediaVariants[variant ?? "default"],
-          cls,
-        ]
+        [media, mediaVariants[variant ?? "default"], cls]
         // @hella:end
       }
       {...attrs}

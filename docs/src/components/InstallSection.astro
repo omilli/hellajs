@@ -9,7 +9,7 @@ interface Props {
 
 const { entry } = Astro.props;
 
-// Both variants are real `add`-output files written by `bun
+// Both variants are real `add`-output files written by `vp run
 // docs-ui` — the Manual tab shows exactly what the CLI writes, as
 // real greppable files, with no ui-package import anywhere in site code.
 const cssJsx = import.meta.glob("../ui-install/css-jsx/*.tsx", {
@@ -42,7 +42,7 @@ for (const [variant, key] of Object.entries(sourceKeys)) {
   );
   if (match === undefined) {
     throw new Error(
-      `[InstallSection] missing ${variant} install source for ${entry}; generate with: bun docs-ui ${entry}`,
+      `[InstallSection] missing ${variant} install source for ${entry}; generate with: vp run docs-ui ${entry}`,
     );
   }
   sources[variant] = match[1];

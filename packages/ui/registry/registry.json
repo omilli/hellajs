@@ -784,10 +784,27 @@
       "styles": {
         "css": {
           "deps": ["@hellajs/css"],
-          "registryDependencies": ["theme", "button", "input", "separator", "skeleton", "sheet", "tooltip"]
+          "registryDependencies": [
+            "theme",
+            "button",
+            "input",
+            "separator",
+            "skeleton",
+            "sheet",
+            "tooltip"
+          ]
         },
         "tailwind": {
-          "registryDependencies": ["theme", "cn", "button", "input", "separator", "skeleton", "sheet", "tooltip"]
+          "registryDependencies": [
+            "theme",
+            "cn",
+            "button",
+            "input",
+            "separator",
+            "skeleton",
+            "sheet",
+            "tooltip"
+          ]
         }
       }
     }

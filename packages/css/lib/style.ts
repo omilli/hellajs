@@ -31,9 +31,10 @@ function mergeStyles(base: StyleObject, override: StyleObject): StyleObject {
     const key = keys[i++] as string;
     const value = (override as Record<string, unknown>)[key];
     const existing = merged[key];
-    merged[key] = isPlainObject(value) && isPlainObject(existing)
-      ? mergeStyles(existing as StyleObject, value as StyleObject)
-      : value;
+    merged[key] =
+      isPlainObject(value) && isPlainObject(existing)
+        ? mergeStyles(existing as StyleObject, value as StyleObject)
+        : value;
   }
   return merged as StyleObject;
 }
@@ -156,7 +157,11 @@ export function style(label: string, obj: StyleObject, options?: StyleOptions): 
  * @throws {Error} When a style argument is not a plain object, or when a property value is a function — use `vars()` for reactive values.
  */
 export function style(base: StyleObject, override: StyleObject, options?: StyleOptions): string;
-export function style(base: string | StyleObject, overrideOrOptions?: StyleObject | StyleOptions, optionsArg?: StyleOptions): string {
+export function style(
+  base: string | StyleObject,
+  overrideOrOptions?: StyleObject | StyleOptions,
+  optionsArg?: StyleOptions,
+): string {
   const resolved = resolveStyle("style", base, overrideOrOptions, optionsArg);
   registerText(resolved.text, resolved.host);
   return resolved.classList;

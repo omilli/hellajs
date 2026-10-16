@@ -1,4 +1,13 @@
-import type { TableProps, TableHeaderProps, TableBodyProps, TableFooterProps, TableRowProps, TableHeadProps, TableCellProps, TableCaptionProps } from "./table-types.js";
+import type {
+  TableProps,
+  TableHeaderProps,
+  TableBodyProps,
+  TableFooterProps,
+  TableRowProps,
+  TableHeadProps,
+  TableCellProps,
+  TableCaptionProps,
+} from "./table-types.js";
 
 // @hella:styles
 declare const base: string;

@@ -1,7 +1,8 @@
-import { logger } from "./utils/index.js";
-import { isThinkingLevel } from "./agent/rpc.js";
-import { resolveSetFolder } from "./worker/set.js";
-import { runMerge } from "./merge/run.js";
+import type {} from "bun";
+import { logger } from "./utils/index.ts";
+import { isThinkingLevel } from "./agent/rpc.ts";
+import { resolveSetFolder } from "./worker/set.ts";
+import { runMerge } from "./merge/run.ts";
 
 /** Parsed CLI configuration. */
 interface MergeArgs {
@@ -53,8 +54,12 @@ function parseArgs(argv: string[]): MergeArgs {
 
 /** Print the usage line. */
 function printUsage(): void {
-  logger.error("usage: bun merge <set-folder> [--model=<provider/id>] [--thinking=<level>] [--dry-run]");
-  logger.error("       --dry-run prints the derived queue and completeness, then exits before any spawn");
+  logger.error(
+    "usage: bun merge <set-folder> [--model=<provider/id>] [--thinking=<level>] [--dry-run]",
+  );
+  logger.error(
+    "       --dry-run prints the derived queue and completeness, then exits before any spawn",
+  );
 }
 
 /** Entry point: parse args, validate, and run the merge. */
@@ -66,7 +71,9 @@ async function main(): Promise<void> {
       process.exit(1);
     }
     const setDir = resolveSetFolder(args.setFolder);
-    process.exit(await runMerge({ setDir, model: args.model, thinking: args.thinking, dryRun: args.dryRun }));
+    process.exit(
+      await runMerge({ setDir, model: args.model, thinking: args.thinking, dryRun: args.dryRun }),
+    );
   } catch (error) {
     logger.error(`merge failed: ${(error as Error).message}`);
     process.exit(1);

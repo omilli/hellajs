@@ -1,5 +1,5 @@
-import { describe, test, expect } from "bun:test";
-import { store } from "@hellajs/store/bundle";
+import { describe, test, expect } from "vite-plus/test";
+import { store } from "@hellajs/store";
 
 describe("store", () => {
   describe("data", () => {
@@ -12,7 +12,7 @@ describe("store", () => {
         obj: { nested: "value" },
         nullVal: null,
         undefinedVal: undefined,
-        func: () => "helper"
+        func: () => "helper",
       });
 
       expect(data.num()).toBe(42);
@@ -29,7 +29,7 @@ describe("store", () => {
       const data = store({
         num: 42,
         str: "hello",
-        obj: { nested: "value" }
+        obj: { nested: "value" },
       });
 
       data.num(100);

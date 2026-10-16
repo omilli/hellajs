@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { delay, resetTestState } from "@utils/test-helpers.js";
 import { onLongPress } from "@hellajs/dom";
 import { pointerDown, pointerMove, pointerUp, pointerCancel } from "./helpers";
@@ -9,7 +9,7 @@ describe("onLongPress", () => {
   });
 
   test("fires the handler once with the pointerdown event after the default duration", async () => {
-    const handler = mock<(event: PointerEvent) => void>(() => {});
+    const handler = vi.fn<(event: PointerEvent) => void>(() => {});
     const el = document.createElement("div");
     document.body.append(el);
     const dispose = onLongPress(el, handler);
@@ -24,7 +24,7 @@ describe("onLongPress", () => {
   });
 
   test("fires nothing when released before the duration", async () => {
-    const handler = mock<(event: PointerEvent) => void>(() => {});
+    const handler = vi.fn<(event: PointerEvent) => void>(() => {});
     const el = document.createElement("div");
     document.body.append(el);
     const dispose = onLongPress(el, handler, { duration: 5 });
@@ -39,7 +39,7 @@ describe("onLongPress", () => {
   });
 
   test("cancels when the pointer drifts beyond tolerance", async () => {
-    const handler = mock<(event: PointerEvent) => void>(() => {});
+    const handler = vi.fn<(event: PointerEvent) => void>(() => {});
     const el = document.createElement("div");
     document.body.append(el);
     const dispose = onLongPress(el, handler, { duration: 10, tolerance: 8 });
@@ -52,7 +52,7 @@ describe("onLongPress", () => {
   });
 
   test("cancels on pointercancel", async () => {
-    const handler = mock<(event: PointerEvent) => void>(() => {});
+    const handler = vi.fn<(event: PointerEvent) => void>(() => {});
     const el = document.createElement("div");
     document.body.append(el);
     const dispose = onLongPress(el, handler, { duration: 5 });
@@ -65,8 +65,8 @@ describe("onLongPress", () => {
   });
 
   test("honors a custom duration", async () => {
-    const short = mock<(event: PointerEvent) => void>(() => {});
-    const long = mock<(event: PointerEvent) => void>(() => {});
+    const short = vi.fn<(event: PointerEvent) => void>(() => {});
+    const long = vi.fn<(event: PointerEvent) => void>(() => {});
     const fast = document.createElement("div");
     const slow = document.createElement("div");
     document.body.append(fast, slow);
@@ -83,7 +83,7 @@ describe("onLongPress", () => {
   });
 
   test("ignores non-primary buttons and disabled descendants", async () => {
-    const handler = mock<(event: PointerEvent) => void>(() => {});
+    const handler = vi.fn<(event: PointerEvent) => void>(() => {});
     const el = document.createElement("div");
     const disabled = document.createElement("button");
     disabled.disabled = true;
@@ -101,7 +101,7 @@ describe("onLongPress", () => {
   });
 
   test("dispose clears the pending timer", async () => {
-    const handler = mock<(event: PointerEvent) => void>(() => {});
+    const handler = vi.fn<(event: PointerEvent) => void>(() => {});
     const el = document.createElement("div");
     document.body.append(el);
     const dispose = onLongPress(el, handler, { duration: 5 });

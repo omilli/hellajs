@@ -1,4 +1,4 @@
-import { describe, test, expect } from "bun:test";
+import { describe, test, expect } from "vite-plus/test";
 import babel from "@babel/core";
 import jsxSyntax from "@babel/plugin-syntax-jsx";
 import { getTagCallee } from "../src/utils/babel.mjs";
@@ -22,7 +22,7 @@ describe("babel", () => {
   describe("getTagCallee", () => {
     test("JSXIdentifier returns identifier", () => {
       const ast = babel.parseSync("<div />", {
-        plugins: [jsxSyntax]
+        plugins: [jsxSyntax],
       });
       const openingElement = (ast as BabelParseResult).program.body[0]!.expression.openingElement;
       const callee = getTagCallee(babel.types, openingElement.name);
@@ -32,7 +32,7 @@ describe("babel", () => {
 
     test("JSXMemberExpression returns member expression", () => {
       const ast = babel.parseSync("<UI.Button />", {
-        plugins: [jsxSyntax]
+        plugins: [jsxSyntax],
       });
       const openingElement = (ast as BabelParseResult).program.body[0]!.expression.openingElement;
       const callee = getTagCallee(babel.types, openingElement.name);
@@ -45,7 +45,7 @@ describe("babel", () => {
 
     test("nested member expression", () => {
       const ast = babel.parseSync("<App.Components.Button />", {
-        plugins: [jsxSyntax]
+        plugins: [jsxSyntax],
       });
       const openingElement = (ast as BabelParseResult).program.body[0]!.expression.openingElement;
       const callee = getTagCallee(babel.types, openingElement.name);
@@ -56,9 +56,13 @@ describe("babel", () => {
       const invalidNode = {
         type: "JSXNamespacedName",
         namespace: { name: "xml" },
-        name: { name: "lang" }
+        name: { name: "lang" },
       };
-      expect(() => getTagCallee(babel.types, invalidNode as unknown as Parameters<typeof getTagCallee>[1])).toThrow("[babel-plugin-hellajs] getTagCallee: unsupported JSX tag name, received JSXNamespacedName");
+      expect(() =>
+        getTagCallee(babel.types, invalidNode as unknown as Parameters<typeof getTagCallee>[1]),
+      ).toThrow(
+        "[babel-plugin-hellajs] getTagCallee: unsupported JSX tag name, received JSXNamespacedName",
+      );
     });
   });
 });

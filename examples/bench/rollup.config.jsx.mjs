@@ -1,17 +1,17 @@
-import rollupHellaJS from 'rollup-plugin-hellajs';
-import resolve from '@rollup/plugin-node-resolve';
-import terser from '@rollup/plugin-terser';
-import typescript from '@rollup/plugin-typescript';
+import rollupHellaJS from "rollup-plugin-hellajs";
+import resolve from "@rollup/plugin-node-resolve";
+import terser from "@rollup/plugin-terser";
+import typescript from "@rollup/plugin-typescript";
 
 export default {
-  input: 'src-jsx/main.tsx',
+  input: "src-jsx/main.tsx",
   output: {
-    file: 'dist/main.js',
-    format: 'iife',
+    file: "dist/main.js",
+    format: "iife",
   },
   plugins: [
     typescript({
-      tsconfig: './src-jsx/tsconfig.json',
+      tsconfig: "./src-jsx/tsconfig.json",
     }),
     rollupHellaJS(),
     resolve(),

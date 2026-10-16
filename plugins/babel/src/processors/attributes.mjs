@@ -10,9 +10,13 @@ import { maybeReactive } from "../utils/reactive.mjs";
 export function processAttributes(t, attributes, isComponent) {
   if (!attributes.length) return { props: [], on: [], hooks: [], e: [], error: [] };
 
-  const props = [], on = [], hooks = [], e = [], error = [];
+  const props = [],
+    on = [],
+    hooks = [],
+    e = [],
+    error = [];
 
-  attributes.forEach(attr => {
+  attributes.forEach((attr) => {
     if (t.isJSXAttribute(attr)) {
       let key;
       if (t.isJSXIdentifier(attr.name)) {
@@ -22,9 +26,8 @@ export function processAttributes(t, attributes, isComponent) {
         key = `${attr.name.namespace.name}:${attr.name.name.name}`;
       }
 
-      let value = attr.value && attr.value.expression !== undefined
-        ? attr.value.expression
-        : attr.value;
+      let value =
+        attr.value && attr.value.expression !== undefined ? attr.value.expression : attr.value;
 
       if (value === null) {
         value = t.booleanLiteral(true);
@@ -35,12 +38,10 @@ export function processAttributes(t, attributes, isComponent) {
       // at render time (routePrefixedProps). Bucket arrays stay element-only.
       if (isComponent && /^(error|hook|e|on):/.test(key)) {
         props.push(t.objectProperty(t.stringLiteral(key), value));
-      }
-      else if (key.startsWith("error:")) {
+      } else if (key.startsWith("error:")) {
         const errorKey = key.slice(6);
         error.push(t.objectProperty(t.identifier(errorKey), value));
-      }
-      else if (key.startsWith("hook:")) {
+      } else if (key.startsWith("hook:")) {
         const hookName = key.slice(5);
         hooks.push(t.objectProperty(t.identifier(hookName), value));
       }
@@ -48,8 +49,7 @@ export function processAttributes(t, attributes, isComponent) {
       else if (key.startsWith("e:")) {
         const eventName = key.slice(2);
         e.push(t.objectProperty(t.identifier(eventName), value));
-      }
-      else if (key.startsWith("on:")) {
+      } else if (key.startsWith("on:")) {
         const eventName = key.slice(3);
         on.push(t.objectProperty(t.identifier(eventName), value));
       } else {
@@ -66,12 +66,14 @@ export function processAttributes(t, attributes, isComponent) {
         if (!isComponent) value = maybeReactive(t, value);
 
         const needsQuoting = typeof key === "string" && /[-:]/.test(key);
-        props.push(t.objectProperty(
-          needsQuoting || (typeof key === "string" && /^data-|^aria-/.test(key))
-            ? t.stringLiteral(key)
-            : t.identifier(key),
-          value
-        ));
+        props.push(
+          t.objectProperty(
+            needsQuoting || (typeof key === "string" && /^data-|^aria-/.test(key))
+              ? t.stringLiteral(key)
+              : t.identifier(key),
+            value,
+          ),
+        );
       }
     } else if (t.isJSXSpreadAttribute(attr)) {
       props.push(t.spreadElement(attr.argument));
@@ -80,4 +82,3 @@ export function processAttributes(t, attributes, isComponent) {
 
   return { props, on, hooks, e, error };
 }
-

@@ -1,7 +1,20 @@
 import { effect, signal } from "@hellajs/core";
 import { anchorPosition, hoverIntent, onEscape, onOutside, Portal, trapFocus } from "@hellajs/dom";
 import type { HellaChild, HellaChildren } from "@hellajs/dom";
-import type { SidebarProviderProps, SidebarProps, SidebarMobileSheetProps, SidebarTriggerProps, SidebarRailProps, SidebarPartProps, SidebarInputProps, SidebarGroupActionProps, SidebarMenuButtonProps, SidebarMenuActionProps, SidebarMenuSkeletonProps, SidebarMenuSubButtonProps } from "./sidebar-types.js";
+import type {
+  SidebarProviderProps,
+  SidebarProps,
+  SidebarMobileSheetProps,
+  SidebarTriggerProps,
+  SidebarRailProps,
+  SidebarPartProps,
+  SidebarInputProps,
+  SidebarGroupActionProps,
+  SidebarMenuButtonProps,
+  SidebarMenuActionProps,
+  SidebarMenuSkeletonProps,
+  SidebarMenuSubButtonProps,
+} from "./sidebar-types.js";
 
 // @hella:styles
 declare const base: string;
@@ -54,7 +67,14 @@ declare const tooltipContent: string;
 declare const trigger: string;
 // @hella:end
 
-export function SidebarProvider({ open: openProp, defaultOpen, onOpenChange, children, class: cls, ...attrs }: SidebarProviderProps): JSX.Element {
+export function SidebarProvider({
+  open: openProp,
+  defaultOpen,
+  onOpenChange,
+  children,
+  class: cls,
+  ...attrs
+}: SidebarProviderProps): JSX.Element {
   const internal = signal(defaultOpen ?? true);
   // Two separate states the ref also splits: the viewport query and the
   // mobile sheet's own open flag - conflating them would flip the branch
@@ -117,7 +137,18 @@ export function SidebarProvider({ open: openProp, defaultOpen, onOpenChange, chi
 
 let sidebarCount = 0;
 
-export function Sidebar({ open, mobile: mobileProp, openMobile, onOpenMobileChange, side: sideProp, variant: variantProp, collapsible: collapsibleProp, class: cls, children, ...attrs }: SidebarProps): JSX.Element {
+export function Sidebar({
+  open,
+  mobile: mobileProp,
+  openMobile,
+  onOpenMobileChange,
+  side: sideProp,
+  variant: variantProp,
+  collapsible: collapsibleProp,
+  class: cls,
+  children,
+  ...attrs
+}: SidebarProps): JSX.Element {
   const side = sideProp ?? "left";
   const variant = variantProp ?? "sidebar";
   const collapsible = collapsibleProp ?? "offcanvas";
@@ -145,58 +176,65 @@ export function Sidebar({ open, mobile: mobileProp, openMobile, onOpenMobileChan
   // provider's matchMedia flip would never propagate.
   return (
     <>
-      {() => mobileProp?.() === true ? (
-        <SidebarMobileSheet
-          open={() => openMobile?.() ?? false}
-          onClose={() => onOpenMobileChange?.(false)}
-          side={side}
-          children={flattenChildren(children)}
-        />
-      ) : (
-        <div
-          data-slot="sidebar"
-          data-state={collapsed() ? "collapsed" : "expanded"}
-          data-collapsible={collapsed() ? collapsible : undefined}
-          data-variant={variant}
-          data-side={side}
-          class={
-            // @hella:compose
-            [sidebar]
-            // @hella:end
-          }
-          {...attrs}
-        >
-          {/* This is what handles the sidebar gap on desktop */}
-          <div
-            data-slot="sidebar-gap"
-            class={
-              // @hella:compose
-              [gap, variantIsInset ? gapInset : gapPlain]
-              // @hella:end
-            }
+      {() =>
+        mobileProp?.() === true ? (
+          <SidebarMobileSheet
+            open={() => openMobile?.() ?? false}
+            onClose={() => onOpenMobileChange?.(false)}
+            side={side}
+            children={flattenChildren(children)}
           />
+        ) : (
           <div
-            data-slot="sidebar-container"
+            data-slot="sidebar"
+            data-state={collapsed() ? "collapsed" : "expanded"}
+            data-collapsible={collapsed() ? collapsible : undefined}
+            data-variant={variant}
+            data-side={side}
             class={
               // @hella:compose
-              [container, containerSides[side], variantIsInset ? containerInset : containerPlain, cls]
+              [sidebar]
               // @hella:end
             }
+            {...attrs}
           >
+            {/* This is what handles the sidebar gap on desktop */}
             <div
-              data-sidebar="sidebar"
-              data-slot="sidebar-inner"
+              data-slot="sidebar-gap"
               class={
                 // @hella:compose
-                [inner]
+                [gap, variantIsInset ? gapInset : gapPlain]
+                // @hella:end
+              }
+            />
+            <div
+              data-slot="sidebar-container"
+              class={
+                // @hella:compose
+                [
+                  container,
+                  containerSides[side],
+                  variantIsInset ? containerInset : containerPlain,
+                  cls,
+                ]
                 // @hella:end
               }
             >
-              {children}
+              <div
+                data-sidebar="sidebar"
+                data-slot="sidebar-inner"
+                class={
+                  // @hella:compose
+                  [inner]
+                  // @hella:end
+                }
+              >
+                {children}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
     </>
   );
 }
@@ -266,69 +304,80 @@ function SidebarMobileSheet(props: SidebarMobileSheetProps): JSX.Element {
 
   return (
     <>
-      {() => visible() && (
-        <Portal to="body">
-          <div
-            data-slot="sidebar-overlay"
-            data-state={state()}
-            class={
-              // @hella:compose
-              [overlay]
-              // @hella:end
-            }
-          />
-          <div
-            data-sidebar="sidebar"
-            data-slot="sidebar"
-            data-mobile="true"
-            data-state={state()}
-            data-side={side}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={titleId}
-            aria-describedby={descriptionId}
-            style="--sidebar-width: 18rem"
-            class={
-              // @hella:compose
-              [mobile, mobileSides[side]]
-              // @hella:end
-            }
-            hook:afterMount={(node) => {
-              if (!(node instanceof HTMLElement)) return;
-              panel = node;
-              installWirings();
-              // The exit's animationend (state already "closed") is the
-              // primary unmount trigger; the entry's is ignored.
-              const onAnimationEnd = (): void => {
-                if (props.open() === false) finishExit();
-              };
-              node.addEventListener("animationend", onAnimationEnd);
-              teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
-            }}
-            hook:beforeDestroy={() => {
-              disposeWirings();
-              while (teardown.length) teardown.pop()!();
-            }}
-          >
-            <h2 id={titleId} class="sr-only">Sidebar</h2>
-            <p id={descriptionId} class="sr-only">Displays the mobile sidebar.</p>
+      {() =>
+        visible() && (
+          <Portal to="body">
             <div
+              data-slot="sidebar-overlay"
+              data-state={state()}
               class={
                 // @hella:compose
-                [mobileInner]
+                [overlay]
                 // @hella:end
               }
+            />
+            <div
+              data-sidebar="sidebar"
+              data-slot="sidebar"
+              data-mobile="true"
+              data-state={state()}
+              data-side={side}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={titleId}
+              aria-describedby={descriptionId}
+              style="--sidebar-width: 18rem"
+              class={
+                // @hella:compose
+                [mobile, mobileSides[side]]
+                // @hella:end
+              }
+              hook:afterMount={(node) => {
+                if (!(node instanceof HTMLElement)) return;
+                panel = node;
+                installWirings();
+                // The exit's animationend (state already "closed") is the
+                // primary unmount trigger; the entry's is ignored.
+                const onAnimationEnd = (): void => {
+                  if (props.open() === false) finishExit();
+                };
+                node.addEventListener("animationend", onAnimationEnd);
+                teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
+              }}
+              hook:beforeDestroy={() => {
+                disposeWirings();
+                while (teardown.length) teardown.pop()!();
+              }}
             >
-              {props.children}
+              <h2 id={titleId} class="sr-only">
+                Sidebar
+              </h2>
+              <p id={descriptionId} class="sr-only">
+                Displays the mobile sidebar.
+              </p>
+              <div
+                class={
+                  // @hella:compose
+                  [mobileInner]
+                  // @hella:end
+                }
+              >
+                {props.children}
+              </div>
             </div>
-          </div>
-        </Portal>
-      )}
+          </Portal>
+        )
+      }
     </>
   );
 }
 
-export function SidebarTrigger({ onToggle, "on:click": userClick, class: cls, ...attrs }: SidebarTriggerProps): JSX.Element {
+export function SidebarTrigger({
+  onToggle,
+  "on:click": userClick,
+  class: cls,
+  ...attrs
+}: SidebarTriggerProps): JSX.Element {
   return (
     <button
       type="button"
@@ -366,7 +415,13 @@ export function SidebarTrigger({ onToggle, "on:click": userClick, class: cls, ..
 }
 
 /** The drag-handle edge - click toggles; width dragging is out of scope (bounded open). */
-export function SidebarRail({ onToggle, "on:click": userClick, class: cls, children, ...attrs }: SidebarRailProps): JSX.Element {
+export function SidebarRail({
+  onToggle,
+  "on:click": userClick,
+  class: cls,
+  children,
+  ...attrs
+}: SidebarRailProps): JSX.Element {
   return (
     <button
       type="button"
@@ -456,7 +511,11 @@ export function SidebarFooter({ children, class: cls, ...attrs }: SidebarPartPro
   );
 }
 
-export function SidebarSeparator({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
+export function SidebarSeparator({
+  children,
+  class: cls,
+  ...attrs
+}: SidebarPartProps): JSX.Element {
   return (
     <div
       data-slot="sidebar-separator"
@@ -510,7 +569,11 @@ export function SidebarGroup({ children, class: cls, ...attrs }: SidebarPartProp
   );
 }
 
-export function SidebarGroupLabel({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
+export function SidebarGroupLabel({
+  children,
+  class: cls,
+  ...attrs
+}: SidebarPartProps): JSX.Element {
   return (
     <div
       data-slot="sidebar-group-label"
@@ -527,7 +590,11 @@ export function SidebarGroupLabel({ children, class: cls, ...attrs }: SidebarPar
   );
 }
 
-export function SidebarGroupAction({ children, class: cls, ...attrs }: SidebarGroupActionProps): JSX.Element {
+export function SidebarGroupAction({
+  children,
+  class: cls,
+  ...attrs
+}: SidebarGroupActionProps): JSX.Element {
   return (
     <button
       type="button"
@@ -545,7 +612,11 @@ export function SidebarGroupAction({ children, class: cls, ...attrs }: SidebarGr
   );
 }
 
-export function SidebarGroupContent({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
+export function SidebarGroupContent({
+  children,
+  class: cls,
+  ...attrs
+}: SidebarPartProps): JSX.Element {
   return (
     <div
       data-slot="sidebar-group-content"
@@ -596,7 +667,18 @@ export function SidebarMenuItem({ children, class: cls, ...attrs }: SidebarPartP
   );
 }
 
-export function SidebarMenuButton({ active, tooltip: tooltipProp, variant: variantProp, size: sizeProp, open, mobile: mobileProp, disabled, class: cls, children, ...attrs }: SidebarMenuButtonProps): JSX.Element {
+export function SidebarMenuButton({
+  active,
+  tooltip: tooltipProp,
+  variant: variantProp,
+  size: sizeProp,
+  open,
+  mobile: mobileProp,
+  disabled,
+  class: cls,
+  children,
+  ...attrs
+}: SidebarMenuButtonProps): JSX.Element {
   const variant = variantProp ?? "default";
   const size = sizeProp ?? "default";
 
@@ -638,47 +720,56 @@ export function SidebarMenuButton({ active, tooltip: tooltipProp, variant: varia
         triggerNode = node;
         // hoverIntent stays armed for the trigger's lifetime - reopen works
         // without a remount (the skip-delay window is the primitive's global).
-        disposals.push(hoverIntent(node, {
-          onOpen: () => tooltipOpen(true),
-          onClose: () => tooltipOpen(false),
-          openDelay: 0,
-        }));
+        disposals.push(
+          hoverIntent(node, {
+            onOpen: () => tooltipOpen(true),
+            onClose: () => tooltipOpen(false),
+            openDelay: 0,
+          }),
+        );
       }}
       hook:beforeDestroy={() => {
         while (disposals.length) disposals.pop()!();
       }}
     >
       {button}
-      {() => tooltipOpen() && (
-        <Portal to="body">
-          <div
-            role="tooltip"
-            id={tooltipId}
-            data-slot="sidebar-tooltip-content"
-            data-state={tooltipOpen() ? "open" : "closed"}
-            data-side="right"
-            data-align="center"
-            hidden={hidden() ? "" : undefined}
-            class={
-              // @hella:compose
-              [tooltipContent]
-              // @hella:end
-            }
-            hook:afterMount={(node) => {
-              if (!(node instanceof HTMLElement) || triggerNode === undefined) return;
-              const anchor = triggerNode;
-              disposals.push(anchorPosition(anchor, node, { placement: "right" }));
-            }}
-          >
-            {tooltipProp}
-          </div>
-        </Portal>
-      )}
+      {() =>
+        tooltipOpen() && (
+          <Portal to="body">
+            <div
+              role="tooltip"
+              id={tooltipId}
+              data-slot="sidebar-tooltip-content"
+              data-state={tooltipOpen() ? "open" : "closed"}
+              data-side="right"
+              data-align="center"
+              hidden={hidden() ? "" : undefined}
+              class={
+                // @hella:compose
+                [tooltipContent]
+                // @hella:end
+              }
+              hook:afterMount={(node) => {
+                if (!(node instanceof HTMLElement) || triggerNode === undefined) return;
+                const anchor = triggerNode;
+                disposals.push(anchorPosition(anchor, node, { placement: "right" }));
+              }}
+            >
+              {tooltipProp}
+            </div>
+          </Portal>
+        )
+      }
     </span>
   );
 }
 
-export function SidebarMenuAction({ showOnHover, children, class: cls, ...attrs }: SidebarMenuActionProps): JSX.Element {
+export function SidebarMenuAction({
+  showOnHover,
+  children,
+  class: cls,
+  ...attrs
+}: SidebarMenuActionProps): JSX.Element {
   return (
     <button
       type="button"
@@ -697,7 +788,11 @@ export function SidebarMenuAction({ showOnHover, children, class: cls, ...attrs 
   );
 }
 
-export function SidebarMenuBadge({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
+export function SidebarMenuBadge({
+  children,
+  class: cls,
+  ...attrs
+}: SidebarPartProps): JSX.Element {
   return (
     <div
       data-sidebar="menu-badge"
@@ -714,7 +809,11 @@ export function SidebarMenuBadge({ children, class: cls, ...attrs }: SidebarPart
   );
 }
 
-export function SidebarMenuSkeleton({ showIcon, class: cls, ...attrs }: SidebarMenuSkeletonProps): JSX.Element {
+export function SidebarMenuSkeleton({
+  showIcon,
+  class: cls,
+  ...attrs
+}: SidebarMenuSkeletonProps): JSX.Element {
   // Random width between 50 to 90%, fixed per call.
   const width = `${Math.floor(Math.random() * 40) + 50}%`;
 
@@ -769,7 +868,11 @@ export function SidebarMenuSub({ children, class: cls, ...attrs }: SidebarPartPr
   );
 }
 
-export function SidebarMenuSubItem({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
+export function SidebarMenuSubItem({
+  children,
+  class: cls,
+  ...attrs
+}: SidebarPartProps): JSX.Element {
   return (
     <li
       data-sidebar="menu-sub-item"
@@ -786,7 +889,13 @@ export function SidebarMenuSubItem({ children, class: cls, ...attrs }: SidebarPa
   );
 }
 
-export function SidebarMenuSubButton({ size: sizeProp, active, class: cls, children, ...attrs }: SidebarMenuSubButtonProps): JSX.Element {
+export function SidebarMenuSubButton({
+  size: sizeProp,
+  active,
+  class: cls,
+  children,
+  ...attrs
+}: SidebarMenuSubButtonProps): JSX.Element {
   const size = sizeProp ?? "md";
 
   return (

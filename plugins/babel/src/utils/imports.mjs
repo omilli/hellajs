@@ -10,9 +10,7 @@
  * @param {string} name Local binding name the emitted code requires.
  */
 function hasNamedImport(t, specifiers, name) {
-  return specifiers.some(
-    spec => t.isImportSpecifier(spec) && spec.local.name === name
-  );
+  return specifiers.some((spec) => t.isImportSpecifier(spec) && spec.local.name === name);
 }
 
 /**
@@ -36,9 +34,7 @@ function ensureNamedImport(t, program, source, name) {
     if (t.isImportDeclaration(node) && node.source.value === source) {
       if (hasNamedImport(t, node.specifiers, name)) return;
 
-      node.specifiers.push(
-        t.importSpecifier(t.identifier(name), t.identifier(name))
-      );
+      node.specifiers.push(t.importSpecifier(t.identifier(name), t.identifier(name)));
       return;
     }
     i++;
@@ -47,8 +43,8 @@ function ensureNamedImport(t, program, source, name) {
   program.node.body.unshift(
     t.importDeclaration(
       [t.importSpecifier(t.identifier(name), t.identifier(name))],
-      t.stringLiteral(source)
-    )
+      t.stringLiteral(source),
+    ),
   );
 }
 

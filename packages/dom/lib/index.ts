@@ -37,7 +37,7 @@ export type * from "./types/behaviors";
 declare global {
   namespace JSX {
     type Element = HellaNode & RenderFn;
-    interface IntrinsicElements extends HTMLAttributeMap { }
+    interface IntrinsicElements extends HTMLAttributeMap {}
     interface ElementAttributesProperty {
       props: {};
     }

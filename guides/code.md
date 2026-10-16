@@ -100,6 +100,10 @@ Performance beats DRY when extracting a helper adds hot-path overhead. Correctne
 
 ## Code Rules
 
+### Formatting
+
+Oxfmt (the `vp fmt` defaults — Prettier-compatible) is the style authority for all code: quotes, line width, wrapping, and blank-line layout are formatter-owned and enforced by `vp fmt --check` (part of `vp run lint` via `vp check`). This guide carries no hand-style rules in those areas; semantic conventions (naming, structure, JSDoc, reactivity shapes) remain here and below. One deliberate divergence from blanket defaults: md/mdx are fmt-ignored because the docs guards (doc-structure, em-dash, doc-snippets) police them structurally.
+
 ### Functions & Modules
 
 - Export functions in place — never define then export separately
@@ -124,7 +128,6 @@ import { value } from "./internal/module";
 ```
 
 - All `import` statements precede every other top-level statement (side-effect imports included)
-- Double quotes for all imports and string literals; semicolons always — enforced by `@stylistic/quotes` in `eslint.config.mjs` (`packages/dom/**`, `plugins/**`)
 - Separate `import type` for all type-only imports — never inline `type` in a value import
 - Import only what each file uses
 - No external runtime dependencies. Exceptions: type-only imports from `.d.ts`-only packages declared as an intentional `dependency` (types erase at compile time, zero bundle weight — `import type * as CSS from "csstype"` in `packages/css/lib/types.d.ts` is canonical); a package whose published artifact is a CLI may declare a real runtime dependency its `lib/` imports (`@hellajs/ui`'s `esbuild` for add-time type-stripping — the CLI needs it at user runtime, so it cannot be a devDep; the bundle externals rule keeps the JS API external in `dist`)
@@ -146,7 +149,7 @@ import { value } from "./internal/module";
 - JSDoc on every overload signature. When the implementation signature is the exported function itself (single `export function` body after the overloads), no separate implementation JSDoc — the overloads carry the public documentation; a separate non-exported implementation gets `@internal`
 - `Object.hasOwn(obj, key)` for own-property checks — never `in` (prototype chain) or `.hasOwnProperty` (shadowable)
 - A named type is the source of truth for its shape: reference it by name at every signature, never re-inline — inlined duplicates drift
-- **Type visibility is enforced by file location, not annotation.** `export type * from "./types"` promotes every type in the file to the public API with no per-type opt-out. Public types live in the `lib/types/*.d.ts` files the barrel reaches via `export type *`; internal types are co-located with the code that owns them — exported `@internal` if a sibling module needs them, unexported if local. There is no catch-all `lib/internal/types.ts`: a type lives next to the implementation that introduces it (owning module exports it `@internal`; others import from there). `@internal` on a type *inside* a wholesale-re-exported `.d.ts` is contradictory and decorative — TypeScript strips `@internal` only when emitting `.d.ts` from `.ts`, and these hand-written declarations are the source of truth, so the annotated type ships public regardless: move the type to its owning internal module instead. `scripts/type-visibility.ts` (`bun visibility`) mechanically flags the violation
+- **Type visibility is enforced by file location, not annotation.** `export type * from "./types"` promotes every type in the file to the public API with no per-type opt-out. Public types live in the `lib/types/*.d.ts` files the barrel reaches via `export type *`; internal types are co-located with the code that owns them — exported `@internal` if a sibling module needs them, unexported if local. There is no catch-all `lib/internal/types.ts`: a type lives next to the implementation that introduces it (owning module exports it `@internal`; others import from there). `@internal` on a type *inside* a wholesale-re-exported `.d.ts` is contradictory and decorative — TypeScript strips `@internal` only when emitting `.d.ts` from `.ts`, and these hand-written declarations are the source of truth, so the annotated type ships public regardless: move the type to its owning internal module instead. `scripts/type-visibility.ts` (`vp run visibility`) mechanically flags the violation
 
 ### Loops
 
@@ -174,7 +177,7 @@ while (i < len) {
 
 `Object.entries()` over `Object.keys()` only when both key and value are needed — the `[key, value]` destructure replaces the indexed lookup.
 
-Enforcement: eslint `no-restricted-syntax` bans `ForOfStatement` (non-`await`) and `ForInStatement` in `packages/*/lib`; `isNull`/`isFalsy` conversions are prose-enforced (audited via the checklist).
+Enforcement: the `hella/no-iterator-loops` JS-plugin rule (`lint/hellajs.js`, registered in the `vite.config.ts` lint block) bans `ForOfStatement` (non-`await`) and `ForInStatement` in `packages/*/lib`; `isNull`/`isFalsy` conversions are prose-enforced (audited via the checklist).
 
 ### Memory
 
@@ -225,7 +228,7 @@ Exemptions (architecturally forced):
 - **build-time plugins** (`plugins/**`) and `scripts/` — no `@hellajs/core` dep; typeof discriminates AST nodes / build metrics
 - **core's own `lib/internal/utils.ts` + `env.ts`** — they are the guards/probes
 
-Enforcement: eslint `no-restricted-syntax` bans the typeof forms in `packages/*/lib`; `isNull`/`isFalsy` conversions are prose-enforced (audited via the checklist).
+Enforcement: the `hella/no-raw-typeof-compare` JS-plugin rule (`lint/hellajs.js`, registered in the `vite.config.ts` lint block) bans the typeof forms in `packages/*/lib`; `isNull`/`isFalsy` conversions are prose-enforced (audited via the checklist).
 
 ### Error Handling
 
@@ -363,7 +366,7 @@ Run this when holding a Code file (`.ts`/`.tsx`/`.mjs` under `lib/`, `scripts/`,
 **Imports**
 - [ ] All imports precede every other top-level statement
 - [ ] `import type` separated; never inline
-- [ ] Double quotes; semicolons always
+- [ ] `vp fmt --check` clean (oxfmt is the style authority — §Formatting)
 - [ ] No external runtime dependency (type-only from `.d.ts`-only packages excepted)
 
 **Templates**
@@ -390,7 +393,7 @@ Run this when holding a Code file (`.ts`/`.tsx`/`.mjs` under `lib/`, `scripts/`,
 - [ ] No parameter added just to pass it through unchanged
 
 **Loops & memory**
-- [ ] Cached `while` loops; no `for…of`/`for…in` anywhere (`.forEach` cold paths only; `for await…of` for async iterables) (eslint-enforced)
+- [ ] Cached `while` loops; no `for…of`/`for…in` anywhere (`.forEach` cold paths only; `for await…of` for async iterables) (enforced by `hella/no-iterator-loops`)
 - [ ] No collection reallocation where `.clear()` or swap works
 - [ ] No bare `l` for cached length (`len` / `<prefix>Len`)
 
@@ -400,12 +403,12 @@ Run this when holding a Code file (`.ts`/`.tsx`/`.mjs` under `lib/`, `scripts/`,
 - [ ] No broad `catch {}` swallowing unknown errors
 
 **Toolchain**
-- [ ] `bun coverage <package>` exits 0
-- [ ] `bun lint` exits 0
+- [ ] `vp run coverage <package>` exits 0
+- [ ] `vp run lint` exits 0
 
 ## Config Verification Checklist
 
-Run this when holding a Config file (`tsconfig*.json`, `eslint.config.*`, `package.json`, `bunfig.toml`, `.npmrc`, `.nvmrc`, `*.config.{ts,mjs,js}`, `plugins/**/{babel,rollup,vite}/` files). Config answers to different rules than the code beside it.
+Run this when holding a Config file (`tsconfig*.json`, `package.json`, `vite.config.ts`, `lint/*.js`, `.npmrc`, `.nvmrc`, `*.config.{ts,mjs,js}`, `plugins/**/{babel,rollup,vite}/` files). Config answers to different rules than the code beside it.
 
 **TypeScript configs**
 - [ ] `strict: true` or stronger; nothing weakened
@@ -413,10 +416,10 @@ Run this when holding a Config file (`tsconfig*.json`, `eslint.config.*`, `packa
 - [ ] `include` covers everything lint should see; `exclude` drops `dist/` + `node_modules/`
 - [ ] No `any`-enabling flags
 
-**ESLint config**
+**Lint config** (`vite.config.ts` `lint` block + `lint/*.js` JS plugins)
 - [ ] No rule contradicts this guide
-- [ ] `@stylistic/quotes` enforces double quotes
-- [ ] Plugin refs resolve (no orphaned plugins)
+- [ ] Custom JS-plugin rules (`lint/hellajs.js`) scope to their guide sections (`packages/*/lib` minus the `core/lib/internal` + `ssr/lib` exemptions; test globs for the tests rule) and quote their guide messages verbatim (`§Loops`, `§ Type guards`, `guides/tests.md §Anti-Patterns`)
+- [ ] `ignorePatterns` covers `dist/`, `coverage/`, `docs/`, `plans/`, and agent dirs; rule/override refs resolve (no orphaned plugin or rule ids)
 
 **package.json**
 - [ ] Every `scripts` entry referenced by a workflow or another script exists and does what callers expect
@@ -429,6 +432,6 @@ Run this when holding a Config file (`tsconfig*.json`, `eslint.config.*`, `packa
 - [ ] Wrapper thinness: rollup/vite forward to the babel plugin, never re-implement
 
 **Toolchain**
-- [ ] `bun coverage` exits 0 for every touched package
-- [ ] `bun lint` exits 0
-- [ ] `bun bundle <package>` succeeds if build tooling changed
+- [ ] `vp run coverage` exits 0 for every touched package
+- [ ] `vp run lint` exits 0
+- [ ] `vp run bundle <package>` succeeds if build tooling changed

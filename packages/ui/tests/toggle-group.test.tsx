@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components import the bare
@@ -12,7 +12,11 @@ import {
   toggleGroupPartVariants,
   toggleGroupVariants,
 } from "./helpers/variants";
-import type { ComponentVariant, ToggleGroupEntryVariant, ToggleGroupVariantProps } from "./helpers/variants";
+import type {
+  ComponentVariant,
+  ToggleGroupEntryVariant,
+  ToggleGroupVariantProps,
+} from "./helpers/variants";
 
 beforeEach(() => {
   resetTestState();
@@ -31,13 +35,18 @@ interface MountedToggleGroup {
 }
 
 /** Mounts a toggle-group variant into a fresh container and resolves its root and item buttons. */
-function mountToggleGroup(variant: ComponentVariant<ToggleGroupVariantProps>, props: ToggleGroupVariantProps): MountedToggleGroup {
+function mountToggleGroup(
+  variant: ComponentVariant<ToggleGroupVariantProps>,
+  props: ToggleGroupVariantProps,
+): MountedToggleGroup {
   const container = setupContainer();
   const rendered = variant.render(props);
   // A reactive fn root cannot pass through mount's resolve-once unwrap — wrap it like the harness does.
   mount(typeof rendered === "function" ? <div>{rendered as never}</div> : rendered, container);
   const root = container.firstElementChild as HTMLElement;
-  const renderedItems = Array.from(root.querySelectorAll("[data-slot='toggle-group-item']")) as HTMLElement[];
+  const renderedItems = Array.from(
+    root.querySelectorAll("[data-slot='toggle-group-item']"),
+  ) as HTMLElement[];
   return { container, root, items: renderedItems };
 }
 
@@ -56,197 +65,338 @@ function press(item: HTMLElement, key: string): void {
 }
 
 describe("toggle-group", () => {
-  test.each(toggleGroupVariants)("$style renders the group with every item as a pressed-off button", async (variant) => {
-    const { root, items: rendered } = mountToggleGroup(variant, { items, type: "single" });
-    await awaitWiring(root);
-    expect(root.getAttribute("role")).toBe("group");
-    expect(root.getAttribute("data-slot")).toBe("toggle-group");
-    expect(root.getAttribute("data-variant")).toBe("default");
-    expect(root.getAttribute("data-size")).toBe("default");
-    expect(root.getAttribute("data-spacing")).toBe("0");
-    expect(rendered).toHaveLength(3);
-    expect(rendered.map((item) => item.getAttribute("aria-pressed"))).toEqual(["false", "false", "false"]);
-    expect(rendered.map((item) => item.getAttribute("data-state"))).toEqual(["off", "off", "off"]);
-    expect(rendered[0]!.textContent).toContain("Bold");
-  });
+  test.each(toggleGroupVariants)(
+    "$style renders the group with every item as a pressed-off button",
+    async (variant) => {
+      const { root, items: rendered } = mountToggleGroup(variant, { items, type: "single" });
+      await awaitWiring(root);
+      expect(root.getAttribute("role")).toBe("group");
+      expect(root.getAttribute("data-slot")).toBe("toggle-group");
+      expect(root.getAttribute("data-variant")).toBe("default");
+      expect(root.getAttribute("data-size")).toBe("default");
+      expect(root.getAttribute("data-spacing")).toBe("0");
+      expect(rendered).toHaveLength(3);
+      expect(rendered.map((item) => item.getAttribute("aria-pressed"))).toEqual([
+        "false",
+        "false",
+        "false",
+      ]);
+      expect(rendered.map((item) => item.getAttribute("data-state"))).toEqual([
+        "off",
+        "off",
+        "off",
+      ]);
+      expect(rendered[0]!.textContent).toContain("Bold");
+    },
+  );
 
-  test.each(toggleGroupVariants)("$style seeds uncontrolled single selection from the pressed item and deselects on re-click", async (variant) => {
-    const onValueChange = mock((value: string | string[]) => value);
-    const seeded: ToggleGroupVariantProps["items"] = [items[0]!, { ...items[1]!, pressed: true }, items[2]!];
-    const { items: rendered } = mountToggleGroup(variant, { items: seeded, type: "single", onValueChange });
-    await awaitWiring(rendered[0]!.closest("[role='group']") as HTMLElement);
-    expect(rendered.map((item) => item.getAttribute("data-state"))).toEqual(["off", "on", "off"]);
-    rendered[2]!.dispatchEvent(new Event("click"));
-    expect(onValueChange).toHaveBeenCalledTimes(1);
-    expect(onValueChange.mock.calls[0]).toEqual(["underline"]);
-    expect(rendered.map((item) => item.getAttribute("data-state"))).toEqual(["off", "off", "on"]);
-    // Single mode unsets the active item on re-click, reporting "".
-    rendered[2]!.dispatchEvent(new Event("click"));
-    expect(onValueChange).toHaveBeenCalledTimes(2);
-    expect(onValueChange.mock.calls[1]).toEqual([""]);
-    expect(rendered.map((item) => item.getAttribute("data-state"))).toEqual(["off", "off", "off"]);
-  });
+  test.each(toggleGroupVariants)(
+    "$style seeds uncontrolled single selection from the pressed item and deselects on re-click",
+    async (variant) => {
+      const onValueChange = vi.fn((value: string | string[]) => value);
+      const seeded: ToggleGroupVariantProps["items"] = [
+        items[0]!,
+        { ...items[1]!, pressed: true },
+        items[2]!,
+      ];
+      const { items: rendered } = mountToggleGroup(variant, {
+        items: seeded,
+        type: "single",
+        onValueChange,
+      });
+      await awaitWiring(rendered[0]!.closest("[role='group']") as HTMLElement);
+      expect(rendered.map((item) => item.getAttribute("data-state"))).toEqual(["off", "on", "off"]);
+      rendered[2]!.dispatchEvent(new Event("click"));
+      expect(onValueChange).toHaveBeenCalledTimes(1);
+      expect(onValueChange.mock.calls[0]).toEqual(["underline"]);
+      expect(rendered.map((item) => item.getAttribute("data-state"))).toEqual(["off", "off", "on"]);
+      // Single mode unsets the active item on re-click, reporting "".
+      rendered[2]!.dispatchEvent(new Event("click"));
+      expect(onValueChange).toHaveBeenCalledTimes(2);
+      expect(onValueChange.mock.calls[1]).toEqual([""]);
+      expect(rendered.map((item) => item.getAttribute("data-state"))).toEqual([
+        "off",
+        "off",
+        "off",
+      ]);
+    },
+  );
 
-  test.each(toggleGroupVariants)("$style toggles multiple membership and reports the full array payload", async (variant) => {
-    const onValueChange = mock((value: string | string[]) => value);
-    const { items: rendered } = mountToggleGroup(variant, { items, type: "multiple", onValueChange });
-    await awaitWiring(rendered[0]!.closest("[role='group']") as HTMLElement);
-    rendered[0]!.dispatchEvent(new Event("click"));
-    rendered[2]!.dispatchEvent(new Event("click"));
-    expect(onValueChange).toHaveBeenCalledTimes(2);
-    expect(onValueChange.mock.calls[0]).toEqual([["bold"]]);
-    expect(onValueChange.mock.calls[1]).toEqual([["bold", "underline"]]);
-    expect(rendered.map((item) => item.getAttribute("aria-pressed"))).toEqual(["true", "false", "true"]);
-    rendered[0]!.dispatchEvent(new Event("click"));
-    expect(onValueChange.mock.calls[2]).toEqual([["underline"]]);
-  });
+  test.each(toggleGroupVariants)(
+    "$style toggles multiple membership and reports the full array payload",
+    async (variant) => {
+      const onValueChange = vi.fn((value: string | string[]) => value);
+      const { items: rendered } = mountToggleGroup(variant, {
+        items,
+        type: "multiple",
+        onValueChange,
+      });
+      await awaitWiring(rendered[0]!.closest("[role='group']") as HTMLElement);
+      rendered[0]!.dispatchEvent(new Event("click"));
+      rendered[2]!.dispatchEvent(new Event("click"));
+      expect(onValueChange).toHaveBeenCalledTimes(2);
+      expect(onValueChange.mock.calls[0]).toEqual([["bold"]]);
+      expect(onValueChange.mock.calls[1]).toEqual([["bold", "underline"]]);
+      expect(rendered.map((item) => item.getAttribute("aria-pressed"))).toEqual([
+        "true",
+        "false",
+        "true",
+      ]);
+      rendered[0]!.dispatchEvent(new Event("click"));
+      expect(onValueChange.mock.calls[2]).toEqual([["underline"]]);
+    },
+  );
 
-  test.each(toggleGroupVariants)("$style drives selection from controlled accessors without writing them", async (variant) => {
-    const value = signal("bold");
-    const values = signal(["bold", "italic"]);
-    const onValueChange = mock((v: string | string[]) => v);
-    const single = mountToggleGroup(variant, { items, type: "single", value: () => value(), onValueChange });
-    const multiple = mountToggleGroup(variant, { items, type: "multiple", values: () => values(), onValueChange });
-    await awaitWiring(single.root);
-    expect(single.items[0]!.getAttribute("data-state")).toBe("on");
-    value("underline");
-    flush();
-    expect(single.items.map((item) => item.getAttribute("data-state"))).toEqual(["off", "off", "on"]);
-    single.items[0]!.dispatchEvent(new Event("click"));
-    expect(onValueChange).toHaveBeenCalledTimes(1);
-    expect(onValueChange.mock.calls[0]).toEqual(["bold"]);
-    expect(single.items[0]!.getAttribute("data-state")).toBe("off");
-    await awaitWiring(multiple.root);
-    multiple.items[2]!.dispatchEvent(new Event("click"));
-    expect(onValueChange).toHaveBeenCalledTimes(2);
-    expect(onValueChange.mock.calls[1]).toEqual([["bold", "italic", "underline"]]);
-    expect(values()).toEqual(["bold", "italic"]);
-  });
+  test.each(toggleGroupVariants)(
+    "$style drives selection from controlled accessors without writing them",
+    async (variant) => {
+      const value = signal("bold");
+      const values = signal(["bold", "italic"]);
+      const onValueChange = vi.fn((v: string | string[]) => v);
+      const single = mountToggleGroup(variant, {
+        items,
+        type: "single",
+        value: () => value(),
+        onValueChange,
+      });
+      const multiple = mountToggleGroup(variant, {
+        items,
+        type: "multiple",
+        values: () => values(),
+        onValueChange,
+      });
+      await awaitWiring(single.root);
+      expect(single.items[0]!.getAttribute("data-state")).toBe("on");
+      value("underline");
+      flush();
+      expect(single.items.map((item) => item.getAttribute("data-state"))).toEqual([
+        "off",
+        "off",
+        "on",
+      ]);
+      single.items[0]!.dispatchEvent(new Event("click"));
+      expect(onValueChange).toHaveBeenCalledTimes(1);
+      expect(onValueChange.mock.calls[0]).toEqual(["bold"]);
+      expect(single.items[0]!.getAttribute("data-state")).toBe("off");
+      await awaitWiring(multiple.root);
+      multiple.items[2]!.dispatchEvent(new Event("click"));
+      expect(onValueChange).toHaveBeenCalledTimes(2);
+      expect(onValueChange.mock.calls[1]).toEqual([["bold", "italic", "underline"]]);
+      expect(values()).toEqual(["bold", "italic"]);
+    },
+  );
 
-  test.each(toggleGroupVariants)("$style moves focus with the arrows and roves tabindex without changing selection", async (variant) => {
-    const onValueChange = mock((value: string | string[]) => value);
-    const { items: rendered } = mountToggleGroup(variant, { items, type: "single", onValueChange });
-    await awaitWiring(rendered[0]!.closest("[role='group']") as HTMLElement);
-    rendered[0]!.focus();
-    press(rendered[0]!, "ArrowRight");
-    expect(document.activeElement).toBe(rendered[1]!);
-    expect(rendered.map((item) => item.tabIndex)).toEqual([-1, 0, -1]);
-    // Arrows only move focus; selection stays untouched.
-    expect(onValueChange).not.toHaveBeenCalled();
-    expect(rendered.map((item) => item.getAttribute("data-state"))).toEqual(["off", "off", "off"]);
-    press(rendered[1]!, "ArrowRight");
-    expect(document.activeElement).toBe(rendered[2]!);
-    press(rendered[2]!, "ArrowLeft");
-    expect(document.activeElement).toBe(rendered[1]!);
-    rendered[0]!.focus();
-    press(rendered[0]!, "ArrowUp");
-    expect(document.activeElement).toBe(rendered[2]!);
-  });
+  test.each(toggleGroupVariants)(
+    "$style moves focus with the arrows and roves tabindex without changing selection",
+    async (variant) => {
+      const onValueChange = vi.fn((value: string | string[]) => value);
+      const { items: rendered } = mountToggleGroup(variant, {
+        items,
+        type: "single",
+        onValueChange,
+      });
+      await awaitWiring(rendered[0]!.closest("[role='group']") as HTMLElement);
+      rendered[0]!.focus();
+      press(rendered[0]!, "ArrowRight");
+      expect(document.activeElement).toBe(rendered[1]!);
+      expect(rendered.map((item) => item.tabIndex)).toEqual([-1, 0, -1]);
+      // Arrows only move focus; selection stays untouched.
+      expect(onValueChange).not.toHaveBeenCalled();
+      expect(rendered.map((item) => item.getAttribute("data-state"))).toEqual([
+        "off",
+        "off",
+        "off",
+      ]);
+      press(rendered[1]!, "ArrowRight");
+      expect(document.activeElement).toBe(rendered[2]!);
+      press(rendered[2]!, "ArrowLeft");
+      expect(document.activeElement).toBe(rendered[1]!);
+      rendered[0]!.focus();
+      press(rendered[0]!, "ArrowUp");
+      expect(document.activeElement).toBe(rendered[2]!);
+    },
+  );
 
-  test.each(toggleGroupVariants)("$style skips disabled items in the arrow walk and blocks their clicks", async (variant) => {
-    const onValueChange = mock((value: string | string[]) => value);
-    const disabledItems: ToggleGroupVariantProps["items"] = [items[0]!, { ...items[1]!, disabled: true }, items[2]!];
-    const { items: rendered } = mountToggleGroup(variant, { items: disabledItems, type: "single", onValueChange });
-    await awaitWiring(rendered[0]!.closest("[role='group']") as HTMLElement);
-    expect(rendered[1]!.hasAttribute("disabled")).toBe(true);
-    rendered[0]!.focus();
-    press(rendered[0]!, "ArrowRight");
-    expect(document.activeElement).toBe(rendered[2]!);
-    rendered[1]!.dispatchEvent(new Event("click"));
-    expect(onValueChange).not.toHaveBeenCalled();
-    expect(rendered[1]!.getAttribute("data-state")).toBe("off");
-  });
+  test.each(toggleGroupVariants)(
+    "$style skips disabled items in the arrow walk and blocks their clicks",
+    async (variant) => {
+      const onValueChange = vi.fn((value: string | string[]) => value);
+      const disabledItems: ToggleGroupVariantProps["items"] = [
+        items[0]!,
+        { ...items[1]!, disabled: true },
+        items[2]!,
+      ];
+      const { items: rendered } = mountToggleGroup(variant, {
+        items: disabledItems,
+        type: "single",
+        onValueChange,
+      });
+      await awaitWiring(rendered[0]!.closest("[role='group']") as HTMLElement);
+      expect(rendered[1]!.hasAttribute("disabled")).toBe(true);
+      rendered[0]!.focus();
+      press(rendered[0]!, "ArrowRight");
+      expect(document.activeElement).toBe(rendered[2]!);
+      rendered[1]!.dispatchEvent(new Event("click"));
+      expect(onValueChange).not.toHaveBeenCalled();
+      expect(rendered[1]!.getAttribute("data-state")).toBe("off");
+    },
+  );
 
-  test.each(toggleGroupVariants)("$style threads variant and size onto the root and every item", async (variant) => {
-    const { root, items: rendered } = mountToggleGroup(variant, { items, type: "single", variant: "outline", size: "sm" });
-    await awaitWiring(root);
-    expect(root.getAttribute("data-variant")).toBe("outline");
-    expect(root.getAttribute("data-size")).toBe("sm");
-    for (const item of rendered) {
-      expect(item.getAttribute("data-variant")).toBe("outline");
-      expect(item.getAttribute("data-size")).toBe("sm");
-    }
-    if (variant.style === "tailwind") {
-      expect(classTokens(rendered[0]!)).toContain("data-[spacing=0]:rounded-none");
-    }
-  });
+  test.each(toggleGroupVariants)(
+    "$style threads variant and size onto the root and every item",
+    async (variant) => {
+      const { root, items: rendered } = mountToggleGroup(variant, {
+        items,
+        type: "single",
+        variant: "outline",
+        size: "sm",
+      });
+      await awaitWiring(root);
+      expect(root.getAttribute("data-variant")).toBe("outline");
+      expect(root.getAttribute("data-size")).toBe("sm");
+      for (const item of rendered) {
+        expect(item.getAttribute("data-variant")).toBe("outline");
+        expect(item.getAttribute("data-size")).toBe("sm");
+      }
+      if (variant.style === "tailwind") {
+        expect(classTokens(rendered[0]!)).toContain("data-[spacing=0]:rounded-none");
+      }
+    },
+  );
 
-  test.each(toggleGroupVariants)("$style disposes the roving wiring when the root unmounts", async (variant) => {
-    const onValueChange = mock((value: string | string[]) => value);
-    const { root, items: rendered } = mountToggleGroup(variant, { items, type: "single", onValueChange });
-    await awaitWiring(root);
-    rendered[0]!.focus();
-    // Removing the root from its observed mount container runs the destroy hooks.
-    root.remove();
-    for (let i = 0; i < 50; i++) {
-      if (!peekState(root)) break;
-      await delay();
-    }
-    expect(peekState(root)).toBeUndefined();
-    rendered[0]!.focus();
-    const before = document.activeElement;
-    press(rendered[0]!, "ArrowRight");
-    expect(document.activeElement).toBe(before);
-    rendered[1]!.dispatchEvent(new Event("click"));
-    expect(onValueChange).not.toHaveBeenCalled();
-  });
+  test.each(toggleGroupVariants)(
+    "$style disposes the roving wiring when the root unmounts",
+    async (variant) => {
+      const onValueChange = vi.fn((value: string | string[]) => value);
+      const { root, items: rendered } = mountToggleGroup(variant, {
+        items,
+        type: "single",
+        onValueChange,
+      });
+      await awaitWiring(root);
+      rendered[0]!.focus();
+      // Removing the root from its observed mount container runs the destroy hooks.
+      root.remove();
+      for (let i = 0; i < 50; i++) {
+        if (!peekState(root)) break;
+        await delay();
+      }
+      expect(peekState(root)).toBeUndefined();
+      rendered[0]!.focus();
+      const before = document.activeElement;
+      press(rendered[0]!, "ArrowRight");
+      expect(document.activeElement).toBe(before);
+      rendered[1]!.dispatchEvent(new Event("click"));
+      expect(onValueChange).not.toHaveBeenCalled();
+    },
+  );
 
   test("forwards user attrs onto the root across both styles", () => {
-    assertAttrForwarded(toggleGroupVariants, { items, type: "single", title: "Hella" }, "title", "Hella");
+    assertAttrForwarded(
+      toggleGroupVariants,
+      { items, type: "single", title: "Hella" },
+      "title",
+      "Hella",
+    );
   });
 
   test("fires a user on:click handler on the root across both styles", () => {
-    const onClick = mock(() => {});
-    assertHandlerForwarded(toggleGroupVariants, { items, type: "single", "on:click": onClick }, "on:click", "click", onClick);
+    const onClick = vi.fn(() => {});
+    assertHandlerForwarded(
+      toggleGroupVariants,
+      { items, type: "single", "on:click": onClick },
+      "on:click",
+      "click",
+      onClick,
+    );
   });
 
-  test.each(toggleGroupVariants)("$style merges props.class into the class attribute", (variant) => {
-    const { root } = mountToggleGroup(variant, { items, type: "single", class: "my-toggle-group" });
-    expect(classTokens(root).at(-1)).toBe("my-toggle-group");
-  });
+  test.each(toggleGroupVariants)(
+    "$style merges props.class into the class attribute",
+    (variant) => {
+      const { root } = mountToggleGroup(variant, {
+        items,
+        type: "single",
+        class: "my-toggle-group",
+      });
+      expect(classTokens(root).at(-1)).toBe("my-toggle-group");
+    },
+  );
 
-  test.each(toggleGroupVariants)("$style re-renders a signal items list across append, remove, and reorder", (variant) => {
-    const liveItems = signal<ToggleGroupEntryVariant[]>([...items]);
-    const { root } = mountToggleGroup(variant, { items: liveItems, type: "multiple" });
-    const values = () => Array.from(root.querySelectorAll("[data-slot='toggle-group-item']")).map((el) => el.getAttribute("value"));
-    expect(values()).toEqual(["bold", "italic", "underline"]);
-    liveItems([...liveItems(), { value: "strikethrough", label: "Strikethrough" }]);
-    expect(values()).toEqual(["bold", "italic", "underline", "strikethrough"]);
-    liveItems(liveItems().filter((entry) => entry.value !== "italic"));
-    expect(values()).toEqual(["bold", "underline", "strikethrough"]);
-    liveItems([liveItems()[2]!, liveItems()[0]!, liveItems()[1]!]);
-    expect(values()).toEqual(["strikethrough", "bold", "underline"]);
-  });
+  test.each(toggleGroupVariants)(
+    "$style re-renders a signal items list across append, remove, and reorder",
+    (variant) => {
+      const liveItems = signal<ToggleGroupEntryVariant[]>([...items]);
+      const { root } = mountToggleGroup(variant, { items: liveItems, type: "multiple" });
+      const values = () =>
+        Array.from(root.querySelectorAll("[data-slot='toggle-group-item']")).map((el) =>
+          el.getAttribute("value"),
+        );
+      expect(values()).toEqual(["bold", "italic", "underline"]);
+      liveItems([...liveItems(), { value: "strikethrough", label: "Strikethrough" }]);
+      expect(values()).toEqual(["bold", "italic", "underline", "strikethrough"]);
+      liveItems(liveItems().filter((entry) => entry.value !== "italic"));
+      expect(values()).toEqual(["bold", "underline", "strikethrough"]);
+      liveItems([liveItems()[2]!, liveItems()[0]!, liveItems()[1]!]);
+      expect(values()).toEqual(["strikethrough", "bold", "underline"]);
+    },
+  );
 
-  test.each(toggleGroupVariants)("$style reuses the pressed item's node through a reorder when keyBy is value", async (variant) => {
-    const liveItems = signal<ToggleGroupEntryVariant[]>([...items]);
-    const { root } = mountToggleGroup(variant, { items: liveItems, type: "multiple", keyBy: "value" });
-    await awaitWiring(root);
-    const itemEls = () => Array.from(root.querySelectorAll("[data-slot='toggle-group-item']")) as HTMLElement[];
-    itemEls()[1]!.dispatchEvent(new Event("click"));
-    const italicBefore = itemEls().find((el) => el.getAttribute("value") === "italic")!;
-    expect(italicBefore.getAttribute("data-state")).toBe("on");
-    liveItems([liveItems()[2]!, liveItems()[0]!, liveItems()[1]!]);
-    expect(itemEls().map((el) => el.getAttribute("value"))).toEqual(["underline", "bold", "italic"]);
-    const italicAfter = itemEls().find((el) => el.getAttribute("value") === "italic")!;
-    expect(italicAfter).toBe(italicBefore);
-    expect(italicAfter.getAttribute("aria-pressed")).toBe("true");
-  });
+  test.each(toggleGroupVariants)(
+    "$style reuses the pressed item's node through a reorder when keyBy is value",
+    async (variant) => {
+      const liveItems = signal<ToggleGroupEntryVariant[]>([...items]);
+      const { root } = mountToggleGroup(variant, {
+        items: liveItems,
+        type: "multiple",
+        keyBy: "value",
+      });
+      await awaitWiring(root);
+      const itemEls = () =>
+        Array.from(root.querySelectorAll("[data-slot='toggle-group-item']")) as HTMLElement[];
+      itemEls()[1]!.dispatchEvent(new Event("click"));
+      const italicBefore = itemEls().find((el) => el.getAttribute("value") === "italic")!;
+      expect(italicBefore.getAttribute("data-state")).toBe("on");
+      liveItems([liveItems()[2]!, liveItems()[0]!, liveItems()[1]!]);
+      expect(itemEls().map((el) => el.getAttribute("value"))).toEqual([
+        "underline",
+        "bold",
+        "italic",
+      ]);
+      const italicAfter = itemEls().find((el) => el.getAttribute("value") === "italic")!;
+      expect(italicAfter).toBe(italicBefore);
+      expect(italicAfter.getAttribute("aria-pressed")).toBe("true");
+    },
+  );
 
-  test.each(toggleGroupVariants)("$style keeps the reconciliation key out of the markup when keyBy is value", (variant) => {
-    const { root } = mountToggleGroup(variant, { items, type: "single", keyBy: "value" });
-    expect(root.outerHTML).not.toContain("key=");
-  });
+  test.each(toggleGroupVariants)(
+    "$style keeps the reconciliation key out of the markup when keyBy is value",
+    (variant) => {
+      const { root } = mountToggleGroup(variant, { items, type: "single", keyBy: "value" });
+      expect(root.outerHTML).not.toContain("key=");
+    },
+  );
 
   test("keeps structural parity across both styles", () => {
     assertStructuralParity(toggleGroupVariants, { items, type: "single" });
-    assertStructuralParity(toggleGroupVariants, { items, type: "multiple", variant: "outline", size: "lg" });
+    assertStructuralParity(toggleGroupVariants, {
+      items,
+      type: "multiple",
+      variant: "outline",
+      size: "lg",
+    });
   });
 
   test("renders the manual item part with its joined-segment classes and pressed state across both styles", () => {
     for (const variant of toggleGroupPartVariants) {
       const container = setupContainer();
-      const rendered = variant.render({ value: "bold", pressed: () => true, variant: "outline", size: "sm", children: "Bold" });
+      const rendered = variant.render({
+        value: "bold",
+        pressed: () => true,
+        variant: "outline",
+        size: "sm",
+        children: "Bold",
+      });
       mount(typeof rendered === "function" ? <div>{rendered as never}</div> : rendered, container);
       const el = container.firstElementChild as HTMLElement;
       expect(el.getAttribute("data-slot")).toBe("toggle-group-item");
@@ -266,11 +416,18 @@ describe("toggle-group", () => {
   });
 
   test("chains a user on:click on the item part with its owned select across both styles", () => {
-    const userClick = mock(function (this: HTMLElement, e: Event) { void e; });
-    const onSelect = mock(() => {});
+    const userClick = vi.fn(function (this: HTMLElement, e: Event) {
+      void e;
+    });
+    const onSelect = vi.fn(() => {});
     for (const variant of toggleGroupPartVariants) {
       const container = setupContainer();
-      const rendered = variant.render({ value: "bold", onSelect, "on:click": userClick, children: "Bold" });
+      const rendered = variant.render({
+        value: "bold",
+        onSelect,
+        "on:click": userClick,
+        children: "Bold",
+      });
       mount(typeof rendered === "function" ? <div>{rendered as never}</div> : rendered, container);
       const el = container.firstElementChild as HTMLElement;
       userClick.mockClear();

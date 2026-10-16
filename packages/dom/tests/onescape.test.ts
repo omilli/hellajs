@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { resetTestState } from "@utils/test-helpers.js";
 import { onEscape } from "@hellajs/dom";
 import { setupButtons, pressKey } from "./helpers";
@@ -9,7 +9,7 @@ describe("onEscape", () => {
   });
 
   test("fires the handler only on Escape keydown at the target", () => {
-    const handler = mock(() => {});
+    const handler = vi.fn(() => {});
     const { container } = setupButtons(["one"]);
     const dismiss = onEscape(container, handler);
 
@@ -27,7 +27,7 @@ describe("onEscape", () => {
   });
 
   test("stops firing after dispose and validates inputs", () => {
-    const handler = mock(() => {});
+    const handler = vi.fn(() => {});
     const { container } = setupButtons(["one"]);
     const dismiss = onEscape(container, handler);
     dismiss();

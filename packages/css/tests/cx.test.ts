@@ -1,5 +1,5 @@
-import { describe, test, expect } from "bun:test";
-import { cx } from "@hellajs/css/bundle";
+import { describe, test, expect } from "vite-plus/test";
+import { cx } from "@hellajs/css";
 
 describe("cx", () => {
   test("joins strings and stringifies numbers", () => {

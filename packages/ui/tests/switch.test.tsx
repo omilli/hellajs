@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState, setupContainer } from "@utils/test-helpers.js";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components import the bare
@@ -29,32 +29,38 @@ function mountSwitch(variant: ComponentVariant<SwitchVariantProps>, props: Switc
 }
 
 describe("switch", () => {
-  test.each(switchVariants)("$style renders unchecked by default and toggles on click", (variant) => {
-    const { root, thumb } = mountSwitch(variant, {});
-    expect(root.getAttribute("role")).toBe("switch");
-    expect(root.getAttribute("aria-checked")).toBe("false");
-    expect(root.getAttribute("data-state")).toBe("unchecked");
-    expect(thumb.getAttribute("data-state")).toBe("unchecked");
-    root.dispatchEvent(new Event("click"));
-    expect(root.getAttribute("aria-checked")).toBe("true");
-    expect(root.getAttribute("data-state")).toBe("checked");
-    expect(thumb.getAttribute("data-state")).toBe("checked");
-    root.dispatchEvent(new Event("click"));
-    expect(root.getAttribute("aria-checked")).toBe("false");
-  });
+  test.each(switchVariants)(
+    "$style renders unchecked by default and toggles on click",
+    (variant) => {
+      const { root, thumb } = mountSwitch(variant, {});
+      expect(root.getAttribute("role")).toBe("switch");
+      expect(root.getAttribute("aria-checked")).toBe("false");
+      expect(root.getAttribute("data-state")).toBe("unchecked");
+      expect(thumb.getAttribute("data-state")).toBe("unchecked");
+      root.dispatchEvent(new Event("click"));
+      expect(root.getAttribute("aria-checked")).toBe("true");
+      expect(root.getAttribute("data-state")).toBe("checked");
+      expect(thumb.getAttribute("data-state")).toBe("checked");
+      root.dispatchEvent(new Event("click"));
+      expect(root.getAttribute("aria-checked")).toBe("false");
+    },
+  );
 
-  test.each(switchVariants)("$style is a native button, so the platform Space activation drives toggle()", (variant) => {
-    // Native button activation (Space/Enter) synthesizes a click in browsers; the
-    // test asserts the mechanism — the toggle rides click, so keyboard activation works.
-    const { root } = mountSwitch(variant, {});
-    expect(root.tagName).toBe("BUTTON");
-    expect(root.getAttribute("type")).toBe("button");
-    root.dispatchEvent(new Event("click"));
-    expect(root.getAttribute("aria-checked")).toBe("true");
-  });
+  test.each(switchVariants)(
+    "$style is a native button, so the platform Space activation drives toggle()",
+    (variant) => {
+      // Native button activation (Space/Enter) synthesizes a click in browsers; the
+      // test asserts the mechanism — the toggle rides click, so keyboard activation works.
+      const { root } = mountSwitch(variant, {});
+      expect(root.tagName).toBe("BUTTON");
+      expect(root.getAttribute("type")).toBe("button");
+      root.dispatchEvent(new Event("click"));
+      expect(root.getAttribute("aria-checked")).toBe("true");
+    },
+  );
 
   test.each(switchVariants)("$style reports each flip through onCheckedChange", (variant) => {
-    const onCheckedChange = mock((checked: boolean) => checked);
+    const onCheckedChange = vi.fn((checked: boolean) => checked);
     const { root } = mountSwitch(variant, { onCheckedChange });
     root.dispatchEvent(new Event("click"));
     root.dispatchEvent(new Event("click"));
@@ -63,22 +69,25 @@ describe("switch", () => {
     expect(onCheckedChange.mock.calls[1]).toEqual([false]);
   });
 
-  test.each(switchVariants)("$style drives state from a controlled checked() signal and keeps clicks from writing it", (variant) => {
-    const checked = signal(true);
-    const onCheckedChange = mock((checked: boolean) => checked);
-    const { root } = mountSwitch(variant, { checked: () => checked(), onCheckedChange });
-    expect(root.getAttribute("aria-checked")).toBe("true");
-    checked(false);
-    flush();
-    expect(root.getAttribute("aria-checked")).toBe("false");
-    root.dispatchEvent(new Event("click"));
-    expect(onCheckedChange).toHaveBeenCalledTimes(1);
-    expect(onCheckedChange.mock.calls[0]).toEqual([true]);
-    expect(root.getAttribute("aria-checked")).toBe("false");
-  });
+  test.each(switchVariants)(
+    "$style drives state from a controlled checked() signal and keeps clicks from writing it",
+    (variant) => {
+      const checked = signal(true);
+      const onCheckedChange = vi.fn((checked: boolean) => checked);
+      const { root } = mountSwitch(variant, { checked: () => checked(), onCheckedChange });
+      expect(root.getAttribute("aria-checked")).toBe("true");
+      checked(false);
+      flush();
+      expect(root.getAttribute("aria-checked")).toBe("false");
+      root.dispatchEvent(new Event("click"));
+      expect(onCheckedChange).toHaveBeenCalledTimes(1);
+      expect(onCheckedChange.mock.calls[0]).toEqual([true]);
+      expect(root.getAttribute("aria-checked")).toBe("false");
+    },
+  );
 
   test.each(switchVariants)("$style blocks clicks while disabled", (variant) => {
-    const onCheckedChange = mock((checked: boolean) => checked);
+    const onCheckedChange = vi.fn((checked: boolean) => checked);
     const { root } = mountSwitch(variant, { disabled: true, onCheckedChange });
     expect(root.hasAttribute("disabled")).toBe(true);
     root.dispatchEvent(new Event("click"));
@@ -86,18 +95,23 @@ describe("switch", () => {
     expect(onCheckedChange).not.toHaveBeenCalled();
   });
 
-  test.each(switchVariants)("$style carries the state classes for the thumb translation on both styles", (variant) => {
-    const { root, thumb } = mountSwitch(variant, { checked: true });
-    if (variant.style === "tailwind") {
-      expect(classTokens(thumb)).toContain("data-[state=checked]:translate-x-[calc(100%-2px)]");
-      expect(classTokens(root)).toContain("data-[size=default]:h-[1.15rem]");
-    } else {
-      expect(classTokens(thumb).some((token) => token.startsWith("switch-thumb"))).toBe(true);
-    }
-  });
+  test.each(switchVariants)(
+    "$style carries the state classes for the thumb translation on both styles",
+    (variant) => {
+      const { root, thumb } = mountSwitch(variant, { checked: true });
+      if (variant.style === "tailwind") {
+        expect(classTokens(thumb)).toContain("data-[state=checked]:translate-x-[calc(100%-2px)]");
+        expect(classTokens(root)).toContain("data-[size=default]:h-[1.15rem]");
+      } else {
+        expect(classTokens(thumb).some((token) => token.startsWith("switch-thumb"))).toBe(true);
+      }
+    },
+  );
 
   test.each(switchVariants)("$style chains a user on:click with the owned toggle", (variant) => {
-    const userClick = mock(function (this: HTMLElement, e: Event) { void e; });
+    const userClick = vi.fn(function (this: HTMLElement, e: Event) {
+      void e;
+    });
     const { root } = mountSwitch(variant, { "on:click": userClick });
     root.dispatchEvent(new Event("click"));
     expect(userClick).toHaveBeenCalledTimes(1);
@@ -110,7 +124,7 @@ describe("switch", () => {
   });
 
   test("fires a forwarded on:click handler across both styles", () => {
-    const onClick = mock(() => {});
+    const onClick = vi.fn(() => {});
     assertHandlerForwarded(switchVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 

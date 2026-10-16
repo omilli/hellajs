@@ -1,7 +1,7 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, vi } from "vite-plus/test";
 import { flush } from "@hellajs/core";
 import { suppressConsole } from "@utils/test-helpers.js";
-import { router, navigate, route } from "@hellajs/router/bundle";
+import { router, navigate, route } from "@hellajs/router";
 import { setupRouterEnv, expectLoggedError } from "./helpers";
 
 describe("router", () => {
@@ -25,9 +25,12 @@ describe("router", () => {
       router({
         routes: {
           "/a": () => render("a"),
-          "/b": () => render("b")
+          "/b": () => render("b"),
         },
-        redirects: [{ from: ["/a"], to: "/b" }, { from: ["/b"], to: "/a" }]
+        redirects: [
+          { from: ["/a"], to: "/b" },
+          { from: ["/b"], to: "/a" },
+        ],
       });
 
       navigate("/safe");
@@ -41,9 +44,9 @@ describe("router", () => {
     test("cancels a self-redirect instead of overflowing the stack", () => {
       router({
         routes: {
-          "/a": () => render("a")
+          "/a": () => render("a"),
         },
-        redirects: [{ from: ["/a"], to: "/a" }]
+        redirects: [{ from: ["/a"], to: "/a" }],
       });
 
       navigate("/safe");
@@ -57,13 +60,13 @@ describe("router", () => {
     test("resolves a multi-hop redirect chain under the cap", () => {
       router({
         routes: {
-          "/final": () => render("final")
+          "/final": () => render("final"),
         },
         redirects: [
           { from: ["/old"], to: "/legacy" },
           { from: ["/legacy"], to: "/v1" },
-          { from: ["/v1"], to: "/final" }
-        ]
+          { from: ["/v1"], to: "/final" },
+        ],
       });
 
       navigate("/old");
@@ -76,10 +79,13 @@ describe("router", () => {
       const info = router({
         routes: {
           "/a": () => {},
-          "/b": () => {}
+          "/b": () => {},
         },
-        redirects: [{ from: ["/a"], to: "/b" }, { from: ["/b"], to: "/a" }],
-        url: "/a"
+        redirects: [
+          { from: ["/a"], to: "/b" },
+          { from: ["/b"], to: "/a" },
+        ],
+        url: "/a",
       });
 
       expect(info.path).toBe("/a");
@@ -89,8 +95,8 @@ describe("router", () => {
       router({
         routes: {
           "/old": "/new",
-          "/new": () => render("redirected")
-        }
+          "/new": () => render("redirected"),
+        },
       });
 
       navigate("/old");
@@ -101,9 +107,9 @@ describe("router", () => {
     test("redirects using global config", () => {
       router({
         routes: {
-          "/dashboard": () => render("dashboard")
+          "/dashboard": () => render("dashboard"),
         },
-        redirects: [{ from: ["/login"], to: "/dashboard" }]
+        redirects: [{ from: ["/login"], to: "/dashboard" }],
       });
 
       navigate("/login");
@@ -120,9 +126,9 @@ describe("router", () => {
     test("captures params from a pattern source and substitutes them into the target", () => {
       router({
         routes: {
-          "/users/:id": () => render("user")
+          "/users/:id": () => render("user"),
         },
-        redirects: [{ from: ["/user/:id"], to: "/users/:id" }]
+        redirects: [{ from: ["/user/:id"], to: "/users/:id" }],
       });
 
       navigate("/user/7");
@@ -135,9 +141,9 @@ describe("router", () => {
     test("captures a wildcard source into the target wildcard", () => {
       router({
         routes: {
-          "/archive/*": () => render("archive")
+          "/archive/*": () => render("archive"),
         },
-        redirects: [{ from: ["/docs/*"], to: "/archive/*" }]
+        redirects: [{ from: ["/docs/*"], to: "/archive/*" }],
       });
 
       navigate("/docs/guide/setup");
@@ -150,12 +156,12 @@ describe("router", () => {
       router({
         routes: {
           "/v1": () => render("v1"),
-          "/v2": () => render("v2")
+          "/v2": () => render("v2"),
         },
         redirects: [
           { from: ["/legacy"], to: "/v1" },
-          { from: ["/legacy"], to: "/v2" }
-        ]
+          { from: ["/legacy"], to: "/v2" },
+        ],
       });
 
       navigate("/legacy");
@@ -167,9 +173,9 @@ describe("router", () => {
     test("strips target tokens with no captured value", () => {
       router({
         routes: {
-          "/new": () => render("new")
+          "/new": () => render("new"),
         },
-        redirects: [{ from: ["/old"], to: "/new/:id" }]
+        redirects: [{ from: ["/old"], to: "/new/:id" }],
       });
 
       navigate("/old");
@@ -179,12 +185,12 @@ describe("router", () => {
     });
 
     test("handles not found routes", () => {
-      const notFound = mock(() => render("404"));
+      const notFound = vi.fn(() => render("404"));
       router({
         routes: {
-          "/": () => render("home")
+          "/": () => render("home"),
         },
-        notFound
+        notFound,
       });
 
       // Synchronous init may fire notFound for the unmatched initial path; isolate the navigate.
@@ -198,9 +204,9 @@ describe("router", () => {
       router({
         routes: {
           "/": () => render("home"),
-          "/404": () => render("not-found-page")
+          "/404": () => render("not-found-page"),
         },
-        notFound: "/404"
+        notFound: "/404",
       });
 
       navigate("/missing");
@@ -209,19 +215,19 @@ describe("router", () => {
     });
 
     test("hooks-only parent with no matching child falls through to notFound", () => {
-      const notFound = mock(() => render("404"));
+      const notFound = vi.fn(() => render("404"));
 
       router({
         routes: {
           "/admin": {
-            before: () => { },
-            after: () => { },
+            before: () => {},
+            after: () => {},
             children: {
-              "/users": () => render("users")
-            }
-          }
+              "/users": () => render("users"),
+            },
+          },
         },
-        notFound
+        notFound,
       });
 
       // Synchronous init may fire notFound for the unmatched initial path; isolate the navigate.

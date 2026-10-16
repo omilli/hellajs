@@ -40,10 +40,7 @@ export function createVersion(): { read: Signal<number>; bump: () => void } {
  * @returns The normalized hooks.
  * @throws {Error} When `equals`, `wrap`, or `merge` is present and not a function.
  */
-export function createHooks<T>(
-  name: string,
-  options?: CollectionOptions<T>
-): CollectionHooks<T> {
+export function createHooks<T>(name: string, options?: CollectionOptions<T>): CollectionHooks<T> {
   const ce = options?.equals;
   const wrap = options?.wrap;
   const merge = options?.merge;

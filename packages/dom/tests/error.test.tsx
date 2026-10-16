@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { signal } from "@hellajs/core";
 import { resetTestState, setupContainer, suppressConsole } from "@utils/test-helpers.js";
 import { mount, onError } from "@hellajs/dom";
@@ -15,16 +15,30 @@ describe("dom", () => {
       fallbackHandler(<span>Default</span>);
 
       const container = setupContainer();
-      mount(<div error:fallback={((e: Error) => <span>Custom: {e.message}</span>)}>{() => { throw new Error("oops"); }}</div>, container);
+      mount(
+        <div error:fallback={(e: Error) => <span>Custom: {e.message}</span>}>
+          {() => {
+            throw new Error("oops");
+          }}
+        </div>,
+        container,
+      );
 
       expect(container.textContent).toBe("Custom: oops");
     });
 
     test("falls back to handler default when no element config", () => {
-      onError((error: Error) => <span>Default: {error.message}</span> as HellaNode);
+      onError((error: Error) => (<span>Default: {error.message}</span>) as HellaNode);
 
       const container = setupContainer();
-      mount(<div>{() => { throw new Error("oops"); }}</div>, container);
+      mount(
+        <div>
+          {() => {
+            throw new Error("oops");
+          }}
+        </div>,
+        container,
+      );
 
       expect(container.textContent).toBe("Default: oops");
     });
@@ -36,7 +50,9 @@ describe("dom", () => {
         return null;
       });
 
-      const Thrower = () => { throw new Error("render"); };
+      const Thrower = () => {
+        throw new Error("render");
+      };
       mount(<Thrower />);
 
       expect(receivedConfig).toBeUndefined();
@@ -46,7 +62,16 @@ describe("dom", () => {
       fallbackHandler(<span>Parent</span>);
 
       const container = setupContainer();
-      mount(<div error:fallback={(() => <span>Parent</span>)} error:category="outer"><div error:fallback={(() => <span>Child</span>)}>{() => { throw new Error("oops"); }}</div></div>, container);
+      mount(
+        <div error:fallback={() => <span>Parent</span>} error:category="outer">
+          <div error:fallback={() => <span>Child</span>}>
+            {() => {
+              throw new Error("oops");
+            }}
+          </div>
+        </div>,
+        container,
+      );
 
       expect(container.textContent).toBe("Child");
     });
@@ -59,7 +84,18 @@ describe("dom", () => {
       });
 
       const container = setupContainer();
-      mount(<div error:category="sidebar"><button on:click={() => { throw new Error("click"); }}>Click</button></div>, container);
+      mount(
+        <div error:category="sidebar">
+          <button
+            on:click={() => {
+              throw new Error("click");
+            }}
+          >
+            Click
+          </button>
+        </div>,
+        container,
+      );
 
       container.querySelector("button")?.click();
       expect(receivedCategory).toBe("sidebar");
@@ -69,7 +105,14 @@ describe("dom", () => {
       fallbackHandler();
 
       const container = setupContainer();
-      mount(<div error:fallback={(() => <span>Caught</span>)}>{() => { throw new Error("shallow"); }}</div>, container);
+      mount(
+        <div error:fallback={() => <span>Caught</span>}>
+          {() => {
+            throw new Error("shallow");
+          }}
+        </div>,
+        container,
+      );
       expect(container.textContent).toBe("Caught");
     });
 
@@ -77,7 +120,18 @@ describe("dom", () => {
       fallbackHandler();
 
       const container = setupContainer();
-      mount(<div error:fallback={(() => <span>Caught</span>)}><div><span>{() => { throw new Error("deep"); }}</span></div></div>, container);
+      mount(
+        <div error:fallback={() => <span>Caught</span>}>
+          <div>
+            <span>
+              {() => {
+                throw new Error("deep");
+              }}
+            </span>
+          </div>
+        </div>,
+        container,
+      );
       expect(container.textContent).toBe("Caught");
     });
 
@@ -85,14 +139,25 @@ describe("dom", () => {
       fallbackHandler();
 
       const container = setupContainer();
-      mount(<div error:fallback={(() => <span>Event error</span>)}><button on:click={() => { throw new Error("Click error"); }}>Click</button></div>, container);
+      mount(
+        <div error:fallback={() => <span>Event error</span>}>
+          <button
+            on:click={() => {
+              throw new Error("Click error");
+            }}
+          >
+            Click
+          </button>
+        </div>,
+        container,
+      );
 
       container.querySelector("button")!.click();
       expect(container.textContent).toBe("Event error");
     });
 
     test("nearest element config wins", () => {
-      const outerCalled = mock(() => { });
+      const outerCalled = vi.fn(() => {});
       onError((_, context) => {
         if (context.config?.category === "inner") return <span>Inner</span>;
         outerCalled();
@@ -100,7 +165,16 @@ describe("dom", () => {
       });
 
       const container = setupContainer();
-      mount(<div error:category="outer" error:fallback={(() => <span>Outer</span>)}><div error:category="inner" error:fallback={(() => <span>Inner</span>)}>{() => { throw new Error("Nested"); }}</div></div>, container);
+      mount(
+        <div error:category="outer" error:fallback={() => <span>Outer</span>}>
+          <div error:category="inner" error:fallback={() => <span>Inner</span>}>
+            {() => {
+              throw new Error("Nested");
+            }}
+          </div>
+        </div>,
+        container,
+      );
 
       expect(outerCalled).not.toHaveBeenCalled();
       expect(container.textContent).toBe("Inner");
@@ -109,14 +183,21 @@ describe("dom", () => {
     test("handler returning null logs error without UI change", () => {
       const suppressed = suppressConsole();
       try {
-        const called = mock(() => { });
+        const called = vi.fn(() => {});
         onError(() => {
           called();
           return null;
         });
 
         const container = setupContainer();
-        mount(<div id="content">{() => { throw new Error("Logged"); }}</div>, container);
+        mount(
+          <div id="content">
+            {() => {
+              throw new Error("Logged");
+            }}
+          </div>,
+          container,
+        );
 
         expect(called).toHaveBeenCalledTimes(1);
       } finally {
@@ -131,7 +212,13 @@ describe("dom", () => {
         return null;
       });
 
-      const node = <div error:fallback={((e: Error) => <span>{e.message}</span>)}>{() => { throw new Error("tpl"); }}</div>;
+      const node = (
+        <div error:fallback={(e: Error) => <span>{e.message}</span>}>
+          {() => {
+            throw new Error("tpl");
+          }}
+        </div>
+      );
 
       expect(node.error?.fallback).toBeDefined();
       mount(node);
@@ -141,7 +228,7 @@ describe("dom", () => {
     test("prevents infinite loop during mount error", () => {
       const suppressed = suppressConsole();
       try {
-        const calls = mock(() => { });
+        const calls = vi.fn(() => {});
 
         onError((error: Error, context: ErrorContext) => {
           calls();
@@ -149,7 +236,18 @@ describe("dom", () => {
         });
 
         const container = setupContainer();
-        mount(<div error:fallback={() => { throw new Error("fb"); }}>{() => { throw new Error("orig"); }}</div>, container);
+        mount(
+          <div
+            error:fallback={() => {
+              throw new Error("fb");
+            }}
+          >
+            {() => {
+              throw new Error("orig");
+            }}
+          </div>,
+          container,
+        );
 
         expect(calls).toHaveBeenCalledTimes(1);
       } finally {
@@ -160,7 +258,7 @@ describe("dom", () => {
     test("prevents infinite loop during event error", () => {
       const suppressed = suppressConsole();
       try {
-        const calls = mock(() => { });
+        const calls = vi.fn(() => {});
 
         onError((error: Error, context: ErrorContext) => {
           calls();
@@ -168,7 +266,22 @@ describe("dom", () => {
         });
 
         const container = setupContainer();
-        mount(<div error:fallback={() => { throw new Error("fb"); }}><button on:click={() => { throw new Error("orig"); }}>X</button></div>, container);
+        mount(
+          <div
+            error:fallback={() => {
+              throw new Error("fb");
+            }}
+          >
+            <button
+              on:click={() => {
+                throw new Error("orig");
+              }}
+            >
+              X
+            </button>
+          </div>,
+          container,
+        );
 
         const btn = container.querySelector("button");
         if (btn) btn.click();
@@ -182,7 +295,7 @@ describe("dom", () => {
     test("prevents infinite loop during update error", () => {
       const suppressed = suppressConsole();
       try {
-        const calls = mock(() => { });
+        const calls = vi.fn(() => {});
         const s = signal(false);
 
         onError((error: Error, context: ErrorContext) => {
@@ -191,7 +304,19 @@ describe("dom", () => {
         });
 
         const container = setupContainer();
-        const app = mount(<div error:fallback={() => { throw new Error("fb"); }}>{() => { if (s()) throw new Error("orig"); return "ok"; }}</div>, container);
+        const app = mount(
+          <div
+            error:fallback={() => {
+              throw new Error("fb");
+            }}
+          >
+            {() => {
+              if (s()) throw new Error("orig");
+              return "ok";
+            }}
+          </div>,
+          container,
+        );
 
         s(true);
         app.flush();
@@ -219,21 +344,35 @@ describe("dom", () => {
       });
 
       const container = setupContainer();
-      mount(<div>{() => { throw new Error("test"); }}</div>, container);
+      mount(
+        <div>
+          {() => {
+            throw new Error("test");
+          }}
+        </div>,
+        container,
+      );
 
       expect(order).toEqual(["first", "second"]);
       expect(container.textContent).toBe("Second");
     });
 
     test("remove function unregisters handler", () => {
-      const firstCalled = mock(() => <span>First</span> as HellaNode);
+      const firstCalled = vi.fn(() => (<span>First</span>) as HellaNode);
       const remove = onError(firstCalled);
 
       remove();
-      onError(() => <span>Second</span> as HellaNode);
+      onError(() => (<span>Second</span>) as HellaNode);
 
       const container = setupContainer();
-      mount(<div>{() => { throw new Error("test"); }}</div>, container);
+      mount(
+        <div>
+          {() => {
+            throw new Error("test");
+          }}
+        </div>,
+        container,
+      );
 
       expect(firstCalled).not.toHaveBeenCalled();
       expect(container.textContent).toBe("Second");
@@ -242,12 +381,19 @@ describe("dom", () => {
     test("onError(null) clears all handlers", () => {
       const suppressed = suppressConsole();
       try {
-        onError(() => <span>H1</span> as HellaNode);
-        onError(() => <span>H2</span> as HellaNode);
+        onError(() => (<span>H1</span>) as HellaNode);
+        onError(() => (<span>H2</span>) as HellaNode);
         onError(null);
 
         const container = setupContainer();
-        mount(<div>{() => { throw new Error("test"); }}</div>, container);
+        mount(
+          <div>
+            {() => {
+              throw new Error("test");
+            }}
+          </div>,
+          container,
+        );
 
         expect(suppressed.errors.length).toBeGreaterThan(0);
         expect(suppressed.errors[0]![0]).toContain("[dom]");
@@ -257,10 +403,19 @@ describe("dom", () => {
     });
 
     test("without boundary, fallback replaces error element content", () => {
-      onError(() => <span>Global</span> as HellaNode);
+      onError(() => (<span>Global</span>) as HellaNode);
 
       const container = setupContainer();
-      mount(<div id="parent"><div id="child">{() => { throw new Error("no boundary"); }}</div></div>, container);
+      mount(
+        <div id="parent">
+          <div id="child">
+            {() => {
+              throw new Error("no boundary");
+            }}
+          </div>
+        </div>,
+        container,
+      );
 
       expect(container.querySelector("#child")?.textContent).toBe("Global");
       expect(container.querySelector("#parent")).not.toBeNull();
@@ -269,11 +424,24 @@ describe("dom", () => {
     test("bind error replaces element content when no boundary", () => {
       const suppressed = suppressConsole();
       try {
-        onError((error: Error) => <span>E: {error.message}</span> as HellaNode);
+        onError((error: Error) => (<span>E: {error.message}</span>) as HellaNode);
 
         const shouldThrow = signal(false);
         const container = setupContainer();
-        const app = mount(<div id="parent"><span id="child" test={() => { if (shouldThrow()) throw new Error("bind"); return "ok"; }}>Content</span></div>, container);
+        const app = mount(
+          <div id="parent">
+            <span
+              id="child"
+              test={() => {
+                if (shouldThrow()) throw new Error("bind");
+                return "ok";
+              }}
+            >
+              Content
+            </span>
+          </div>,
+          container,
+        );
 
         expect(container.querySelector("#child")?.textContent).toBe("Content");
 
@@ -293,10 +461,17 @@ describe("dom", () => {
         tracked.push(error);
         return null;
       });
-      onError((error: Error) => <span>Error: {error.message}</span> as HellaNode);
+      onError((error: Error) => (<span>Error: {error.message}</span>) as HellaNode);
 
       const container = setupContainer();
-      mount(<div>{() => { throw new Error("tracked"); }}</div>, container);
+      mount(
+        <div>
+          {() => {
+            throw new Error("tracked");
+          }}
+        </div>,
+        container,
+      );
 
       expect(tracked.length).toBe(1);
       expect(tracked[0]!.message).toBe("tracked");

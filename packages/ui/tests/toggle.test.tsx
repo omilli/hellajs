@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState, setupContainer } from "@utils/test-helpers.js";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components import the bare
@@ -46,7 +46,7 @@ describe("toggle", () => {
   });
 
   test.each(toggleVariants)("$style reports each flip through onPressedChange", (variant) => {
-    const onPressedChange = mock((pressed: boolean) => pressed);
+    const onPressedChange = vi.fn((pressed: boolean) => pressed);
     const root = mountToggle(variant, { onPressedChange, children: variant.child("Bold") });
     root.dispatchEvent(new Event("click"));
     root.dispatchEvent(new Event("click"));
@@ -55,60 +55,83 @@ describe("toggle", () => {
     expect(onPressedChange.mock.calls[1]).toEqual([false]);
   });
 
-  test.each(toggleVariants)("$style drives state from a controlled pressed() signal and keeps clicks from writing it", (variant) => {
-    const pressed = signal(false);
-    const onPressedChange = mock((pressed: boolean) => pressed);
-    const root = mountToggle(variant, { pressed: () => pressed(), onPressedChange, children: variant.child("Bold") });
-    pressed(true);
-    flush();
-    expect(root.getAttribute("aria-pressed")).toBe("true");
-    expect(root.getAttribute("data-state")).toBe("on");
-    root.dispatchEvent(new Event("click"));
-    expect(onPressedChange).toHaveBeenCalledTimes(1);
-    expect(onPressedChange.mock.calls[0]).toEqual([false]);
-    expect(root.getAttribute("aria-pressed")).toBe("true");
-  });
+  test.each(toggleVariants)(
+    "$style drives state from a controlled pressed() signal and keeps clicks from writing it",
+    (variant) => {
+      const pressed = signal(false);
+      const onPressedChange = vi.fn((pressed: boolean) => pressed);
+      const root = mountToggle(variant, {
+        pressed: () => pressed(),
+        onPressedChange,
+        children: variant.child("Bold"),
+      });
+      pressed(true);
+      flush();
+      expect(root.getAttribute("aria-pressed")).toBe("true");
+      expect(root.getAttribute("data-state")).toBe("on");
+      root.dispatchEvent(new Event("click"));
+      expect(onPressedChange).toHaveBeenCalledTimes(1);
+      expect(onPressedChange.mock.calls[0]).toEqual([false]);
+      expect(root.getAttribute("aria-pressed")).toBe("true");
+    },
+  );
 
-  test.each(toggleVariants)("$style seeds the uncontrolled state from a boolean pressed", (variant) => {
-    const root = mountToggle(variant, { pressed: true, children: variant.child("Bold") });
-    expect(root.getAttribute("aria-pressed")).toBe("true");
-    expect(root.getAttribute("data-state")).toBe("on");
-    root.dispatchEvent(new Event("click"));
-    expect(root.getAttribute("aria-pressed")).toBe("false");
-  });
+  test.each(toggleVariants)(
+    "$style seeds the uncontrolled state from a boolean pressed",
+    (variant) => {
+      const root = mountToggle(variant, { pressed: true, children: variant.child("Bold") });
+      expect(root.getAttribute("aria-pressed")).toBe("true");
+      expect(root.getAttribute("data-state")).toBe("on");
+      root.dispatchEvent(new Event("click"));
+      expect(root.getAttribute("aria-pressed")).toBe("false");
+    },
+  );
 
   test.each(toggleVariants)("$style blocks clicks while disabled", (variant) => {
-    const onPressedChange = mock((pressed: boolean) => pressed);
-    const root = mountToggle(variant, { disabled: true, onPressedChange, children: variant.child("Bold") });
+    const onPressedChange = vi.fn((pressed: boolean) => pressed);
+    const root = mountToggle(variant, {
+      disabled: true,
+      onPressedChange,
+      children: variant.child("Bold"),
+    });
     expect(root.hasAttribute("disabled")).toBe(true);
     root.dispatchEvent(new Event("click"));
     expect(root.getAttribute("aria-pressed")).toBe("false");
     expect(onPressedChange).not.toHaveBeenCalled();
   });
 
-  test.each(toggleVariants)("$style applies the variant and size maps with the outline and lg selections", (variant) => {
-    const outlineLg = mountToggle(variant, { variant: "outline", size: "lg", children: variant.child("Bold") });
-    const tokens = classTokens(outlineLg);
-    if (variant.style === "tailwind") {
-      expect(tokens).toContain("border");
-      expect(tokens).toContain("border-input");
-      expect(tokens).toContain("shadow-xs");
-      expect(tokens).toContain("h-10");
-      expect(tokens).toContain("min-w-10");
-      expect(tokens).toContain("px-2.5");
-    } else {
-      expect(tokens.some((token) => token.startsWith("toggle-outline"))).toBe(true);
-      expect(tokens.some((token) => token.startsWith("toggle-size-lg"))).toBe(true);
-    }
-    // data-state=on styling rides the base class on both styles.
-    outlineLg.dispatchEvent(new Event("click"));
-    if (variant.style === "tailwind") {
-      expect(classTokens(outlineLg)).toContain("data-[state=on]:bg-accent");
-    }
-  });
+  test.each(toggleVariants)(
+    "$style applies the variant and size maps with the outline and lg selections",
+    (variant) => {
+      const outlineLg = mountToggle(variant, {
+        variant: "outline",
+        size: "lg",
+        children: variant.child("Bold"),
+      });
+      const tokens = classTokens(outlineLg);
+      if (variant.style === "tailwind") {
+        expect(tokens).toContain("border");
+        expect(tokens).toContain("border-input");
+        expect(tokens).toContain("shadow-xs");
+        expect(tokens).toContain("h-10");
+        expect(tokens).toContain("min-w-10");
+        expect(tokens).toContain("px-2.5");
+      } else {
+        expect(tokens.some((token) => token.startsWith("toggle-outline"))).toBe(true);
+        expect(tokens.some((token) => token.startsWith("toggle-size-lg"))).toBe(true);
+      }
+      // data-state=on styling rides the base class on both styles.
+      outlineLg.dispatchEvent(new Event("click"));
+      if (variant.style === "tailwind") {
+        expect(classTokens(outlineLg)).toContain("data-[state=on]:bg-accent");
+      }
+    },
+  );
 
   test.each(toggleVariants)("$style chains a user on:click with the owned toggle", (variant) => {
-    const userClick = mock(function (this: HTMLElement, e: Event) { void e; });
+    const userClick = vi.fn(function (this: HTMLElement, e: Event) {
+      void e;
+    });
     const root = mountToggle(variant, { "on:click": userClick, children: variant.child("Bold") });
     root.dispatchEvent(new Event("click"));
     expect(userClick).toHaveBeenCalledTimes(1);
@@ -117,12 +140,23 @@ describe("toggle", () => {
   });
 
   test("forwards user attrs onto the root across both styles", () => {
-    assertAttrForwarded(toggleVariants, { title: "Hella", children: "Forwarded" } as never, "title", "Hella");
+    assertAttrForwarded(
+      toggleVariants,
+      { title: "Hella", children: "Forwarded" } as never,
+      "title",
+      "Hella",
+    );
   });
 
   test("fires a forwarded on:click handler across both styles", () => {
-    const onClick = mock(() => {});
-    assertHandlerForwarded(toggleVariants, { "on:click": onClick, children: "Forwarded" } as never, "on:click", "click", onClick);
+    const onClick = vi.fn(() => {});
+    assertHandlerForwarded(
+      toggleVariants,
+      { "on:click": onClick, children: "Forwarded" } as never,
+      "on:click",
+      "click",
+      onClick,
+    );
   });
 
   test.each(toggleVariants)("$style merges props.class into the class attribute", (variant) => {
@@ -132,6 +166,12 @@ describe("toggle", () => {
 
   test("keeps structural parity across both styles", () => {
     assertStructuralParity(toggleVariants, { children: "Bold" } as never);
-    assertStructuralParity(toggleVariants, { pressed: true, variant: "outline", size: "sm", disabled: true, children: "Bold" } as never);
+    assertStructuralParity(toggleVariants, {
+      pressed: true,
+      variant: "outline",
+      size: "sm",
+      disabled: true,
+      children: "Bold",
+    } as never);
   });
 });

@@ -11,10 +11,13 @@ import type { HellaNode, ComponentReturn } from "./types/nodes";
  * @param props Props to pass to the component function
  * @returns HellaNode with attached scope dispose function, or empty fragment on error
  */
-export function component<P extends Record<string, unknown>>(fn: (props: P) => ComponentReturn, props: P): HellaNode {
+export function component<P extends Record<string, unknown>>(
+  fn: (props: P) => ComponentReturn,
+  props: P,
+): HellaNode {
   let result!: HellaNode;
   try {
-    const dispose = scope(() => result = fn(props) as HellaNode);
+    const dispose = scope(() => (result = fn(props) as HellaNode));
     // A `static` root is shared by reference across invocations of the same template
     // (cloneWithValues returns it as-is) — wrap it so each instance carries its own
     // componentScope instead of mutating the shared node (last call would win).

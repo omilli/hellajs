@@ -1,12 +1,34 @@
-import type { HellaNode, HellaChild, HellaElement, RenderFn, ElementMountFn, DirectListenerSpec } from "../types/nodes";
+import type {
+  HellaNode,
+  HellaChild,
+  HellaElement,
+  RenderFn,
+  ElementMountFn,
+  DirectListenerSpec,
+} from "../types/nodes";
 import { isFunction, isObject, isNull, objectLoop } from "./core";
-import { renderProp, resolveDeep, isHellaNode, chainScopes, wireFragmentScope, routePrefixedProps, toText } from "./utils";
+import {
+  renderProp,
+  resolveDeep,
+  isHellaNode,
+  chainScopes,
+  wireFragmentScope,
+  routePrefixedProps,
+  toText,
+} from "./utils";
 import { setNodeHandler, setDirectHandler } from "./events";
 import { dispatchError, toError } from "./dispatch";
 import { registry } from "../registry";
 import { getState } from "./state";
 import { deferSuspenseRegion, resetDeferredState, setDeferredAdopters } from "./deferred";
-import { mountNode, resolveNode, getBoundaryConfig, clearRenderedNodes, childNamespaceOf, HTML_NS } from "./render";
+import {
+  mountNode,
+  resolveNode,
+  getBoundaryConfig,
+  clearRenderedNodes,
+  childNamespaceOf,
+  HTML_NS,
+} from "./render";
 import { drainAnchorCleanup } from "./cleanup";
 
 /**
@@ -59,7 +81,8 @@ export function resetHydrateState(): void {
 }
 
 /** Region-open Comment node discriminator (parser strips `<!--`/`-->`, leaving nodeValue `[`). The close is read inline by `gatherRegion`. */
-const isMarkOpen = (n: Node | null): boolean => !isNull(n) && n.nodeType === Node.COMMENT_NODE && n.nodeValue === "[";
+const isMarkOpen = (n: Node | null): boolean =>
+  !isNull(n) && n.nodeType === Node.COMMENT_NODE && n.nodeValue === "[";
 
 /**
  * Gathers the nodes between an open marker and its matching close (depth-aware for nested regions).
@@ -80,7 +103,7 @@ function gatherRegion(open: Node): { nodes: Node[]; close: Node } {
     nodes.push(node);
     node = node.nextSibling;
   }
-  return { nodes, close: open };   // no close found — degenerate; treat open as close
+  return { nodes, close: open }; // no close found — degenerate; treat open as close
 }
 
 /**
@@ -88,9 +111,12 @@ function gatherRegion(open: Node): { nodes: Node[]; close: Node } {
  * persistent text anchor where the open marker was. Returns the anchor, the gathered nodes, and the
  * DOM pointer past the region (the node that followed the close marker).
  */
-function consumeRegion(parent: HellaElement, open: Node): { anchor: Node; existing: Node[]; next: Node | null } {
+function consumeRegion(
+  parent: HellaElement,
+  open: Node,
+): { anchor: Node; existing: Node[]; next: Node | null } {
   const { nodes: existing, close } = gatherRegion(open);
-  const next = close.nextSibling;   // capture before removeChild — a detached node's nextSibling is null
+  const next = close.nextSibling; // capture before removeChild — a detached node's nextSibling is null
   const anchor = document.createTextNode("");
   parent.insertBefore(anchor, open);
   parent.removeChild(open);
@@ -131,7 +157,10 @@ export function swapSuspenseStage(existing: Node[], anchor: Node): StageSwapResu
     if (n.nodeType === Node.COMMENT_NODE && n.nodeValue) {
       if (HS_STAGE_REGEX.test(n.nodeValue)) sentinel = n as Comment;
       const staged = document.getElementById(n.nodeValue);
-      if (staged && staged.tagName === "TEMPLATE") { template = staged as HTMLTemplateElement; break; }
+      if (staged && staged.tagName === "TEMPLATE") {
+        template = staged as HTMLTemplateElement;
+        break;
+      }
     }
   }
   if (!template) return { nodes: existing, missing: !isNull(sentinel), sentinel };
@@ -141,13 +170,13 @@ export function swapSuspenseStage(existing: Node[], anchor: Node): StageSwapResu
   const rLen = existing.length;
   while (ri < rLen) {
     const n = existing[ri++]!;
-    if (n.parentNode) n.parentNode.removeChild(n);   // drop fallback + sentinel
+    if (n.parentNode) n.parentNode.removeChild(n); // drop fallback + sentinel
   }
   if (parent) {
     let pi = 0;
     const pLen = swapped.length;
     while (pi < pLen) {
-      parent.insertBefore(swapped[pi++]!, anchor);   // place resolved children
+      parent.insertBefore(swapped[pi++]!, anchor); // place resolved children
     }
   }
   template.remove();
@@ -161,7 +190,13 @@ export function swapSuspenseStage(existing: Node[], anchor: Node): StageSwapResu
  * `internal/deferred.ts`, whose deferred arms adopt arrived/late regions through the registered
  * adopter — the walker coupling (hydrateNode + the ctx stack) lives here.
  */
-export function adoptRegion(parent: HellaElement, child: RenderFn, anchor: Node, existing: Node[], stageMissing = false): void {
+export function adoptRegion(
+  parent: HellaElement,
+  child: RenderFn,
+  anchor: Node,
+  existing: Node[],
+  stageMissing = false,
+): void {
   pushHydrateContext({ anchor, existingNodes: existing, hydrateNode, stageMissing });
   child(parent);
   popHydrateContext();
@@ -178,7 +213,13 @@ setDeferredAdopters(adoptRegion, swapSuspenseStage);
  * component state left on the persistent region anchor (`drainAnchorCleanup` — a no-op for the common
  * text/element case), so a dynamic component's effect and disposers never outlive their run.
  */
-function adoptReactiveRegion(parent: HellaElement, child: HellaChild, anchor: Node, existing: Node[], boundaryElement?: Element): void {
+function adoptReactiveRegion(
+  parent: HellaElement,
+  child: HellaChild,
+  anchor: Node,
+  existing: Node[],
+  boundaryElement?: Element,
+): void {
   const renderedNodes: Node[] = existing;
   let firstRun = existing.length > 0;
   registry.addEffect(parent, () => {
@@ -199,7 +240,10 @@ function adoptReactiveRegion(parent: HellaElement, child: HellaChild, anchor: No
         const dLen = deep.length;
         while (di < dLen) {
           const el: unknown = deep[di++];
-          if (isFunction(el) && !(el as RenderFn).isDynamic) { drills = true; break; }
+          if (isFunction(el) && !(el as RenderFn).isDynamic) {
+            drills = true;
+            break;
+          }
         }
         if (drills) {
           const drilled = deep.slice();
@@ -229,8 +273,10 @@ function adoptReactiveRegion(parent: HellaElement, child: HellaChild, anchor: No
             const vnode = resolved[i] as HellaNode;
             const el = renderedNodes[i];
             if (
-              !isObject(vnode) || (vnode as HellaNode).tag === undefined ||
-              !el || el.nodeType !== Node.ELEMENT_NODE ||
+              !isObject(vnode) ||
+              (vnode as HellaNode).tag === undefined ||
+              !el ||
+              el.nodeType !== Node.ELEMENT_NODE ||
               !tagMatches(el as Element, vnode.tag as string)
             ) {
               pairable = false;
@@ -262,7 +308,7 @@ function adoptReactiveRegion(parent: HellaElement, child: HellaChild, anchor: No
             }
             const val = (target as unknown as Record<string, unknown>)[prop as string];
             return isFunction(val) ? (val as (...args: unknown[]) => unknown).bind(target) : val;
-          }
+          },
         });
         (resolved as RenderFn)(proxyParent as HellaElement);
         return;
@@ -326,11 +372,17 @@ function replaceMismatch(node: HellaNode, existing: Node | null, boundaryElement
  * `props` (the server already applied them via `ssr()`). On tag mismatch, warns
  * and subtree-replaces. Returns the hydrated element, or a fresh subtree on mismatch.
  */
-export function hydrateNode(node: HellaNode, existing: Node | null, boundaryElement?: Element): Node {
+export function hydrateNode(
+  node: HellaNode,
+  existing: Node | null,
+  boundaryElement?: Element,
+): Node {
   if (node.static && existing && existing.nodeType === Node.ELEMENT_NODE) {
     const staticTag = node.tag as string | undefined;
     if (staticTag && !tagMatches(existing as Element, staticTag)) {
-      console.warn(`[dom] hydrate mismatch: expected <${staticTag}>, found <${(existing as Element).tagName.toLowerCase()}>`);
+      console.warn(
+        `[dom] hydrate mismatch: expected <${staticTag}>, found <${(existing as Element).tagName.toLowerCase()}>`,
+      );
       return replaceMismatch(node, existing, boundaryElement);
     }
     // An adopted static element still owns its component's effects — wire the scope
@@ -351,7 +403,9 @@ export function hydrateNode(node: HellaNode, existing: Node | null, boundaryElem
 
   const element = existing as HellaElement;
   if (tag && !tagMatches(element, tag as string)) {
-    console.warn(`[dom] hydrate mismatch: expected <${tag}>, found <${element.tagName.toLowerCase()}>`);
+    console.warn(
+      `[dom] hydrate mismatch: expected <${tag}>, found <${element.tagName.toLowerCase()}>`,
+    );
     return replaceMismatch(node, existing, boundaryElement);
   }
 
@@ -361,7 +415,13 @@ export function hydrateNode(node: HellaNode, existing: Node | null, boundaryElem
   }
   // Prefixed props keys ("on:click" from a component's rest-forwarding) slice
   // into their live buckets before wiring; other props render as attributes.
-  const routed = routePrefixedProps(props as Record<string, unknown>, on as Record<string, unknown>, e as Record<string, unknown>, hooks, error);
+  const routed = routePrefixedProps(
+    props as Record<string, unknown>,
+    on as Record<string, unknown>,
+    e as Record<string, unknown>,
+    hooks,
+    error,
+  );
   if (routed.error) {
     const state = getState(element);
     state.errorConfig = routed.error;
@@ -371,11 +431,16 @@ export function hydrateNode(node: HellaNode, existing: Node | null, boundaryElem
 
   if (routed.hooks) {
     routed.hooks.beforeMount && registry.addHook(element, "beforeMount", routed.hooks.beforeMount);
-    routed.hooks.afterMount && registry.addHook(element, "afterMount", routed.hooks.afterMount as ElementMountFn);
-    routed.hooks.beforeDestroy && registry.addHook(element, "beforeDestroy", routed.hooks.beforeDestroy as ElementMountFn);
-    routed.hooks.afterDestroy && registry.addHook(element, "afterDestroy", routed.hooks.afterDestroy);
-    routed.hooks.beforeUpdate && registry.addHook(element, "beforeUpdate", routed.hooks.beforeUpdate as ElementMountFn);
-    routed.hooks.afterUpdate && registry.addHook(element, "afterUpdate", routed.hooks.afterUpdate as ElementMountFn);
+    routed.hooks.afterMount &&
+      registry.addHook(element, "afterMount", routed.hooks.afterMount as ElementMountFn);
+    routed.hooks.beforeDestroy &&
+      registry.addHook(element, "beforeDestroy", routed.hooks.beforeDestroy as ElementMountFn);
+    routed.hooks.afterDestroy &&
+      registry.addHook(element, "afterDestroy", routed.hooks.afterDestroy);
+    routed.hooks.beforeUpdate &&
+      registry.addHook(element, "beforeUpdate", routed.hooks.beforeUpdate as ElementMountFn);
+    routed.hooks.afterUpdate &&
+      registry.addHook(element, "afterUpdate", routed.hooks.afterUpdate as ElementMountFn);
 
     if (routed.hooks.beforeMount) {
       try {
@@ -405,12 +470,12 @@ export function hydrateNode(node: HellaNode, existing: Node | null, boundaryElem
   });
 
   objectLoop(routed.on, (eventName, handler) =>
-    setNodeHandler(element, eventName, handler as EventListener)
+    setNodeHandler(element, eventName, handler as EventListener),
   );
 
   if (routed.e) {
     objectLoop(routed.e, (eventName, handler) =>
-      setDirectHandler(element, eventName, handler as EventListener | DirectListenerSpec)
+      setDirectHandler(element, eventName, handler as EventListener | DirectListenerSpec),
     );
   }
 
@@ -429,7 +494,12 @@ export function hydrateNode(node: HellaNode, existing: Node | null, boundaryElem
  * @param boundaryElement Nearest error boundary
  * @returns The advanced DOM pointer
  */
-export function hydrateSequence(parent: HellaElement, children: HellaChild[] | undefined, current: Node | null, boundaryElement?: Element): Node | null {
+export function hydrateSequence(
+  parent: HellaElement,
+  children: HellaChild[] | undefined,
+  current: Node | null,
+  boundaryElement?: Element,
+): Node | null {
   if (!children || children.length === 0) return current;
   let i = 0;
   const len = children.length;
@@ -469,18 +539,22 @@ export function hydrateSequence(parent: HellaElement, children: HellaChild[] | u
         if (current && isMarkOpen(current)) {
           const { close } = gatherRegion(current);
           const firstChild = current.nextSibling;
-          const regionPrev = current.previousSibling;   // capture before removing the markers
+          const regionPrev = current.previousSibling; // capture before removing the markers
           parent.removeChild(current);
           if (close !== current) parent.removeChild(close);
           const empty = firstChild === close;
           if (node.componentScope && empty) node.componentScope();
           current = hydrateSequence(parent, node.children, firstChild, boundaryElement);
           if (node.componentScope && !empty) {
-            wireFragmentScope(regionPrev ? regionPrev.nextSibling : parent.firstChild, null, node.componentScope);
+            wireFragmentScope(
+              regionPrev ? regionPrev.nextSibling : parent.firstChild,
+              null,
+              node.componentScope,
+            );
           }
         } else {
           console.warn("[dom] hydrate: expected fragment marker, not found");
-          const preRecursion = current;   // degenerate warn path — the carrier identity is best-effort
+          const preRecursion = current; // degenerate warn path — the carrier identity is best-effort
           current = hydrateSequence(parent, node.children, current, boundaryElement);
           if (node.componentScope) wireFragmentScope(preRecursion, null, node.componentScope);
         }
@@ -510,7 +584,8 @@ export function hydrateSequence(parent: HellaElement, children: HellaChild[] | u
       } else {
         console.warn("[dom] hydrate: expected reactive-region marker, not found");
         const anchor = document.createTextNode("");
-        if (current) parent.insertBefore(anchor, current); else parent.appendChild(anchor);
+        if (current) parent.insertBefore(anchor, current);
+        else parent.appendChild(anchor);
         adoptReactiveRegion(parent, child, anchor, [], boundaryElement);
       }
       i++;
@@ -540,7 +615,8 @@ function hydrateDynamic(parent: HellaElement, child: RenderFn, current: Node | n
   if (!current || !isMarkOpen(current)) {
     console.warn("[dom] hydrate: expected isDynamic-region marker, not found");
     const anchor = document.createTextNode("");
-    if (current) parent.insertBefore(anchor, current); else parent.appendChild(anchor);
+    if (current) parent.insertBefore(anchor, current);
+    else parent.appendChild(anchor);
     adoptRegion(parent, child, anchor, []);
     return current;
   }
@@ -553,10 +629,10 @@ function hydrateDynamic(parent: HellaElement, child: RenderFn, current: Node | n
       adoptRegion(parent, child, anchor, existing);
       break;
     case "portal":
-      adoptRegion(parent, child, anchor, []);   // server rendered nothing in-place
+      adoptRegion(parent, child, anchor, []); // server rendered nothing in-place
       break;
     case "lazy":
-      adoptRegion(parent, child, anchor, existing);   // server content (loaded render, or loading UI from a sync render) stays until Lazy's fresh loader run replaces it — no flash
+      adoptRegion(parent, child, anchor, existing); // server content (loaded render, or loading UI from a sync render) stays until Lazy's fresh loader run replaces it — no flash
       break;
     case "suspense":
       // no-script fallback: staged <template> → resolved children (a browser's inline $hs already swapped on arrival);
@@ -565,7 +641,14 @@ function hydrateDynamic(parent: HellaElement, child: RenderFn, current: Node | n
       // template is present or provably dead, so degrade via stageMissing (re-suspend client-side)
       swappedStage = swapSuspenseStage(existing, anchor);
       if (swappedStage.sentinel && swappedStage.missing && document.readyState === "loading") {
-        deferSuspenseRegion({ parent, child, anchor, next, nodes: existing, sentinel: swappedStage.sentinel });
+        deferSuspenseRegion({
+          parent,
+          child,
+          anchor,
+          next,
+          nodes: existing,
+          sentinel: swappedStage.sentinel,
+        });
         break;
       }
       adoptRegion(parent, child, anchor, swappedStage.nodes, swappedStage.missing);

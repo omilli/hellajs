@@ -14,44 +14,32 @@ import { buildChildrenValue } from "./children.mjs";
  * @returns {import("@babel/core").ObjectExpression}
  */
 export function buildHellaNode(t, tag, props, on, e, hooks, children, error) {
-  const vNodeProperties = [
-    t.objectProperty(t.identifier("tag"), t.stringLiteral(tag))
-  ];
+  const vNodeProperties = [t.objectProperty(t.identifier("tag"), t.stringLiteral(tag))];
 
   if (props && props.length > 0) {
-    vNodeProperties.push(
-      t.objectProperty(t.identifier("props"), t.objectExpression(props))
-    );
+    vNodeProperties.push(t.objectProperty(t.identifier("props"), t.objectExpression(props)));
   }
 
   if (on && on.length > 0) {
-    vNodeProperties.push(
-      t.objectProperty(t.identifier("on"), t.objectExpression(on))
-    );
+    vNodeProperties.push(t.objectProperty(t.identifier("on"), t.objectExpression(on)));
   }
 
   if (e && e.length > 0) {
-    vNodeProperties.push(
-      t.objectProperty(t.identifier("e"), t.objectExpression(e))
-    );
+    vNodeProperties.push(t.objectProperty(t.identifier("e"), t.objectExpression(e)));
   }
 
   if (hooks && hooks.length > 0) {
-    vNodeProperties.push(
-      t.objectProperty(t.identifier("hooks"), t.objectExpression(hooks))
-    );
+    vNodeProperties.push(t.objectProperty(t.identifier("hooks"), t.objectExpression(hooks)));
   }
 
   // Add error property
   if (error && error.length > 0) {
-    vNodeProperties.push(
-      t.objectProperty(t.identifier("error"), t.objectExpression(error))
-    );
+    vNodeProperties.push(t.objectProperty(t.identifier("error"), t.objectExpression(error)));
   }
 
   if (children && children.length > 0) {
     vNodeProperties.push(
-      t.objectProperty(t.identifier("children"), buildChildrenValue(t, children))
+      t.objectProperty(t.identifier("children"), buildChildrenValue(t, children)),
     );
   }
 

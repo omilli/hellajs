@@ -13,13 +13,19 @@ import type { NavigateOptions, Params } from "./types";
  * @param options Navigation options including params, query, replace, scroll, meta, and force.
  * @throws {Error} When path is null, undefined, or not a string.
  */
-export function navigate<T extends string>(
-  path: T,
-  options: NavigateOptions<T> = {}
-): void {
+export function navigate<T extends string>(path: T, options: NavigateOptions<T> = {}): void {
   if (!isString(path)) {
-    throw new Error(`[router] navigate: path must be a string, received ${isNull(path) ? "null" : typeof path}`);
+    throw new Error(
+      `[router] navigate: path must be a string, received ${isNull(path) ? "null" : typeof path}`,
+    );
   }
-  const { params = EMPTY_OBJECT, query = EMPTY_OBJECT, replace = false, scroll, meta, force } = options;
+  const {
+    params = EMPTY_OBJECT,
+    query = EMPTY_OBJECT,
+    replace = false,
+    scroll,
+    meta,
+    force,
+  } = options;
   go(buildPath(path, params as Params, query), { replace, scroll, meta, force });
 }

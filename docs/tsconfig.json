@@ -8,9 +8,6 @@
     "dist"
   ],
   "compilerOptions": {
-    "types": [
-      "bun"
-    ],
     "paths": {
       "@components/*": [
         "./src/components/*"

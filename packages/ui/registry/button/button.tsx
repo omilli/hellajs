@@ -6,7 +6,13 @@ declare const sizes: Record<string, string>;
 declare const variants: Record<string, string>;
 // @hella:end
 
-export function Button({ variant, size, children, class: cls, ...attrs }: ButtonProps): JSX.Element {
+export function Button({
+  variant,
+  size,
+  children,
+  class: cls,
+  ...attrs
+}: ButtonProps): JSX.Element {
   return (
     <button
       data-slot="button"
@@ -14,12 +20,7 @@ export function Button({ variant, size, children, class: cls, ...attrs }: Button
       data-size={size ?? "default"}
       class={
         // @hella:compose
-        [
-          base,
-          variants[variant ?? "default"],
-          sizes[size ?? "default"],
-          cls,
-        ]
+        [base, variants[variant ?? "default"], sizes[size ?? "default"], cls]
         // @hella:end
       }
       {...attrs}

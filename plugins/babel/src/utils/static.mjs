@@ -27,9 +27,7 @@ import { FRAGMENT_TAG } from "../constants.mjs";
  * @returns {boolean}
  */
 function isLiteralValue(t, value) {
-  return t.isStringLiteral(value) ||
-    t.isNumericLiteral(value) ||
-    t.isBooleanLiteral(value);
+  return t.isStringLiteral(value) || t.isNumericLiteral(value) || t.isBooleanLiteral(value);
 }
 
 /**
@@ -83,7 +81,7 @@ export function tryBuildStaticJSX(t, node) {
       children.push(staticChild);
       continue;
     }
-    return null;   // expression / spread child — dynamic
+    return null; // expression / spread child — dynamic
   }
 
   const tag = isElement ? node.openingElement.name.name : FRAGMENT_TAG;

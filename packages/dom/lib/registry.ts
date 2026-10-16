@@ -28,11 +28,18 @@ export const registry = {
       // adopts elements that are ALREADY connected, so without the guard a hooked element hosting
       // an effect (e.g. a tablist carrying its items region) self-marks isMounted during the
       // attach and the flush walk's idempotence gate then never fires its afterMount.
-      if (state.hooks && (state.isMounted || (!isMountInFlight() && (state.isMounted = el.isConnected)))) {
+      if (
+        state.hooks &&
+        (state.isMounted || (!isMountInFlight() && (state.isMounted = el.isConnected)))
+      ) {
         try {
           runHooks(node, "beforeUpdate");
         } catch (err) {
-          dispatchError(toError(err), { phase: "update", element: el, config: resolveErrorConfig(el) });
+          dispatchError(toError(err), {
+            phase: "update",
+            element: el,
+            config: resolveErrorConfig(el),
+          });
         }
       }
       effectFn();
@@ -40,7 +47,11 @@ export const registry = {
         try {
           runHooks(node, "afterUpdate");
         } catch (err) {
-          dispatchError(toError(err), { phase: "update", element: el, config: resolveErrorConfig(el) });
+          dispatchError(toError(err), {
+            phase: "update",
+            element: el,
+            config: resolveErrorConfig(el),
+          });
         }
       }
     });
@@ -55,11 +66,7 @@ export const registry = {
    * @param type Hook type (beforeMount, afterMount, etc.)
    * @param handler Hook function (with or without element parameter)
    */
-  addHook(
-    element: Element,
-    type: HookType,
-    handler: HookFn
-  ) {
+  addHook(element: Element, type: HookType, handler: HookFn) {
     noteMountHook();
     const state = getState(element);
     const stacks = state.hooks ?? (state.hooks = {});
@@ -71,5 +78,5 @@ export const registry = {
       state.isMounted = true;
       (handler as (node: Element) => void)(element);
     }
-  }
+  },
 };

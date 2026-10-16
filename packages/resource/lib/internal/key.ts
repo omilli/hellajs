@@ -18,11 +18,16 @@ const HASH_PREFIX = "\u0000";
 function serialize(value: unknown): string | null {
   if (isNull(value)) return "null";
   switch (typeof value) {
-    case "string": return JSON.stringify(value);
-    case "number": return String(value);
-    case "boolean": return String(value);
-    case "bigint": return String(value) + "n";
-    case "undefined": return "undefined";
+    case "string":
+      return JSON.stringify(value);
+    case "number":
+      return String(value);
+    case "boolean":
+      return String(value);
+    case "bigint":
+      return String(value) + "n";
+    case "undefined":
+      return "undefined";
   }
   if (value instanceof Date) return "d" + value.toISOString();
   if (Array.isArray(value)) {

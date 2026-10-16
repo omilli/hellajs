@@ -7,81 +7,91 @@ import { Placeholder } from "../components/Placeholder.tsx";
 import { PostCard } from "../components/PostCard.tsx";
 import { BackLink } from "../components/BackLink.tsx";
 
-const avatar = style({
-  width: "4rem",
-  height: "4rem",
-  borderRadius: "50%",
-  objectFit: "cover",
-}, { label: "avatar" });
+const avatar = style(
+  {
+    width: "4rem",
+    height: "4rem",
+    borderRadius: "50%",
+    objectFit: "cover",
+  },
+  { label: "avatar" },
+);
 
-const userInfo = style({
-  display: "flex",
-  gap: "1rem",
-  alignItems: "center",
-  marginBottom: "1rem",
-}, { label: "user-info" });
+const userInfo = style(
+  {
+    display: "flex",
+    gap: "1rem",
+    alignItems: "center",
+    marginBottom: "1rem",
+  },
+  { label: "user-info" },
+);
 
-const userMeta = style({
-  fontSize: "0.85rem",
-  color: theme.color.subtle,
-  "& p": { margin: "0.15rem 0" },
-}, { label: "user-meta" });
+const userMeta = style(
+  {
+    fontSize: "0.85rem",
+    color: theme.color.subtle,
+    "& p": { margin: "0.15rem 0" },
+  },
+  { label: "user-meta" },
+);
 
-const {
-  fetch: fetchUser,
-  isFetching: isFetchingUser,
-  data: userData
-} = userResource;
+const { fetch: fetchUser, isFetching: isFetchingUser, data: userData } = userResource;
 
-const {
-  fetch: fetchPosts,
-  data: postsData,
-  isFetching: isFetchingPosts
-} = userPostsResource;
+const { fetch: fetchPosts, data: postsData, isFetching: isFetchingPosts } = userPostsResource;
 
 export const UserProfile = () => {
   fetchUser();
   fetchPosts();
 
-  return <div class="user-profile">
-    <BackLink />
+  return (
+    <div class="user-profile">
+      <BackLink />
 
-    {() => {
-      const user = userData();
-      const { firstName, lastName, email, image, company } = user || {};
+      {() => {
+        const user = userData();
+        const { firstName, lastName, email, image, company } = user || {};
 
-      if (isFetchingUser()) return <Placeholder message="Loading user..." />;
+        if (isFetchingUser()) return <Placeholder message="Loading user..." />;
 
-      if (!user?.id) return <Placeholder message="User not found." />;
+        if (!user?.id) return <Placeholder message="User not found." />;
 
-      return <div class={card}>
-        <div class={userInfo}>
-          <img class={avatar} src={image} alt={`${firstName} ${lastName}`} />
-          <div>
-            <h2 class="title" style="margin-bottom: 0.25rem">
-              {firstName} {lastName}
-            </h2>
-            <div class={userMeta}>
-              <p>{email}</p>
-              <p>{company?.title} at {company?.name}</p>
+        return (
+          <div class={card}>
+            <div class={userInfo}>
+              <img class={avatar} src={image} alt={`${firstName} ${lastName}`} />
+              <div>
+                <h2 class="title" style="margin-bottom: 0.25rem">
+                  {firstName} {lastName}
+                </h2>
+                <div class={userMeta}>
+                  <p>{email}</p>
+                  <p>
+                    {company?.title} at {company?.name}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>;
-    }}
+        );
+      }}
 
-    <h3>Recent Posts</h3>
+      <h3>Recent Posts</h3>
 
-    {() => {
-      const posts = postsData()?.posts ?? [];
+      {() => {
+        const posts = postsData()?.posts ?? [];
 
-      return isFetchingPosts() ?
-        <Placeholder message="Loading posts..." /> :
-        posts.length > 0 ?
-          <ForEach each={posts} use={(post) =>
-            <PostCard post={post} onClick={() => navigate(`/posts/${post.id}`)} />
-          } /> :
-          <Placeholder message="No posts found." />;
-    }}
-  </div>;
+        return isFetchingPosts() ? (
+          <Placeholder message="Loading posts..." />
+        ) : posts.length > 0 ? (
+          <ForEach
+            each={posts}
+            use={(post) => <PostCard post={post} onClick={() => navigate(`/posts/${post.id}`)} />}
+          />
+        ) : (
+          <Placeholder message="No posts found." />
+        );
+      }}
+    </div>
+  );
 };

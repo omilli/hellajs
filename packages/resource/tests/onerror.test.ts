@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { resource } from "@hellajs/resource/bundle";
+import { resource } from "@hellajs/resource";
 
 describe("resource", () => {
   beforeEach(() => {
@@ -9,8 +9,8 @@ describe("resource", () => {
 
   describe("onError", () => {
     test("does not fire onError when a fetch starts", async () => {
-      const onError = mock(() => {});
-      const fetcher = mock(() => delay("value", 5));
+      const onError = vi.fn(() => {});
+      const fetcher = vi.fn(() => delay("value", 5));
       const r = resource(fetcher, { refetchOnKeyChange: true, onError });
 
       for (let i = 0; i < 100; i++) {
@@ -23,8 +23,8 @@ describe("resource", () => {
     });
 
     test("does not fire onError on successful completion", async () => {
-      const onSuccess = mock(() => {});
-      const onError = mock(() => {});
+      const onSuccess = vi.fn(() => {});
+      const onError = vi.fn(() => {});
       const r = resource(() => delay("value", 5), { refetchOnKeyChange: true, onSuccess, onError });
 
       for (let i = 0; i < 100; i++) {
@@ -36,8 +36,8 @@ describe("resource", () => {
     });
 
     test("does not fire onError on a cache hit", async () => {
-      const onError = mock(() => {});
-      const fetcher = mock(() => delay("value", 5));
+      const onError = vi.fn(() => {});
+      const fetcher = vi.fn(() => delay("value", 5));
       const r = resource(fetcher, { cacheTime: 60000, onError });
 
       r.fetch();
@@ -55,8 +55,8 @@ describe("resource", () => {
     });
 
     test("does not fire onError after abort", async () => {
-      const onError = mock(() => {});
-      const fetcher = mock(() => delay("value", 5000));
+      const onError = vi.fn(() => {});
+      const fetcher = vi.fn(() => delay("value", 5000));
       const r = resource(fetcher, { onError });
 
       r.fetch();
@@ -68,8 +68,8 @@ describe("resource", () => {
     });
 
     test("does not fire onError after reset", async () => {
-      const onError = mock(() => {});
-      const fetcher = mock(() => delay("value", 5));
+      const onError = vi.fn(() => {});
+      const fetcher = vi.fn(() => delay("value", 5));
       const r = resource(fetcher, { onError });
 
       r.fetch();

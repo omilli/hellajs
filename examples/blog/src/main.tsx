@@ -12,10 +12,10 @@ import { PostList } from "./pages/PostList.tsx";
 const title = signal("");
 const view = signal(<Placeholder message="Loading..." />);
 
-effect(() => document.title = `Blog - ${title}`);
+effect(() => (document.title = `Blog - ${title}`));
 
 router({
-  scrollBehavior: 'top',
+  scrollBehavior: "top",
   routes: {
     "/": "/posts",
     "/posts": (_params, query) => {
@@ -37,19 +37,27 @@ router({
   notFound: () => view(PostList()),
 });
 
-const appContainer = style({
-  maxWidth: "48rem",
-  margin: "0 auto",
-  padding: "1rem",
-}, { label: "app-container" });
+const appContainer = style(
+  {
+    maxWidth: "48rem",
+    margin: "0 auto",
+    padding: "1rem",
+  },
+  { label: "app-container" },
+);
 
-const appTitle = style({
-  fontSize: "1.5rem",
-}, { label: "app-title" });
+const appTitle = style(
+  {
+    fontSize: "1.5rem",
+  },
+  { label: "app-title" },
+);
 
-const App = <div class={appContainer}>
-  <h1 class={appTitle}>{title}</h1>
-  {view}
-</div>;
+const App = (
+  <div class={appContainer}>
+    <h1 class={appTitle}>{title}</h1>
+    {view}
+  </div>
+);
 
 mount(App, "#app");

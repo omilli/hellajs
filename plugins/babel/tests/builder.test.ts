@@ -1,4 +1,4 @@
-import { describe, test, expect } from "bun:test";
+import { describe, test, expect } from "vite-plus/test";
 import { transformJSX } from "./helpers";
 
 describe("babel", () => {
@@ -85,5 +85,4 @@ describe("babel", () => {
       expect(output).toMatch(/component\(\s*Component\s*,\s*\{\s*\}\s*\)/);
     });
   });
-
 });

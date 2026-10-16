@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
 import { mount, hydrate, peekState } from "@hellajs/dom";
@@ -11,8 +11,12 @@ beforeEach(() => {
 describe("dom", () => {
   describe("direct events", () => {
     test("e:click attaches handler directly to element", () => {
-      const clickHandler = mock(() => {});
-      mount(<button id="btn" e:click={clickHandler}>Click</button>);
+      const clickHandler = vi.fn(() => {});
+      mount(
+        <button id="btn" e:click={clickHandler}>
+          Click
+        </button>,
+      );
 
       const btn = document.getElementById("btn") as HTMLButtonElement;
       btn.click();
@@ -20,8 +24,12 @@ describe("dom", () => {
     });
 
     test("e: handlers are cleaned up on removal", () => {
-      const clickHandler = mock(() => {});
-      const app = mount(<div id="container" e:click={clickHandler}>Content</div>);
+      const clickHandler = vi.fn(() => {});
+      const app = mount(
+        <div id="container" e:click={clickHandler}>
+          Content
+        </div>,
+      );
 
       const container = document.getElementById("container")!;
       container.click();
@@ -35,9 +43,13 @@ describe("dom", () => {
 
     test("handlers work with reactive children", () => {
       const count = signal(0);
-      const clickHandler = mock(() => {});
+      const clickHandler = vi.fn(() => {});
 
-      mount(<div id="container" e:click={clickHandler}>{count}</div>);
+      mount(
+        <div id="container" e:click={clickHandler}>
+          {count}
+        </div>,
+      );
 
       const container = document.getElementById("container")!;
       expect(container.textContent).toBe("0");
@@ -51,10 +63,14 @@ describe("dom", () => {
     });
 
     test("e: and on: can coexist on same element", () => {
-      const directHandler = mock(() => {});
-      const delegatedHandler = mock(() => {});
+      const directHandler = vi.fn(() => {});
+      const delegatedHandler = vi.fn(() => {});
 
-      mount(<button id="btn" e:click={directHandler} on:click={delegatedHandler}>Click</button>);
+      mount(
+        <button id="btn" e:click={directHandler} on:click={delegatedHandler}>
+          Click
+        </button>,
+      );
 
       const btn = document.getElementById("btn")!;
       btn.click();
@@ -63,17 +79,25 @@ describe("dom", () => {
     });
 
     test("replaces existing e:click handler on re-mount", () => {
-      const firstHandler = mock(() => {});
-      const secondHandler = mock(() => {});
+      const firstHandler = vi.fn(() => {});
+      const secondHandler = vi.fn(() => {});
 
-      mount(<div id="test" e:click={firstHandler}>Test</div>);
+      mount(
+        <div id="test" e:click={firstHandler}>
+          Test
+        </div>,
+      );
 
       let el = document.getElementById("test")!;
       el.click();
       expect(firstHandler).toHaveBeenCalledTimes(1);
       expect(secondHandler).not.toHaveBeenCalled();
 
-      mount(<div id="test" e:click={secondHandler}>Test</div>);
+      mount(
+        <div id="test" e:click={secondHandler}>
+          Test
+        </div>,
+      );
 
       el = document.getElementById("test")!;
       el.click();
@@ -82,10 +106,18 @@ describe("dom", () => {
     });
 
     test("re-registering e:click on the same element replaces the listener", async () => {
-      const firstHandler = mock(() => {});
-      const secondHandler = mock(() => {});
-      const first = () => <button id="btn" e:click={firstHandler}>Go</button>;
-      const second = () => <button id="btn" e:click={secondHandler}>Go</button>;
+      const firstHandler = vi.fn(() => {});
+      const secondHandler = vi.fn(() => {});
+      const first = () => (
+        <button id="btn" e:click={firstHandler}>
+          Go
+        </button>
+      );
+      const second = () => (
+        <button id="btn" e:click={secondHandler}>
+          Go
+        </button>
+      );
 
       const container = ssrContainer(first());
       hydrate(first(), container);
@@ -98,17 +130,24 @@ describe("dom", () => {
       expect(secondHandler).toHaveBeenCalledTimes(1);
 
       btn.remove();
-      for (let __i = 0; __i < 50; __i++) { if (peekState(btn) === undefined) break; await delay(); }
+      for (let __i = 0; __i < 50; __i++) {
+        if (peekState(btn) === undefined) break;
+        await delay();
+      }
       btn.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 
       expect(secondHandler).toHaveBeenCalledTimes(1);
     });
 
     test("multiple handlers on single element", () => {
-      const clickHandler = mock(() => {});
-      const mouseEnterHandler = mock(() => {});
+      const clickHandler = vi.fn(() => {});
+      const mouseEnterHandler = vi.fn(() => {});
 
-      mount(<div id="test" e:click={clickHandler} e:mouseenter={mouseEnterHandler}>Test</div>);
+      mount(
+        <div id="test" e:click={clickHandler} e:mouseenter={mouseEnterHandler}>
+          Test
+        </div>,
+      );
 
       const el = document.getElementById("test")!;
       el.click();
@@ -121,7 +160,16 @@ describe("dom", () => {
     test("receives event object as argument", () => {
       let receivedEvent!: Event;
 
-      mount(<button id="btn" e:click={(event: Event) => { receivedEvent = event; }}>Click</button>);
+      mount(
+        <button
+          id="btn"
+          e:click={(event: Event) => {
+            receivedEvent = event;
+          }}
+        >
+          Click
+        </button>,
+      );
 
       const btn = document.getElementById("btn")!;
       btn.dispatchEvent(new Event("click"));
@@ -131,10 +179,18 @@ describe("dom", () => {
     });
 
     test("stopPropagation prevents parent e:click from firing", () => {
-      const parentHandler = mock(() => {});
-      const childHandler = mock((event: Event) => { event.stopPropagation(); });
+      const parentHandler = vi.fn(() => {});
+      const childHandler = vi.fn((event: Event) => {
+        event.stopPropagation();
+      });
 
-      mount(<div id="parent" e:click={parentHandler}><button id="child" e:click={childHandler}>Click</button></div>);
+      mount(
+        <div id="parent" e:click={parentHandler}>
+          <button id="child" e:click={childHandler}>
+            Click
+          </button>
+        </div>,
+      );
 
       const child = document.getElementById("child")!;
       child.click();
@@ -144,10 +200,16 @@ describe("dom", () => {
     });
 
     test("nested elements with e: handlers", () => {
-      const outerHandler = mock(() => {});
-      const innerHandler = mock(() => {});
+      const outerHandler = vi.fn(() => {});
+      const innerHandler = vi.fn(() => {});
 
-      mount(<div id="outer" e:click={outerHandler}><div id="inner" e:click={innerHandler}>Inner</div></div>);
+      mount(
+        <div id="outer" e:click={outerHandler}>
+          <div id="inner" e:click={innerHandler}>
+            Inner
+          </div>
+        </div>,
+      );
 
       const inner = document.getElementById("inner")!;
       inner.click();
@@ -157,7 +219,7 @@ describe("dom", () => {
     });
 
     test("element supports prefix", () => {
-      const clickHandler = mock(() => {});
+      const clickHandler = vi.fn(() => {});
       mount(<button e:click={clickHandler}>Click Me</button>);
 
       const btn = document.querySelector("button")!;
@@ -166,8 +228,12 @@ describe("dom", () => {
     });
 
     test("once: true fires the handler exactly once", () => {
-      const clickHandler = mock(() => {});
-      mount(<button id="btn" e:click={{ handler: clickHandler, options: { once: true } }}>Click</button>);
+      const clickHandler = vi.fn(() => {});
+      mount(
+        <button id="btn" e:click={{ handler: clickHandler, options: { once: true } }}>
+          Click
+        </button>,
+      );
 
       const btn = document.getElementById("btn")!;
       btn.click();
@@ -177,10 +243,20 @@ describe("dom", () => {
 
     test("capture: true fires the parent handler before the target handler", () => {
       const order: string[] = [];
-      const parentCapture = mock(() => { order.push("parent"); });
-      const childHandler = mock(() => { order.push("child"); });
+      const parentCapture = vi.fn(() => {
+        order.push("parent");
+      });
+      const childHandler = vi.fn(() => {
+        order.push("child");
+      });
 
-      mount(<div id="parent" e:click={{ handler: parentCapture, options: { capture: true } }}><button id="child" e:click={childHandler}>Click</button></div>);
+      mount(
+        <div id="parent" e:click={{ handler: parentCapture, options: { capture: true } }}>
+          <button id="child" e:click={childHandler}>
+            Click
+          </button>
+        </div>,
+      );
 
       document.getElementById("child")!.click();
 
@@ -191,10 +267,14 @@ describe("dom", () => {
 
     test("passive: true is forwarded to addEventListener", () => {
       const original = Element.prototype.addEventListener;
-      const addSpy = mock<(type: string, listener: unknown, options?: unknown) => void>(() => {});
+      const addSpy = vi.fn<(type: string, listener: unknown, options?: unknown) => void>(() => {});
       Element.prototype.addEventListener = addSpy as unknown as typeof original;
       try {
-        mount(<div id="test" e:touchstart={{ handler: mock(() => {}), options: { passive: true } }}>Test</div>);
+        mount(
+          <div id="test" e:touchstart={{ handler: vi.fn(() => {}), options: { passive: true } }}>
+            Test
+          </div>,
+        );
 
         const call = addSpy.mock.calls.find(([type]) => type === "touchstart");
         expect(call?.[2]).toEqual({ passive: true });
@@ -205,14 +285,21 @@ describe("dom", () => {
 
     test("cleanup removes the listener with the stored options object", () => {
       const original = Element.prototype.removeEventListener;
-      const removeSpy = mock(function (this: Element, ...args: Parameters<Element["removeEventListener"]>) {
+      const removeSpy = vi.fn(function (
+        this: Element,
+        ...args: Parameters<Element["removeEventListener"]>
+      ) {
         return original.apply(this, args);
       });
       Element.prototype.removeEventListener = removeSpy as unknown as typeof original;
       try {
-        const clickHandler = mock(() => {});
+        const clickHandler = vi.fn(() => {});
         const options = { capture: true };
-        const app = mount(<div id="test" e:click={{ handler: clickHandler, options }}>Test</div>);
+        const app = mount(
+          <div id="test" e:click={{ handler: clickHandler, options }}>
+            Test
+          </div>,
+        );
         const el = document.getElementById("test")!;
 
         app.unmount();
@@ -228,10 +315,18 @@ describe("dom", () => {
     });
 
     test("plain function and spec forms coexist on the same element", () => {
-      const plainHandler = mock(() => {});
-      const specHandler = mock(() => {});
+      const plainHandler = vi.fn(() => {});
+      const specHandler = vi.fn(() => {});
 
-      mount(<div id="test" e:click={plainHandler} e:mouseenter={{ handler: specHandler, options: { once: true } }}>Test</div>);
+      mount(
+        <div
+          id="test"
+          e:click={plainHandler}
+          e:mouseenter={{ handler: specHandler, options: { once: true } }}
+        >
+          Test
+        </div>,
+      );
 
       const el = document.getElementById("test")!;
       el.click();

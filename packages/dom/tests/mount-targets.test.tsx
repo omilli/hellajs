@@ -1,5 +1,5 @@
-import { describe, test, expect, beforeEach } from "bun:test";
-import {resetTestState} from "@utils/test-helpers.js";
+import { describe, test, expect, beforeEach } from "vite-plus/test";
+import { resetTestState } from "@utils/test-helpers.js";
 import { mount } from "@hellajs/dom";
 
 beforeEach(() => {

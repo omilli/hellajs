@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { resource, resourceCache } from "@hellajs/resource/bundle";
+import { resource, resourceCache } from "@hellajs/resource";
 
 describe("resource", () => {
   describe("transform", () => {
@@ -9,12 +9,9 @@ describe("resource", () => {
     });
 
     test("transforms data on success", async () => {
-      const r = resource(
-        () => delay({ id: 1, name: "John", email: "john@test.com" }),
-        {
-          transform: (data) => ({ name: data.name })
-        }
-      );
+      const r = resource(() => delay({ id: 1, name: "John", email: "john@test.com" }), {
+        transform: (data) => ({ name: data.name }),
+      });
 
       r.fetch({ force: true });
       await delay(20);
@@ -23,14 +20,11 @@ describe("resource", () => {
     });
 
     test("cache stores original data, not transformed", async () => {
-      const r = resource(
-        () => delay({ id: 1, name: "John" }),
-        {
-          key: () => "user-1",
-          cacheTime: 60000,
-          transform: (data) => data.name
-        }
-      );
+      const r = resource(() => delay({ id: 1, name: "John" }), {
+        key: () => "user-1",
+        cacheTime: 60000,
+        transform: (data) => data.name,
+      });
 
       r.fetch({ force: true });
       await delay(20);
@@ -41,10 +35,7 @@ describe("resource", () => {
     });
 
     test("returns undefined when no data", async () => {
-      const r = resource(
-        () => delay("data"),
-        { transform: (d) => d.toUpperCase() }
-      );
+      const r = resource(() => delay("data"), { transform: (d) => d.toUpperCase() });
 
       expect(r.data()).toBeUndefined();
 
@@ -55,13 +46,10 @@ describe("resource", () => {
     });
 
     test("works with initialData", async () => {
-      const r = resource(
-        () => delay({ count: 10 }),
-        {
-          initialData: { count: 0 },
-          transform: (data) => data.count
-        }
-      );
+      const r = resource(() => delay({ count: 10 }), {
+        initialData: { count: 0 },
+        transform: (data) => data.count,
+      });
 
       expect(r.data()).toBe(0);
 
@@ -85,18 +73,19 @@ describe("resource", () => {
       }
 
       const todos = resource<Todo[], undefined, TodoStats>(
-        () => delay([
-          { id: 1, text: "Task 1", completed: true },
-          { id: 2, text: "Task 2", completed: false },
-          { id: 3, text: "Task 3", completed: true }
-        ]),
+        () =>
+          delay([
+            { id: 1, text: "Task 1", completed: true },
+            { id: 2, text: "Task 2", completed: false },
+            { id: 3, text: "Task 3", completed: true },
+          ]),
         {
           transform: (todos): TodoStats => ({
             total: todos.length,
-            completed: todos.filter(t => t.completed).length,
-            pending: todos.filter(t => !t.completed).length
-          })
-        }
+            completed: todos.filter((t) => t.completed).length,
+            pending: todos.filter((t) => !t.completed).length,
+          }),
+        },
       );
 
       todos.fetch({ force: true });
@@ -119,14 +108,15 @@ describe("resource", () => {
       }
 
       const user = resource<UserResponse, string, UserSummary>(
-        () => delay({ id: 1, name: "John", email: "john@test.com", permissions: ["read", "write"] }),
+        () =>
+          delay({ id: 1, name: "John", email: "john@test.com", permissions: ["read", "write"] }),
         {
           key: () => "user-1",
           transform: (data): UserSummary => ({
             name: data.name,
-            email: data.email
-          })
-        }
+            email: data.email,
+          }),
+        },
       );
 
       user.fetch({ force: true });
@@ -140,16 +130,13 @@ describe("resource", () => {
     });
 
     test("re-applies transform to cached data on cache hit", async () => {
-      const fetcher = mock(() => delay({ value: fetcher.mock.calls.length }));
+      const fetcher = vi.fn(() => delay({ value: fetcher.mock.calls.length }));
 
-      const r = resource(
-        fetcher,
-        {
-          key: () => "cached",
-          cacheTime: 60000,
-          transform: (data) => data.value * 10
-        }
-      );
+      const r = resource(fetcher, {
+        key: () => "cached",
+        cacheTime: 60000,
+        transform: (data) => data.value * 10,
+      });
 
       r.fetch({ force: true });
       await delay(20);
@@ -165,14 +152,11 @@ describe("resource", () => {
     });
 
     test("transform with setData still transforms", async () => {
-      const r = resource(
-        () => delay({ count: 5 }),
-        {
-          key: () => "counter",
-          cacheTime: 60000,
-          transform: (data) => data.count * 2
-        }
-      );
+      const r = resource(() => delay({ count: 5 }), {
+        key: () => "counter",
+        cacheTime: 60000,
+        transform: (data) => data.count * 2,
+      });
 
       r.fetch({ force: true });
       await delay(20);

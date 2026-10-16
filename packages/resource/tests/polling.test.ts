@@ -1,7 +1,7 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, vi } from "vite-plus/test";
 import { effect, signal } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { resource } from "@hellajs/resource/bundle";
+import { resource } from "@hellajs/resource";
 
 let originalVisibility: string;
 
@@ -21,13 +21,15 @@ describe("resource", () => {
     });
 
     test("polls at interval with refetchOnKeyChange", async () => {
-      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const fetcher = vi.fn(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
       const r = resource(fetcher, {
         refetchInterval: 30,
         refetchOnKeyChange: true,
       });
 
-      effect(() => { r.status(); });
+      effect(() => {
+        r.status();
+      });
       await delay(100);
 
       expect(fetcher.mock.calls.length).toBeGreaterThanOrEqual(2);
@@ -35,12 +37,14 @@ describe("resource", () => {
     });
 
     test("polls without refetchOnKeyChange", async () => {
-      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const fetcher = vi.fn(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
       const r = resource(fetcher, {
         refetchInterval: 30,
       });
 
-      effect(() => { r.status(); });
+      effect(() => {
+        r.status();
+      });
       await delay(100);
 
       expect(fetcher.mock.calls.length).toBeGreaterThanOrEqual(2);
@@ -48,13 +52,15 @@ describe("resource", () => {
     });
 
     test("stops polling on abort", async () => {
-      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const fetcher = vi.fn(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
       const r = resource(fetcher, {
         refetchInterval: 20,
         refetchOnKeyChange: true,
       });
 
-      effect(() => { r.status(); });
+      effect(() => {
+        r.status();
+      });
       await delay(50);
       r.abort();
       const countAfter = fetcher.mock.calls.length;
@@ -65,13 +71,15 @@ describe("resource", () => {
     });
 
     test("restarts polling after reset", async () => {
-      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const fetcher = vi.fn(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
       const r = resource(fetcher, {
         refetchInterval: 20,
         refetchOnKeyChange: true,
       });
 
-      effect(() => { r.status(); });
+      effect(() => {
+        r.status();
+      });
       await delay(50);
       r.reset();
       const countAfterReset = fetcher.mock.calls.length;
@@ -83,16 +91,17 @@ describe("resource", () => {
 
     test("dynamic interval based on data", async () => {
       let dataCount = 0;
-      const fetcher = mock(() => delay(5).then(() => ({ status: dataCount++ > 0 ? "healthy" : "unhealthy" })));
-      const r = resource(
-        fetcher,
-        {
-          refetchInterval: (data) => (!data ? 20 : data.status === "unhealthy" ? 20 : 100),
-          refetchOnKeyChange: true,
-        }
+      const fetcher = vi.fn(() =>
+        delay(5).then(() => ({ status: dataCount++ > 0 ? "healthy" : "unhealthy" })),
       );
+      const r = resource(fetcher, {
+        refetchInterval: (data) => (!data ? 20 : data.status === "unhealthy" ? 20 : 100),
+        refetchOnKeyChange: true,
+      });
 
-      effect(() => { r.status(); });
+      effect(() => {
+        r.status();
+      });
       await delay(60);
 
       expect(fetcher.mock.calls.length).toBeGreaterThanOrEqual(2);
@@ -114,13 +123,15 @@ describe("resource", () => {
     });
 
     test.each([false, 0])("refetchInterval %p disables polling", async (value) => {
-      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const fetcher = vi.fn(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
       const r = resource(fetcher, {
         refetchInterval: value as false | 0,
         refetchOnKeyChange: true,
       });
 
-      effect(() => { r.status(); });
+      effect(() => {
+        r.status();
+      });
       await delay(80);
 
       expect(fetcher).toHaveBeenCalledTimes(1);
@@ -128,14 +139,16 @@ describe("resource", () => {
     });
 
     test("respects enabled: false", async () => {
-      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const fetcher = vi.fn(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
       const r = resource(fetcher, {
         refetchInterval: 20,
         refetchOnKeyChange: true,
         enabled: false,
       });
 
-      effect(() => { r.status(); });
+      effect(() => {
+        r.status();
+      });
       await delay(80);
 
       expect(fetcher).toHaveBeenCalledTimes(0);
@@ -161,13 +174,15 @@ describe("resource", () => {
     };
 
     test("pauses when hidden, resumes when visible", async () => {
-      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const fetcher = vi.fn(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
       const r = resource(fetcher, {
         refetchInterval: 20,
         refetchOnKeyChange: true,
       });
 
-      effect(() => { r.status(); });
+      effect(() => {
+        r.status();
+      });
       await delay(50);
       expect(fetcher.mock.calls.length).toBeGreaterThanOrEqual(1);
 
@@ -184,14 +199,16 @@ describe("resource", () => {
     });
 
     test("continues polling in background when enabled", async () => {
-      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const fetcher = vi.fn(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
       const r = resource(fetcher, {
         refetchInterval: 20,
         refetchIntervalInBackground: true,
         refetchOnKeyChange: true,
       });
 
-      effect(() => { r.status(); });
+      effect(() => {
+        r.status();
+      });
       await delay(50);
 
       setHidden();
@@ -204,14 +221,16 @@ describe("resource", () => {
 
     test("arms polling when enabled getter flips true", async () => {
       const flag = signal(false);
-      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const fetcher = vi.fn(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
       const r = resource(fetcher, {
         refetchInterval: 20,
         refetchOnKeyChange: true,
         enabled: () => flag(),
       });
 
-      effect(() => { r.status(); });
+      effect(() => {
+        r.status();
+      });
       await delay(40);
       expect(fetcher.mock.calls.length).toBe(0);
 
@@ -225,13 +244,15 @@ describe("resource", () => {
 
     test("arms polling when enabled getter flips true without refetchOnKeyChange", async () => {
       const flag = signal(false);
-      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const fetcher = vi.fn(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
       const r = resource(fetcher, {
         refetchInterval: 20,
         enabled: () => flag(),
       });
 
-      effect(() => { r.status(); });
+      effect(() => {
+        r.status();
+      });
       await delay(40);
       expect(fetcher.mock.calls.length).toBe(0);
 
@@ -245,14 +266,16 @@ describe("resource", () => {
 
     test("does not reset polling cadence on key change", async () => {
       const keySignal = signal("a");
-      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const fetcher = vi.fn(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
       const r = resource(fetcher, {
         refetchInterval: 20,
         refetchOnKeyChange: true,
         key: () => keySignal(),
       });
 
-      effect(() => { r.status(); });
+      effect(() => {
+        r.status();
+      });
       await delay(40);
       keySignal("b"); // mid-window key change; cadence restart would lose ticks
       await delay(160);
@@ -263,13 +286,15 @@ describe("resource", () => {
     });
 
     test("polling stays stopped after abort()", async () => {
-      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const fetcher = vi.fn(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
       const r = resource(fetcher, {
         refetchInterval: 20,
         refetchOnKeyChange: true,
       });
 
-      effect(() => { r.status(); });
+      effect(() => {
+        r.status();
+      });
       await delay(50);
       expect(fetcher.mock.calls.length).toBeGreaterThanOrEqual(1);
 

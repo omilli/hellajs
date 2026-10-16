@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, vi } from "vite-plus/test";
 import { resetTestState } from "@utils/test-helpers.js";
 import { onSwipe } from "@hellajs/dom";
 import type { SwipeCommit, SwipeState } from "@hellajs/dom";
@@ -21,7 +21,7 @@ describe("onSwipe", () => {
   });
 
   test("fires onStart on primary pointerdown", () => {
-    const onStart = mock<(event: PointerEvent) => void>(() => {});
+    const onStart = vi.fn<(event: PointerEvent) => void>(() => {});
     const el = document.createElement("div");
     document.body.append(el);
     const dispose = onSwipe(el, { onStart, onMove: () => {} });
@@ -32,8 +32,8 @@ describe("onSwipe", () => {
   });
 
   test("ignores non-primary buttons", () => {
-    const onStart = mock<(event: PointerEvent) => void>(() => {});
-    const onMove = mock<(state: SwipeState) => void>(() => {});
+    const onStart = vi.fn<(event: PointerEvent) => void>(() => {});
+    const onMove = vi.fn<(state: SwipeState) => void>(() => {});
     const el = document.createElement("div");
     document.body.append(el);
     const dispose = onSwipe(el, { onStart, onMove });
@@ -47,8 +47,8 @@ describe("onSwipe", () => {
   });
 
   test("ignores pointerdown on disabled descendants", () => {
-    const onStart = mock<(event: PointerEvent) => void>(() => {});
-    const onMove = mock<(state: SwipeState) => void>(() => {});
+    const onStart = vi.fn<(event: PointerEvent) => void>(() => {});
+    const onMove = vi.fn<(state: SwipeState) => void>(() => {});
     const el = document.createElement("div");
     const disabled = document.createElement("button");
     disabled.disabled = true;
@@ -64,7 +64,7 @@ describe("onSwipe", () => {
   });
 
   test("reports cumulative deltas across moves", () => {
-    const onMove = mock<(state: SwipeState) => void>(() => {});
+    const onMove = vi.fn<(state: SwipeState) => void>(() => {});
     const el = document.createElement("div");
     document.body.append(el);
     const dispose = onSwipe(el, { onMove });
@@ -82,26 +82,29 @@ describe("onSwipe", () => {
     [60, 0, "right"],
     [-60, 0, "left"],
     [0, 60, "down"],
-    [0, -60, "up"]
-  ] as SwipeCase[])("commits a dominant-axis release past the threshold toward %s", (dx, dy, direction) => {
-    const onCommit = mock<(info: SwipeCommit) => void>(() => {});
-    const onCancel = mock(() => {});
-    const el = document.createElement("div");
-    document.body.append(el);
-    const dispose = onSwipe(el, { onMove: () => {}, onCommit, onCancel });
+    [0, -60, "up"],
+  ] as SwipeCase[])(
+    "commits a dominant-axis release past the threshold toward %s",
+    (dx, dy, direction) => {
+      const onCommit = vi.fn<(info: SwipeCommit) => void>(() => {});
+      const onCancel = vi.fn(() => {});
+      const el = document.createElement("div");
+      document.body.append(el);
+      const dispose = onSwipe(el, { onMove: () => {}, onCommit, onCancel });
 
-    pointerDown(el);
-    pointerMove(el, dx, dy);
-    pointerUp(el);
-    expect(onCommit).toHaveBeenCalledTimes(1);
-    expect(onCommit).toHaveBeenCalledWith({ direction, dx, dy });
-    expect(onCancel).not.toHaveBeenCalled();
-    dispose();
-  });
+      pointerDown(el);
+      pointerMove(el, dx, dy);
+      pointerUp(el);
+      expect(onCommit).toHaveBeenCalledTimes(1);
+      expect(onCommit).toHaveBeenCalledWith({ direction, dx, dy });
+      expect(onCancel).not.toHaveBeenCalled();
+      dispose();
+    },
+  );
 
   test("cancels a release below threshold with low velocity", () => {
-    const onCommit = mock<(info: SwipeCommit) => void>(() => {});
-    const onCancel = mock(() => {});
+    const onCommit = vi.fn<(info: SwipeCommit) => void>(() => {});
+    const onCancel = vi.fn(() => {});
     const el = document.createElement("div");
     document.body.append(el);
     const dispose = onSwipe(el, { onMove: () => {}, onCommit, onCancel });
@@ -116,8 +119,8 @@ describe("onSwipe", () => {
   });
 
   test("commits a below-threshold release whose velocity crosses a custom floor", () => {
-    const onCommit = mock<(info: SwipeCommit) => void>(() => {});
-    const onCancel = mock(() => {});
+    const onCommit = vi.fn<(info: SwipeCommit) => void>(() => {});
+    const onCancel = vi.fn(() => {});
     const el = document.createElement("div");
     document.body.append(el);
     const dispose = onSwipe(el, { onMove: () => {}, onCommit, onCancel }, { velocity: 0.1 });
@@ -133,8 +136,8 @@ describe("onSwipe", () => {
   });
 
   test("cancels when the distance stays under a custom threshold", () => {
-    const onCommit = mock<(info: SwipeCommit) => void>(() => {});
-    const onCancel = mock(() => {});
+    const onCommit = vi.fn<(info: SwipeCommit) => void>(() => {});
+    const onCancel = vi.fn(() => {});
     const el = document.createElement("div");
     document.body.append(el);
     const dispose = onSwipe(el, { onMove: () => {}, onCommit, onCancel }, { threshold: 100 });
@@ -149,10 +152,10 @@ describe("onSwipe", () => {
   });
 
   test("stops all wiring after dispose", () => {
-    const onStart = mock<(event: PointerEvent) => void>(() => {});
-    const onMove = mock<(state: SwipeState) => void>(() => {});
-    const onCommit = mock<(info: SwipeCommit) => void>(() => {});
-    const onCancel = mock(() => {});
+    const onStart = vi.fn<(event: PointerEvent) => void>(() => {});
+    const onMove = vi.fn<(state: SwipeState) => void>(() => {});
+    const onCommit = vi.fn<(info: SwipeCommit) => void>(() => {});
+    const onCancel = vi.fn(() => {});
     const el = document.createElement("div");
     document.body.append(el);
     const dispose = onSwipe(el, { onStart, onMove, onCommit, onCancel });
@@ -170,7 +173,9 @@ describe("onSwipe", () => {
 
   test("requires el, handlers, and onMove", () => {
     const el = document.createElement("div");
-    expect(() => onSwipe(null as never, { onMove: () => {} })).toThrow("[dom] onSwipe: el is required");
+    expect(() => onSwipe(null as never, { onMove: () => {} })).toThrow(
+      "[dom] onSwipe: el is required",
+    );
     expect(() => onSwipe(el, null as never)).toThrow("[dom] onSwipe: handlers is required");
     expect(() => onSwipe(el, {} as never)).toThrow("[dom] onSwipe: onMove is required");
   });

@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { resetTestState } from "@utils/test-helpers.js";
 import {
   alertPartVariants,
@@ -12,11 +12,29 @@ import {
 
 /** Verbatim shadcn utility tokens per part/variant — asserted in the tailwind flavor. */
 const TOKENS = {
-  base: ["relative", "grid", "w-full", "grid-cols-[0_1fr]", "rounded-lg", "px-4", "py-3", "text-sm", "has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr]", "[&>svg]:size-4"],
+  base: [
+    "relative",
+    "grid",
+    "w-full",
+    "grid-cols-[0_1fr]",
+    "rounded-lg",
+    "px-4",
+    "py-3",
+    "text-sm",
+    "has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr]",
+    "[&>svg]:size-4",
+  ],
   default: ["bg-card", "text-card-foreground"],
   destructive: ["text-destructive", "*:data-[slot=alert-description]:text-destructive/90"],
   title: ["col-start-2", "line-clamp-1", "min-h-4", "font-medium", "tracking-tight"],
-  description: ["col-start-2", "grid", "gap-1", "text-sm", "text-muted-foreground", "[&_p]:leading-relaxed"],
+  description: [
+    "col-start-2",
+    "grid",
+    "gap-1",
+    "text-sm",
+    "text-muted-foreground",
+    "[&_p]:leading-relaxed",
+  ],
 };
 
 beforeEach(() => {
@@ -25,7 +43,10 @@ beforeEach(() => {
 
 describe("alert", () => {
   test.each(alertVariants)("$style renders the alert root with role and class merge", (variant) => {
-    const alert = renderVariant(variant, { children: variant.child("Heads up"), class: "my-alert" });
+    const alert = renderVariant(variant, {
+      children: variant.child("Heads up"),
+      class: "my-alert",
+    });
     expect(alert.tagName).toBe("DIV");
     expect(alert.getAttribute("data-slot")).toBe("alert");
     expect(alert.getAttribute("role")).toBe("alert");
@@ -41,7 +62,10 @@ describe("alert", () => {
   });
 
   test.each(alertVariants)("$style renders the destructive variant's token set", (variant) => {
-    const alert = renderVariant(variant, { children: variant.child("Error"), variant: "destructive" });
+    const alert = renderVariant(variant, {
+      children: variant.child("Error"),
+      variant: "destructive",
+    });
     const tokens = classTokens(alert);
     if (variant.style === "css") {
       expect(tokens[1]!.startsWith("alert-destructive-")).toBe(true);
@@ -78,7 +102,7 @@ describe("alert", () => {
   });
 
   test("fires a user on:click handler across both styles", () => {
-    const onClick = mock(() => {});
+    const onClick = vi.fn(() => {});
     assertHandlerForwarded(alertVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 

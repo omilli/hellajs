@@ -1,4 +1,4 @@
-import { describe, test, expect } from "bun:test";
+import { describe, test, expect } from "vite-plus/test";
 import { parse } from "@babel/parser";
 import { frontmatterCss } from "../frontmatter.mjs";
 
@@ -10,7 +10,11 @@ interface Batch {
 }
 
 interface PluginUnderTest {
-  transform: (this: { addWatchFile: (file: string) => void }, code: string, id: string) => { code: string } | null;
+  transform: (
+    this: { addWatchFile: (file: string) => void },
+    code: string,
+    id: string,
+  ) => { code: string } | null;
   load: (this: unknown, id: string) => string | null;
 }
 
@@ -37,25 +41,39 @@ export default $$Page;`;
  * island style tag from the transformed code.
  */
 function run(code: string, opts: { id?: string; resolve?: Resolve; load?: Load } = {}): Batch {
-  const plugin = frontmatterCss({ resolve: opts.resolve, load: opts.load }) as unknown as PluginUnderTest;
+  const plugin = frontmatterCss({
+    resolve: opts.resolve,
+    load: opts.load,
+  }) as unknown as PluginUnderTest;
   const watched: string[] = [];
-  const context = { addWatchFile: (file: string) => { watched.push(file); } };
+  const context = {
+    addWatchFile: (file: string) => {
+      watched.push(file);
+    },
+  };
   const result = plugin.transform.call(context, code, opts.id ?? "/src/pages/index.astro");
   if (result === null) return { code: null, css: null, island: null, watched };
   const virtual = /import "virtual:hella-frontmatter\/([^"]+)\.css";/.exec(result.code);
   expect(virtual).not.toBeNull();
   const tag = /<style id="hella-css">([\s\S]*?)<\/style>/.exec(result.code);
-  return { code: result.code, css: plugin.load.call({}, `virtual:hella-frontmatter/${virtual![1]}.css`), island: tag?.[1] ?? null, watched };
+  return {
+    code: result.code,
+    css: plugin.load.call({}, `virtual:hella-frontmatter/${virtual![1]}.css`),
+    island: tag?.[1] ?? null,
+    watched,
+  };
 }
 
 describe("astro", () => {
   describe("frontmatter extraction", () => {
     test("folds a literal style() call to its class literal and collects the scoped rule", () => {
-      const { code, css, island } = run(compiled(
-        [`import { style } from "@hellajs/css";`],
-        `  const card = style({ padding: "1rem", "&:hover": { color: "red" } });`,
-        "<div class=${card}></div>",
-      ));
+      const { code, css, island } = run(
+        compiled(
+          [`import { style } from "@hellajs/css";`],
+          `  const card = style({ padding: "1rem", "&:hover": { color: "red" } });`,
+          "<div class=${card}></div>",
+        ),
+      );
       expect(code).toMatch(/const card = "[a-z]+"/);
       expect(css).toMatch(/\.[a-z]+ \{\n {2}padding: 1rem;\n\}/);
       expect(css).toMatch(/:hover \{\n {2}color: red;\n\}/);
@@ -63,39 +81,47 @@ describe("astro", () => {
     });
 
     test("folds a css() call to void 0 and collects the global rule", () => {
-      const { code, css } = run(compiled(
-        [`import { css } from "@hellajs/css";`],
-        `  css({ ".prose a": { textDecoration: "underline" } });`,
-        "<main></main>",
-      ));
+      const { code, css } = run(
+        compiled(
+          [`import { css } from "@hellajs/css";`],
+          `  css({ ".prose a": { textDecoration: "underline" } });`,
+          "<main></main>",
+        ),
+      );
       expect(code).toContain("void 0");
       expect(css).toContain(".prose a {\n  text-decoration: underline;\n}");
     });
 
     test("folds a keyframes() call to its name literal and collects the rule", () => {
-      const { code, css } = run(compiled(
-        [`import { keyframes } from "@hellajs/css";`],
-        [
-          `  const spin = keyframes({ from: { opacity: 0 }, to: { opacity: 1 } });`,
-          "  const anim = `${spin} 1s linear`;",
-        ].join("\n"),
-        "<div></div>",
-      ));
+      const { code, css } = run(
+        compiled(
+          [`import { keyframes } from "@hellajs/css";`],
+          [
+            `  const spin = keyframes({ from: { opacity: 0 }, to: { opacity: 1 } });`,
+            "  const anim = `${spin} 1s linear`;",
+          ].join("\n"),
+          "<div></div>",
+        ),
+      );
       expect(code).toContain(`const spin = "kf-`);
-      expect(css).toMatch(/@keyframes kf-[a-z]+ \{\n {2}from \{\n {4}opacity: 0;\n {2}\}\n {2}to \{\n {4}opacity: 1;\n {2}\}\n\}/);
+      expect(css).toMatch(
+        /@keyframes kf-[a-z]+ \{\n {2}from \{\n {4}opacity: 0;\n {2}\}\n {2}to \{\n {4}opacity: 1;\n {2}\}\n\}/,
+      );
     });
 
     test("folds same-module const bindings: object merge, positional label, and options bag", () => {
-      const { code, css } = run(compiled(
-        [`import { style } from "@hellajs/css";`],
-        [
-          `  const base = { fontSize: "14px" };`,
-          `  const merged = style(base, { color: "blue" });`,
-          `  const labeledBtn = style("btn", { color: "red" });`,
-          `  const labeled = style({ margin: 0 }, { label: "card" });`,
-        ].join("\n"),
-        "<div></div>",
-      ));
+      const { code, css } = run(
+        compiled(
+          [`import { style } from "@hellajs/css";`],
+          [
+            `  const base = { fontSize: "14px" };`,
+            `  const merged = style(base, { color: "blue" });`,
+            `  const labeledBtn = style("btn", { color: "red" });`,
+            `  const labeled = style({ margin: 0 }, { label: "card" });`,
+          ].join("\n"),
+          "<div></div>",
+        ),
+      );
       expect(code).toMatch(/const merged = "[a-z]+"/);
       expect(code).toMatch(/const labeledBtn = "btn-[a-z]+"/);
       expect(code).toMatch(/const labeled = "card-[a-z]+"/);
@@ -105,19 +131,25 @@ describe("astro", () => {
 
     test("folds imports through a stubbed resolver: const objects and composed keyframes names", () => {
       const files = new Map<string, string>([
-        ["/src/theme.ts", [
-          `import { keyframes } from "@hellajs/css";`,
-          `export const base = { fontSize: "14px" };`,
-          `export const spin = keyframes({ from: { opacity: 0 }, to: { opacity: 1 } });`,
-        ].join("\n")],
+        [
+          "/src/theme.ts",
+          [
+            `import { keyframes } from "@hellajs/css";`,
+            `export const base = { fontSize: "14px" };`,
+            `export const spin = keyframes({ from: { opacity: 0 }, to: { opacity: 1 } });`,
+          ].join("\n"),
+        ],
       ]);
       const resolve: Resolve = (specifier) => (specifier === "../theme" ? "/src/theme.ts" : null);
       const load: Load = (id) => files.get(id) ?? "";
-      const { code, css, island, watched } = run(compiled(
-        [`import { style } from "@hellajs/css";`, `import { base, spin } from "../theme";`],
-        "  const hero = style(base, { animation: `${spin} 1s linear` });",
-        "<body><div></div></body>",
-      ), { resolve, load });
+      const { code, css, island, watched } = run(
+        compiled(
+          [`import { style } from "@hellajs/css";`, `import { base, spin } from "../theme";`],
+          "  const hero = style(base, { animation: `${spin} 1s linear` });",
+          "<body><div></div></body>",
+        ),
+        { resolve, load },
+      );
       expect(code).toMatch(/const hero = "[a-z]+"/);
       expect(island).toContain("@keyframes kf-");
       expect(css).toContain("font-size: 14px");
@@ -126,15 +158,17 @@ describe("astro", () => {
     });
 
     test("folds cx() composition and a cva recipe call to their string results", () => {
-      const { code } = run(compiled(
-        [`import { style, cx, cva } from "@hellajs/css";`],
-        [
-          `  const btn = cva({ base: { padding: "4px" }, variants: { size: { sm: { padding: "2px" } } } });`,
-          `  const mixed = style(cx("a", { b: true }), { color: "blue" });`,
-          `  const variant = style(btn({ size: "sm" }), { color: "red" });`,
-        ].join("\n"),
-        "<div></div>",
-      ));
+      const { code } = run(
+        compiled(
+          [`import { style, cx, cva } from "@hellajs/css";`],
+          [
+            `  const btn = cva({ base: { padding: "4px" }, variants: { size: { sm: { padding: "2px" } } } });`,
+            `  const mixed = style(cx("a", { b: true }), { color: "blue" });`,
+            `  const variant = style(btn({ size: "sm" }), { color: "red" });`,
+          ].join("\n"),
+          "<div></div>",
+        ),
+      );
       // a string first argument is a positional label now: the folded cx/cva
       // results feed the label slot, sanitized to `a-b` / `base-…-size-sm-…`.
       expect(code).toMatch(/const mixed = "a-b-[a-z]+"/);
@@ -143,21 +177,28 @@ describe("astro", () => {
 
     test("collects imported top-level creator calls into the island tag, discards their vars() sheets, and ignores their non-foldable calls", () => {
       const files = new Map<string, string>([
-        ["/src/island-styles.ts", [
-          `import { css, style, vars } from "@hellajs/css";`,
-          `css({ ".imported-rule": { color: "green" } });`,
-          `const first = (fn: unknown) => fn;`,
-          `style({ color: first("nope") });`,
-          `vars({ brand: "hotpink" });`,
-        ].join("\n")],
+        [
+          "/src/island-styles.ts",
+          [
+            `import { css, style, vars } from "@hellajs/css";`,
+            `css({ ".imported-rule": { color: "green" } });`,
+            `const first = (fn: unknown) => fn;`,
+            `style({ color: first("nope") });`,
+            `vars({ brand: "hotpink" });`,
+          ].join("\n"),
+        ],
       ]);
-      const resolve: Resolve = (specifier) => (specifier === "../island-styles" ? "/src/island-styles.ts" : null);
+      const resolve: Resolve = (specifier) =>
+        specifier === "../island-styles" ? "/src/island-styles.ts" : null;
       const load: Load = (id) => files.get(id) ?? "";
-      const { css, island } = run(compiled(
-        [`import { style } from "@hellajs/css";`, `import "../island-styles";`],
-        `  const own = style({ color: "blue" });`,
-        "<body><div></div></body>",
-      ), { resolve, load });
+      const { css, island } = run(
+        compiled(
+          [`import { style } from "@hellajs/css";`, `import "../island-styles";`],
+          `  const own = style({ color: "blue" });`,
+          "<body><div></div></body>",
+        ),
+        { resolve, load },
+      );
       expect(island).toContain(".imported-rule {");
       expect(island).toContain("color: green;");
       expect(island).not.toContain("--brand");
@@ -167,26 +208,41 @@ describe("astro", () => {
 
     test("folds member chains on an imported vars() result in either position", () => {
       const files = new Map<string, string>([
-        ["/src/styles/tokens.ts", [
-          `import { vars } from "@hellajs/css";`,
-          `export const tokens = vars({ brand: "hotpink" });`,
-        ].join("\n")],
-        ["/src/island-styles.ts", [
-          `import { style } from "@hellajs/css";`,
-          `import { tokens } from "../styles/tokens";`,
-          `style({ color: tokens.brand }, { label: "island-brand" });`,
-        ].join("\n")],
+        [
+          "/src/styles/tokens.ts",
+          [
+            `import { vars } from "@hellajs/css";`,
+            `export const tokens = vars({ brand: "hotpink" });`,
+          ].join("\n"),
+        ],
+        [
+          "/src/island-styles.ts",
+          [
+            `import { style } from "@hellajs/css";`,
+            `import { tokens } from "../styles/tokens";`,
+            `style({ color: tokens.brand }, { label: "island-brand" });`,
+          ].join("\n"),
+        ],
       ]);
       const resolve: Resolve = (specifier) =>
-        specifier === "../styles/tokens" ? "/src/styles/tokens.ts"
-          : specifier === "../island-styles" ? "/src/island-styles.ts"
+        specifier === "../styles/tokens"
+          ? "/src/styles/tokens.ts"
+          : specifier === "../island-styles"
+            ? "/src/island-styles.ts"
             : null;
       const load: Load = (id) => files.get(id) ?? "";
-      const { code, css, island, watched } = run(compiled(
-        [`import { css } from "@hellajs/css";`, `import { tokens } from "../styles/tokens";`, `import "../island-styles";`],
-        `  css({ ".hero": { color: tokens.brand } });`,
-        "<body><div></div></body>",
-      ), { resolve, load });
+      const { code, css, island, watched } = run(
+        compiled(
+          [
+            `import { css } from "@hellajs/css";`,
+            `import { tokens } from "../styles/tokens";`,
+            `import "../island-styles";`,
+          ],
+          `  css({ ".hero": { color: tokens.brand } });`,
+          "<body><div></div></body>",
+        ),
+        { resolve, load },
+      );
       expect(code).toContain("void 0");
       expect(css).toContain(".hero {\n  color: var(--brand);\n}");
       expect(css).not.toContain("--brand: hotpink");
@@ -197,45 +253,65 @@ describe("astro", () => {
 
     test("keeps computed member access non-foldable", () => {
       const files = new Map<string, string>([
-        ["/src/styles/tokens.ts", [
-          `import { vars } from "@hellajs/css";`,
-          `export const tokens = vars({ brand: "hotpink" });`,
-        ].join("\n")],
+        [
+          "/src/styles/tokens.ts",
+          [
+            `import { vars } from "@hellajs/css";`,
+            `export const tokens = vars({ brand: "hotpink" });`,
+          ].join("\n"),
+        ],
       ]);
-      const resolve: Resolve = (specifier) => (specifier === "../styles/tokens" ? "/src/styles/tokens.ts" : null);
+      const resolve: Resolve = (specifier) =>
+        specifier === "../styles/tokens" ? "/src/styles/tokens.ts" : null;
       const load: Load = (id) => files.get(id) ?? "";
-      expect(() => run(compiled(
-        [`import { style } from "@hellajs/css";`, `import { tokens } from "../styles/tokens";`],
-        `  const hero = style({ color: tokens["brand"] });`,
-        "<div></div>",
-      ), { resolve, load })).toThrow("requires statically evaluable arguments");
+      expect(() =>
+        run(
+          compiled(
+            [`import { style } from "@hellajs/css";`, `import { tokens } from "../styles/tokens";`],
+            `  const hero = style({ color: tokens["brand"] });`,
+            "<div></div>",
+          ),
+          { resolve, load },
+        ),
+      ).toThrow("requires statically evaluable arguments");
     });
 
     test("collects TSX island component styles into the island tag and frontmatter rules into the virtual css", () => {
       const files = new Map<string, string>([
-        ["/src/components/Counter.tsx", [
-          `import { signal } from "@hellajs/core";`,
-          `import { counterBtn } from "../theme";`,
-          `export default function Counter({ initial = 0 }: { initial?: number }) {`,
-          `  const count = signal(initial);`,
-          `  return <button class={counterBtn} on:click={() => count(count() + 1)}>{count()}</button>;`,
-          `}`,
-        ].join("\n")],
-        ["/src/theme.ts", [
-          `import { style } from "@hellajs/css";`,
-          `export const counterBtn = style({ padding: "0.5rem" }, { label: "counter-btn" });`,
-        ].join("\n")],
+        [
+          "/src/components/Counter.tsx",
+          [
+            `import { signal } from "@hellajs/core";`,
+            `import { counterBtn } from "../theme";`,
+            `export default function Counter({ initial = 0 }: { initial?: number }) {`,
+            `  const count = signal(initial);`,
+            `  return <button class={counterBtn} on:click={() => count(count() + 1)}>{count()}</button>;`,
+            `}`,
+          ].join("\n"),
+        ],
+        [
+          "/src/theme.ts",
+          [
+            `import { style } from "@hellajs/css";`,
+            `export const counterBtn = style({ padding: "0.5rem" }, { label: "counter-btn" });`,
+          ].join("\n"),
+        ],
       ]);
       const resolve: Resolve = (specifier) =>
-        specifier === "../components/Counter" ? "/src/components/Counter.tsx"
-          : specifier === "../theme" ? "/src/theme.ts"
+        specifier === "../components/Counter"
+          ? "/src/components/Counter.tsx"
+          : specifier === "../theme"
+            ? "/src/theme.ts"
             : null;
       const load: Load = (id) => files.get(id) ?? "";
-      const { css, island, watched } = run(compiled(
-        [`import { css } from "@hellajs/css";`, `import Counter from "../components/Counter";`],
-        `  css({ body: { margin: "2rem auto" } });`,
-        "<body><Counter client:load initial={0} /></body>",
-      ), { resolve, load });
+      const { css, island, watched } = run(
+        compiled(
+          [`import { css } from "@hellajs/css";`, `import Counter from "../components/Counter";`],
+          `  css({ body: { margin: "2rem auto" } });`,
+          "<body><Counter client:load initial={0} /></body>",
+        ),
+        { resolve, load },
+      );
       expect(island).toContain("padding: 0.5rem;");
       expect(island).toMatch(/\.counter-btn-[a-z]+/);
       expect(css).toContain("margin: 2rem auto;");
@@ -244,69 +320,98 @@ describe("astro", () => {
     });
 
     test("throws the escape-hatch message for non-foldable creator arguments", () => {
-      expect(() => run(compiled(
-        [`import { style } from "@hellajs/css";`],
-        `  const make = (dark: string) => style({ color: dark });`,
-        "<div></div>",
-      ))).toThrow("requires statically evaluable arguments");
+      expect(() =>
+        run(
+          compiled(
+            [`import { style } from "@hellajs/css";`],
+            `  const make = (dark: string) => style({ color: dark });`,
+            "<div></div>",
+          ),
+        ),
+      ).toThrow("requires statically evaluable arguments");
     });
 
     test("throws when vars() appears in the .astro module", () => {
-      expect(() => run(compiled(
-        [`import { vars } from "@hellajs/css";`],
-        `  const theme = vars({ brand: "hotpink" });`,
-        "<div></div>",
-      ))).toThrow("vars()");
+      expect(() =>
+        run(
+          compiled(
+            [`import { vars } from "@hellajs/css";`],
+            `  const theme = vars({ brand: "hotpink" });`,
+            "<div></div>",
+          ),
+        ),
+      ).toThrow("vars()");
     });
 
     test("returns null for modules importing and referencing cssText", () => {
-      const result = run(compiled(
-        [`import { cssText, style } from "@hellajs/css";`],
-        `  const card = style({ color: "blue" });`,
-        "<style is:inline set:html=${cssText()}></style><div class=${card}></div>",
-      ));
+      const result = run(
+        compiled(
+          [`import { cssText, style } from "@hellajs/css";`],
+          `  const card = style({ color: "blue" });`,
+          "<style is:inline set:html=${cssText()}></style><div class=${card}></div>",
+        ),
+      );
       expect(result.code).toBeNull();
       expect(result.css).toBeNull();
     });
 
     test("returns null for modules without creator calls", () => {
-      const result = run(compiled(
-        [`import { signal } from "@hellajs/core";`],
-        `  const count = signal(0);`,
-        "<div>${count()}</div>",
-      ));
+      const result = run(
+        compiled(
+          [`import { signal } from "@hellajs/core";`],
+          `  const count = signal(0);`,
+          "<div>${count()}</div>",
+        ),
+      );
       expect(result.code).toBeNull();
     });
 
     test("extracts a template-expression creator call inside $$render", () => {
-      const { code, css, island } = run(compiled(
-        [`import { style } from "@hellajs/css";`],
-        ``,
-        "<div class=${style({ margin: 0 })}></div>",
-      ));
+      const { code, css, island } = run(
+        compiled(
+          [`import { style } from "@hellajs/css";`],
+          ``,
+          "<div class=${style({ margin: 0 })}></div>",
+        ),
+      );
       expect(code).toMatch(/\$\{"[a-z]+"\}/);
       expect(css).toContain("margin: 0px;");
       expect(island).toBeNull();
     });
 
     test.each([
-      { label: "after the head open tag", template: "<html><head><title>t</title></head><body><div></div></body></html>", adjacent: '<head><style id="hella-css">' },
-      { label: "after the body open tag", template: "<html><body><div></div></body></html>", adjacent: '<body><style id="hella-css">' },
-    ])("splices the island tag $label", ({ template, adjacent } : {template: string, adjacent: string}) => {
-      const files = new Map<string, string>([
-        ["/src/island.ts", `import { style } from "@hellajs/css";\nstyle({ margin: 0 });`],
-      ]);
-      const resolve: Resolve = (specifier) => (specifier === "../island" ? "/src/island.ts" : null);
-      const load: Load = (id) => files.get(id) ?? "";
-      const { code, island } = run(compiled(
-        [`import { style } from "@hellajs/css";`, `import "../island";`],
-        `  const own = style({ color: "blue" });`,
-        template,
-      ), { resolve, load });
-      expect(code).toContain(adjacent);
-      expect(island).toContain("margin: 0px;");
-      expect(island).not.toContain("color: blue");
-    });
+      {
+        label: "after the head open tag",
+        template: "<html><head><title>t</title></head><body><div></div></body></html>",
+        adjacent: '<head><style id="hella-css">',
+      },
+      {
+        label: "after the body open tag",
+        template: "<html><body><div></div></body></html>",
+        adjacent: '<body><style id="hella-css">',
+      },
+    ])(
+      "splices the island tag $label",
+      ({ template, adjacent }: { template: string; adjacent: string }) => {
+        const files = new Map<string, string>([
+          ["/src/island.ts", `import { style } from "@hellajs/css";\nstyle({ margin: 0 });`],
+        ]);
+        const resolve: Resolve = (specifier) =>
+          specifier === "../island" ? "/src/island.ts" : null;
+        const load: Load = (id) => files.get(id) ?? "";
+        const { code, island } = run(
+          compiled(
+            [`import { style } from "@hellajs/css";`, `import "../island";`],
+            `  const own = style({ color: "blue" });`,
+            template,
+          ),
+          { resolve, load },
+        );
+        expect(code).toContain(adjacent);
+        expect(island).toContain("margin: 0px;");
+        expect(island).not.toContain("color: blue");
+      },
+    );
 
     test("merges island css into the virtual import when the quasi has no head/body anchor", () => {
       const files = new Map<string, string>([
@@ -314,11 +419,14 @@ describe("astro", () => {
       ]);
       const resolve: Resolve = (specifier) => (specifier === "../island" ? "/src/island.ts" : null);
       const load: Load = (id) => files.get(id) ?? "";
-      const { code, css, island } = run(compiled(
-        [`import { style } from "@hellajs/css";`, `import "../island";`],
-        `  const own = style({ color: "blue" });`,
-        "<div></div>",
-      ), { resolve, load });
+      const { code, css, island } = run(
+        compiled(
+          [`import { style } from "@hellajs/css";`, `import "../island";`],
+          `  const own = style({ color: "blue" });`,
+          "<div></div>",
+        ),
+        { resolve, load },
+      );
       expect(island).toBeNull();
       expect(css).toContain("margin: 0px;");
       expect(css).toContain("color: blue");
@@ -327,18 +435,24 @@ describe("astro", () => {
 
     test("escapes island css for the template literal and keeps the module parseable", () => {
       const files = new Map<string, string>([
-        ["/src/island.ts", [
-          `import { style } from "@hellajs/css";`,
-          `style({ ".brk::after": { content: "'</style>'" }, ".tick::after": { content: "'\`'" } });`,
-        ].join("\n")],
+        [
+          "/src/island.ts",
+          [
+            `import { style } from "@hellajs/css";`,
+            `style({ ".brk::after": { content: "'</style>'" }, ".tick::after": { content: "'\`'" } });`,
+          ].join("\n"),
+        ],
       ]);
       const resolve: Resolve = (specifier) => (specifier === "../island" ? "/src/island.ts" : null);
       const load: Load = (id) => files.get(id) ?? "";
-      const { code, island } = run(compiled(
-        [`import { style } from "@hellajs/css";`, `import "../island";`],
-        `  const own = style({ color: "blue" });`,
-        "<body><div></div></body>",
-      ), { resolve, load });
+      const { code, island } = run(
+        compiled(
+          [`import { style } from "@hellajs/css";`, `import "../island";`],
+          `  const own = style({ color: "blue" });`,
+          "<body><div></div></body>",
+        ),
+        { resolve, load },
+      );
       expect(island).toContain("<\\\\/style>");
       expect(island).toContain("\\`");
       expect(island).not.toContain("</style>");
@@ -351,14 +465,17 @@ describe("astro", () => {
       ]);
       const resolve: Resolve = (specifier) => (specifier === "../island" ? "/src/island.ts" : null);
       const load: Load = (id) => files.get(id) ?? "";
-      const { css, island } = run([
-        `import { css } from "@hellajs/css";`,
-        `import "../island";`,
-        `const $$Page = $$createComponent(($$result) => {`,
-        `  css({ body: { margin: "2rem auto" } });`,
-        `});`,
-        `export default $$Page;`,
-      ].join("\n"), { resolve, load });
+      const { css, island } = run(
+        [
+          `import { css } from "@hellajs/css";`,
+          `import "../island";`,
+          `const $$Page = $$createComponent(($$result) => {`,
+          `  css({ body: { margin: "2rem auto" } });`,
+          `});`,
+          `export default $$Page;`,
+        ].join("\n"),
+        { resolve, load },
+      );
       expect(island).toBeNull();
       expect(css).toContain("margin: 2rem auto;");
       expect(css).toContain("margin: 0px;");

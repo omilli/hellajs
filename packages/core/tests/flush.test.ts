@@ -1,4 +1,4 @@
-import { describe, expect, test, mock } from "bun:test";
+import { describe, expect, test, vi } from "vite-plus/test";
 import { effect, flush, signal } from "@hellajs/core";
 
 describe("core", () => {
@@ -7,10 +7,12 @@ describe("core", () => {
       const s = signal(0);
 
       // The thrower subscribes first, so the drain reaches it before the survivor
-      const thrower = mock(() => {
+      const thrower = vi.fn(() => {
         if (s() > 0) throw new Error("drain aborted");
       });
-      const survivor = mock(() => { s(); });
+      const survivor = vi.fn(() => {
+        s();
+      });
       effect(thrower);
       effect(survivor);
       thrower.mockClear();
@@ -26,7 +28,9 @@ describe("core", () => {
 
     test("flush on an idle queue runs no effects", () => {
       const s = signal(0);
-      const runs = mock(() => { s(); });
+      const runs = vi.fn(() => {
+        s();
+      });
       effect(runs);
       runs.mockClear();
 

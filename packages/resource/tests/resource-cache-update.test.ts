@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach } from "vite-plus/test";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { resource, resourceCache } from "@hellajs/resource/bundle";
+import { resource, resourceCache } from "@hellajs/resource";
 
 describe("resourceCache", () => {
   let mockTime = 0;
@@ -56,7 +56,7 @@ describe("resourceCache", () => {
 
       resourceCache.updateMultiple([
         { key: "key1", updater: (old) => `${old}-updated` },
-        { key: "key2", updater: "replaced" }
+        { key: "key2", updater: "replaced" },
       ]);
 
       expect(resourceCache.get<string>("key1")).toBe("data1-updated");
@@ -69,7 +69,7 @@ describe("resourceCache", () => {
       r.fetch({ force: true });
       await delay(20);
 
-      r.setData((old: string) => old ? `${old}-updated` : "updated");
+      r.setData((old: string) => (old ? `${old}-updated` : "updated"));
       expect(resourceCache.get<string>("test-key")).toBe("initial-updated");
     });
 
@@ -86,7 +86,7 @@ describe("resourceCache", () => {
     test("setData with function when cache miss and cacheTime > 0", () => {
       const r = resource(() => delay("initial"), { cacheTime: 60000, key: () => "test-key" });
 
-      r.setData((old: string) => old ? `${old}-updated` : "new");
+      r.setData((old: string) => (old ? `${old}-updated` : "new"));
       expect(resourceCache.get<string>("test-key")).toBe("new");
     });
 
@@ -101,10 +101,7 @@ describe("resourceCache", () => {
       mockTime = 1000;
       Date.now = () => mockTime;
 
-      const r = resource(
-        () => delay("initial", 5),
-        { cacheTime: 100, key: () => "expiring-key" }
-      );
+      const r = resource(() => delay("initial", 5), { cacheTime: 100, key: () => "expiring-key" });
 
       r.fetch({ force: true });
       await delay(20);

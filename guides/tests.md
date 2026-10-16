@@ -63,20 +63,21 @@ A file name that is only a category (`features-*.test.ts`, `unit-*.test.ts`) sig
 ## Anti-Patterns
 
 - Import reactive primitives (`signal`, `effect`, `computed`, `batch`, `untracked`, `flush`, `scope`) from `@hellajs/core`; `onError` from `@hellajs/dom`; test helpers (`delay`, `suppressConsole`, `setupContainer`, `resetTestState`) from `@utils/test-helpers.js`. Never import a symbol whose module isn't listed — a needed primitive joins the existing `@hellajs/core` import, never a duplicate.
-- Never `jest.fn()` / `jest.spyOn()` / `vi.fn()` — `mock()` from `bun:test`.
+- Never `jest.fn()` / `jest.spyOn()` / `mock()` — `vi.fn()` from `vite-plus/test`.
+- Never unawaited `expect(promise).rejects` / `.resolves` — under Vitest the expectation silently skips: `await expect(p).rejects.toThrow(...)`. A sync-style `expect(() => asyncFn()).toThrow()` never sees the rejection — assert `rejects`.
 - Never `any` — `unknown` only. Never `it()` or `test.skip()` — always `test()`.
 - Never two behaviors in one test (exception: sequential lifecycle tests, §Test Structure). Never AAA pattern. Never placeholder tests. Never mock reactive primitives — use real ones.
 - Never repeat a helper across files — extract.
 - Never `await flush()` — synchronous, returns `void`; bare `flush()`.
 - Never the double-delay (`await delay(); await delay()`) — `await delay(0)` (macrotask) instead.
-- Never track callback invocations with boolean flags (`let called = false`) or pure integer counters (`let runs = 0`) — `mock()`. Renamed flags (`cleaned`, `handlerCalled`, `errorOccurred`, `asyncCompleted`) are the same pattern. Sole exception: a counter incremented inside a callback that **also** performs observable side effects (`count++; flush()`, DOM writes, network calls). Signal reads or value returns (`return signal()`) don't qualify — `mock()`.
+- Never track callback invocations with boolean flags (`let called = false`) or pure integer counters (`let runs = 0`) — `vi.fn()`. Renamed flags (`cleaned`, `handlerCalled`, `errorOccurred`, `asyncCompleted`) are the same pattern. Sole exception: a counter incremented inside a callback that **also** performs observable side effects (`count++; flush()`, DOM writes, network calls). Signal reads or value returns (`return signal()`) don't qualify — `vi.fn()`.
 - Never assert generated output (CSS text, HTML strings, serialized forms) by substring alone when the artifact's **structure** is the contract — `toContain` passes inside structurally invalid output (`@font-face{{font-family:…}}` satisfied substring asserts while browsers parsed it to an empty rule). Every generated shape gets at least one exact-form `toBe` assert.
 
-Enforcement: eslint `no-restricted-syntax` bans `it()`, `test.skip()`, and `jest.*`/`vi.*` calls in `*.test.ts`; the rest are prose-enforced (audited via the checklist).
+Enforcement: the `hella/tests-api` JS-plugin rule (`lint/hellajs.js`, registered in the `vite.config.ts` lint block) bans `it()`, `test.skip()`, and `jest.*` calls in test files; `mock()` and the rest are prose-enforced (audited via the checklist).
 
 ### Replace pattern
 
-Wrap the side effect in `mock()` — tracks the call and runs the effect in one step:
+Wrap the side effect in `vi.fn()` — tracks the call and runs the effect in one step:
 
 ```typescript
 // Before
@@ -86,19 +87,19 @@ register(callback);
 expect(called).toBe(true);
 
 // After
-const callback = mock(() => doWork());
+const callback = vi.fn(() => doWork());
 register(callback);
 expect(callback).toHaveBeenCalledTimes(1);
 ```
 
 ## Test Framework
 
-- `bun:test` only. Double quotes, semicolons always.
-- Import order: `bun:test` → `@hellajs/core` (reactive primitives, if needed) → `@utils/test-helpers.js` → package under test (`@hellajs/dom`) → `import type` (bare path, last) → local helpers (`./helpers`), if present.
+- `vite-plus/test` only (Vitest 5 via the local vite-plus CLI — `vp test` runs it through the root `vite.config.ts`). Formatting follows guides/code.md §Formatting — oxfmt (`vp fmt`) is the style authority.
+- Import order: `vite-plus/test` → `@hellajs/core` (reactive primitives, if needed) → `@utils/test-helpers.js` → package under test (`@hellajs/dom`) → `import type` (bare path, last) → local helpers (`./helpers`), if present.
 - Separate `import type` statement — never inline.
 
 ```typescript
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, vi } from "vite-plus/test";
 import { signal } from "@hellajs/core";
 import { delay, suppressConsole, setupContainer, resetTestState } from "@utils/test-helpers.js";
 import { mount, onError } from "@hellajs/dom";
@@ -110,7 +111,7 @@ import { fallbackHandler } from "./helpers";
 
 ## Files
 
-- `{feature}.test.ts` — lowercase, hyphenated. The `.test`/`.spec` marker is load-bearing: omitting it makes the file invisible to `bun coverage`. **Never run `bun test` directly — always `bun coverage <package>`** (§Triage & Gate Semantics).
+- `{feature}.test.ts` — lowercase, hyphenated. The `.test`/`.spec` marker is load-bearing: omitting it makes the file invisible to `vp run coverage`. **Never run bare `vp test`/`vitest` for verification — always `vp run coverage <package>`** (§Triage & Gate Semantics).
 - Names identify the **specific** API surface or behavior area (`scroll`, `active`, `crumbs`, `hash-mode`, `navigate-options`); categorical prefixes add no information. Category-only or surface-less naming signals mixed concerns — split.
 - Group by feature area, not internal module.
 - 100–300 lines target; soft cap 400 (trim duplication or split on a sub-feature seam); minimum 2 tests per file. The cap is advisory, not a gate: a file well past 400 flags in audit only when a clean sub-feature seam exists — when the file's split seam is a real contract boundary (e.g. mount-side vs hydrate-adopted wiring), a larger file beats tests filed under the wrong seam.
@@ -187,6 +188,7 @@ Any test reassigning a global (`window.scrollTo = ...`, `global.window = {...}`,
 - `await delay(val, ms)` — resolve a value after ms (mocking async APIs).
 - Polling loop `await delay(10)` for conditions with no contractually fixed timing: `for (let i = 0; i < 100; i++) { if (condition) break; await delay(10); }` — but see the observer-cleanup rule before polling on DOM removals.
 - **Observer-driven cleanup waits (element `remove()` → MutationObserver → effect disposal): poll with microtask hops + a mirror assert — never macrotask waits between staged removals.** `for (let __i = 0; __i < 50; __i++) { if (peekState(el) === undefined) break; await delay(); }` then `expect(peekState(el)).toBeUndefined();`. HappyDOM holds the observer's report closure only via `WeakRef` — a macrotask idle before a removal lets GC kill it, and the next removal is then NEVER reported (not late: never), so cleanup silently never runs. Microtask hops never idle the loop; delivery + cleanup are microtask-scheduled, so the loop settles within a few hops. Poll the state-carrying element: the node that owns the `hook:` wiring the wait covers — a hook-less component root never gains ElementState at all (`processMountQueue` skips state-less nodes), so polling the root never resolves, in mount waits or cleanup waits. `peekState` of a removed static wrapper is vacuously `undefined` at iteration 0.
+- **GC-determinism tests (WeakRef canary + `gc?.()`): create the canary inside an async IIFE that fully unwinds before collecting, then a macrotask hop (`await delay(10)`) and repeated `gc?.()` passes.** `gc()` exists because the gate spawns `vp test` with `NODE_OPTIONS=--expose-gc`; V8 conservative stack scanning pins objects referenced by stale words in any still-live frame — a direct test-local canary survives every pass; block scoping does not clear context slots. A single gc pass can also leave weak targets un-swept.
 
 ### Package-Exported Testing Utilities
 
@@ -201,11 +203,11 @@ Imported from `@hellajs/dom` (re-exports of `internal/` state accessors — fair
 
 ## Mock Patterns
 
-- `mock(() => {})` for call tracking; `mock(() => value)` for return values. `mockClear()` between assertion phases.
-- Pure call-tracking uses `mock()`; signal reads/value returns never qualify for the side-effect counter exception (§Anti-Patterns).
+- `vi.fn(() => {})` for call tracking; `vi.fn(() => value)` for return values. `mockClear()` between assertion phases.
+- Pure call-tracking uses `vi.fn()`; signal reads/value returns never qualify for the side-effect counter exception (§Anti-Patterns).
 - Global mocking: save in `beforeEach`, restore in `afterEach`, cast `as unknown as typeof X`.
 - DOM API mocking: `Object.defineProperty` for readonly props; save/restore for prototype patching.
-- Spy typing: type the recorded call signature with `mock`'s explicit generic (`mock<(type: string, opts?: unknown) => void>(() => {})`), never named-but-unused `_` params — eslint carries no `argsIgnorePattern`; they fail the gate.
+- Spy typing: type the recorded call signature with `vi.fn`'s explicit generic (`vi.fn<(type: string, opts?: unknown) => void>(() => {})`), never named-but-unused `_` params — the linter's `no-unused-vars` flags them.
 - Time mocking (`Date.now`, `performance.now`): declare the mock-time closure at describe scope, capture the original in `beforeEach`, restore in `afterEach`. Tests needing the mock override it in-body and advance the closure; they never own the save/restore pair, so a failing assertion can't leak a frozen clock.
 - Error handler setup: extract the common `onError` pattern into a shared helper (`fallbackHandler(defaultNode)`) in `tests/helpers.ts`; call it at the top of each test instead of repeating the lambda.
 
@@ -263,31 +265,31 @@ expect(document.getElementById("test")?.textContent).toBe("value");
 - 100% of public API. Real-world integration patterns, not internals. Error and edge cases alongside happy paths. Each behavior tested exactly once in the most relevant file.
 - **Barrel rule**: when `index.ts` re-exports a utility (type guard, predicate, env-probe, iterator helper), the authoring package **must** cover it — even if consumers also exercise it. The barrel defines the public surface; coverage follows the barrel. Consumer coverage doesn't protect the author from silent contract drift (a predicate whose name suggests general semantics but whose implementation is narrow).
 - **Compile-shape rule**: when testing component-child handling (`Suspense`/`Lazy`/`ForEach`/`Portal`/`Transition`, or anything reading `props.children`), cover both child shapes — the compiled JSX array (`<Comp>{child}</Comp>`, `children: [child]`) and the direct-call single child (`component(Comp, { children: child })`). babel compiles JSX component children to an array; the single-child form survives only as a direct public call; a fix that passes for one shape can stringify or drop the other. Concrete miss: a `<Suspense>` fix that handled a bare function child passed every single-child test but still rendered `[object Promise]` for the compiled array — the array wasn't unwrapped before evaluation.
-- **JSX authoring rule**: test markup is JSX — `.test.tsx` files, transformed at load by the `utils/jsx.js` bun preload registered alongside `utils/happydom.js` in `bunfig.toml` `[test] preload`. Markup reads as JSX (`<div id="x">{value}</div>`), compiled by `babel-plugin-hellajs` at test time — the same compiled path production code ships through.
+- **JSX authoring rule**: test markup is JSX — `.test.tsx` files, transformed at load by `vite-plugin-hellajs` through the root `vite.config.ts` (which also supplies the happy-dom environment for `vp test`). Markup reads as JSX (`<div id="x">{value}</div>`), compiled by `babel-plugin-hellajs` at test time — the same compiled path production code ships through.
 - **Discrimination rule**: a scenario encoding a bug — the plan states today's broken behavior — is shown to FAIL against the pre-fix code before its DoD ticks: stash the fix, rebuild the bundle, run the scenario, restore (expected fail → pass). A timing-sequenced race scenario additionally places each step by causal order, not delay magnitude: the joining fetch lands after the superseded request's settle while the surviving request is still in flight. Concrete miss: a force-supersede dedup scenario joined before the prefetch settled — it passed against both the fixed and unfixed bundle, ticking a DoD it never verified; only the pre-fix run exposed it.
 - Never import non-public APIs: functions/types not exported from `index.ts` are internal; exports from `index.ts` (including testing utilities from `internal/` modules) are fair game.
 - **Carveout — `plugins/**`**: plugin internals (`src/**/*.mjs`) may be imported directly in unit tests when (a) the helpers are pure functions whose edge cases are impractical to reach through the public transform surface (single default export or visitor), and (b) no `index.ts` barrel exists to re-export them. Narrow: runtime packages keep the strict barrel-exclusive rule; `plugins/**` is the only scope where isolated parser/util tests outweigh the internal-import cost.
 
 ## Triage & Gate Semantics
 
-How test gates are run and triaged. `bun coverage` (§Scripts) is the single verification gate; these rules govern its scoped form and failure handling.
+How test gates are run and triaged. `vp run coverage` (§Scripts) is the single verification gate; these rules govern its scoped form and failure handling.
 
-- **No bare `bun test` for verification.** Tests import from `dist/` bundles; `bun test` never rebuilds them and silently tests stale code. Mid-flight iteration uses the triage form: `bun bundle <package> --quiet && bun test packages/<package>/tests[/<file>.test.tsx]` (explicit rebuild + scoped tests). The green baseline and final gate are always `bun coverage <package>`.
-- **Scoped-run scoping.** `bun coverage <package>` scopes tests + eslint to the target package; its `tsc` and guard stages stay repo-wide. A scoped run failing on a file OUTSIDE the target is foreign, not yours: confirm your package clean (`bunx eslint packages/<pkg>`), report the foreign failure, move on — CI's unscoped `bun coverage` owns the full-repo gate.
-- **Bundle-stage foreign block.** `bundle.ts --quiet` builds ALL packages before scoped tests run, so a foreign bundle failure blocks the target's own tests. Verify via `bun bundle <package>` (explicit rebuild — honors no-stale-dist) followed by the scoped test command coverage runs internally (`bun test --parallel packages/<package>/tests --coverage`); report the foreign failure.
+- **No bare `vp test`/`vitest` for verification.** Tests import from `dist/` bundles; a bare runner never rebuilds them and silently tests stale code. Mid-flight iteration uses the triage form: `vp run bundle <package> --quiet && ./node_modules/.bin/vp test packages/<package>/tests[/<file>.test.tsx]` (explicit rebuild + scoped tests). The green baseline and final gate are always `vp run coverage <package>`.
+- **Scoped-run scoping.** `vp run coverage <package>` scopes tests to the target package and runs no lint (`vp run lint` is its own gate, repo-wide). A scoped run failing on a file OUTSIDE the target is foreign, not yours: report the foreign failure, move on — CI's unscoped `vp run coverage` + `vp run lint` own the full-repo gate.
+- **Bundle-stage foreign block.** `bundle.ts --quiet` builds ALL packages before scoped tests run, so a foreign bundle failure blocks the target's own tests. Verify via `vp run bundle <package>` (explicit rebuild — honors no-stale-dist) followed by the scoped test command coverage runs internally (`vp test packages/<package>/tests --coverage`); report the foreign failure.
 - **Gate-failure attribution.** A check failing on files outside your diff → `git status -sb` first; verify the files carry no edits of yours (concurrent user changes) before debugging your own work. Re-run the gate after the foreign change settles.
-- **Plugin exception.** `bun coverage <plugin>` fails — `isValidPackage` resolves under `packages/` only. For plugins, use `bun test plugins/<p>/tests` + `bun lint`. Plugin tests import source, not `dist/`. No scheduled gate runs plugin suites: a `packages/` change breaking them (serializer output, runtime contracts a plugin test asserts) surfaces only when a plugin unit executes — run the affected `bun test plugins/*/tests` before declaring done when the change reaches what they assert.
-- **Coverage blind spots.** `bun coverage` runs tsc + eslint + tests; eslint covers only the mechanical subset (`for…of`/`for…in` and raw typeof in `packages/*/lib`, banned test APIs in `*.test.ts`). Everything else — `guides/code.md`'s thin-wrapper ban, `lib/internal/` placement, single-callsite <30-line extraction, `@internal` visibility, and most of §Anti-Patterns — has no lint counterpart. A new file, file structure, or shared test helper → run `audit-tests` as part of verification.
-- **Measurement target.** Coverage instruments built bundles (`dist/`), not `lib/` — `lib/` is truth, the bundle is the measurement. A reading is point-in-time: re-run `bun coverage` immediately before reporting coverage findings.
+- **Plugin scoping.** `vp run coverage <plugin>` scopes tests to `plugins/<p>/tests` and narrows the coverage includes to the plugin's rows (source `.mjs` — plugins have no `dist/`; `vite`/`rollup` carry no suites and fail the tests-dir check). The bundle stage still runs before plugin tests: `plugins/astro`'s tests import `@hellajs/core`'s dist. Package-scoped runs still execute no plugin suites: a `packages/` change breaking them (serializer output, runtime contracts a plugin test asserts) surfaces only when a plugin unit executes — run the affected `vp run coverage <plugin>` (bare `./node_modules/.bin/vp test plugins/<p>/tests` mid-flight — plugin tests import source, not `dist/`) before declaring done when the change reaches what they assert.
+- **Coverage blind spots.** `vp run coverage` runs bundle + tests only — no lint. The mechanical subset (the `hella/*` JS-plugin rules: `for…of`/`for…in` and raw typeof in `packages/*/lib`, banned test APIs in test files) is `vp run lint`'s to catch. Everything else — `guides/code.md`'s thin-wrapper ban, `lib/internal/` placement, single-callsite <30-line extraction, `@internal` visibility, and most of §Anti-Patterns — has no lint counterpart. A new file, file structure, or shared test helper → run `audit-tests` as part of verification.
+- **Measurement target.** Coverage instruments the entry-graph per-module dist files (`dist/*.js` + `dist/internal/*.js`), the ui registry minus `cn.js`/`tokens*.js`, and `plugins/**/*.mjs` — not `lib/`: `lib/` is truth, the built dist artifact is the measurement. `bundle.js` is exercised by each package's `tests/bundle.test.ts` smoke test (export parity), not measured. A reading is point-in-time: re-run `vp run coverage` immediately before reporting coverage findings.
 
 ## Verification Checklist
 
 Run this when holding a Tests file (`*.test.ts` / `*.spec.ts`). Each item is a yes/no or a command. This is the audit floor stated where the rules live; `audit-tests` reads it instead of reconstructing it from prose.
 
 **Framework & imports**
-- [ ] `bun:test` only; double quotes, semicolons always
+- [ ] `vite-plus/test` only; `vp fmt --check` clean (guides/code.md §Formatting)
 - [ ] All imports from correct sources: reactive primitives from `@hellajs/core`, `onError` from `@hellajs/dom`, test helpers from `@utils/test-helpers.js`
-- [ ] Import order: `bun:test` → `@hellajs/core` → `@utils/test-helpers.js` → package under test (bare specifier) → `import type` (bare path, last) → local helpers (e.g. `./helpers`), if present
+- [ ] Import order: `vite-plus/test` → `@hellajs/core` → `@utils/test-helpers.js` → package under test (bare specifier) → `import type` (bare path, last) → local helpers (e.g. `./helpers`), if present
 - [ ] Separate `import type` statement; never inline
 
 **File & structure**
@@ -302,13 +304,15 @@ Run this when holding a Tests file (`*.test.ts` / `*.spec.ts`). Each item is a y
 
 **Anti-patterns (none present)**
 - [ ] No `{() => fn()}` wrapper bindings — zero-arg fns/signals bind bare (`{fn}`)
-- [ ] No `jest.fn` / `jest.spyOn` / `vi.fn` — `mock()` from `bun:test` (eslint-enforced)
+- [ ] No `jest.fn` / `jest.spyOn` / `mock()` — `vi.fn()` from `vite-plus/test` (jest.* enforced by `hella/tests-api`; `mock()` prose-enforced)
+- [ ] No unawaited `.rejects`/`.resolves` — `await expect(p).rejects.toThrow(...)` (the expectation silently skips otherwise)
 - [ ] No `any` (`unknown` only)
 - [ ] No invalid-input call against an overloaded function cast to the bare options type — cast to one concrete overload shape (TS2769 otherwise)
-- [ ] No `it()` or `test.skip()` (eslint-enforced)
+- [ ] No `it()` or `test.skip()` (enforced by `hella/tests-api`)
 - [ ] No bare `await delay()` used as double-delay — use `delay(0)` (macrotask) for multi-hop chains
 - [ ] No macrotask waits (`delay(0)`/`delay(N)`/`delay(10)` polls) between staged DOM removals whose cleanup the test waits on — observer-driven cleanup waits use the microtask-hop `peekState` poll + mirror assert (HappyDOM WeakRef GC hazard)
-- [ ] No boolean-flag or pure-integer call counters — `mock()` (exception: counter with observable side effects)
+- [ ] GC-determinism tests canary from an async IIFE that fully unwinds, with `await delay(10)` + repeated `gc?.()` before the deref assert (V8 conservative stack scanning)
+- [ ] No boolean-flag or pure-integer call counters — `vi.fn()` (exception: counter with observable side effects)
 - [ ] No substring-only asserts on generated output whose structure is the contract — at least one exact-form `toBe` per generated shape
 - [ ] No helper duplicated across files — extracted to `tests/helpers.ts`
 
@@ -320,13 +324,13 @@ Run this when holding a Tests file (`*.test.ts` / `*.spec.ts`). Each item is a y
 **Coverage**
 - [ ] Every test asserts a behavior the source actually exposes (cross-checked against `lib/index.ts`)
 - [ ] No test imports a symbol not exported from `lib/index.ts`
-- [ ] `bun coverage` shows 100% on the relevant source lines; overall not lower than baseline
+- [ ] `vp run coverage` shows 100% on the relevant source lines; overall not lower than baseline
 - [ ] Component-child handling covered in BOTH child shapes — compiled JSX array (`children: [child]`) and direct-call single child (`children: child`)
-- [ ] Markup authored as JSX in `.test.tsx` files (compiled by the `utils/jsx.js` preload, registered in `bunfig.toml` beside `utils/happydom.js`)
+- [ ] Markup authored as JSX in `.test.tsx` files (compiled by `vite-plugin-hellajs` through the root `vite.config.ts`)
 - [ ] Bug-encoding scenario verified to fail against pre-fix code (stash → rebuild → run) before the DoD tick (§Test Coverage, Discrimination rule)
 
 **Gate usage (§Triage & Gate Semantics)**
-- [ ] No bare `bun test` used for verification — mid-flight iteration used the triage form; final gate was `bun coverage <package>`
+- [ ] No bare `vp test`/`vitest` used for verification — mid-flight iteration used the triage form; final gate was `vp run coverage <package>`
 - [ ] Foreign failure triaged per protocol (own package verified clean, failure reported), not debugged as own work
-- [ ] Plugins verified via the plugin exception path, not `bun coverage`
+- [ ] Plugin suites verified via `vp run coverage <plugin>` + `vp run lint` (never bare `vp test` as a final gate)
 - [ ] New file/structure/helper → `audit-tests` run (coverage's blind spots)

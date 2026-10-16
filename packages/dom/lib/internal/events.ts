@@ -80,7 +80,7 @@ function delegatedHandler(event: Event) {
 export function setDirectHandler(
   element: Element,
   type: string,
-  handler: EventListener | DirectListenerSpec
+  handler: EventListener | DirectListenerSpec,
 ) {
   const state = getState(element);
   const handlers = state.directHandlers ?? (state.directHandlers = new Map());

@@ -86,7 +86,7 @@ export function collectRemovedNode(node: Node): boolean {
   if (node.nodeType === Node.TEXT_NODE && !hasState(node)) return false;
   if (hasState(node)) {
     cleanupQueue.add(node);
-    return true;   // cleanupSubtree traverses this node's descendants — walking them here too doubles the removal cost
+    return true; // cleanupSubtree traverses this node's descendants — walking them here too doubles the removal cost
   }
   if (node.nodeType !== Node.ELEMENT_NODE) return false;
   const children = (node as Element).childNodes;
@@ -214,7 +214,7 @@ export function processMountQueue() {
         if (n.nodeType !== Node.ELEMENT_NODE) return;
         const state = peekState(n);
         if (!state) return;
-        if (state.isMounted) return;   // idempotent: a re-flush (or observer re-fire) must not double-fire afterMount
+        if (state.isMounted) return; // idempotent: a re-flush (or observer re-fire) must not double-fire afterMount
         state.isMounted = true;
         if (state.hooks) runHooks(n, "afterMount");
       });
@@ -244,5 +244,3 @@ export function resetQueueState() {
     containerObserver = null;
   }
 }
-
-

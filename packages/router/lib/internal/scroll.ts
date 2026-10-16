@@ -16,7 +16,7 @@ export const scrollStack: { top: number; left: number }[] = [];
  * @internal
  */
 export function takeSavedScroll(isPop: boolean | undefined): { top: number; left: number } | null {
-  return isPop ? scrollStack.pop() ?? null : null;
+  return isPop ? (scrollStack.pop() ?? null) : null;
 }
 
 /**
@@ -43,7 +43,7 @@ export function handleScroll(
   inlineScroll?: ScrollBehavior | false,
   routeScroll?: ScrollBehavior | false,
   isPop?: boolean,
-  savedPosition?: { top: number; left: number } | null
+  savedPosition?: { top: number; left: number } | null,
 ): void {
   const fromPath = previousPath();
 
@@ -78,7 +78,7 @@ export function handleScroll(
     scrollPos = { top: 0, left: 0 };
   } else if (isFunction(behavior)) {
     try {
-      scrollPos = behavior(toPath, fromPath, isPop ? savedPosition ?? null : null);
+      scrollPos = behavior(toPath, fromPath, isPop ? (savedPosition ?? null) : null);
     } catch (error) {
       console.error("[router] scrollBehavior:", error);
     }

@@ -25,7 +25,7 @@ import { createMountHandle } from "./internal/handle";
  */
 export function hydrate(
   node: HellaNode | (() => HellaNode) | (() => Promise<HellaNode | (() => HellaNode)>),
-  target: string | Element = "#app"
+  target: string | Element = "#app",
 ): MountHandle {
   const container = isString(target) ? document.querySelector(target) : target;
   if (!container) throw new Error(`[dom] hydrate: target "${target}" not found in document`);
@@ -48,7 +48,12 @@ export function hydrate(
         // anchor or the leading adopted static node) — wiring before it exists would
         // land on a node the walk replaces (empty container never reaches this branch
         // — the fresh-mount path above wires it).
-        hydrateSequence(container as unknown as HellaElement, n.children, container.firstChild, undefined);
+        hydrateSequence(
+          container as unknown as HellaElement,
+          n.children,
+          container.firstChild,
+          undefined,
+        );
         if (n.componentScope) wireFragmentScope(container.firstChild, null, n.componentScope);
         roots = Array.from(container.childNodes);
       } else {
@@ -60,7 +65,7 @@ export function hydrate(
       return roots;
     },
     () => {
-      if (hasDeferredRegions()) startDeferredRegionWatch(container);   // selective hydration: watch for late <Suspense> stages + replay events
-    }
+      if (hasDeferredRegions()) startDeferredRegionWatch(container); // selective hydration: watch for late <Suspense> stages + replay events
+    },
   );
 }

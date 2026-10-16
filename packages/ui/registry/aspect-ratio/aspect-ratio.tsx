@@ -4,7 +4,12 @@ import type { AspectRatioProps } from "./aspect-ratio-types.js";
 declare const base: string;
 // @hella:end
 
-export function AspectRatio({ ratio, children, class: cls, ...attrs }: AspectRatioProps): JSX.Element {
+export function AspectRatio({
+  ratio,
+  children,
+  class: cls,
+  ...attrs
+}: AspectRatioProps): JSX.Element {
   return (
     <div
       data-slot="aspect-ratio"

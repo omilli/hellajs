@@ -62,7 +62,10 @@ function resolveSelection(prop: unknown, fallback: string | undefined): Resolved
  * @param resolved The resolved selection per variant key
  * @returns True when every stated selection matches
  */
-function matchesCompound(compound: Record<string, unknown>, resolved: Record<string, ResolvedSelection>): boolean {
+function matchesCompound(
+  compound: Record<string, unknown>,
+  resolved: Record<string, ResolvedSelection>,
+): boolean {
   const keys = Object.keys(compound);
   let i = 0;
   const len = keys.length;
@@ -139,15 +142,23 @@ function compoundLabel(compound: Record<string, unknown>): string {
  * @returns The recipe callable — resolves props to a class string
  * @throws {Error} When config, `variants`, `base`, or `media` has an invalid shape; when props is neither an object nor undefined; when a resolved value is absent from its variant or a breakpoint is absent from `media`.
  */
-export function cva<V extends CVAVariants, M extends CVAMedia>(config: CVAConfig<V, M>): (props?: CVAProps<V, M>) => string {
-  if (!isPlainObject(config)) throw new Error(`[css] cva: expected a config object, received ${String(config)}`);
+export function cva<V extends CVAVariants, M extends CVAMedia>(
+  config: CVAConfig<V, M>,
+): (props?: CVAProps<V, M>) => string {
+  if (!isPlainObject(config))
+    throw new Error(`[css] cva: expected a config object, received ${String(config)}`);
   const { base, media, variants, defaultVariants, compoundVariants } = config;
-  if (!isPlainObject(variants)) throw new Error(`[css] cva: expected a variants object, received ${String(variants)}`);
+  if (!isPlainObject(variants))
+    throw new Error(`[css] cva: expected a variants object, received ${String(variants)}`);
   if (base !== undefined && !isString(base) && !isPlainObject(base)) {
-    throw new Error(`[css] cva: expected base to be a style object or class string, received ${String(base)}`);
+    throw new Error(
+      `[css] cva: expected base to be a style object or class string, received ${String(base)}`,
+    );
   }
   if (media !== undefined && !isPlainObject(media)) {
-    throw new Error(`[css] cva: expected media to be a breakpoint object, received ${String(media)}`);
+    throw new Error(
+      `[css] cva: expected media to be a breakpoint object, received ${String(media)}`,
+    );
   }
 
   // Derived rules per cache key (`variant:value[:bp]`, `base`, `compound:{i}`).
@@ -157,7 +168,12 @@ export function cva<V extends CVAVariants, M extends CVAMedia>(config: CVAConfig
    * Derives (or reuses) the rule for a cache key and re-registers its text —
    * `injectedMap` keeps the reference count exact across repeat resolutions.
    */
-  const registerRule = (cacheKey: string, obj: StyleObject, label: string, mediaQuery?: string): string => {
+  const registerRule = (
+    cacheKey: string,
+    obj: StyleObject,
+    label: string,
+    mediaQuery?: string,
+  ): string => {
     let rule = cache.get(cacheKey);
     if (rule === undefined) {
       rule = scopedRule(obj, { label, media: mediaQuery });
@@ -173,13 +189,18 @@ export function cva<V extends CVAVariants, M extends CVAMedia>(config: CVAConfig
    * and a breakpoint selection wraps in its media condition.
    */
   const variantClass = (key: string, value: string, bp?: string): string => {
-    const def = (variants as Record<string, Record<string, StyleObject | string | undefined>>)[key]?.[value];
-    if (def === undefined) throw new Error(`[css] cva: unknown value "${value}" for variant "${key}"`);
+    const def = (variants as Record<string, Record<string, StyleObject | string | undefined>>)[
+      key
+    ]?.[value];
+    if (def === undefined)
+      throw new Error(`[css] cva: unknown value "${value}" for variant "${key}"`);
     if (isString(def)) return def;
     if (bp === undefined) return registerRule(`${key}:${value}`, def, `${key}-${value}`);
     const query = (media as Record<string, string | undefined> | undefined)?.[bp];
     if (query === undefined) {
-      throw new Error(`[css] cva: unknown breakpoint "${bp}" for variant "${key}" — add it to the media config`);
+      throw new Error(
+        `[css] cva: unknown breakpoint "${bp}" for variant "${key}" — add it to the media config`,
+      );
     }
     return registerRule(`${key}:${value}:${bp}`, def, `${key}-${value}`, query);
   };
@@ -201,9 +222,13 @@ export function cva<V extends CVAVariants, M extends CVAMedia>(config: CVAConfig
     const len = keys.length;
     while (i < len) {
       const key = keys[i++] as string;
-      const selection = resolveSelection(record?.[key], (defaultVariants as Record<string, string | undefined> | undefined)?.[key]);
+      const selection = resolveSelection(
+        record?.[key],
+        (defaultVariants as Record<string, string | undefined> | undefined)?.[key],
+      );
       resolved[key] = selection;
-      if (selection.initial !== undefined) appendClass(classes, variantClass(key, selection.initial));
+      if (selection.initial !== undefined)
+        appendClass(classes, variantClass(key, selection.initial));
       const bps = selection.bps;
       if (bps !== undefined) {
         const bpKeys = Object.keys(bps);

@@ -1,9 +1,9 @@
 import { relative } from "node:path";
-import { logger, projectRoot } from "../utils/index.js";
-import { dialogHook, driveAgent, installSigint, makeRelay } from "../agent/driver.js";
-import type { Relay } from "../agent/relay.js";
-import { classifyOutcome, deriveQueue, idValue, snapshotEntry } from "./queue.js";
-import type { MemoryEntry } from "./queue.js";
+import { logger, projectRoot } from "../utils/index.ts";
+import { dialogHook, driveAgent, installSigint, makeRelay } from "../agent/driver.ts";
+import type { Relay } from "../agent/relay.ts";
+import { classifyOutcome, deriveQueue, idValue, snapshotEntry } from "./queue.ts";
+import type { MemoryEntry } from "./queue.ts";
 
 /** Default model pattern for verification instances (`--model` overrides). */
 const DEFAULT_MEMORY_MODEL = "glm-5.3-flash";
@@ -111,7 +111,12 @@ async function runEntry(
     logger.warn(`${entry.stem}: no file-state change — attempt ${attempt} of 2`);
   }
   const detail = "unchanged after 2 attempts";
-  records.push({ stem: entry.stem, status: "skipped", detail, session: `memory: ${entry.stem} (retry)` });
+  records.push({
+    stem: entry.stem,
+    status: "skipped",
+    detail,
+    session: `memory: ${entry.stem} (retry)`,
+  });
   logger.warn(`${entry.stem}: skipped (${detail})`);
 }
 
@@ -175,9 +180,13 @@ export async function runMemory(options: RunMemoryOptions): Promise<number> {
   }
   if (options.dryRun) {
     logger.info(`memory · dry run · ${queue.length} entry(s), no instances spawned`);
-    logger.info("  actions: still true → confirm date bump (+ in-place drift fix) · false/reversed → delete the entry, author the corrected fact fresh · blocked/no-verdict → one retry, then auto-skip");
+    logger.info(
+      "  actions: still true → confirm date bump (+ in-place drift fix) · false/reversed → delete the entry, author the corrected fact fresh · blocked/no-verdict → one retry, then auto-skip",
+    );
     for (const entry of queue) {
-      logger.info(`  ${entry.id}  confirmed=${entry.confirmed}  ${relative(projectRoot, entry.file)}`);
+      logger.info(
+        `  ${entry.id}  confirmed=${entry.confirmed}  ${relative(projectRoot, entry.file)}`,
+      );
     }
     const resume = nextStartId(queue, options.limit);
     if (resume !== null) {

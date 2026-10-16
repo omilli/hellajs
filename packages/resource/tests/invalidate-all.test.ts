@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { resetTestState } from "@utils/test-helpers.js";
-import { resourceCache } from "@hellajs/resource/bundle";
+import { resourceCache } from "@hellajs/resource";
 
 describe("resourceCache", () => {
   beforeEach(() => {

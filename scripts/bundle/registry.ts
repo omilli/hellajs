@@ -3,15 +3,9 @@ import path from "node:path";
 import { transformSync } from "@babel/core";
 import babelHellaJS from "babel-plugin-hellajs";
 import presetTypeScript from "@babel/preset-typescript";
-import { applyStyleVariant, inlineTypes } from "../../packages/ui/lib/internal/transform.js";
-import {
-  ensureDir,
-  execCommand,
-  projectRoot,
-  readJson,
-  scanDirRecursive,
-} from "../utils/index.js";
-import type { PackageInfo } from "../utils/index.js";
+import { applyStyleVariant, inlineTypes } from "../../packages/ui/lib/internal/transform.ts";
+import { ensureDir, execCommand, projectRoot, readJson, scanDirRecursive } from "../utils/index.ts";
+import type { PackageInfo } from "../utils/index.ts";
 
 const UI_STYLES = ["css", "tailwind"] as const;
 
@@ -91,11 +85,13 @@ async function compileFile(
   }
 
   const canonical = await fs.readFile(sourcePath, "utf8");
-  const spliced = styleModuleText === null ? canonical : applyStyleVariant(canonical, styleModuleText, style);
+  const spliced =
+    styleModuleText === null ? canonical : applyStyleVariant(canonical, styleModuleText, style);
   // Types inlining couples to the splice: only canonicals carry the types
   // import, and both module texts derive from the entry's shared-files flag —
   // so staging and compile both consume self-contained sources.
-  const flavored = styleModuleText !== null && typesText !== null ? inlineTypes(spliced, typesText) : spliced;
+  const flavored =
+    styleModuleText !== null && typesText !== null ? inlineTypes(spliced, typesText) : spliced;
   const compiled = transformRegistrySource(flavored, filename);
   // Spliced style modules import the theme sheet as a components-dir sibling
   // ("./tokens.js"); in dist the sheet compiles once at registry/theme/, so
@@ -181,7 +177,9 @@ async function readStyleModule(
   try {
     return await fs.readFile(styleFile, "utf8");
   } catch {
-    throw new Error(`[bundle] registry entry "${name}" is missing its style module "${name}-${style}.ts"`);
+    throw new Error(
+      `[bundle] registry entry "${name}" is missing its style module "${name}-${style}.ts"`,
+    );
   }
 }
 
@@ -204,7 +202,9 @@ async function readTypesModule(
   try {
     return await fs.readFile(path.join(registryDir, name, `${name}-types.ts`), "utf8");
   } catch {
-    throw new Error(`[bundle] registry entry "${name}" is missing its types module "${name}-types.ts"`);
+    throw new Error(
+      `[bundle] registry entry "${name}" is missing its types module "${name}-types.ts"`,
+    );
   }
 }
 /**
@@ -237,20 +237,48 @@ export async function compileRegistry(packageInfo: PackageInfo): Promise<void> {
         const styleName = style as UiStyle;
         const slot = entry.styles![style]!;
         const shared = entry.files ?? [];
-        const styleModuleText = await readStyleModule(registryDir, name, styleName, shared.length > 0);
+        const styleModuleText = await readStyleModule(
+          registryDir,
+          name,
+          styleName,
+          shared.length > 0,
+        );
         const typesText = await readTypesModule(registryDir, name, shared.length > 0);
-        const outBase = shared.length > 0
-          ? path.join(outDir, name, style)
-          : path.join(outDir, name);
+        const outBase =
+          shared.length > 0 ? path.join(outDir, name, style) : path.join(outDir, name);
 
         for (const file of shared) {
-          await compileFile(path.join(registryDir, name, file), outBase, outDir, stageDir, styleModuleText, typesText, styleName);
+          await compileFile(
+            path.join(registryDir, name, file),
+            outBase,
+            outDir,
+            stageDir,
+            styleModuleText,
+            typesText,
+            styleName,
+          );
         }
         for (const file of slot.files ?? []) {
-          await compileFile(path.join(registryDir, name, file), outBase, outDir, stageDir, null, null, styleName);
+          await compileFile(
+            path.join(registryDir, name, file),
+            outBase,
+            outDir,
+            stageDir,
+            null,
+            null,
+            styleName,
+          );
         }
         for (const source of Object.values(slot.darkFiles ?? {})) {
-          await compileFile(path.join(registryDir, name, source), outBase, outDir, stageDir, null, null, styleName);
+          await compileFile(
+            path.join(registryDir, name, source),
+            outBase,
+            outDir,
+            stageDir,
+            null,
+            null,
+            styleName,
+          );
         }
         for (const dep of slot.registryDependencies ?? []) {
           await compileDependency(dep, styleName, manifest, registryDir, outBase, outDir, stageDir);
@@ -260,26 +288,29 @@ export async function compileRegistry(packageInfo: PackageInfo): Promise<void> {
 
     const staged = await scanDirRecursive(stageDir, /\.(ts|tsx)$/);
     if (staged.length > 0) {
-      await execCommand("bunx", [
-        "tsc",
-        ...staged,
-        "--ignoreConfig",
-        "--emitDeclarationOnly",
-        "--declaration",
-        "--target",
-        "esnext",
-        "--module",
-        "esnext",
-        "--moduleResolution",
-        "bundler",
-        "--jsx",
-        "preserve",
-        "--strict",
-        "--skipLibCheck",
-        "--verbatimModuleSyntax",
-        "--outDir",
-        outDir,
-      ], { cwd: projectRoot });
+      await execCommand(
+        path.join(projectRoot, "node_modules/.bin/tsc"),
+        [
+          ...staged,
+          "--ignoreConfig",
+          "--emitDeclarationOnly",
+          "--declaration",
+          "--target",
+          "esnext",
+          "--module",
+          "esnext",
+          "--moduleResolution",
+          "bundler",
+          "--jsx",
+          "preserve",
+          "--strict",
+          "--skipLibCheck",
+          "--verbatimModuleSyntax",
+          "--outDir",
+          outDir,
+        ],
+        { cwd: projectRoot },
+      );
     }
   } finally {
     await fs.rm(stageDir, { recursive: true, force: true });

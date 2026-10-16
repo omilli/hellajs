@@ -1,7 +1,7 @@
-import { describe, expect, test, beforeEach } from "bun:test";
+import { describe, expect, test, beforeEach } from "vite-plus/test";
 import { batch, flush, signal } from "@hellajs/core";
 import { resetTestState, getStylesheet } from "@utils/test-helpers.js";
-import { vars, resetVars } from "@hellajs/css/bundle";
+import { vars, resetVars } from "@hellajs/css";
 
 beforeEach(() => {
   resetTestState();
@@ -9,12 +9,15 @@ beforeEach(() => {
 
 describe("vars scoped", () => {
   test("scoped option wraps vars in the class selector", () => {
-    const varsObj = vars({
-      theme: {
-        primary: "#ff0000",
-        secondary: "#00ff00"
-      }
-    }, { scoped: ".my-component" });
+    const varsObj = vars(
+      {
+        theme: {
+          primary: "#ff0000",
+          secondary: "#00ff00",
+        },
+      },
+      { scoped: ".my-component" },
+    );
 
     flush();
     const varsText = getStylesheet("hella-vars");
@@ -25,12 +28,15 @@ describe("vars scoped", () => {
   });
 
   test("scoped option wraps vars in the ID selector", () => {
-    const varsObj = vars({
-      layout: {
-        padding: "20px",
-        margin: "10px"
-      }
-    }, { scoped: "#main-content" });
+    const varsObj = vars(
+      {
+        layout: {
+          padding: "20px",
+          margin: "10px",
+        },
+      },
+      { scoped: "#main-content" },
+    );
 
     flush();
     const varsText = getStylesheet("hella-vars");
@@ -41,12 +47,15 @@ describe("vars scoped", () => {
   });
 
   test("prefix option prefixes every custom property", () => {
-    const varsObj = vars({
-      colors: {
-        primary: "blue",
-        accent: "orange"
-      }
-    }, { prefix: "comp" });
+    const varsObj = vars(
+      {
+        colors: {
+          primary: "blue",
+          accent: "orange",
+        },
+      },
+      { prefix: "comp" },
+    );
 
     flush();
     const varsText = getStylesheet("hella-vars");
@@ -57,12 +66,15 @@ describe("vars scoped", () => {
   });
 
   test("scoped and prefix options compose", () => {
-    const varsObj = vars({
-      typography: {
-        size: "16px",
-        weight: "bold"
-      }
-    }, { scoped: ".card", prefix: "ui" });
+    const varsObj = vars(
+      {
+        typography: {
+          size: "16px",
+          weight: "bold",
+        },
+      },
+      { scoped: ".card", prefix: "ui" },
+    );
 
     flush();
     const varsText = getStylesheet("hella-vars");
@@ -73,17 +85,26 @@ describe("vars scoped", () => {
   });
 
   test("multiple scoped vars accumulate", () => {
-    vars({
-      theme: { primary: "red" }
-    }, { scoped: ".header" });
+    vars(
+      {
+        theme: { primary: "red" },
+      },
+      { scoped: ".header" },
+    );
 
-    vars({
-      theme: { secondary: "blue" }
-    }, { scoped: ".footer" });
+    vars(
+      {
+        theme: { secondary: "blue" },
+      },
+      { scoped: ".footer" },
+    );
 
-    vars({
-      layout: { padding: "10px" }
-    }, { scoped: ".header" });
+    vars(
+      {
+        layout: { padding: "10px" },
+      },
+      { scoped: ".header" },
+    );
 
     flush();
     const varsText = getStylesheet("hella-vars");
@@ -100,10 +121,13 @@ describe("vars scoped", () => {
     const color = signal("green");
     const size = signal("18px");
 
-    vars({
-      theme: { color: color },
-      font: { size: size }
-    }, { scoped: ".dynamic", prefix: "dyn" });
+    vars(
+      {
+        theme: { color: color },
+        font: { size: size },
+      },
+      { scoped: ".dynamic", prefix: "dyn" },
+    );
 
     flush();
     let varsText = getStylesheet("hella-vars");

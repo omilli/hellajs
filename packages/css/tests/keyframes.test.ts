@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { resetTestState, getStylesheet } from "@utils/test-helpers.js";
-import { keyframes, removeKeyframes, style, cssText } from "@hellajs/css/bundle";
+import { keyframes, removeKeyframes, style, cssText } from "@hellajs/css";
 
 beforeEach(() => {
   resetTestState();
@@ -8,7 +8,10 @@ beforeEach(() => {
 
 describe("keyframes", () => {
   test("returns a content-hashed kf- name", () => {
-    const name = keyframes({ from: { transform: "rotate(0deg)" }, to: { transform: "rotate(360deg)" } });
+    const name = keyframes({
+      from: { transform: "rotate(0deg)" },
+      to: { transform: "rotate(360deg)" },
+    });
 
     expect(name).toMatch(/^kf-[a-z]+$/);
   });
@@ -20,15 +23,25 @@ describe("keyframes", () => {
   });
 
   test("carries the exact from/to rule form via cssText (happy-dom re-serializes from/to in the CSSOM)", () => {
-    const name = keyframes({ from: { transform: "rotate(0deg)" }, to: { transform: "rotate(360deg)" } });
+    const name = keyframes({
+      from: { transform: "rotate(0deg)" },
+      to: { transform: "rotate(360deg)" },
+    });
 
-    expect(cssText()).toBe(`@keyframes ${name} {\n  from {\n    transform: rotate(0deg);\n  }\n  to {\n    transform: rotate(360deg);\n  }\n}`);
+    expect(cssText()).toBe(
+      `@keyframes ${name} {\n  from {\n    transform: rotate(0deg);\n  }\n  to {\n    transform: rotate(360deg);\n  }\n}`,
+    );
   });
 
   test("injects from/to steps into the CSSOM as 0%/100% (happy-dom serialization)", () => {
-    const name = keyframes({ from: { transform: "rotate(0deg)" }, to: { transform: "rotate(360deg)" } });
+    const name = keyframes({
+      from: { transform: "rotate(0deg)" },
+      to: { transform: "rotate(360deg)" },
+    });
 
-    expect(getStylesheet("hella-css")).toBe(`@keyframes ${name}{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}`);
+    expect(getStylesheet("hella-css")).toBe(
+      `@keyframes ${name}{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}`,
+    );
   });
 
   test("repeat call with a structurally equal object returns the same name and injects one rule", () => {
@@ -36,14 +49,21 @@ describe("keyframes", () => {
     const second = keyframes({ to: { transform: "scale(1.1)" }, from: { transform: "scale(1)" } });
 
     expect(second).toBe(first);
-    expect(getStylesheet("hella-css")).toBe(`@keyframes ${first}{0%{transform:scale(1)}100%{transform:scale(1.1)}}`);
+    expect(getStylesheet("hella-css")).toBe(
+      `@keyframes ${first}{0%{transform:scale(1)}100%{transform:scale(1.1)}}`,
+    );
   });
 
   test("composes into a style() animation declaration", () => {
-    const spin = keyframes({ "0%": { transform: "rotate(0deg)" }, "100%": { transform: "rotate(360deg)" } });
+    const spin = keyframes({
+      "0%": { transform: "rotate(0deg)" },
+      "100%": { transform: "rotate(360deg)" },
+    });
     const cls = style({ animation: `${spin} 1s linear infinite` });
 
-    expect(getStylesheet("hella-css")).toBe(`@keyframes ${spin}{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}.${cls}{animation:${spin} 1s linear infinite}`);
+    expect(getStylesheet("hella-css")).toBe(
+      `@keyframes ${spin}{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}.${cls}{animation:${spin} 1s linear infinite}`,
+    );
   });
 
   test("removeKeyframes decrements and drops the rule at zero references", () => {
@@ -52,7 +72,9 @@ describe("keyframes", () => {
     keyframes(steps);
 
     removeKeyframes(steps);
-    expect(cssText()).toBe(`@keyframes ${name} {\n  from {\n    opacity: 0;\n  }\n  to {\n    opacity: 1;\n  }\n}`);
+    expect(cssText()).toBe(
+      `@keyframes ${name} {\n  from {\n    opacity: 0;\n  }\n  to {\n    opacity: 1;\n  }\n}`,
+    );
 
     removeKeyframes(steps);
     expect(cssText()).toBe("");

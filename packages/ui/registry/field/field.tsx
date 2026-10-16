@@ -1,5 +1,16 @@
 import type { HellaChild } from "@hellajs/dom";
-import type { FieldSetProps, FieldLegendProps, FieldGroupProps, FieldProps, FieldContentProps, FieldLabelProps, FieldTitleProps, FieldDescriptionProps, FieldSeparatorProps, FieldErrorProps } from "./field-types.js";
+import type {
+  FieldSetProps,
+  FieldLegendProps,
+  FieldGroupProps,
+  FieldProps,
+  FieldContentProps,
+  FieldLabelProps,
+  FieldTitleProps,
+  FieldDescriptionProps,
+  FieldSeparatorProps,
+  FieldErrorProps,
+} from "./field-types.js";
 
 // @hella:styles
 declare const base: string;
@@ -36,18 +47,19 @@ export function FieldSet({ children, class: cls, ...attrs }: FieldSetProps): JSX
   );
 }
 
-export function FieldLegend({ variant, children, class: cls, ...attrs }: FieldLegendProps): JSX.Element {
+export function FieldLegend({
+  variant,
+  children,
+  class: cls,
+  ...attrs
+}: FieldLegendProps): JSX.Element {
   return (
     <legend
       data-slot="field-legend"
       data-variant={variant ?? "legend"}
       class={
         // @hella:compose
-        [
-          legend,
-          legendVariants[variant ?? "legend"],
-          cls,
-        ]
+        [legend, legendVariants[variant ?? "legend"], cls]
         // @hella:end
       }
       {...attrs}
@@ -73,7 +85,14 @@ export function FieldGroup({ children, class: cls, ...attrs }: FieldGroupProps):
   );
 }
 
-export function Field({ orientation: orient, disabled, invalid, children, class: cls, ...attrs }: FieldProps): JSX.Element {
+export function Field({
+  orientation: orient,
+  disabled,
+  invalid,
+  children,
+  class: cls,
+  ...attrs
+}: FieldProps): JSX.Element {
   return (
     <div
       role="group"
@@ -83,11 +102,7 @@ export function Field({ orientation: orient, disabled, invalid, children, class:
       data-invalid={invalid ? "true" : undefined}
       class={
         // @hella:compose
-        [
-          base,
-          orientation[orient ?? "vertical"],
-          cls,
-        ]
+        [base, orientation[orient ?? "vertical"], cls]
         // @hella:end
       }
       {...attrs}
@@ -145,7 +160,11 @@ export function FieldTitle({ children, class: cls, ...attrs }: FieldTitleProps):
   );
 }
 
-export function FieldDescription({ children, class: cls, ...attrs }: FieldDescriptionProps): JSX.Element {
+export function FieldDescription({
+  children,
+  class: cls,
+  ...attrs
+}: FieldDescriptionProps): JSX.Element {
   return (
     <p
       data-slot="field-description"
@@ -161,7 +180,11 @@ export function FieldDescription({ children, class: cls, ...attrs }: FieldDescri
   );
 }
 
-export function FieldSeparator({ children, class: cls, ...attrs }: FieldSeparatorProps): JSX.Element {
+export function FieldSeparator({
+  children,
+  class: cls,
+  ...attrs
+}: FieldSeparatorProps): JSX.Element {
   return (
     <div
       data-slot="field-separator"
@@ -180,21 +203,21 @@ export function FieldSeparator({ children, class: cls, ...attrs }: FieldSeparato
         aria-orientation="horizontal"
         class={[separatorBase, separatorRule]}
       />
-      {children
-        ? (
-          <span
-            data-slot="field-separator-content"
-            class={[separatorContent]}
-          >
-            {children}
-          </span>
-        )
-        : null}
+      {children ? (
+        <span data-slot="field-separator-content" class={[separatorContent]}>
+          {children}
+        </span>
+      ) : null}
     </div>
   );
 }
 
-export function FieldError({ errors, children, class: cls, ...attrs }: FieldErrorProps): JSX.Element {
+export function FieldError({
+  errors,
+  children,
+  class: cls,
+  ...attrs
+}: FieldErrorProps): JSX.Element {
   const unique = (): { message?: string }[] => {
     const seen = new Map<string | undefined, { message?: string } | undefined>();
     for (const issue of errors ?? []) seen.set(issue?.message, issue);
@@ -227,7 +250,7 @@ export function FieldError({ errors, children, class: cls, ...attrs }: FieldErro
         if (issues.length === 0) return null;
         return (
           <ul class={errorList}>
-            {issues.map((item) => item.message ? <li>{item.message}</li> : null)}
+            {issues.map((item) => (item.message ? <li>{item.message}</li> : null))}
           </ul>
         );
       }}

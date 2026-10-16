@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState, delay } from "@utils/test-helpers.js";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components import the bare
@@ -47,9 +47,24 @@ function spyTrackRect(root: HTMLElement, rect: Rect): void {
 /** Dispatches the pointerdown/move/up sequence on the root at absolute client coordinates. */
 function drag(root: HTMLElement, points: { x: number; y?: number }[]): void {
   const first = points[0]!;
-  root.dispatchEvent(new PointerEvent("pointerdown", { button: 0, clientX: first.x, clientY: first.y ?? 0, bubbles: true, cancelable: true }));
+  root.dispatchEvent(
+    new PointerEvent("pointerdown", {
+      button: 0,
+      clientX: first.x,
+      clientY: first.y ?? 0,
+      bubbles: true,
+      cancelable: true,
+    }),
+  );
   for (const point of points) {
-    root.dispatchEvent(new PointerEvent("pointermove", { clientX: point.x, clientY: point.y ?? 0, bubbles: true, cancelable: true }));
+    root.dispatchEvent(
+      new PointerEvent("pointermove", {
+        clientX: point.x,
+        clientY: point.y ?? 0,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
   }
   root.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, cancelable: true }));
 }
@@ -59,141 +74,205 @@ function press(thumb: HTMLElement, key: string): void {
 }
 
 describe("slider", () => {
-  test.each(sliderVariants)("$style renders one thumb spanning min to max by default", (variant) => {
-    const root = renderVariant(variant, {}) as HTMLElement;
-    const thumbs = Array.from(root.querySelectorAll("[data-slot='slider-thumb']")) as HTMLElement[];
-    expect(thumbs.length).toBe(2);
-    expect(root.getAttribute("data-orientation")).toBe("horizontal");
-    const track = root.querySelector("[data-slot='slider-track']") as HTMLElement;
-    expect(track.getAttribute("data-orientation")).toBe("horizontal");
-    expect(thumbs[0]!.getAttribute("role")).toBe("slider");
-    expect(thumbs[0]!.getAttribute("aria-valuemin")).toBe("0");
-    expect(thumbs[0]!.getAttribute("aria-valuemax")).toBe("100");
-    expect(thumbs[0]!.getAttribute("aria-valuenow")).toBe("0");
-    expect(thumbs[1]!.getAttribute("aria-valuenow")).toBe("100");
-    expect(thumbs[0]!.getAttribute("tabindex")).toBe("0");
-  });
+  test.each(sliderVariants)(
+    "$style renders one thumb spanning min to max by default",
+    (variant) => {
+      const root = renderVariant(variant, {}) as HTMLElement;
+      const thumbs = Array.from(
+        root.querySelectorAll("[data-slot='slider-thumb']"),
+      ) as HTMLElement[];
+      expect(thumbs.length).toBe(2);
+      expect(root.getAttribute("data-orientation")).toBe("horizontal");
+      const track = root.querySelector("[data-slot='slider-track']") as HTMLElement;
+      expect(track.getAttribute("data-orientation")).toBe("horizontal");
+      expect(thumbs[0]!.getAttribute("role")).toBe("slider");
+      expect(thumbs[0]!.getAttribute("aria-valuemin")).toBe("0");
+      expect(thumbs[0]!.getAttribute("aria-valuemax")).toBe("100");
+      expect(thumbs[0]!.getAttribute("aria-valuenow")).toBe("0");
+      expect(thumbs[1]!.getAttribute("aria-valuenow")).toBe("100");
+      expect(thumbs[0]!.getAttribute("tabindex")).toBe("0");
+    },
+  );
 
-  test.each(sliderVariants)("$style renders multi-thumb positions and aria from the value array", (variant) => {
-    const root = renderVariant(variant, { value: [25, 75] }) as HTMLElement;
-    const thumbs = Array.from(root.querySelectorAll("[data-slot='slider-thumb']")) as HTMLElement[];
-    const range = root.querySelector("[data-slot='slider-range']") as HTMLElement;
-    expect(thumbs[0]!.getAttribute("aria-valuenow")).toBe("25");
-    expect(thumbs[1]!.getAttribute("aria-valuenow")).toBe("75");
-    expect(inlineStyles(thumbs[0]!)).toContain("left:25%");
-    expect(inlineStyles(thumbs[1]!)).toContain("left:75%");
-    expect(inlineStyles(range)).toContain("left:25%");
-    expect(inlineStyles(range)).toContain("width:50%");
-  });
+  test.each(sliderVariants)(
+    "$style renders multi-thumb positions and aria from the value array",
+    (variant) => {
+      const root = renderVariant(variant, { value: [25, 75] }) as HTMLElement;
+      const thumbs = Array.from(
+        root.querySelectorAll("[data-slot='slider-thumb']"),
+      ) as HTMLElement[];
+      const range = root.querySelector("[data-slot='slider-range']") as HTMLElement;
+      expect(thumbs[0]!.getAttribute("aria-valuenow")).toBe("25");
+      expect(thumbs[1]!.getAttribute("aria-valuenow")).toBe("75");
+      expect(inlineStyles(thumbs[0]!)).toContain("left:25%");
+      expect(inlineStyles(thumbs[1]!)).toContain("left:75%");
+      expect(inlineStyles(range)).toContain("left:25%");
+      expect(inlineStyles(range)).toContain("width:50%");
+    },
+  );
 
-  test.each(sliderVariants)("$style maps pointer drags to the nearest thumb through onValueChange", async (variant) => {
-    const onValueChange = mock((value: number[]) => value);
-    const root = renderVariant(variant, { value: [50], onValueChange }) as HTMLElement;
-    await awaitWiring(root);
-    spyTrackRect(root, { left: 0, top: 0, width: 100, height: 10 });
-    drag(root, [{ x: 20 }, { x: 30 }]);
-    expect(onValueChange).toHaveBeenCalledTimes(2);
-    expect(onValueChange.mock.calls[0]).toEqual([[20]]);
-    expect(onValueChange.mock.calls[1]).toEqual([[30]]);
-    flush();
-    const thumb = root.querySelector("[data-slot='slider-thumb']") as HTMLElement;
-    expect(inlineStyles(thumb)).toContain("left:30%");
-    expect(thumb.getAttribute("aria-valuenow")).toBe("30");
-  });
+  test.each(sliderVariants)(
+    "$style maps pointer drags to the nearest thumb through onValueChange",
+    async (variant) => {
+      const onValueChange = vi.fn((value: number[]) => value);
+      const root = renderVariant(variant, { value: [50], onValueChange }) as HTMLElement;
+      await awaitWiring(root);
+      spyTrackRect(root, { left: 0, top: 0, width: 100, height: 10 });
+      drag(root, [{ x: 20 }, { x: 30 }]);
+      expect(onValueChange).toHaveBeenCalledTimes(2);
+      expect(onValueChange.mock.calls[0]).toEqual([[20]]);
+      expect(onValueChange.mock.calls[1]).toEqual([[30]]);
+      flush();
+      const thumb = root.querySelector("[data-slot='slider-thumb']") as HTMLElement;
+      expect(inlineStyles(thumb)).toContain("left:30%");
+      expect(thumb.getAttribute("aria-valuenow")).toBe("30");
+    },
+  );
 
-  test.each(sliderVariants)("$style quantizes pointer values onto the step grid", async (variant) => {
-    const onValueChange = mock((value: number[]) => value);
-    const root = renderVariant(variant, { value: [0], min: 0, max: 100, step: 5, onValueChange }) as HTMLElement;
-    await awaitWiring(root);
-    spyTrackRect(root, { left: 0, top: 0, width: 100, height: 10 });
-    drag(root, [{ x: 22 }]);
-    expect(onValueChange).toHaveBeenCalledTimes(1);
-    expect(onValueChange.mock.calls[0]).toEqual([[20]]);
-  });
+  test.each(sliderVariants)(
+    "$style quantizes pointer values onto the step grid",
+    async (variant) => {
+      const onValueChange = vi.fn((value: number[]) => value);
+      const root = renderVariant(variant, {
+        value: [0],
+        min: 0,
+        max: 100,
+        step: 5,
+        onValueChange,
+      }) as HTMLElement;
+      await awaitWiring(root);
+      spyTrackRect(root, { left: 0, top: 0, width: 100, height: 10 });
+      drag(root, [{ x: 22 }]);
+      expect(onValueChange).toHaveBeenCalledTimes(1);
+      expect(onValueChange.mock.calls[0]).toEqual([[20]]);
+    },
+  );
 
-  test.each(sliderVariants)("$style enforces minStepsBetweenThumbs against the neighbor", async (variant) => {
-    const onValueChange = mock((value: number[]) => value);
-    const root = renderVariant(variant, { value: [30, 70], minStepsBetweenThumbs: 10, onValueChange }) as HTMLElement;
-    await awaitWiring(root);
-    spyTrackRect(root, { left: 0, top: 0, width: 100, height: 10 });
-    drag(root, [{ x: 32 }, { x: 85 }]);
-    expect(onValueChange).toHaveBeenCalledTimes(2);
-    expect(onValueChange.mock.calls[0]).toEqual([[32, 70]]);
-    expect(onValueChange.mock.calls[1]).toEqual([[60, 70]]);
-  });
+  test.each(sliderVariants)(
+    "$style enforces minStepsBetweenThumbs against the neighbor",
+    async (variant) => {
+      const onValueChange = vi.fn((value: number[]) => value);
+      const root = renderVariant(variant, {
+        value: [30, 70],
+        minStepsBetweenThumbs: 10,
+        onValueChange,
+      }) as HTMLElement;
+      await awaitWiring(root);
+      spyTrackRect(root, { left: 0, top: 0, width: 100, height: 10 });
+      drag(root, [{ x: 32 }, { x: 85 }]);
+      expect(onValueChange).toHaveBeenCalledTimes(2);
+      expect(onValueChange.mock.calls[0]).toEqual([[32, 70]]);
+      expect(onValueChange.mock.calls[1]).toEqual([[60, 70]]);
+    },
+  );
 
-  test.each(sliderVariants)("$style fires onValueCommit on drag end with the committed values", async (variant) => {
-    const onValueCommit = mock((value: number[]) => value);
-    const root = renderVariant(variant, { value: [50], onValueCommit }) as HTMLElement;
-    await awaitWiring(root);
-    spyTrackRect(root, { left: 0, top: 0, width: 100, height: 10 });
-    drag(root, [{ x: 70 }]);
-    expect(onValueCommit).toHaveBeenCalledTimes(1);
-    expect(onValueCommit.mock.calls[0]).toEqual([[70]]);
-  });
+  test.each(sliderVariants)(
+    "$style fires onValueCommit on drag end with the committed values",
+    async (variant) => {
+      const onValueCommit = vi.fn((value: number[]) => value);
+      const root = renderVariant(variant, { value: [50], onValueCommit }) as HTMLElement;
+      await awaitWiring(root);
+      spyTrackRect(root, { left: 0, top: 0, width: 100, height: 10 });
+      drag(root, [{ x: 70 }]);
+      expect(onValueCommit).toHaveBeenCalledTimes(1);
+      expect(onValueCommit.mock.calls[0]).toEqual([[70]]);
+    },
+  );
 
-  test.each(sliderVariants)("$style steps by keyboard with Home/End clamps and PageUp/PageDown jumps", (variant) => {
-    const onValueChange = mock((value: number[]) => value);
-    const root = renderVariant(variant, { value: [50], min: 0, max: 100, step: 10, onValueChange }) as HTMLElement;
-    const thumb = root.querySelector("[data-slot='slider-thumb']") as HTMLElement;
-    press(thumb, "ArrowRight");
-    expect(onValueChange.mock.calls[0]).toEqual([[60]]);
-    press(thumb, "ArrowDown");
-    expect(onValueChange.mock.calls[1]).toEqual([[50]]);
-    press(thumb, "PageUp");
-    expect(onValueChange.mock.calls[2]).toEqual([[100]]);
-    press(thumb, "Home");
-    expect(onValueChange.mock.calls[3]).toEqual([[0]]);
-    press(thumb, "End");
-    expect(onValueChange.mock.calls[4]).toEqual([[100]]);
-    press(thumb, "PageDown");
-    expect(onValueChange.mock.calls[5]).toEqual([[0]]);
-    press(thumb, "ArrowUp");
-    expect(onValueChange.mock.calls[6]).toEqual([[10]]);
-    press(thumb, "ArrowLeft");
-    expect(onValueChange.mock.calls[7]).toEqual([[0]]);
-    press(thumb, "x");
-    expect(onValueChange).toHaveBeenCalledTimes(8);
-  });
+  test.each(sliderVariants)(
+    "$style steps by keyboard with Home/End clamps and PageUp/PageDown jumps",
+    (variant) => {
+      const onValueChange = vi.fn((value: number[]) => value);
+      const root = renderVariant(variant, {
+        value: [50],
+        min: 0,
+        max: 100,
+        step: 10,
+        onValueChange,
+      }) as HTMLElement;
+      const thumb = root.querySelector("[data-slot='slider-thumb']") as HTMLElement;
+      press(thumb, "ArrowRight");
+      expect(onValueChange.mock.calls[0]).toEqual([[60]]);
+      press(thumb, "ArrowDown");
+      expect(onValueChange.mock.calls[1]).toEqual([[50]]);
+      press(thumb, "PageUp");
+      expect(onValueChange.mock.calls[2]).toEqual([[100]]);
+      press(thumb, "Home");
+      expect(onValueChange.mock.calls[3]).toEqual([[0]]);
+      press(thumb, "End");
+      expect(onValueChange.mock.calls[4]).toEqual([[100]]);
+      press(thumb, "PageDown");
+      expect(onValueChange.mock.calls[5]).toEqual([[0]]);
+      press(thumb, "ArrowUp");
+      expect(onValueChange.mock.calls[6]).toEqual([[10]]);
+      press(thumb, "ArrowLeft");
+      expect(onValueChange.mock.calls[7]).toEqual([[0]]);
+      press(thumb, "x");
+      expect(onValueChange).toHaveBeenCalledTimes(8);
+    },
+  );
 
-  test.each(sliderVariants)("$style maps vertical drags and keys from the bottom edge", async (variant) => {
-    const onValueChange = mock((value: number[]) => value);
-    const root = renderVariant(variant, { value: [40], orientation: "vertical", onValueChange }) as HTMLElement;
-    await awaitWiring(root);
-    expect(root.getAttribute("data-orientation")).toBe("vertical");
-    spyTrackRect(root, { left: 0, top: 0, width: 10, height: 100 });
-    const thumb = root.querySelector("[data-slot='slider-thumb']") as HTMLElement;
-    expect(inlineStyles(thumb)).toContain("bottom:40%");
-    drag(root, [{ x: 0, y: 60 }, { x: 0, y: 30 }]);
-    expect(onValueChange).toHaveBeenCalledTimes(1);
-    expect(onValueChange.mock.calls[0]).toEqual([[70]]);
-    flush();
-    expect(inlineStyles(thumb)).toContain("bottom:70%");
-    press(thumb, "ArrowUp");
-    expect(onValueChange.mock.calls[1]).toEqual([[71]]);
-    press(thumb, "ArrowDown");
-    expect(onValueChange.mock.calls[2]).toEqual([[70]]);
-  });
+  test.each(sliderVariants)(
+    "$style maps vertical drags and keys from the bottom edge",
+    async (variant) => {
+      const onValueChange = vi.fn((value: number[]) => value);
+      const root = renderVariant(variant, {
+        value: [40],
+        orientation: "vertical",
+        onValueChange,
+      }) as HTMLElement;
+      await awaitWiring(root);
+      expect(root.getAttribute("data-orientation")).toBe("vertical");
+      spyTrackRect(root, { left: 0, top: 0, width: 10, height: 100 });
+      const thumb = root.querySelector("[data-slot='slider-thumb']") as HTMLElement;
+      expect(inlineStyles(thumb)).toContain("bottom:40%");
+      drag(root, [
+        { x: 0, y: 60 },
+        { x: 0, y: 30 },
+      ]);
+      expect(onValueChange).toHaveBeenCalledTimes(1);
+      expect(onValueChange.mock.calls[0]).toEqual([[70]]);
+      flush();
+      expect(inlineStyles(thumb)).toContain("bottom:70%");
+      press(thumb, "ArrowUp");
+      expect(onValueChange.mock.calls[1]).toEqual([[71]]);
+      press(thumb, "ArrowDown");
+      expect(onValueChange.mock.calls[2]).toEqual([[70]]);
+    },
+  );
 
-  test.each(sliderVariants)("$style lands user min/max/step overrides on the root and drives the range math", async (variant) => {
-    const onValueChange = mock((value: number[]) => value);
-    const root = renderVariant(variant, { value: [50], min: 20, max: 80, step: 10, onValueChange }) as HTMLElement;
-    await awaitWiring(root);
-    expect(root.getAttribute("min")).toBe("20");
-    expect(root.getAttribute("max")).toBe("80");
-    expect(root.getAttribute("step")).toBe("10");
-    const thumb = root.querySelector("[data-slot='slider-thumb']") as HTMLElement;
-    expect(thumb.getAttribute("aria-valuemin")).toBe("20");
-    expect(thumb.getAttribute("aria-valuemax")).toBe("80");
-    spyTrackRect(root, { left: 0, top: 0, width: 100, height: 10 });
-    drag(root, [{ x: 25 }]);
-    // 25% of the 20–80 track is 35; the step-10 grid quantizes it to 40.
-    expect(onValueChange.mock.calls[0]).toEqual([[40]]);
-  });
+  test.each(sliderVariants)(
+    "$style lands user min/max/step overrides on the root and drives the range math",
+    async (variant) => {
+      const onValueChange = vi.fn((value: number[]) => value);
+      const root = renderVariant(variant, {
+        value: [50],
+        min: 20,
+        max: 80,
+        step: 10,
+        onValueChange,
+      }) as HTMLElement;
+      await awaitWiring(root);
+      expect(root.getAttribute("min")).toBe("20");
+      expect(root.getAttribute("max")).toBe("80");
+      expect(root.getAttribute("step")).toBe("10");
+      const thumb = root.querySelector("[data-slot='slider-thumb']") as HTMLElement;
+      expect(thumb.getAttribute("aria-valuemin")).toBe("20");
+      expect(thumb.getAttribute("aria-valuemax")).toBe("80");
+      spyTrackRect(root, { left: 0, top: 0, width: 100, height: 10 });
+      drag(root, [{ x: 25 }]);
+      // 25% of the 20–80 track is 35; the step-10 grid quantizes it to 40.
+      expect(onValueChange.mock.calls[0]).toEqual([[40]]);
+    },
+  );
 
   test.each(sliderVariants)("$style blocks drags and keys while disabled", async (variant) => {
-    const onValueChange = mock((value: number[]) => value);
-    const root = renderVariant(variant, { value: [50], disabled: true, onValueChange }) as HTMLElement;
+    const onValueChange = vi.fn((value: number[]) => value);
+    const root = renderVariant(variant, {
+      value: [50],
+      disabled: true,
+      onValueChange,
+    }) as HTMLElement;
     await awaitWiring(root);
     expect(root.getAttribute("data-disabled")).toBe("true");
     const thumb = root.querySelector("[data-slot='slider-thumb']") as HTMLElement;
@@ -204,51 +283,60 @@ describe("slider", () => {
     expect(onValueChange).not.toHaveBeenCalled();
   });
 
-  test.each(sliderVariants)("$style re-renders positions when a controlled value() signal writes", async (variant) => {
-    const values = signal<number[]>([25]);
-    const root = renderVariant(variant, { value: () => values() }) as HTMLElement;
-    const thumb = root.querySelector("[data-slot='slider-thumb']") as HTMLElement;
-    expect(thumb.getAttribute("aria-valuenow")).toBe("25");
-    values([80]);
-    flush();
-    expect(thumb.getAttribute("aria-valuenow")).toBe("80");
-    expect(inlineStyles(thumb)).toContain("left:80%");
-  });
+  test.each(sliderVariants)(
+    "$style re-renders positions when a controlled value() signal writes",
+    async (variant) => {
+      const values = signal<number[]>([25]);
+      const root = renderVariant(variant, { value: () => values() }) as HTMLElement;
+      const thumb = root.querySelector("[data-slot='slider-thumb']") as HTMLElement;
+      expect(thumb.getAttribute("aria-valuenow")).toBe("25");
+      values([80]);
+      flush();
+      expect(thumb.getAttribute("aria-valuenow")).toBe("80");
+      expect(inlineStyles(thumb)).toContain("left:80%");
+    },
+  );
 
-  test.each(sliderVariants)("$style carries the ring focus classes for the thumb on both styles", (variant) => {
-    const root = renderVariant(variant, { value: [50] }) as HTMLElement;
-    const thumb = root.querySelector("[data-slot='slider-thumb']") as HTMLElement;
-    if (variant.style === "tailwind") {
-      expect(classTokens(thumb)).toContain("focus-visible:ring-4");
-      expect(classTokens(root)).toContain("touch-none");
-    } else {
-      expect(classTokens(root).some((token) => token.startsWith("slider"))).toBe(true);
-      expect(classTokens(thumb).some((token) => token.startsWith("slider-thumb"))).toBe(true);
-    }
-  });
+  test.each(sliderVariants)(
+    "$style carries the ring focus classes for the thumb on both styles",
+    (variant) => {
+      const root = renderVariant(variant, { value: [50] }) as HTMLElement;
+      const thumb = root.querySelector("[data-slot='slider-thumb']") as HTMLElement;
+      if (variant.style === "tailwind") {
+        expect(classTokens(thumb)).toContain("focus-visible:ring-4");
+        expect(classTokens(root)).toContain("touch-none");
+      } else {
+        expect(classTokens(root).some((token) => token.startsWith("slider"))).toBe(true);
+        expect(classTokens(thumb).some((token) => token.startsWith("slider-thumb"))).toBe(true);
+      }
+    },
+  );
 
-  test.each(sliderVariants)("$style disposes the drag wiring when the root unmounts", async (variant) => {
-    const onValueChange = mock((value: number[]) => value);
-    const root = renderVariant(variant, { value: [50], onValueChange }) as HTMLElement;
-    await awaitWiring(root);
-    // Removing the root from its observed mount container runs the destroy hooks.
-    root.remove();
-    for (let i = 0; i < 50; i++) {
-      if (!peekState(root)) break;
-      await delay();
-    }
-    expect(peekState(root)).toBeUndefined();
-    spyTrackRect(root, { left: 0, top: 0, width: 100, height: 10 });
-    drag(root, [{ x: 20 }]);
-    expect(onValueChange).not.toHaveBeenCalled();
-  });
+  test.each(sliderVariants)(
+    "$style disposes the drag wiring when the root unmounts",
+    async (variant) => {
+      const onValueChange = vi.fn((value: number[]) => value);
+      const root = renderVariant(variant, { value: [50], onValueChange }) as HTMLElement;
+      await awaitWiring(root);
+      // Removing the root from its observed mount container runs the destroy hooks.
+      root.remove();
+      for (let i = 0; i < 50; i++) {
+        if (!peekState(root)) break;
+        await delay();
+      }
+      expect(peekState(root)).toBeUndefined();
+      spyTrackRect(root, { left: 0, top: 0, width: 100, height: 10 });
+      drag(root, [{ x: 20 }]);
+      expect(onValueChange).not.toHaveBeenCalled();
+    },
+  );
 
   test("forwards user attrs onto the root across both styles", () => {
     assertAttrForwarded(sliderVariants, { title: "Hella" }, "title", "Hella");
   });
 
   test("fires a user on:click handler across both styles", () => {
-    const onClick = mock(() => {});
+    const onClick = vi.fn(() => {});
     assertHandlerForwarded(sliderVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 
@@ -259,6 +347,10 @@ describe("slider", () => {
 
   test("keeps structural parity across both styles", () => {
     assertStructuralParity(sliderVariants, { value: [25, 75] });
-    assertStructuralParity(sliderVariants, { value: [50], orientation: "vertical", disabled: true });
+    assertStructuralParity(sliderVariants, {
+      value: [50],
+      orientation: "vertical",
+      disabled: true,
+    });
   });
 });

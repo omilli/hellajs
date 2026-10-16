@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { resetTestState, getStylesheet, getHostStylesheet } from "@utils/test-helpers.js";
-import { style, removeStyle, cssText } from "@hellajs/css/bundle";
+import { style, removeStyle, cssText } from "@hellajs/css";
 import { createShadowHost } from "./helpers";
 
 beforeEach(() => {

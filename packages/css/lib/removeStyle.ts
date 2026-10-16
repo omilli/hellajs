@@ -33,7 +33,11 @@ export function removeStyle(label: string, obj: StyleObject, options?: StyleOpti
  * @throws {Error} When a style argument is not a plain object, or when a property value is a function — use `vars()` for reactive values.
  */
 export function removeStyle(base: StyleObject, override: StyleObject, options?: StyleOptions): void;
-export function removeStyle(base: string | StyleObject, overrideOrOptions?: StyleObject | StyleOptions, optionsArg?: StyleOptions): void {
+export function removeStyle(
+  base: string | StyleObject,
+  overrideOrOptions?: StyleObject | StyleOptions,
+  optionsArg?: StyleOptions,
+): void {
   const resolved = resolveStyle("removeStyle", base, overrideOrOptions, optionsArg);
   deregisterText(resolved.text, resolved.host);
 }

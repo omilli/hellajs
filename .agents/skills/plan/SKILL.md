@@ -111,7 +111,7 @@ Files: `packages/core/tests/signals.test.ts`.
 
 - [ ] A labeled signal stores the label; an unlabeled one leaves it undefined
   (both overload shapes exercised).
-- [ ] `bun coverage core` green with the new scenarios.
+- [ ] `vp run coverage core` green with the new scenarios.
 
 ## [ ] Docs
 Files: `packages/core/docs/api/signal.mdx`.

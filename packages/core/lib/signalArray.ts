@@ -36,7 +36,9 @@ export function signalArray<T>(initial?: T[], options?: CollectionOptions<T>): S
   const { read: version, bump } = createVersion();
   const nodes: ArrayNode<T>[] = [];
   const equals = hooks.ce ? { equals: hooks.ce } : undefined;
-  const create = (value: T): ArrayNode<T> => ({ s: equals ? signal(value, equals) : signal(value) });
+  const create = (value: T): ArrayNode<T> => ({
+    s: equals ? signal(value, equals) : signal(value),
+  });
 
   if (initial !== undefined) {
     let i = 0;

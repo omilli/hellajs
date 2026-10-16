@@ -1,16 +1,14 @@
 import fs from "node:fs/promises";
 import { gzipSync } from "node:zlib";
 import path from "node:path";
-import { logger } from "../utils/index.js";
-import type { BuildMetrics } from "./config.js";
+import { logger } from "../utils/index.ts";
+import type { BuildMetrics } from "./config.ts";
 
 /**
  * Calculate raw and gzipped size for a single file.
  * @returns Size object with bundleSize and gzipSize in KB
  */
-export async function calculateFileMetrics(
-  filePath: string,
-): Promise<BuildMetrics> {
+export async function calculateFileMetrics(filePath: string): Promise<BuildMetrics> {
   const fileContents = await fs.readFile(filePath);
   const stats = await fs.stat(filePath);
   const gzipSize = gzipSync(fileContents).length;
@@ -42,9 +40,7 @@ export async function calculateMetrics(
   try {
     await fs.writeFile(sizesPath, JSON.stringify(sizeData, null, 2));
   } catch (error) {
-    logger.warn(
-      `Warning: Failed to write size data for ${name}: ${(error as Error).message}`,
-    );
+    logger.warn(`Warning: Failed to write size data for ${name}: ${(error as Error).message}`);
   }
 
   return bundleMetrics;

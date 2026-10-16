@@ -4,7 +4,7 @@ interface ButtonProps {
   text: string;
 }
 
-export const ActionButton = ((props: ButtonProps) => (
+export const ActionButton = (props: ButtonProps) => (
   <div class="col-sm-6">
     <button
       id={props.id}
@@ -15,4 +15,4 @@ export const ActionButton = ((props: ButtonProps) => (
       {props.text}
     </button>
   </div>
-));
+);

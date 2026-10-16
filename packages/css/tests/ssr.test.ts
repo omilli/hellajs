@@ -1,7 +1,18 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, vi } from "vite-plus/test";
 import { signal } from "@hellajs/core";
 import { getStylesheet, resetTestState } from "@utils/test-helpers.js";
-import { css, style, vars, keyframes, cssText, removeCss, removeVars, removeStyle, resetCss, resetVars } from "@hellajs/css/bundle";
+import {
+  css,
+  style,
+  vars,
+  keyframes,
+  cssText,
+  removeCss,
+  removeVars,
+  removeStyle,
+  resetCss,
+  resetVars,
+} from "@hellajs/css";
 
 let origDocument: unknown;
 
@@ -34,10 +45,13 @@ describe("platform-independent registration (no document)", () => {
   });
 
   test("style() nesting composes under the class in cssText()", () => {
-    const cls = style({
-      color: "red",
-      "&:hover": { color: "blue" },
-    }, { label: "btn" });
+    const cls = style(
+      {
+        color: "red",
+        "&:hover": { color: "blue" },
+      },
+      { label: "btn" },
+    );
     expect(cssText()).toBe(`.${cls} {\n  color: red;\n}\n.${cls}:hover {\n  color: blue;\n}`);
   });
 
@@ -55,20 +69,20 @@ describe("platform-independent registration (no document)", () => {
 
   test("css() throws for selector-less conditional at-rule declarations on the server too", () => {
     expect(() => css({ "@media (min-width: 1px)": { color: "red" } })).toThrow(
-      '[css] conditional at-rule "@media (min-width: 1px)" contains declarations with no selector'
+      '[css] conditional at-rule "@media (min-width: 1px)" contains declarations with no selector',
     );
   });
 
   test("css() throws for top-level declarations on the server too", () => {
     expect(() => css({ color: "red" })).toThrow(
-      "[css] top-level declarations have no selector — nest them under a selector or at-rule"
+      "[css] top-level declarations have no selector — nest them under a selector or at-rule",
     );
   });
 
   test("css() throws for function values on the server too", () => {
     // @ts-expect-error - testing invalid input
     expect(() => css({ padding: () => "1px" })).toThrow(
-      "[css] function values are not supported in css objects — use vars() for reactive values, key: padding"
+      "[css] function values are not supported in css objects — use vars() for reactive values, key: padding",
     );
   });
 
@@ -86,7 +100,7 @@ describe("platform-independent registration (no document)", () => {
   });
 
   test("vars() resolves function leaves exactly once on the server", () => {
-    const tracker = mock(() => "red");
+    const tracker = vi.fn(() => "red");
     const theme = vars({ x: tracker });
 
     expect(theme.x).toBe("var(--x)");
@@ -112,10 +126,15 @@ describe("platform-independent registration (no document)", () => {
   });
 
   test("keyframes() returns the name and cssText() carries the rule", () => {
-    const name = keyframes({ from: { transform: "rotate(0deg)" }, to: { transform: "rotate(360deg)" } });
+    const name = keyframes({
+      from: { transform: "rotate(0deg)" },
+      to: { transform: "rotate(360deg)" },
+    });
 
     expect(name).toMatch(/^kf-[a-z]+$/);
-    expect(cssText()).toBe(`@keyframes ${name} {\n  from {\n    transform: rotate(0deg);\n  }\n  to {\n    transform: rotate(360deg);\n  }\n}`);
+    expect(cssText()).toBe(
+      `@keyframes ${name} {\n  from {\n    transform: rotate(0deg);\n  }\n  to {\n    transform: rotate(360deg);\n  }\n}`,
+    );
   });
 
   test("removeCss decrements the server registration", () => {
@@ -154,7 +173,7 @@ describe("platform-independent registration (no document)", () => {
     vars(theme, { scoped: ".a" });
 
     expect(() => vars(theme, { scoped: ".b" })).toThrow(
-      "[css] vars: reactive vars object already registered with different options"
+      "[css] vars: reactive vars object already registered with different options",
     );
     expect(cssText()).toBe(".a {\n  --color: red;\n}");
   });

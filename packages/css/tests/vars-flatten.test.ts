@@ -1,6 +1,6 @@
-import { describe, expect, test, beforeEach } from "bun:test";
+import { describe, expect, test, beforeEach } from "vite-plus/test";
 import { resetTestState, getStylesheet } from "@utils/test-helpers.js";
-import { vars } from "@hellajs/css/bundle";
+import { vars } from "@hellajs/css";
 
 beforeEach(() => {
   resetTestState();
@@ -11,7 +11,7 @@ describe("vars flatten", () => {
     const varsObj = vars({
       theme: {
         color: () => "blue",
-      }
+      },
     });
     expect(varsObj.theme.color).toBe("var(--theme-color)");
   });
@@ -22,8 +22,8 @@ describe("vars flatten", () => {
         b: {
           c: "static",
           d: () => "dynamic",
-        }
-      }
+        },
+      },
     });
     expect(varsObj.a.b.c).toBe("var(--a-b-c)");
     expect(varsObj.a.b.d).toBe("var(--a-b-d)");

@@ -1,4 +1,15 @@
-import type { ItemGroupProps, ItemSeparatorProps, ItemProps, ItemMediaProps, ItemContentProps, ItemTitleProps, ItemDescriptionProps, ItemActionsProps, ItemHeaderProps, ItemFooterProps } from "./item-types.js";
+import type {
+  ItemGroupProps,
+  ItemSeparatorProps,
+  ItemProps,
+  ItemMediaProps,
+  ItemContentProps,
+  ItemTitleProps,
+  ItemDescriptionProps,
+  ItemActionsProps,
+  ItemHeaderProps,
+  ItemFooterProps,
+} from "./item-types.js";
 
 // @hella:styles
 declare const actions: string;
@@ -43,11 +54,7 @@ export function ItemSeparator({ class: cls, ...attrs }: ItemSeparatorProps): JSX
       aria-orientation="horizontal"
       class={
         // @hella:compose
-        [
-          separatorBase,
-          separator,
-          cls,
-        ]
+        [separatorBase, separator, cls]
         // @hella:end
       }
       {...attrs}
@@ -55,7 +62,14 @@ export function ItemSeparator({ class: cls, ...attrs }: ItemSeparatorProps): JSX
   );
 }
 
-export function Item({ variant, size, selected, children, class: cls, ...attrs }: ItemProps): JSX.Element {
+export function Item({
+  variant,
+  size,
+  selected,
+  children,
+  class: cls,
+  ...attrs
+}: ItemProps): JSX.Element {
   const selectedAttr = (): "true" | "false" =>
     (typeof selected === "function" ? selected() : selected) ? "true" : "false";
   return (
@@ -67,12 +81,7 @@ export function Item({ variant, size, selected, children, class: cls, ...attrs }
       aria-selected={selectedAttr}
       class={
         // @hella:compose
-        [
-          base,
-          variants[variant ?? "default"],
-          sizes[size ?? "default"],
-          cls,
-        ]
+        [base, variants[variant ?? "default"], sizes[size ?? "default"], cls]
         // @hella:end
       }
       {...attrs}
@@ -82,18 +91,19 @@ export function Item({ variant, size, selected, children, class: cls, ...attrs }
   );
 }
 
-export function ItemMedia({ variant, children, class: cls, ...attrs }: ItemMediaProps): JSX.Element {
+export function ItemMedia({
+  variant,
+  children,
+  class: cls,
+  ...attrs
+}: ItemMediaProps): JSX.Element {
   return (
     <div
       data-slot="item-media"
       data-variant={variant ?? "default"}
       class={
         // @hella:compose
-        [
-          media,
-          mediaVariants[variant ?? "default"],
-          cls,
-        ]
+        [media, mediaVariants[variant ?? "default"], cls]
         // @hella:end
       }
       {...attrs}
@@ -135,7 +145,11 @@ export function ItemTitle({ children, class: cls, ...attrs }: ItemTitleProps): J
   );
 }
 
-export function ItemDescription({ children, class: cls, ...attrs }: ItemDescriptionProps): JSX.Element {
+export function ItemDescription({
+  children,
+  class: cls,
+  ...attrs
+}: ItemDescriptionProps): JSX.Element {
   return (
     <p
       data-slot="item-description"

@@ -1,7 +1,7 @@
-import { describe, expect, test, beforeEach, afterEach } from "bun:test";
+import { describe, expect, test, beforeEach, afterEach } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState, suppressConsole } from "@utils/test-helpers.js";
-import { vars, removeVars, cssText } from "@hellajs/css/bundle";
+import { vars, removeVars, cssText } from "@hellajs/css";
 
 let sup: ReturnType<typeof suppressConsole>;
 
@@ -28,7 +28,9 @@ describe("vars layer", () => {
     vars({ bg: "#000" }, { media: "(min-width: 600px)", layer: "hella" });
 
     flush();
-    expect(cssText()).toBe("@layer hella {\n  @media (min-width: 600px) {\n    :root {\n      --bg: #000;\n    }\n  }\n}");
+    expect(cssText()).toBe(
+      "@layer hella {\n  @media (min-width: 600px) {\n    :root {\n      --bg: #000;\n    }\n  }\n}",
+    );
   });
 
   test("same scope under two layers coexists and removeVars drops only its layer bucket", () => {
@@ -37,7 +39,9 @@ describe("vars layer", () => {
     vars({ bg: "#000" }, { layer: "two" });
 
     flush();
-    expect(cssText()).toBe("@layer one {\n  :root {\n    --bg: #fff;\n  }\n}\n\n@layer two {\n  :root {\n    --bg: #000;\n  }\n}");
+    expect(cssText()).toBe(
+      "@layer one {\n  :root {\n    --bg: #fff;\n  }\n}\n\n@layer two {\n  :root {\n    --bg: #000;\n  }\n}",
+    );
 
     removeVars(light, { layer: "one" });
     flush();

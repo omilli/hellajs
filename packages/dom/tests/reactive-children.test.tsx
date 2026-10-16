@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { mount, hydrate, component, ForEach } from "@hellajs/dom";
@@ -9,13 +9,12 @@ beforeEach(() => {
 });
 
 // The vendored-component codegen shape: children re-interpolated through the compiled JSX path
-const Box = (props: { children?: HellaChildren }) =>
-  <div id="box">{() => props.children}</div>;
+const Box = (props: { children?: HellaChildren }) => <div id="box">{() => props.children}</div>;
 
 describe("dom", () => {
   describe("reactive children", () => {
     test("renders a function child returning a node through a component child slot", () => {
-      mount(<Box>{(() => <b>sync</b>)}</Box>);
+      mount(<Box>{() => <b>sync</b>}</Box>);
 
       expect(document.getElementById("box")!.innerHTML).toBe("<b>sync</b>");
     });
@@ -23,7 +22,7 @@ describe("dom", () => {
     test("renders a function child returning a node array through a component child slot", () => {
       const rows = ["a", "b", "c"];
 
-      mount(<Box>{(() => rows.map((row) => <p>{row}</p>))}</Box>);
+      mount(<Box>{() => rows.map((row) => <p>{row}</p>)}</Box>);
 
       expect(document.getElementById("box")!.textContent).toBe("abc");
       expect(document.getElementById("box")!.querySelectorAll("p").length).toBe(3);
@@ -38,7 +37,7 @@ describe("dom", () => {
     test("swaps component-slot child nodes when the source signal changes", () => {
       const items = signal(["one", "two"]);
 
-      mount(<Box>{(() => items().map((item) => <p>{item}</p>))}</Box>);
+      mount(<Box>{() => items().map((item) => <p>{item}</p>)}</Box>);
       const box = document.getElementById("box")!;
       expect(box.textContent).toBe("onetwo");
 
@@ -56,7 +55,11 @@ describe("dom", () => {
     test("renders a function child resolving to an isDynamic component through a component slot", () => {
       const items = signal(["x", "y"]);
 
-      mount(<Box>{(() => ForEach({ each: () => items(), use: (item: string) => <span>{item}</span> }))}</Box>);
+      mount(
+        <Box>
+          {() => ForEach({ each: () => items(), use: (item: string) => <span>{item}</span> })}
+        </Box>,
+      );
       const box = document.getElementById("box")!;
       expect(box.textContent).toBe("xy");
 
@@ -85,7 +88,7 @@ describe("dom", () => {
       const container = setupContainer();
       container.innerHTML = '<div id="box"><!--[--><p>a</p><p>b</p><!--]--></div>';
 
-      hydrate(<Box>{(() => items().map((item) => <p>{item}</p>))}</Box>, container);
+      hydrate(<Box>{() => items().map((item) => <p>{item}</p>)}</Box>, container);
       const box = container.querySelector("#box")!;
       expect(box.querySelectorAll("p").length).toBe(2);
 

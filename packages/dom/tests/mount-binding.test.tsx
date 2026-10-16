@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState } from "@utils/test-helpers.js";
 import { mount } from "@hellajs/dom";
@@ -12,7 +12,11 @@ describe("dom", () => {
     test("value set via direct property with falsy fallback", () => {
       const inputValue = signal("hello");
 
-      mount(<div><input id="val-input" value={inputValue} /></div>);
+      mount(
+        <div>
+          <input id="val-input" value={inputValue} />
+        </div>,
+      );
 
       const valInput = document.getElementById("val-input") as HTMLInputElement;
 

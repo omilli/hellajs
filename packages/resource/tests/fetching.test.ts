@@ -1,7 +1,7 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, vi } from "vite-plus/test";
 import { effect, signal } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { resource } from "@hellajs/resource/bundle";
+import { resource } from "@hellajs/resource";
 import { mockUser, mockPosts } from "./helpers";
 
 describe("resource", () => {
@@ -19,18 +19,20 @@ describe("resource", () => {
 
     test("throws when options is null", () => {
       // @ts-expect-error — intentionally invalid options
-      expect(() => resource(async () => mockUser, null)).toThrow("[resource] resource: options must be an object");
+      expect(() => resource(async () => mockUser, null)).toThrow(
+        "[resource] resource: options must be an object",
+      );
     });
 
     test("throws when cacheTime is negative", () => {
       expect(() => resource(async () => mockUser, { cacheTime: -100 })).toThrow(
-        "[resource] resource: cacheTime must be a non-negative number, received -100"
+        "[resource] resource: cacheTime must be a non-negative number, received -100",
       );
     });
 
     test("throws when staleTime is negative", () => {
       expect(() => resource(async () => mockUser, { staleTime: -1 })).toThrow(
-        "[resource] resource: staleTime must be a non-negative number, received -1"
+        "[resource] resource: staleTime must be a non-negative number, received -1",
       );
     });
 
@@ -67,10 +69,7 @@ describe("resource", () => {
 
     test("invalidates on key change", async () => {
       const userId = signal(1);
-      const r = resource(
-        (id) => delay({ id, name: `User ${id}` }),
-        { key: () => userId() }
-      );
+      const r = resource((id) => delay({ id, name: `User ${id}` }), { key: () => userId() });
       r.fetch({ force: true });
       await delay(20);
       expect(r.data()?.name).toBe("User 1");
@@ -81,7 +80,7 @@ describe("resource", () => {
     });
 
     test("respects enabled flag", async () => {
-      const fetcher = mock(() => delay(mockUser));
+      const fetcher = vi.fn(() => delay(mockUser));
       const r = resource(fetcher, { enabled: false });
       r.fetch({ force: true });
       await delay(20);
@@ -90,7 +89,7 @@ describe("resource", () => {
     });
 
     test("calls onSuccess callback", async () => {
-      const onSuccess = mock(() => { });
+      const onSuccess = vi.fn(() => {});
       const successR = resource(() => delay(mockUser), { onSuccess });
       successR.fetch({ force: true });
       await delay(20);
@@ -99,7 +98,7 @@ describe("resource", () => {
     });
 
     test("calls onError callback", async () => {
-      const onError = mock(() => { });
+      const onError = vi.fn(() => {});
       const errorR = resource(() => Promise.reject("Error"), { onError });
       errorR.fetch({ force: true });
       await delay(20);
@@ -123,7 +122,7 @@ describe("resource", () => {
     test("fetches from URL", async () => {
       globalThis.fetch = (async (url: RequestInfo) => ({
         ok: true,
-        json: async () => ({ message: `Data from ${url}` })
+        json: async () => ({ message: `Data from ${url}` }),
       })) as unknown as typeof globalThis.fetch;
 
       const r = resource("https://api.example.com/data");
@@ -136,7 +135,7 @@ describe("resource", () => {
     test("timeout does not interfere with fast response", async () => {
       const r = resource(() => delay("response", 10), {
         timeout: 1000,
-        initialData: "initial"
+        initialData: "initial",
       });
 
       r.fetch({ force: true });
@@ -148,12 +147,14 @@ describe("resource", () => {
 
     test("handles external AbortSignal", async () => {
       const controller = new AbortController();
-      let resolvePromise: (value: string) => void = () => { };
-      const slowPromise = new Promise<string>((resolve) => { resolvePromise = resolve; });
+      let resolvePromise: (value: string) => void = () => {};
+      const slowPromise = new Promise<string>((resolve) => {
+        resolvePromise = resolve;
+      });
 
       const r = resource(() => slowPromise, {
         abortSignal: controller.signal,
-        initialData: "initial"
+        initialData: "initial",
       });
 
       r.fetch({ force: true });
@@ -190,12 +191,14 @@ describe("resource", () => {
     test("auto-fetch disabled by default", async () => {
       const userId = signal(1);
 
-      const fetcher = mock((id: number) => delay({ id, name: `User ${id}` }));
+      const fetcher = vi.fn((id: number) => delay({ id, name: `User ${id}` }));
       const r = resource(fetcher, {
-        key: () => userId()
+        key: () => userId(),
       });
 
-      const cleanup = effect(() => { r.data(); });
+      const cleanup = effect(() => {
+        r.data();
+      });
       await delay(20);
 
       expect(fetcher).toHaveBeenCalledTimes(0);
@@ -206,13 +209,15 @@ describe("resource", () => {
     test("auto-fetch triggers on key change", async () => {
       const userId = signal(1);
 
-      const fetcher = mock((id: number) => delay({ id, name: `User ${id}` }));
+      const fetcher = vi.fn((id: number) => delay({ id, name: `User ${id}` }));
       const r = resource(fetcher, {
         key: () => userId(),
-        refetchOnKeyChange: true
+        refetchOnKeyChange: true,
       });
 
-      const cleanup = effect(() => { r.status(); });
+      const cleanup = effect(() => {
+        r.status();
+      });
 
       // Initial auto-fetch
       await delay(20);
@@ -231,14 +236,16 @@ describe("resource", () => {
     test("auto-fetch respects enabled flag", async () => {
       const userId = signal(1);
 
-      const fetcher = mock((id: number) => delay({ id, name: `User ${id}` }));
+      const fetcher = vi.fn((id: number) => delay({ id, name: `User ${id}` }));
       const r = resource(fetcher, {
         key: () => userId(),
         refetchOnKeyChange: true,
-        enabled: false
+        enabled: false,
       });
 
-      const cleanup = effect(() => { r.status(); });
+      const cleanup = effect(() => {
+        r.status();
+      });
       await delay(20);
 
       expect(fetcher).toHaveBeenCalledTimes(0);
@@ -247,10 +254,10 @@ describe("resource", () => {
     });
 
     test("accepts static key value", async () => {
-      const r = resource(
-        (key) => delay({ key, data: `Data for ${key}` }),
-        { key: () => "static-key", cacheTime: 100 }
-      );
+      const r = resource((key) => delay({ key, data: `Data for ${key}` }), {
+        key: () => "static-key",
+        cacheTime: 100,
+      });
 
       r.fetch({ force: true });
       await delay(20);
@@ -262,13 +269,15 @@ describe("resource", () => {
     test("skips fetch when key is undefined or null", async () => {
       const userId = signal<number | undefined>(undefined);
 
-      const fetcher = mock((id: number | undefined) => delay({ id, name: `User ${id}` }));
+      const fetcher = vi.fn((id: number | undefined) => delay({ id, name: `User ${id}` }));
       const r = resource(fetcher, {
         key: () => userId(),
-        refetchOnKeyChange: true
+        refetchOnKeyChange: true,
       });
 
-      const cleanup = effect(() => { r.status(); });
+      const cleanup = effect(() => {
+        r.status();
+      });
       await delay(20);
 
       // No fetch with undefined key
@@ -291,8 +300,10 @@ describe("resource", () => {
     });
 
     test("dispose during ongoing request", async () => {
-      let resolvePromise: (value: string) => void = () => { };
-      const promise = new Promise<string>((resolve) => { resolvePromise = resolve; });
+      let resolvePromise: (value: string) => void = () => {};
+      const promise = new Promise<string>((resolve) => {
+        resolvePromise = resolve;
+      });
 
       const r = resource(() => promise, {
         initialData: "initial",
@@ -300,7 +311,9 @@ describe("resource", () => {
         refetchInterval: 20,
       });
 
-      effect(() => { r.status(); });
+      effect(() => {
+        r.status();
+      });
 
       r.fetch({ force: true });
       expect(r.isFetching()).toBe(true);
@@ -320,8 +333,12 @@ describe("resource", () => {
       const listenerCounts = { added: 0, removed: 0 };
       const fakeSignal = {
         aborted: false,
-        addEventListener: () => { listenerCounts.added++; },
-        removeEventListener: () => { listenerCounts.removed++; },
+        addEventListener: () => {
+          listenerCounts.added++;
+        },
+        removeEventListener: () => {
+          listenerCounts.removed++;
+        },
       } as unknown as AbortSignal;
 
       const r = resource(() => delay("data", 5), { abortSignal: fakeSignal });
@@ -342,7 +359,7 @@ describe("resource", () => {
     });
 
     test("resolves with cached data without refetching", async () => {
-      const fetcher = mock(() => delay(mockUser));
+      const fetcher = vi.fn(() => delay(mockUser));
       const r = resource(fetcher, { cacheTime: 1000 });
 
       const first = await r.fetch({ force: true });

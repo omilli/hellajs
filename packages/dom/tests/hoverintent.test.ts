@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, vi } from "vite-plus/test";
 import { delay, resetTestState } from "@utils/test-helpers.js";
 import { hoverIntent } from "@hellajs/dom";
 import { pointerDown, pointerEnter, pointerLeave } from "./helpers";
@@ -19,8 +19,8 @@ describe("hoverIntent", () => {
   });
 
   test("opens after the open delay", async () => {
-    const onOpen = mock(() => {});
-    const onClose = mock(() => {});
+    const onOpen = vi.fn(() => {});
+    const onClose = vi.fn(() => {});
     const trigger = document.createElement("button");
     document.body.append(trigger);
     const dispose = hoverIntent(trigger, { onOpen, onClose, openDelay: 5, closeDelay: 5 });
@@ -34,7 +34,7 @@ describe("hoverIntent", () => {
   });
 
   test("cancels the open when the pointer leaves early", async () => {
-    const onOpen = mock(() => {});
+    const onOpen = vi.fn(() => {});
     const trigger = document.createElement("button");
     document.body.append(trigger);
     const dispose = hoverIntent(trigger, { onOpen, onClose: onOpen, openDelay: 5, closeDelay: 5 });
@@ -47,8 +47,8 @@ describe("hoverIntent", () => {
   });
 
   test("honors the close delay after leave", async () => {
-    const onOpen = mock(() => {});
-    const onClose = mock(() => {});
+    const onOpen = vi.fn(() => {});
+    const onClose = vi.fn(() => {});
     const trigger = document.createElement("button");
     document.body.append(trigger);
     const dispose = hoverIntent(trigger, { onOpen, onClose, openDelay: 5, closeDelay: 5 });
@@ -63,8 +63,8 @@ describe("hoverIntent", () => {
   });
 
   test("closes immediately on an outside pointerdown", async () => {
-    const onOpen = mock(() => {});
-    const onClose = mock(() => {});
+    const onOpen = vi.fn(() => {});
+    const onClose = vi.fn(() => {});
     const trigger = document.createElement("button");
     const inside = document.createElement("div");
     document.body.append(trigger, inside);
@@ -80,8 +80,8 @@ describe("hoverIntent", () => {
   });
 
   test("fires onOpen instantly within the shared skip-delay window", async () => {
-    const onOpen = mock(() => {});
-    const onClose = mock(() => {});
+    const onOpen = vi.fn(() => {});
+    const onClose = vi.fn(() => {});
     const trigger = document.createElement("button");
     document.body.append(trigger);
     const dispose = hoverIntent(trigger, { onOpen, onClose, openDelay: 5, closeDelay: 5 });
@@ -97,8 +97,8 @@ describe("hoverIntent", () => {
   });
 
   test("delays again once the skip-delay window has passed", async () => {
-    const onOpen = mock(() => {});
-    const onClose = mock(() => {});
+    const onOpen = vi.fn(() => {});
+    const onClose = vi.fn(() => {});
     const trigger = document.createElement("button");
     document.body.append(trigger);
     const dispose = hoverIntent(trigger, { onOpen, onClose, openDelay: 5, closeDelay: 5 });
@@ -116,8 +116,8 @@ describe("hoverIntent", () => {
   });
 
   test("opens on focus and closes on blur", async () => {
-    const onOpen = mock(() => {});
-    const onClose = mock(() => {});
+    const onOpen = vi.fn(() => {});
+    const onClose = vi.fn(() => {});
     const trigger = document.createElement("button");
     document.body.append(trigger);
     const dispose = hoverIntent(trigger, { onOpen, onClose, openDelay: 5, closeDelay: 5 });
@@ -133,7 +133,9 @@ describe("hoverIntent", () => {
 
   test("requires target and handlers", () => {
     const el = document.createElement("div");
-    expect(() => hoverIntent(null as never, { onOpen: () => {}, onClose: () => {} })).toThrow("[dom] hoverIntent: target is required");
+    expect(() => hoverIntent(null as never, { onOpen: () => {}, onClose: () => {} })).toThrow(
+      "[dom] hoverIntent: target is required",
+    );
     expect(() => hoverIntent(el, null as never)).toThrow("[dom] hoverIntent: handlers is required");
   });
 });

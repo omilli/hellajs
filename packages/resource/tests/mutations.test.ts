@@ -1,6 +1,6 @@
-import { describe, test, expect, mock, beforeEach } from "bun:test";
+import { describe, test, expect, vi, beforeEach } from "vite-plus/test";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { resource, resourceCache } from "@hellajs/resource/bundle";
+import { resource, resourceCache } from "@hellajs/resource";
 import { expectErrorMessage } from "./helpers";
 
 describe("resource", () => {
@@ -24,12 +24,9 @@ describe("resource", () => {
   });
 
   test("calls onMutate hook", async () => {
-    const onMutate = mock((vars: unknown) => `context-${vars}`);
+    const onMutate = vi.fn((vars: unknown) => `context-${vars}`);
 
-    const r = resource(
-      async (vars: string) => delay(`result-${vars}`, 10),
-      { onMutate }
-    );
+    const r = resource(async (vars: string) => delay(`result-${vars}`, 10), { onMutate });
 
     await r.mutate("test");
 
@@ -38,13 +35,13 @@ describe("resource", () => {
   });
 
   test("calls onSuccess and onSettled hooks", async () => {
-    const onSuccess = mock(() => { });
-    const onSettled = mock(() => { });
+    const onSuccess = vi.fn(() => {});
+    const onSettled = vi.fn(() => {});
 
-    const r = resource(
-      async (vars: string) => delay(`result-${vars}`, 10),
-      { onSuccess, onSettled }
-    );
+    const r = resource(async (vars: string) => delay(`result-${vars}`, 10), {
+      onSuccess,
+      onSettled,
+    });
 
     await r.mutate("test");
 
@@ -55,14 +52,14 @@ describe("resource", () => {
   });
 
   test("calls onError and onSettled on failure", async () => {
-    const onError = mock(() => { });
-    const onSettled = mock(() => { });
+    const onError = vi.fn(() => {});
+    const onSettled = vi.fn(() => {});
 
     const r = resource(
       async () => {
         throw new Error("Mutation failed");
       },
-      { onError, onSettled }
+      { onError, onSettled },
     );
 
     await expectErrorMessage(r.mutate("test"), "Mutation failed");
@@ -73,7 +70,9 @@ describe("resource", () => {
   });
 
   test("settles once when success-path onSettled throws", async () => {
-    const onSettled = mock<(data?: unknown, error?: unknown, variables?: unknown, context?: unknown) => void>(() => {
+    const onSettled = vi.fn<
+      (data?: unknown, error?: unknown, variables?: unknown, context?: unknown) => void
+    >(() => {
       throw new Error("settled-boom");
     });
 
@@ -93,11 +92,13 @@ describe("resource", () => {
     resourceCache.set("user:1", { id: 1 }, 60000);
 
     const r = resource(async () => delay("saved", 10), {
-      onSettled: () => { throw new Error("settled-boom"); },
+      onSettled: () => {
+        throw new Error("settled-boom");
+      },
       invalidates: ["user:"],
     });
 
-    await r.mutate("v").catch(() => { });
+    await r.mutate("v").catch(() => {});
 
     expect(resourceCache.map.has("user:1")).toBe(true);
   });
@@ -149,20 +150,25 @@ describe("resource", () => {
   });
 
   test("runs overlapping mutations independently", async () => {
-    const fetcher = mock((vars: string) => delay(`result-${vars}`, vars === "slow" ? 30 : 10));
-    const onMutate = mock((vars: unknown) => `ctx-${vars}`);
+    const fetcher = vi.fn((vars: string) => delay(`result-${vars}`, vars === "slow" ? 30 : 10));
+    const onMutate = vi.fn((vars: unknown) => `ctx-${vars}`);
     const settles: Array<[unknown, unknown, unknown, unknown]> = [];
     const r = resource(fetcher, {
       onMutate,
-      onSettled: (data, error, vars, context) => { settles.push([data, error, vars, context]); }
+      onSettled: (data, error, vars, context) => {
+        settles.push([data, error, vars, context]);
+      },
     });
 
-    expect(await Promise.all([r.mutate("slow"), r.mutate("fast")])).toEqual(["result-slow", "result-fast"]);
+    expect(await Promise.all([r.mutate("slow"), r.mutate("fast")])).toEqual([
+      "result-slow",
+      "result-fast",
+    ]);
     expect(fetcher).toHaveBeenCalledTimes(2);
     expect(onMutate).toHaveBeenCalledTimes(2);
     expect(settles).toEqual([
       ["result-fast", undefined, "fast", "ctx-fast"],
-      ["result-slow", undefined, "slow", "ctx-slow"]
+      ["result-slow", undefined, "slow", "ctx-slow"],
     ]);
   });
 
@@ -178,13 +184,15 @@ describe("resource", () => {
       },
       {
         onMutate: (vars) => `ctx-${vars}`,
-        onSettled: (data, error, vars, context) => { settles.push([data, error, vars, context]); }
-      }
+        onSettled: (data, error, vars, context) => {
+          settles.push([data, error, vars, context]);
+        },
+      },
     );
 
     const first = r.mutate("slow-bad");
     await r.mutate("quick");
-    await first.catch(() => { });
+    await first.catch(() => {});
 
     // The second onMutate ran before the first settled; the rollback still sees the first call's context
     expect(settles[0]).toEqual(["ok", undefined, "quick", "ctx-quick"]);
@@ -196,12 +204,16 @@ describe("resource", () => {
   });
 
   test("does not abort an in-flight mutation when a read starts", async () => {
-    let resolveMutation: (value: string) => void = () => { };
-    const onSettled = mock(() => { });
+    let resolveMutation: (value: string) => void = () => {};
+    const onSettled = vi.fn(() => {});
     const r = resource(
       async (vars: unknown): Promise<string> =>
-        vars === "write" ? new Promise((resolve) => { resolveMutation = resolve; }) : delay("read-data", 5),
-      { onSettled }
+        vars === "write"
+          ? new Promise((resolve) => {
+              resolveMutation = resolve;
+            })
+          : delay("read-data", 5),
+      { onSettled },
     );
 
     const mutation = r.mutate("write");
@@ -216,10 +228,13 @@ describe("resource", () => {
   });
 
   test("does not abort an in-flight read when a mutation starts", async () => {
-    let resolveRead: (value: string) => void = () => { };
-    const r = resource(
-      async (vars: unknown): Promise<string> =>
-        vars === "write" ? delay("saved", 5) : new Promise((resolve) => { resolveRead = resolve; })
+    let resolveRead: (value: string) => void = () => {};
+    const r = resource(async (vars: unknown): Promise<string> =>
+      vars === "write"
+        ? delay("saved", 5)
+        : new Promise((resolve) => {
+            resolveRead = resolve;
+          }),
     );
 
     const read = r.fetch({ force: true });
@@ -232,7 +247,7 @@ describe("resource", () => {
   });
 
   test("retries a failing mutation until it succeeds", async () => {
-    const fetcher = mock(() => {
+    const fetcher = vi.fn(() => {
       if (fetcher.mock.calls.length < 2) return Promise.reject(new Error("x"));
       return delay("saved");
     });
@@ -244,5 +259,4 @@ describe("resource", () => {
     expect(fetcher).toHaveBeenCalledTimes(2);
     expect(r.data()).toBe("saved");
   });
-
 });

@@ -12,11 +12,7 @@ export function Badge({ variant, children, class: cls, ...attrs }: BadgeProps): 
       data-variant={variant ?? "default"}
       class={
         // @hella:compose
-        [
-          base,
-          variants[variant ?? "default"],
-          cls,
-        ]
+        [base, variants[variant ?? "default"], cls]
         // @hella:end
       }
       {...attrs}

@@ -1,4 +1,4 @@
-import { describe, expect, test, mock } from "bun:test";
+import { describe, expect, test, vi } from "vite-plus/test";
 import { computed, effect, signal, untracked } from "@hellajs/core";
 
 describe("core", () => {
@@ -7,7 +7,7 @@ describe("core", () => {
       const a = signal(0);
       const untrackedSig = signal(0);
 
-      const runs = mock(() => {
+      const runs = vi.fn(() => {
         a();
         untracked(() => untrackedSig());
       });
@@ -24,7 +24,7 @@ describe("core", () => {
       const s = signal(0);
       const t = signal(0);
 
-      const runs = mock(() => {
+      const runs = vi.fn(() => {
         t();
         untracked(() => {
           untracked(() => s());

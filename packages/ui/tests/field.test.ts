@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { resetTestState } from "@utils/test-helpers.js";
 import {
   assertAttrForwarded,
@@ -37,113 +37,153 @@ describe("field", () => {
     expect(root.getAttribute("data-slot")).toBe(slotOf(variant));
   });
 
-  test.each(fieldVariants)("$part $style renders orientation variants on the field root", (variant) => {
-    const horizontal = renderVariant(variant, { orientation: "horizontal", children: ["x"] });
-    expect(horizontal.getAttribute("data-orientation")).toBe("horizontal");
-    if (variant.style === "css") {
-      const tokens = classTokens(horizontal);
-      expect(tokens.some((token) => token.startsWith("field-horizontal"))).toBe(true);
-    } else {
-      expect(classTokens(horizontal)).toContain("flex-row");
-      expect(classTokens(horizontal)).toContain("has-[>[data-slot=field-content]]:items-start");
-    }
-  });
+  test.each(fieldVariants)(
+    "$part $style renders orientation variants on the field root",
+    (variant) => {
+      const horizontal = renderVariant(variant, { orientation: "horizontal", children: ["x"] });
+      expect(horizontal.getAttribute("data-orientation")).toBe("horizontal");
+      if (variant.style === "css") {
+        const tokens = classTokens(horizontal);
+        expect(tokens.some((token) => token.startsWith("field-horizontal"))).toBe(true);
+      } else {
+        expect(classTokens(horizontal)).toContain("flex-row");
+        expect(classTokens(horizontal)).toContain("has-[>[data-slot=field-content]]:items-start");
+      }
+    },
+  );
 
-  test.each(fieldVariants)("$part $style renders the responsive orientation with the container query variant class", (variant) => {
-    const root = renderVariant(variant, { orientation: "responsive", children: ["x"] });
-    if (variant.style === "css") {
-      expect(classTokens(root).some((token) => token.startsWith("field-responsive"))).toBe(true);
-    } else {
-      expect(classTokens(root)).toContain("@md/field-group:flex-row");
-    }
-  });
+  test.each(fieldVariants)(
+    "$part $style renders the responsive orientation with the container query variant class",
+    (variant) => {
+      const root = renderVariant(variant, { orientation: "responsive", children: ["x"] });
+      if (variant.style === "css") {
+        expect(classTokens(root).some((token) => token.startsWith("field-responsive"))).toBe(true);
+      } else {
+        expect(classTokens(root)).toContain("@md/field-group:flex-row");
+      }
+    },
+  );
 
-  test.each(fieldVariants)("$part $style renders data-disabled and data-invalid flags", (variant) => {
-    const root = renderVariant(variant, { disabled: true, invalid: true, children: ["x"] });
-    expect(root.getAttribute("data-disabled")).toBe("true");
-    expect(root.getAttribute("data-invalid")).toBe("true");
-    if (variant.style === "tailwind") {
-      expect(classTokens(root)).toContain("data-[invalid=true]:text-destructive");
-    }
-  });
+  test.each(fieldVariants)(
+    "$part $style renders data-disabled and data-invalid flags",
+    (variant) => {
+      const root = renderVariant(variant, { disabled: true, invalid: true, children: ["x"] });
+      expect(root.getAttribute("data-disabled")).toBe("true");
+      expect(root.getAttribute("data-invalid")).toBe("true");
+      if (variant.style === "tailwind") {
+        expect(classTokens(root)).toContain("data-[invalid=true]:text-destructive");
+      }
+    },
+  );
 
-  test.each(fieldPartVariants.filter((variant) => variant.part === "Legend"))("$part $style renders legend variants", (variant) => {
-    const legend = renderVariant(variant, { variant: "legend", children: ["x"] });
-    expect(legend.getAttribute("data-variant")).toBe("legend");
-    const label = renderVariant(variant, { variant: "label", children: ["x"] });
-    expect(label.getAttribute("data-variant")).toBe("label");
-    if (variant.style === "css") {
-      expect(classTokens(label).some((token) => token.startsWith("field-legend-label"))).toBe(true);
-    } else {
-      expect(classTokens(label)).toContain("data-[variant=label]:text-sm");
-    }
-  });
+  test.each(fieldPartVariants.filter((variant) => variant.part === "Legend"))(
+    "$part $style renders legend variants",
+    (variant) => {
+      const legend = renderVariant(variant, { variant: "legend", children: ["x"] });
+      expect(legend.getAttribute("data-variant")).toBe("legend");
+      const label = renderVariant(variant, { variant: "label", children: ["x"] });
+      expect(label.getAttribute("data-variant")).toBe("label");
+      if (variant.style === "css") {
+        expect(classTokens(label).some((token) => token.startsWith("field-legend-label"))).toBe(
+          true,
+        );
+      } else {
+        expect(classTokens(label)).toContain("data-[variant=label]:text-sm");
+      }
+    },
+  );
 
-  test.each(fieldPartVariants.filter((variant) => variant.part === "Label"))("$part $style composes the label base with the field overrides", (variant) => {
-    const root = renderVariant(variant, { children: ["x"] });
-    expect(root.tagName).toBe("LABEL");
-    if (variant.style === "css") {
-      expect(classTokens(root)[0]!.startsWith("field-label")).toBe(true);
-    } else {
-      const tokens = classTokens(root);
-      expect(tokens).toContain("select-none");
-      expect(tokens).toContain("group-data-[disabled=true]/field:opacity-50");
-      expect(tokens).toContain("has-[>[data-slot=field]]:w-full");
-    }
-  });
+  test.each(fieldPartVariants.filter((variant) => variant.part === "Label"))(
+    "$part $style composes the label base with the field overrides",
+    (variant) => {
+      const root = renderVariant(variant, { children: ["x"] });
+      expect(root.tagName).toBe("LABEL");
+      if (variant.style === "css") {
+        expect(classTokens(root)[0]!.startsWith("field-label")).toBe(true);
+      } else {
+        const tokens = classTokens(root);
+        expect(tokens).toContain("select-none");
+        expect(tokens).toContain("group-data-[disabled=true]/field:opacity-50");
+        expect(tokens).toContain("has-[>[data-slot=field]]:w-full");
+      }
+    },
+  );
 
-  test.each(fieldPartVariants.filter((variant) => variant.part === "Separator"))("$part $style nests the rule and omits the content span when empty", (variant) => {
-    const bare = renderVariant(variant, {});
-    expect(bare.getAttribute("data-content")).toBe("false");
-    expect(bare.querySelector("[role='separator']")).not.toBeNull();
-    expect(bare.querySelector("[data-slot='field-separator-content']")).toBeNull();
-  });
+  test.each(fieldPartVariants.filter((variant) => variant.part === "Separator"))(
+    "$part $style nests the rule and omits the content span when empty",
+    (variant) => {
+      const bare = renderVariant(variant, {});
+      expect(bare.getAttribute("data-content")).toBe("false");
+      expect(bare.querySelector("[role='separator']")).not.toBeNull();
+      expect(bare.querySelector("[data-slot='field-separator-content']")).toBeNull();
+    },
+  );
 
-  test.each(fieldPartVariants.filter((variant) => variant.part === "Separator"))("$part $style renders the content span when children exist", (variant) => {
-    const root = renderVariant(variant, { children: ["or"] });
-    expect(root.getAttribute("data-content")).toBe("true");
-    const content = root.querySelector("[data-slot='field-separator-content']")!;
-    expect(content.textContent).toBe("or");
-  });
+  test.each(fieldPartVariants.filter((variant) => variant.part === "Separator"))(
+    "$part $style renders the content span when children exist",
+    (variant) => {
+      const root = renderVariant(variant, { children: ["or"] });
+      expect(root.getAttribute("data-content")).toBe("true");
+      const content = root.querySelector("[data-slot='field-separator-content']")!;
+      expect(content.textContent).toBe("or");
+    },
+  );
 
-  test.each(fieldPartVariants.filter((variant) => variant.part === "Error"))("$part $style renders the destructive tokens and alert role", (variant) => {
-    const root = renderVariant(variant, { children: ["Required"] });
-    expect(root.getAttribute("role")).toBe("alert");
-    expect(root.textContent).toBe("Required");
-    expect(root.hasAttribute("hidden")).toBe(false);
-    if (variant.style === "css") {
-      expect(classTokens(root)[0]!.startsWith("field-error")).toBe(true);
-    } else {
-      expect(classTokens(root)).toContain("text-destructive");
-    }
-  });
+  test.each(fieldPartVariants.filter((variant) => variant.part === "Error"))(
+    "$part $style renders the destructive tokens and alert role",
+    (variant) => {
+      const root = renderVariant(variant, { children: ["Required"] });
+      expect(root.getAttribute("role")).toBe("alert");
+      expect(root.textContent).toBe("Required");
+      expect(root.hasAttribute("hidden")).toBe(false);
+      if (variant.style === "css") {
+        expect(classTokens(root)[0]!.startsWith("field-error")).toBe(true);
+      } else {
+        expect(classTokens(root)).toContain("text-destructive");
+      }
+    },
+  );
 
-  test.each(fieldPartVariants.filter((variant) => variant.part === "Error"))("$part $style hides when empty", (variant) => {
-    const root = renderVariant(variant, {});
-    expect(root.hasAttribute("hidden")).toBe(true);
-  });
+  test.each(fieldPartVariants.filter((variant) => variant.part === "Error"))(
+    "$part $style hides when empty",
+    (variant) => {
+      const root = renderVariant(variant, {});
+      expect(root.hasAttribute("hidden")).toBe(true);
+    },
+  );
 
-  test.each(fieldPartVariants.filter((variant) => variant.part === "Error"))("$part $style renders a single error message as text", (variant) => {
-    const root = renderVariant(variant, { errors: [{ message: "Too short" }] });
-    expect(root.textContent).toBe("Too short");
-    expect(root.hasAttribute("hidden")).toBe(false);
-  });
+  test.each(fieldPartVariants.filter((variant) => variant.part === "Error"))(
+    "$part $style renders a single error message as text",
+    (variant) => {
+      const root = renderVariant(variant, { errors: [{ message: "Too short" }] });
+      expect(root.textContent).toBe("Too short");
+      expect(root.hasAttribute("hidden")).toBe(false);
+    },
+  );
 
-  test.each(fieldPartVariants.filter((variant) => variant.part === "Error"))("$part $style renders multiple errors as a deduplicated list", (variant) => {
-    const root = renderVariant(variant, {
-      errors: [{ message: "Too short" }, { message: "Too short" }, { message: "Required" }, undefined],
-    });
-    const list = root.querySelector("ul")!;
-    expect(list.querySelectorAll("li")).toHaveLength(2);
-    expect(root.textContent).toContain("Required");
-  });
+  test.each(fieldPartVariants.filter((variant) => variant.part === "Error"))(
+    "$part $style renders multiple errors as a deduplicated list",
+    (variant) => {
+      const root = renderVariant(variant, {
+        errors: [
+          { message: "Too short" },
+          { message: "Too short" },
+          { message: "Required" },
+          undefined,
+        ],
+      });
+      const list = root.querySelector("ul")!;
+      expect(list.querySelectorAll("li")).toHaveLength(2);
+      expect(root.textContent).toContain("Required");
+    },
+  );
 
   test("forwards user attrs onto the field root across both styles", () => {
     assertAttrForwarded(fieldVariants, { title: "Hella" }, "title", "Hella");
   });
 
   test("fires a user on:click handler on the field root across both styles", () => {
-    const onClick = mock(() => {});
+    const onClick = vi.fn(() => {});
     assertHandlerForwarded(fieldVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 
@@ -155,12 +195,20 @@ describe("field", () => {
   });
 
   test("lands the label's for target through the spread across both styles", () => {
-    assertAttrForwarded(fieldPartVariants.filter((variant) => variant.part === "Label"), { for: "demo-name" }, "for", "demo-name");
+    assertAttrForwarded(
+      fieldPartVariants.filter((variant) => variant.part === "Label"),
+      { for: "demo-name" },
+      "for",
+      "demo-name",
+    );
   });
 
   test("both styles agree on tag and attributes", () => {
     assertStructuralParity(fieldVariants, { orientation: "horizontal", children: ["x"] });
     assertStructuralParity(fieldVariants, { disabled: true, invalid: true, children: ["x"] });
-    assertStructuralParity(fieldPartVariants.filter((candidate) => candidate.part === "Error"), {});
+    assertStructuralParity(
+      fieldPartVariants.filter((candidate) => candidate.part === "Error"),
+      {},
+    );
   });
 });

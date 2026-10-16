@@ -1,22 +1,22 @@
-import { css, cssText } from '@hellajs/css';
+import { css, cssText } from "@hellajs/css";
 
 // css() registers the rules on both platforms; cssText() collects the generated text
 // for the server (after the registration below). Pass it to `doc()`'s `styles` to emit
 // one <style> tag.
 css({
   body: {
-    fontFamily: 'sans-serif',
-    margin: '2rem',
-    color: '#333',
+    fontFamily: "sans-serif",
+    margin: "2rem",
+    color: "#333",
   },
-  '#slot button': {
-    marginTop: '1rem',
-    padding: '0.5rem 1rem',
-    fontSize: '1rem',
-    cursor: 'pointer',
-    borderRadius: '0.375rem',
-    border: '1px solid #2563eb',
-    backgroundColor: '#fff',
+  "#slot button": {
+    marginTop: "1rem",
+    padding: "0.5rem 1rem",
+    fontSize: "1rem",
+    cursor: "pointer",
+    borderRadius: "0.375rem",
+    border: "1px solid #2563eb",
+    backgroundColor: "#fff",
   },
 });
 

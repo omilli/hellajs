@@ -1,109 +1,147 @@
-import { describe, test, expect } from "bun:test";
+import { describe, test, expect } from "vite-plus/test";
 import { transformJSX, normalize, getNamedImports } from "./helpers";
 
 describe("babel", () => {
   describe("JSX transformation", () => {
     test("simple element", () => {
       const output = transformJSX("<div />");
-      expect(normalize(output)).toBe('const _hellaStatic = { tag: "div", static: true }; _hellaStatic;');
+      expect(normalize(output)).toBe(
+        'const _hellaStatic = { tag: "div", static: true }; _hellaStatic;',
+      );
     });
 
     test("element with attributes", () => {
       const output = transformJSX('<div id="test" class="container" />');
-      expect(normalize(output)).toBe('const _hellaStatic = { tag: "div", props: { id: "test", class: "container" }, static: true }; _hellaStatic;');
+      expect(normalize(output)).toBe(
+        'const _hellaStatic = { tag: "div", props: { id: "test", class: "container" }, static: true }; _hellaStatic;',
+      );
     });
 
     test("element with children", () => {
       const output = transformJSX("<div>Hello World</div>");
-      expect(normalize(output)).toBe('const _hellaStatic = { tag: "div", children: ["Hello World"], static: true }; _hellaStatic;');
+      expect(normalize(output)).toBe(
+        'const _hellaStatic = { tag: "div", children: ["Hello World"], static: true }; _hellaStatic;',
+      );
     });
 
     test("nested elements hoist as one maximal static subtree", () => {
       const output = transformJSX("<div><span>nested</span></div>");
-      expect(normalize(output)).toBe('const _hellaStatic = { tag: "div", children: [{ tag: "span", children: ["nested"], static: true }], static: true }; _hellaStatic;');
+      expect(normalize(output)).toBe(
+        'const _hellaStatic = { tag: "div", children: [{ tag: "span", children: ["nested"], static: true }], static: true }; _hellaStatic;',
+      );
     });
 
     test("empty elements are self-closing", () => {
       const output = transformJSX("<div></div>");
-      expect(normalize(output)).toBe('const _hellaStatic = { tag: "div", static: true }; _hellaStatic;');
+      expect(normalize(output)).toBe(
+        'const _hellaStatic = { tag: "div", static: true }; _hellaStatic;',
+      );
     });
 
     test("multiple root elements", () => {
       const output = transformJSX("<><div>first</div><div>second</div></>");
-      expect(normalize(output)).toBe('const _hellaStatic = { tag: "$", children: [{ tag: "div", children: ["first"], static: true }, { tag: "div", children: ["second"], static: true }], static: true }; _hellaStatic;');
+      expect(normalize(output)).toBe(
+        'const _hellaStatic = { tag: "$", children: [{ tag: "div", children: ["first"], static: true }, { tag: "div", children: ["second"], static: true }], static: true }; _hellaStatic;',
+      );
     });
   });
 
   describe("JSXFragment transformation", () => {
     test("simple fragment", () => {
       const output = transformJSX("<>fragment</>");
-      expect(normalize(output)).toBe('const _hellaStatic = { tag: "$", children: ["fragment"], static: true }; _hellaStatic;');
+      expect(normalize(output)).toBe(
+        'const _hellaStatic = { tag: "$", children: ["fragment"], static: true }; _hellaStatic;',
+      );
     });
 
     test("fragment with multiple children", () => {
       const output = transformJSX("<>a<span>b</span>c</>");
-      expect(normalize(output)).toBe('const _hellaStatic = { tag: "$", children: ["a", { tag: "span", children: ["b"], static: true }, "c"], static: true }; _hellaStatic;');
+      expect(normalize(output)).toBe(
+        'const _hellaStatic = { tag: "$", children: ["a", { tag: "span", children: ["b"], static: true }, "c"], static: true }; _hellaStatic;',
+      );
     });
 
     test("nested fragments", () => {
       const output = transformJSX("<>outer<><>inner</></></>");
-      expect(normalize(output)).toBe('const _hellaStatic = { tag: "$", children: ["outer", { tag: "$", children: [{ tag: "$", children: ["inner"], static: true }], static: true }], static: true }; _hellaStatic;');
+      expect(normalize(output)).toBe(
+        'const _hellaStatic = { tag: "$", children: ["outer", { tag: "$", children: [{ tag: "$", children: ["inner"], static: true }], static: true }], static: true }; _hellaStatic;',
+      );
     });
   });
 
   describe("Component detection", () => {
     test("uppercase first letter is component", () => {
       const output = transformJSX("<Button />");
-      expect(normalize(output)).toBe('import { component } from "@hellajs/dom"; component(Button, {});');
+      expect(normalize(output)).toBe(
+        'import { component } from "@hellajs/dom"; component(Button, {});',
+      );
     });
 
     test("lowercase is element", () => {
       const output = transformJSX("<div />");
-      expect(normalize(output)).toBe('const _hellaStatic = { tag: "div", static: true }; _hellaStatic;');
+      expect(normalize(output)).toBe(
+        'const _hellaStatic = { tag: "div", static: true }; _hellaStatic;',
+      );
     });
 
     test("member expression is component", () => {
       const output = transformJSX("<UI.Button />");
-      expect(normalize(output)).toBe('import { component } from "@hellajs/dom"; component(UI.Button, {});');
+      expect(normalize(output)).toBe(
+        'import { component } from "@hellajs/dom"; component(UI.Button, {});',
+      );
     });
 
     test("component with children", () => {
       const output = transformJSX("<Button>Click me</Button>");
-      expect(normalize(output)).toBe('import { component } from "@hellajs/dom"; component(Button, { children: ["Click me"] });');
+      expect(normalize(output)).toBe(
+        'import { component } from "@hellajs/dom"; component(Button, { children: ["Click me"] });',
+      );
     });
 
     test("component with props", () => {
       const output = transformJSX('<Button id="test" />');
-      expect(normalize(output)).toBe('import { component } from "@hellajs/dom"; component(Button, { id: "test" });');
+      expect(normalize(output)).toBe(
+        'import { component } from "@hellajs/dom"; component(Button, { id: "test" });',
+      );
     });
 
     test("component keeps prefixed attrs verbatim in props", () => {
       const output = transformJSX("<Button on:click={h}>x</Button>");
-      expect(normalize(output)).toBe('import { component } from "@hellajs/dom"; component(Button, { "on:click": h, children: ["x"] });');
+      expect(normalize(output)).toBe(
+        'import { component } from "@hellajs/dom"; component(Button, { "on:click": h, children: ["x"] });',
+      );
     });
   });
 
   describe("Passthrough components", () => {
     test("ForEach is passthrough", () => {
       const output = transformJSX("<ForEach each={items} use={item => item} />");
-      expect(normalize(output)).toBe('import { ForEach } from "@hellajs/dom"; ForEach({ each: items, use: item => item });');
+      expect(normalize(output)).toBe(
+        'import { ForEach } from "@hellajs/dom"; ForEach({ each: items, use: item => item });',
+      );
     });
 
     test("Portal is passthrough", () => {
       const output = transformJSX("<Portal target={target}>content</Portal>");
-      expect(normalize(output)).toBe('import { Portal } from "@hellajs/dom"; Portal({ target: target, children: ["content"] });');
+      expect(normalize(output)).toBe(
+        'import { Portal } from "@hellajs/dom"; Portal({ target: target, children: ["content"] });',
+      );
     });
 
     test("Lazy is passthrough", () => {
       const output = transformJSX("<Lazy component={Comp} />");
-      expect(normalize(output)).toBe('import { Lazy } from "@hellajs/dom"; Lazy({ component: Comp });');
+      expect(normalize(output)).toBe(
+        'import { Lazy } from "@hellajs/dom"; Lazy({ component: Comp });',
+      );
     });
   });
 
   describe("Style tag is a regular element", () => {
     test("<style> produces a regular HellaNode", () => {
       const output = transformJSX("<style>hello</style>");
-      expect(normalize(output)).toBe('const _hellaStatic = { tag: "style", children: ["hello"], static: true }; _hellaStatic;');
+      expect(normalize(output)).toBe(
+        'const _hellaStatic = { tag: "style", children: ["hello"], static: true }; _hellaStatic;',
+      );
     });
 
     test("<style> does not inject css import", () => {
@@ -129,7 +167,10 @@ describe("babel", () => {
     });
 
     test("ForEach JSX injects ForEach import", () => {
-      const imports = getNamedImports("<ForEach each={items} use={item => item} />", "@hellajs/dom");
+      const imports = getNamedImports(
+        "<ForEach each={items} use={item => item} />",
+        "@hellajs/dom",
+      );
       expect(imports).toContain("ForEach");
     });
 
@@ -160,7 +201,9 @@ describe("babel", () => {
       `;
       expect(getNamedImports(code, "@hellajs/dom")).toEqual(["component as c", "component"]);
       const output = transformJSX(code);
-      expect(normalize(output)).toBe("import { component as c, component } from '@hellajs/dom'; const n = component(Button, {});");
+      expect(normalize(output)).toBe(
+        "import { component as c, component } from '@hellajs/dom'; const n = component(Button, {});",
+      );
     });
 
     test("aliased ForEach import gains a fresh ForEach specifier", () => {
@@ -170,7 +213,9 @@ describe("babel", () => {
       `;
       expect(getNamedImports(code, "@hellajs/dom")).toEqual(["ForEach as FE", "ForEach"]);
       const output = transformJSX(code);
-      expect(normalize(output)).toBe("import { ForEach as FE, ForEach } from '@hellajs/dom'; const el = ForEach({ each: items, use: item => item });");
+      expect(normalize(output)).toBe(
+        "import { ForEach as FE, ForEach } from '@hellajs/dom'; const el = ForEach({ each: items, use: item => item });",
+      );
     });
 
     test("alias into the required local name suppresses injection", () => {
@@ -180,7 +225,9 @@ describe("babel", () => {
       `;
       expect(getNamedImports(code, "@hellajs/dom")).toEqual(["x as component"]);
       const output = transformJSX(code);
-      expect(normalize(output)).toBe("import { x as component } from '@hellajs/dom'; const n = component(Button, {});");
+      expect(normalize(output)).toBe(
+        "import { x as component } from '@hellajs/dom'; const n = component(Button, {});",
+      );
     });
   });
 
@@ -192,19 +239,25 @@ describe("babel", () => {
           <span>text</span>
         </div>
       `);
-      expect(normalize(output)).toBe('const _hellaStatic = { tag: "span", children: ["text"], static: true }; import { component } from "@hellajs/dom"; ({ tag: "div", children: [component(Button, { children: ["Click"] }), _hellaStatic] });');
+      expect(normalize(output)).toBe(
+        'const _hellaStatic = { tag: "span", children: ["text"], static: true }; import { component } from "@hellajs/dom"; ({ tag: "div", children: [component(Button, { children: ["Click"] }), _hellaStatic] });',
+      );
     });
 
     test("passthrough with component children", () => {
       const output = transformJSX(`
         <ForEach each={items} use={item => <Item data={item} />} />
       `);
-      expect(normalize(output)).toBe('import { ForEach, component } from "@hellajs/dom"; ForEach({ each: items, use: item => component(Item, { data: item }) });');
+      expect(normalize(output)).toBe(
+        'import { ForEach, component } from "@hellajs/dom"; ForEach({ each: items, use: item => component(Item, { data: item }) });',
+      );
     });
 
     test("fragment with components", () => {
       const output = transformJSX("<><Button /><span /></>");
-      expect(normalize(output)).toBe('const _hellaStatic = { tag: "span", static: true }; import { component } from "@hellajs/dom"; ({ tag: "$", children: [component(Button, {}), _hellaStatic] });');
+      expect(normalize(output)).toBe(
+        'const _hellaStatic = { tag: "span", static: true }; import { component } from "@hellajs/dom"; ({ tag: "$", children: [component(Button, {}), _hellaStatic] });',
+      );
     });
 
     test("attribute with expression", () => {
@@ -214,7 +267,9 @@ describe("babel", () => {
 
     test("event handler arrow function", () => {
       const output = transformJSX('<button on:click={() => console.log("clicked")}>Click</button>');
-      expect(normalize(output)).toBe('({ tag: "button", on: { click: () => console.log("clicked") }, children: ["Click"] });');
+      expect(normalize(output)).toBe(
+        '({ tag: "button", on: { click: () => console.log("clicked") }, children: ["Click"] });',
+      );
     });
 
     test("hook lifecycle", () => {
@@ -226,17 +281,23 @@ describe("babel", () => {
   describe("e: prefix", () => {
     test("transforms e:click to e property", () => {
       const output = transformJSX("<button e:click={handler}>Click</button>");
-      expect(normalize(output)).toBe('({ tag: "button", e: { click: handler }, children: ["Click"] });');
+      expect(normalize(output)).toBe(
+        '({ tag: "button", e: { click: handler }, children: ["Click"] });',
+      );
     });
 
     test("e: with arrow function", () => {
       const output = transformJSX('<button e:click={() => console.log("clicked")}>Click</button>');
-      expect(normalize(output)).toBe('({ tag: "button", e: { click: () => console.log("clicked") }, children: ["Click"] });');
+      expect(normalize(output)).toBe(
+        '({ tag: "button", e: { click: () => console.log("clicked") }, children: ["Click"] });',
+      );
     });
 
     test("e: and on: can coexist", () => {
       const output = transformJSX("<div e:click={direct} on:click={delegated} />");
-      expect(normalize(output)).toBe('({ tag: "div", on: { click: delegated }, e: { click: direct } });');
+      expect(normalize(output)).toBe(
+        '({ tag: "div", on: { click: delegated }, e: { click: direct } });',
+      );
     });
 
     test("multiple e: handlers", () => {
@@ -245,17 +306,22 @@ describe("babel", () => {
     });
 
     test("e: with other attributes", () => {
-      const output = transformJSX('<button id="btn" class="primary" e:click={handler}>Click</button>');
-      expect(normalize(output)).toBe('({ tag: "button", props: { id: "btn", class: "primary" }, e: { click: handler }, children: ["Click"] });');
+      const output = transformJSX(
+        '<button id="btn" class="primary" e:click={handler}>Click</button>',
+      );
+      expect(normalize(output)).toBe(
+        '({ tag: "button", props: { id: "btn", class: "primary" }, e: { click: handler }, children: ["Click"] });',
+      );
     });
-
   });
 
   describe("static hoisting", () => {
     test("fully-static element hoists to a module const declared before use", () => {
-      const output = transformJSX("mount(<div id=\"x\">hi</div>);");
+      const output = transformJSX('mount(<div id="x">hi</div>);');
       const normalized = normalize(output);
-      expect(normalized).toContain('const _hellaStatic = { tag: "div", props: { id: "x" }, children: ["hi"], static: true }');
+      expect(normalized).toContain(
+        'const _hellaStatic = { tag: "div", props: { id: "x" }, children: ["hi"], static: true }',
+      );
       expect(normalized).toContain("mount(_hellaStatic)");
       expect(normalized.indexOf("const _hellaStatic")).toBeLessThan(normalized.indexOf("mount("));
     });
@@ -271,7 +337,7 @@ describe("babel", () => {
     });
 
     test("hook: attribute disables hoisting", () => {
-      const output = transformJSX("<div hook:afterMount={fn} />" );
+      const output = transformJSX("<div hook:afterMount={fn} />");
       expect(normalize(output)).toBe('({ tag: "div", hooks: { afterMount: fn } });');
     });
 
@@ -281,15 +347,19 @@ describe("babel", () => {
     });
 
     test("spread attribute disables hoisting", () => {
-      const output = transformJSX("<div {...spread} />" );
+      const output = transformJSX("<div {...spread} />");
       expect(normalize(output)).toBe('({ tag: "div", props: { ...spread } });');
     });
 
     test("dynamic child disables hoisting for the parent but a static sibling still hoists", () => {
       const output = transformJSX("<div class={dyn()}><span>static</span><b>{expr}</b></div>");
       const normalized = normalize(output);
-      expect(normalized).toContain('const _hellaStatic = { tag: "span", children: ["static"], static: true }');
-      expect(normalized).toContain('({ tag: "div", props: { class: () => dyn() }, children: [_hellaStatic, { tag: "b", children: [expr] }] });');
+      expect(normalized).toContain(
+        'const _hellaStatic = { tag: "span", children: ["static"], static: true }',
+      );
+      expect(normalized).toContain(
+        '({ tag: "div", props: { class: () => dyn() }, children: [_hellaStatic, { tag: "b", children: [expr] }] });',
+      );
     });
 
     test("component child disables hoisting and still injects the component import", () => {
@@ -301,14 +371,20 @@ describe("babel", () => {
 
     test("numeric and boolean prop literals hoist", () => {
       const output = transformJSX("<input tabIndex={3} disabled={true} />");
-      expect(normalize(output)).toBe('const _hellaStatic = { tag: "input", props: { tabIndex: 3, disabled: true }, static: true }; _hellaStatic;');
+      expect(normalize(output)).toBe(
+        'const _hellaStatic = { tag: "input", props: { tabIndex: 3, disabled: true }, static: true }; _hellaStatic;',
+      );
     });
 
     test("two static sites hoist to distinct consts", () => {
       const output = transformJSX("const a = <div>a</div>; const b = <span>b</span>;");
       const normalized = normalize(output);
-      expect(normalized).toContain('const _hellaStatic = { tag: "div", children: ["a"], static: true }');
-      expect(normalized).toContain('_hellaStatic2 = { tag: "span", children: ["b"], static: true }');
+      expect(normalized).toContain(
+        'const _hellaStatic = { tag: "div", children: ["a"], static: true }',
+      );
+      expect(normalized).toContain(
+        '_hellaStatic2 = { tag: "span", children: ["b"], static: true }',
+      );
       expect(normalized).toContain("const a = _hellaStatic;");
       expect(normalized).toContain("const b = _hellaStatic2;");
     });
@@ -342,7 +418,9 @@ describe("babel", () => {
 
     test("element child .map() returning elements is wrapped", () => {
       const output = transformJSX("<div>{arr.map(x => <li />)}</div>");
-      expect(normalize(output)).toBe('const _hellaStatic = { tag: "li", static: true }; ({ tag: "div", children: [() => arr.map(x => _hellaStatic)] });');
+      expect(normalize(output)).toBe(
+        'const _hellaStatic = { tag: "li", static: true }; ({ tag: "div", children: [() => arr.map(x => _hellaStatic)] });',
+      );
     });
 
     test("explicit arrow child is emitted verbatim (double-wrap guard)", () => {
@@ -362,28 +440,39 @@ describe("babel", () => {
 
     test("prop ternary with a call is wrapped", () => {
       const output = transformJSX('<div class={a ? active() : "x"} />');
-      expect(normalize(output)).toBe('({ tag: "div", props: { class: () => a ? active() : "x" } });');
+      expect(normalize(output)).toBe(
+        '({ tag: "div", props: { class: () => a ? active() : "x" } });',
+      );
     });
 
     test("non-call props (static, bare identifier) pass through unwrapped", () => {
-      expect(normalize(transformJSX('<div class="static" />'))).toBe('const _hellaStatic = { tag: "div", props: { class: "static" }, static: true }; _hellaStatic;');
-      expect(normalize(transformJSX("<div class={className} />"))).toBe('({ tag: "div", props: { class: className } });');
+      expect(normalize(transformJSX('<div class="static" />'))).toBe(
+        'const _hellaStatic = { tag: "div", props: { class: "static" }, static: true }; _hellaStatic;',
+      );
+      expect(normalize(transformJSX("<div class={className} />"))).toBe(
+        '({ tag: "div", props: { class: className } });',
+      );
     });
 
     test("prefixed keys (on:/hook:) are not wrapped", () => {
-      expect(normalize(transformJSX("<div on:click={handleClick()} />"))).toContain("click: handleClick()");
+      expect(normalize(transformJSX("<div on:click={handleClick()} />"))).toContain(
+        "click: handleClick()",
+      );
       expect(normalize(transformJSX("<div hook:mount={cb()} />"))).toContain("mount: cb()");
     });
 
     test("component prop is not wrapped (props may be a plain value)", () => {
       const output = transformJSX("<Btn class={foo()} />");
-      expect(normalize(output)).toBe('import { component } from "@hellajs/dom"; component(Btn, { class: foo() });');
+      expect(normalize(output)).toBe(
+        'import { component } from "@hellajs/dom"; component(Btn, { class: foo() });',
+      );
     });
 
     test("component child with a call is NOT wrapped (props.children is a value)", () => {
       const output = transformJSX("<Comp>{foo()}</Comp>");
-      expect(normalize(output)).toBe('import { component } from "@hellajs/dom"; component(Comp, { children: [foo()] });');
+      expect(normalize(output)).toBe(
+        'import { component } from "@hellajs/dom"; component(Comp, { children: [foo()] });',
+      );
     });
-
   });
 });

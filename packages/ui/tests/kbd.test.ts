@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { resetTestState } from "@utils/test-helpers.js";
 import {
   assertAttrForwarded,
@@ -12,7 +12,21 @@ import {
 
 /** Verbatim shadcn utility tokens — asserted in the tailwind flavor. */
 const TOKENS = {
-  base: ["pointer-events-none", "inline-flex", "h-5", "min-w-5", "rounded-sm", "bg-muted", "px-1", "font-sans", "text-xs", "text-muted-foreground", "select-none", "[&_svg:not([class*='size-'])]:size-3", "[[data-slot=tooltip-content]_&]:bg-background/20"],
+  base: [
+    "pointer-events-none",
+    "inline-flex",
+    "h-5",
+    "min-w-5",
+    "rounded-sm",
+    "bg-muted",
+    "px-1",
+    "font-sans",
+    "text-xs",
+    "text-muted-foreground",
+    "select-none",
+    "[&_svg:not([class*='size-'])]:size-3",
+    "[[data-slot=tooltip-content]_&]:bg-background/20",
+  ],
   group: ["inline-flex", "items-center", "gap-1"],
 };
 
@@ -21,19 +35,22 @@ beforeEach(() => {
 });
 
 describe("kbd", () => {
-  test.each(kbdVariants)("$style renders the kbd root with its data-slot and class merge", (variant) => {
-    const kbd = renderVariant(variant, { children: variant.child("⌘K"), class: "my-kbd" });
-    expect(kbd.tagName).toBe("KBD");
-    expect(kbd.getAttribute("data-slot")).toBe("kbd");
-    const tokens = classTokens(kbd);
-    expect(tokens.at(-1)).toBe("my-kbd");
-    if (variant.style === "css") {
-      expect(tokens).toHaveLength(2);
-      expect(tokens[0]!.startsWith("kbd-")).toBe(true);
-    } else {
-      for (const token of TOKENS.base) expect(tokens).toContain(token);
-    }
-  });
+  test.each(kbdVariants)(
+    "$style renders the kbd root with its data-slot and class merge",
+    (variant) => {
+      const kbd = renderVariant(variant, { children: variant.child("⌘K"), class: "my-kbd" });
+      expect(kbd.tagName).toBe("KBD");
+      expect(kbd.getAttribute("data-slot")).toBe("kbd");
+      const tokens = classTokens(kbd);
+      expect(tokens.at(-1)).toBe("my-kbd");
+      if (variant.style === "css") {
+        expect(tokens).toHaveLength(2);
+        expect(tokens[0]!.startsWith("kbd-")).toBe(true);
+      } else {
+        for (const token of TOKENS.base) expect(tokens).toContain(token);
+      }
+    },
+  );
 
   test.each(kbdVariants)("$style renders children directly", (variant) => {
     const kbd = renderVariant(variant, { children: variant.child("⌘K") });
@@ -62,7 +79,7 @@ describe("kbd", () => {
   });
 
   test("fires a user on:click handler across both styles", () => {
-    const onClick = mock(() => {});
+    const onClick = vi.fn(() => {});
     assertHandlerForwarded(kbdVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 

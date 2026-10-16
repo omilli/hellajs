@@ -1,5 +1,5 @@
-import { describe, test, expect, beforeEach } from "bun:test";
-import { router, navigate, route } from "@hellajs/router/bundle";
+import { describe, test, expect, beforeEach } from "vite-plus/test";
+import { router, navigate, route } from "@hellajs/router";
 import { setupRouterEnv } from "./helpers";
 
 describe("router", () => {
@@ -11,49 +11,49 @@ describe("router", () => {
     test("throws when config is null", () => {
       expect(() =>
         // @ts-expect-error - intentionally invalid: null config
-        router(null)
+        router(null),
       ).toThrow("[router] router: config must be an object");
     });
 
     test("throws when config is undefined", () => {
       expect(() =>
         // @ts-expect-error - intentionally invalid: undefined config
-        router(undefined)
+        router(undefined),
       ).toThrow("[router] router: config must be an object, received undefined");
     });
 
     test("throws when config is a non-object string", () => {
       expect(() =>
         // @ts-expect-error - intentionally invalid: string config
-        router("routes")
+        router("routes"),
       ).toThrow("[router] router: config must be an object");
     });
 
     test("throws when config is an array", () => {
       expect(() =>
         // @ts-expect-error - intentionally invalid: array config
-        router([])
+        router([]),
       ).toThrow("[router] router: config must be an object");
     });
 
     test("throws when navigate path is null", () => {
       expect(() =>
         // @ts-expect-error - intentionally invalid: null path
-        navigate(null)
+        navigate(null),
       ).toThrow("[router] navigate: path must be a string");
     });
 
     test("throws when navigate path is undefined", () => {
       expect(() =>
         // @ts-expect-error - intentionally invalid: undefined path
-        navigate(undefined)
+        navigate(undefined),
       ).toThrow("[router] navigate: path must be a string, received undefined");
     });
 
     test("throws when navigate path is a non-string number", () => {
       expect(() =>
         // @ts-expect-error - intentionally invalid: number path
-        navigate(42)
+        navigate(42),
       ).toThrow("[router] navigate: path must be a string, received number");
     });
 
@@ -64,7 +64,7 @@ describe("router", () => {
     });
 
     test("navigates to a valid path without throwing", () => {
-      router({ routes: { "/path": () => { } } });
+      router({ routes: { "/path": () => {} } });
       expect(() => navigate("/path")).not.toThrow();
       expect(route().path).toBe("/path");
     });

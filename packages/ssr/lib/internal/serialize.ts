@@ -3,8 +3,20 @@
  * HTML void elements — emitted as `<tag ...>` with no closing tag (the DOM has no child nodes for these).
  */
 export const VOID = new Set([
-  "area", "base", "br", "col", "embed", "hr", "img", "input",
-  "link", "meta", "param", "source", "track", "wbr",
+  "area",
+  "base",
+  "br",
+  "col",
+  "embed",
+  "hr",
+  "img",
+  "input",
+  "link",
+  "meta",
+  "param",
+  "source",
+  "track",
+  "wbr",
 ]);
 
 /**
@@ -32,9 +44,7 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   const proto = Object.getPrototypeOf(value) as typeof Object.prototype | null;
 
   const hasObjectPrototype =
-    proto === null ||
-    proto === Object.prototype ||
-    Object.getPrototypeOf(proto) === null; // Cross-realm support
+    proto === null || proto === Object.prototype || Object.getPrototypeOf(proto) === null; // Cross-realm support
 
   if (!hasObjectPrototype) return false;
 
@@ -53,10 +63,11 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
  * reconciliation metadata (ForEach reads it from vnode props) and is omitted, matching `renderProp`.
  */
 export function serializeProp(key: string, value: unknown): string {
-  if (key === "key") return "";                    // reconciliation metadata — never in HTML output
+  if (key === "key") return ""; // reconciliation metadata — never in HTML output
   const isFalsy = value === false || value === null || value === undefined;
-  if (isFalsy) return "";                          // omit (renderProp removeAttribute equivalent)
-  if (key === "style" && isPlainObject(value)) {   // style objects — byte-parity with renderProp
+  if (isFalsy) return ""; // omit (renderProp removeAttribute equivalent)
+  if (key === "style" && isPlainObject(value)) {
+    // style objects — byte-parity with renderProp
     const entries = Object.entries(value);
     let i = 0;
     const len = entries.length;
@@ -70,10 +81,11 @@ export function serializeProp(key: string, value: unknown): string {
     }
     return declarations.length ? ` style="${escapeHtml(declarations.join("; "))}"` : "";
   }
-  if (value === true) return ` ${key}`;            // boolean attribute (renderProp setAttribute(key,"") equivalent)
-  if (Array.isArray(value)) {                      // class lists — renderProp joins filtering falsy
+  if (value === true) return ` ${key}`; // boolean attribute (renderProp setAttribute(key,"") equivalent)
+  if (Array.isArray(value)) {
+    // class lists — renderProp joins filtering falsy
     const joined = value.filter(Boolean).join(" ");
     return joined ? ` ${key}="${escapeHtml(joined)}"` : "";
   }
-  return ` ${key}="${escapeHtml(`${value}`)}"`;    // generic value (covers value/innerHTML strings)
+  return ` ${key}="${escapeHtml(`${value}`)}"`; // generic value (covers value/innerHTML strings)
 }

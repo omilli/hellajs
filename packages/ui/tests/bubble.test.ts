@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { resetTestState } from "@utils/test-helpers.js";
 import {
   assertAttrForwarded,
@@ -35,7 +35,15 @@ describe("bubble", () => {
   });
 
   test.each(bubbleVariants)("$part $style renders all seven variants", (variant) => {
-    for (const name of ["default", "secondary", "muted", "tinted", "outline", "ghost", "destructive"]) {
+    for (const name of [
+      "default",
+      "secondary",
+      "muted",
+      "tinted",
+      "outline",
+      "ghost",
+      "destructive",
+    ]) {
       const root = renderVariant(variant, { variant: name as "default", children: ["x"] });
       expect(root.getAttribute("data-variant")).toBe(name);
       if (variant.style === "css") {
@@ -44,62 +52,80 @@ describe("bubble", () => {
     }
   });
 
-  test.each(bubblePartVariants.filter((variant) => variant.part === "Group"))("$part $style renders the group stack", (variant) => {
-    const root = renderVariant(variant, { children: ["x"] });
-    expect(root.tagName).toBe("DIV");
-    expect(root.getAttribute("data-slot")).toBe("bubble-group");
-    expect(root.textContent).toBe("x");
-    if (variant.style === "css") {
-      expect(classTokens(root)[0]!.startsWith("bubble-group")).toBe(true);
-    } else {
-      expect(classTokens(root)).toContain("gap-2");
-    }
-  });
+  test.each(bubblePartVariants.filter((variant) => variant.part === "Group"))(
+    "$part $style renders the group stack",
+    (variant) => {
+      const root = renderVariant(variant, { children: ["x"] });
+      expect(root.tagName).toBe("DIV");
+      expect(root.getAttribute("data-slot")).toBe("bubble-group");
+      expect(root.textContent).toBe("x");
+      if (variant.style === "css") {
+        expect(classTokens(root)[0]!.startsWith("bubble-group")).toBe(true);
+      } else {
+        expect(classTokens(root)).toContain("gap-2");
+      }
+    },
+  );
 
-  test.each(bubblePartVariants.filter((variant) => variant.part === "Content"))("$part $style renders the message content", (variant) => {
-    const root = renderVariant(variant, { children: ["hello"] });
-    expect(root.getAttribute("data-slot")).toBe("bubble-content");
-    expect(root.textContent).toBe("hello");
-    if (variant.style === "css") {
-      expect(classTokens(root)[0]!.startsWith("bubble-content")).toBe(true);
-    } else {
-      expect(classTokens(root)).toContain("rounded-xl");
-    }
-  });
+  test.each(bubblePartVariants.filter((variant) => variant.part === "Content"))(
+    "$part $style renders the message content",
+    (variant) => {
+      const root = renderVariant(variant, { children: ["hello"] });
+      expect(root.getAttribute("data-slot")).toBe("bubble-content");
+      expect(root.textContent).toBe("hello");
+      if (variant.style === "css") {
+        expect(classTokens(root)[0]!.startsWith("bubble-content")).toBe(true);
+      } else {
+        expect(classTokens(root)).toContain("rounded-xl");
+      }
+    },
+  );
 
-  test.each(bubblePartVariants.filter((variant) => variant.part === "Reactions"))("$part $style defaults reactions to bottom-end", (variant) => {
-    const root = renderVariant(variant, { children: ["x"] });
-    expect(root.getAttribute("data-slot")).toBe("bubble-reactions");
-    expect(root.getAttribute("data-side")).toBe("bottom");
-    expect(root.getAttribute("data-align")).toBe("end");
-    if (variant.style === "css") {
-      const tokens = classTokens(root);
-      expect(tokens.some((token) => token.startsWith("bubble-reactions-bottom"))).toBe(true);
-      expect(tokens.some((token) => token.startsWith("bubble-reactions-end"))).toBe(true);
-    } else {
-      expect(classTokens(root)).toContain("translate-y-3/4");
-    }
-  });
+  test.each(bubblePartVariants.filter((variant) => variant.part === "Reactions"))(
+    "$part $style defaults reactions to bottom-end",
+    (variant) => {
+      const root = renderVariant(variant, { children: ["x"] });
+      expect(root.getAttribute("data-slot")).toBe("bubble-reactions");
+      expect(root.getAttribute("data-side")).toBe("bottom");
+      expect(root.getAttribute("data-align")).toBe("end");
+      if (variant.style === "css") {
+        const tokens = classTokens(root);
+        expect(tokens.some((token) => token.startsWith("bubble-reactions-bottom"))).toBe(true);
+        expect(tokens.some((token) => token.startsWith("bubble-reactions-end"))).toBe(true);
+      } else {
+        expect(classTokens(root)).toContain("translate-y-3/4");
+      }
+    },
+  );
 
-  test.each(bubblePartVariants.filter((variant) => variant.part === "Reactions"))("$part $style renders side and align variants", (variant) => {
-    const root = renderVariant(variant, { side: "top", align: "start", children: ["x"] });
-    expect(root.getAttribute("data-side")).toBe("top");
-    expect(root.getAttribute("data-align")).toBe("start");
-    if (variant.style === "css") {
-      const tokens = classTokens(root);
-      expect(tokens.some((token) => token.startsWith("bubble-reactions-top"))).toBe(true);
-      expect(tokens.some((token) => token.startsWith("bubble-reactions-start"))).toBe(true);
-    } else {
-      const tokens = classTokens(root);
-      expect(tokens).toContain("-translate-y-3/4");
-      expect(tokens).toContain("left-3");
-    }
-  });
+  test.each(bubblePartVariants.filter((variant) => variant.part === "Reactions"))(
+    "$part $style renders side and align variants",
+    (variant) => {
+      const root = renderVariant(variant, { side: "top", align: "start", children: ["x"] });
+      expect(root.getAttribute("data-side")).toBe("top");
+      expect(root.getAttribute("data-align")).toBe("start");
+      if (variant.style === "css") {
+        const tokens = classTokens(root);
+        expect(tokens.some((token) => token.startsWith("bubble-reactions-top"))).toBe(true);
+        expect(tokens.some((token) => token.startsWith("bubble-reactions-start"))).toBe(true);
+      } else {
+        const tokens = classTokens(root);
+        expect(tokens).toContain("-translate-y-3/4");
+        expect(tokens).toContain("left-3");
+      }
+    },
+  );
 
   test("both styles agree on tag and attributes", () => {
     assertStructuralParity(bubbleVariants, { variant: "ghost", align: "end", children: ["x"] });
-    assertStructuralParity(bubblePartVariants.filter((candidate) => candidate.part === "Reactions"), { side: "top", align: "start", children: ["x"] });
-    assertStructuralParity(bubblePartVariants.filter((candidate) => candidate.part === "Content"), { children: ["x"] });
+    assertStructuralParity(
+      bubblePartVariants.filter((candidate) => candidate.part === "Reactions"),
+      { side: "top", align: "start", children: ["x"] },
+    );
+    assertStructuralParity(
+      bubblePartVariants.filter((candidate) => candidate.part === "Content"),
+      { children: ["x"] },
+    );
   });
 
   test("forwards user attrs onto the root across both styles", () => {
@@ -107,7 +133,7 @@ describe("bubble", () => {
   });
 
   test("fires a user on:click handler across both styles", () => {
-    const onClick = mock(() => {});
+    const onClick = vi.fn(() => {});
     assertHandlerForwarded(bubbleVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 

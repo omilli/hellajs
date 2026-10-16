@@ -1,6 +1,6 @@
 // Shared store test helpers.
 
-import { mock } from "bun:test";
+import { vi } from "vite-plus/test";
 
 /**
  * Spies on a store's `$cleanup` method: captures the original, redefines it (store methods are
@@ -9,7 +9,7 @@ import { mock } from "bun:test";
  */
 export const spyCleanup = (target: { $cleanup: () => void }) => {
   const original = target.$cleanup;
-  const tracker = mock(() => {});
+  const tracker = vi.fn(() => {});
   Object.defineProperty(target, "$cleanup", {
     value: function (this: unknown) {
       tracker();
@@ -17,7 +17,7 @@ export const spyCleanup = (target: { $cleanup: () => void }) => {
     },
     writable: false,
     enumerable: true,
-    configurable: true
+    configurable: true,
   });
   return tracker;
 };

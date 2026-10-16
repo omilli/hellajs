@@ -1,7 +1,7 @@
 import fsStat from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { packagesDir } from "../utils/index.js";
+import { packagesDir } from "../utils/index.ts";
 
 export interface BuildMetrics {
   bundleSize: number;
@@ -69,8 +69,8 @@ export function derivePackageGraph(): PackageGraph {
       const localName = name.replace("@hellajs/", "");
       const deps = new Set<string>();
       const allDeps = {
-        ...(pkgJson.dependencies as Record<string, string> || {}),
-        ...(pkgJson.peerDependencies as Record<string, string> || {}),
+        ...((pkgJson.dependencies as Record<string, string>) || {}),
+        ...((pkgJson.peerDependencies as Record<string, string>) || {}),
       };
 
       for (const depName of Object.keys(allDeps)) {

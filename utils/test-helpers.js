@@ -1,12 +1,12 @@
 import { resetDom } from "@hellajs/dom";
-import { resetCss, resetVars } from "@hellajs/css/bundle";
-import { resetResource } from "@hellajs/resource/bundle";
-import { resetRouter } from "@hellajs/router/bundle";
+import { resetCss, resetVars } from "@hellajs/css";
+import { resetResource } from "@hellajs/resource";
+import { resetRouter } from "@hellajs/router";
 
 export function delay(val, ms) {
-  if (ms !== undefined) return new Promise(r => setTimeout(() => r(val), ms));
+  if (ms !== undefined) return new Promise((r) => setTimeout(() => r(val), ms));
   if (val === undefined) return Promise.resolve();
-  if (typeof val === "number") return new Promise(r => setTimeout(r, val));
+  if (typeof val === "number") return new Promise((r) => setTimeout(r, val));
   return Promise.resolve(val);
 }
 
@@ -20,7 +20,10 @@ export function suppressConsole() {
   return {
     errors,
     warns,
-    restore: () => { console.error = origError; console.warn = origWarn; }
+    restore: () => {
+      console.error = origError;
+      console.warn = origWarn;
+    },
   };
 }
 

@@ -1,4 +1,5 @@
-import type { UiRequest, UiResponsePayload } from "./rpc.js";
+import type {} from "bun";
+import type { UiRequest, UiResponsePayload } from "./rpc.ts";
 
 /** Wiring the relay needs to steer or abort the active agent. */
 export interface RelayOptions {
@@ -131,13 +132,15 @@ export class TerminalRelay implements Relay {
    */
   public ask(request: UiRequest): Promise<UiResponsePayload> {
     this.renderDialog(request);
-    return new Promise<UiResponsePayload>((resolve: (response: UiResponsePayload) => void): void => {
-      dialog = {
-        onLine: (line: string): void => {
-          this.answerDialog(request, line, resolve);
-        },
-      };
-    });
+    return new Promise<UiResponsePayload>(
+      (resolve: (response: UiResponsePayload) => void): void => {
+        dialog = {
+          onLine: (line: string): void => {
+            this.answerDialog(request, line, resolve);
+          },
+        };
+      },
+    );
   }
 
   /**
@@ -219,7 +222,11 @@ export class TerminalRelay implements Relay {
   }
 
   /** Validate one answer line against the open dialog; re-prompt on mismatch. */
-  private answerDialog(request: UiRequest, line: string, resolve: (response: UiResponsePayload) => void): void {
+  private answerDialog(
+    request: UiRequest,
+    line: string,
+    resolve: (response: UiResponsePayload) => void,
+  ): void {
     if (line.trim() === "c") {
       dialog = null;
       resolve({ cancelled: true });

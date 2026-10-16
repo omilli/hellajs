@@ -1,4 +1,4 @@
-import { describe, expect, test, mock } from "bun:test";
+import { describe, expect, test, vi } from "vite-plus/test";
 import { computed, effect, signal } from "@hellajs/core";
 
 /** Tests adopted with thanks from preact-signals implementation at
@@ -20,7 +20,7 @@ describe("core", () => {
       const b = computed(() => a() - 1);
       const c = computed(() => a() + b());
 
-      const renderMock = mock(() => "Display: " + c());
+      const renderMock = vi.fn(() => "Display: " + c());
       const d = computed(renderMock);
 
       expect(d()).toBe("Display: 3");
@@ -43,7 +43,7 @@ describe("core", () => {
       const b = computed(() => a());
       const c = computed(() => a());
 
-      const renderSpy = mock(() => b() + " " + c());
+      const renderSpy = vi.fn(() => b() + " " + c());
       const d = computed(renderSpy);
 
       expect(d()).toBe("John John");
@@ -69,7 +69,7 @@ describe("core", () => {
 
       const d = computed(() => b() + " " + c());
 
-      const spy = mock(() => d());
+      const spy = vi.fn(() => d());
       const e = computed(spy);
 
       expect(e()).toBe("a a");
@@ -88,7 +88,7 @@ describe("core", () => {
         return "foo";
       });
 
-      const spy = mock(() => b());
+      const spy = vi.fn(() => b());
       const c = computed(spy);
 
       expect(c()).toBe("foo");
@@ -116,12 +116,12 @@ describe("core", () => {
 
       const d = computed(() => c());
 
-      const eSpy = mock(() => b() + " " + d());
+      const eSpy = vi.fn(() => b() + " " + d());
       const e = computed(eSpy);
 
-      const fSpy = mock(() => e());
+      const fSpy = vi.fn(() => e());
       const f = computed(fSpy);
-      const gSpy = mock(() => e());
+      const gSpy = vi.fn(() => e());
       const g = computed(gSpy);
 
       expect(f()).toBe("a a");
@@ -172,7 +172,7 @@ describe("core", () => {
       const a = signal("a");
 
       const b = computed(() => a());
-      const spy = mock(() => a());
+      const spy = vi.fn(() => a());
       computed(spy);
 
       expect(b()).toBe("a");
@@ -190,10 +190,10 @@ describe("core", () => {
       //  |
       // *C
       const a = signal("a");
-      const spyB = mock(() => a());
+      const spyB = vi.fn(() => a());
       const b = computed(spyB);
 
-      const spyC = mock(() => b());
+      const spyC = vi.fn(() => b());
       const c = computed(spyC);
 
       const d = computed(() => a());
@@ -222,7 +222,7 @@ describe("core", () => {
       const b = signal(0);
       const c = signal(0);
       const branch = signal(true);
-      const spy = mock(() => (branch() ? a() + b() + c() : a()));
+      const spy = vi.fn(() => (branch() ? a() + b() + c() : a()));
       effect(spy);
 
       expect(spy).toHaveBeenCalledTimes(1);
@@ -241,7 +241,7 @@ describe("core", () => {
       const b = signal(0);
       const c = signal(0);
       const branch = signal(true);
-      const spy = mock(() => (branch() ? a() + b() + c() : a()));
+      const spy = vi.fn(() => (branch() ? a() + b() + c() : a()));
       const value = computed(spy);
 
       expect(value()).toBe(0);
@@ -268,7 +268,7 @@ describe("core", () => {
         a();
         return "c";
       });
-      const spy = mock(() => b() + " " + c());
+      const spy = vi.fn(() => b() + " " + c());
       const d = computed(spy);
 
       expect(d()).toBe("a c");
@@ -294,7 +294,7 @@ describe("core", () => {
         a();
         return "d";
       });
-      const spy = mock(() => b() + " " + c() + " " + d());
+      const spy = vi.fn(() => b() + " " + c() + " " + d());
       const e = computed(spy);
 
       expect(e()).toBe("a c d");
@@ -334,7 +334,7 @@ describe("core", () => {
         a();
         return "c";
       });
-      const spy = mock(() => b() + " " + c());
+      const spy = vi.fn(() => b() + " " + c());
       const d = computed(spy);
 
       expect(d()).toBe("b c");

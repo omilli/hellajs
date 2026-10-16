@@ -2,51 +2,60 @@ import { signal, computed } from "@hellajs/core";
 import { mount } from "@hellajs/dom";
 import { style, vars } from "@hellajs/css";
 
-const theme = signal('light');
-const isDark = computed(() => theme() === 'dark');
+const theme = signal("light");
+const isDark = computed(() => theme() === "dark");
 
 const tokens = vars({
-  bg: () => isDark() ? '#1a1a2e' : '#fff',
-  surface: () => isDark() ? '#16213e' : '#f8fafc',
-  text: () => isDark() ? '#e2e8f0' : '#1e293b',
-  primary: () => '#3b82f6',
-  border: () => isDark() ? '#334155' : '#e2e8f0',
+  bg: () => (isDark() ? "#1a1a2e" : "#fff"),
+  surface: () => (isDark() ? "#16213e" : "#f8fafc"),
+  text: () => (isDark() ? "#e2e8f0" : "#1e293b"),
+  primary: () => "#3b82f6",
+  border: () => (isDark() ? "#334155" : "#e2e8f0"),
 });
 
-const page = style({
-  minHeight: '100vh',
-  backgroundColor: tokens.bg,
-  color: tokens.text,
-  fontFamily: 'system-ui, sans-serif',
-  transition: 'background-color 0.2s, color 0.2s',
-}, { label: 'page' });
-
-const app = style({
-  maxWidth: '30rem',
-  margin: '0 auto',
-  padding: '1rem',
-  'h1': { margin: '0 0 0.75rem' },
-  'button': {
-    padding: '0.5rem 1rem',
-    border: 'none',
-    borderRadius: '0.25rem',
-    backgroundColor: tokens.primary,
-    color: '#fff',
-    cursor: 'pointer',
-    fontSize: '0.875rem',
+const page = style(
+  {
+    minHeight: "100vh",
+    backgroundColor: tokens.bg,
+    color: tokens.text,
+    fontFamily: "system-ui, sans-serif",
+    transition: "background-color 0.2s, color 0.2s",
   },
-}, { label: 'app' });
+  { label: "page" },
+);
+
+const app = style(
+  {
+    maxWidth: "30rem",
+    margin: "0 auto",
+    padding: "1rem",
+    h1: { margin: "0 0 0.75rem" },
+    button: {
+      padding: "0.5rem 1rem",
+      border: "none",
+      borderRadius: "0.25rem",
+      backgroundColor: tokens.primary,
+      color: "#fff",
+      cursor: "pointer",
+      fontSize: "0.875rem",
+    },
+  },
+  { label: "app" },
+);
 
 const ThemeSwitcher = () => (
   <div class={page}>
     <div class={app}>
       <h1>Theme Switcher</h1>
-      <button on:click={() => theme(isDark() ? 'light' : 'dark')}>
-        {isDark() ? '☀️ Light' : '🌙 Dark'}
+      <button on:click={() => theme(isDark() ? "light" : "dark")}>
+        {isDark() ? "☀️ Light" : "🌙 Dark"}
       </button>
-      <p>Toggle the button to switch themes. The background, text, and border colors all update reactively.</p>
+      <p>
+        Toggle the button to switch themes. The background, text, and border colors all update
+        reactively.
+      </p>
     </div>
   </div>
 );
 
-mount(ThemeSwitcher, '#app');
+mount(ThemeSwitcher, "#app");

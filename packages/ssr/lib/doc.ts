@@ -116,9 +116,9 @@ export function doc(options: DocOptions): string | ReadableStream<string> {
   }
   const prefix = `<!DOCTYPE html><html${serializeProp("lang", options.lang)}><head>${buildHead(options.head)}</head><body>${mount !== undefined ? mount.open : ""}`;
   const suffix = `${mount !== undefined ? mount.close : ""}${data}</body></html>`;
-  let done = false;                         // shared by pull/cancel: skip the suffix once the stream is done (cancel/error)
-  let prefixDone = false;                   // document shell delivered — body chunks follow
-  const reader = options.body.getReader();  // acquired up front: cancel() must reach the body through this reader (the stream is locked to it)
+  let done = false; // shared by pull/cancel: skip the suffix once the stream is done (cancel/error)
+  let prefixDone = false; // document shell delivered — body chunks follow
+  const reader = options.body.getReader(); // acquired up front: cancel() must reach the body through this reader (the stream is locked to it)
   return new ReadableStream<string>({
     // pull-driven pipe — one chunk per pull, so a slow document consumer exerts backpressure on the
     // body stream (and its staged swaps) instead of buffering the whole document in the stream queue;
@@ -128,22 +128,25 @@ export function doc(options: DocOptions): string | ReadableStream<string> {
       try {
         if (!prefixDone) {
           prefixDone = true;
-          controller.enqueue(prefix);      // shell first
+          controller.enqueue(prefix); // shell first
           return;
         }
-        const chunk = await reader.read();  // advance the body by at most one chunk
-        if (done) return;                   // cancelled while parked on the body read
-        if (!chunk.done) { controller.enqueue(chunk.value); return; }
-        controller.enqueue(suffix);          // body closed — flush the suffix and close in the same pull
+        const chunk = await reader.read(); // advance the body by at most one chunk
+        if (done) return; // cancelled while parked on the body read
+        if (!chunk.done) {
+          controller.enqueue(chunk.value);
+          return;
+        }
+        controller.enqueue(suffix); // body closed — flush the suffix and close in the same pull
         controller.close();
       } catch (err) {
-        done = true;                        // a body-stream error (or late enqueue on a cancelled stream) — surface it
+        done = true; // a body-stream error (or late enqueue on a cancelled stream) — surface it
         controller.error(err);
       }
     },
     cancel(reason) {
-      done = true;                          // stop the suffix flush; the consumer is gone
-      return reader.cancel(reason);         // propagate so a cancelled document stops the body (and its staged swaps)
+      done = true; // stop the suffix flush; the consumer is gone
+      return reader.cancel(reason); // propagate so a cancelled document stops the body (and its staged swaps)
     },
   });
 }

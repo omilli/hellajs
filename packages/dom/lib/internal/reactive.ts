@@ -1,4 +1,12 @@
-import type { DomWrapper, HellaPrimitive, HellaProps, HellaElement, ElementHooks, HookType, ElementMountFn } from "../types/nodes";
+import type {
+  DomWrapper,
+  HellaPrimitive,
+  HellaProps,
+  HellaElement,
+  ElementHooks,
+  HookType,
+  ElementMountFn,
+} from "../types/nodes";
 import type { DOMEventMap } from "../types/attributes";
 import { registry } from "../registry";
 import { isFunction, isPlainObject, objectLoop } from "./core";
@@ -23,14 +31,17 @@ export function createReactive<T extends HellaElement>(element: T): DomWrapper<T
         });
       } else {
         const prop = FORM_ELEMENTS.has(element.tagName) ? "value" : "textContent";
-        const set = () => element[prop] = resolveText(value);
+        const set = () => (element[prop] = resolveText(value));
         if (isFunction(value)) registry.addEffect(element, set);
         else set();
       }
       return wrapper;
     },
 
-    on: <K extends keyof DOMEventMap>(event: K, handler: (this: Element, event: DOMEventMap[K]) => void) => {
+    on: <K extends keyof DOMEventMap>(
+      event: K,
+      handler: (this: Element, event: DOMEventMap[K]) => void,
+    ) => {
       setNodeHandler(element, event as string, handler as EventListener);
       return wrapper;
     },
@@ -50,7 +61,7 @@ export function createReactive<T extends HellaElement>(element: T): DomWrapper<T
 
     get node() {
       return element;
-    }
+    },
   };
 
   return wrapper;

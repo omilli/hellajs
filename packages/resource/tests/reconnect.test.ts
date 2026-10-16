@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { resource } from "@hellajs/resource/bundle";
+import { resource } from "@hellajs/resource";
 
 describe("resource", () => {
   describe("refetchOnReconnect", () => {
@@ -9,10 +9,10 @@ describe("resource", () => {
     });
 
     test("refetches when coming back online", async () => {
-      const fetcher = mock(() => delay(`data-${fetcher.mock.calls.length}`));
+      const fetcher = vi.fn(() => delay(`data-${fetcher.mock.calls.length}`));
       const r = resource(fetcher, {
         refetchOnReconnect: true,
-        refetchOnKeyChange: true
+        refetchOnKeyChange: true,
       });
 
       await delay(20);
@@ -32,10 +32,10 @@ describe("resource", () => {
     });
 
     test("does not refetch when disabled", async () => {
-      const fetcher = mock(() => delay(`data-${fetcher.mock.calls.length}`));
+      const fetcher = vi.fn(() => delay(`data-${fetcher.mock.calls.length}`));
       const r = resource(fetcher, {
         refetchOnReconnect: false,
-        refetchOnKeyChange: true
+        refetchOnKeyChange: true,
       });
 
       await delay(20);
@@ -54,10 +54,10 @@ describe("resource", () => {
     });
 
     test("dispose cleans up reconnect listener", async () => {
-      const fetcher = mock(() => delay(`data-${fetcher.mock.calls.length}`));
+      const fetcher = vi.fn(() => delay(`data-${fetcher.mock.calls.length}`));
       const r = resource(fetcher, {
         refetchOnReconnect: true,
-        refetchOnKeyChange: true
+        refetchOnKeyChange: true,
       });
 
       await delay(20);
@@ -73,7 +73,7 @@ describe("resource", () => {
     });
 
     test("works without refetchOnKeyChange (manual trigger + reconnect)", async () => {
-      const fetcher = mock(() => delay(`data-${fetcher.mock.calls.length}`));
+      const fetcher = vi.fn(() => delay(`data-${fetcher.mock.calls.length}`));
       const r = resource(fetcher, {
         refetchOnReconnect: true,
       });

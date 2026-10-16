@@ -14,6 +14,8 @@ export function assertNode(node: unknown, member: string): void {
     throw new Error(`[ssr] ${member}: node is required, received ${node}`);
   }
   if (typeof node !== "object" || (node as HellaNode).tag === undefined) {
-    throw new Error(`[ssr] ${member}: node must be a HellaNode (object with a tag), received ${typeof node}`);
+    throw new Error(
+      `[ssr] ${member}: node must be a HellaNode (object with a tag), received ${typeof node}`,
+    );
   }
 }

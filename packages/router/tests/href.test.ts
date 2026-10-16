@@ -1,5 +1,5 @@
-import { describe, test, expect } from "bun:test";
-import { router, navigate, route, href } from "@hellajs/router/bundle";
+import { describe, test, expect } from "vite-plus/test";
+import { router, navigate, route, href } from "@hellajs/router";
 import { setupRouterEnv } from "./helpers";
 
 describe("href", () => {
@@ -8,13 +8,13 @@ describe("href", () => {
   });
 
   test("URL-encodes substituted params", () => {
-    expect(href("/search/:term", { params: { term: "hello world & more!" } }))
-      .toBe("/search/hello%20world%20%26%20more!");
+    expect(href("/search/:term", { params: { term: "hello world & more!" } })).toBe(
+      "/search/hello%20world%20%26%20more!",
+    );
   });
 
   test("inserts wildcard values raw with slashes preserved", () => {
-    expect(href("/files/*", { params: { "*": "docs/readme.md" } }))
-      .toBe("/files/docs/readme.md");
+    expect(href("/files/*", { params: { "*": "docs/readme.md" } })).toBe("/files/docs/readme.md");
   });
 
   test("strips unmatched param tokens", () => {
@@ -32,13 +32,15 @@ describe("href", () => {
   });
 
   test("substitutes multiple params across segments", () => {
-    expect(href("/users/:id/posts/:postId", { params: { id: "1", postId: "2" } }))
-      .toBe("/users/1/posts/2");
+    expect(href("/users/:id/posts/:postId", { params: { id: "1", postId: "2" } })).toBe(
+      "/users/1/posts/2",
+    );
   });
 
   test("URL-encodes query keys and values", () => {
-    expect(href("/search", { query: { q: "hello world", "a&b": "c=d" } }))
-      .toBe("/search?q=hello%20world&a%26b=c%3Dd");
+    expect(href("/search", { query: { q: "hello world", "a&b": "c=d" } })).toBe(
+      "/search?q=hello%20world&a%26b=c%3Dd",
+    );
   });
 
   test("omits the ? for an empty query object", () => {
@@ -49,19 +51,20 @@ describe("href", () => {
     const env = setupRouterEnv();
     router({
       routes: {
-        "/users/:id": () => env.render("user")
-      }
+        "/users/:id": () => env.render("user"),
+      },
     });
 
     navigate("/users/:id", { params: { id: "hello world" }, query: { tab: "profile & posts" } });
-    expect(href("/users/:id", { params: { id: "hello world" }, query: { tab: "profile & posts" } }))
-      .toBe(route().path);
+    expect(
+      href("/users/:id", { params: { id: "hello world" }, query: { tab: "profile & posts" } }),
+    ).toBe(route().path);
   });
 
   test("throws when path is null", () => {
     expect(() =>
       // @ts-expect-error - intentionally invalid: null path
-      href(null)
+      href(null),
     ).toThrow("[router] href: path must be a string, received null");
   });
 });

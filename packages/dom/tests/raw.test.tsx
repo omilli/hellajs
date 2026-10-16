@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { mount, hydrate, raw } from "@hellajs/dom";
@@ -16,12 +16,17 @@ describe("dom raw child", () => {
 
   test("adopts a multi-node raw region in place during hydrate without re-binding", () => {
     const label = signal("A");
-    const App = () => <main>{raw("<h1>Hi</h1><p>slot</p>")}<span>{label}</span></main>;
-    const container = ssrContainer(<App></App> as HellaNode);
+    const App = () => (
+      <main>
+        {raw("<h1>Hi</h1><p>slot</p>")}
+        <span>{label}</span>
+      </main>
+    );
+    const container = ssrContainer((<App></App>) as HellaNode);
     const h1Before = container.querySelector("h1")!;
     const pBefore = container.querySelector("p")!;
 
-    hydrate(<App></App> as HellaNode, container);
+    hydrate((<App></App>) as HellaNode, container);
 
     // raw nodes adopted in place — same element references, not rebuilt
     expect(container.querySelector("h1")).toBe(h1Before);
@@ -38,7 +43,7 @@ describe("dom raw child", () => {
     const container = setupContainer();
     container.innerHTML = "<div></div>";
 
-    const { warnings } = suppressWarn(() => hydrate(<App></App> as HellaNode, container));
+    const { warnings } = suppressWarn(() => hydrate((<App></App>) as HellaNode, container));
 
     expect(warnings.length).toBeGreaterThan(0);
     expect(container.querySelector("b")?.textContent).toBe("x");
@@ -47,7 +52,7 @@ describe("dom raw child", () => {
   test("mounts a raw child by parsing its HTML via a template (client-only)", () => {
     const App = () => <main>{raw("<h1>Hi</h1><p>slot</p>")}</main>;
     const container = setupContainer();
-    mount(<App></App> as HellaNode, container);
+    mount((<App></App>) as HellaNode, container);
     expect(container.querySelector("h1")?.textContent).toBe("Hi");
     expect(container.querySelector("p")?.textContent).toBe("slot");
   });
@@ -56,7 +61,7 @@ describe("dom raw child", () => {
     const markup = signal("<b>x</b>");
     const App = () => <main>{() => raw(markup())}</main>;
     const container = setupContainer();
-    mount(<App></App> as HellaNode, container);
+    mount((<App></App>) as HellaNode, container);
     expect(container.querySelector("b")?.textContent).toBe("x");
     markup("<b>y</b>");
     flush();

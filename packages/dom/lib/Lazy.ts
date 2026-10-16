@@ -52,13 +52,18 @@ export function Lazy(props: LazyProps): JSX.Element {
       }
     };
 
-    props.loader({ signal: controller.signal })
-      .then(component => {
+    props
+      .loader({ signal: controller.signal })
+      .then((component) => {
         if (isCancelled || !anchor.parentNode) return;
         if (loadingNode?.parentNode) loadingNode.parentNode.removeChild(loadingNode);
-        if (existing.length) clearRenderedNodes(existing, parent);   // swap the server-rendered region for the fresh mount
+        if (existing.length) clearRenderedNodes(existing, parent); // swap the server-rendered region for the fresh mount
         const resolved = isFunction(component) ? component(props.props) : component;
-        const mounted = mountNode(resolved as HellaNode, undefined, childNamespaceOf(anchor.parentNode));
+        const mounted = mountNode(
+          resolved as HellaNode,
+          undefined,
+          childNamespaceOf(anchor.parentNode),
+        );
         contentNode = mounted;
         anchor.parentNode.insertBefore(mounted, anchor);
       })
@@ -67,11 +72,15 @@ export function Lazy(props: LazyProps): JSX.Element {
         if (loadingNode?.parentNode) loadingNode.parentNode.removeChild(loadingNode);
         if (props.fallback) {
           if (existing.length) clearRenderedNodes(existing, parent); // replace the server content with the error UI
-          const mounted = resolveNode(props.fallback, undefined, childNamespaceOf(anchor.parentNode));
+          const mounted = resolveNode(
+            props.fallback,
+            undefined,
+            childNamespaceOf(anchor.parentNode),
+          );
           contentNode = mounted;
           anchor.parentNode.insertBefore(mounted, anchor);
         } else {
-          console.error("[dom] Lazy:", err);                        // no fallback — leave the server content in place (static degradation)
+          console.error("[dom] Lazy:", err); // no fallback — leave the server content in place (static degradation)
         }
       });
   }) as JSX.Element;

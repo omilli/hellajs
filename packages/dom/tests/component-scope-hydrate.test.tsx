@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { effect, flush, signal } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
 import { hydrate, component, peekState } from "@hellajs/dom";
@@ -13,16 +13,23 @@ describe("dom", () => {
   describe("component scope hydrate", () => {
     test("wires the scope when hydrate adopts a static root", async () => {
       const count = signal(0);
-      const effectRuns = mock(() => { });
+      const effectRuns = vi.fn(() => {});
       const Static = () => {
-        effect(() => { effectRuns(); count(); });
+        effect(() => {
+          effectRuns();
+          count();
+        });
         return <div id="static-hydrated">Hydrated</div>;
       };
 
       // One view instance drives both ssr() and hydrate() — the documented
       // contract. A second template call would create a second component whose
       // scope belongs to a discarded server-side node.
-      const view = <div><Static></Static></div>;
+      const view = (
+        <div>
+          <Static></Static>
+        </div>
+      );
       const container = ssrContainer(view);
       expect(effectRuns).toHaveBeenCalledTimes(1);
 
@@ -39,14 +46,21 @@ describe("dom", () => {
 
     test("wires the scope when hydrate adopts a fragment root", async () => {
       const count = signal(0);
-      const effectRuns = mock(() => { });
+      const effectRuns = vi.fn(() => {});
       // The fragment root's first child is itself a fragment component — its region
       // markers lead the container, and the walk removes them while recursing, so
       // the root scope wires (post-recursion) onto the first surviving node.
       const Inner = () => <>b</>;
       const FragRoot = () => {
-        effect(() => { effectRuns(); count(); });
-        return <><Inner></Inner>tail</>;
+        effect(() => {
+          effectRuns();
+          count();
+        });
+        return (
+          <>
+            <Inner></Inner>tail
+          </>
+        );
       };
 
       // One component() instance drives both ssr() and hydrate() (memory 092):
@@ -60,7 +74,10 @@ describe("dom", () => {
 
       const first = container.firstChild!;
       first.remove();
-      for (let __i = 0; __i < 50; __i++) { if (peekState(first) === undefined) break; await delay(); }
+      for (let __i = 0; __i < 50; __i++) {
+        if (peekState(first) === undefined) break;
+        await delay();
+      }
       expect(peekState(first)).toBeUndefined();
 
       count(1);
@@ -70,9 +87,12 @@ describe("dom", () => {
 
     test("keeps a reactive-first fragment-root component's scope across a post-hydrate swap", async () => {
       const count = signal(0);
-      const effectRuns = mock(() => { });
+      const effectRuns = vi.fn(() => {});
       const ReactiveFirst = () => {
-        effect(() => { effectRuns(); count(); });
+        effect(() => {
+          effectRuns();
+          count();
+        });
         return <>{count} tail</>;
       };
 
@@ -102,7 +122,10 @@ describe("dom", () => {
       expect(container.textContent).toBe("2 tail");
 
       carrier.remove();
-      for (let __i = 0; __i < 50; __i++) { if (peekState(carrier) === undefined) break; await delay(); }
+      for (let __i = 0; __i < 50; __i++) {
+        if (peekState(carrier) === undefined) break;
+        await delay();
+      }
       expect(peekState(carrier)).toBeUndefined();
 
       count(3);
@@ -113,7 +136,7 @@ describe("dom", () => {
     test("keeps a falsy-first fragment-root component's scope across the region's first re-run", async () => {
       const count = signal(0);
       const show = signal(false);
-      const effectRuns = mock(() => { });
+      const effectRuns = vi.fn(() => {});
       // The region resolves falsy at SSR (empty markers) — the dialog shape: a
       // visible-gated region renders nothing until its signal flips. hydrate must
       // settle the falsy resolution into the region anchor, never mount a transient
@@ -121,8 +144,11 @@ describe("dom", () => {
       // (regionPrev.nextSibling) and the first re-run's clear would dispose the
       // component scope — killing its effects while the component stays mounted.
       const FalsyFirst = () => {
-        effect(() => { effectRuns(); count(); });
-        return <>{(() => show() && <span>shown</span>)} tail</>;
+        effect(() => {
+          effectRuns();
+          count();
+        });
+        return <>{() => show() && <span>shown</span>} tail</>;
       };
 
       // One component() instance drives both ssr() and hydrate() (memory 092):

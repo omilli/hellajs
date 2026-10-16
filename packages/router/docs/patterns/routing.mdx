@@ -408,26 +408,22 @@ The view-signal style is the isomorphic handler form: the same handlers fire on 
 [`ssr`](/reference/ssr/ssr) is synchronous, so resolve the route before stringifying: pass the request URL via the `url` option, the full request URL (`req.url`) or a path (`pathname + search`); see [`router`](/reference/router/router) for `url` semantics.
 
 ```jsx
+import { createServer } from 'node:http';
 import { router } from '@hellajs/router';
 import { ssr, doc } from '@hellajs/ssr';
 import { routes, App, notFound } from './app.js';
 
-Bun.serve({
-  port: 3000,
-  fetch(req) {
-    const { pathname, search } = new URL(req.url);
+createServer((req, res) => {
+  const { pathname, search } = new URL(req.url, `http://${req.headers.host}`);
 
-    // url overrides window.location; resolution is synchronous, so currentView
-    // holds the matched view before ssr walks the tree.
-    router({ routes, url: pathname + search, notFound });
+  // url overrides window.location; resolution is synchronous, so currentView
+  // holds the matched view before ssr walks the tree.
+  router({ routes, url: pathname + search, notFound });
 
-    const body = ssr(<App />);
-    return new Response(
-      doc({ lang: 'en', head: { title: 'App' }, body }),
-      { headers: { 'content-type': 'text/html' } }
-    );
-  }
-});
+  const body = ssr(<App />);
+  res.setHeader('content-type', 'text/html');
+  res.end(doc({ lang: 'en', head: { title: 'App' }, body }));
+}).listen(3000);
 ```
 
 ### Server: ssr.async()
@@ -436,6 +432,7 @@ For server-fetched data, return a Promise from a getter child; [`ssr.async`](/re
 
 ```jsx
 import { signal } from '@hellajs/core';
+import { createServer } from 'node:http';
 import { router } from '@hellajs/router';
 import type { Params } from '@hellajs/router';
 import { ssr, doc } from '@hellajs/ssr';
@@ -451,19 +448,14 @@ const routes = {
 };
 const App = () => <main>{currentView}</main>;
 
-Bun.serve({
-  port: 3000,
-  async fetch(req) {
-    const { pathname, search } = new URL(req.url);
-    router({ routes, url: pathname + search });
+createServer(async (req, res) => {
+  const { pathname, search } = new URL(req.url, `http://${req.headers.host}`);
+  router({ routes, url: pathname + search });
 
-    const body = await ssr.async(<App />);
-    return new Response(
-      doc({ lang: 'en', head: { title: 'App' }, body }),
-      { headers: { 'content-type': 'text/html' } }
-    );
-  }
-});
+  const body = await ssr.async(<App />);
+  res.setHeader('content-type', 'text/html');
+  res.end(doc({ lang: 'en', head: { title: 'App' }, body }));
+}).listen(3000);
 ```
 
 ### Server: ssr.stream()
@@ -473,6 +465,8 @@ Bun.serve({
 ```jsx
 import { signal } from '@hellajs/core';
 import { Suspense } from '@hellajs/dom';
+import { createServer } from 'node:http';
+import { Readable } from 'node:stream';
 import { router } from '@hellajs/router';
 import type { Params } from '@hellajs/router';
 import { ssr, doc } from '@hellajs/ssr';
@@ -490,23 +484,20 @@ const routes = {
 };
 const App = () => <main>{currentView}</main>;
 
-Bun.serve({
-  port: 3000,
-  fetch(req) {
-    const { pathname, search } = new URL(req.url);
-    router({ routes, url: pathname + search });
+createServer((req, res) => {
+  const { pathname, search } = new URL(req.url, `http://${req.headers.host}`);
+  router({ routes, url: pathname + search });
 
-    return new Response(
-      doc({
-        lang: 'en',
-        head: { title: 'App', scripts: [{ src: '/client.js', type: 'module' }] },
-        body: ssr.stream(<App />),
-        mount: '#app'
-      }).pipeThrough(new TextEncoderStream()),
-      { headers: { 'content-type': 'text/html' } }
-    );
-  }
-});
+  res.setHeader('content-type', 'text/html');
+  Readable.fromWeb(
+    doc({
+      lang: 'en',
+      head: { title: 'App', scripts: [{ src: '/client.js', type: 'module' }] },
+      body: ssr.stream(<App />),
+      mount: '#app'
+    }).pipeThrough(new TextEncoderStream())
+  ).pipe(res);
+}).listen(3000);
 ```
 
 Streamed [`<Suspense>`](/reference/dom/suspense) regions stage their resolved children in `<template>` elements; [`hydrate`](/reference/dom/hydrate) swaps each staged template in automatically, so the streamed and sync paths share one client entry: `router({ routes })` (no `url` option) resolves `window.location` synchronously, and [`hydrate`](/reference/dom/hydrate) adopts the existing nodes instead of rebuilding them.

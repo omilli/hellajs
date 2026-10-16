@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { effect, flush, signal } from "@hellajs/core";
 import { resetTestState } from "@utils/test-helpers.js";
 import { mount, component } from "@hellajs/dom";
@@ -17,15 +17,18 @@ describe("dom", () => {
     });
 
     test("returns empty fragment on render error", () => {
-      const BrokenComp = () => { throw new Error("render failed"); };
+      const BrokenComp = () => {
+        throw new Error("render failed");
+      };
       const node = component(BrokenComp, {});
       expect(node.tag).toBe("$");
       expect(node.children).toEqual([]);
     });
 
     test("passes props to component function", () => {
-      const Greeting = (props: Record<string, unknown>) =>
-        <span id="greeting">Hello {props.name as string}</span>;
+      const Greeting = (props: Record<string, unknown>) => (
+        <span id="greeting">Hello {props.name as string}</span>
+      );
 
       mount(component(Greeting as ComponentFn, { name: "World" }));
       expect(document.getElementById("greeting")?.textContent).toBe("Hello World");
@@ -33,9 +36,13 @@ describe("dom", () => {
 
     test("does not mutate the shared static template node", () => {
       const count = signal(0);
-      const shared = <div class="shared-root">x</div> as HellaNode & { componentScope?: () => void };
+      const shared = (<div class="shared-root">x</div>) as HellaNode & {
+        componentScope?: () => void;
+      };
       const Static = () => {
-        effect(() => { count(); });
+        effect(() => {
+          count();
+        });
         return shared;
       };
 
@@ -50,16 +57,24 @@ describe("dom", () => {
 
     test("disposes an empty-fragment-root component immediately", () => {
       const count = signal(0);
-      const effectRuns = mock(() => { });
+      const effectRuns = vi.fn(() => {});
       const EmptyRoot = () => {
-        effect(() => { effectRuns(); count(); });
+        effect(() => {
+          effectRuns();
+          count();
+        });
         return <></>;
       };
 
       // One instance mounted twice: the first mount serves the `$` branch, the second
       // the staticDom clone — nothing is rendered either way, so both mounts dispose.
       const node = component(EmptyRoot, {});
-      mount(<div id="empty-root-wrapper">{node}{node}</div>);
+      mount(
+        <div id="empty-root-wrapper">
+          {node}
+          {node}
+        </div>,
+      );
       expect(effectRuns).toHaveBeenCalledTimes(1);
 
       count(1);

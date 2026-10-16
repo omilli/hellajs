@@ -16,7 +16,7 @@
  * Report-only: findings never change the exit code. Exit 0 = report
  * written; 1 = no session file resolved; 2 = unreadable input.
  *
- * Usage: bun .agents/skills/feedback/scripts/scan.ts [session.jsonl] [--all]
+ * Usage: node .agents/skills/feedback/scripts/scan.ts [session.jsonl] [--all]
  *   (no args)  newest session for the current working directory
  *   --all      every session file in that dir, plus cross-run recurrence
  *              (commands failing in 2+ sessions)

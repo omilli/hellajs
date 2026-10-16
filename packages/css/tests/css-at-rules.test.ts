@@ -1,6 +1,6 @@
-import { describe, expect, test, beforeEach, afterEach } from "bun:test";
+import { describe, expect, test, beforeEach, afterEach } from "vite-plus/test";
 import { resetTestState, getStylesheet, suppressConsole } from "@utils/test-helpers.js";
-import { css, cssText, removeCss } from "@hellajs/css/bundle";
+import { css, cssText, removeCss } from "@hellajs/css";
 
 let sup: ReturnType<typeof suppressConsole>;
 
@@ -21,12 +21,14 @@ describe("css at-rules", () => {
       "@media (prefers-color-scheme: dark)": {
         ":root": {
           "--theme-bg": "black",
-          "--theme-color": "white"
-        }
-      }
+          "--theme-color": "white",
+        },
+      },
     });
     const content = getStylesheet("hella-css");
-    expect(content).toContain("@media (prefers-color-scheme:dark){:root{--theme-bg:black;--theme-color:white}}");
+    expect(content).toContain(
+      "@media (prefers-color-scheme:dark){:root{--theme-bg:black;--theme-color:white}}",
+    );
   });
 
   test("@keyframes generates correct animation", () => {
@@ -65,8 +67,12 @@ describe("css at-rules", () => {
         fontStyle: "normal",
       },
     });
-    expect(cssText()).toBe('@font-face {\n  font-family: "Inter";\n  src: url("/fonts/inter.woff2") format("woff2");\n  font-weight: 400;\n  font-style: normal;\n}');
-    expect(getStylesheet("hella-css")).toBe('@font-face{font-family:Inter;src:url("/fonts/inter.woff2") format("woff2");font-weight:400;font-style:normal}');
+    expect(cssText()).toBe(
+      '@font-face {\n  font-family: "Inter";\n  src: url("/fonts/inter.woff2") format("woff2");\n  font-weight: 400;\n  font-style: normal;\n}',
+    );
+    expect(getStylesheet("hella-css")).toBe(
+      '@font-face{font-family:Inter;src:url("/fonts/inter.woff2") format("woff2");font-weight:400;font-style:normal}',
+    );
   });
 
   test("@container generates correct rule", () => {
@@ -77,8 +83,12 @@ describe("css at-rules", () => {
         },
       },
     });
-    expect(cssText()).toBe("@container (min-width: 400px) {\n  .card {\n    font-size: 1.25rem;\n  }\n}");
-    expect(getStylesheet("hella-css")).toBe("@container (min-width:400px){.card{font-size:1.25rem}}");
+    expect(cssText()).toBe(
+      "@container (min-width: 400px) {\n  .card {\n    font-size: 1.25rem;\n  }\n}",
+    );
+    expect(getStylesheet("hella-css")).toBe(
+      "@container (min-width:400px){.card{font-size:1.25rem}}",
+    );
   });
 
   test("@supports generates correct rule", () => {
@@ -94,8 +104,8 @@ describe("css at-rules", () => {
   test("@layer generates correct rule", () => {
     const layer = {
       "@layer base": {
-        "h1": { fontSize: "2rem" },
-        "p": { lineHeight: "1.5" },
+        h1: { fontSize: "2rem" },
+        p: { lineHeight: "1.5" },
       },
     };
     // happy-dom rejects @layer insertRule (the premise of the phantom-index
@@ -115,7 +125,9 @@ describe("css at-rules", () => {
     } finally {
       (globalThis as unknown as Record<string, unknown>).document = savedDocument;
     }
-    expect(serverText).toBe("@layer base {\n  h1 {\n    font-size: 2rem;\n  }\n  p {\n    line-height: 1.5;\n  }\n}");
+    expect(serverText).toBe(
+      "@layer base {\n  h1 {\n    font-size: 2rem;\n  }\n  p {\n    line-height: 1.5;\n  }\n}",
+    );
   });
 
   test("@import statement emits the exact block-less form", () => {
@@ -170,18 +182,20 @@ describe("css at-rules", () => {
       "@starting-style",
     ])("%s with direct declarations throws in a global call", (atRule) => {
       expect(() => css({ [atRule]: { color: "red" } })).toThrow(
-        `[css] conditional at-rule "${atRule}" contains declarations with no selector — nest selectors under the at-rule`
+        `[css] conditional at-rule "${atRule}" contains declarations with no selector — nest selectors under the at-rule`,
       );
     });
 
     test("removeCss throws for the same shape", () => {
       expect(() => removeCss({ "@media (min-width: 1px)": { color: "red" } })).toThrow(
-        '[css] conditional at-rule "@media (min-width: 1px)" contains declarations with no selector'
+        '[css] conditional at-rule "@media (min-width: 1px)" contains declarations with no selector',
       );
     });
 
     test("null-only body does not throw (nulls are skipped)", () => {
-      expect(() => css({ "@media (min-width: 1px)": { color: null as unknown as undefined } })).not.toThrow();
+      expect(() =>
+        css({ "@media (min-width: 1px)": { color: null as unknown as undefined } }),
+      ).not.toThrow();
       expect(getStylesheet("hella-css")).toContain("@media (min-width:1px){}");
     });
 

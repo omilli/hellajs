@@ -15,12 +15,47 @@ const CAMEL_REGEX = /[A-Z]/g;
  * take a unit; they bypass this set via the custom-property key check in process().
  */
 const UNITLESS_PROPERTIES = new Set([
-  "animation-iteration-count", "aspect-ratio", "border-image-outset", "border-image-slice", "border-image-width",
-  "column-count", "columns", "flex", "flex-grow", "flex-positive", "flex-shrink", "flex-negative", "flex-order",
-  "grid-area", "grid-row", "grid-row-end", "grid-row-span", "grid-row-start", "grid-column", "grid-column-end",
-  "grid-column-span", "grid-column-start", "font-weight", "line-clamp", "line-height", "opacity", "order",
-  "orphans", "scale", "tab-size", "widows", "z-index", "zoom", "fill-opacity", "flood-opacity", "stop-opacity",
-  "stroke-dasharray", "stroke-dashoffset", "stroke-miterlimit", "stroke-opacity", "stroke-width"
+  "animation-iteration-count",
+  "aspect-ratio",
+  "border-image-outset",
+  "border-image-slice",
+  "border-image-width",
+  "column-count",
+  "columns",
+  "flex",
+  "flex-grow",
+  "flex-positive",
+  "flex-shrink",
+  "flex-negative",
+  "flex-order",
+  "grid-area",
+  "grid-row",
+  "grid-row-end",
+  "grid-row-span",
+  "grid-row-start",
+  "grid-column",
+  "grid-column-end",
+  "grid-column-span",
+  "grid-column-start",
+  "font-weight",
+  "line-clamp",
+  "line-height",
+  "opacity",
+  "order",
+  "orphans",
+  "scale",
+  "tab-size",
+  "widows",
+  "z-index",
+  "zoom",
+  "fill-opacity",
+  "flood-opacity",
+  "stop-opacity",
+  "stroke-dasharray",
+  "stroke-dashoffset",
+  "stroke-miterlimit",
+  "stroke-opacity",
+  "stroke-width",
 ]);
 
 /**
@@ -44,7 +79,8 @@ const CONDITIONAL_AT_RULES = ["@media", "@container", "@supports", "@starting-st
  * declarations with no selector — nest them under a selector or at-rule.
  */
 export function css(obj: CSSObject, options: CSSOptions = {}): string {
-  if (!isPlainObject(obj)) throw new Error(`[css] css: expected a CSS object, received ${String(obj)}`);
+  if (!isPlainObject(obj))
+    throw new Error(`[css] css: expected a CSS object, received ${String(obj)}`);
 
   const { host } = options;
   const cssText = process(obj, "", true);
@@ -122,13 +158,16 @@ export function process(obj: CSSObject, selector: string, isTopLevel: boolean, i
           while (bi < bLen) {
             const bodyValue = body[bodyKeys[bi++] as string];
             if (bodyValue != null && !isPlainObject(bodyValue)) {
-              throw new Error(`[css] conditional at-rule "${key}" contains declarations with no selector — nest selectors under the at-rule`);
+              throw new Error(
+                `[css] conditional at-rule "${key}" contains declarations with no selector — nest selectors under the at-rule`,
+              );
             }
           }
         }
-        const nestedCss = isConditional && selector
-          ? process(value as CSSObject, selector, false, indent + 1)
-          : process(value as CSSObject, "", false, indent + 1);
+        const nestedCss =
+          isConditional && selector
+            ? process(value as CSSObject, selector, false, indent + 1)
+            : process(value as CSSObject, "", false, indent + 1);
         rules.push(wrapBlock(key, nestedCss, indent));
       } else {
         let nestedSelector: string;
@@ -147,7 +186,9 @@ export function process(obj: CSSObject, selector: string, isTopLevel: boolean, i
       }
     } else {
       if (isFunction(value)) {
-        throw new Error(`[css] function values are not supported in css objects — use vars() for reactive values, key: ${key}`);
+        throw new Error(
+          `[css] function values are not supported in css objects — use vars() for reactive values, key: ${key}`,
+        );
       }
       // @-prefixed scalar keys are block-less at-statements (@import, @charset,
       // @namespace): the value is the statement body, not a declaration. They
@@ -158,7 +199,9 @@ export function process(obj: CSSObject, selector: string, isTopLevel: boolean, i
         continue;
       }
       const isCustom = key.startsWith("--");
-      const property = isCustom ? key : key.replace(CAMEL_REGEX, (match) => `-${match.toLowerCase()}`);
+      const property = isCustom
+        ? key
+        : key.replace(CAMEL_REGEX, (match) => `-${match.toLowerCase()}`);
       let cssValue: string;
       if (Array.isArray(value)) {
         cssValue = value.join(", ");
@@ -168,7 +211,12 @@ export function process(obj: CSSObject, selector: string, isTopLevel: boolean, i
         cssValue = String(value);
       }
 
-      if (property === "content" && isString(value) && !value.startsWith("\"") && !value.startsWith("'")) {
+      if (
+        property === "content" &&
+        isString(value) &&
+        !value.startsWith('"') &&
+        !value.startsWith("'")
+      ) {
         cssValue = `"${value}"`;
       }
 
@@ -180,7 +228,9 @@ export function process(obj: CSSObject, selector: string, isTopLevel: boolean, i
   // A top-level entry with direct declarations would emit selector-less text the
   // platform silently drops — reject loudly instead.
   if (isTopLevel && hasDirectDeclaration) {
-    throw new Error("[css] top-level declarations have no selector — nest them under a selector or at-rule");
+    throw new Error(
+      "[css] top-level declarations have no selector — nest them under a selector or at-rule",
+    );
   }
   const segments: string[] = [];
   let si = 0;
@@ -207,7 +257,9 @@ export function process(obj: CSSObject, selector: string, isTopLevel: boolean, i
     }
     return segments.join("\n");
   }
-  segments.push(`${pad(indent)}${selector} {\n${pad(indent + 1)}${properties.join(";\n" + pad(indent + 1))};\n${pad(indent)}}`);
+  segments.push(
+    `${pad(indent)}${selector} {\n${pad(indent + 1)}${properties.join(";\n" + pad(indent + 1))};\n${pad(indent)}}`,
+  );
   segments.push(...rules);
   return segments.join("\n");
 }

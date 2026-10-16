@@ -4,12 +4,12 @@
 // file into `docs/src/ui-install/<variant>/` for the InstallSection
 // Manual tab; one css-jsx `addComponent` call over the full name list writes
 // the live component set — every `<name>.tsx` + `tokens.ts` — into
-// `docs/src/components/ui/`. Usage: bun docs-ui [entry ...]  (no args = all
+// `docs/src/components/ui/`. Usage: vp run docs-ui [entry ...]  (no args = all
 // components)
 import { copyFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { addComponent, loadRegistry } from "../packages/ui/dist/index.js";
-import { ensureDir, logger, projectRoot, writeJson } from "./utils/index.js";
+import { ensureDir, logger, projectRoot, writeJson } from "./utils/index.ts";
 
 /** Generated variants: style combos addComponent produces a canonical file for. */
 const variants = [
@@ -58,7 +58,10 @@ async function generateEntry(name: string, scratchDir: string, outRoot: string):
     addComponent([name], { dir: scratchDir, style: variant.style, overwrite: true });
     const targetDir = join(outRoot, variant.dir);
     await ensureDir(targetDir);
-    copyFileSync(join(scratchDir, "src/components", variant.file(name)), join(targetDir, variant.file(name)));
+    copyFileSync(
+      join(scratchDir, "src/components", variant.file(name)),
+      join(targetDir, variant.file(name)),
+    );
   }
   logger.info(`[docs-ui] ${name} -> docs/src/ui-install`);
 }
@@ -111,13 +114,15 @@ async function main(): Promise<void> {
       copyFileSync(join(scratchDir, "src/components", `${name}.tsx`), join(uiDir, `${name}.tsx`));
     }
     copyFileSync(join(scratchDir, "src/components", "tokens.ts"), join(uiDir, "tokens.ts"));
-    logger.success(`docs-ui: ${names.length} ${names.length === 1 ? "entry" : "entries"} written -> docs/src/ui-install + docs/src/components/ui`);
+    logger.success(
+      `docs-ui: ${names.length} ${names.length === 1 ? "entry" : "entries"} written -> docs/src/ui-install + docs/src/components/ui`,
+    );
   } finally {
     rmSync(scratchDir, { recursive: true, force: true });
   }
 }
 
-if (import.meta.main) {
+if (process.argv[1] === import.meta.filename) {
   main().catch((error: Error) => {
     logger.error("docs-ui failed", error);
     process.exit(1);

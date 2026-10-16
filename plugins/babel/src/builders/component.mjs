@@ -15,10 +15,7 @@ export function buildComponentCall(t, tagCallee, props, children) {
   if (children && children.length > 0) {
     finalProps = t.objectExpression([
       ...props,
-      t.objectProperty(
-        t.identifier("children"),
-        buildChildrenValue(t, children)
-      )
+      t.objectProperty(t.identifier("children"), buildChildrenValue(t, children)),
     ]);
   } else if (props.length > 0) {
     finalProps = t.objectExpression(props);
@@ -33,8 +30,5 @@ export function buildComponentCall(t, tagCallee, props, children) {
   }
 
   // Wrap component call in component for automatic scope management
-  return t.callExpression(
-    t.identifier("component"),
-    [tagCallee, finalProps]
-  );
+  return t.callExpression(t.identifier("component"), [tagCallee, finalProps]);
 }

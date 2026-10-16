@@ -1,4 +1,11 @@
-import type { InputGroupProps, InputGroupAddonProps, InputGroupButtonProps, InputGroupTextProps, InputGroupInputProps, InputGroupTextareaProps } from "./input-group-types.js";
+import type {
+  InputGroupProps,
+  InputGroupAddonProps,
+  InputGroupButtonProps,
+  InputGroupTextProps,
+  InputGroupInputProps,
+  InputGroupTextareaProps,
+} from "./input-group-types.js";
 
 // @hella:styles
 declare const addon: string;
@@ -19,7 +26,12 @@ declare const textareaFocus: string;
 declare const textareaInvalid: string;
 // @hella:end
 
-export function InputGroup({ disabled, children, class: cls, ...attrs }: InputGroupProps): JSX.Element {
+export function InputGroup({
+  disabled,
+  children,
+  class: cls,
+  ...attrs
+}: InputGroupProps): JSX.Element {
   return (
     <div
       data-slot="input-group"
@@ -37,7 +49,12 @@ export function InputGroup({ disabled, children, class: cls, ...attrs }: InputGr
   );
 }
 
-export function InputGroupAddon({ align, children, class: cls, ...attrs }: InputGroupAddonProps): JSX.Element {
+export function InputGroupAddon({
+  align,
+  children,
+  class: cls,
+  ...attrs
+}: InputGroupAddonProps): JSX.Element {
   return (
     <div
       role="group"
@@ -45,11 +62,7 @@ export function InputGroupAddon({ align, children, class: cls, ...attrs }: Input
       data-align={align ?? "inline-start"}
       class={
         // @hella:compose
-        [
-          addon,
-          addonAlign[align ?? "inline-start"],
-          cls,
-        ]
+        [addon, addonAlign[align ?? "inline-start"], cls]
         // @hella:end
       }
       e:click={(e: Event) => {
@@ -64,7 +77,13 @@ export function InputGroupAddon({ align, children, class: cls, ...attrs }: Input
   );
 }
 
-export function InputGroupButton({ variant, size, children, class: cls, ...attrs }: InputGroupButtonProps): JSX.Element {
+export function InputGroupButton({
+  variant,
+  size,
+  children,
+  class: cls,
+  ...attrs
+}: InputGroupButtonProps): JSX.Element {
   return (
     <button
       type="button"
@@ -89,7 +108,11 @@ export function InputGroupButton({ variant, size, children, class: cls, ...attrs
   );
 }
 
-export function InputGroupText({ children, class: cls, ...attrs }: InputGroupTextProps): JSX.Element {
+export function InputGroupText({
+  children,
+  class: cls,
+  ...attrs
+}: InputGroupTextProps): JSX.Element {
   return (
     <span
       data-slot="input-group-text"
@@ -111,13 +134,7 @@ export function InputGroupInput({ class: cls, ...attrs }: InputGroupInputProps):
       data-slot="input-group-control"
       class={
         // @hella:compose
-        [
-          inputBase,
-          inputFocus,
-          inputInvalid,
-          inputControl,
-          cls,
-        ]
+        [inputBase, inputFocus, inputInvalid, inputControl, cls]
         // @hella:end
       }
       {...attrs}
@@ -131,13 +148,7 @@ export function InputGroupTextarea({ class: cls, ...attrs }: InputGroupTextareaP
       data-slot="input-group-control"
       class={
         // @hella:compose
-        [
-          textareaBase,
-          textareaFocus,
-          textareaInvalid,
-          textareaControl,
-          cls,
-        ]
+        [textareaBase, textareaFocus, textareaInvalid, textareaControl, cls]
         // @hella:end
       }
       {...attrs}

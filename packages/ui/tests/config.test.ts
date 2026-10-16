@@ -1,8 +1,8 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach } from "vite-plus/test";
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { readConfig } from "@hellajs/ui/bundle";
+import { readConfig } from "@hellajs/ui";
 
 describe("readConfig", () => {
   let root: string;
@@ -16,7 +16,12 @@ describe("readConfig", () => {
   });
 
   test("falls back to defaults when hella.ui.json is absent", () => {
-    expect(readConfig(root)).toEqual({ componentsDir: "src/components", style: "css", themeMode: "light", lang: "ts" });
+    expect(readConfig(root)).toEqual({
+      componentsDir: "src/components",
+      style: "css",
+      themeMode: "light",
+      lang: "ts",
+    });
   });
 
   test("reads overrides from hella.ui.json when present", () => {
@@ -24,7 +29,12 @@ describe("readConfig", () => {
       join(root, "hella.ui.json"),
       JSON.stringify({ componentsDir: "app/ui", style: "tailwind" }),
     );
-    expect(readConfig(root)).toEqual({ componentsDir: "app/ui", style: "tailwind", themeMode: "light", lang: "ts" });
+    expect(readConfig(root)).toEqual({
+      componentsDir: "app/ui",
+      style: "tailwind",
+      themeMode: "light",
+      lang: "ts",
+    });
   });
 
   test("round-trips a dark themeMode from hella.ui.json", () => {
@@ -34,14 +44,16 @@ describe("readConfig", () => {
 
   test("throws the themeMode contract for an invalid themeMode", () => {
     writeFileSync(join(root, "hella.ui.json"), JSON.stringify({ themeMode: "midnight" }));
-    expect(() => readConfig(root))
-      .toThrow('[ui] readConfig: themeMode must be light or dark, received "midnight"');
+    expect(() => readConfig(root)).toThrow(
+      '[ui] readConfig: themeMode must be light or dark, received "midnight"',
+    );
   });
 
   test("throws the two-style contract for an invalid style", () => {
     writeFileSync(join(root, "hella.ui.json"), JSON.stringify({ style: "bogus" }));
-    expect(() => readConfig(root))
-      .toThrow('[ui] readConfig: style must be one of css, tailwind, received "bogus"');
+    expect(() => readConfig(root)).toThrow(
+      '[ui] readConfig: style must be one of css, tailwind, received "bogus"',
+    );
   });
 
   test("throws the invalid-JSON contract for unparseable hella.ui.json", () => {

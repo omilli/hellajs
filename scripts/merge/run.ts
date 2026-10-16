@@ -1,12 +1,18 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { basename, join, relative } from "node:path";
-import { logger, projectRoot } from "../utils/index.js";
-import { dialogHook, driveAgent, installSigint, makeRelay } from "../agent/driver.js";
-import type { Relay } from "../agent/relay.js";
-import { worktreeScript } from "../agent/worktree.js";
-import { isTicked, listPlanUnits, type PlanUnit } from "../worker/set.js";
-import { unionGate } from "./gate.js";
-import { allTickedInMainTree, deriveQueue, isCompleteInWorktree, mainTreeTickTotal, type QueueEntry } from "./queue.js";
+import { logger, projectRoot } from "../utils/index.ts";
+import { dialogHook, driveAgent, installSigint, makeRelay } from "../agent/driver.ts";
+import type { Relay } from "../agent/relay.ts";
+import { worktreeScript } from "../agent/worktree.ts";
+import { isTicked, listPlanUnits, type PlanUnit } from "../worker/set.ts";
+import { unionGate } from "./gate.ts";
+import {
+  allTickedInMainTree,
+  deriveQueue,
+  isCompleteInWorktree,
+  mainTreeTickTotal,
+  type QueueEntry,
+} from "./queue.ts";
 
 /** Default model pattern for merge instances (`--model` overrides). */
 const DEFAULT_MERGE_MODEL = "glm-5.3-flash";
@@ -55,7 +61,12 @@ interface ComponentOutcome {
  * @param continuation True on passes after the first.
  * @returns The prompt text.
  */
-function buildMergePrompt(entry: QueueEntry, setDir: string, relSetDir: string, continuation: boolean): string {
+function buildMergePrompt(
+  entry: QueueEntry,
+  setDir: string,
+  relSetDir: string,
+  continuation: boolean,
+): string {
   const unitNames = entry.units.map((unit: PlanUnit): string => unit.name).join(", ");
   const lines = [
     `/skill:merge Merge the ONE component worktree "${entry.slug}" of plan set ${relSetDir} into the main tree. Set context lives in ${join(setDir, "index.md")} — read it first for shared scope.`,
@@ -108,13 +119,17 @@ export async function runMerge(options: MergeOptions): Promise<number> {
   for (const entry of derived.queue) {
     const first = entry.units[0]?.name ?? "?";
     const last = entry.units[entry.units.length - 1]?.name ?? "?";
-    logger.info(`  queue   ${entry.slug} · units ${first}${last === first ? "" : `…${last}`} (${entry.units.length})`);
+    logger.info(
+      `  queue   ${entry.slug} · units ${first}${last === first ? "" : `…${last}`} (${entry.units.length})`,
+    );
   }
   for (const entry of derived.preMerged) {
     logger.info(`  skip    ${entry.slug} (main-tree markers [x] — already merged)`);
   }
   for (const slug of derived.anomalies) {
-    logger.warn(`  anomaly ${slug} — slug matches no component of ${relSetDir}; excluded (merge it manually)`);
+    logger.warn(
+      `  anomaly ${slug} — slug matches no component of ${relSetDir}; excluded (merge it manually)`,
+    );
   }
   if (derived.queue.length === 0) {
     logger.success("merge queue empty — nothing outstanding for this set");
@@ -123,7 +138,9 @@ export async function runMerge(options: MergeOptions): Promise<number> {
   if (options.dryRun) {
     for (const entry of derived.queue) {
       const complete = isCompleteInWorktree(relSetDir, entry);
-      logger.info(`  ${entry.slug} · ${complete ? "complete — would merge" : "INCOMPLETE — would be refused (left standing)"}`);
+      logger.info(
+        `  ${entry.slug} · ${complete ? "complete — would merge" : "INCOMPLETE — would be refused (left standing)"}`,
+      );
     }
     logger.info("dry run — no instance spawned, nothing merged");
     return 0;
@@ -136,7 +153,12 @@ export async function runMerge(options: MergeOptions): Promise<number> {
   for (const entry of derived.queue) {
     if (!isCompleteInWorktree(relSetDir, entry)) {
       logger.warn(`refuse ${entry.slug} — worktree copy incomplete; standing for plan rework`);
-      records.push({ slug: entry.slug, status: "refused", detail: "worktree copy incomplete", session: null });
+      records.push({
+        slug: entry.slug,
+        status: "refused",
+        detail: "worktree copy incomplete",
+        session: null,
+      });
       continue;
     }
     const outcome = await mergeComponent(entry, options, relay, setName, relSetDir);
@@ -159,7 +181,10 @@ export async function runMerge(options: MergeOptions): Promise<number> {
     logger.info("no component merged — set aggregate and union gate skipped");
   }
   printSummary(records, gateGreen);
-  return gateGreen && records.every((record: ComponentRecord): boolean => record.status === "merged") ? 0 : 1;
+  return gateGreen &&
+    records.every((record: ComponentRecord): boolean => record.status === "merged")
+    ? 0
+    : 1;
 }
 
 /**
@@ -200,10 +225,16 @@ async function mergeComponent(
     console.log(`\n── merge report (${entry.slug}) ──\n${report}\n`);
     const listing = await worktreeScript(["list"]);
     const cleaned =
-      listing !== null && !listing.split("\n").some((line: string): boolean => line.startsWith(`${entry.slug}  `));
+      listing !== null &&
+      !listing.split("\n").some((line: string): boolean => line.startsWith(`${entry.slug}  `));
     if (cleaned && allTickedInMainTree(entry)) {
       return {
-        record: { slug: entry.slug, status: "merged", detail: `attempt ${attempt}`, session: sessionName },
+        record: {
+          slug: entry.slug,
+          status: "merged",
+          detail: `attempt ${attempt}`,
+          session: sessionName,
+        },
         status: "merged",
       };
     }
@@ -230,7 +261,12 @@ async function mergeComponent(
       };
     }
     return {
-      record: { slug: entry.slug, status: "halted", detail: `gate: halted after ${attempt} attempt(s)`, session: sessionName },
+      record: {
+        slug: entry.slug,
+        status: "halted",
+        detail: `gate: halted after ${attempt} attempt(s)`,
+        session: sessionName,
+      },
       status: "halted",
     };
   }
@@ -245,10 +281,20 @@ async function mergeComponent(
  * @param cleaned Whether the worktree was cleaned anyway.
  * @returns The chosen operator action.
  */
-async function askComponentGate(relay: Relay, slug: string, cleaned: boolean): Promise<"retry" | "skip" | "halt"> {
-  const state = cleaned ? "worktree cleaned but main-tree ticks missing" : "worktree still standing";
+async function askComponentGate(
+  relay: Relay,
+  slug: string,
+  cleaned: boolean,
+): Promise<"retry" | "skip" | "halt"> {
+  const state = cleaned
+    ? "worktree cleaned but main-tree ticks missing"
+    : "worktree still standing";
   for (;;) {
-    const line = (await relay.askOrchestrator(`${slug}: not merged (${state}) — retry / skip / halt?`)).trim().toLowerCase();
+    const line = (
+      await relay.askOrchestrator(`${slug}: not merged (${state}) — retry / skip / halt?`)
+    )
+      .trim()
+      .toLowerCase();
     if (line === "r" || line === "retry") {
       return "retry";
     }
@@ -258,7 +304,9 @@ async function askComponentGate(relay: Relay, slug: string, cleaned: boolean): P
     if (line === "h" || line === "halt") {
       return "halt";
     }
-    console.log("  (r=retry, fresh instance resuming the component · s=skip: leave standing, continue the queue · h=halt the run)");
+    console.log(
+      "  (r=retry, fresh instance resuming the component · s=skip: leave standing, continue the queue · h=halt the run)",
+    );
   }
 }
 

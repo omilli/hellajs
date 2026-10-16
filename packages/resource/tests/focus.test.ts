@@ -1,7 +1,7 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, vi } from "vite-plus/test";
 import { effect } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { resource } from "@hellajs/resource/bundle";
+import { resource } from "@hellajs/resource";
 
 describe("resource", () => {
   describe("focus", () => {
@@ -30,13 +30,15 @@ describe("resource", () => {
     };
 
     test("refetches when tab becomes visible", async () => {
-      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const fetcher = vi.fn(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
       const r = resource(fetcher, {
         refetchOnWindowFocus: true,
         refetchOnKeyChange: true,
       });
 
-      effect(() => { r.status(); });
+      effect(() => {
+        r.status();
+      });
       await delay(20);
 
       expect(fetcher).toHaveBeenCalledTimes(1);
@@ -53,13 +55,15 @@ describe("resource", () => {
     });
 
     test("refetches on window focus event", async () => {
-      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const fetcher = vi.fn(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
       const r = resource(fetcher, {
         refetchOnWindowFocus: true,
         refetchOnKeyChange: true,
       });
 
-      effect(() => { r.status(); });
+      effect(() => {
+        r.status();
+      });
       await delay(20);
 
       expect(fetcher).toHaveBeenCalledTimes(1);
@@ -74,13 +78,15 @@ describe("resource", () => {
     });
 
     test("deduplicates back-to-back visibility and focus triggers", async () => {
-      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const fetcher = vi.fn(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
       const r = resource(fetcher, {
         refetchOnWindowFocus: true,
         refetchOnKeyChange: true,
       });
 
-      effect(() => { r.status(); });
+      effect(() => {
+        r.status();
+      });
       await delay(20);
 
       expect(fetcher).toHaveBeenCalledTimes(1);
@@ -97,13 +103,15 @@ describe("resource", () => {
     });
 
     test("does not refetch when disabled", async () => {
-      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const fetcher = vi.fn(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
       const r = resource(fetcher, {
         refetchOnWindowFocus: false,
         refetchOnKeyChange: true,
       });
 
-      effect(() => { r.status(); });
+      effect(() => {
+        r.status();
+      });
       await delay(20);
 
       expect(fetcher).toHaveBeenCalledTimes(1);
@@ -119,13 +127,15 @@ describe("resource", () => {
     });
 
     test("stops refetching on dispose", async () => {
-      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const fetcher = vi.fn(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
       const r = resource(fetcher, {
         refetchOnWindowFocus: true,
         refetchOnKeyChange: true,
       });
 
-      effect(() => { r.status(); });
+      effect(() => {
+        r.status();
+      });
       await delay(20);
 
       expect(fetcher).toHaveBeenCalledTimes(1);
@@ -141,13 +151,15 @@ describe("resource", () => {
     });
 
     test("does not refetch on focus after dispose", async () => {
-      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const fetcher = vi.fn(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
       const r = resource(fetcher, {
         refetchOnWindowFocus: true,
         refetchOnKeyChange: true,
       });
 
-      effect(() => { r.status(); });
+      effect(() => {
+        r.status();
+      });
       await delay(20);
 
       expect(fetcher).toHaveBeenCalledTimes(1);
@@ -162,13 +174,15 @@ describe("resource", () => {
     });
 
     test("does not refetch when hidden (only on visible)", async () => {
-      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const fetcher = vi.fn(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
       const r = resource(fetcher, {
         refetchOnWindowFocus: true,
         refetchOnKeyChange: true,
       });
 
-      effect(() => { r.status(); });
+      effect(() => {
+        r.status();
+      });
       await delay(20);
 
       expect(fetcher).toHaveBeenCalledTimes(1);
@@ -183,12 +197,14 @@ describe("resource", () => {
     });
 
     test("refetchOnWindowFocus triggers even without auto-fetch enabled", async () => {
-      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const fetcher = vi.fn(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
       const r = resource(fetcher, {
         refetchOnWindowFocus: true,
       });
 
-      effect(() => { r.status(); });
+      effect(() => {
+        r.status();
+      });
       await delay(20);
 
       // No auto, so no fetch yet
@@ -211,14 +227,16 @@ describe("resource", () => {
     });
 
     test("respects enabled: false", async () => {
-      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const fetcher = vi.fn(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
       const r = resource(fetcher, {
         refetchOnWindowFocus: true,
         refetchOnKeyChange: true,
         enabled: false,
       });
 
-      effect(() => { r.status(); });
+      effect(() => {
+        r.status();
+      });
       await delay(20);
 
       expect(fetcher).toHaveBeenCalledTimes(0);

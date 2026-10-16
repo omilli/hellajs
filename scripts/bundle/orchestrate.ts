@@ -1,25 +1,20 @@
 import fsStat from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import {
-  ensureDir,
-  logger,
-  getPackageInfo,
-  projectRoot,
-} from "../utils/index.js";
+import { ensureDir, logger, getPackageInfo, projectRoot } from "../utils/index.ts";
 import {
   BUILD_CONFIG,
   derivePackageGraph,
   type BuildMetrics,
   type BuildResult,
   type BuildSummary,
-} from "./config.js";
-import { cleanCache, isCacheValid, updateCache } from "./cache.js";
-import { buildBundle, buildIndividualModules } from "./esbuild-build.js";
-import { buildDeclarations, copyDeclarationFiles } from "./declarations.js";
-import { compileRegistry } from "./registry.js";
-import { validateBuildArtifacts } from "./validate.js";
-import { calculateMetrics } from "./metrics.js";
+} from "./config.ts";
+import { cleanCache, isCacheValid, updateCache } from "./cache.ts";
+import { buildBundle, buildIndividualModules } from "./esbuild-build.ts";
+import { buildDeclarations, copyDeclarationFiles } from "./declarations.ts";
+import { compileRegistry } from "./registry.ts";
+import { validateBuildArtifacts } from "./validate.ts";
+import { calculateMetrics } from "./metrics.ts";
 
 const PACKAGE_GRAPH = derivePackageGraph();
 
@@ -30,10 +25,7 @@ async function cleanBuildDir(distDir: string): Promise<void> {
   await ensureDir(distDir);
 }
 
-function canBuildPackage(
-  packageName: string,
-  completed: Set<string>,
-): boolean {
+function canBuildPackage(packageName: string, completed: Set<string>): boolean {
   const deps = PACKAGE_GRAPH.getDependencies(packageName);
   return deps.every((dep) => completed.has(dep));
 }
@@ -44,10 +36,7 @@ function getReadyPackages(
   activeBuilds: Set<string>,
 ): string[] {
   return packages.filter(
-    (pkg) =>
-      !completed.has(pkg) &&
-      !activeBuilds.has(pkg) &&
-      canBuildPackage(pkg, completed),
+    (pkg) => !completed.has(pkg) && !activeBuilds.has(pkg) && canBuildPackage(pkg, completed),
   );
 }
 
@@ -92,20 +81,10 @@ async function buildSinglePackageEntry(
     return { success: true, cached: false, packageName, metrics };
   } catch (error) {
     if (retryCount < BUILD_CONFIG.maxRetries) {
-      await new Promise((resolve) =>
-        setTimeout(resolve, 1000 * 2 ** retryCount),
-      );
-      return buildSinglePackageEntry(
-        packageName,
-        cwd,
-        retryCount + 1,
-        bundleMode,
-        shouldClean,
-      );
+      await new Promise((resolve) => setTimeout(resolve, 1000 * 2 ** retryCount));
+      return buildSinglePackageEntry(packageName, cwd, retryCount + 1, bundleMode, shouldClean);
     }
-    logger.error(
-      `Build failed for ${packageName}: ${(error as Error).message}`,
-    );
+    logger.error(`Build failed for ${packageName}: ${(error as Error).message}`);
     return {
       success: false,
       cached: false,
@@ -137,11 +116,7 @@ export async function buildPackagesParallel(
       continue;
     }
 
-    const readyPackages = getReadyPackages(
-      remainingPackages,
-      completed,
-      activeBuilds,
-    );
+    const readyPackages = getReadyPackages(remainingPackages, completed, activeBuilds);
     const packagesToStart = readyPackages.slice(0, slots);
 
     if (!packagesToStart.length) {
@@ -208,13 +183,7 @@ export function buildPackageEntry(
   bundleMode: string,
   shouldClean: boolean,
 ): Promise<BuildResult> {
-  return buildSinglePackageEntry(
-    packageName,
-    cwd,
-    0,
-    bundleMode,
-    shouldClean,
-  );
+  return buildSinglePackageEntry(packageName, cwd, 0, bundleMode, shouldClean);
 }
 
 /**
@@ -229,8 +198,7 @@ export async function buildAllPackagesFromOrder(
   const availablePackages = (await fs.readdir(packagesDir)).filter((pkg) => {
     const pkgDir = path.join(packagesDir, pkg);
     return (
-      fsStat.statSync(pkgDir).isDirectory() &&
-      fsStat.existsSync(path.join(pkgDir, "package.json"))
+      fsStat.statSync(pkgDir).isDirectory() && fsStat.existsSync(path.join(pkgDir, "package.json"))
     );
   });
 
@@ -239,17 +207,10 @@ export async function buildAllPackagesFromOrder(
     ...availablePackages.filter((pkg) => !buildOrder.includes(pkg)),
   ];
 
-  const buildWrapper = (
-    packageName: string,
-    cwd: string,
-  ): Promise<BuildResult> =>
+  const buildWrapper = (packageName: string, cwd: string): Promise<BuildResult> =>
     buildSinglePackageEntry(packageName, cwd, 0, bundleMode, shouldClean);
 
-  const results = await buildPackagesParallel(
-    packagesToBuild,
-    buildWrapper,
-    projectRoot,
-  );
+  const results = await buildPackagesParallel(packagesToBuild, buildWrapper, projectRoot);
   const summary = generateSummary(results);
 
   return { results, summary };
@@ -257,9 +218,7 @@ export async function buildAllPackagesFromOrder(
 
 const METRIC_KEYS = [".min", "min"] as const;
 
-function extractMinified(
-  metrics: Record<string, unknown>,
-): BuildMetrics | undefined {
+function extractMinified(metrics: Record<string, unknown>): BuildMetrics | undefined {
   for (const key of METRIC_KEYS) {
     const m = metrics[key];
     if (m) return m as BuildMetrics;
@@ -269,10 +228,7 @@ function extractMinified(
 /**
  * Print the build summary and exit with the appropriate code.
  */
-export function reportSummary(
-  results: BuildResult[],
-  summary: BuildSummary,
-): void {
+export function reportSummary(results: BuildResult[], summary: BuildSummary): void {
   if (summary.successful > 0) {
     logger.info("\nBuild Summary:");
     results
@@ -288,9 +244,7 @@ export function reportSummary(
   }
 
   if (summary.failed > 0) {
-    logger.error(
-      `Some packages failed to build: ${JSON.stringify(summary.failedPackages)}`,
-    );
+    logger.error(`Some packages failed to build: ${JSON.stringify(summary.failedPackages)}`);
     process.exit(1);
   } else {
     logger.success("All packages built successfully!");
@@ -300,14 +254,9 @@ export function reportSummary(
 /**
  * Print the single-package build result and exit with the appropriate code.
  */
-export function reportSingleResult(
-  packageName: string,
-  result: BuildResult,
-): void {
+export function reportSingleResult(packageName: string, result: BuildResult): void {
   if (!result.success) {
-    logger.error(
-      `Build failed for package ${packageName}: ${result.error}`,
-    );
+    logger.error(`Build failed for package ${packageName}: ${result.error}`);
     process.exit(1);
   }
 

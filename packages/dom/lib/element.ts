@@ -1,6 +1,12 @@
 import { flush, scope, signal, isFunction, isString } from "./internal/core";
 import { mount } from "./mount";
-import type { ComponentProps, ComponentRenderFn, ComponentSlots, ElementOptions, HellaNode } from "./types/nodes";
+import type {
+  ComponentProps,
+  ComponentRenderFn,
+  ComponentSlots,
+  ElementOptions,
+  HellaNode,
+} from "./types/nodes";
 
 /**
  * Defines a custom element with light DOM and slot support.
@@ -14,7 +20,7 @@ import type { ComponentProps, ComponentRenderFn, ComponentSlots, ElementOptions,
 export function element<T extends object = ComponentProps & Partial<ComponentSlots>>(
   tagName: string,
   render: ComponentRenderFn<T>,
-  options: ElementOptions = {}
+  options: ElementOptions = {},
 ): void {
   class HellaCustomElement extends HTMLElement {
     private _dispose?: () => void;
@@ -58,7 +64,7 @@ export function element<T extends object = ComponentProps & Partial<ComponentSlo
             version();
             return self.getAttribute(name);
           };
-        }
+        },
       });
 
       // Override attribute methods for synchronous reactivity. Natives are captured once:
@@ -82,7 +88,9 @@ export function element<T extends object = ComponentProps & Partial<ComponentSlo
       // attachShadow throws on a host that already carries a shadow root (reconnects), and
       // this.shadowRoot reads null for closed roots — so the reference lives on the instance.
       const root = options.shadow
-        ? (this._shadowRoot ??= this.attachShadow(options.shadow === true ? { mode: "open" } : options.shadow))
+        ? (this._shadowRoot ??= this.attachShadow(
+            options.shadow === true ? { mode: "open" } : options.shadow,
+          ))
         : this;
 
       this._dispose = scope(() => {
@@ -107,7 +115,9 @@ export function element<T extends object = ComponentProps & Partial<ComponentSlo
   }
 
   if (!isString(tagName) || !tagName.includes("-")) {
-    throw new Error(`[dom] element: tagName must be a hyphenated string, received ${!isString(tagName) ? typeof tagName : tagName}`);
+    throw new Error(
+      `[dom] element: tagName must be a hyphenated string, received ${!isString(tagName) ? typeof tagName : tagName}`,
+    );
   }
   if (!isFunction(render)) {
     throw new Error(`[dom] element: render must be a function, received ${typeof render}`);

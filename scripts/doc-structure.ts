@@ -1,9 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
-import { logger, packagesDir, projectRoot } from "./utils/index.js";
+import { logger, packagesDir, projectRoot } from "./utils/index.ts";
 
 /**
- * Guard (`bun lint:structure`): seven structural checks over the docs surfaces.
+ * Guard (`vp run lint:structure`): seven structural checks over the docs surfaces.
  * Catches the classes of defect that shipped before it existed — an unclosed code
  * fence that mangled every block after it, Complete-Code drift between a tutorial
  * and the app it documents, broken `#`-anchors, pages unreachable from the nav,
@@ -249,7 +249,10 @@ function stripBreadcrumb(body: string[]): string[] {
  * @returns True when the block byte-matches the file
  */
 function blockMatchesFile(block: string[], file: string): boolean {
-  const real = readFileOrNull(file)!.replace(/\n$/, "").split("\n").map((l) => l.replace(/\s+$/, ""));
+  const real = readFileOrNull(file)!
+    .replace(/\n$/, "")
+    .split("\n")
+    .map((l) => l.replace(/\s+$/, ""));
   return JSON.stringify(block.map((l) => l.replace(/\s+$/, ""))) === JSON.stringify(real);
 }
 
@@ -324,7 +327,10 @@ function checkTutorialParity(): Finding[] {
       } else {
         const body = stripBreadcrumb(section.slice(fenceLines[0]! + 1, fenceLines[1]!));
         if (!blockMatchesFile(body, srcFiles[0]!)) {
-          findings.push({ file: tutorialPath, message: `src/${rel} Complete Code block drifts from the real file` });
+          findings.push({
+            file: tutorialPath,
+            message: `src/${rel} Complete Code block drifts from the real file`,
+          });
         }
       }
       continue;
@@ -334,9 +340,15 @@ function checkTutorialParity(): Finding[] {
       const rel = path.relative(srcRoot, real);
       const block = documented.get(rel);
       if (block === undefined) {
-        findings.push({ file: tutorialPath, message: `src/${rel} exists but has no Complete Code block` });
+        findings.push({
+          file: tutorialPath,
+          message: `src/${rel} exists but has no Complete Code block`,
+        });
       } else if (!blockMatchesFile(block, real)) {
-        findings.push({ file: tutorialPath, message: `src/${rel} Complete Code block drifts from the real file` });
+        findings.push({
+          file: tutorialPath,
+          message: `src/${rel} Complete Code block drifts from the real file`,
+        });
       }
     }
   }
@@ -469,7 +481,10 @@ function checkWrappers(): Finding[] {
     for (const line of body.split("\n")) {
       const t = line.trim();
       if (t === "" || IMPORT_RE.test(t) || TAG_RE.test(t)) continue;
-      findings.push({ file, message: `wrapper carries content (zero-content rule): "${t.slice(0, 60)}"` });
+      findings.push({
+        file,
+        message: `wrapper carries content (zero-content rule): "${t.slice(0, 60)}"`,
+      });
     }
   }
   return findings;
@@ -522,13 +537,22 @@ function checkRegistration(): Finding[] {
     }
   }
   if (pluginsIdx !== -1) {
-    for (const slug of navData.slice(pluginsIdx, uiIdx === -1 ? undefined : uiIdx).matchAll(/"([^"]+)"/g)) pluginSlugs.add(slug[1]!.toLowerCase());
+    for (const slug of navData
+      .slice(pluginsIdx, uiIdx === -1 ? undefined : uiIdx)
+      .matchAll(/"([^"]+)"/g))
+      pluginSlugs.add(slug[1]!.toLowerCase());
   }
 
   const learnIndex = readFileOrNull(path.join(docsPagesDir, "learn", "index.mdx")) ?? "";
-  const patternsIndex = readFileOrNull(path.join(docsPagesDir, "learn", "patterns", "index.mdx")) ?? "";
+  const patternsIndex =
+    readFileOrNull(path.join(docsPagesDir, "learn", "patterns", "index.mdx")) ?? "";
 
-  const registered = { learn: new Set<string>(), reference: new Set<string>(), plugins: new Set<string>(), ui: new Set<string>() };
+  const registered = {
+    learn: new Set<string>(),
+    reference: new Set<string>(),
+    plugins: new Set<string>(),
+    ui: new Set<string>(),
+  };
   for (const file of collectFiles(docsPagesDir, [".mdx", ".astro"])) {
     const rel = path.relative(docsPagesDir, file).replace(/\.(mdx|astro)$/, "");
     if (rel === "index" || rel.endsWith("/index")) continue;
@@ -541,10 +565,21 @@ function checkRegistration(): Finding[] {
       if (!learnSlugs.has(slug)) {
         findings.push({ file, message: `page not registered in nav.ts (${rel})` });
       }
-      const enumeration = rel.startsWith("learn/patterns/") ? patternsIndex : rel === "learn/quick-start" ? "" : learnIndex;
+      const enumeration = rel.startsWith("learn/patterns/")
+        ? patternsIndex
+        : rel === "learn/quick-start"
+          ? ""
+          : learnIndex;
       const url = `/${rel.split(path.sep).join("/")}`;
-      if (enumeration && !enumeration.includes(`(${url})`) && !enumeration.includes(`href="${url}"`)) {
-        findings.push({ file, message: `page not listed in its enumeration page (${rel.startsWith("learn/patterns/") ? "learn/patterns/index.mdx" : "learn/index.mdx"})` });
+      if (
+        enumeration &&
+        !enumeration.includes(`(${url})`) &&
+        !enumeration.includes(`href="${url}"`)
+      ) {
+        findings.push({
+          file,
+          message: `page not listed in its enumeration page (${rel.startsWith("learn/patterns/") ? "learn/patterns/index.mdx" : "learn/index.mdx"})`,
+        });
       }
     } else if (section === "reference") {
       registered.reference.add(rel);
@@ -569,7 +604,12 @@ function checkRegistration(): Finding[] {
   // Reverse direction: a nav entry with no page is a dead sidebar link.
   for (const slug of learnSlugs) {
     if (["concepts", "patterns", "tutorials"].includes(slug)) continue; // group keys, not pages
-    const candidates = [`learn/concepts/${slug}`, `learn/patterns/${slug}`, `learn/tutorials/${slug}`, `learn/${slug}`];
+    const candidates = [
+      `learn/concepts/${slug}`,
+      `learn/patterns/${slug}`,
+      `learn/tutorials/${slug}`,
+      `learn/${slug}`,
+    ];
     if (!candidates.some((c) => registered.learn.has(c))) {
       findings.push({ file: navFile, message: `nav.ts learn entry "${slug}" matches no page` });
     }
@@ -577,7 +617,10 @@ function checkRegistration(): Finding[] {
   for (const [pkg, slugs] of referenceSlugs) {
     for (const slug of slugs) {
       if (!registered.reference.has(`reference/${pkg}/${slug}`)) {
-        findings.push({ file: navFile, message: `nav.ts reference entry ${pkg}/${slug} matches no page` });
+        findings.push({
+          file: navFile,
+          message: `nav.ts reference entry ${pkg}/${slug} matches no page`,
+        });
       }
     }
   }
@@ -618,22 +661,40 @@ function checkExampleConventions(corpus: string[]): Finding[] {
         continue;
       }
       if (CHILDREN_UNKNOWN_RE.test(line)) {
-        findings.push({ file, message: `line ${lineNo}: children prop typed unknown — use HellaChildren from @hellajs/dom` });
+        findings.push({
+          file,
+          message: `line ${lineNo}: children prop typed unknown — use HellaChildren from @hellajs/dom`,
+        });
       }
       if (INTERNAL_MECHANICS_RE.test(line)) {
-        findings.push({ file, message: `line ${lineNo}: Internal Mechanics details block — internal implementation is not documented` });
+        findings.push({
+          file,
+          message: `line ${lineNo}: Internal Mechanics details block — internal implementation is not documented`,
+        });
       }
       if (ALERT_ICON_SPAN_RE.test(line)) {
-        findings.push({ file, message: `line ${lineNo}: alert icon span — the alert template carries content only` });
+        findings.push({
+          file,
+          message: `line ${lineNo}: alert icon span — the alert template carries content only`,
+        });
       }
       if (BLOCKQUOTE_WARN_RE.test(line)) {
-        findings.push({ file, message: `line ${lineNo}: blockquote warning marker — lead with a bold label instead` });
+        findings.push({
+          file,
+          message: `line ${lineNo}: blockquote warning marker — lead with a bold label instead`,
+        });
       }
       if (inJsxFence && WRAPPED_ATTR_RE.test(line)) {
-        findings.push({ file, message: `line ${lineNo}: function-wrapped attribute — write the value directly` });
+        findings.push({
+          file,
+          message: `line ${lineNo}: function-wrapped attribute — write the value directly`,
+        });
       }
       if (INLINE_CSS_OBJECT_RE.test(line)) {
-        findings.push({ file, message: `line ${lineNo}: single-line css()/style() object argument — break it across lines` });
+        findings.push({
+          file,
+          message: `line ${lineNo}: single-line css()/style() object argument — break it across lines`,
+        });
       }
     }
   }
@@ -670,7 +731,10 @@ function checkTableParity(corpus: string[]): Finding[] {
       const headerCells = countCells(trimmed);
       const delimiterCells = countCells(delimiter);
       if (headerCells !== delimiterCells) {
-        findings.push({ file, message: `line ${i + 2}: table delimiter row carries ${delimiterCells} cells against header's ${headerCells} — GFM refuses the table, rendering it as prose` });
+        findings.push({
+          file,
+          message: `line ${i + 2}: table delimiter row carries ${delimiterCells} cells against header's ${headerCells} — GFM refuses the table, rendering it as prose`,
+        });
       }
     }
   }
@@ -706,7 +770,7 @@ async function main(): Promise<void> {
   }
 }
 
-if (import.meta.main) {
+if (process.argv[1] === import.meta.filename) {
   main().catch((error: Error) => {
     logger.error("Fatal error:", error);
     process.exit(1);

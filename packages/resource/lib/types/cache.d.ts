@@ -37,7 +37,6 @@ export interface CacheUpdate<T> {
   updater: T | ((old: T | undefined) => T);
 }
 
-
 /**
  * Flattened read-only view over the nested cache structure.
  * Provides a simple Map-like interface that searches across all fetcher scopes.

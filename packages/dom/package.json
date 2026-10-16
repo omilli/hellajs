@@ -1,6 +1,20 @@
 {
   "name": "@hellajs/dom",
   "version": "1.4.2",
+  "homepage": "https://github.com/omilli/hellajs.git",
+  "bugs": {
+    "url": "https://github.com/omilli/hellajs/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/omilli/hellajs.git",
+    "directory": "packages/dom"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "type": "module",
   "sideEffects": false,
   "main": "./dist/index.js",
@@ -19,28 +33,14 @@
       "import": "./dist/*.js"
     }
   },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
-  "peerDependencies": {
-    "@hellajs/core": "^1.0.6"
-  },
-  "devDependencies": {
-    "@hellajs/ssr": "workspace:*"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/omilli/hellajs.git",
-    "directory": "packages/dom"
-  },
-  "homepage": "https://github.com/omilli/hellajs.git",
-  "bugs": {
-    "url": "https://github.com/omilli/hellajs/issues"
-  },
   "publishConfig": {
     "access": "public",
     "provenance": true
+  },
+  "devDependencies": {
+    "@hellajs/ssr": "*"
+  },
+  "peerDependencies": {
+    "@hellajs/core": "^1.0.6"
   }
 }

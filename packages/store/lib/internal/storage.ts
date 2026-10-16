@@ -13,5 +13,5 @@ export const storageAdaptor = (getStorage: () => Storage, key: string): StoreAda
   },
   clear: () => {
     getStorage().removeItem(key);
-  }
+  },
 });

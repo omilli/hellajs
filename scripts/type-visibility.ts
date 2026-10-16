@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { logger, packagesDir } from "./utils/index.js";
+import { logger, packagesDir } from "./utils/index.ts";
 
 interface Violation {
   package: string;
@@ -25,9 +25,10 @@ function getTypeBasename(relPath: string): string {
  */
 function isWholesaleExported(indexContent: string, typeBase: string): boolean {
   const escaped = typeBase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const pattern = typeBase === "types"
-    ? `export type \\* from ["']\\./types["']`
-    : `export type \\* from ["']\\./types/${escaped}["']`;
+  const pattern =
+    typeBase === "types"
+      ? `export type \\* from ["']\\./types["']`
+      : `export type \\* from ["']\\./types/${escaped}["']`;
   return new RegExp(pattern).test(indexContent);
 }
 
@@ -39,7 +40,8 @@ function isWholesaleExported(indexContent: string, typeBase: string): boolean {
 function scanInternalExports(filePath: string): string[] {
   const content = fs.readFileSync(filePath, "utf-8");
   const names: string[] = [];
-  const regex = /\/\*\*[\s\S]*?@internal[\s\S]*?\*\/\s*(?:\r?\n\s*)*export\s+(type|interface)\s+(\w+)/g;
+  const regex =
+    /\/\*\*[\s\S]*?@internal[\s\S]*?\*\/\s*(?:\r?\n\s*)*export\s+(type|interface)\s+(\w+)/g;
   let match: RegExpExecArray | null;
   while ((match = regex.exec(content)) !== null) {
     names.push(match[2]!);
@@ -108,7 +110,9 @@ async function main(): Promise<void> {
     }
 
     for (const v of violations) {
-      logger.info(`${v.package}:${v.file}:${v.type} — @internal on type in wholesale-exported .d.ts`);
+      logger.info(
+        `${v.package}:${v.file}:${v.type} — @internal on type in wholesale-exported .d.ts`,
+      );
     }
     process.exit(1);
   } catch (error) {
@@ -117,7 +121,7 @@ async function main(): Promise<void> {
   }
 }
 
-if (import.meta.main) {
+if (process.argv[1] === import.meta.filename) {
   main().catch((error: Error) => {
     logger.error("Fatal error:", error);
     process.exit(1);

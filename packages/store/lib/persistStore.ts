@@ -1,5 +1,12 @@
 import { signal, effect, batch, isObject, isFunction, hasWindow } from "./internal/core";
-import type { Store, Snapshot, PartialDeep, StoreAdaptor, PersistOptions, PersistHandle } from "./types";
+import type {
+  Store,
+  Snapshot,
+  PartialDeep,
+  StoreAdaptor,
+  PersistOptions,
+  PersistHandle,
+} from "./types";
 
 /**
  * Persists a store through a storage adaptor: rehydrates persisted state at
@@ -22,13 +29,13 @@ import type { Store, Snapshot, PartialDeep, StoreAdaptor, PersistOptions, Persis
 export function persistStore<T extends Record<string, unknown>>(
   store: Store<T, PropertyKey>,
   adaptor: StoreAdaptor,
-  options?: PersistOptions<T>
+  options?: PersistOptions<T>,
 ): PersistHandle {
   if (!hasWindow()) {
     return {
       hydrated: () => true,
       ready: Promise.resolve(),
-      dispose: () => {}
+      dispose: () => {},
     };
   }
 
@@ -37,7 +44,7 @@ export function persistStore<T extends Record<string, unknown>>(
     deserialize = (raw: string) => JSON.parse(raw) as PartialDeep<T>,
     partialize = (state: Snapshot<T>) => state as PartialDeep<T>,
     onError,
-    debounce: debounceMs
+    debounce: debounceMs,
   }: PersistOptions<T> = options ?? {};
 
   const hydratedSignal = signal(false);
@@ -166,7 +173,7 @@ export function persistStore<T extends Record<string, unknown>>(
         (error: unknown) => {
           onError?.(error);
           if (!disposed) finish();
-        }
+        },
       );
     } else {
       settle(raw as string | null);
@@ -188,6 +195,6 @@ export function persistStore<T extends Record<string, unknown>>(
       if (timer !== undefined) clearTimeout(timer);
       pendingWrite = undefined;
       if (debounceMs !== undefined) window.removeEventListener("pagehide", onPageHide);
-    }
+    },
   };
 }

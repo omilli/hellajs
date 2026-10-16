@@ -12,5 +12,5 @@ export {
   isFalsy,
   isNull,
   objectLoop,
-  hasDocument
+  hasDocument,
 } from "@hellajs/core";

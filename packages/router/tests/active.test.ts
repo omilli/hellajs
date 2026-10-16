@@ -1,5 +1,5 @@
-import { describe, test, expect, beforeEach } from "bun:test";
-import { router, navigate, route } from "@hellajs/router/bundle";
+import { describe, test, expect, beforeEach } from "vite-plus/test";
+import { router, navigate, route } from "@hellajs/router";
 import { setupRouterEnv } from "./helpers";
 
 describe("router", () => {
@@ -16,10 +16,10 @@ describe("router", () => {
         routes: {
           "/admin": {
             children: {
-              "/users": () => render("users")
-            }
-          }
-        }
+              "/users": () => render("users"),
+            },
+          },
+        },
       });
 
       navigate("/admin/users");
@@ -33,12 +33,12 @@ describe("router", () => {
             children: {
               "/users": {
                 children: {
-                  "/:id": () => render("user")
-                }
-              }
-            }
-          }
-        }
+                  "/:id": () => render("user"),
+                },
+              },
+            },
+          },
+        },
       });
 
       navigate("/admin/users/123");
@@ -49,8 +49,8 @@ describe("router", () => {
       router({
         routes: {
           "/administrators": () => render("admins"),
-          "/admin": () => render("admin")
-        }
+          "/admin": () => render("admin"),
+        },
       });
 
       navigate("/administrators");
@@ -60,8 +60,8 @@ describe("router", () => {
     test("returns true for exact match", () => {
       router({
         routes: {
-          "/about": () => render("about")
-        }
+          "/about": () => render("about"),
+        },
       });
 
       navigate("/about");
@@ -71,8 +71,8 @@ describe("router", () => {
     test("returns false for non-matching pattern", () => {
       router({
         routes: {
-          "/about": () => render("about")
-        }
+          "/about": () => render("about"),
+        },
       });
 
       navigate("/about");
@@ -82,8 +82,8 @@ describe("router", () => {
     test("returns true for wildcard pattern match", () => {
       router({
         routes: {
-          "/files/*": () => render("files")
-        }
+          "/files/*": () => render("files"),
+        },
       });
 
       navigate("/files/docs/readme.md");
@@ -93,8 +93,8 @@ describe("router", () => {
     test("strips query string before matching", () => {
       router({
         routes: {
-          "/search": () => render("search")
-        }
+          "/search": () => render("search"),
+        },
       });
 
       navigate("/search", { query: { q: "hello" } });
@@ -105,8 +105,8 @@ describe("router", () => {
       router({
         routes: {
           "/": () => render("home"),
-          "/users/:id": () => render("user")
-        }
+          "/users/:id": () => render("user"),
+        },
       });
 
       navigate("/");

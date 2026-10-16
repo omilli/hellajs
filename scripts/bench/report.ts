@@ -10,9 +10,9 @@
 
 import fs from "node:fs/promises";
 import path from "node:path";
-import { ensureDir, execCommand, fileExists, logger, projectRoot } from "../utils/index.js";
-import type { BenchResult } from "./driver.js";
-import type { BenchVariant } from "./build.js";
+import { ensureDir, execCommand, fileExists, logger, projectRoot } from "../utils/index.ts";
+import type { BenchResult } from "./driver.ts";
+import type { BenchVariant } from "./build.ts";
 
 const resultsPath = path.join(projectRoot, ".bench", "results.md");
 
@@ -84,8 +84,7 @@ export function printReport(report: BenchReport): void {
       `runs ${report.runs} · variant ${report.variant}`,
   );
   logger.info(
-    `label ${report.label} · HEAD ${report.git.shortSha}` +
-      `${report.git.dirty ? " (dirty)" : ""}`,
+    `label ${report.label} · HEAD ${report.git.shortSha}` + `${report.git.dirty ? " (dirty)" : ""}`,
   );
   for (const line of tableLines(report)) {
     logger.info(line);

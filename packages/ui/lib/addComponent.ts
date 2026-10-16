@@ -43,16 +43,22 @@ export function addComponent(names: string[], options: AddOptions = {}): void {
   const lang = options.lang ?? config.lang;
   const themeMode: UiThemeMode = options.themeMode ?? config.themeMode;
   if (!UI_STYLES.includes(style)) {
-    throw new Error(`[ui] addComponent: style must be one of css, tailwind, received "${String(options.style)}"`);
+    throw new Error(
+      `[ui] addComponent: style must be one of css, tailwind, received "${String(options.style)}"`,
+    );
   }
   if (!UI_THEME_MODES.includes(themeMode)) {
-    throw new Error(`[ui] addComponent: themeMode must be light or dark, received "${String(options.themeMode)}"`);
+    throw new Error(
+      `[ui] addComponent: themeMode must be light or dark, received "${String(options.themeMode)}"`,
+    );
   }
   if (!UI_LANGS.includes(lang)) {
     throw new Error(`[ui] addComponent: lang must be js or ts, received "${String(options.lang)}"`);
   }
   if (themeMode === "dark" && style === "tailwind") {
-    throw new Error(`[ui] addComponent: themeMode "dark" supports the css style only, received style "tailwind"`);
+    throw new Error(
+      `[ui] addComponent: themeMode "dark" supports the css style only, received style "tailwind"`,
+    );
   }
   const root = resolveRoot(options.dir);
   const manifest = loadRegistry();
@@ -63,8 +69,14 @@ export function addComponent(names: string[], options: AddOptions = {}): void {
   let i = 0;
   while (i < resolved.length) {
     const entry = resolved[i++]!;
-    const styleModuleText = entry.styleFile === undefined ? undefined : readFileSync(join(entry.baseDir, entry.styleFile), "utf8");
-    const typesModuleText = entry.typesFile === undefined ? undefined : readFileSync(join(entry.baseDir, entry.typesFile), "utf8");
+    const styleModuleText =
+      entry.styleFile === undefined
+        ? undefined
+        : readFileSync(join(entry.baseDir, entry.styleFile), "utf8");
+    const typesModuleText =
+      entry.typesFile === undefined
+        ? undefined
+        : readFileSync(join(entry.baseDir, entry.typesFile), "utf8");
     // --lang js retargets TS files (.tsx to .jsx) so user imports resolve
     // ./components/<name>. A dark themeMode reads the mapped dark source instead of the target file
     // (tokens.dark.ts in) and renames it back (tokens.ts out) - the file set is
@@ -88,19 +100,15 @@ export function addComponent(names: string[], options: AddOptions = {}): void {
         rename[file] = `${file.slice(0, -".ts".length)}.js`;
       }
     }
-    copyFiles(
-      entry.baseDir,
-      copied,
-      componentsDir,
-      options.overwrite === true,
-      {
-        rename,
-        transform: (text: string, file: string): string => {
-          const spliced = styleModuleText === undefined ? text : applyStyleVariant(text, styleModuleText, style);
-          const inlined = typesModuleText === undefined ? spliced : inlineTypes(spliced, typesModuleText);
-          return lang === "js" ? stripTypes(inlined, file) : inlined;
-        },
+    copyFiles(entry.baseDir, copied, componentsDir, options.overwrite === true, {
+      rename,
+      transform: (text: string, file: string): string => {
+        const spliced =
+          styleModuleText === undefined ? text : applyStyleVariant(text, styleModuleText, style);
+        const inlined =
+          typesModuleText === undefined ? spliced : inlineTypes(spliced, typesModuleText);
+        return lang === "js" ? stripTypes(inlined, file) : inlined;
       },
-    );
+    });
   }
 }

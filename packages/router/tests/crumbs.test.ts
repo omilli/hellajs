@@ -1,5 +1,5 @@
-import { describe, test, expect, beforeEach } from "bun:test";
-import { router, navigate, route } from "@hellajs/router/bundle";
+import { describe, test, expect, beforeEach } from "vite-plus/test";
+import { router, navigate, route } from "@hellajs/router";
 import { setupRouterEnv } from "./helpers";
 
 describe("router", () => {
@@ -14,14 +14,12 @@ describe("router", () => {
     test("flat route produces single crumb", () => {
       router({
         routes: {
-          "/about": () => render("about")
-        }
+          "/about": () => render("about"),
+        },
       });
 
       navigate("/about");
-      expect(route().crumbs).toEqual([
-        { segment: "/about", path: "/about", params: {} }
-      ]);
+      expect(route().crumbs).toEqual([{ segment: "/about", path: "/about", params: {} }]);
     });
 
     test("nested route produces parent-to-leaf chain", () => {
@@ -29,16 +27,16 @@ describe("router", () => {
         routes: {
           "/admin": {
             children: {
-              "/users": () => render("users")
-            }
-          }
-        }
+              "/users": () => render("users"),
+            },
+          },
+        },
       });
 
       navigate("/admin/users");
       expect(route().crumbs).toEqual([
         { segment: "/admin", path: "/admin", params: {} },
-        { segment: "/users", path: "/admin/users", params: {} }
+        { segment: "/users", path: "/admin/users", params: {} },
       ]);
     });
 
@@ -49,19 +47,19 @@ describe("router", () => {
             children: {
               "/b": {
                 children: {
-                  "/c": () => render("c")
-                }
-              }
-            }
-          }
-        }
+                  "/c": () => render("c"),
+                },
+              },
+            },
+          },
+        },
       });
 
       navigate("/a/b/c");
       expect(route().crumbs).toEqual([
         { segment: "/a", path: "/a", params: {} },
         { segment: "/b", path: "/a/b", params: {} },
-        { segment: "/c", path: "/a/b/c", params: {} }
+        { segment: "/c", path: "/a/b/c", params: {} },
       ]);
     });
 
@@ -70,29 +68,29 @@ describe("router", () => {
         routes: {
           "/admin": {
             children: {
-              "/users/:id": () => render("user")
-            }
-          }
-        }
+              "/users/:id": () => render("user"),
+            },
+          },
+        },
       });
 
       navigate("/admin/users/123");
       expect(route().crumbs).toEqual([
         { segment: "/admin", path: "/admin", params: {} },
-        { segment: "/users/:id", path: "/admin/users/123", params: { id: "123" } }
+        { segment: "/users/:id", path: "/admin/users/123", params: { id: "123" } },
       ]);
     });
 
     test("wildcard flat route produces single crumb with wildcard params", () => {
       router({
         routes: {
-          "/files/*": () => render("files")
-        }
+          "/files/*": () => render("files"),
+        },
       });
 
       navigate("/files/docs/readme.md");
       expect(route().crumbs).toEqual([
-        { segment: "/files/*", path: "/files/docs/readme.md", params: { "*": "docs/readme.md" } }
+        { segment: "/files/*", path: "/files/docs/readme.md", params: { "*": "docs/readme.md" } },
       ]);
     });
 
@@ -101,25 +99,25 @@ describe("router", () => {
         routes: {
           "/files": {
             children: {
-              "/*": () => render("file")
-            }
-          }
-        }
+              "/*": () => render("file"),
+            },
+          },
+        },
       });
 
       navigate("/files/docs/readme.md");
       expect(route().crumbs).toEqual([
         { segment: "/files", path: "/files", params: {} },
-        { segment: "/*", path: "/files/docs/readme.md", params: { "*": "docs/readme.md" } }
+        { segment: "/*", path: "/files/docs/readme.md", params: { "*": "docs/readme.md" } },
       ]);
     });
 
     test("notFound resolution produces empty crumbs", () => {
       router({
         routes: {
-          "/": () => render("home")
+          "/": () => render("home"),
         },
-        notFound: () => render("not-found")
+        notFound: () => render("not-found"),
       });
 
       navigate("/nonexistent");
@@ -129,14 +127,12 @@ describe("router", () => {
     test("query string excluded from crumb paths", () => {
       router({
         routes: {
-          "/search": () => render("search")
-        }
+          "/search": () => render("search"),
+        },
       });
 
       navigate("/search", { query: { q: "hello" } });
-      expect(route().crumbs).toEqual([
-        { segment: "/search", path: "/search", params: {} }
-      ]);
+      expect(route().crumbs).toEqual([{ segment: "/search", path: "/search", params: {} }]);
     });
   });
 });

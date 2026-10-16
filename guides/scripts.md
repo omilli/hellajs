@@ -1,8 +1,8 @@
 # Scripts Style Guide
 
-Build tooling and CI automation under `scripts/` — NOT the shipped runtime; runs under `bun` in dev and CI to bundle, test, lint, sync, release. Different priorities than `code.md` (no hot-path concern), same typographic discipline (double quotes, semicolons, 2-space indent, JSDoc, no `any`).
+Build tooling and CI automation under `scripts/` — NOT the shipped runtime; runs under `node` in dev and CI to bundle, test, lint, sync, release. Different priorities than `code.md` (no hot-path concern), same typographic discipline (double quotes, semicolons, 2-space indent, JSDoc, no `any`).
 
-Governs `scripts/**/*.ts` and `utils/**/*.ts` (the test preload). Config files (`tsconfig*`, `eslint.config.*`, `package.json`, `bunfig.toml`) follow `code.md` plus its Config checklist.
+Governs `scripts/**/*.ts` and `utils/**/*.ts` (the shared test helper). Config files (`tsconfig*`, `vite.config.ts`, `lint/*.js`, `package.json`) follow `code.md` plus its Config checklist.
 
 ## Contents
 
@@ -33,8 +33,8 @@ Performance is **off the list**. Scripts are not hot paths. `for…of`, temporar
 
 ## Language and runtime
 
-- **TypeScript, not `.mjs` / `.js`.** Bun runs `.ts` natively — zero build step, and the lint tsconfig already includes `scripts/**`. Migration from `.mjs`/`.js` is the target state; new scripts are `.ts`.
-- **`bun` and `bunx`, never `node` or `npx`.** Invoke external tools (`esbuild`, `terser`, `tsc`) via `bunx` or direct binary paths. No `#!/usr/bin/env node` shebangs — scripts are invoked as `bun ./scripts/[name].ts`, so a shebang is misleading.
+- **TypeScript, not `.mjs` / `.js`.** Node runs `.ts` natively via strip-types (default-on ≥23.6; `.node-version` pins the floor) — zero build step, and the root tsconfig already includes `scripts/**`. Migration from `.mjs`/`.js` is the target state; new scripts are `.ts`.
+- **`node` and local `.bin` paths — never `bun`, `bunx`, or `npx`.** Invoke external tools (`esbuild`, `terser`, `tsc`) via `<projectRoot>/node_modules/.bin/<tool>`. No `#!/usr/bin/env node` shebangs — scripts are invoked as `node ./scripts/[name].ts` or `vp run <name>`, so a shebang is misleading.
 - **Node builtins are allowed** — `node:fs`, `node:path`, `node:child_process`, `node:crypto`, `node:os`, `node:zlib`. Scripts are not the shipped runtime; `code.md`'s "no external dependencies" rule does not apply. Dev dependencies (`esbuild`, `terser`, `typescript`, `mitata`) are the justified exceptions, declared as root `devDependencies`.
 
 ## Canonical paths
@@ -45,7 +45,7 @@ Performance is **off the list**. Scripts are not hot paths. `for…of`, temporar
 | Shared helper | `scripts/utils/[concern].ts` | Single noun (`fs`, `exec`, `logger`, `paths`) |
 | Shared cross-pipeline concern | `scripts/[concern]/` | Multi-file infra consumed by 2+ pipelines, no CLI entry (e.g. `agent/`) |
 | Utils barrel | `scripts/utils/index.ts` | Re-exports every helper; the only import path scripts use |
-| Test preload | `utils/happydom.js`, `utils/jsx.js` | Non-scripts JS exceptions: the two test preloads only |
+| Test helper | `utils/test-helpers.js` | Non-scripts JS exception: the shared test helper only |
 
 `scripts/utils/common.js` (the backward-compat re-export shim) is dead weight once `index.ts` exists — do not recreate it. One barrel, one import path.
 
@@ -110,22 +110,23 @@ A script that re-implements what a util already does is a DRY violation and a dr
 - `import type` separated; `node:` prefixed builtins.
 - No `any` — `unknown` and type-narrow. `catch (error)` gives `unknown` under strict; narrow before `.message`.
 - JSDoc `@param` / `@returns` with TS types, not `{string}` / `{Object}` JSDoc-style annotations.
+- Relative imports between scripts use `.ts` specifiers (`from "./utils/index.ts"`) — the root tsconfig's `allowImportingTsExtensions` + `rewriteRelativeImportExtensions` accept them; node strip-types executes them.
 
 ## Verification Checklist
 
 Run this when holding a scripts file (`scripts/**/*.ts`, `utils/**/*.ts`). Each item is a yes/no or a command.
 
 **Structure**
-- [ ] File is `.ts`, not `.mjs` / `.js` (test preloads `utils/happydom.js` + `utils/jsx.js` excepted)
+- [ ] File is `.ts`, not `.mjs` / `.js` (`utils/test-helpers.js` excepted)
 - [ ] One concern per file; CLI entries are thin (parse → call → report → exit)
 - [ ] No `globalThis` mutations for inter-script data
 - [ ] A file over ~300 lines is split on a concern seam
 - [ ] No `common.js`-style backward-compat shim duplicating the `index.ts` barrel
 
 **Runtime**
-- [ ] No `node` or `npx` invocations — `bun` / `bunx` only
+- [ ] No `bun`, `bunx`, or `npx` invocations — bare `node` + `node_modules/.bin` paths only
 - [ ] No `#!/usr/bin/env node` shebangs
-- [ ] External tools (`esbuild`, `terser`, `tsc`) invoked via `bunx` or direct binary path
+- [ ] External tools (`esbuild`, `terser`, `tsc`) invoked via the `node_modules/.bin` path
 
 **Utils usage**
 - [ ] Uses `logger` not bare `console.log`
@@ -151,4 +152,5 @@ Run this when holding a scripts file (`scripts/**/*.ts`, `utils/**/*.ts`). Each 
 - [ ] Cache (if present) keyed on file hashes + git status, invalidated correctly
 
 **Toolchain**
-- [ ] `bun lint` exits 0 (scripts are in the lint tsconfig)
+- [ ] Relative script imports carry `.ts` specifiers (never `.js`)
+- [ ] `vp run lint` exits 0 (scripts are in the lint tsconfig)

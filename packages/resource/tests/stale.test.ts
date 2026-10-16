@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { resource, resourceCache } from "@hellajs/resource/bundle";
+import { resource, resourceCache } from "@hellajs/resource";
 
 describe("resource", () => {
   describe("stale", () => {
@@ -9,7 +9,7 @@ describe("resource", () => {
     });
 
     test("returns cached data without refetch within staleTime", async () => {
-      const fetcher = mock(() => delay(`data-${fetcher.mock.calls.length}`, 10));
+      const fetcher = vi.fn(() => delay(`data-${fetcher.mock.calls.length}`, 10));
       const r = resource(fetcher, { staleTime: 500, cacheTime: 1000, key: () => "test-key" });
 
       r.fetch({ force: true });
@@ -25,7 +25,7 @@ describe("resource", () => {
     });
 
     test("triggers background refetch when data is stale", async () => {
-      const fetcher = mock(() => delay(`data-${fetcher.mock.calls.length}`, 10));
+      const fetcher = vi.fn(() => delay(`data-${fetcher.mock.calls.length}`, 10));
       const r = resource(fetcher, { staleTime: 1, cacheTime: 1000, key: () => "test-key" });
 
       r.fetch({ force: true });
@@ -55,10 +55,11 @@ describe("resource", () => {
     });
 
     test("isFetching is true during background refetch", async () => {
-      const r = resource(
-        () => delay("data", 10),
-        { staleTime: 1, cacheTime: 1000, key: () => "test-key" }
-      );
+      const r = resource(() => delay("data", 10), {
+        staleTime: 1,
+        cacheTime: 1000,
+        key: () => "test-key",
+      });
 
       r.fetch({ force: true });
       await delay(20);
@@ -80,8 +81,13 @@ describe("resource", () => {
     });
 
     test("revalidateOnStale false prevents background fetch", async () => {
-      const fetcher = mock(() => delay(`data-${fetcher.mock.calls.length}`, 10));
-      const r = resource(fetcher, { staleTime: 1, cacheTime: 1000, revalidateOnStale: false, key: () => "test-key" });
+      const fetcher = vi.fn(() => delay(`data-${fetcher.mock.calls.length}`, 10));
+      const r = resource(fetcher, {
+        staleTime: 1,
+        cacheTime: 1000,
+        revalidateOnStale: false,
+        key: () => "test-key",
+      });
 
       r.fetch({ force: true });
       await delay(20);
@@ -97,7 +103,7 @@ describe("resource", () => {
     });
 
     test("staleTime Infinity never refetches on get", async () => {
-      const fetcher = mock(() => delay(`data-${fetcher.mock.calls.length}`, 10));
+      const fetcher = vi.fn(() => delay(`data-${fetcher.mock.calls.length}`, 10));
       const r = resource(fetcher, { staleTime: Infinity, cacheTime: 1000, key: () => "test-key" });
 
       r.fetch({ force: true });
@@ -113,7 +119,7 @@ describe("resource", () => {
     });
 
     test("staleTime 0 always triggers background fetch on get", async () => {
-      const fetcher = mock(() => delay(`data-${fetcher.mock.calls.length}`, 10));
+      const fetcher = vi.fn(() => delay(`data-${fetcher.mock.calls.length}`, 10));
       const r = resource(fetcher, { staleTime: 0, cacheTime: 1000, key: () => "test-key" });
 
       r.fetch({ force: true });
@@ -139,10 +145,11 @@ describe("resource", () => {
     });
 
     test("cache entry stores staleTime", async () => {
-      const r = resource(
-        () => delay("data"),
-        { staleTime: 500, cacheTime: 1000, key: () => "test-key" }
-      );
+      const r = resource(() => delay("data"), {
+        staleTime: 500,
+        cacheTime: 1000,
+        key: () => "test-key",
+      });
 
       r.fetch({ force: true });
       await delay(20);
@@ -152,10 +159,7 @@ describe("resource", () => {
     });
 
     test("uses Infinity as default staleTime when not specified", async () => {
-      const r = resource(
-        () => delay("data"),
-        { cacheTime: 1000, key: () => "test-key" }
-      );
+      const r = resource(() => delay("data"), { cacheTime: 1000, key: () => "test-key" });
 
       r.fetch({ force: true });
       await delay(20);
@@ -165,10 +169,11 @@ describe("resource", () => {
     });
 
     test("staleTime 0 marks data as always stale in cache", async () => {
-      const r = resource(
-        () => delay("data"),
-        { staleTime: 0, cacheTime: 1000, key: () => "test-key" }
-      );
+      const r = resource(() => delay("data"), {
+        staleTime: 0,
+        cacheTime: 1000,
+        key: () => "test-key",
+      });
 
       r.fetch({ force: true });
       await delay(20);

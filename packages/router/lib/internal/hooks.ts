@@ -14,7 +14,7 @@ export function executeHook(
   handler: Handler | null | undefined,
   params: Params,
   query: Params,
-  errorPrefix: string
+  errorPrefix: string,
 ): unknown {
   if (!handler) return;
 
@@ -30,9 +30,7 @@ export function executeHook(
     }
 
     if (hookResult instanceof Promise) {
-      hookResult.catch((error) =>
-        console.error(`[router] ${errorPrefix}:`, error)
-      );
+      hookResult.catch((error) => console.error(`[router] ${errorPrefix}:`, error));
     }
     return hookResult;
   } catch (error) {
@@ -67,15 +65,13 @@ export function executeGlobalHook(
   hookFn: ((to: string, from: string) => unknown) | null | undefined,
   to: string,
   from: string,
-  errorPrefix: string
+  errorPrefix: string,
 ): void {
   if (!isFunction(hookFn)) return;
   try {
     const result = hookFn(to, from);
     if (result instanceof Promise) {
-      result.catch((error) =>
-        console.error(`[router] ${errorPrefix}:`, error)
-      );
+      result.catch((error) => console.error(`[router] ${errorPrefix}:`, error));
     }
   } catch (error) {
     console.error(`[router] ${errorPrefix}:`, error);

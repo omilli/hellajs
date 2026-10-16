@@ -1,8 +1,8 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { signal, flush } from "@hellajs/core";
 import { delay, suppressConsole, resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { hydrate, onError, ForEach, Suspense, Lazy } from "@hellajs/dom";
-import { ssr } from "@hellajs/ssr/bundle";
+import { ssr } from "@hellajs/ssr";
 import type { HellaNode } from "@hellajs/dom";
 import { collect } from "./helpers";
 
@@ -13,9 +13,13 @@ beforeEach(() => {
 describe("ssr to hydrate integration", () => {
   test("ssr output hydrates with identity preservation", () => {
     const count = signal(0);
-    const App = () => <div id="root"><span id="s">{count}</span></div>;
+    const App = () => (
+      <div id="root">
+        <span id="s">{count}</span>
+      </div>
+    );
     const container = setupContainer();
-    container.innerHTML = ssr(<App></App> as HellaNode);
+    container.innerHTML = ssr((<App></App>) as HellaNode);
     const sBefore = container.querySelector("#s")!;
 
     hydrate(<App></App>, container);
@@ -28,10 +32,20 @@ describe("ssr to hydrate integration", () => {
   });
 
   test("ssr ForEach output hydrates and reconciles updates", () => {
-    const items = signal([{ id: 1, t: "a" }, { id: 2, t: "b" }]);
-    const App = () => <ul id="list"><ForEach each={items} use={((i: { id: number; t: string }) => <li id={"i" + i.id}>{i.t}</li>)}></ForEach></ul>;
+    const items = signal([
+      { id: 1, t: "a" },
+      { id: 2, t: "b" },
+    ]);
+    const App = () => (
+      <ul id="list">
+        <ForEach
+          each={items}
+          use={(i: { id: number; t: string }) => <li id={"i" + i.id}>{i.t}</li>}
+        ></ForEach>
+      </ul>
+    );
     const container = setupContainer();
-    container.innerHTML = ssr(<App></App> as HellaNode);
+    container.innerHTML = ssr((<App></App>) as HellaNode);
     const i1Before = container.querySelector("#i1")!;
 
     hydrate(<App></App>, container);
@@ -41,7 +55,7 @@ describe("ssr to hydrate integration", () => {
     flush();
     expect(container.querySelector("#i3")!.textContent).toBe("c");
 
-    items(items().filter(i => i.id !== 1));
+    items(items().filter((i) => i.id !== 1));
     flush();
     expect(container.querySelector("#i1")).toBeNull();
   });
@@ -50,7 +64,7 @@ describe("ssr to hydrate integration", () => {
     const count = signal(5);
     const App = () => <div id="root">a{count}b</div>;
     const container = setupContainer();
-    container.innerHTML = ssr(<App></App> as HellaNode);
+    container.innerHTML = ssr((<App></App>) as HellaNode);
     // ssr bounds the reactive value in its own region: a<!--[-->5<!--]-->b → 5 nodes
     expect(container.querySelector("#root")!.childNodes.length).toBe(5);
 
@@ -64,10 +78,24 @@ describe("ssr to hydrate integration", () => {
 
   test("ssr reactive getter returning a ForEach hydrates (C1 resolved)", () => {
     const show = signal(true);
-    const items = signal([{ id: 1, t: "a" }, { id: 2, t: "b" }]);
-    const App = () => <div id="root">{(() => show() ? ForEach({ each: items, use: (i: { id: number; t: string }) => <li id={"i" + i.id}>{i.t}</li> }) : null)}</div>;
+    const items = signal([
+      { id: 1, t: "a" },
+      { id: 2, t: "b" },
+    ]);
+    const App = () => (
+      <div id="root">
+        {() =>
+          show()
+            ? ForEach({
+                each: items,
+                use: (i: { id: number; t: string }) => <li id={"i" + i.id}>{i.t}</li>,
+              })
+            : null
+        }
+      </div>
+    );
     const container = setupContainer();
-    container.innerHTML = ssr(<App></App> as HellaNode);
+    container.innerHTML = ssr((<App></App>) as HellaNode);
     expect(container.querySelector("#i1")!.textContent).toBe("a");
 
     hydrate(<App></App>, container);
@@ -81,61 +109,79 @@ describe("ssr to hydrate integration", () => {
   test("hydrate swaps a streamed <Suspense> via the fallback path when the inline swap script doesn’t run (HappyDOM)", async () => {
     // ssr.stream now emits an inline $hs swap script per region; HappyDOM does not execute inline scripts,
     // so the staged <template> + sentinel remain and hydrate’s swapSuspenseStage fallback swaps them in.
-    const tree = () => <div id="root"><Suspense fallback={(<p>loading</p>)}>{(() => Promise.resolve(<b>resolved</b>))}</Suspense></div>;
+    const tree = () => (
+      <div id="root">
+        <Suspense fallback={<p>loading</p>}>{() => Promise.resolve(<b>resolved</b>)}</Suspense>
+      </div>
+    );
     const container = setupContainer();
-    container.innerHTML = await collect(ssr.stream(tree()));   // scripts present but NOT executed
+    container.innerHTML = await collect(ssr.stream(tree())); // scripts present but NOT executed
     hydrate(tree(), container);
     expect(container.querySelector("#root b")!.textContent).toBe("resolved");
   });
 
   test("server-rendered Lazy content hydrates without a loading flash", async () => {
     let resolveLoader!: (v: HellaNode) => void;
-    const loader = mock(() => new Promise<HellaNode>((r) => { resolveLoader = r; }));
-    const App = () => <div id="root">a<Lazy loader={loader} loading={(<i>loading</i>)}></Lazy>b</div>;
+    const loader = vi.fn(
+      () =>
+        new Promise<HellaNode>((r) => {
+          resolveLoader = r;
+        }),
+    );
+    const App = () => (
+      <div id="root">
+        a<Lazy loader={loader} loading={<i>loading</i>}></Lazy>b
+      </div>
+    );
     const container = setupContainer();
-    const rendered = ssr.async(<App></App> as HellaNode);
-    await delay(0);                                                // let the walk reach and call the server loader
-    resolveLoader(<b id="c">resolved</b> as HellaNode);
+    const rendered = ssr.async((<App></App>) as HellaNode);
+    await delay(0); // let the walk reach and call the server loader
+    resolveLoader((<b id="c">resolved</b>) as HellaNode);
     container.innerHTML = await rendered;
-    expect(container.textContent).toBe("aresolvedb");              // server rendered the loaded component — the loading fallback never appears in the HTML
+    expect(container.textContent).toBe("aresolvedb"); // server rendered the loaded component — the loading fallback never appears in the HTML
     const serverNode = container.querySelector("#c")!;
 
     hydrate(<App></App>, container);
-    expect(loader).toHaveBeenCalledTimes(2);                       // the client always re-runs the loader (the chunk must load for interactivity)
-    await delay(0);                                                // client loader still pending — server content adopted, no flash
+    expect(loader).toHaveBeenCalledTimes(2); // the client always re-runs the loader (the chunk must load for interactivity)
+    await delay(0); // client loader still pending — server content adopted, no flash
     expect(container.querySelector("#c")).toBe(serverNode);
     expect(container.textContent).toBe("aresolvedb");
     expect(container.textContent).not.toContain("loading");
 
-    resolveLoader(<span id="fresh">fresh</span> as HellaNode);
+    resolveLoader((<span id="fresh">fresh</span>) as HellaNode);
     await delay(0);
-    expect(container.textContent).toBe("afreshb");                // the fresh render replaced the server content
+    expect(container.textContent).toBe("afreshb"); // the fresh render replaced the server content
     expect(container.textContent).not.toContain("[object Promise]");
   });
 
   test("a rejecting <Suspense> region re-suspends on the client while the healthy sibling's swap is adopted", async () => {
     // the server skips the failed region's <template> (stream completes); on the client the sentinel has no
     // template → stageMissing → <Suspense> re-runs the getter → the rejection bubbles to onError (React $RX parity)
-    const tree = () => <div id="root"><Suspense fallback={(<p>boom-fb</p>)}>{() => Promise.reject(new Error("boom"))}</Suspense><Suspense fallback={(<p>ok-fb</p>)}>{(() => Promise.resolve(<b>OK</b>))}</Suspense></div>;
+    const tree = () => (
+      <div id="root">
+        <Suspense fallback={<p>boom-fb</p>}>{() => Promise.reject(new Error("boom"))}</Suspense>
+        <Suspense fallback={<p>ok-fb</p>}>{() => Promise.resolve(<b>OK</b>)}</Suspense>
+      </div>
+    );
     const container = setupContainer();
-    const handler = mock<(error: Error) => null>(() => null);
+    const handler = vi.fn<(error: Error) => null>(() => null);
     onError(handler);
-    const sup = suppressConsole();                             // [ssr] skip warn (render) + [dom] stage-missing warn (hydrate)
+    const sup = suppressConsole(); // [ssr] skip warn (render) + [dom] stage-missing warn (hydrate)
     try {
       container.innerHTML = await collect(ssr.stream(tree())); // HappyDOM never executes the inline $hs scripts
       hydrate(tree(), container);
-      await delay(0);                                          // macrotask — the .then().catch() chain over the rejection settles
+      await delay(0); // macrotask — the .then().catch() chain over the rejection settles
     } finally {
       sup.restore();
       onError(null);
     }
     expect(handler).toHaveBeenCalledTimes(1);
-    const [err] = handler.mock.calls[0]!;                   // ErrorFn passes (error, context) — assert the error
+    const [err] = handler.mock.calls[0]!; // ErrorFn passes (error, context) — assert the error
     expect(err).toBeInstanceOf(Error);
     expect(err.message).toBe("boom");
-    expect(container.textContent).toContain("OK");                    // healthy sibling's resolved content adopted
-    expect(container.textContent).not.toContain("ok-fb");             // its fallback swapped out
-    expect(container.textContent).not.toContain("boom-fb");           // failed region's fallback removed on rejection
-    expect(container.textContent).not.toContain("[object Promise]");  // no stringified Promise beside the matched nodes
+    expect(container.textContent).toContain("OK"); // healthy sibling's resolved content adopted
+    expect(container.textContent).not.toContain("ok-fb"); // its fallback swapped out
+    expect(container.textContent).not.toContain("boom-fb"); // failed region's fallback removed on rejection
+    expect(container.textContent).not.toContain("[object Promise]"); // no stringified Promise beside the matched nodes
   });
 });

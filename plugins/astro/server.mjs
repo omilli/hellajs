@@ -25,6 +25,6 @@ function mapSlots(props, slots) {
 export default {
   check: (Component) => typeof Component === "function",
   renderToStaticMarkup: async (Component, props, slots) => ({
-    html: ssr(Component(mapSlots(props, slots)))
+    html: ssr(Component(mapSlots(props, slots))),
   }),
 };

@@ -110,7 +110,7 @@ const loadPagefind = (): Promise<PagefindApi | undefined> => {
   //   .then((module) => module as PagefindApi)
   //   .catch(() => {
   //     console.warn(
-  //       "Search index not found — it is built for production builds only (bun run build).",
+  //       "Search index not found — it is built for production builds only (npm run build).",
   //     );
   //     return undefined;
   //   });

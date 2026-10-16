@@ -1,7 +1,30 @@
-import { signal, computed, effect, untracked, isFunction, isString, isNumber, isObject, hasWindow } from "./internal/core";
-import type { ResourceOptions, Resource, ResourceError, Fetcher, FetchOptions } from "./types/resource";
+import {
+  signal,
+  computed,
+  effect,
+  untracked,
+  isFunction,
+  isString,
+  isNumber,
+  isObject,
+  hasWindow,
+} from "./internal/core";
+import type {
+  ResourceOptions,
+  Resource,
+  ResourceError,
+  Fetcher,
+  FetchOptions,
+} from "./types/resource";
 import type { CacheEntry } from "./types/cache";
-import { cacheMap, cleanupExpiredCache, setCacheData, getCacheData, isStale, resourceCache } from "./resourceCache";
+import {
+  cacheMap,
+  cleanupExpiredCache,
+  setCacheData,
+  getCacheData,
+  isStale,
+  resourceCache,
+} from "./resourceCache";
 import { isAbortError, categorizeError } from "./internal/errors";
 import { resolveRetryConfig, fetchWithRetry } from "./internal/retry";
 import { wireRequestControls } from "./internal/abort";
@@ -24,7 +47,7 @@ import { structuralShare } from "./internal/structural";
  */
 export function resource<T = unknown, TTransformed = T>(
   url: string,
-  options?: ResourceOptions<T, string, TTransformed>
+  options?: ResourceOptions<T, string, TTransformed>,
 ): Resource<TTransformed, T>;
 
 /**
@@ -40,21 +63,33 @@ export function resource<T = unknown, TTransformed = T>(
  */
 export function resource<T, K = undefined, TTransformed = T>(
   fetcher: Fetcher<T, K>,
-  options?: ResourceOptions<T, K, TTransformed>
+  options?: ResourceOptions<T, K, TTransformed>,
 ): Resource<TTransformed, T>;
 
 export function resource<T, K = undefined, TTransformed = T>(
   fetcher: Fetcher<T, K> | string,
-  options: ResourceOptions<T, K, TTransformed> = {}
+  options: ResourceOptions<T, K, TTransformed> = {},
 ): Resource<TTransformed, T> {
   if (!isString(fetcher) && !isFunction(fetcher))
-    throw new Error("[resource] resource: fetcher must be a string URL or function, received " + typeof fetcher);
+    throw new Error(
+      "[resource] resource: fetcher must be a string URL or function, received " + typeof fetcher,
+    );
   if (!isObject(options) || Array.isArray(options))
     throw new Error("[resource] resource: options must be an object, received " + options);
-  if (options.cacheTime !== undefined && (!isNumber(options.cacheTime) || Number.isNaN(options.cacheTime) || options.cacheTime < 0))
-    throw new Error("[resource] resource: cacheTime must be a non-negative number, received " + options.cacheTime);
-  if (options.staleTime !== undefined && (!isNumber(options.staleTime) || Number.isNaN(options.staleTime) || options.staleTime < 0))
-    throw new Error("[resource] resource: staleTime must be a non-negative number, received " + options.staleTime);
+  if (
+    options.cacheTime !== undefined &&
+    (!isNumber(options.cacheTime) || Number.isNaN(options.cacheTime) || options.cacheTime < 0)
+  )
+    throw new Error(
+      "[resource] resource: cacheTime must be a non-negative number, received " + options.cacheTime,
+    );
+  if (
+    options.staleTime !== undefined &&
+    (!isNumber(options.staleTime) || Number.isNaN(options.staleTime) || options.staleTime < 0)
+  )
+    throw new Error(
+      "[resource] resource: staleTime must be a non-negative number, received " + options.staleTime,
+    );
 
   if (isString(fetcher))
     return resource<T, string, TTransformed>(
@@ -63,7 +98,7 @@ export function resource<T, K = undefined, TTransformed = T>(
         if (!ok) throw new Error(`HTTP ${status}: ${statusText}`);
         return json();
       },
-      { ...options, key: fetcher } as unknown as ResourceOptions<T, string, TTransformed>
+      { ...options, key: fetcher } as unknown as ResourceOptions<T, string, TTransformed>,
     );
 
   // Always a function after the string overload; the const preserves the Fetcher
@@ -74,9 +109,9 @@ export function resource<T, K = undefined, TTransformed = T>(
   const transformFn = options.transform;
   const data = transformFn
     ? computed(() => {
-      const current = rawData();
-      return current === undefined ? undefined : transformFn(current);
-    })
+        const current = rawData();
+        return current === undefined ? undefined : transformFn(current);
+      })
     : computed(() => rawData() as unknown as TTransformed);
 
   const error = signal<ResourceError | undefined>(undefined);
@@ -102,19 +137,19 @@ export function resource<T, K = undefined, TTransformed = T>(
     refetchOnReconnect = false,
     pauseWhenOffline = false,
     invalidates,
-    key = (() => undefined as unknown as K)
+    key = () => undefined as unknown as K,
   } = options;
 
   /**
    * Resolves the key value, handling both function and static value cases
    */
-  const resolveKey = () => isFunction(key) ? (key as () => K)() : key;
+  const resolveKey = () => (isFunction(key) ? (key as () => K)() : key);
 
   const enabledIsFn = isFunction(enabled);
   /**
    * Resolves the enabled flag, evaluating the getter reactively when provided as a function
    */
-  const isEnabled = () => enabledIsFn ? (enabled as () => boolean)() : enabled;
+  const isEnabled = () => (enabledIsFn ? (enabled as () => boolean)() : enabled);
 
   /**
    * Handles error state updates with optional loading/fetching state
@@ -161,7 +196,7 @@ export function resource<T, K = undefined, TTransformed = T>(
     settle: (value: R) => void,
     value: R,
     cacheKey: unknown,
-    request: OngoingRequest
+    request: OngoingRequest,
   ) => {
     settle(value);
     // Compare-and-delete: a force fetch that superseded this request must keep
@@ -169,6 +204,7 @@ export function resource<T, K = undefined, TTransformed = T>(
     deduplicate && deleteOngoingIf(fetcherFn, cacheKey, request);
   };
 
+  // oxlint-disable-next-line prefer-const
   let cleanupEffect: (() => void) | undefined;
   let currentAbortController: AbortController | undefined;
   /** Live mutation controllers — one per in-flight `mutate()`, self-removed on settle. */
@@ -176,7 +212,12 @@ export function resource<T, K = undefined, TTransformed = T>(
   /** Force flag of the fetch deferred by offline pausing — replayed on reconnect. */
   let stashedForce = false;
 
-  const polling = createPolling<TTransformed>({ refetchInterval, refetchIntervalInBackground, data, run });
+  const polling = createPolling<TTransformed>({
+    refetchInterval,
+    refetchIntervalInBackground,
+    data,
+    run,
+  });
   const focus = createFocus(run);
   const reconnect = createReconnect(run);
 
@@ -231,10 +272,12 @@ export function resource<T, K = undefined, TTransformed = T>(
 
       // Deduplication phase - reuse ongoing requests for same fetcher + key
       if (deduplicate) {
-        const ongoing = getOngoing(fetcherFn, cacheKey) as {
-          promise: Promise<T>;
-          abortController: AbortController;
-        } | undefined;
+        const ongoing = getOngoing(fetcherFn, cacheKey) as
+          | {
+              promise: Promise<T>;
+              abortController: AbortController;
+            }
+          | undefined;
 
         if (ongoing) {
           const { promise, abortController } = ongoing;
@@ -282,20 +325,31 @@ export function resource<T, K = undefined, TTransformed = T>(
       rejectPromise = reject;
     });
 
-    const request: OngoingRequest = { promise: requestPromise, abortController: currentAbortController };
+    const request: OngoingRequest = {
+      promise: requestPromise,
+      abortController: currentAbortController,
+    };
 
     if (deduplicate) {
       setOngoing(fetcherFn, cacheKey, request);
       // Silently handle rejection when no one is awaiting
       // This prevents unhandled promise rejection errors
-      requestPromise.catch(() => { });
+      requestPromise.catch(() => {});
     }
 
     // Request loop shared with prefetch; post-processing order preserved.
     try {
-      const result = await fetchWithRetry(() => fetcherFn(rawKey), { signal: currentSignal, retryConfig });
+      const result = await fetchWithRetry(() => fetcherFn(rawKey), {
+        signal: currentSignal,
+        retryConfig,
+      });
 
-      const shared = structuralSharing ? structuralShare<T>(untracked(() => rawData()), result) : result;
+      const shared = structuralSharing
+        ? structuralShare<T>(
+            untracked(() => rawData()),
+            result,
+          )
+        : result;
       setCacheData(fetcherFn, cacheKey, shared, cacheTime, staleTime ?? Infinity);
       !currentSignal.aborted && handleSuccess(shared);
       settleRun(resolvePromise!, shared, cacheKey, request);
@@ -359,7 +413,6 @@ export function resource<T, K = undefined, TTransformed = T>(
     }
   };
 
-  // eslint-disable-next-line prefer-const
   cleanupEffect = effect(() => {
     if (isEnabled()) {
       armPolling();
@@ -396,11 +449,11 @@ export function resource<T, K = undefined, TTransformed = T>(
   // triggers a fetch (that is refetchOnReconnect's job).
   const clearOfflinePause = pauseWhenOffline
     ? resourceCache.onOnlineChange((online) => {
-      if (online && paused()) {
-        paused(false);
-        run(stashedForce);
-      }
-    })
+        if (online && paused()) {
+          paused(false);
+          run(stashedForce);
+        }
+      })
     : undefined;
 
   /**
@@ -425,12 +478,13 @@ export function resource<T, K = undefined, TTransformed = T>(
    * @param updater - New data or updater function to modify existing cached data
    */
   const setData = (updater: T | ((old: T | undefined) => T)) => {
-    if (updater === undefined) throw new Error("[resource] setData: updater is required, received undefined");
+    if (updater === undefined)
+      throw new Error("[resource] setData: updater is required, received undefined");
     const key = stableKey(cacheKey());
 
     if (isFunction(updater)) {
       // Get old value from cache first, fallback to current rawData
-      const cachedOld = cacheTime ? getCacheData(fetcherFn, key) as T | undefined : undefined;
+      const cachedOld = cacheTime ? (getCacheData(fetcherFn, key) as T | undefined) : undefined;
       const oldValue = cachedOld !== undefined ? cachedOld : rawData();
       const newData = (updater as (old: T | undefined) => T)(oldValue);
       rawData(newData);
@@ -474,7 +528,7 @@ export function resource<T, K = undefined, TTransformed = T>(
         ctx = options.onMutate ? await options.onMutate(variables) : undefined;
         result = await fetchWithRetry(
           () => (fetcherFn as unknown as (vars: TVariables) => Promise<T>)(variables),
-          { signal, retryConfig }
+          { signal, retryConfig },
         );
       } catch (err) {
         if (!signal.aborted) {

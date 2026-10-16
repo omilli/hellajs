@@ -6,7 +6,11 @@ import { untracked, hasDocument, isFunction } from "./core";
 /** Configuration for creating a polling controller. */
 interface PollingConfig<TTransformed> {
   /** Interval in ms, false to disable, or function returning interval based on current data. */
-  refetchInterval: number | false | undefined | ((data: TTransformed | undefined) => number | false);
+  refetchInterval:
+    | number
+    | false
+    | undefined
+    | ((data: TTransformed | undefined) => number | false);
   /** Whether to continue polling when the tab is hidden. */
   refetchIntervalInBackground: boolean;
   /** Reactive accessor for current (transformed) data, used to compute dynamic intervals. */
@@ -44,7 +48,8 @@ export function createPolling<TTransformed>(config: PollingConfig<TTransformed>)
 
     const executePoll = () => {
       // Skip if tab hidden and background polling disabled
-      if (!refetchIntervalInBackground && hasDocument() && document.visibilityState === "hidden") return;
+      if (!refetchIntervalInBackground && hasDocument() && document.visibilityState === "hidden")
+        return;
       run(false);
     };
 

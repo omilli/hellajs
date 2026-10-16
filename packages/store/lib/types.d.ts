@@ -6,12 +6,12 @@ import type { Signal, SignalArray, SignalMap, SignalSet } from "@hellajs/core";
  */
 export type PartialDeep<T> = {
   [K in keyof T]?: T[K] extends (...args: unknown[]) => unknown
-  ? T[K]
-  : T[K] extends unknown[]
-  ? T[K]
-  : T[K] extends Record<string, unknown>
-  ? PartialDeep<T[K]>
-  : T[K];
+    ? T[K]
+    : T[K] extends unknown[]
+      ? T[K]
+      : T[K] extends Record<string, unknown>
+        ? PartialDeep<T[K]>
+        : T[K];
 };
 
 /**
@@ -21,12 +21,12 @@ export type PartialDeep<T> = {
  */
 export type StoreMiddleware<T> = {
   [K in keyof T]?: T[K] extends (...args: unknown[]) => unknown
-  ? (value: T[K]) => T[K]
-  : T[K] extends unknown[]
-  ? (value: T[K]) => T[K]
-  : T[K] extends Record<string, unknown>
-  ? StoreMiddleware<T[K]>
-  : (value: T[K]) => T[K];
+    ? (value: T[K]) => T[K]
+    : T[K] extends unknown[]
+      ? (value: T[K]) => T[K]
+      : T[K] extends Record<string, unknown>
+        ? StoreMiddleware<T[K]>
+        : (value: T[K]) => T[K];
 };
 
 /**
@@ -38,10 +38,13 @@ export type StoreMiddleware<T> = {
  * not two whole collections.
  */
 export type StoreEquals<T> = {
-  [K in keyof T]?: T[K] extends (...args: unknown[]) => unknown ? never
-    : T[K] extends unknown[] ? EqualsFor<T[K]>
-    : T[K] extends Record<string, unknown> ? StoreEquals<T[K]>
-    : EqualsFor<T[K]>;
+  [K in keyof T]?: T[K] extends (...args: unknown[]) => unknown
+    ? never
+    : T[K] extends unknown[]
+      ? EqualsFor<T[K]>
+      : T[K] extends Record<string, unknown>
+        ? StoreEquals<T[K]>
+        : EqualsFor<T[K]>;
 };
 
 /**
@@ -65,12 +68,11 @@ export interface StoreOptions<T> {
 /**
  * Extracts which keys are readonly based on StoreOptions.
  */
-export type ReadonlyKeys<T, O extends StoreOptions<T> | undefined> =
-  O extends { readonly: true }
+export type ReadonlyKeys<T, O extends StoreOptions<T> | undefined> = O extends { readonly: true }
   ? keyof T
   : O extends { readonly: readonly (keyof T)[] }
-  ? O["readonly"][number]
-  : never;
+    ? O["readonly"][number]
+    : never;
 
 /**
  * Recursively unwraps composed store types so Snapshot matches the plain
@@ -78,9 +80,7 @@ export type ReadonlyKeys<T, O extends StoreOptions<T> | undefined> =
  * data types, everything else is preserved.
  */
 export type Snapshot<T> = {
-  [K in keyof T]:
-  T[K] extends Store<infer U, PropertyKey> ? Snapshot<U> :
-  T[K];
+  [K in keyof T]: T[K] extends Store<infer U, PropertyKey> ? Snapshot<U> : T[K];
 };
 
 /**
@@ -90,9 +90,11 @@ export type Snapshot<T> = {
  * index signature and stay settable — they become signals like primitives.
  */
 type SettableKeyOf<T> = {
-  [K in keyof T]: T[K] extends (...args: unknown[]) => unknown ? never
-  : T[K] extends Record<string, unknown> ? never
-  : K;
+  [K in keyof T]: T[K] extends (...args: unknown[]) => unknown
+    ? never
+    : T[K] extends Record<string, unknown>
+      ? never
+      : K;
 }[keyof T];
 
 /**
@@ -107,13 +109,17 @@ type Simplify<T> = { [K in keyof T]: T[K] };
  * semantics; a full object is assignable too), everything else keeps its type.
  * @template U Element type to widen for writes.
  */
-type WriteForm<U> =
-  U extends readonly (infer I)[] ? WriteForm<I>[] :
-  U extends Map<infer K, infer V> ? Map<K, WriteForm<V>> :
-  U extends Set<infer S> ? Set<WriteForm<S>> :
-  U extends (...args: never[]) => unknown ? U :
-  U extends Record<string, unknown> ? PartialDeep<U> :
-  U;
+type WriteForm<U> = U extends readonly (infer I)[]
+  ? WriteForm<I>[]
+  : U extends Map<infer K, infer V>
+    ? Map<K, WriteForm<V>>
+    : U extends Set<infer S>
+      ? Set<WriteForm<S>>
+      : U extends (...args: never[]) => unknown
+        ? U
+        : U extends Record<string, unknown>
+          ? PartialDeep<U>
+          : U;
 
 /**
  * Recursive reactive mapping for collection element positions: arrays become
@@ -126,13 +132,17 @@ type WriteForm<U> =
  * of `Store`.
  * @template E Element or value type to map.
  */
-export type Reactive<E> =
-  E extends readonly (infer U)[] ? SignalArray<Reactive<U>, WriteForm<U>> :
-  E extends Map<infer K, infer V> ? SignalMap<K, Reactive<V>, WriteForm<V>> :
-  E extends Set<infer S> ? SignalSet<Reactive<S>, WriteForm<S>> :
-  E extends (...args: never[]) => unknown ? E :
-  E extends Record<string, unknown> ? Store<E> :
-  E;
+export type Reactive<E> = E extends readonly (infer U)[]
+  ? SignalArray<Reactive<U>, WriteForm<U>>
+  : E extends Map<infer K, infer V>
+    ? SignalMap<K, Reactive<V>, WriteForm<V>>
+    : E extends Set<infer S>
+      ? SignalSet<Reactive<S>, WriteForm<S>>
+      : E extends (...args: never[]) => unknown
+        ? E
+        : E extends Record<string, unknown>
+          ? Store<E>
+          : E;
 
 /**
  * Reactive store type that transforms an object's properties.
@@ -153,13 +163,21 @@ export type Reactive<E> =
  */
 export type Store<
   T extends Record<string, unknown> = Record<string, never>,
-  R extends PropertyKey = never
+  R extends PropertyKey = never,
 > = {
-  [K in keyof T]:
-  T[K] extends (...args: unknown[]) => unknown ? T[K] :
-  T[K] extends unknown[] | Map<unknown, unknown> | Set<unknown> ? (K extends R ? () => T[K] : Reactive<T[K]>) :
-  T[K] extends Record<string, unknown> ? (K extends R ? Store<T[K], keyof T[K]> : Store<T[K]>) :
-  K extends R ? () => T[K] : Signal<T[K]>;
+  [K in keyof T]: T[K] extends (...args: unknown[]) => unknown
+    ? T[K]
+    : T[K] extends unknown[] | Map<unknown, unknown> | Set<unknown>
+      ? K extends R
+        ? () => T[K]
+        : Reactive<T[K]>
+      : T[K] extends Record<string, unknown>
+        ? K extends R
+          ? Store<T[K], keyof T[K]>
+          : Store<T[K]>
+        : K extends R
+          ? () => T[K]
+          : Signal<T[K]>;
 } & {
   /** Returns a reactive plain-object snapshot of the entire store state; composed nested stores unwrap to their plain data types */
   $snapshot: () => Snapshot<T>;
@@ -177,7 +195,9 @@ export type Store<
    * @throws {Error} When `partial` touches a reserved key, a function property, a store key with a non-object value, a readonly key, a function value on a new key, or an externally-replaced property (unknown key).
    */
   $update: {
-    <P extends Record<string, unknown>>(partial: PartialDeep<T> & P): Store<Simplify<T & Omit<P, keyof T>>, R>;
+    <P extends Record<string, unknown>>(
+      partial: PartialDeep<T> & P,
+    ): Store<Simplify<T & Omit<P, keyof T>>, R>;
     (mutator: (draft: Snapshot<T>) => void): Store<T, R>;
   };
   /** Recursively invokes cleanup on nested stores; individual signals are not disposed — they remain functional */
@@ -189,7 +209,10 @@ export type Store<
    * @returns Unsubscribe function; safe to call more than once
    * @throws {Error} When key is not a settable key of the store.
    */
-  $subscribe: <K extends SettableKeyOf<T>>(key: K, callback: (next: T[K], prev: T[K]) => void) => () => void;
+  $subscribe: <K extends SettableKeyOf<T>>(
+    key: K,
+    callback: (next: T[K], prev: T[K]) => void,
+  ) => () => void;
 };
 
 /**

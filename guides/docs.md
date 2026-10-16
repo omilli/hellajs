@@ -272,7 +272,7 @@ Full runnable code matching the example app.
 
 - **Frontmatter**: none — the wrapper page owns `title`, `description`, `layout`. **Language tag**: `tsx` (TS tutorials) / `jsx` (JS).
 - **Progressive build**: each section adds code on top of the previous; never removes or rewrites earlier code. **Context markers** (`//... add after X`, `//... rest unchanged`) show placement — never full file repeats; the reader builds up from previous sections.
-- **Exercise blanks**: `/**/` marks a reader-filled blank (`const filter = /**/;`), legal alongside `//...` markers. `bun doc-snippets` skips blocks containing `/**/` (answers vary); every non-blank line must still be valid for the language tag, and the answer must appear in a later section or Complete Code.
+- **Exercise blanks**: `/**/` marks a reader-filled blank (`const filter = /**/;`), legal alongside `//...` markers. `vp run doc-snippets` skips blocks containing `/**/` (answers vary); every non-blank line must still be valid for the language tag, and the answer must appear in a later section or Complete Code.
 - **Code Explanation**: always after every code block — bullet list, bold backtick-wrapped API names linking to reference docs on first mention, factual tone.
 - **Callouts**: `<Callout variant="error">` (import from `@components/Callout.astro`) for critical warnings (mutation pitfalls, reactivity gotchas), followed by Good/Bad examples.
 - **Dev server callout**: in the section where the app first becomes reachable, the actual run command + URL — Vite: `npm run dev` + `http://localhost:5173`; Node-served SSR: the start command (`npm run dev` / `node --watch src/server.js`) + its URL.
@@ -324,7 +324,7 @@ import ContentName from '@{package}/{type}/{name}.mdx'
 
 ### Site-Authored Content Pages
 
-Content spanning packages or site-only (quick-start, testing patterns) may live as a **site-authored content page** under `docs/src/pages/`: full body content, complete frontmatter, no package-doc import. The zero-content rule applies only to import-rendering wrappers. Registration duties unchanged — `nav.ts` + enumeration index. `bun lint:structure` check 4 detects the kind by the absent package-doc import and exempts it from the zero-content rule, never from the frontmatter rule.
+Content spanning packages or site-only (quick-start, testing patterns) may live as a **site-authored content page** under `docs/src/pages/`: full body content, complete frontmatter, no package-doc import. The zero-content rule applies only to import-rendering wrappers. Registration duties unchanged — `nav.ts` + enumeration index. `vp run lint:structure` check 4 detects the kind by the absent package-doc import and exempts it from the zero-content rule, never from the frontmatter rule.
 
 ## Extending Existing Content
 
@@ -393,7 +393,7 @@ Followed by a bullet list of parameters:
 - **Returns**: uses bold + colon as a separate bullet.
 - Generic parameters shown in the signature (`<T>`); list separately only if they have constraints.
 - Complex types (interfaces, unions) may be inline or in separate blocks below the signature.
-- **Interface blocks stay comment-free on member lines**: `bun doc-snippets` skips signature-only blocks, but its detector reads trailing comments as executable code, so a commented interface block gets typechecked while the `import type` lines that would satisfy it (living in a skipped signature block) are discarded. Keep interface-member lines bare; put behavior in prose or tables.
+- **Interface blocks stay comment-free on member lines**: `vp run doc-snippets` skips signature-only blocks, but its detector reads trailing comments as executable code, so a commented interface block gets typechecked while the `import type` lines that would satisfy it (living in a skipped signature block) are discarded. Keep interface-member lines bare; put behavior in prose or tables.
 - **Type accuracy**: interface/type signatures match the actual exported types from `index.ts`, including wrapper/view types. If the runtime type is a wrapper interface (a read-only view over an internal collection), document the wrapper by name — never substitute a familiar built-in (`Map`) implying capabilities it lacks. Code examples only call methods the documented interface exposes.
 
 ### Overloaded Functions
@@ -591,7 +591,7 @@ try {
 
 ### Exports per Doc
 
-One block per doc carries `export` lines. `bun doc-snippets` concatenates a doc's same-language blocks into ONE module, and export-bearing blocks (any line matching `/^(declare|export) /m`) hoist whole to module scope, so a second one collides: TS2451 on shared export names, TS2528 on double `default`. Structure multi-page or multi-component examples as one export-bearing block plus export-free blocks (export-free blocks nest-scope and chain: a later block reads earlier blocks' names); narrate additional pages in prose or build-output comments.
+One block per doc carries `export` lines. `vp run doc-snippets` concatenates a doc's same-language blocks into ONE module, and export-bearing blocks (any line matching `/^(declare|export) /m`) hoist whole to module scope, so a second one collides: TS2451 on shared export names, TS2528 on double `default`. Structure multi-page or multi-component examples as one export-bearing block plus export-free blocks (export-free blocks nest-scope and chain: a later block reads earlier blocks' names); narrate additional pages in prose or build-output comments.
 
 ## Example Syntax (JSX Default)
 
@@ -641,7 +641,7 @@ Use for structured data: error categories/status enums, hook timing reference, o
 - Tables supplement text explanations — don't use them as a replacement.
 - Always include header row.
 - Keep columns narrow enough for readable rendering.
-- Delimiter row cell count must match the header row (escaped `\|` does not split a cell); GFM refuses the whole table otherwise. Enforced by `bun lint:structure`.
+- Delimiter row cell count must match the header row (escaped `\|` does not split a cell); GFM refuses the whole table otherwise. Enforced by `vp run lint:structure`.
 - **Prop tables (`Prop | Type | Default`)**: the Default column holds actual default values only. End-user slot rows (`children`, children-passing `content`/`trigger` props) have no default and show `-`; a slot's role or behavior lives in the prose around the table, never in the Default cell.
 
 ## Callouts
@@ -688,7 +688,7 @@ Rewrite per occurrence, never a mechanical `" - "`:
 - Code comment (`… — detail`): `…; detail` or `. detail` (fits §Code Examples → Comment Style & No Test Assertions).
 - Numeric range: ASCII hyphen (`5-30`), never an en dash.
 
-Rewrites must not change meaning, link targets, identifiers, or fenced code semantics. Where a sentence reads worse after rewrite, restructure the sentence instead of forcing a colon. Enforcement: `bun em-dash`, composed into `bun lint:guards` (CI). Agent-facing files (AGENTS.md, guides, memory, plans) are exempt.
+Rewrites must not change meaning, link targets, identifiers, or fenced code semantics. Where a sentence reads worse after rewrite, restructure the sentence instead of forcing a colon. Enforcement: `vp run em-dash`, composed into `vp run lint:guards` (CI). Agent-facing files (AGENTS.md, guides, memory, plans) are exempt.
 
 ## Section Headings
 
@@ -711,7 +711,7 @@ Within the healthy range, length is not a review topic. Between the range and th
 
 ## Verification Checklist
 
-Run this when holding a Docs file (`.mdx` / `.md`). Each item is a yes/no or a cross-check. This is the audit floor stated where the rules live; `audit-docs` reads it instead of reconstructing it from prose. Docs-only input skips `bun coverage` — it verifies code, not prose.
+Run this when holding a Docs file (`.mdx` / `.md`). Each item is a yes/no or a cross-check. This is the audit floor stated where the rules live; `audit-docs` reads it instead of reconstructing it from prose. Docs-only input skips `vp run coverage` — it verifies code, not prose.
 
 **Location & template**
 - [ ] File at the right path per §File Locations & Naming; filename matches export name (API) or is lowercase-hyphenated (concepts/patterns)
@@ -734,13 +734,13 @@ Run this when holding a Docs file (`.mdx` / `.md`). Each item is a yes/no or a c
 
 **Code examples**
 - [ ] `typescript` for annotated API code; `js` for plain JavaScript; `jsx` for JSX; correct tag per §Language Tags
-- [ ] JSX is the only example syntax in every fenced block (§Example Syntax (JSX Default)); audit-enforced, deliberately outside `bun lint:structure` — example syntax is judgment
+- [ ] JSX is the only example syntax in every fenced block (§Example Syntax (JSX Default)); audit-enforced, deliberately outside `vp run lint:structure` — example syntax is judgment
 - [ ] No upstream-catalog references (shadcn, Radix, "the ref") in component docs — provenance lives in `packages/ui/README.md` and `ui-comparison.md` (§Concept Docs → Rules)
-- [ ] Attribute values written directly, never function-wrapped — `bun lint:structure` bans function-wrapped `class`/`style`/`title`/`href`/`id` inside jsx/tsx fences (§Code Examples → Example Code Style)
+- [ ] Attribute values written directly, never function-wrapped — `vp run lint:structure` bans function-wrapped `class`/`style`/`title`/`href`/`id` inside jsx/tsx fences (§Code Examples → Example Code Style)
 - [ ] Zero-arg fn/signal bindings bare (`{fn}`, `="${fn}"`) — never `{() => fn()}`; wrappers only when they consume a param, preserve a receiver, or compose; mixed-string attribute values keep call syntax (§Code Examples → Example Code Style)
-- [ ] Multi-prop component prop types extracted to a named `type` declared above the component; audit-policed — inline multi-prop types are not mechanically detectable, so `bun lint:structure` skips them (§Code Examples → Example Code Style)
-- [ ] No `unknown` annotation on any `children` prop — always `HellaChildren` from `@hellajs/dom`; enforced by `bun lint:structure` (`children??: unknown` banned) (§Code Examples → Example Code Style)
-- [ ] `css()` / `style()` calls multiline, one property per line, single-property calls included; enforced by `bun lint:structure` (§Code Examples → Example Code Style)
+- [ ] Multi-prop component prop types extracted to a named `type` declared above the component; audit-policed — inline multi-prop types are not mechanically detectable, so `vp run lint:structure` skips them (§Code Examples → Example Code Style)
+- [ ] No `unknown` annotation on any `children` prop — always `HellaChildren` from `@hellajs/dom`; enforced by `vp run lint:structure` (`children??: unknown` banned) (§Code Examples → Example Code Style)
+- [ ] `css()` / `style()` calls multiline, one property per line, single-property calls included; enforced by `vp run lint:structure` (§Code Examples → Example Code Style)
 - [ ] Imports shown (package imports `@hellajs/...`, never relative); first example imports the documented export
 - [ ] No test-framework assertions (`expect` / `toBe` / `describe` / `it` / `test`) — use comments and `console.log`
 - [ ] No single-letter variable names (well-known `i`, `x`, `fn` excepted)
@@ -766,7 +766,7 @@ Run this when holding a Docs file (`.mdx` / `.md`). Each item is a yes/no or a c
 - [ ] Present tense, no hedging; tone matches doc type (API = factual, Concept = educational, Pattern = terse)
 
 **Typography**
-- [ ] No em/en dashes or their HTML entities in any user-facing file (prose, tables, frontmatter descriptions, code-block comments); numeric ranges use ASCII hyphens; enforced by `bun em-dash` (composed into `bun lint:guards`)
+- [ ] No em/en dashes or their HTML entities in any user-facing file (prose, tables, frontmatter descriptions, code-block comments); numeric ranges use ASCII hyphens; enforced by `vp run em-dash` (composed into `vp run lint:guards`)
 
 **Length**
 - [ ] Within the healthy range per §Length Targets, or beyond a flag line with trim/split action taken; the range-to-flag zone is judgment, not a finding

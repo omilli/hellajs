@@ -29,7 +29,8 @@ export const scrollbar = style("scroll-area-scrollbar", {
   padding: "1px",
   touchAction: "none",
   userSelect: "none",
-  transitionProperty: "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke",
+  transitionProperty:
+    "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke",
   transitionDuration: "150ms",
   transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
   "&[data-orientation='vertical']": {

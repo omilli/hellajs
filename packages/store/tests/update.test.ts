@@ -1,18 +1,18 @@
-import { describe, test, expect, mock } from "bun:test";
+import { describe, test, expect, vi } from "vite-plus/test";
 import { batch, effect } from "@hellajs/core";
-import { store } from "@hellajs/store/bundle";
+import { store } from "@hellajs/store";
 
 describe("store", () => {
   describe("update", () => {
     test("performs partial updates", () => {
       const user = store({
         profile: { name: "Alice", email: "alice@example.com" },
-        settings: { theme: "light", notifications: true }
+        settings: { theme: "light", notifications: true },
       });
 
       user.$update({
         profile: { email: "alice.doe@example.com" },
-        settings: { theme: "dark" }
+        settings: { theme: "dark" },
       });
 
       expect(user.profile.name()).toBe("Alice");
@@ -34,7 +34,7 @@ describe("store", () => {
     });
 
     test("throws on function-valued properties without invoking them", () => {
-      const onSave = mock(() => "old");
+      const onSave = vi.fn(() => "old");
       const data = store({ onSave, count: 0 });
 
       expect(() => {
@@ -48,11 +48,11 @@ describe("store", () => {
     });
 
     test("throws on function reassignment in draft updates", () => {
-      const onSave = mock(() => "old");
+      const onSave = vi.fn(() => "old");
       const data = store({ onSave, count: 0 });
 
       expect(() => {
-        data.$update(draft => {
+        data.$update((draft) => {
           // @ts-expect-error initial infers onSave as Mock<() => string>; the draft path accepts any function value
           draft.onSave = () => "new";
           draft.count = 1;
@@ -87,10 +87,10 @@ describe("store", () => {
       const data = store({
         name: "John",
         age: 30,
-        settings: { theme: "light" }
+        settings: { theme: "light" },
       });
 
-      data.$update(draft => {
+      data.$update((draft) => {
         draft.name = "Jane";
         draft.age = 25;
       });
@@ -103,10 +103,10 @@ describe("store", () => {
     test("handles array mutations", () => {
       const data = store({
         items: [1, 2, 3],
-        count: 0
+        count: 0,
       });
 
-      data.$update(draft => {
+      data.$update((draft) => {
         draft.items.push(4, 5);
         draft.count = draft.items.length;
       });
@@ -120,12 +120,12 @@ describe("store", () => {
         user: {
           profile: {
             name: "John",
-            email: "john@example.com"
-          }
-        }
+            email: "john@example.com",
+          },
+        },
       });
 
-      data.$update(draft => {
+      data.$update((draft) => {
         draft.user.profile.name = "Jane";
         draft.user.profile.email = "jane@example.com";
       });
@@ -136,10 +136,10 @@ describe("store", () => {
 
     test("handles array splice and pop", () => {
       const data = store({
-        items: [1, 2, 3, 4, 5]
+        items: [1, 2, 3, 4, 5],
       });
 
-      data.$update(draft => {
+      data.$update((draft) => {
         draft.items.splice(1, 2);
         draft.items.pop();
       });
@@ -150,13 +150,13 @@ describe("store", () => {
     test("changes primitive to object in draft", () => {
       const data = store<{
         payload: string | { nested: boolean; value: string };
-        other: number
+        other: number;
       }>({
         payload: "string",
-        other: 123
+        other: 123,
       });
 
-      data.$update(draft => {
+      data.$update((draft) => {
         draft.payload = { nested: true, value: "changed" };
       });
 
@@ -167,7 +167,7 @@ describe("store", () => {
     test("detects changed array elements in draft", () => {
       const data = store({ items: [1, 2, 3] });
 
-      data.$update(draft => {
+      data.$update((draft) => {
         draft.items[1] = 99;
       });
 
@@ -178,11 +178,11 @@ describe("store", () => {
       const data = store({
         a: 1,
         b: 2,
-        c: 3
+        c: 3,
       });
 
-      const aTracker = mock(() => { });
-      const bTracker = mock(() => { });
+      const aTracker = vi.fn(() => {});
+      const bTracker = vi.fn(() => {});
 
       effect(() => {
         data.a();
@@ -194,7 +194,7 @@ describe("store", () => {
         bTracker();
       });
 
-      data.$update(draft => {
+      data.$update((draft) => {
         draft.a = 1;
         draft.b = 20;
       });
@@ -209,11 +209,11 @@ describe("store", () => {
     test("unchanged arrays do not trigger updates", () => {
       const data = store({
         items: [1, 2, 3],
-        count: 0
+        count: 0,
       });
 
-      const itemsTracker = mock(() => { });
-      const countTracker = mock(() => { });
+      const itemsTracker = vi.fn(() => {});
+      const countTracker = vi.fn(() => {});
 
       effect(() => {
         data.items();
@@ -225,7 +225,7 @@ describe("store", () => {
         countTracker();
       });
 
-      data.$update(draft => {
+      data.$update((draft) => {
         // Access items without mutating — count change is the only write
         draft.count = 10;
       });
@@ -245,14 +245,14 @@ describe("store", () => {
 
     test("empty draft function is a no-op", () => {
       const data = store({ a: 1, b: 2 });
-      data.$update(() => { });
+      data.$update(() => {});
       expect(data.a()).toBe(1);
       expect(data.b()).toBe(2);
     });
 
     test("batched store updates trigger effects once", () => {
       const data = store({ x: 0, y: 0 });
-      const tracker = mock(() => { });
+      const tracker = vi.fn(() => {});
 
       effect(() => {
         data.x();
@@ -274,7 +274,7 @@ describe("store", () => {
 
     test("batch wraps update(draft)", () => {
       const data = store({ x: 0, y: 0 });
-      const tracker = mock(() => { });
+      const tracker = vi.fn(() => {});
 
       effect(() => {
         data.x();
@@ -285,7 +285,7 @@ describe("store", () => {
       expect(tracker).toHaveBeenCalledTimes(1);
 
       batch(() => {
-        data.$update(draft => {
+        data.$update((draft) => {
           draft.x = 1;
           draft.y = 2;
         });
@@ -305,7 +305,7 @@ describe("store", () => {
       // Composed leaf members type as Signal<number>; the runtime write-through is the scenario under test
       // composed leaf members type as Signal<number>; the runtime write-through is the scenario under test
       expect(() => outer.inner.$update({ value: 5 })).toThrow(
-        '[store] $update: settable key "value" must hold a signal, received number'
+        '[store] $update: settable key "value" must hold a signal, received number',
       );
     });
 
@@ -317,7 +317,7 @@ describe("store", () => {
       outer.inner.value = 42;
       // composed leaf members type as Signal<number>; the runtime write-through is the scenario under test
       expect(() => outer.inner.$update({ value: 5 })).toThrow(
-        '[store] $update: settable key "value" must hold a signal, received number'
+        '[store] $update: settable key "value" must hold a signal, received number',
       );
 
       inner.$update({ value: 5 });
@@ -333,7 +333,7 @@ describe("store", () => {
 
       // composed leaf members type as Signal<number>; the runtime write-through is the scenario under test
       expect(() => outer.inner.$update({ value: 5 })).toThrow(
-        '[store] $update: settable key "value" must hold a signal, received undefined'
+        '[store] $update: settable key "value" must hold a signal, received undefined',
       );
     });
   });

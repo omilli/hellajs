@@ -1,6 +1,21 @@
-import type { CacheEntry, CacheConfig, CacheUpdate, ResourceCache, CacheMapView, PrefetchOptions } from "./types/cache";
+import type {
+  CacheEntry,
+  CacheConfig,
+  CacheUpdate,
+  ResourceCache,
+  CacheMapView,
+  PrefetchOptions,
+} from "./types/cache";
 import type { Resource } from "./types/resource";
-import { hasNavigator, hasWindow, isFunction, isString, isNumber, isBoolean, isObject } from "./internal/core";
+import {
+  hasNavigator,
+  hasWindow,
+  isFunction,
+  isString,
+  isNumber,
+  isBoolean,
+  isObject,
+} from "./internal/core";
 import { resolveRetryConfig, fetchWithRetry } from "./internal/retry";
 import { wireRequestControls } from "./internal/abort";
 import { getOngoing, setOngoing, deleteOngoingIf } from "./internal/dedupe";
@@ -106,7 +121,13 @@ export function cleanupExpiredCache() {
 }
 
 /** @internal Writes data to the cache scope; no-op when cacheTime is 0. */
-export function setCacheData<T>(scope: unknown, key: unknown, data: T, cacheTime = 0, staleTime = 0): void {
+export function setCacheData<T>(
+  scope: unknown,
+  key: unknown,
+  data: T,
+  cacheTime = 0,
+  staleTime = 0,
+): void {
   if (!cacheTime) return;
 
   cleanupExpiredCache();
@@ -117,7 +138,7 @@ export function setCacheData<T>(scope: unknown, key: unknown, data: T, cacheTime
     timestamp: now,
     cacheTime,
     staleTime,
-    lastAccess: now
+    lastAccess: now,
   } as CacheEntry<T>);
 
   const maxSize = cacheConfig.maxSize;
@@ -125,7 +146,7 @@ export function setCacheData<T>(scope: unknown, key: unknown, data: T, cacheTime
     const size = totalSize();
     const entriesToEvict = size - maxSize;
 
-    const allEntries: Array<{ scope: unknown, key: unknown, lastAccess: number }> = [];
+    const allEntries: Array<{ scope: unknown; key: unknown; lastAccess: number }> = [];
     const scopeEntries = Array.from(cacheMap.entries());
     let si = 0;
     const sLen = scopeEntries.length;
@@ -170,7 +191,7 @@ export function getCacheData<T = unknown>(scope: unknown, key: unknown): T | und
 export function updateCacheData<T>(
   scope: unknown,
   key: unknown,
-  updater: T | ((old: T | undefined) => T)
+  updater: T | ((old: T | undefined) => T),
 ): boolean {
   const inner = cacheMap.get(scope);
   if (!inner) return false;
@@ -193,7 +214,9 @@ export function updateCacheData<T>(
 }
 
 const flatView: CacheMapView = {
-  get size() { return totalSize(); },
+  get size() {
+    return totalSize();
+  },
   get(key: unknown) {
     const normalized = stableKey(key);
     const scopes = Array.from(cacheMap.values());
@@ -218,7 +241,9 @@ const flatView: CacheMapView = {
     }
     return false;
   },
-  clear() { cacheMap.clear(); },
+  clear() {
+    cacheMap.clear();
+  },
 };
 
 /**
@@ -242,24 +267,45 @@ const invalidateGlobal = (key: unknown): void => {
 
 /** Global cache singleton with cross-scope set/get/update/invalidate operations. */
 export const resourceCache: ResourceCache = {
-  get map() { return flatView; },
-  get config() { return { ...cacheConfig }; },
+  get map() {
+    return flatView;
+  },
+  get config() {
+    return { ...cacheConfig };
+  },
   setConfig: (config: Partial<CacheConfig>) => {
     if (!isObject(config) || Array.isArray(config))
       throw new Error("[resource] setConfig: config must be an object, received " + config);
-    if (config.maxSize !== undefined && (!isNumber(config.maxSize) || Number.isNaN(config.maxSize) || config.maxSize < 0))
-      throw new Error("[resource] setConfig: maxSize must be a non-negative number, received " + config.maxSize);
+    if (
+      config.maxSize !== undefined &&
+      (!isNumber(config.maxSize) || Number.isNaN(config.maxSize) || config.maxSize < 0)
+    )
+      throw new Error(
+        "[resource] setConfig: maxSize must be a non-negative number, received " + config.maxSize,
+      );
     if (config.enableLRU !== undefined && !isBoolean(config.enableLRU))
-      throw new Error("[resource] setConfig: enableLRU must be a boolean, received " + config.enableLRU);
+      throw new Error(
+        "[resource] setConfig: enableLRU must be a boolean, received " + config.enableLRU,
+      );
     cacheConfig = { ...cacheConfig, ...config };
   },
   set: <K, T>(key: K, data: T, cacheTime: number, staleTime = 0) => {
     if (cacheTime === undefined)
       throw new Error("[resource] set: cacheTime is required, received undefined");
-    if (cacheTime !== undefined && (!isNumber(cacheTime) || Number.isNaN(cacheTime) || cacheTime < 0))
-      throw new Error("[resource] set: cacheTime must be a non-negative number, received " + cacheTime);
-    if (staleTime !== undefined && (!isNumber(staleTime) || Number.isNaN(staleTime) || staleTime < 0))
-      throw new Error("[resource] set: staleTime must be a non-negative number, received " + staleTime);
+    if (
+      cacheTime !== undefined &&
+      (!isNumber(cacheTime) || Number.isNaN(cacheTime) || cacheTime < 0)
+    )
+      throw new Error(
+        "[resource] set: cacheTime must be a non-negative number, received " + cacheTime,
+      );
+    if (
+      staleTime !== undefined &&
+      (!isNumber(staleTime) || Number.isNaN(staleTime) || staleTime < 0)
+    )
+      throw new Error(
+        "[resource] set: staleTime must be a non-negative number, received " + staleTime,
+      );
     setCacheData(PUBLIC_SCOPE, stableKey(key), data, cacheTime, staleTime);
     return key;
   },
@@ -282,7 +328,8 @@ export const resourceCache: ResourceCache = {
     return undefined;
   },
   update: <T>(key: unknown, updater: T | ((old: T | undefined) => T)): boolean => {
-    if (updater === undefined) throw new Error("[resource] update: updater is required, received undefined");
+    if (updater === undefined)
+      throw new Error("[resource] update: updater is required, received undefined");
     const normalized = stableKey(key);
     const scopeEntries = Array.from(cacheMap.entries());
     let i = 0;
@@ -392,9 +439,21 @@ export const resourceCache: ResourceCache = {
     if (!isObject(options))
       throw new Error("[resource] prefetch: options must be an object, received " + typeof options);
     if (!isFunction(options.fetcher))
-      throw new Error("[resource] prefetch: fetcher must be a function, received " + typeof options.fetcher);
+      throw new Error(
+        "[resource] prefetch: fetcher must be a function, received " + typeof options.fetcher,
+      );
 
-    const { fetcher, key, cacheTime = 0, staleTime, timeout, abortSignal, retry = 0, retryDelay = 1000, deduplicate = true } = options;
+    const {
+      fetcher,
+      key,
+      cacheTime = 0,
+      staleTime,
+      timeout,
+      abortSignal,
+      retry = 0,
+      retryDelay = 1000,
+      deduplicate = true,
+    } = options;
     // Structural key: dedup and cache compare plain objects/arrays by shape,
     // while the fetcher receives the raw key unchanged
     const normalizedKey = stableKey(key);
@@ -420,7 +479,7 @@ export const resourceCache: ResourceCache = {
 
     if (deduplicate) {
       setOngoing(fetcher, normalizedKey, request);
-      requestPromise.catch(() => { });
+      requestPromise.catch(() => {});
     }
 
     const retryConfig = resolveRetryConfig(retry, retryDelay);

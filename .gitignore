@@ -1,5 +1,10 @@
-# dependencies (bun install)
+# dependencies (npm install)
 node_modules
+
+# package manager lockfiles: package-lock.json is committed; foreign locks are puller-owned noise
+bun.lock
+pnpm-lock.yaml
+yarn.lock
 
 # output
 out

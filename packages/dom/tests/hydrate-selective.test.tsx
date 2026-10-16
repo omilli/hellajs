@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
 import { hydrate, Suspense } from "@hellajs/dom";
@@ -28,7 +28,8 @@ const streamWithoutTemplates = async (node: HellaNode | (() => HellaNode)) => {
 };
 
 /** The app root's full text — the whole rendered surface (memory 034), excluding the stream's inert <script> baggage. */
-const rootText = (container: Element): string => container.querySelector("#root")!.textContent ?? "";
+const rootText = (container: Element): string =>
+  container.querySelector("#root")!.textContent ?? "";
 
 /** Microtask-hop poll until selector matches — MutationObserver delivery needs no macrotask (HappyDOM WeakRef GC hazard). */
 const untilAdopted = async (container: Element, selector: string): Promise<void> => {
@@ -40,103 +41,165 @@ const untilAdopted = async (container: Element, selector: string): Promise<void>
 
 describe("dom hydrate selective hydration", () => {
   test("defers a region whose staged template has not arrived while the document streams", async () => {
-    const producer = mock(() => <b id="b">x</b> as HellaNode);
-    const App = () => <div id="root"><Suspense fallback={(<i id="fb">wait</i>)}>{producer}</Suspense></div>;
-    const { container } = await streamWithoutTemplates(<App></App> as HellaNode);
-    producer.mockClear();   // the server walk already resolved the child into the (now removed) template
+    const producer = vi.fn(() => (<b id="b">x</b>) as HellaNode);
+    const App = () => (
+      <div id="root">
+        <Suspense fallback={<i id="fb">wait</i>}>{producer}</Suspense>
+      </div>
+    );
+    const { container } = await streamWithoutTemplates((<App></App>) as HellaNode);
+    producer.mockClear(); // the server walk already resolved the child into the (now removed) template
     await withReadyState("loading", async () => {
       hydrate(<App></App>, container);
-      expect(producer).not.toHaveBeenCalled();   // deferred — children fn not re-invoked, no re-suspension
-      expect(container.querySelector("#fb")).not.toBeNull();   // fallback stays mounted
+      expect(producer).not.toHaveBeenCalled(); // deferred — children fn not re-invoked, no re-suspension
+      expect(container.querySelector("#fb")).not.toBeNull(); // fallback stays mounted
       expect(rootText(container)).toBe("wait");
     });
   });
 
   test("adopts the region reactively when the staged template arrives", async () => {
     const count = signal(0);
-    const App = () => <div id="root"><Suspense fallback={(<i id="fb">wait</i>)}><b id="b" data-n={count}>x</b></Suspense></div>;
-    const { container, templates } = await streamWithoutTemplates(<App></App> as HellaNode);
+    const App = () => (
+      <div id="root">
+        <Suspense fallback={<i id="fb">wait</i>}>
+          <b id="b" data-n={count}>
+            x
+          </b>
+        </Suspense>
+      </div>
+    );
+    const { container, templates } = await streamWithoutTemplates((<App></App>) as HellaNode);
     await withReadyState("loading", async () => {
       hydrate(<App></App>, container);
-      container.appendChild(document.createElement("span"));   // unrelated mutation — the pending region must survive the recheck
+      container.appendChild(document.createElement("span")); // unrelated mutation — the pending region must survive the recheck
       await delay();
       expect(container.querySelector("#fb")).not.toBeNull();
-      container.appendChild(templates[0]!);   // simulated late arrival
+      container.appendChild(templates[0]!); // simulated late arrival
       await untilAdopted(container, "#b");
-      expect(container.querySelector("#fb")).toBeNull();   // fallback swapped out
-      expect(container.querySelector("template")).toBeNull();   // template consumed
+      expect(container.querySelector("#fb")).toBeNull(); // fallback swapped out
+      expect(container.querySelector("template")).toBeNull(); // template consumed
       expect(rootText(container)).toBe("x");
     });
     const b = container.querySelector("#b")!;
     expect(b.getAttribute("data-n")).toBe("0");
     count(7);
     flush();
-    expect(b.getAttribute("data-n")).toBe("7");   // adopted + reactive
+    expect(b.getAttribute("data-n")).toBe("7"); // adopted + reactive
   });
 
   test("replays a click buffered on the fallback once the region adopts", async () => {
-    const handler = mock(() => {});
-    const App = () => <div id="root"><Suspense fallback={(<button id="fb" type="button">wait</button>)}><button id="b" type="button" on:click={handler}>go</button></Suspense></div>;
-    const { container, templates } = await streamWithoutTemplates(<App></App> as HellaNode);
+    const handler = vi.fn(() => {});
+    const App = () => (
+      <div id="root">
+        <Suspense
+          fallback={
+            <button id="fb" type="button">
+              wait
+            </button>
+          }
+        >
+          <button id="b" type="button" on:click={handler}>
+            go
+          </button>
+        </Suspense>
+      </div>
+    );
+    const { container, templates } = await streamWithoutTemplates((<App></App>) as HellaNode);
     await withReadyState("loading", async () => {
       hydrate(<App></App>, container);
       container.querySelector("#fb")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-      expect(handler).not.toHaveBeenCalled();   // region unhydrated — nothing is wired yet
+      expect(handler).not.toHaveBeenCalled(); // region unhydrated — nothing is wired yet
       container.appendChild(templates[0]!);
       await untilAdopted(container, "#b");
-      expect(handler).toHaveBeenCalledTimes(1);   // buffered, then positionally replayed on the resolved button
+      expect(handler).toHaveBeenCalledTimes(1); // buffered, then positionally replayed on the resolved button
       expect(rootText(container)).toBe("go");
     });
   });
 
   test("fires a click outside any pending region immediately, without buffering it", async () => {
-    const handler = mock(() => {});
-    const App = () => <div id="root"><button id="shell" on:click={handler}>shell</button><Suspense fallback={(<i id="fb">wait</i>)}><b id="b">x</b></Suspense></div>;
-    const { container, templates } = await streamWithoutTemplates(<App></App> as HellaNode);
+    const handler = vi.fn(() => {});
+    const App = () => (
+      <div id="root">
+        <button id="shell" on:click={handler}>
+          shell
+        </button>
+        <Suspense fallback={<i id="fb">wait</i>}>
+          <b id="b">x</b>
+        </Suspense>
+      </div>
+    );
+    const { container, templates } = await streamWithoutTemplates((<App></App>) as HellaNode);
     await withReadyState("loading", async () => {
       hydrate(<App></App>, container);
       container.querySelector("#shell")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-      expect(handler).toHaveBeenCalledTimes(1);   // shell interactivity is live during deferral
+      expect(handler).toHaveBeenCalledTimes(1); // shell interactivity is live during deferral
       container.appendChild(templates[0]!);
       await untilAdopted(container, "#b");
-      expect(handler).toHaveBeenCalledTimes(1);   // never buffered, never replayed
+      expect(handler).toHaveBeenCalledTimes(1); // never buffered, never replayed
     });
   });
 
   test("does not buffer or replay events on an already-adopted region", async () => {
-    const handler = mock(() => {});
-    const App = () => <div id="root"><Suspense fallback={(<i id="fb">wait</i>)}><button id="b" on:click={handler}>go</button></Suspense></div>;
-    const { container, templates } = await streamWithoutTemplates(<App></App> as HellaNode);
+    const handler = vi.fn(() => {});
+    const App = () => (
+      <div id="root">
+        <Suspense fallback={<i id="fb">wait</i>}>
+          <button id="b" on:click={handler}>
+            go
+          </button>
+        </Suspense>
+      </div>
+    );
+    const { container, templates } = await streamWithoutTemplates((<App></App>) as HellaNode);
     await withReadyState("loading", async () => {
       hydrate(<App></App>, container);
       container.appendChild(templates[0]!);
       await untilAdopted(container, "#b");
       container.querySelector("#b")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
       expect(handler).toHaveBeenCalledTimes(1);
-      container.appendChild(document.createElement("span"));   // post-adoption mutation — nothing may replay
+      container.appendChild(document.createElement("span")); // post-adoption mutation — nothing may replay
       await delay();
       expect(handler).toHaveBeenCalledTimes(1);
     });
   });
 
   test("drops a buffered event whose target has no connected counterpart after the swap", async () => {
-    const handler = mock(() => {});
-    const App = () => <div id="root"><Suspense fallback={(<><i>one</i><i id="two">two</i></>)}><button id="b" on:click={handler}>go</button></Suspense></div>;
-    const { container, templates } = await streamWithoutTemplates(<App></App> as HellaNode);
+    const handler = vi.fn(() => {});
+    const App = () => (
+      <div id="root">
+        <Suspense
+          fallback={
+            <>
+              <i>one</i>
+              <i id="two">two</i>
+            </>
+          }
+        >
+          <button id="b" on:click={handler}>
+            go
+          </button>
+        </Suspense>
+      </div>
+    );
+    const { container, templates } = await streamWithoutTemplates((<App></App>) as HellaNode);
     await withReadyState("loading", async () => {
       hydrate(<App></App>, container);
-      container.querySelector("#two")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));   // second fallback node — the single resolved node has no index-1 counterpart
+      container.querySelector("#two")!.dispatchEvent(new MouseEvent("click", { bubbles: true })); // second fallback node — the single resolved node has no index-1 counterpart
       container.appendChild(templates[0]!);
       await untilAdopted(container, "#b");
-      expect(handler).not.toHaveBeenCalled();   // entry dropped, not replayed onto the resolved button
+      expect(handler).not.toHaveBeenCalled(); // entry dropped, not replayed onto the resolved button
       expect(rootText(container)).toBe("go");
     });
   });
 
   test("degrades a deferred region to client-side re-suspension when the stream dies", async () => {
-    const producer = mock(() => Promise.resolve(<p id="late">resolved</p> as HellaNode));
-    const App = () => <div id="root"><Suspense fallback={(<i id="fb">wait</i>)}>{producer}</Suspense></div>;
-    const { container } = await streamWithoutTemplates(<App></App> as HellaNode);
+    const producer = vi.fn(() => Promise.resolve((<p id="late">resolved</p>) as HellaNode));
+    const App = () => (
+      <div id="root">
+        <Suspense fallback={<i id="fb">wait</i>}>{producer}</Suspense>
+      </div>
+    );
+    const { container } = await streamWithoutTemplates((<App></App>) as HellaNode);
     producer.mockClear();
     await withReadyState("loading", async () => {
       hydrate(<App></App>, container);
@@ -144,63 +207,103 @@ describe("dom hydrate selective hydration", () => {
       expect(container.querySelector("#fb")).not.toBeNull();
     });
     await withReadyState("complete", async () => {
-      suppressWarn(() => document.dispatchEvent(new Event("readystatechange")));   // the degrade path warns
+      suppressWarn(() => document.dispatchEvent(new Event("readystatechange"))); // the degrade path warns
     });
-    expect(producer).toHaveBeenCalledTimes(1);   // re-suspended client-side
-    await delay(0);   // macrotask — suspendChild's .then chain settles
+    expect(producer).toHaveBeenCalledTimes(1); // re-suspended client-side
+    await delay(0); // macrotask — suspendChild's .then chain settles
     expect(container.querySelector("#fb")).toBeNull();
     expect(rootText(container)).toBe("resolved");
   });
 
   test("adopts synchronously when the template is present and parsing is done", async () => {
     const count = signal(0);
-    const App = () => <div id="root"><Suspense fallback={(<i id="fb">wait</i>)}><b id="b" data-n={count}>x</b></Suspense></div>;
-    const container = await streamContainer(<App></App> as HellaNode);   // no shadowing — the test env's readyState never defers
+    const App = () => (
+      <div id="root">
+        <Suspense fallback={<i id="fb">wait</i>}>
+          <b id="b" data-n={count}>
+            x
+          </b>
+        </Suspense>
+      </div>
+    );
+    const container = await streamContainer((<App></App>) as HellaNode); // no shadowing — the test env's readyState never defers
     hydrate(<App></App>, container);
-    expect(container.querySelector("#fb")).toBeNull();   // swapped + adopted in the hydrate pass
+    expect(container.querySelector("#fb")).toBeNull(); // swapped + adopted in the hydrate pass
     expect(rootText(container)).toBe("x");
     const b = container.querySelector("#b")!;
     count(7);
     flush();
-    expect(b.getAttribute("data-n")).toBe("7");   // reactive — no regression vs the hydrate-suspense suite
+    expect(b.getAttribute("data-n")).toBe("7"); // reactive — no regression vs the hydrate-suspense suite
   });
 
   test("hydrates two regions independently when one stage is present and one deferred", async () => {
     const count = signal(0);
-    const App = () => <div id="root"><Suspense fallback={(<i id="fb1">w1</i>)}><b id="b1" data-n={count}>a</b></Suspense><Suspense fallback={(<i id="fb2">w2</i>)}><b id="b2" data-n={count}>b</b></Suspense></div>;
-    const container = await streamContainer(<App></App> as HellaNode);
-    const deferred = Array.from(container.querySelectorAll("template")).find((tpl) => tpl.content.querySelector("#b2"))!;
+    const App = () => (
+      <div id="root">
+        <Suspense fallback={<i id="fb1">w1</i>}>
+          <b id="b1" data-n={count}>
+            a
+          </b>
+        </Suspense>
+        <Suspense fallback={<i id="fb2">w2</i>}>
+          <b id="b2" data-n={count}>
+            b
+          </b>
+        </Suspense>
+      </div>
+    );
+    const container = await streamContainer((<App></App>) as HellaNode);
+    const deferred = Array.from(container.querySelectorAll("template")).find((tpl) =>
+      tpl.content.querySelector("#b2"),
+    )!;
     deferred.remove();
     await withReadyState("loading", async () => {
       hydrate(<App></App>, container);
-      expect(container.querySelector("#b1")).not.toBeNull();   // present stage adopted synchronously
-      expect(container.querySelector("#fb2")).not.toBeNull();   // missing stage deferred — fallback stays
+      expect(container.querySelector("#b1")).not.toBeNull(); // present stage adopted synchronously
+      expect(container.querySelector("#fb2")).not.toBeNull(); // missing stage deferred — fallback stays
       expect(rootText(container)).toBe("aw2");
       count(5);
       flush();
-      expect(container.querySelector("#b1")!.getAttribute("data-n")).toBe("5");   // region 1 live while region 2 waits
+      expect(container.querySelector("#b1")!.getAttribute("data-n")).toBe("5"); // region 1 live while region 2 waits
       container.appendChild(deferred);
       await untilAdopted(container, "#b2");
       expect(container.querySelector("#fb2")).toBeNull();
       expect(rootText(container)).toBe("ab");
-      expect(container.querySelector("#b2")!.getAttribute("data-n")).toBe("5");   // adopted at the current signal value
+      expect(container.querySelector("#b2")!.getAttribute("data-n")).toBe("5"); // adopted at the current signal value
     });
   });
 
   test("keeps a region's buffered event while a sibling region adopts, then replays it", async () => {
-    const handler = mock(() => {});
-    const App = () => <div id="root"><Suspense fallback={(<i id="fb1">w1</i>)}><b id="b1">a</b></Suspense><Suspense fallback={(<button id="fb2" type="button">w2</button>)}><button id="b2" type="button" on:click={handler}>b</button></Suspense></div>;
-    const { container, templates } = await streamWithoutTemplates(<App></App> as HellaNode);
+    const handler = vi.fn(() => {});
+    const App = () => (
+      <div id="root">
+        <Suspense fallback={<i id="fb1">w1</i>}>
+          <b id="b1">a</b>
+        </Suspense>
+        <Suspense
+          fallback={
+            <button id="fb2" type="button">
+              w2
+            </button>
+          }
+        >
+          <button id="b2" type="button" on:click={handler}>
+            b
+          </button>
+        </Suspense>
+      </div>
+    );
+    const { container, templates } = await streamWithoutTemplates((<App></App>) as HellaNode);
     const t1 = templates.find((tpl) => tpl.content.querySelector("#b1"))!;
     const t2 = templates.find((tpl) => tpl.content.querySelector("#b2"))!;
     await withReadyState("loading", async () => {
       hydrate(<App></App>, container);
       container.querySelector("#fb2")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-      container.appendChild(t1);   // sibling adopts first — region 2's buffered entry must survive it
+      container.appendChild(t1); // sibling adopts first — region 2's buffered entry must survive it
       await untilAdopted(container, "#b1");
       expect(handler).not.toHaveBeenCalled();
       expect(rootText(container)).toBe("aw2");
-      container.appendChild(t2);   // region 2 adopts — its buffered click replays now
+      container.appendChild(t2); // region 2 adopts — its buffered click replays now
       await untilAdopted(container, "#b2");
       expect(handler).toHaveBeenCalledTimes(1);
       expect(rootText(container)).toBe("ab");
@@ -209,8 +312,16 @@ describe("dom hydrate selective hydration", () => {
 
   test("adopts a region whose fallback was swapped out externally before recheck", async () => {
     const count = signal(0);
-    const App = () => <div id="root"><Suspense fallback={(<i id="fb">wait</i>)}><b id="b" data-n={count}>x</b></Suspense></div>;
-    const { container } = await streamWithoutTemplates(<App></App> as HellaNode);
+    const App = () => (
+      <div id="root">
+        <Suspense fallback={<i id="fb">wait</i>}>
+          <b id="b" data-n={count}>
+            x
+          </b>
+        </Suspense>
+      </div>
+    );
+    const { container } = await streamWithoutTemplates((<App></App>) as HellaNode);
     await withReadyState("loading", async () => {
       hydrate(<App></App>, container);
       const root = container.querySelector("#root")!;
@@ -218,15 +329,17 @@ describe("dom hydrate selective hydration", () => {
       b.id = "b";
       b.textContent = "x";
       // sentinel-only removal (e.g. comment-stripping middleware): the fallback is still live, so the region stays pending
-      Array.from(root.childNodes).find((n) => n.nodeType === Node.COMMENT_NODE)!.remove();
+      Array.from(root.childNodes)
+        .find((n) => n.nodeType === Node.COMMENT_NODE)!
+        .remove();
       root.appendChild(b);
       count(3);
-      for (let i = 0; i < 5; i++) await delay();   // microtask hops — let the observer recheck run
-      expect(b.hasAttribute("data-n")).toBe(false);   // not adopted while the fallback stands in
+      for (let i = 0; i < 5; i++) await delay(); // microtask hops — let the observer recheck run
+      expect(b.hasAttribute("data-n")).toBe(false); // not adopted while the fallback stands in
       // full external swap (an inline $hs that ran while the markers were intact): fallback + sentinel replaced, no template
       root.querySelector("#fb")!.remove();
       for (let i = 0; i < 50 && b.getAttribute("data-n") !== "3"; i++) await delay();
-      expect(b.getAttribute("data-n")).toBe("3");   // replacement adopted + reactive
+      expect(b.getAttribute("data-n")).toBe("3"); // replacement adopted + reactive
       expect(rootText(container)).toBe("x");
     });
   });

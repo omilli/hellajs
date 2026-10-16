@@ -3,7 +3,16 @@ import { hash, stringify } from "./internal/shared";
 import { createVarsEffect } from "./internal/reactive";
 import { hasDocument, isFunction, isPlainObject } from "./internal/core";
 import { hostQualifier } from "./internal/sheet";
-import { kebabVarName, cache, CACHE_MAX, varsRegistryStatic, varsRegistryReactive, varsResultReactive, applyRules, resolveVarsOptions } from "./internal/vars";
+import {
+  kebabVarName,
+  cache,
+  CACHE_MAX,
+  varsRegistryStatic,
+  varsRegistryReactive,
+  varsResultReactive,
+  applyRules,
+  resolveVarsOptions,
+} from "./internal/vars";
 
 /**
  * Creates CSS custom properties (variables) from JavaScript objects with automatic reactivity support.
@@ -21,7 +30,8 @@ import { kebabVarName, cache, CACHE_MAX, varsRegistryStatic, varsRegistryReactiv
  * @throws {Error} When the same reactive vars object is registered a second time with differing scoped/prefix/media/layer/host options.
  */
 export function vars<T extends CSSVarInputObject>(vars: T, options: VarsOptions = {}): CSSVars<T> {
-  if (!isPlainObject(vars)) throw new Error(`[css] vars: expected a plain object, received ${String(vars)}`);
+  if (!isPlainObject(vars))
+    throw new Error(`[css] vars: expected a plain object, received ${String(vars)}`);
 
   const { flat, hasFns } = flattenVars(vars);
   const { scope, fullPrefix, media, layer, host } = resolveVarsOptions(options);
@@ -68,8 +78,16 @@ export function vars<T extends CSSVarInputObject>(vars: T, options: VarsOptions 
 
   const existingEntry = varsRegistryReactive.get(vars);
   if (existingEntry) {
-    if (scope !== existingEntry.scope || fullPrefix !== existingEntry.fullPrefix || media !== existingEntry.media || layer !== existingEntry.layer || host !== existingEntry.host) {
-      throw new Error(`[css] vars: reactive vars object already registered with different options (scoped/prefix/media/layer/host); use a separate object per scope, received ${String(vars)}`);
+    if (
+      scope !== existingEntry.scope ||
+      fullPrefix !== existingEntry.fullPrefix ||
+      media !== existingEntry.media ||
+      layer !== existingEntry.layer ||
+      host !== existingEntry.host
+    ) {
+      throw new Error(
+        `[css] vars: reactive vars object already registered with different options (scoped/prefix/media/layer/host); use a separate object per scope, received ${String(vars)}`,
+      );
     }
     existingEntry.refCount++;
     applyRules(flat, resolved);
@@ -108,7 +126,11 @@ export function vars<T extends CSSVarInputObject>(vars: T, options: VarsOptions 
  * and resolves function values. Returns a flat map and a flag indicating
  * whether any reactive functions were found.
  */
-function flattenVars(obj: Record<string, unknown>, prefix = "", result: { flat: Record<string, unknown>; hasFns: boolean } = { flat: {}, hasFns: false }): { flat: Record<string, unknown>; hasFns: boolean } {
+function flattenVars(
+  obj: Record<string, unknown>,
+  prefix = "",
+  result: { flat: Record<string, unknown>; hasFns: boolean } = { flat: {}, hasFns: false },
+): { flat: Record<string, unknown>; hasFns: boolean } {
   const keys = Object.keys(obj);
   let i = 0;
   const len = keys.length;
@@ -132,7 +154,10 @@ function flattenVars(obj: Record<string, unknown>, prefix = "", result: { flat: 
  * Builds the result proxy object with var() references from flattened vars.
  * Reconstructs nested structure using dot-separated keys.
  */
-function buildResult<T extends CSSVarInputObject>(flat: Record<string, unknown>, fullPrefix: string): CSSVars<T> {
+function buildResult<T extends CSSVarInputObject>(
+  flat: Record<string, unknown>,
+  fullPrefix: string,
+): CSSVars<T> {
   const result: Record<string, unknown> = {};
   const flatKeys = Object.keys(flat);
   let i = 0;

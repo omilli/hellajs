@@ -15,7 +15,8 @@ import type { KeyframesObject } from "./types";
  * @throws {Error} When obj is not a plain object.
  */
 export function removeKeyframes(obj: KeyframesObject): void {
-  if (!isPlainObject(obj)) throw new Error(`[css] removeKeyframes: expected a CSS object, received ${String(obj)}`);
+  if (!isPlainObject(obj))
+    throw new Error(`[css] removeKeyframes: expected a CSS object, received ${String(obj)}`);
 
   const { cssText: text } = keyframesRule(obj);
   deregisterText(text);

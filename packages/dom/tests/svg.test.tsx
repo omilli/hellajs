@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
 import { mount, hydrate, component, ForEach, Lazy, Suspense } from "@hellajs/dom";
@@ -24,14 +24,25 @@ describe("dom", () => {
     });
 
     test("mounts camelCase svg children as their SVG constructors", () => {
-      mount(<svg><clipPath id="clip"></clipPath><linearGradient id="grad"></linearGradient></svg>);
+      mount(
+        <svg>
+          <clipPath id="clip"></clipPath>
+          <linearGradient id="grad"></linearGradient>
+        </svg>,
+      );
 
       expect(document.getElementById("clip")!.constructor.name).toBe("SVGClipPathElement");
       expect(document.getElementById("grad")!.constructor.name).toBe("SVGLinearGradientElement");
     });
 
     test("resets to the HTML namespace inside <foreignObject>", () => {
-      mount(<svg><foreignObject id="host"><div id="html-child"></div></foreignObject></svg>);
+      mount(
+        <svg>
+          <foreignObject id="host">
+            <div id="html-child"></div>
+          </foreignObject>
+        </svg>,
+      );
 
       expect(document.getElementById("host")!.namespaceURI).toBe(SVG_NS);
       const div = document.getElementById("html-child")!;
@@ -40,7 +51,11 @@ describe("dom", () => {
     });
 
     test("mounts <math> and <mi> in the MathML namespace", () => {
-      mount(<math id="formula"><mi id="var">x</mi></math>);
+      mount(
+        <math id="formula">
+          <mi id="var">x</mi>
+        </math>,
+      );
 
       expect(document.getElementById("formula")!.namespaceURI).toBe(MATHML_NS);
       expect(document.getElementById("var")!.namespaceURI).toBe(MATHML_NS);
@@ -49,7 +64,14 @@ describe("dom", () => {
 
     test("mounts ForEach items in the SVG namespace under an <svg> parent", () => {
       const radii = signal([3, 5]);
-      const App = () => <svg id="list"><ForEach each={radii} use={((r: number) => <circle key={r} cx={r} cy={r} r={r}></circle>)}></ForEach></svg>;
+      const App = () => (
+        <svg id="list">
+          <ForEach
+            each={radii}
+            use={(r: number) => <circle key={r} cx={r} cy={r} r={r}></circle>}
+          ></ForEach>
+        </svg>
+      );
 
       mount(App);
 
@@ -62,7 +84,11 @@ describe("dom", () => {
 
     test("updates a reactive child inside <svg> in place", () => {
       const label = signal("a");
-      const App = () => <svg><text id="label">{label}</text></svg>;
+      const App = () => (
+        <svg>
+          <text id="label">{label}</text>
+        </svg>
+      );
 
       mount(App);
 
@@ -77,7 +103,11 @@ describe("dom", () => {
     });
 
     test("resolves Lazy children into the SVG namespace under an <svg> parent", async () => {
-      const App = () => <svg id="icon"><Lazy loader={(() => delay(<circle id="lazy-circle" r="4"></circle>))}></Lazy></svg>;
+      const App = () => (
+        <svg id="icon">
+          <Lazy loader={() => delay(<circle id="lazy-circle" r="4"></circle>)}></Lazy>
+        </svg>
+      );
 
       mount(App);
       await delay();
@@ -89,7 +119,11 @@ describe("dom", () => {
 
     test("mounts a JSX-shaped children array in the SVG namespace", () => {
       // JSX compiles <Suspense><circle/></Suspense> to component(Suspense, { children: [node] }) — an array
-      mount(<svg id="icon">{(component(Suspense, { children: [<circle id="jsx-circle" r="2"></circle>] }))}</svg>);
+      mount(
+        <svg id="icon">
+          {component(Suspense, { children: [<circle id="jsx-circle" r="2"></circle>] })}
+        </svg>,
+      );
 
       const circle = document.getElementById("jsx-circle")!;
       expect(circle.constructor.name).toBe("SVGCircleElement");
@@ -98,7 +132,13 @@ describe("dom", () => {
 
     test("hydrates an ssr'd svg region without mismatch warnings and wires reactivity", () => {
       const width = signal("24");
-      const App = () => <svg id="icon" width={width}><clipPath id="clip"><rect width="10"></rect></clipPath></svg>;
+      const App = () => (
+        <svg id="icon" width={width}>
+          <clipPath id="clip">
+            <rect width="10"></rect>
+          </clipPath>
+        </svg>
+      );
       const container = ssrContainer(<App></App>);
       const clipBefore = container.querySelector("#clip")!;
 

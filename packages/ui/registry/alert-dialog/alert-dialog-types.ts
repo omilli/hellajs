@@ -4,7 +4,15 @@ export type AlertDialogState = () => "open" | "closed";
 
 export type ActionVariant = "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
 
-export type ActionSize = "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
+export type ActionSize =
+  | "default"
+  | "xs"
+  | "sm"
+  | "lg"
+  | "icon"
+  | "icon-xs"
+  | "icon-sm"
+  | "icon-lg";
 
 export interface AlertDialogOverlayProps extends HTMLAttributes<"div"> {
   state?: AlertDialogState;

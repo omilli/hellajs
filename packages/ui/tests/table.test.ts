@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { resetTestState } from "@utils/test-helpers.js";
 import {
   assertAttrForwarded,
@@ -26,9 +26,31 @@ const TOKENS: Record<string, string[]> = {
   Header: ["[&_tr]:border-b"],
   Body: ["[&_tr:last-child]:border-0"],
   Footer: ["border-t", "bg-muted/50", "font-medium", "[&>tr]:last:border-b-0"],
-  Row: ["border-b", "transition-colors", "hover:bg-muted/50", "has-aria-expanded:bg-muted/50", "data-[state=selected]:bg-muted"],
-  Head: ["h-10", "px-2", "text-left", "align-middle", "font-medium", "whitespace-nowrap", "text-foreground", "[&:has([role=checkbox])]:pr-0", "[&>[role=checkbox]]:translate-y-[2px]"],
-  Cell: ["p-2", "align-middle", "whitespace-nowrap", "[&:has([role=checkbox])]:pr-0", "[&>[role=checkbox]]:translate-y-[2px]"],
+  Row: [
+    "border-b",
+    "transition-colors",
+    "hover:bg-muted/50",
+    "has-aria-expanded:bg-muted/50",
+    "data-[state=selected]:bg-muted",
+  ],
+  Head: [
+    "h-10",
+    "px-2",
+    "text-left",
+    "align-middle",
+    "font-medium",
+    "whitespace-nowrap",
+    "text-foreground",
+    "[&:has([role=checkbox])]:pr-0",
+    "[&>[role=checkbox]]:translate-y-[2px]",
+  ],
+  Cell: [
+    "p-2",
+    "align-middle",
+    "whitespace-nowrap",
+    "[&:has([role=checkbox])]:pr-0",
+    "[&>[role=checkbox]]:translate-y-[2px]",
+  ],
   Caption: ["mt-4", "text-sm", "text-muted-foreground"],
 };
 
@@ -60,36 +82,47 @@ describe("table", () => {
     }
   });
 
-  test.each(tablePartVariants)("$style $part renders its tag, data-slot, and classes", (variant) => {
-    const el = renderVariant(variant, { children: [], class: "my-part" });
-    expect(el.tagName).toBe(PART_TAGS[variant.part]!);
-    expect(el.getAttribute("data-slot")).toBe(`table-${variant.part.toLowerCase()}`);
-    const tokens = classTokens(el);
-    expect(tokens.at(-1)).toBe("my-part");
-    if (variant.style === "css") {
-      expect(tokens[0]!.startsWith(`table-${variant.part.toLowerCase()}-`)).toBe(true);
-    } else {
-      for (const token of TOKENS[variant.part]!) expect(tokens).toContain(token);
-    }
-  });
-
-  test.each(tablePartVariants.filter((variant) => variant.part === "Head" || variant.part === "Cell"))(
-    "$style $part passes colspan through",
+  test.each(tablePartVariants)(
+    "$style $part renders its tag, data-slot, and classes",
     (variant) => {
-      const spanned = renderVariant(variant, { children: [], colspan: 2 });
-      expect(spanned.getAttribute("colspan")).toBe("2");
-      const plain = renderVariant(variant, { children: [] });
-      expect(plain.hasAttribute("colspan")).toBe(false);
+      const el = renderVariant(variant, { children: [], class: "my-part" });
+      expect(el.tagName).toBe(PART_TAGS[variant.part]!);
+      expect(el.getAttribute("data-slot")).toBe(`table-${variant.part.toLowerCase()}`);
+      const tokens = classTokens(el);
+      expect(tokens.at(-1)).toBe("my-part");
+      if (variant.style === "css") {
+        expect(tokens[0]!.startsWith(`table-${variant.part.toLowerCase()}-`)).toBe(true);
+      } else {
+        for (const token of TOKENS[variant.part]!) expect(tokens).toContain(token);
+      }
     },
   );
 
+  test.each(
+    tablePartVariants.filter((variant) => variant.part === "Head" || variant.part === "Cell"),
+  )("$style $part passes colspan through", (variant) => {
+    const spanned = renderVariant(variant, { children: [], colspan: 2 });
+    expect(spanned.getAttribute("colspan")).toBe("2");
+    const plain = renderVariant(variant, { children: [] });
+    expect(plain.hasAttribute("colspan")).toBe(false);
+  });
+
   test("forwards user attrs onto the table element across both styles", () => {
-    assertAttrForwarded(tableVariants, { title: "Hella" }, "title", "Hella", (el) => el.querySelector("table")!);
+    assertAttrForwarded(tableVariants, { title: "Hella" }, "title", "Hella", (el) =>
+      el.querySelector("table")!,
+    );
   });
 
   test("fires a user on:click handler on the table element across both styles", () => {
-    const onClick = mock(() => {});
-    assertHandlerForwarded(tableVariants, { "on:click": onClick }, "on:click", "click", onClick, (el) => el.querySelector("table")!);
+    const onClick = vi.fn(() => {});
+    assertHandlerForwarded(
+      tableVariants,
+      { "on:click": onClick },
+      "on:click",
+      "click",
+      onClick,
+      (el) => el.querySelector("table")!,
+    );
   });
 
   test("keeps structural parity for the full table across both styles", () => {

@@ -66,9 +66,7 @@ export function isPlainObject(value: unknown): value is Record<string, unknown> 
   const proto = Object.getPrototypeOf(value) as typeof Object.prototype | null;
 
   const hasObjectPrototype =
-    proto === null ||
-    proto === Object.prototype ||
-    Object.getPrototypeOf(proto) === null; // Cross-realm support
+    proto === null || proto === Object.prototype || Object.getPrototypeOf(proto) === null; // Cross-realm support
 
   if (!hasObjectPrototype) return false;
 
@@ -109,7 +107,7 @@ export function isObject(value: unknown): value is object {
  */
 export function objectLoop<T extends Record<string, unknown>>(
   obj: T | undefined,
-  callback: (key: string, value: unknown) => void
+  callback: (key: string, value: unknown) => void,
 ) {
   if (!obj) return;
   const keys = Object.keys(obj);
@@ -120,4 +118,4 @@ export function objectLoop<T extends Record<string, unknown>>(
     callback(key, obj[key]);
     i++;
   }
-};
+}

@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { resource, resourceCache } from "@hellajs/resource/bundle";
+import { resource, resourceCache } from "@hellajs/resource";
 
 describe("resource", () => {
   describe("structuralSharing", () => {
@@ -10,10 +10,9 @@ describe("resource", () => {
 
     test("preserves nested references across identical fetches", async () => {
       type Data = { user: { name: string; age: number }; count: number };
-      const r = resource<Data>(
-        () => delay({ user: { name: "John", age: 30 }, count: 5 }),
-        { structuralSharing: true }
-      );
+      const r = resource<Data>(() => delay({ user: { name: "John", age: 30 }, count: 5 }), {
+        structuralSharing: true,
+      });
 
       r.fetch({ force: true });
       await delay(20);
@@ -29,10 +28,9 @@ describe("resource", () => {
     test("keeps unchanged subtree references when a leaf changes", async () => {
       type Data = { profile: { name: string }; meta: { version: number } };
       let version = 0;
-      const r = resource<Data>(
-        () => delay({ profile: { name: "John" }, meta: { version } }),
-        { structuralSharing: true }
-      );
+      const r = resource<Data>(() => delay({ profile: { name: "John" }, meta: { version } }), {
+        structuralSharing: true,
+      });
 
       r.fetch({ force: true });
       await delay(20);
@@ -52,8 +50,14 @@ describe("resource", () => {
       type Data = { rows: Row[] };
       let secondValue = 20;
       const r = resource<Data>(
-        () => delay({ rows: [{ id: 1, value: 10 }, { id: 2, value: secondValue }] }),
-        { structuralSharing: true }
+        () =>
+          delay({
+            rows: [
+              { id: 1, value: 10 },
+              { id: 2, value: secondValue },
+            ],
+          }),
+        { structuralSharing: true },
       );
 
       r.fetch({ force: true });
@@ -86,10 +90,9 @@ describe("resource", () => {
 
     test("falls back to fresh value when object keys differ", async () => {
       let useB = false;
-      const r = resource(
-        () => delay(useB ? { a: 1, c: 3 } : { a: 1, b: 2 }),
-        { structuralSharing: true }
-      );
+      const r = resource(() => delay(useB ? { a: 1, c: 3 } : { a: 1, b: 2 }), {
+        structuralSharing: true,
+      });
 
       r.fetch({ force: true });
       await delay(20);
@@ -103,13 +106,10 @@ describe("resource", () => {
 
     test("applies transform after structural sharing", async () => {
       let version = 0;
-      const r = resource(
-        () => delay({ profile: { name: "John" }, version }),
-        {
-          structuralSharing: true,
-          transform: (data) => ({ label: data.profile.name, v: data.version })
-        }
-      );
+      const r = resource(() => delay({ profile: { name: "John" }, version }), {
+        structuralSharing: true,
+        transform: (data) => ({ label: data.profile.name, v: data.version }),
+      });
 
       r.fetch({ force: true });
       await delay(20);
@@ -123,14 +123,11 @@ describe("resource", () => {
 
     test("cache stores structurally-shared result", async () => {
       type Data = { items: number[] };
-      const r = resource(
-        () => delay({ items: [1, 2, 3] }),
-        {
-          key: () => "shared-list",
-          cacheTime: 60000,
-          structuralSharing: true
-        }
-      );
+      const r = resource(() => delay({ items: [1, 2, 3] }), {
+        key: () => "shared-list",
+        cacheTime: 60000,
+        structuralSharing: true,
+      });
 
       r.fetch({ force: true });
       await delay(20);

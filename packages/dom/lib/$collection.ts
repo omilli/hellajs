@@ -1,13 +1,19 @@
 import { createReactive } from "./internal/reactive";
 import { registerMultiOp, unregisterMultiOp } from "./internal/selectors";
-import type { DomWrapper, DomCollection, HellaPrimitive, HellaProps, ElementHooks } from "./types/nodes";
+import type {
+  DomWrapper,
+  DomCollection,
+  HellaPrimitive,
+  HellaProps,
+  ElementHooks,
+} from "./types/nodes";
 import type { DOMEventMap } from "./types/attributes";
 
 /**
  * Creates a reactive reference to multiple DOM elements with auto-watching.
  * Automatically applies operations to newly added elements matching the selector.
  * Use $ref for single element references without collection overhead.
- * 
+ *
  * @param selector CSS selector string
  * @returns DomCollection with bind/on/hooks/forEach chainable methods
  */
@@ -54,21 +60,24 @@ export function $collection<T extends Element = Element>(selector: string): DomC
 
   Object.defineProperty(result, "length", {
     get: () => elementWrappers.length,
-    enumerable: true
+    enumerable: true,
   });
 
   result.bind = (value: HellaPrimitive | HellaProps) => {
-    applyAndQueue(w => w.bind(value));
+    applyAndQueue((w) => w.bind(value));
     return result;
   };
 
-  result.on = <K extends keyof DOMEventMap>(event: K, handler: (this: T, event: DOMEventMap[K]) => void) => {
-    applyAndQueue(w => w.on(event, handler as EventListener));
+  result.on = <K extends keyof DOMEventMap>(
+    event: K,
+    handler: (this: T, event: DOMEventMap[K]) => void,
+  ) => {
+    applyAndQueue((w) => w.on(event, handler as EventListener));
     return result;
   };
 
   result.hooks = (hooksObj: ElementHooks) => {
-    applyAndQueue(w => w.hooks(hooksObj));
+    applyAndQueue((w) => w.hooks(hooksObj));
     return result;
   };
 

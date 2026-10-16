@@ -2,7 +2,9 @@ import { css, keyframes, style } from "@hellajs/css";
 import { tokens } from "../theme/tokens.js";
 
 const inTop = keyframes({ from: { opacity: "0", transform: "translateY(0.5rem) scale(0.95)" } });
-const inBottom = keyframes({ from: { opacity: "0", transform: "translateY(-0.5rem) scale(0.95)" } });
+const inBottom = keyframes({
+  from: { opacity: "0", transform: "translateY(-0.5rem) scale(0.95)" },
+});
 const inLeft = keyframes({ from: { opacity: "0", transform: "translateX(0.5rem) scale(0.95)" } });
 const inRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem) scale(0.95)" } });
 const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
@@ -17,7 +19,8 @@ export const base = style("combobox-wrapper", {
   minWidth: "0",
   outlineStyle: "none",
   position: "relative",
-  transition: "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
+  transition:
+    "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   width: "100%",
   "&:is(.dark *)": {
     background: `color-mix(in oklab, ${tokens.input} 30%, transparent)`,
@@ -41,9 +44,10 @@ export const base = style("combobox-wrapper", {
   "&:has([data-slot][aria-invalid='true']):has([data-slot='input-group-control']:focus-visible)": {
     boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 20%, transparent)`,
   },
-  "&:is(.dark *):has([data-slot][aria-invalid='true']):has([data-slot='input-group-control']:focus-visible)": {
-    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
-  },
+  "&:is(.dark *):has([data-slot][aria-invalid='true']):has([data-slot='input-group-control']:focus-visible)":
+    {
+      boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
+    },
 });
 
 export const input = style("combobox-input", {
@@ -58,7 +62,8 @@ export const input = style("combobox-input", {
   outlineStyle: "none",
   paddingBlock: "0.25rem",
   paddingInline: "0.75rem",
-  transition: "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
+  transition:
+    "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   width: "100%",
   "&::file-selector-button": {
     background: "transparent",
@@ -436,7 +441,8 @@ export const chips = style("combobox-chips", {
   minHeight: "2.25rem",
   paddingBlock: "0.375rem",
   paddingInline: "0.625rem",
-  transition: "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
+  transition:
+    "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   "&:focus-within": {
     borderColor: tokens.ring,
     boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,

@@ -6,7 +6,7 @@
  * wrapping, so your own overrides win the ordinary way: import this file
  * before your override sheet (later declarations win) or out-specify it.
  *
- * Add this file once per project through `bunx @hellajs/ui add theme` and
+ * Add this file once per project through `npx @hellajs/ui add theme` and
  * import it in the app entry before any styled component mounts. The
  * exported `tokens` object maps each camelCase key to its `var(--*)`
  * reference (`primaryForeground` to `var(--primary-foreground)`), and the

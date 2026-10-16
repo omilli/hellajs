@@ -1,5 +1,15 @@
 import type { HellaChildren } from "@hellajs/dom";
-import type { AttachmentProps, AttachmentMediaProps, AttachmentContentProps, AttachmentTitleProps, AttachmentDescriptionProps, AttachmentActionsProps, AttachmentActionProps, AttachmentTriggerProps, AttachmentGroupProps } from "./attachment-types.js";
+import type {
+  AttachmentProps,
+  AttachmentMediaProps,
+  AttachmentContentProps,
+  AttachmentTitleProps,
+  AttachmentDescriptionProps,
+  AttachmentActionsProps,
+  AttachmentActionProps,
+  AttachmentTriggerProps,
+  AttachmentGroupProps,
+} from "./attachment-types.js";
 
 // @hella:styles
 declare const actions: string;
@@ -18,7 +28,14 @@ declare const title: string;
 declare const trigger: string;
 // @hella:end
 
-export function Attachment({ state, size, orientation, children, class: cls, ...attrs }: AttachmentProps): JSX.Element {
+export function Attachment({
+  state,
+  size,
+  orientation,
+  children,
+  class: cls,
+  ...attrs
+}: AttachmentProps): JSX.Element {
   return (
     <div
       data-slot="attachment"
@@ -37,7 +54,13 @@ export function Attachment({ state, size, orientation, children, class: cls, ...
   );
 }
 
-export function AttachmentMedia({ variant, state, children, class: cls, ...attrs }: AttachmentMediaProps): JSX.Element {
+export function AttachmentMedia({
+  variant,
+  state,
+  children,
+  class: cls,
+  ...attrs
+}: AttachmentMediaProps): JSX.Element {
   const icon = (): HellaChildren | undefined => {
     if (children !== undefined) return undefined;
     if (state === "uploading") {
@@ -95,7 +118,11 @@ export function AttachmentMedia({ variant, state, children, class: cls, ...attrs
   );
 }
 
-export function AttachmentContent({ children, class: cls, ...attrs }: AttachmentContentProps): JSX.Element {
+export function AttachmentContent({
+  children,
+  class: cls,
+  ...attrs
+}: AttachmentContentProps): JSX.Element {
   return (
     <div
       data-slot="attachment-content"
@@ -111,7 +138,11 @@ export function AttachmentContent({ children, class: cls, ...attrs }: Attachment
   );
 }
 
-export function AttachmentTitle({ children, class: cls, ...attrs }: AttachmentTitleProps): JSX.Element {
+export function AttachmentTitle({
+  children,
+  class: cls,
+  ...attrs
+}: AttachmentTitleProps): JSX.Element {
   return (
     <span
       data-slot="attachment-title"
@@ -127,7 +158,11 @@ export function AttachmentTitle({ children, class: cls, ...attrs }: AttachmentTi
   );
 }
 
-export function AttachmentDescription({ children, class: cls, ...attrs }: AttachmentDescriptionProps): JSX.Element {
+export function AttachmentDescription({
+  children,
+  class: cls,
+  ...attrs
+}: AttachmentDescriptionProps): JSX.Element {
   return (
     <span
       data-slot="attachment-description"
@@ -143,7 +178,11 @@ export function AttachmentDescription({ children, class: cls, ...attrs }: Attach
   );
 }
 
-export function AttachmentActions({ children, class: cls, ...attrs }: AttachmentActionsProps): JSX.Element {
+export function AttachmentActions({
+  children,
+  class: cls,
+  ...attrs
+}: AttachmentActionsProps): JSX.Element {
   return (
     <div
       data-slot="attachment-actions"
@@ -159,7 +198,13 @@ export function AttachmentActions({ children, class: cls, ...attrs }: Attachment
   );
 }
 
-export function AttachmentAction({ variant, size, children, class: cls, ...attrs }: AttachmentActionProps): JSX.Element {
+export function AttachmentAction({
+  variant,
+  size,
+  children,
+  class: cls,
+  ...attrs
+}: AttachmentActionProps): JSX.Element {
   return (
     <button
       type="button"
@@ -178,7 +223,11 @@ export function AttachmentAction({ variant, size, children, class: cls, ...attrs
   );
 }
 
-export function AttachmentTrigger({ children, class: cls, ...attrs }: AttachmentTriggerProps): JSX.Element {
+export function AttachmentTrigger({
+  children,
+  class: cls,
+  ...attrs
+}: AttachmentTriggerProps): JSX.Element {
   return (
     <button
       type="button"
@@ -195,7 +244,11 @@ export function AttachmentTrigger({ children, class: cls, ...attrs }: Attachment
   );
 }
 
-export function AttachmentGroup({ children, class: cls, ...attrs }: AttachmentGroupProps): JSX.Element {
+export function AttachmentGroup({
+  children,
+  class: cls,
+  ...attrs
+}: AttachmentGroupProps): JSX.Element {
   return (
     <div
       data-slot="attachment-group"

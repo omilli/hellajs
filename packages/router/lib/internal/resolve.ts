@@ -4,7 +4,17 @@ import { route, activeFn } from "../route";
 import { matchRoute, matchNestedEntry } from "./match";
 import type { RouteMatch } from "./match";
 import { buildPath } from "./path";
-import { extractHandler, extractMeta, extractInheritMeta, extractScroll, executeRouteWithHooks, runGuardsFlat, runGuardsNested, setMatchedChain, type GuardVerdict } from "./matched";
+import {
+  extractHandler,
+  extractMeta,
+  extractInheritMeta,
+  extractScroll,
+  executeRouteWithHooks,
+  runGuardsFlat,
+  runGuardsNested,
+  setMatchedChain,
+  type GuardVerdict,
+} from "./matched";
 import { executeNotFound } from "./hooks";
 import { handleScroll, takeSavedScroll, scrollStack } from "./scroll";
 import { EMPTY_OBJECT, EMPTY_CRUMBS, getCachedRouteEntries, hasChildren } from "./utils";
@@ -108,11 +118,14 @@ export function updateRoute(
   inlineScroll?: ScrollBehavior | false,
   inlineMeta?: Record<string, unknown>,
   isPop?: boolean,
-  force?: boolean
+  force?: boolean,
 ): RouteVerdict {
   navEpoch++;
   if (resolveDepth >= MAX_REDIRECT_HOPS) {
-    console.error("[router] redirect loop detected:", new Error(`exceeded ${MAX_REDIRECT_HOPS} hops resolving ${nextPath ?? route().path}`));
+    console.error(
+      "[router] redirect loop detected:",
+      new Error(`exceeded ${MAX_REDIRECT_HOPS} hops resolving ${nextPath ?? route().path}`),
+    );
     clearPending();
     asyncHops = 0;
     return "cancelled";
@@ -138,14 +151,16 @@ export function updateRoute(
     }
 
     setMatchedChain(null);
-    route(buildRouteInfo({
-      handler: notFoundValue as Handler | null,
-      params: EMPTY_OBJECT,
-      query: EMPTY_OBJECT,
-      path: currentPath,
-      meta: inlineMeta,
-      crumbs: EMPTY_CRUMBS
-    }));
+    route(
+      buildRouteInfo({
+        handler: notFoundValue as Handler | null,
+        params: EMPTY_OBJECT,
+        query: EMPTY_OBJECT,
+        path: currentPath,
+        meta: inlineMeta,
+        crumbs: EMPTY_CRUMBS,
+      }),
+    );
 
     asyncHops = 0;
     notFoundValue && executeNotFound(notFoundValue, currentPath);
@@ -173,7 +188,7 @@ export function go(
     scroll?: ScrollBehavior | false;
     meta?: Record<string, unknown>;
     readonly force?: boolean;
-  } = {}
+  } = {},
 ): void {
   const { replace = false, scroll, meta, force } = options;
   const routerMode = mode();
@@ -213,7 +228,10 @@ export function go(
  * @param routeMeta Meta resolved from the matched route chain, or undefined.
  * @returns The merged meta object or undefined.
  */
-function mergeRouteMeta(inlineMeta: Record<string, unknown> | undefined, routeMeta?: Record<string, unknown>): Record<string, unknown> | undefined {
+function mergeRouteMeta(
+  inlineMeta: Record<string, unknown> | undefined,
+  routeMeta?: Record<string, unknown>,
+): Record<string, unknown> | undefined {
   return inlineMeta !== undefined ? { ...routeMeta, ...inlineMeta } : routeMeta;
 }
 
@@ -251,7 +269,7 @@ function commitMatch(
   routeScroll: ScrollBehavior | false | undefined,
   routeValue: unknown,
   nestedMatches?: RouteMatch[],
-  isPop?: boolean
+  isPop?: boolean,
 ): RouteVerdict {
   if (guardVerdict === "cancel") {
     clearPending();
@@ -283,7 +301,12 @@ function commitMatch(
         if (resolved !== "pass") {
           asyncHops++;
           if (asyncHops > MAX_REDIRECT_HOPS) {
-            console.error("[router] async redirect loop detected:", new Error(`exceeded ${MAX_REDIRECT_HOPS} async redirect hops resolving ${currentPath}`));
+            console.error(
+              "[router] async redirect loop detected:",
+              new Error(
+                `exceeded ${MAX_REDIRECT_HOPS} async redirect hops resolving ${currentPath}`,
+              ),
+            );
             clearPending();
             restorePopUrl(isPop, fromPath);
             asyncHops = 0;
@@ -292,7 +315,20 @@ function commitMatch(
           go(resolved.redirect, { replace: true });
           return;
         }
-        commitMatch("pass", handler, params, query, meta, crumbs, currentPath, inlineScroll, routeScroll, routeValue, nestedMatches, isPop);
+        commitMatch(
+          "pass",
+          handler,
+          params,
+          query,
+          meta,
+          crumbs,
+          currentPath,
+          inlineScroll,
+          routeScroll,
+          routeValue,
+          nestedMatches,
+          isPop,
+        );
         historyCommit?.();
       });
       return "deferred";
@@ -303,15 +339,17 @@ function commitMatch(
 
   asyncHops = 0;
   const fromPath = route().path;
-  route(buildRouteInfo({
-    handler,
-    params,
-    query,
-    path: currentPath,
-    meta,
-    crumbs
-  }));
-  setMatchedChain(nestedMatches ? nestedMatches.map(match => match.routeValue) : [routeValue]);
+  route(
+    buildRouteInfo({
+      handler,
+      params,
+      query,
+      path: currentPath,
+      meta,
+      crumbs,
+    }),
+  );
+  setMatchedChain(nestedMatches ? nestedMatches.map((match) => match.routeValue) : [routeValue]);
   executeRouteWithHooks(handler, params, query, currentPath, fromPath, routeValue, nestedMatches);
   handleScroll(currentPath, inlineScroll, routeScroll, isPop, takeSavedScroll(isPop));
   return "matched";
@@ -384,7 +422,7 @@ function matchNestedPhase(
   inlineScroll: ScrollBehavior | false | undefined,
   inlineMeta: Record<string, unknown> | undefined,
   isPop?: boolean,
-  force?: boolean
+  force?: boolean,
 ): "none" | RouteVerdict {
   const pathWithoutQuery = currentPath.split("?")[0]!;
 
@@ -430,7 +468,7 @@ function matchNestedPhase(
         crumbs[mi] = {
           segment: match.pattern,
           path: pathWithoutQuery.slice(0, pathWithoutQuery.length - match.remainingPath.length),
-          params: match.params
+          params: match.params,
         };
         mi++;
       }
@@ -447,7 +485,7 @@ function matchNestedPhase(
         extractScroll(lastMatch.routeValue),
         routeValue,
         nestedMatches,
-        isPop
+        isPop,
       );
     }
   }
@@ -472,7 +510,7 @@ function matchFlatPhase(
   inlineScroll: ScrollBehavior | false | undefined,
   inlineMeta: Record<string, unknown> | undefined,
   isPop?: boolean,
-  force?: boolean
+  force?: boolean,
 ): "none" | RouteVerdict {
   const pathWithoutQuery = currentPath.split("?")[0]!;
 
@@ -503,7 +541,7 @@ function matchFlatPhase(
         extractScroll(routeValue),
         routeValue,
         undefined,
-        isPop
+        isPop,
       );
     }
   }
@@ -525,14 +563,21 @@ function tryMatchRoute(
   inlineScroll: ScrollBehavior | false | undefined,
   inlineMeta: Record<string, unknown> | undefined,
   isPop?: boolean,
-  force?: boolean
+  force?: boolean,
 ): "none" | RouteVerdict {
   const routeMap = routes();
   if (!routeMap) {
     return "none";
   }
 
-  const nestedVerdict = matchNestedPhase(routeMap, currentPath, inlineScroll, inlineMeta, isPop, force);
+  const nestedVerdict = matchNestedPhase(
+    routeMap,
+    currentPath,
+    inlineScroll,
+    inlineMeta,
+    isPop,
+    force,
+  );
   if (nestedVerdict !== "none") {
     return nestedVerdict;
   }

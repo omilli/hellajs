@@ -1,4 +1,4 @@
-import { describe, expect, test, mock } from "bun:test";
+import { describe, expect, test, vi } from "vite-plus/test";
 import { batch, computed, effect, scope, signal } from "@hellajs/core";
 
 describe("core", () => {
@@ -7,11 +7,15 @@ describe("core", () => {
       const count = signal(0);
 
       // Unscoped effect for comparison
-      const unscopedRuns = mock(() => { count(); });
+      const unscopedRuns = vi.fn(() => {
+        count();
+      });
       const cleanupUnscoped = effect(unscopedRuns);
 
       // Scoped effects
-      const scopedRuns = mock(() => { count(); });
+      const scopedRuns = vi.fn(() => {
+        count();
+      });
       const dispose = scope(() => {
         effect(scopedRuns);
         effect(scopedRuns);
@@ -39,8 +43,12 @@ describe("core", () => {
     test("nested scopes dispose independently", () => {
       const count = signal(0);
 
-      const outerRuns = mock(() => { count(); });
-      const innerRuns = mock(() => { count(); });
+      const outerRuns = vi.fn(() => {
+        count();
+      });
+      const innerRuns = vi.fn(() => {
+        count();
+      });
 
       const disposeOuter = scope(() => {
         effect(outerRuns);
@@ -68,7 +76,9 @@ describe("core", () => {
       const a = signal(0);
       const b = signal(0);
 
-      const runs = mock(() => { sum(); });
+      const runs = vi.fn(() => {
+        sum();
+      });
       const sum = computed(() => a() + b());
       const dispose = scope(() => {
         effect(runs);
@@ -76,18 +86,26 @@ describe("core", () => {
 
       expect(runs).toHaveBeenCalledTimes(1);
 
-      batch(() => { a(5); b(10); });
+      batch(() => {
+        a(5);
+        b(10);
+      });
       expect(runs).toHaveBeenCalledTimes(2);
 
       dispose();
-      batch(() => { a(100); b(200); });
+      batch(() => {
+        a(100);
+        b(200);
+      });
       expect(runs).toHaveBeenCalledTimes(2);
     });
 
     test("scope double-cleanup keeps effects disposed", () => {
       const count = signal(0);
 
-      const runs = mock(() => { count(); });
+      const runs = vi.fn(() => {
+        count();
+      });
       const dispose = scope(() => {
         effect(runs);
       });
@@ -107,7 +125,7 @@ describe("core", () => {
     });
 
     test("empty scopes return a shared no-op cleanup", () => {
-      expect(scope(() => { })).toBe(scope(() => { }));
+      expect(scope(() => {})).toBe(scope(() => {}));
     });
   });
 });

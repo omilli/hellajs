@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { resetTestState } from "@utils/test-helpers.js";
 import {
   assertAttrForwarded,
@@ -36,12 +36,15 @@ describe("spinner", () => {
     }
   });
 
-  test.each(spinnerVariants)("$style inlines the loader-circle path from the icon ref", (variant) => {
-    const spinner = renderVariant(variant, {});
-    const path = spinner.querySelector("path");
-    expect(path).not.toBeNull();
-    expect(path!.getAttribute("d")).toBe(LOADER_PATH);
-  });
+  test.each(spinnerVariants)(
+    "$style inlines the loader-circle path from the icon ref",
+    (variant) => {
+      const spinner = renderVariant(variant, {});
+      const path = spinner.querySelector("path");
+      expect(path).not.toBeNull();
+      expect(path!.getAttribute("d")).toBe(LOADER_PATH);
+    },
+  );
 
   test("keeps structural parity across both styles", () => {
     assertStructuralParity(spinnerVariants);
@@ -52,7 +55,7 @@ describe("spinner", () => {
   });
 
   test("fires a user on:click handler across both styles", () => {
-    const onClick = mock(() => {});
+    const onClick = vi.fn(() => {});
     assertHandlerForwarded(spinnerVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 });

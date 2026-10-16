@@ -12,7 +12,7 @@ Review package documentation against `guides/docs.md` and package `AGENTS.md` fi
 
 - Root AGENTS.md (§Style guides, §Folder structure — the docs-site surface enumeration).
 - `guides/docs.md` — a decision procedure: traverse the relevant trees, then tick §Verification Checklist. Tick the checklist, don't reconstruct rules from prose.
-- Docs guards as the mechanical floor: `bun doc-links`, `bun lint:structure`, `bun em-dash` (AGENTS.md §Scripts) — findings these already catch are guard failures, not audit findings; this skill targets what they cannot see.
+- Docs guards as the mechanical floor: `vp run doc-links`, `vp run lint:structure`, `vp run em-dash` (AGENTS.md §Scripts) — findings these already catch are guard failures, not audit findings; this skill targets what they cannot see.
 
 Rule absent for the case at hand → note the gap, don't substitute taste.
 
@@ -20,7 +20,7 @@ Rule absent for the case at hand → note the gap, don't substitute taste.
 
 Each finding is exactly one of:
 
-- **A runnable check** — exact command, expected, actual. "`bun lint:structure` flags the tutorial: the `### src/app.ts` block diverges from the real file" not "example is stale."
+- **A runnable check** — exact command, expected, actual. "`vp run lint:structure` flags the tutorial: the `### src/app.ts` block diverges from the real file" not "example is stale."
 - **A quoted rule** — file + section + rule verbatim + the violation. "`guides/docs.md` §Typography rewrites em dashes as sentence-broken prose; `css/docs/index.mdx` carries `—` twice."
 
 Neither → taste, drop. Severity (blocker / should-fix / nit) + one clause naming the blast radius (which pages/guards/tutorials it risks).

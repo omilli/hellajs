@@ -1,7 +1,7 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach } from "vite-plus/test";
 import { flush } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { resource } from "@hellajs/resource/bundle";
+import { resource } from "@hellajs/resource";
 
 describe("resource", () => {
   describe("errors", () => {
@@ -31,7 +31,7 @@ describe("resource", () => {
       globalThis.fetch = (async () => ({
         ok: false,
         status: 404,
-        statusText: "Not Found"
+        statusText: "Not Found",
       })) as unknown as typeof globalThis.fetch;
 
       const r = resource("https://api.example.com/notfound");
@@ -44,9 +44,12 @@ describe("resource", () => {
     });
 
     test("handles AbortError from DOMException", async () => {
-      const r = resource(() => Promise.reject(new DOMException("Request was aborted", "AbortError")), {
-        initialData: "initial"
-      });
+      const r = resource(
+        () => Promise.reject(new DOMException("Request was aborted", "AbortError")),
+        {
+          initialData: "initial",
+        },
+      );
       r.fetch({ force: true });
       await delay(20);
       expect(r.status()).toBe("idle");
@@ -92,7 +95,7 @@ describe("resource", () => {
 
       const r = resource(() => delay("response", 10), {
         abortSignal: controller.signal,
-        initialData: "initial"
+        initialData: "initial",
       });
 
       r.fetch({ force: true });
@@ -106,7 +109,7 @@ describe("resource", () => {
     test("handles timeout abort", async () => {
       const r = resource(() => delay("response", 50), {
         timeout: 10,
-        initialData: "initial"
+        initialData: "initial",
       });
 
       r.fetch({ force: true });
@@ -128,8 +131,10 @@ describe("resource", () => {
     });
 
     test("ignores late responses after abort", async () => {
-      let resolvePromise: (value: unknown) => void = () => { };
-      const promise = new Promise((resolve) => { resolvePromise = resolve; });
+      let resolvePromise: (value: unknown) => void = () => {};
+      const promise = new Promise((resolve) => {
+        resolvePromise = resolve;
+      });
       const r = resource(() => promise, { initialData: "initial" });
       r.fetch({ force: true });
       r.abort();

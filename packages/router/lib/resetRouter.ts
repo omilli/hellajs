@@ -7,7 +7,7 @@ import {
   base,
   scrollBehavior,
   previousPath,
-  inheritMeta
+  inheritMeta,
 } from "./internal/state";
 import { route, activeFn } from "./route";
 import { resetListeners } from "./router";
@@ -38,7 +38,7 @@ export function resetRouter(): void {
     pending: false,
     meta: undefined,
     crumbs: EMPTY_CRUMBS,
-    active: activeFn
+    active: activeFn,
   });
   resetListeners();
   resetScrollStack();

@@ -1,7 +1,7 @@
 import { remove, selected, type RowSchema } from "./state";
 
 export const Row = ({ row }: { row: RowSchema }) => (
-  <tr class={() => (selected() === row.id ? 'danger' : '')} key={row.id} >
+  <tr class={() => (selected() === row.id ? "danger" : "")} key={row.id}>
     <td class="col-md-1">{row.id}</td>
     <td class="col-md-4">
       <a class="lbl" on:click={() => selected(row.id)}>
@@ -13,5 +13,5 @@ export const Row = ({ row }: { row: RowSchema }) => (
         <span class="glyphicon glyphicon-remove" ariaHidden="true"></span>
       </a>
     </td>
-  </tr >
+  </tr>
 );

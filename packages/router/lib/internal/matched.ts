@@ -36,7 +36,9 @@ export function extractHandler(routeValue: unknown): Handler | null {
   }
 
   if (isPlainObject(routeValue)) {
-    return isFunction((routeValue as RouteWithHooks).handler) ? (routeValue as RouteWithHooks).handler as Handler : null;
+    return isFunction((routeValue as RouteWithHooks).handler)
+      ? ((routeValue as RouteWithHooks).handler as Handler)
+      : null;
   }
 
   return null;
@@ -87,12 +89,16 @@ export function extractScroll(routeValue: unknown): ScrollBehavior | false | und
  * @param routeValue The route value to extract hooks from.
  * @returns Object containing before, after, and leave hook functions.
  */
-export function extractRouteHooks(routeValue: unknown): { before: Handler | null; after: Handler | null; leave: Handler | null } {
+export function extractRouteHooks(routeValue: unknown): {
+  before: Handler | null;
+  after: Handler | null;
+  leave: Handler | null;
+} {
   const isObj = isPlainObject(routeValue);
   return {
     before: isObj ? (routeValue as RouteWithHooks).before || null : null,
     after: isObj ? (routeValue as RouteWithHooks).after || null : null,
-    leave: isObj ? (routeValue as RouteWithHooks).leave || null : null
+    leave: isObj ? (routeValue as RouteWithHooks).leave || null : null,
   };
 }
 
@@ -101,10 +107,7 @@ export function extractRouteHooks(routeValue: unknown): { before: Handler | null
  * string redirects, anything else proceeds.
  * @internal
  */
-type GuardResolution =
-  | "pass"
-  | "cancel"
-  | { redirect: string };
+type GuardResolution = "pass" | "cancel" | { redirect: string };
 
 /**
  * Result of evaluating a guard chain. On the client, a `Promise`-returning guard defers
@@ -112,9 +115,7 @@ type GuardResolution =
  * resolves to `"cancel"` after logging).
  * @internal
  */
-export type GuardVerdict =
-  | GuardResolution
-  | { deferred: Promise<GuardResolution> };
+export type GuardVerdict = GuardResolution | { deferred: Promise<GuardResolution> };
 
 /**
  * Interprets a single guard's return value into a verdict. On the client a `Promise` return
@@ -137,8 +138,8 @@ function interpretGuardResult(result: unknown, errorPrefix: string): GuardVerdic
         (error: unknown) => {
           console.error(`[router] ${errorPrefix}:`, error);
           return "cancel";
-        }
-      )
+        },
+      ),
     };
   }
   return interpretSyncResult(result);
@@ -171,7 +172,7 @@ function invokeRouteGuard(
   guard: Handler,
   params: Params,
   query: Params,
-  errorPrefix: string
+  errorPrefix: string,
 ): GuardVerdict {
   const fn = guard as (a?: Params, b?: Params) => unknown;
   let result: unknown;
@@ -282,7 +283,11 @@ function runLeaveGuards(toPath: string, force?: boolean): GuardVerdict {
  * @param force True to skip leave guards (incoming before guards still run).
  * @returns The verdict: `"pass"`, `"cancel"`, or `{ redirect }`.
  */
-export function runGuardsNested(nestedMatches: RouteMatch[], toPath: string, force?: boolean): GuardVerdict {
+export function runGuardsNested(
+  nestedMatches: RouteMatch[],
+  toPath: string,
+  force?: boolean,
+): GuardVerdict {
   const leaveVerdict = runLeaveGuards(toPath, force);
   if (leaveVerdict !== "pass") {
     return leaveVerdict;
@@ -328,7 +333,7 @@ export function runGuardsFlat(
   params: Params,
   query: Params,
   toPath: string,
-  force?: boolean
+  force?: boolean,
 ): GuardVerdict {
   const leaveVerdict = runLeaveGuards(toPath, force);
   if (leaveVerdict !== "pass") {
@@ -371,7 +376,7 @@ export function executeRouteWithHooks(
   toPath: string,
   fromPath: string,
   routeValue?: unknown,
-  nestedMatches?: RouteMatch[]
+  nestedMatches?: RouteMatch[],
 ): void {
   const { after } = hooks();
 

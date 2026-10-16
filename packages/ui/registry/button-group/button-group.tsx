@@ -1,4 +1,8 @@
-import type { ButtonGroupProps, ButtonGroupTextProps, ButtonGroupSeparatorProps } from "./button-group-types.js";
+import type {
+  ButtonGroupProps,
+  ButtonGroupTextProps,
+  ButtonGroupSeparatorProps,
+} from "./button-group-types.js";
 
 // @hella:styles
 declare const base: string;
@@ -8,7 +12,12 @@ declare const separatorBase: string;
 declare const text: string;
 // @hella:end
 
-export function ButtonGroup({ orientation: orient, children, class: cls, ...attrs }: ButtonGroupProps): JSX.Element {
+export function ButtonGroup({
+  orientation: orient,
+  children,
+  class: cls,
+  ...attrs
+}: ButtonGroupProps): JSX.Element {
   return (
     <div
       role="group"
@@ -16,11 +25,7 @@ export function ButtonGroup({ orientation: orient, children, class: cls, ...attr
       data-orientation={orient ?? "horizontal"}
       class={
         // @hella:compose
-        [
-          base,
-          orientation[orient ?? "horizontal"],
-          cls,
-        ]
+        [base, orientation[orient ?? "horizontal"], cls]
         // @hella:end
       }
       {...attrs}
@@ -30,7 +35,11 @@ export function ButtonGroup({ orientation: orient, children, class: cls, ...attr
   );
 }
 
-export function ButtonGroupText({ children, class: cls, ...attrs }: ButtonGroupTextProps): JSX.Element {
+export function ButtonGroupText({
+  children,
+  class: cls,
+  ...attrs
+}: ButtonGroupTextProps): JSX.Element {
   return (
     <div
       data-slot="button-group-text"
@@ -46,7 +55,11 @@ export function ButtonGroupText({ children, class: cls, ...attrs }: ButtonGroupT
   );
 }
 
-export function ButtonGroupSeparator({ orientation: orient, class: cls, ...attrs }: ButtonGroupSeparatorProps): JSX.Element {
+export function ButtonGroupSeparator({
+  orientation: orient,
+  class: cls,
+  ...attrs
+}: ButtonGroupSeparatorProps): JSX.Element {
   return (
     <div
       role="separator"
@@ -55,11 +68,7 @@ export function ButtonGroupSeparator({ orientation: orient, class: cls, ...attrs
       aria-orientation={orient ?? "vertical"}
       class={
         // @hella:compose
-        [
-          separatorBase,
-          separator,
-          cls,
-        ]
+        [separatorBase, separator, cls]
         // @hella:end
       }
       {...attrs}

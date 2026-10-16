@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, vi } from "vite-plus/test";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { mount, peekState, resetDom } from "@hellajs/dom";
 import {
@@ -39,7 +39,10 @@ afterEach(() => {
 });
 
 /** Opens a tooltip through its trigger and resolves the portaled content once the mount walk finished. */
-async function openTooltip(variant: (typeof tooltipVariants)[number], props: Partial<TooltipVariantProps> = {}) {
+async function openTooltip(
+  variant: (typeof tooltipVariants)[number],
+  props: Partial<TooltipVariantProps> = {},
+) {
   const trigger = renderVariant(variant, { content: "Hi", delayDuration: 5, ...props });
   pointerEnter(trigger);
   await delay(30);
@@ -57,28 +60,34 @@ describe("tooltip", () => {
     expect(content.textContent).toBe("Hi");
   });
 
-  test.each(tooltipVariants)("$style opens instantly inside the shared skip-delay window after a recent tooltip", async (variant) => {
-    const first = await openTooltip(variant);
-    pointerDownOutside();
-    expect(first.content.getAttribute("data-state")).toBe("closed");
-    const second = renderVariant(variant, { content: "Two", delayDuration: 5000 });
-    now += 100;
-    pointerEnter(second);
-    const secondContent = await awaitPortaled("tooltip-content");
-    expect(secondContent.textContent).toBe("Two");
-  });
+  test.each(tooltipVariants)(
+    "$style opens instantly inside the shared skip-delay window after a recent tooltip",
+    async (variant) => {
+      const first = await openTooltip(variant);
+      pointerDownOutside();
+      expect(first.content.getAttribute("data-state")).toBe("closed");
+      const second = renderVariant(variant, { content: "Two", delayDuration: 5000 });
+      now += 100;
+      pointerEnter(second);
+      const secondContent = await awaitPortaled("tooltip-content");
+      expect(secondContent.textContent).toBe("Two");
+    },
+  );
 
-  test.each(tooltipVariants)("$style delays again once the skip-delay window has passed", async (variant) => {
-    await openTooltip(variant);
-    pointerDownOutside();
-    const second = renderVariant(variant, { content: "Two", delayDuration: 40 });
-    now += 600;
-    pointerEnter(second);
-    await delay();
-    expect(newestPortaled("tooltip-content")?.textContent).not.toBe("Two");
-    await delay(80);
-    expect((await awaitPortaled("tooltip-content")).textContent).toBe("Two");
-  });
+  test.each(tooltipVariants)(
+    "$style delays again once the skip-delay window has passed",
+    async (variant) => {
+      await openTooltip(variant);
+      pointerDownOutside();
+      const second = renderVariant(variant, { content: "Two", delayDuration: 40 });
+      now += 600;
+      pointerEnter(second);
+      await delay();
+      expect(newestPortaled("tooltip-content")?.textContent).not.toBe("Two");
+      await delay(80);
+      expect((await awaitPortaled("tooltip-content")).textContent).toBe("Two");
+    },
+  );
 
   test.each(tooltipVariants)("$style closes after the close delay", async (variant) => {
     const { trigger, content } = await openTooltip(variant);
@@ -110,17 +119,25 @@ describe("tooltip", () => {
     expect(content.getAttribute("data-align")).toBe("center");
   });
 
-  test.each(tooltipVariants)("$style anchors below with side bottom and start alignment", async (variant) => {
-    const trigger = renderVariant(variant, { content: "Hi", delayDuration: 5, side: "bottom", align: "start" });
-    pinRect(trigger, 100, 50, 200, 20);
-    pointerEnter(trigger);
-    await delay(30);
-    const content = await awaitPortaled("tooltip-content");
-    expect(content.style.left).toBe("50px");
-    expect(content.style.top).toBe("120px");
-    expect(content.getAttribute("data-side")).toBe("bottom");
-    expect(content.getAttribute("data-align")).toBe("start");
-  });
+  test.each(tooltipVariants)(
+    "$style anchors below with side bottom and start alignment",
+    async (variant) => {
+      const trigger = renderVariant(variant, {
+        content: "Hi",
+        delayDuration: 5,
+        side: "bottom",
+        align: "start",
+      });
+      pinRect(trigger, 100, 50, 200, 20);
+      pointerEnter(trigger);
+      await delay(30);
+      const content = await awaitPortaled("tooltip-content");
+      expect(content.style.left).toBe("50px");
+      expect(content.style.top).toBe("120px");
+      expect(content.getAttribute("data-side")).toBe("bottom");
+      expect(content.getAttribute("data-align")).toBe("start");
+    },
+  );
 
   test.each(tooltipVariants)("$style opens on focus", async (variant) => {
     const trigger = renderVariant(variant, { content: "Hi", delayDuration: 5 });
@@ -143,56 +160,77 @@ describe("tooltip", () => {
     expect(trigger.isConnected).toBe(false);
   });
 
-  test.each(tooltipVariants)("$style reopens cleanly across open and close cycles", async (variant) => {
-    const trigger = renderVariant(variant, { content: "Hi", delayDuration: 5 });
-    pointerEnter(trigger);
-    await delay(30);
-    const first = await awaitPortaled("tooltip-content");
-    pointerDownOutside();
-    expect(first.getAttribute("data-state")).toBe("closed");
-    first.dispatchEvent(new Event("animationend"));
-    await awaitDetached(first);
-    pointerEnter(trigger);
-    const second = await awaitPortaled("tooltip-content");
-    expect(second).not.toBe(first);
-    expect(second.getAttribute("data-state")).toBe("open");
-  });
+  test.each(tooltipVariants)(
+    "$style reopens cleanly across open and close cycles",
+    async (variant) => {
+      const trigger = renderVariant(variant, { content: "Hi", delayDuration: 5 });
+      pointerEnter(trigger);
+      await delay(30);
+      const first = await awaitPortaled("tooltip-content");
+      pointerDownOutside();
+      expect(first.getAttribute("data-state")).toBe("closed");
+      first.dispatchEvent(new Event("animationend"));
+      await awaitDetached(first);
+      pointerEnter(trigger);
+      const second = await awaitPortaled("tooltip-content");
+      expect(second).not.toBe(first);
+      expect(second.getAttribute("data-state")).toBe("open");
+    },
+  );
 
-  test.each(tooltipPartVariants.filter((variant) => variant.part === "Content"))("$style content part positions against the anchor and drains its wirings on disposal", (variant) => {
-    const anchor = document.createElement("button");
-    document.body.appendChild(anchor);
-    pinRect(anchor, 100, 50, 200, 20);
-    const container = setupContainer();
-    const handle = mount(variant.render({ anchor: () => anchor, side: "left", children: [] }), container);
-    const content = container.firstElementChild as HTMLElement;
-    expect(content.style.left).toBe("50px");
-    expect(content.style.top).toBe("110px");
-    handle.unmount();
-    expect(content.isConnected).toBe(false);
-  });
+  test.each(tooltipPartVariants.filter((variant) => variant.part === "Content"))(
+    "$style content part positions against the anchor and drains its wirings on disposal",
+    (variant) => {
+      const anchor = document.createElement("button");
+      document.body.appendChild(anchor);
+      pinRect(anchor, 100, 50, 200, 20);
+      const container = setupContainer();
+      const handle = mount(
+        variant.render({ anchor: () => anchor, side: "left", children: [] }),
+        container,
+      );
+      const content = container.firstElementChild as HTMLElement;
+      expect(content.style.left).toBe("50px");
+      expect(content.style.top).toBe("110px");
+      handle.unmount();
+      expect(content.isConnected).toBe(false);
+    },
+  );
 
-  test.each(tooltipVariants)("$style forwards user attrs onto the trigger root across both styles", (variant) => {
-    const trigger = renderVariant(variant, { content: "Hi", "aria-label": "trigger" });
-    expect(trigger.getAttribute("aria-label")).toBe("trigger");
-  });
+  test.each(tooltipVariants)(
+    "$style forwards user attrs onto the trigger root across both styles",
+    (variant) => {
+      const trigger = renderVariant(variant, { content: "Hi", "aria-label": "trigger" });
+      expect(trigger.getAttribute("aria-label")).toBe("trigger");
+    },
+  );
 
-  test.each(tooltipVariants)("$style fires a user on:click handler on the trigger root across both styles", (variant) => {
-    const userClick = mock(() => {});
-    const trigger = renderVariant(variant, { content: "Hi", "on:click": userClick });
-    trigger.dispatchEvent(new Event("click"));
-    expect(userClick).toHaveBeenCalledTimes(1);
-  });
+  test.each(tooltipVariants)(
+    "$style fires a user on:click handler on the trigger root across both styles",
+    (variant) => {
+      const userClick = vi.fn(() => {});
+      const trigger = renderVariant(variant, { content: "Hi", "on:click": userClick });
+      trigger.dispatchEvent(new Event("click"));
+      expect(userClick).toHaveBeenCalledTimes(1);
+    },
+  );
 
-  test.each(tooltipVariants)("$style merges a user class into the trigger root's class across both styles", (variant) => {
-    const trigger = renderVariant(variant, { content: "Hi", class: "user-class" });
-    expect(classTokens(trigger).at(-1)).toBe("user-class");
-  });
+  test.each(tooltipVariants)(
+    "$style merges a user class into the trigger root's class across both styles",
+    (variant) => {
+      const trigger = renderVariant(variant, { content: "Hi", class: "user-class" });
+      expect(classTokens(trigger).at(-1)).toBe("user-class");
+    },
+  );
 
-  test.each(tooltipPartVariants.filter((variant) => variant.part === "Content"))("$style content part respects a user-supplied id", (variant) => {
-    const container = setupContainer();
-    mount(variant.render({ id: "custom-tooltip", children: [] }), container);
-    expect(container.firstElementChild!.getAttribute("id")).toBe("custom-tooltip");
-  });
+  test.each(tooltipPartVariants.filter((variant) => variant.part === "Content"))(
+    "$style content part respects a user-supplied id",
+    (variant) => {
+      const container = setupContainer();
+      mount(variant.render({ id: "custom-tooltip", children: [] }), container);
+      expect(container.firstElementChild!.getAttribute("id")).toBe("custom-tooltip");
+    },
+  );
 
   test("keeps structural parity across both styles", () => {
     assertStructuralParity(tooltipVariants, { content: "Parity" }, ["aria-describedby"]);

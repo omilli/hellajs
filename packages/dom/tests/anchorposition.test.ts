@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, vi } from "vite-plus/test";
 import { resetTestState } from "@utils/test-helpers.js";
 import { anchorPosition } from "@hellajs/dom";
 
@@ -67,11 +67,17 @@ describe("anchorPosition", () => {
     const anchor = document.createElement("button");
     const floating = document.createElement("div");
     document.body.append(anchor, floating);
-    Object.assign(anchor, { getBoundingClientRect: () => ({ top: 100, left: 100, width: 50, height: 20 }) });
+    Object.assign(anchor, {
+      getBoundingClientRect: () => ({ top: 100, left: 100, width: 50, height: 20 }),
+    });
     setOffsetSize(floating, 60, 40);
-    const onUpdate = mock(() => {});
+    const onUpdate = vi.fn(() => {});
 
-    const dispose = anchorPosition(anchor, floating, { placement: "bottom-start", matchAnchorWidth: true, onUpdate });
+    const dispose = anchorPosition(anchor, floating, {
+      placement: "bottom-start",
+      matchAnchorWidth: true,
+      onUpdate,
+    });
     expect(floating.style.left).toBe("100px");
     expect(floating.style.width).toBe("50px");
     expect(onUpdate).toHaveBeenCalledWith("bottom-start");
@@ -82,16 +88,21 @@ describe("anchorPosition", () => {
     const anchor = document.createElement("button");
     const floating = document.createElement("div");
     document.body.append(anchor, floating);
-    Object.assign(anchor, { getBoundingClientRect: () => ({ top: 100, left: 100, width: 50, height: 20 }) });
+    Object.assign(anchor, {
+      getBoundingClientRect: () => ({ top: 100, left: 100, width: 50, height: 20 }),
+    });
     // Layout-true width: the intrinsic first layout is wider than the viewport
     // (the combobox/select first-open misplacement), then follows the pin.
     Object.defineProperty(floating, "offsetWidth", {
       configurable: true,
-      get: () => (floating.style.width === "" ? 450 : Number.parseFloat(floating.style.width))
+      get: () => (floating.style.width === "" ? 450 : Number.parseFloat(floating.style.width)),
     });
     Object.defineProperty(floating, "offsetHeight", { configurable: true, value: 40 });
 
-    const dispose = anchorPosition(anchor, floating, { placement: "bottom-start", matchAnchorWidth: true });
+    const dispose = anchorPosition(anchor, floating, {
+      placement: "bottom-start",
+      matchAnchorWidth: true,
+    });
     expect(floating.style.left).toBe("100px");
     expect(floating.style.width).toBe("50px");
     dispose();
@@ -101,13 +112,15 @@ describe("anchorPosition", () => {
     const anchor = document.createElement("button");
     const floating = document.createElement("div");
     document.body.append(anchor, floating);
-    Object.assign(anchor, { getBoundingClientRect: () => ({ top: 100, left: 100, width: 50, height: 20 }) });
+    Object.assign(anchor, {
+      getBoundingClientRect: () => ({ top: 100, left: 100, width: 50, height: 20 }),
+    });
     // Layout-true width: an in-flow first layout stretches to the containing
     // block (the context/dropdown first-open misplacement), then shrinks to
     // fit once fixed.
     Object.defineProperty(floating, "offsetWidth", {
       configurable: true,
-      get: () => (floating.style.position === "fixed" ? 60 : 450)
+      get: () => (floating.style.position === "fixed" ? 60 : 450),
     });
     Object.defineProperty(floating, "offsetHeight", { configurable: true, value: 40 });
 
@@ -135,7 +148,11 @@ describe("anchorPosition", () => {
 
   test("requires anchor and floating", () => {
     const el = document.createElement("div");
-    expect(() => anchorPosition(null as never, el)).toThrow("[dom] anchorPosition: anchor is required");
-    expect(() => anchorPosition(el, null as never)).toThrow("[dom] anchorPosition: floating is required");
+    expect(() => anchorPosition(null as never, el)).toThrow(
+      "[dom] anchorPosition: anchor is required",
+    );
+    expect(() => anchorPosition(el, null as never)).toThrow(
+      "[dom] anchorPosition: floating is required",
+    );
   });
 });

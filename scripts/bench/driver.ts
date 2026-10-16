@@ -12,7 +12,7 @@
  * a timing number for an unverified end state is garbage.
  */
 
-import type { BenchOp } from "./ops.js";
+import type { BenchOp } from "./ops.ts";
 import type { Page } from "playwright";
 import { chromium } from "playwright";
 
@@ -75,9 +75,7 @@ async function measureOnce(page: Page, url: string, op: BenchOp): Promise<number
   for (const selector of op.setup) {
     await page.click(selector);
   }
-  const captured = op.capture
-    ? await page.evaluate<unknown>(`(${op.capture})`)
-    : null;
+  const captured = op.capture ? await page.evaluate<unknown>(`(${op.capture})`) : null;
 
   await page.click(op.click);
   const t1 = await page.evaluate<number>(timingExpression(op.predicate, captured));
@@ -98,7 +96,7 @@ function medianOf(durations: number[]): number {
   const sorted = [...durations].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
   return sorted.length % 2 === 1
-    ? sorted[mid] ?? -1
+    ? (sorted[mid] ?? -1)
     : ((sorted[mid - 1] ?? 0) + (sorted[mid] ?? 0)) / 2;
 }
 
@@ -120,8 +118,8 @@ export async function runBench(options: DriverOptions): Promise<BenchResult> {
     });
   } catch (error: unknown) {
     throw new Error(
-      "Failed to launch system Google Chrome (playwright channel \"chrome\"). " +
-        "bun bench requires a local Google Chrome install; no browser is downloaded.",
+      'Failed to launch system Google Chrome (playwright channel "chrome"). ' +
+        "bench requires a local Google Chrome install; no browser is downloaded.",
       { cause: error },
     );
   }
@@ -155,9 +153,7 @@ export async function runBench(options: DriverOptions): Promise<BenchResult> {
           }
         } catch (error: unknown) {
           throw new Error(
-            `bench op "${op.id}" failed: ${
-              error instanceof Error ? error.message : String(error)
-            }`,
+            `bench op "${op.id}" failed: ${error instanceof Error ? error.message : String(error)}`,
             { cause: error },
           );
         }

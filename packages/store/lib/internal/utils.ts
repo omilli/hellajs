@@ -15,13 +15,15 @@ export const reservedKeys = new Set(["$snapshot", "$update", "$cleanup", "$subsc
  * @returns True if value looks like a store.
  */
 export function isStore(value: unknown): boolean {
-  return isObject(value)
-    && Object.hasOwn(value, "$snapshot")
-    && Object.hasOwn(value, "$update")
-    && Object.hasOwn(value, "$cleanup")
-    && isFunction((value as { $snapshot: unknown }).$snapshot)
-    && isFunction((value as { $update: unknown }).$update)
-    && isFunction((value as { $cleanup: unknown }).$cleanup);
+  return (
+    isObject(value) &&
+    Object.hasOwn(value, "$snapshot") &&
+    Object.hasOwn(value, "$update") &&
+    Object.hasOwn(value, "$cleanup") &&
+    isFunction((value as { $snapshot: unknown }).$snapshot) &&
+    isFunction((value as { $update: unknown }).$update) &&
+    isFunction((value as { $cleanup: unknown }).$cleanup)
+  );
 }
 
 /**
@@ -43,15 +45,15 @@ export function applyUpdate(
   target: unknown,
   value: unknown,
   middlewares: Record<string, unknown> | undefined,
-  key: string
+  key: string,
 ) {
   if (!isFunction(target)) {
-    throw new Error(`[store] $update: settable key "${key}" must hold a signal, received ${typeof target}`);
+    throw new Error(
+      `[store] $update: settable key "${key}" must hold a signal, received ${typeof target}`,
+    );
   }
   const middleware = middlewares?.[key];
-  const processedValue = middleware
-    ? (middleware as (v: unknown) => unknown)(value)
-    : value;
+  const processedValue = middleware ? (middleware as (v: unknown) => unknown)(value) : value;
 
   target(processedValue);
 }
@@ -80,7 +82,7 @@ export function defineStoreProperty(
   result: Record<string, unknown>,
   key: string,
   value: unknown,
-  options?: { writable?: boolean }
+  options?: { writable?: boolean },
 ) {
   return Object.defineProperty(result, key, {
     value,

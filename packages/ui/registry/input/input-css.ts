@@ -13,7 +13,8 @@ export const base = style("input", {
   outlineStyle: "none",
   paddingBlock: "0.25rem",
   paddingInline: "0.75rem",
-  transition: "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
+  transition:
+    "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   width: "100%",
   "&::file-selector-button": {
     background: "transparent",

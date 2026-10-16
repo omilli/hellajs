@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { effect, flush, signal } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
 import { mount, component, ForEach, peekState } from "@hellajs/dom";
@@ -11,15 +11,22 @@ beforeEach(() => {
 describe("dom", () => {
   describe("component scope", () => {
     test("cleans up effects when component removed from DOM", () => {
-      const effectRuns = mock(() => { });
+      const effectRuns = vi.fn(() => {});
       const count = signal(0);
 
       const Comp = () => {
-        effect(() => { effectRuns(); count(); });
+        effect(() => {
+          effectRuns();
+          count();
+        });
         return <div id="comp">Component</div>;
       };
 
-      const app = mount(<div id="wrapper"><Comp></Comp></div>);
+      const app = mount(
+        <div id="wrapper">
+          <Comp></Comp>
+        </div>,
+      );
       expect(effectRuns).toHaveBeenCalledTimes(1);
 
       count(1);
@@ -34,21 +41,36 @@ describe("dom", () => {
     });
 
     test("multiple components have independent scopes", async () => {
-      const aCalls = mock(() => { });
-      const bCalls = mock(() => { });
+      const aCalls = vi.fn(() => {});
+      const bCalls = vi.fn(() => {});
       const countA = signal(0);
       const countB = signal(0);
 
       const CompA = () => {
-        effect(() => { aCalls(); countA(); });
+        effect(() => {
+          aCalls();
+          countA();
+        });
         return <div id="comp-a">A</div>;
       };
       const CompB = () => {
-        effect(() => { bCalls(); countB(); });
+        effect(() => {
+          bCalls();
+          countB();
+        });
         return <div id="comp-b">B</div>;
       };
 
-      mount(<div><div id="wrapper-a"><CompA></CompA></div><div id="wrapper-b"><CompB></CompB></div></div>);
+      mount(
+        <div>
+          <div id="wrapper-a">
+            <CompA></CompA>
+          </div>
+          <div id="wrapper-b">
+            <CompB></CompB>
+          </div>
+        </div>,
+      );
 
       expect(aCalls).toHaveBeenCalledTimes(1);
       expect(bCalls).toHaveBeenCalledTimes(1);
@@ -56,7 +78,10 @@ describe("dom", () => {
       const compA = document.getElementById("comp-a")!;
       const wrapperA = document.getElementById("wrapper-a")!;
       wrapperA.remove();
-      for (let __i = 0; __i < 50; __i++) { if (peekState(compA) === undefined) break; await delay(); }
+      for (let __i = 0; __i < 50; __i++) {
+        if (peekState(compA) === undefined) break;
+        await delay();
+      }
       expect(peekState(compA)).toBeUndefined();
 
       countA(1);
@@ -69,10 +94,13 @@ describe("dom", () => {
 
     test("effects dispose when element removed", () => {
       const count = signal(0);
-      const effectRuns = mock(() => { });
+      const effectRuns = vi.fn(() => {});
 
       const Counter = () => {
-        effect(() => { count(); effectRuns(); });
+        effect(() => {
+          count();
+          effectRuns();
+        });
         return <div id="counter">Counter</div>;
       };
 
@@ -91,17 +119,27 @@ describe("dom", () => {
     test("nested components with isolated scopes", async () => {
       const trigger1 = signal(0);
       const trigger2 = signal(0);
-      const effect1Runs = mock(() => { });
-      const effect2Runs = mock(() => { });
+      const effect1Runs = vi.fn(() => {});
+      const effect2Runs = vi.fn(() => {});
 
       const Inner = () => {
-        effect(() => { trigger2(); effect2Runs(); });
+        effect(() => {
+          trigger2();
+          effect2Runs();
+        });
         return <span id="inner">Inner</span>;
       };
 
       const Outer = () => {
-        effect(() => { trigger1(); effect1Runs(); });
-        return <div id="outer"><Inner></Inner></div>;
+        effect(() => {
+          trigger1();
+          effect1Runs();
+        });
+        return (
+          <div id="outer">
+            <Inner></Inner>
+          </div>
+        );
       };
 
       mount(<Outer></Outer>);
@@ -115,7 +153,10 @@ describe("dom", () => {
 
       const inner = document.getElementById("inner") as HellaElement;
       inner.remove();
-      for (let __i = 0; __i < 50; __i++) { if (peekState(inner) === undefined) break; await delay(); }
+      for (let __i = 0; __i < 50; __i++) {
+        if (peekState(inner) === undefined) break;
+        await delay();
+      }
       expect(peekState(inner)).toBeUndefined();
 
       trigger1(2);
@@ -125,7 +166,10 @@ describe("dom", () => {
 
       const outer = document.getElementById("outer") as HellaElement;
       outer.remove();
-      for (let __i = 0; __i < 50; __i++) { if (peekState(outer) === undefined) break; await delay(); }
+      for (let __i = 0; __i < 50; __i++) {
+        if (peekState(outer) === undefined) break;
+        await delay();
+      }
       expect(peekState(outer)).toBeUndefined();
 
       trigger1(3);
@@ -134,10 +178,13 @@ describe("dom", () => {
 
     test("html component scope cleanup", async () => {
       const count = signal(0);
-      const effectRuns = mock(() => { });
+      const effectRuns = vi.fn(() => {});
 
       const Counter = () => {
-        effect(() => { count(); effectRuns(); });
+        effect(() => {
+          count();
+          effectRuns();
+        });
         return <div id="html-counter">{count}</div>;
       };
 
@@ -149,7 +196,10 @@ describe("dom", () => {
 
       const counter = document.getElementById("html-counter") as HellaElement;
       counter.remove();
-      for (let __i = 0; __i < 50; __i++) { if (peekState(counter) === undefined) break; await delay(); }
+      for (let __i = 0; __i < 50; __i++) {
+        if (peekState(counter) === undefined) break;
+        await delay();
+      }
       expect(peekState(counter)).toBeUndefined();
 
       count(2);
@@ -159,26 +209,40 @@ describe("dom", () => {
     test("multiple components isolation", async () => {
       const trigger1 = signal(0);
       const trigger2 = signal(0);
-      const effect1Runs = mock(() => { });
-      const effect2Runs = mock(() => { });
+      const effect1Runs = vi.fn(() => {});
+      const effect2Runs = vi.fn(() => {});
 
       const Component1 = () => {
-        effect(() => { trigger1(); effect1Runs(); });
+        effect(() => {
+          trigger1();
+          effect1Runs();
+        });
         return <div id="comp1">Component 1</div>;
       };
 
       const Component2 = () => {
-        effect(() => { trigger2(); effect2Runs(); });
+        effect(() => {
+          trigger2();
+          effect2Runs();
+        });
         return <div id="comp2">Component 2</div>;
       };
 
-      mount(<div><Component1></Component1><Component2></Component2></div>);
+      mount(
+        <div>
+          <Component1></Component1>
+          <Component2></Component2>
+        </div>,
+      );
       expect(effect1Runs).toHaveBeenCalledTimes(1);
       expect(effect2Runs).toHaveBeenCalledTimes(1);
 
       const comp1 = document.getElementById("comp1")!;
       comp1.remove();
-      for (let __i = 0; __i < 50; __i++) { if (peekState(comp1) === undefined) break; await delay(); }
+      for (let __i = 0; __i < 50; __i++) {
+        if (peekState(comp1) === undefined) break;
+        await delay();
+      }
       expect(peekState(comp1)).toBeUndefined();
 
       trigger1(1);
@@ -188,7 +252,10 @@ describe("dom", () => {
 
       const comp2 = document.getElementById("comp2")!;
       comp2.remove();
-      for (let __i = 0; __i < 50; __i++) { if (peekState(comp2) === undefined) break; await delay(); }
+      for (let __i = 0; __i < 50; __i++) {
+        if (peekState(comp2) === undefined) break;
+        await delay();
+      }
       expect(peekState(comp2)).toBeUndefined();
 
       trigger2(2);
@@ -197,13 +264,21 @@ describe("dom", () => {
 
     test("disposes both instances' scopes for a static-root component", async () => {
       const count = signal(0);
-      const effectRuns = mock(() => { });
+      const effectRuns = vi.fn(() => {});
       const Static = () => {
-        effect(() => { effectRuns(); count(); });
+        effect(() => {
+          effectRuns();
+          count();
+        });
         return <div class="static-root">Static</div>;
       };
 
-      const app = mount(<div>{component(Static, {})}{component(Static, {})}</div>);
+      const app = mount(
+        <div>
+          {component(Static, {})}
+          {component(Static, {})}
+        </div>,
+      );
       expect(effectRuns).toHaveBeenCalledTimes(2);
 
       app.unmount();
@@ -216,16 +291,24 @@ describe("dom", () => {
 
     test("wires the scope on the staticDom clone path", async () => {
       const count = signal(0);
-      const effectRuns = mock(() => { });
+      const effectRuns = vi.fn(() => {});
       const Static = () => {
-        effect(() => { effectRuns(); count(); });
+        effect(() => {
+          effectRuns();
+          count();
+        });
         return <div class="clone-root">Clone</div>;
       };
 
       // One component() call, its result mounted twice: the second mount serves
       // the staticDom cache clone — both elements need the scope wired.
       const node = component(Static, {});
-      const app = mount(<div>{node}{node}</div>);
+      const app = mount(
+        <div>
+          {node}
+          {node}
+        </div>,
+      );
       expect(effectRuns).toHaveBeenCalledTimes(1);
 
       app.unmount();
@@ -238,13 +321,20 @@ describe("dom", () => {
 
     test("disposes a static-fragment-root component's scope on subtree removal", async () => {
       const count = signal(0);
-      const effectRuns = mock(() => { });
+      const effectRuns = vi.fn(() => {});
       const FragRoot = () => {
-        effect(() => { effectRuns(); count(); });
+        effect(() => {
+          effectRuns();
+          count();
+        });
         return <>a b</>;
       };
 
-      mount(<div id="frag-root-wrapper"><FragRoot></FragRoot></div>);
+      mount(
+        <div id="frag-root-wrapper">
+          <FragRoot></FragRoot>
+        </div>,
+      );
       expect(effectRuns).toHaveBeenCalledTimes(1);
 
       count(1);
@@ -254,7 +344,10 @@ describe("dom", () => {
       const wrapper = document.getElementById("frag-root-wrapper")!;
       const text = wrapper.firstChild!;
       wrapper.remove();
-      for (let __i = 0; __i < 50; __i++) { if (peekState(text) === undefined) break; await delay(); }
+      for (let __i = 0; __i < 50; __i++) {
+        if (peekState(text) === undefined) break;
+        await delay();
+      }
       expect(peekState(text)).toBeUndefined();
 
       count(2);
@@ -264,13 +357,25 @@ describe("dom", () => {
 
     test("disposes a multi-root fragment component's scope on subtree removal", async () => {
       const count = signal(0);
-      const effectRuns = mock(() => { });
+      const effectRuns = vi.fn(() => {});
       const MultiRoot = () => {
-        effect(() => { effectRuns(); count(); });
-        return <><b id="frag-first">A</b><i id="frag-second">B</i></>;
+        effect(() => {
+          effectRuns();
+          count();
+        });
+        return (
+          <>
+            <b id="frag-first">A</b>
+            <i id="frag-second">B</i>
+          </>
+        );
       };
 
-      mount(<div id="multi-root-wrapper"><MultiRoot></MultiRoot></div>);
+      mount(
+        <div id="multi-root-wrapper">
+          <MultiRoot></MultiRoot>
+        </div>,
+      );
       expect(effectRuns).toHaveBeenCalledTimes(1);
 
       count(1);
@@ -279,7 +384,10 @@ describe("dom", () => {
 
       const carrier = document.getElementById("frag-second")!;
       document.getElementById("multi-root-wrapper")!.remove();
-      for (let __i = 0; __i < 50; __i++) { if (peekState(carrier) === undefined) break; await delay(); }
+      for (let __i = 0; __i < 50; __i++) {
+        if (peekState(carrier) === undefined) break;
+        await delay();
+      }
       expect(peekState(carrier)).toBeUndefined();
 
       count(2);
@@ -288,21 +396,31 @@ describe("dom", () => {
     });
 
     test("chains scopes when a component returns another component's result directly", async () => {
-      const outerRuns = mock(() => { });
-      const innerRuns = mock(() => { });
+      const outerRuns = vi.fn(() => {});
+      const innerRuns = vi.fn(() => {});
       const outerCount = signal(0);
       const innerCount = signal(0);
 
       const Inner = () => {
-        effect(() => { innerRuns(); innerCount(); });
+        effect(() => {
+          innerRuns();
+          innerCount();
+        });
         return <span id="direct-inner">Inner</span>;
       };
       const Outer = () => {
-        effect(() => { outerRuns(); outerCount(); });
+        effect(() => {
+          outerRuns();
+          outerCount();
+        });
         return component(Inner, {}) as HellaNode & RenderFn;
       };
 
-      mount(<div id="direct-wrapper"><Outer></Outer></div>);
+      mount(
+        <div id="direct-wrapper">
+          <Outer></Outer>
+        </div>,
+      );
       expect(outerRuns).toHaveBeenCalledTimes(1);
       expect(innerRuns).toHaveBeenCalledTimes(1);
 
@@ -314,7 +432,10 @@ describe("dom", () => {
 
       const inner = document.getElementById("direct-inner")!;
       document.getElementById("direct-wrapper")!.remove();
-      for (let __i = 0; __i < 50; __i++) { if (peekState(inner) === undefined) break; await delay(); }
+      for (let __i = 0; __i < 50; __i++) {
+        if (peekState(inner) === undefined) break;
+        await delay();
+      }
       expect(peekState(inner)).toBeUndefined();
 
       outerCount(2);
@@ -325,21 +446,35 @@ describe("dom", () => {
     });
 
     test("chains scopes when a fragment root's first child is an inner component", async () => {
-      const outerRuns = mock(() => { });
-      const innerRuns = mock(() => { });
+      const outerRuns = vi.fn(() => {});
+      const innerRuns = vi.fn(() => {});
       const outerCount = signal(0);
       const innerCount = signal(0);
 
       const Inner = () => {
-        effect(() => { innerRuns(); innerCount(); });
+        effect(() => {
+          innerRuns();
+          innerCount();
+        });
         return <span id="frag-child-inner">Inner</span>;
       };
       const Outer = () => {
-        effect(() => { outerRuns(); outerCount(); });
-        return <><Inner></Inner>tail</>;
+        effect(() => {
+          outerRuns();
+          outerCount();
+        });
+        return (
+          <>
+            <Inner></Inner>tail
+          </>
+        );
       };
 
-      mount(<div id="frag-child-wrapper"><Outer></Outer></div>);
+      mount(
+        <div id="frag-child-wrapper">
+          <Outer></Outer>
+        </div>,
+      );
       expect(outerRuns).toHaveBeenCalledTimes(1);
       expect(innerRuns).toHaveBeenCalledTimes(1);
 
@@ -351,7 +486,10 @@ describe("dom", () => {
 
       const inner = document.getElementById("frag-child-inner")!;
       document.getElementById("frag-child-wrapper")!.remove();
-      for (let __i = 0; __i < 50; __i++) { if (peekState(inner) === undefined) break; await delay(); }
+      for (let __i = 0; __i < 50; __i++) {
+        if (peekState(inner) === undefined) break;
+        await delay();
+      }
       expect(peekState(inner)).toBeUndefined();
 
       outerCount(2);
@@ -363,13 +501,20 @@ describe("dom", () => {
 
     test("keeps a reactive-first fragment-root component's scope across child swaps", async () => {
       const count = signal(0);
-      const effectRuns = mock(() => { });
+      const effectRuns = vi.fn(() => {});
       const ReactiveFirst = () => {
-        effect(() => { effectRuns(); count(); });
+        effect(() => {
+          effectRuns();
+          count();
+        });
         return <>{count} tail</>;
       };
 
-      mount(<div id="reactive-first-wrapper"><ReactiveFirst></ReactiveFirst></div>);
+      mount(
+        <div id="reactive-first-wrapper">
+          <ReactiveFirst></ReactiveFirst>
+        </div>,
+      );
       expect(effectRuns).toHaveBeenCalledTimes(1);
 
       // The leading child swaps its rendered node — the scope must ride past it.
@@ -388,7 +533,10 @@ describe("dom", () => {
       // The carrier is the static tail (the fragment's last child).
       const carrier = document.getElementById("reactive-first-wrapper")!.lastChild!;
       document.getElementById("reactive-first-wrapper")!.remove();
-      for (let __i = 0; __i < 50; __i++) { if (peekState(carrier) === undefined) break; await delay(); }
+      for (let __i = 0; __i < 50; __i++) {
+        if (peekState(carrier) === undefined) break;
+        await delay();
+      }
       expect(peekState(carrier)).toBeUndefined();
 
       count(3);
@@ -398,13 +546,20 @@ describe("dom", () => {
 
     test("keeps a ForEach-first fragment-root component's scope across list reconciliation", async () => {
       const list = signal(["a", "b"]);
-      const effectRuns = mock(() => { });
+      const effectRuns = vi.fn(() => {});
       const ForEachFirst = () => {
-        effect(() => { effectRuns(); list(); });
-        return <>{(ForEach({ each: list, use: (item: string) => <b>{item}</b> }))} tail</>;
+        effect(() => {
+          effectRuns();
+          list();
+        });
+        return <>{ForEach({ each: list, use: (item: string) => <b>{item}</b> })} tail</>;
       };
 
-      mount(<div id="foreach-first-wrapper"><ForEachFirst></ForEachFirst></div>);
+      mount(
+        <div id="foreach-first-wrapper">
+          <ForEachFirst></ForEachFirst>
+        </div>,
+      );
       expect(effectRuns).toHaveBeenCalledTimes(1);
 
       // Full positional reconciliation rebuilds every item — the scope must ride past it.
@@ -422,7 +577,10 @@ describe("dom", () => {
       // The carrier is the static tail (the fragment's last child — the ForEach anchor precedes it).
       const carrier = document.getElementById("foreach-first-wrapper")!.lastChild!;
       document.getElementById("foreach-first-wrapper")!.remove();
-      for (let __i = 0; __i < 50; __i++) { if (peekState(carrier) === undefined) break; await delay(); }
+      for (let __i = 0; __i < 50; __i++) {
+        if (peekState(carrier) === undefined) break;
+        await delay();
+      }
       expect(peekState(carrier)).toBeUndefined();
 
       list(["e"]);
@@ -432,13 +590,20 @@ describe("dom", () => {
 
     test("keeps a single-reactive-child fragment-root component's scope across swaps", async () => {
       const count = signal(0);
-      const effectRuns = mock(() => { });
+      const effectRuns = vi.fn(() => {});
       const SingleReactive = () => {
-        effect(() => { effectRuns(); count(); });
+        effect(() => {
+          effectRuns();
+          count();
+        });
         return <>{count}</>;
       };
 
-      mount(<div id="single-reactive-wrapper"><SingleReactive></SingleReactive></div>);
+      mount(
+        <div id="single-reactive-wrapper">
+          <SingleReactive></SingleReactive>
+        </div>,
+      );
       expect(effectRuns).toHaveBeenCalledTimes(1);
 
       count(1);
@@ -455,7 +620,10 @@ describe("dom", () => {
       // The carrier is the reactive branch's persistent anchor (the last child).
       const carrier = document.getElementById("single-reactive-wrapper")!.lastChild!;
       document.getElementById("single-reactive-wrapper")!.remove();
-      for (let __i = 0; __i < 50; __i++) { if (peekState(carrier) === undefined) break; await delay(); }
+      for (let __i = 0; __i < 50; __i++) {
+        if (peekState(carrier) === undefined) break;
+        await delay();
+      }
       expect(peekState(carrier)).toBeUndefined();
 
       count(3);
@@ -465,13 +633,20 @@ describe("dom", () => {
 
     test("disposes a static-first reactive-tail fragment-root component only on removal", async () => {
       const count = signal(0);
-      const effectRuns = mock(() => { });
+      const effectRuns = vi.fn(() => {});
       const StaticFirst = () => {
-        effect(() => { effectRuns(); count(); });
+        effect(() => {
+          effectRuns();
+          count();
+        });
         return <>head {count} tail</>;
       };
 
-      mount(<div id="static-first-wrapper"><StaticFirst></StaticFirst></div>);
+      mount(
+        <div id="static-first-wrapper">
+          <StaticFirst></StaticFirst>
+        </div>,
+      );
       expect(effectRuns).toHaveBeenCalledTimes(1);
 
       count(1);
@@ -487,7 +662,10 @@ describe("dom", () => {
       // static text, so the test guards the carrier switch end-to-end.
       const carrier = document.getElementById("static-first-wrapper")!.lastChild!;
       document.getElementById("static-first-wrapper")!.remove();
-      for (let __i = 0; __i < 50; __i++) { if (peekState(carrier) === undefined) break; await delay(); }
+      for (let __i = 0; __i < 50; __i++) {
+        if (peekState(carrier) === undefined) break;
+        await delay();
+      }
       expect(peekState(carrier)).toBeUndefined();
 
       count(3);

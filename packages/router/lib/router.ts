@@ -1,6 +1,16 @@
 import { isFunction, isString, isObject, isNull, hasWindow } from "./internal/core";
 import type { RouterConfig, RouteValue, RouteInfo, HistoryMode } from "./types";
-import { hooks, routes, redirects, notFound, mode, base, scrollBehavior, previousPath, inheritMeta } from "./internal/state";
+import {
+  hooks,
+  routes,
+  redirects,
+  notFound,
+  mode,
+  base,
+  scrollBehavior,
+  previousPath,
+  inheritMeta,
+} from "./internal/state";
 import { route } from "./route";
 import { updateRoute } from "./internal/resolve";
 import { getHashPath, stripBase } from "./internal/utils";
@@ -25,10 +35,14 @@ export function resetListeners() {
  */
 export function router(config: RouterConfig): RouteInfo {
   if (!isObject(config) || Array.isArray(config)) {
-    throw new Error(`[router] router: config must be an object, received ${isNull(config) ? "null" : typeof config}`);
+    throw new Error(
+      `[router] router: config must be an object, received ${isNull(config) ? "null" : typeof config}`,
+    );
   }
   if (config.base !== undefined && (!isString(config.base) || !config.base.startsWith("/"))) {
-    throw new Error(`[router] router: base must be a '/'-prefixed string, received ${JSON.stringify(config.base)}`);
+    throw new Error(
+      `[router] router: base must be a '/'-prefixed string, received ${JSON.stringify(config.base)}`,
+    );
   }
   routes(config.routes as Record<string, RouteValue | string>);
   hooks(config.hooks || {});
@@ -53,9 +67,12 @@ export function router(config: RouterConfig): RouteInfo {
     }
     initialPath = stripBase(parsedInitial.pathname + parsedInitial.search, base());
   } else {
-    initialPath = hasWindow() && routerMode !== "memory"
-      ? (routerMode === "hash" ? getHashPath() : stripBase(window.location.pathname + window.location.search, base()))
-      : "/";
+    initialPath =
+      hasWindow() && routerMode !== "memory"
+        ? routerMode === "hash"
+          ? getHashPath()
+          : stripBase(window.location.pathname + window.location.search, base())
+        : "/";
   }
 
   // An explicit `url` (SSR) always re-resolves against it; the `!route().handler`
@@ -64,7 +81,7 @@ export function router(config: RouterConfig): RouteInfo {
   if (config.url !== undefined || !route().handler) {
     route({
       ...route(),
-      path: initialPath
+      path: initialPath,
     });
   }
 
@@ -107,7 +124,12 @@ function attachListeners(routerMode: HistoryMode, intercept: boolean): void {
     } else {
       eventType = "popstate";
       handler = () => {
-        const verdict = updateRoute(stripBase(window.location.pathname + window.location.search, base()), undefined, undefined, true);
+        const verdict = updateRoute(
+          stripBase(window.location.pathname + window.location.search, base()),
+          undefined,
+          undefined,
+          true,
+        );
         if (verdict === "cancelled") {
           window.history.replaceState(null, "", base() + previousPath());
         }
@@ -121,7 +143,7 @@ function attachListeners(routerMode: HistoryMode, intercept: boolean): void {
       const clickHandler = (event: MouseEvent) => {
         if (event.defaultPrevented) return;
 
-        const anchor = (event.target instanceof Element) ? event.target.closest("a") : null;
+        const anchor = event.target instanceof Element ? event.target.closest("a") : null;
         if (!anchor) return;
 
         if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
@@ -151,7 +173,12 @@ function attachListeners(routerMode: HistoryMode, intercept: boolean): void {
         } else {
           // Same URL differing only by hash (in-page anchor): leave the native
           // jump alone instead of re-navigating the current path.
-          if (parsedURL.hash && parsedURL.pathname === window.location.pathname && parsedURL.search === window.location.search) return;
+          if (
+            parsedURL.hash &&
+            parsedURL.pathname === window.location.pathname &&
+            parsedURL.search === window.location.search
+          )
+            return;
           resolvedPath = stripBase(parsedURL.pathname + parsedURL.search, base());
         }
 

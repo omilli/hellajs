@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState } from "@utils/test-helpers.js";
 import {
@@ -11,7 +11,27 @@ import {
 } from "./helpers/variants";
 
 /** Verbatim shadcn utility tokens — asserted in the tailwind flavor. */
-const BASE_TOKENS = ["flex", "field-sizing-content", "min-h-16", "w-full", "rounded-md", "border", "border-input", "bg-transparent", "px-3", "py-2", "text-base", "shadow-xs", "transition-[color,box-shadow]", "outline-none", "placeholder:text-muted-foreground", "disabled:cursor-not-allowed", "disabled:opacity-50", "md:text-sm", "dark:bg-input/30"];
+const BASE_TOKENS = [
+  "flex",
+  "field-sizing-content",
+  "min-h-16",
+  "w-full",
+  "rounded-md",
+  "border",
+  "border-input",
+  "bg-transparent",
+  "px-3",
+  "py-2",
+  "text-base",
+  "shadow-xs",
+  "transition-[color,box-shadow]",
+  "outline-none",
+  "placeholder:text-muted-foreground",
+  "disabled:cursor-not-allowed",
+  "disabled:opacity-50",
+  "md:text-sm",
+  "dark:bg-input/30",
+];
 
 beforeEach(() => {
   resetTestState();
@@ -33,10 +53,13 @@ describe("textarea", () => {
     expect(textarea.getAttribute("rows")).toBe("4");
   });
 
-  test.each(textareaVariants)("$style renders a static value into the value property", (variant) => {
-    const textarea = renderVariant(variant, { value: "hello" }) as HTMLTextAreaElement;
-    expect(textarea.value).toBe("hello");
-  });
+  test.each(textareaVariants)(
+    "$style renders a static value into the value property",
+    (variant) => {
+      const textarea = renderVariant(variant, { value: "hello" }) as HTMLTextAreaElement;
+      expect(textarea.value).toBe("hello");
+    },
+  );
 
   test.each(textareaVariants)("$style updates the value when a bare signal changes", (variant) => {
     const value = signal("first");
@@ -47,14 +70,17 @@ describe("textarea", () => {
     expect(textarea.value).toBe("second");
   });
 
-  test.each(textareaVariants)("$style passes the typed value to on:input via e.target", (variant) => {
-    const onInput = mock((e: Event) => (e.target as HTMLTextAreaElement).value);
-    const textarea = renderVariant(variant, { "on:input": onInput }) as HTMLTextAreaElement;
-    textarea.value = "typed";
-    textarea.dispatchEvent(new Event("input"));
-    expect(onInput).toHaveBeenCalledTimes(1);
-    expect(onInput.mock.results[0]!.value).toBe("typed");
-  });
+  test.each(textareaVariants)(
+    "$style passes the typed value to on:input via e.target",
+    (variant) => {
+      const onInput = vi.fn((e: Event) => (e.target as HTMLTextAreaElement).value);
+      const textarea = renderVariant(variant, { "on:input": onInput }) as HTMLTextAreaElement;
+      textarea.value = "typed";
+      textarea.dispatchEvent(new Event("input"));
+      expect(onInput).toHaveBeenCalledTimes(1);
+      expect(onInput.mock.results[0]!.value).toBe("typed");
+    },
+  );
 
   test.each(textareaVariants)("$style composes base, focus, and invalid classes", (variant) => {
     const textarea = renderVariant(variant, {});
@@ -89,7 +115,7 @@ describe("textarea", () => {
   });
 
   test("fires a user on:click handler across both styles", () => {
-    const onClick = mock(() => {});
+    const onClick = vi.fn(() => {});
     assertHandlerForwarded(textareaVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 

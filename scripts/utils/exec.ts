@@ -36,11 +36,7 @@ export function execCommand(
     if (timeout) {
       timer = setTimeout(() => {
         child.kill("SIGKILL");
-        reject(
-          new Error(
-            `Command timed out after ${timeout}ms: ${command} ${args.join(" ")}`,
-          ),
-        );
+        reject(new Error(`Command timed out after ${timeout}ms: ${command} ${args.join(" ")}`));
       }, timeout);
     }
 

@@ -27,7 +27,7 @@ export function computeAnchorPosition(
   anchor: { top: number; left: number; width: number; height: number },
   floating: { width: number; height: number },
   viewport: { width: number; height: number },
-  options?: AnchorPositionOptions
+  options?: AnchorPositionOptions,
 ): { x: number; y: number; placement: Placement; width: number } {
   if (anchor == null) {
     throw new Error("[dom] computeAnchorPosition: anchor is required");
@@ -50,7 +50,8 @@ export function computeAnchorPosition(
     side = "bottom";
   }
   const alignX = (): number => {
-    if (align !== "center") return (align === "start") !== rtl ? anchor.left : aRight - floating.width;
+    if (align !== "center")
+      return (align === "start") !== rtl ? anchor.left : aRight - floating.width;
     return anchor.left + (anchor.width - floating.width) / 2;
   };
   const alignY = (): number => {
@@ -64,7 +65,8 @@ export function computeAnchorPosition(
     return viewport.width - aRight - offset >= floating.width;
   };
   if (!fits(side)) {
-    side = side === "top" ? "bottom" : side === "bottom" ? "top" : side === "left" ? "right" : "left";
+    side =
+      side === "top" ? "bottom" : side === "bottom" ? "top" : side === "left" ? "right" : "left";
   }
   let x: number;
   let y: number;
@@ -89,6 +91,6 @@ export function computeAnchorPosition(
     x,
     y,
     placement: (dash === -1 ? side : `${side}-${align}`) as Placement,
-    width: options?.matchAnchorWidth === true ? anchor.width : floating.width
+    width: options?.matchAnchorWidth === true ? anchor.width : floating.width,
   };
 }

@@ -1,11 +1,13 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { resetTestState } from "@utils/test-helpers.js";
-import { css, style, vars, keyframes, cssText, resetCss, resetVars } from "@hellajs/css/bundle";
+import { css, style, vars, keyframes, cssText, resetCss, resetVars } from "@hellajs/css";
 
 // Head children ids restricted to the two sheet elements — canonical order
 // is `hella-css` then `hella-vars` regardless of first-write order.
 const sheetIds = () =>
-  Array.from(document.head.children, (el) => el.id).filter((id) => id === "hella-css" || id === "hella-vars");
+  Array.from(document.head.children, (el) => el.id).filter(
+    (id) => id === "hella-css" || id === "hella-vars",
+  );
 
 beforeEach(() => {
   resetTestState();
@@ -20,7 +22,9 @@ describe("cssText", () => {
     css({ body: { margin: 0 } });
     const cls = style({ color: "red" });
     css({ a: { color: "blue" } });
-    expect(cssText()).toBe(`body {\n  margin: 0px;\n}\n\n.${cls} {\n  color: red;\n}\n\na {\n  color: blue;\n}`);
+    expect(cssText()).toBe(
+      `body {\n  margin: 0px;\n}\n\n.${cls} {\n  color: red;\n}\n\na {\n  color: blue;\n}`,
+    );
   });
 
   test("hoists a statement registration ahead of braced-only text", () => {
@@ -58,15 +62,18 @@ describe("cssText", () => {
   test("joins css, style, keyframes, and vars text in registration order", () => {
     css({ body: { margin: 0 } });
     const theme = vars({ color: { primary: "#3b82f6" } });
-    const spin = keyframes({ from: { transform: "rotate(0deg)" }, to: { transform: "rotate(360deg)" } });
+    const spin = keyframes({
+      from: { transform: "rotate(0deg)" },
+      to: { transform: "rotate(360deg)" },
+    });
     const cls = style({ animation: `${spin} 1s linear infinite` });
 
     expect(theme.color.primary).toBe("var(--color-primary)");
     expect(cssText()).toBe(
       `body {\n  margin: 0px;\n}\n\n` +
-      `@keyframes ${spin} {\n  from {\n    transform: rotate(0deg);\n  }\n  to {\n    transform: rotate(360deg);\n  }\n}\n\n` +
-      `.${cls} {\n  animation: ${spin} 1s linear infinite;\n}\n\n` +
-      `:root {\n  --color-primary: #3b82f6;\n}`
+        `@keyframes ${spin} {\n  from {\n    transform: rotate(0deg);\n  }\n  to {\n    transform: rotate(360deg);\n  }\n}\n\n` +
+        `.${cls} {\n  animation: ${spin} 1s linear infinite;\n}\n\n` +
+        `:root {\n  --color-primary: #3b82f6;\n}`,
     );
   });
 
@@ -102,7 +109,9 @@ describe("cssText", () => {
   test("wraps media vars in the at-rule", () => {
     vars({ bg: "#000" }, { media: "(prefers-color-scheme: dark)" });
 
-    expect(cssText()).toBe("@media (prefers-color-scheme: dark) {\n  :root {\n    --bg: #000;\n  }\n}");
+    expect(cssText()).toBe(
+      "@media (prefers-color-scheme: dark) {\n  :root {\n    --bg: #000;\n  }\n}",
+    );
   });
 
   test("resetVars clears the vars contribution only", () => {

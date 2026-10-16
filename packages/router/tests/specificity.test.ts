@@ -1,5 +1,5 @@
-import { describe, test, expect, beforeEach } from "bun:test";
-import { router, navigate } from "@hellajs/router/bundle";
+import { describe, test, expect, beforeEach } from "vite-plus/test";
+import { router, navigate } from "@hellajs/router";
 import { setupRouterEnv } from "./helpers";
 
 describe("router", () => {
@@ -17,8 +17,8 @@ describe("router", () => {
       router({
         routes: {
           "/users/admin": () => render("admin-user"),
-          "/users/:id": ({ id }) => render(`user-${id}`)
-        }
+          "/users/:id": ({ id }) => render(`user-${id}`),
+        },
       });
 
       navigate("/users/admin");
@@ -36,12 +36,12 @@ describe("router", () => {
               "/*": () => render("wildcard"),
               "/v1": {
                 children: {
-                  "/users": () => render("users")
-                }
-              }
-            }
-          }
-        }
+                  "/users": () => render("users"),
+                },
+              },
+            },
+          },
+        },
       });
 
       navigate("/api/v1/users");
@@ -56,18 +56,18 @@ describe("router", () => {
               "/*": () => render("docs-wildcard"),
               "/api": {
                 children: {
-                  "/reference": () => render("api-reference")
-                }
+                  "/reference": () => render("api-reference"),
+                },
               },
               "/guides": {
                 children: {
                   "/getting-started": () => render("getting-started"),
-                  "/*": () => render("guides-wildcard")
-                }
-              }
-            }
-          }
-        }
+                  "/*": () => render("guides-wildcard"),
+                },
+              },
+            },
+          },
+        },
       });
 
       navigate("/docs/api/reference");
@@ -88,15 +88,15 @@ describe("router", () => {
         routes: {
           "/*": {
             children: {
-              "/admin": () => render("wildcard-admin")
-            }
+              "/admin": () => render("wildcard-admin"),
+            },
           },
           "/content": {
             children: {
-              "/admin": () => render("content-admin")
-            }
-          }
-        }
+              "/admin": () => render("content-admin"),
+            },
+          },
+        },
       });
 
       navigate("/content/admin");
@@ -108,15 +108,15 @@ describe("router", () => {
         routes: {
           "/a": {
             children: {
-              "/b": () => render("short-path")
-            }
+              "/b": () => render("short-path"),
+            },
           },
           "/a/b/c": {
             children: {
-              "/d": () => render("long-path")
-            }
-          }
-        }
+              "/d": () => render("long-path"),
+            },
+          },
+        },
       });
 
       navigate("/a/b/c/d");

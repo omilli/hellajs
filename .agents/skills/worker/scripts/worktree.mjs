@@ -16,7 +16,7 @@
  * cherry-picks it into the base branch as one commit per task.
  *
  * Usage: bun .agents/skills/worker/scripts/worktree.mjs <command> [args]
- *   new <slug> --plans <set-folder> [--base <ref>]   seed + carry + baseline + bun install
+ *   new <slug> --plans <set-folder> [--base <ref>]   seed + carry + baseline + install
  *   diff <slug>                                      baseline-relative patch (stdout)
  *   commit <slug> -m <message>                       commit the delta on the wt branch (plans excluded)
  *   status <slug>                                    baseline + dirty summary
@@ -229,7 +229,7 @@ function commandNew(args) {
 
   const installed = run("bun", ["install"], { cwd: wtPath(slug), inherit: true });
   if (installed.status !== 0) {
-    fail(`bun install failed in ${wtPath(slug)} (exit ${installed.status})`);
+    fail(`install failed in ${wtPath(slug)} (exit ${installed.status})`);
   }
 
   console.log(`seeded ${slug}: branch ${BRANCH_PREFIX}${slug} @ ${base}`);
@@ -404,7 +404,7 @@ function requireSlug(args, command) {
 function usage() {
   const lines = [
     "usage: bun .agents/skills/worker/scripts/worktree.mjs <command> [args]",
-    "  new <slug> --plans <set-folder> [--base <ref>]   seed + carry + baseline + bun install",
+    "  new <slug> --plans <set-folder> [--base <ref>]   seed + carry + baseline + install",
     "  diff <slug>                                      baseline-relative patch (stdout)",
     "  commit <slug> -m <message>                       commit the delta on the wt branch (plans excluded)",
     "  status <slug>                                    baseline + dirty summary",

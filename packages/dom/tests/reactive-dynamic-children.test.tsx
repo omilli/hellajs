@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState, delay, setupContainer } from "@utils/test-helpers.js";
 import { mount, hydrate, ForEach, Transition, Lazy, Suspense, registry } from "@hellajs/dom";
@@ -13,7 +13,7 @@ describe("dom", () => {
   describe("reactive dynamic children", () => {
     test("proxy forwards non-appendChild property access for custom dynamic components", () => {
       const toggle = signal<(() => void) | null>(null);
-      const accessedNodeType = mock(() => {});
+      const accessedNodeType = vi.fn(() => {});
 
       const CustomDynamic = ((parent: Element) => {
         const nodeType = (parent as unknown as { nodeType: number }).nodeType;
@@ -60,7 +60,18 @@ describe("dom", () => {
       const toggle = signal(true);
       const container = setupContainer();
 
-      mount(<div id="host">{(() => toggle() ? ForEach({ each: items, use: (item: string) => <li>{item}</li> }) : <p>none</p>)}</div>, container);
+      mount(
+        <div id="host">
+          {() =>
+            toggle() ? (
+              ForEach({ each: items, use: (item: string) => <li>{item}</li> })
+            ) : (
+              <p>none</p>
+            )
+          }
+        </div>,
+        container,
+      );
 
       const host = document.getElementById("host")!;
       expect(host.querySelectorAll("li")).toHaveLength(2);
@@ -81,7 +92,12 @@ describe("dom", () => {
       const toggle = signal(true);
       const container = setupContainer();
 
-      mount(<div id="host">{(() => toggle() ? Transition({ show, children: <b>T-content</b> }) : <p>none</p>)}</div>, container);
+      mount(
+        <div id="host">
+          {() => (toggle() ? Transition({ show, children: <b>T-content</b> }) : <p>none</p>)}
+        </div>,
+        container,
+      );
 
       const host = document.getElementById("host")!;
       expect(host.textContent).toContain("T-content");
@@ -96,7 +112,12 @@ describe("dom", () => {
       const toggle = signal(true);
       const container = setupContainer();
 
-      mount(<div id="host">{(() => toggle() ? Suspense({ children: <b>S-content</b> }) : <p>none</p>)}</div>, container);
+      mount(
+        <div id="host">
+          {() => (toggle() ? Suspense({ children: <b>S-content</b> }) : <p>none</p>)}
+        </div>,
+        container,
+      );
 
       const host = document.getElementById("host")!;
       expect(host.textContent).toContain("S-content");
@@ -109,13 +130,20 @@ describe("dom", () => {
 
     test("Suspense async-child switch-away before settle discards the late resolution", async () => {
       let resolveChild!: (val: HellaNode) => void;
-      const pending = new Promise<HellaNode>((resolve) => { resolveChild = resolve; });
+      const pending = new Promise<HellaNode>((resolve) => {
+        resolveChild = resolve;
+      });
       const toggle = signal(true);
       const container = setupContainer();
 
-      mount(<div id="host">{(() => toggle()
-            ? <Suspense fallback={(<i>fb</i>)}>{() => pending}</Suspense>
-            : <p>none</p>)}</div>, container);
+      mount(
+        <div id="host">
+          {() =>
+            toggle() ? <Suspense fallback={<i>fb</i>}>{() => pending}</Suspense> : <p>none</p>
+          }
+        </div>,
+        container,
+      );
 
       const host = document.getElementById("host")!;
       expect(host.textContent).toContain("fb");
@@ -124,7 +152,7 @@ describe("dom", () => {
       flush();
       await delay(0);
 
-      resolveChild(<b>late</b> as HellaNode);
+      resolveChild((<b>late</b>) as HellaNode);
       await delay(0);
 
       expect(host.textContent).toBe("none");
@@ -134,7 +162,18 @@ describe("dom", () => {
       const toggle = signal(true);
       const container = setupContainer();
 
-      mount(<div id="host">{(() => toggle() ? Lazy({ loader: () => new Promise<HellaNode>(() => {}), loading: <em>L-loading</em> }) : <p>none</p>)}</div>, container);
+      mount(
+        <div id="host">
+          {() =>
+            toggle() ? (
+              Lazy({ loader: () => new Promise<HellaNode>(() => {}), loading: <em>L-loading</em> })
+            ) : (
+              <p>none</p>
+            )
+          }
+        </div>,
+        container,
+      );
 
       const host = document.getElementById("host")!;
       expect(host.textContent).toContain("L-loading");
@@ -149,7 +188,18 @@ describe("dom", () => {
       const toggle = signal(true);
       const container = setupContainer();
 
-      mount(<div id="host">{(() => toggle() ? Lazy({ loader: () => Promise.resolve(<b>L-content</b>), loading: <em>L-loading</em> }) : <p>none</p>)}</div>, container);
+      mount(
+        <div id="host">
+          {() =>
+            toggle() ? (
+              Lazy({ loader: () => Promise.resolve(<b>L-content</b>), loading: <em>L-loading</em> })
+            ) : (
+              <p>none</p>
+            )
+          }
+        </div>,
+        container,
+      );
 
       const host = document.getElementById("host")!;
       expect(host.textContent).toContain("L-loading");
@@ -174,7 +224,21 @@ describe("dom", () => {
         const toggle = signal(true);
         const container = setupContainer();
 
-        mount(<div id="host">{(() => toggle() ? ForEach({ each: items, use: (entry: { id: number; label: string }) => <li>{entry.label}</li> }) : <p>none</p>)}</div>, container);
+        mount(
+          <div id="host">
+            {() =>
+              toggle() ? (
+                ForEach({
+                  each: items,
+                  use: (entry: { id: number; label: string }) => <li>{entry.label}</li>,
+                })
+              ) : (
+                <p>none</p>
+              )
+            }
+          </div>,
+          container,
+        );
 
         expect(document.getElementById("host")!.querySelectorAll("li")).toHaveLength(1);
 
@@ -187,9 +251,9 @@ describe("dom", () => {
       })();
 
       await delay(0);
-      Bun.gc(true);
-      Bun.gc(true);
-      Bun.gc(true);
+      gc?.();
+      gc?.();
+      gc?.();
 
       expect(canary.deref()).toBeUndefined();
     });
@@ -197,7 +261,8 @@ describe("dom", () => {
     test("hydrate reactive region renders and clears a dynamic ForEach across toggles", () => {
       const items = signal(["a", "b"]);
       const toggle = signal(false);
-      const getter = () => toggle() ? ForEach({ each: items, use: (item: string) => <li>{item}</li> }) : <p>none</p>;
+      const getter = () =>
+        toggle() ? ForEach({ each: items, use: (item: string) => <li>{item}</li> }) : <p>none</p>;
       const container = ssrContainer(<div id="host">{getter}</div>);
 
       hydrate(<div id="host">{getter}</div>, container);
@@ -219,15 +284,17 @@ describe("dom", () => {
     test("hydrate region re-run drains effects registered on the region anchor", () => {
       const name = signal("a");
       const toggle = signal(false);
-      const getter = () => toggle() ? <b>{name()}</b> : <p>none</p>;
+      const getter = () => (toggle() ? <b>{name()}</b> : <p>none</p>);
       const container = ssrContainer(<div id="host">{getter}</div>);
 
       hydrate(<div id="host">{getter}</div>, container);
 
       const host = document.getElementById("host")!;
       // the reactive region's persistent anchor is the empty text node the walker left in place
-      const anchor = Array.from(host.childNodes).find((n) => n.nodeType === Node.TEXT_NODE && n.textContent === "")!;
-      const effectRuns = mock(() => {});
+      const anchor = Array.from(host.childNodes).find(
+        (n) => n.nodeType === Node.TEXT_NODE && n.textContent === "",
+      )!;
+      const effectRuns = vi.fn(() => {});
       registry.addEffect(anchor, effectRuns);
       expect(effectRuns).toHaveBeenCalledTimes(1);
 
@@ -243,12 +310,17 @@ describe("dom", () => {
     });
 
     test("parent update hooks do not fire for a ForEach child's internal list updates", () => {
-      const beforeUpdate = mock(() => {});
-      const afterUpdate = mock(() => {});
+      const beforeUpdate = vi.fn(() => {});
+      const afterUpdate = vi.fn(() => {});
       const items = signal(["a"]);
       const container = setupContainer();
 
-      mount(<ul id="host" hook:beforeUpdate={beforeUpdate} hook:afterUpdate={afterUpdate}><ForEach each={items} use={((item: string) => <li>{item}</li>)}></ForEach></ul>, container);
+      mount(
+        <ul id="host" hook:beforeUpdate={beforeUpdate} hook:afterUpdate={afterUpdate}>
+          <ForEach each={items} use={(item: string) => <li>{item}</li>}></ForEach>
+        </ul>,
+        container,
+      );
 
       const host = document.getElementById("host")!;
       expect(host.querySelectorAll("li")).toHaveLength(1);

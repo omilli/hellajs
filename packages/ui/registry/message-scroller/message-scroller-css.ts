@@ -268,7 +268,8 @@ css({
   "[dir='rtl'] [data-slot='message-scroller-button'][data-direction='end'][data-active='false']": {
     translate: "50% 100%",
   },
-  "[dir='rtl'] [data-slot='message-scroller-button'][data-direction='start'][data-active='false']": {
-    translate: "50% -100%",
-  },
+  "[dir='rtl'] [data-slot='message-scroller-button'][data-direction='start'][data-active='false']":
+    {
+      translate: "50% -100%",
+    },
 });

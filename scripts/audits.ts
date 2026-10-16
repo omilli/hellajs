@@ -1,6 +1,7 @@
-import { logger, isValidPackage } from "./utils/index.js";
-import { isThinkingLevel } from "./agent/rpc.js";
-import { type AuditSection, runAudits } from "./audits/run.js";
+import type {} from "bun";
+import { logger, isValidPackage } from "./utils/index.ts";
+import { isThinkingLevel } from "./agent/rpc.ts";
+import { type AuditSection, runAudits } from "./audits/run.ts";
 
 /** Parsed CLI configuration. */
 interface AuditsArgs {
@@ -75,8 +76,12 @@ function resolveTarget(target: string): string {
 
 /** Print the usage line. */
 function printUsage(): void {
-  logger.error("usage: bun audits <package> [--section=code|tests|docs] [--model=<provider/id>] [--thinking=<level>] [--dry-run]");
-  logger.error("       accepts a bare name (core) or packages/core; --dry-run prints derived sections and set dirs, then exits");
+  logger.error(
+    "usage: bun audits <package> [--section=code|tests|docs] [--model=<provider/id>] [--thinking=<level>] [--dry-run]",
+  );
+  logger.error(
+    "       accepts a bare name (core) or packages/core; --dry-run prints derived sections and set dirs, then exits",
+  );
 }
 
 /** Entry point: parse args, resolve the target, and run the audit pipeline. */
@@ -89,7 +94,13 @@ async function main(): Promise<void> {
     }
     const packageName = resolveTarget(args.target);
     process.exit(
-      await runAudits({ packageName, section: args.section, model: args.model, thinking: args.thinking, dryRun: args.dryRun }),
+      await runAudits({
+        packageName,
+        section: args.section,
+        model: args.model,
+        thinking: args.thinking,
+        dryRun: args.dryRun,
+      }),
     );
   } catch (error) {
     logger.error(`audits failed: ${(error as Error).message}`);

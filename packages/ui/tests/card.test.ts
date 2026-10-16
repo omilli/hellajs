@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { resetTestState } from "@utils/test-helpers.js";
 import {
   assertAttrForwarded,
@@ -27,19 +27,22 @@ beforeEach(() => {
 });
 
 describe("card", () => {
-  test.each(cardVariants)("$style renders the default Card with its data-slot and class merge", (variant) => {
-    const card = renderVariant(variant, { children: variant.child("Content"), class: "my-card" });
-    expect(card.tagName).toBe("DIV");
-    expect(card.getAttribute("data-slot")).toBe("card");
-    const tokens = classTokens(card);
-    expect(tokens.at(-1)).toBe("my-card");
-    if (variant.style === "css") {
-      expect(tokens).toHaveLength(2);
-      expect(tokens[0]!.startsWith("card-")).toBe(true);
-    } else {
-      for (const token of PART_TOKENS[""]!) expect(tokens).toContain(token);
-    }
-  });
+  test.each(cardVariants)(
+    "$style renders the default Card with its data-slot and class merge",
+    (variant) => {
+      const card = renderVariant(variant, { children: variant.child("Content"), class: "my-card" });
+      expect(card.tagName).toBe("DIV");
+      expect(card.getAttribute("data-slot")).toBe("card");
+      const tokens = classTokens(card);
+      expect(tokens.at(-1)).toBe("my-card");
+      if (variant.style === "css") {
+        expect(tokens).toHaveLength(2);
+        expect(tokens[0]!.startsWith("card-")).toBe(true);
+      } else {
+        for (const token of PART_TOKENS[""]!) expect(tokens).toContain(token);
+      }
+    },
+  );
 
   test.each(cardVariants)("$style renders children directly with no inner wrapper", (variant) => {
     const card = renderVariant(variant, { children: variant.child("Content") });
@@ -68,7 +71,7 @@ describe("card", () => {
   });
 
   test("fires a user on:click handler across both styles", () => {
-    const onClick = mock(() => {});
+    const onClick = vi.fn(() => {});
     assertHandlerForwarded(cardVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 

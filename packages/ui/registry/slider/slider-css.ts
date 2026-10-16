@@ -56,7 +56,8 @@ export const thumb = style("slider-thumb", {
   flexShrink: "0",
   height: "1rem",
   outlineStyle: "none",
-  transition: "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
+  transition:
+    "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   width: "1rem",
   "&:hover": {
     boxShadow: `0 0 0 4px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,

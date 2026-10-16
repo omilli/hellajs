@@ -1,216 +1,151 @@
-import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import {
   execCommand,
+  execCommandInherited,
   isValidPackage,
+  isValidPlugin,
   projectRoot,
   packagesDir,
+  pluginsDir,
   logger,
-} from "./utils/index.js";
-
-/** ANSI SGR escape sequence matcher (e.g. \x1b[1;32m, \x1b[0m). */
-const ANSI = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, "g");
-const stripAnsi = (line: string): string => line.replace(ANSI, "");
+} from "./utils/index.ts";
 
 /**
- * Write captured output to stdout, exiting only after the write drains.
- * Calling process.exit() immediately after a large process.stdout.write()
- * can truncate piped output in CI environments — the callback guarantees
- * the buffer is flushed before the process terminates.
+ * The vp CLI from the locally installed vite-plus (never a global binary).
+ * The measurement target is the entry-graph per-module dist artifacts
+ * (top-level `dist` .js files plus `dist/internal`), the ui registry minus
+ * the `cn`/`tokens` data artifacts, and every plugin .mjs source (vite/rollup
+ * read 0% by design: thin wrappers, no suites). `bundle.js` is verified by
+ * each package's `tests/bundle.test.ts` smoke test (export parity), not
+ * measured.
+ *
+ * Reporting is vitest's own text reporter. Scoped runs narrow the
+ * `--coverage.include` globs to the target workspace instead of filtering
+ * rendered rows: sibling dists that test helpers load stay uninstrumented,
+ * the "All files" aggregate is vitest's count-weighted total over the scope,
+ * and the stock table's uncovered-line numbers are kept (they reference the
+ * dist files, near-verbatim copies of the lib sources).
+ *
+ * `--coverage` must precede the `--coverage.*` flags on the vp command line
+ * — nested flags appearing before it are silently ignored (the run stays
+ * green and renders a repo-wide table).
  */
-function writeAndExit(output: string, code: number): void {
-  process.stdout.on("error", () => process.exit(code));
-  process.stdout.write(output, () => process.exit(code));
+const vpBin = path.join(projectRoot, "node_modules", ".bin", "vp");
+
+/** Coverage include/exclude flags measuring every workspace (unscoped runs). */
+function repoFlags(): string[] {
+  return [
+    "--coverage.include=packages/*/dist/*.js",
+    "--coverage.include=packages/*/dist/internal/*.js",
+    "--coverage.include=packages/ui/dist/registry/**/*.js",
+    "--coverage.include=plugins/**/*.mjs",
+    "--coverage.exclude=packages/*/dist/bundle.js",
+    "--coverage.exclude=packages/*/dist/**/*.min.js",
+    "--coverage.exclude=packages/ui/dist/registry/**/cn.js",
+    "--coverage.exclude=packages/ui/dist/registry/**/tokens*.js",
+    `--coverage.exclude=plugins/**/index.mjs`,
+  ];
 }
 
 /**
- * Run a command, capturing combined stdout+stderr. Resolves regardless of exit
- * code so coverage tables render even when tests fail. Bun sends test output
- * and coverage tables to stderr; stdout holds only the version banner —
- * concatenating stdout first preserves the original display order.
- *
- * FORCE_COLOR is injected so Bun emits ANSI color codes even though its
- * stdout is piped (non-TTY); without it, all output is plain white.
- *
- * Uses raw spawn (not execCommand) because execCommand rejects on non-zero exit
- * but this function must resolve regardless of exit code so coverage tables
- * render even when tests fail.
+ * Coverage include/exclude flags narrowed to one workspace so vitest's table
+ * scopes itself. Packages measure their dist artifacts; ui additionally
+ * measures the registry minus the `cn`/`tokens` data artifacts; plugins
+ * measure their `.mjs` sources (plugins have no dist).
  */
-function runCapture(
-  command: string,
-  args: string[],
-  options: { cwd?: string } = {},
-): Promise<{ output: string; code: number }> {
-  return new Promise((resolve, reject) => {
-    const child = spawn(command, args, {
-      cwd: options.cwd || projectRoot,
-      stdio: ["pipe", "pipe", "pipe"],
-      env: { ...process.env, FORCE_COLOR: "1" },
-    });
-    let stdout = "";
-    let stderr = "";
-    child.stdout.on("data", (d: string) => {
-      stdout += d;
-    });
-    child.stderr.on("data", (d: string) => {
-      stderr += d;
-    });
-    child.on("close", (code: number | null) =>
-      resolve({ output: stdout + stderr, code: code ?? 1 }),
-    );
-    child.on("error", reject);
-  });
+function scopeFlags(name: string, kind: "package" | "plugin"): string[] {
+  if (kind === "plugin")
+    return [
+      `--coverage.include=plugins/${name}/**/*.mjs`,
+      `--coverage.exclude=plugins/${name}/index.mjs`,
+    ];
+  const root = `packages/${name}/dist`;
+  return [
+    `--coverage.include=${root}/*.js`,
+    `--coverage.include=${root}/internal/*.js`,
+    `--coverage.exclude=${root}/bundle.js`,
+    `--coverage.exclude=${root}/**/*.min.js`,
+    ...(name === "ui"
+      ? [
+          `--coverage.include=${root}/registry/**/*.js`,
+          `--coverage.exclude=${root}/registry/**/cn.js`,
+          `--coverage.exclude=${root}/registry/**/tokens*.js`,
+        ]
+      : []),
+  ];
 }
 
 /**
- * Run the three lint stages (tsc, eslint, guards) concurrently with each other;
- * the caller runs this concurrently with the test run. Every stage runs even
- * when another fails — no short-circuit — so one run reports the full picture.
- * Lint needs no fresh dist bundle (tsconfig paths resolve @hellajs/* to lib/
- * sources), which is what makes the concurrency safe.
- *
- * Captures combined stdout+stderr so the caller can append failed stages'
- * output to the final output — inherited stdio would print before the captured
- * test output (written last by writeAndExit) and bury the errors above the
- * test summary, making a lint failure look like an exit-1 with no reason.
- *
- * With `packageName`, eslint scopes to that package so files outside it
- * (sibling packages mid-edit, foreign scratch files) cannot fail a scoped run;
- * tsc and the guards stay repo-wide — their foreign failures are triaged per
- * AGENTS.md §Testing, not chased here.
+ * Run `vp test` with inherited stdio so test output and the coverage table
+ * stream live; exit non-zero when the run fails (its own output is the
+ * failure report). NODE_OPTIONS delivers `--expose-gc` to the vp process
+ * and the worker forks it spawns (poolOptions.execArgv does not propagate;
+ * gc()-dependent tests need the global).
  */
-async function runLint(packageName?: string): Promise<{ code: number; output: string }> {
-  logger.info(packageName ? `Linting (eslint scoped to ${packageName})...` : "Linting...");
-  const [tsc, eslint, guards] = await Promise.all([
-    runCapture("bunx", ["tsc", "-p", "tsconfig.lint.json", "--noEmit"]),
-    runCapture("bunx", ["eslint", packageName ? `packages/${packageName}` : "."]),
-    runCapture("bun", ["lint:guards"], { cwd: projectRoot }),
-  ]);
-  const failed = [tsc, eslint, guards].filter((stage) => stage.code !== 0);
-  return {
-    code: failed.length > 0 ? 1 : 0,
-    output: failed.map((stage) => stage.output).join("\n"),
+async function runTests(testPath: string | null, coverageFlags: string[]): Promise<void> {
+  const env = {
+    ...process.env,
+    NODE_OPTIONS: [process.env.NODE_OPTIONS, "--expose-gc"].filter(Boolean).join(" "),
   };
+  try {
+    await execCommandInherited(
+      vpBin,
+      [
+        "test",
+        ...(testPath ? [testPath] : []),
+        "--coverage",
+        ...coverageFlags,
+        "--coverage.reporter=text",
+        "--coverage.reportOnFailure",
+      ],
+      { env },
+    );
+  } catch {
+    logger.error(
+      `vp test ${testPath ? `"${testPath}" ` : ""}failed — see the streamed output above`,
+    );
+    process.exit(1);
+  }
 }
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
-  const packageName = args.find((arg) => !arg.startsWith("--"));
+  const scopeName = args.find((arg) => !arg.startsWith("--"));
 
-  if (!packageName) {
+  if (!scopeName) {
     logger.info("Running full coverage...");
-    await execCommand("bun", ["./scripts/bundle.ts", "--quiet"], { cwd: projectRoot });
-    const [result, lint] = await Promise.all([
-      runCapture("bun", ["test", "--parallel", "--coverage"], { cwd: projectRoot }),
-      runLint(),
-    ]);
-    const exitCode = result.code !== 0 ? result.code : lint.code;
-    writeAndExit(result.output + (lint.code !== 0 ? lint.output : ""), exitCode);
+    await execCommand(process.execPath, ["./scripts/bundle.ts", "--quiet"], { cwd: projectRoot });
+    await runTests(null, repoFlags());
     return;
   }
 
-  if (!isValidPackage(packageName)) {
-    logger.error(`Package "${packageName}" not found or invalid`);
+  const kind: "package" | "plugin" | null = isValidPackage(scopeName)
+    ? "package"
+    : isValidPlugin(scopeName)
+      ? "plugin"
+      : null;
+  if (!kind) {
+    logger.error(`Package or plugin "${scopeName}" not found or invalid`);
     process.exit(1);
   }
 
-  const testDir = path.join(packagesDir, packageName, "tests");
+  const workspaceDir = kind === "package" ? packagesDir : pluginsDir;
+  const testDir = path.join(workspaceDir, scopeName, "tests");
   if (!fs.existsSync(testDir)) {
-    logger.error(`No tests directory found for package "${packageName}"`);
+    logger.error(`No tests directory found for ${kind} "${scopeName}"`);
     process.exit(1);
   }
 
-  logger.info(`Running scoped coverage for ${packageName}...`);
-
-  await execCommand("bun", ["./scripts/bundle.ts", "--quiet"], { cwd: projectRoot });
-
-  const [result, lint] = await Promise.all([
-    runCapture(
-      "bun",
-      ["test", "--parallel", `packages/${packageName}/tests`, "--coverage"],
-      { cwd: projectRoot },
-    ),
-    runLint(packageName),
-  ]);
-
-  const filtered = filterCoverageTable(result.output, packageName);
-  const exitCode = result.code !== 0 ? result.code : lint.code;
-  writeAndExit(filtered + (lint.code !== 0 ? lint.output : ""), exitCode);
+  logger.info(`Running scoped coverage for ${kind} ${scopeName}...`);
+  await execCommand(process.execPath, ["./scripts/bundle.ts", "--quiet"], { cwd: projectRoot });
+  await runTests(
+    `${kind === "package" ? "packages" : "plugins"}/${scopeName}/tests`,
+    scopeFlags(scopeName, kind),
+  );
 }
 
-/**
- * Filters bun's coverage output to only show rows for the target package.
- *
- * Bun lacks a CLI flag to scope coverage instrumentation. The test preload
- * (utils/happydom.js) imports @hellajs/dom/bundle for DOM globals, so dom's
- * bundle is always loaded and instrumented — diluting the "All files" average.
- * Post-filtering the text reporter is the pragmatic fix: remove rows from
- * other packages and recalculate the aggregate from the remaining rows.
- */
-function filterCoverageTable(
-  output: string,
-  packageName: string,
-): string {
-  const lines = output.split("\n");
-
-  let tableStart = -1;
-  let tableEnd = -1;
-  for (let i = 0; i < lines.length; i++) {
-    if (/^-{5,}\|/.test(stripAnsi(lines[i]!))) {
-      if (tableStart === -1) tableStart = i;
-      tableEnd = i;
-    }
-  }
-
-  if (tableStart === -1) return output;
-
-  const before = lines.slice(0, tableStart);
-  const after = lines.slice(tableEnd + 1);
-  const table = lines.slice(tableStart, tableEnd + 1);
-
-  const pkgPrefix = `packages/${packageName}/`;
-  const keptRows: string[] = [];
-  const percentages: { funcs: number; lines: number }[] = [];
-
-  for (const line of table) {
-    const clean = stripAnsi(line);
-    if (/^-{5,}\|/.test(clean)) continue;
-    if (/^File\b/.test(clean)) continue;
-    if (/^All files/.test(clean)) continue;
-    if (clean.includes(pkgPrefix)) {
-      keptRows.push(line);
-      const match = clean.match(/\|\s*([\d.]+)\s*\|\s*([\d.]+)/);
-      if (match) {
-        percentages.push({
-          funcs: parseFloat(match[1]!),
-          lines: parseFloat(match[2]!),
-        });
-      }
-    }
-  }
-
-  const sep = table.find((l) => /^-{5,}\|/.test(stripAnsi(l)));
-  const header = table.find((l) => /^File\b/.test(stripAnsi(l)));
-  const rebuilt: string[] = [sep!, header!, sep!];
-
-  if (percentages.length > 0) {
-    const avgFuncs =
-      percentages.reduce((s, p) => s + p.funcs, 0) / percentages.length;
-    const avgLines =
-      percentages.reduce((s, p) => s + p.lines, 0) / percentages.length;
-    const color =
-      avgFuncs >= 100 && avgLines >= 100 ? "\x1b[1;32m" : "\x1b[1;31m";
-    const f = ` ${avgFuncs.toFixed(2).padStart(7)} `;
-    const l = ` ${avgLines.toFixed(2).padStart(7)} `;
-    rebuilt.push(`${color}All files                    |${f}|${l}| \x1b[0m`);
-  }
-
-  rebuilt.push(...keptRows, sep!);
-  return [...before, ...rebuilt, ...after].join("\n");
-}
-
-if (import.meta.main) {
+if (process.argv[1] === import.meta.filename) {
   main().catch((error: Error) => {
     logger.error(`Coverage failed: ${error.message}`);
     process.exit(1);

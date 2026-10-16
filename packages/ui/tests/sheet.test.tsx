@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { signal } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components import the bare
@@ -30,14 +30,25 @@ function newestPanel(): HTMLElement | undefined {
  * (earlier tests can leave stale panels attached) that has finished the
  * observer-driven mount walk.
  */
-function mountSheet(variant: SheetVariant, props: Partial<SheetVariantProps> & { onClose: () => void }) {
+function mountSheet(
+  variant: SheetVariant,
+  props: Partial<SheetVariantProps> & { onClose: () => void },
+) {
   const open = signal(false);
   const container = setupContainer();
-  mount(<div>{variant.render({ ...props, open: () => open(), children: props.children ?? [] })}</div>, container);
+  mount(
+    <div>{variant.render({ ...props, open: () => open(), children: props.children ?? [] })}</div>,
+    container,
+  );
   const panel = async (): Promise<HTMLElement> => {
     for (let i = 0; i < 50; i++) {
       const newest = newestPanel();
-      if (newest !== undefined && peekState(newest)?.isMounted && newest.getAttribute("aria-modal") === "true") return newest;
+      if (
+        newest !== undefined &&
+        peekState(newest)?.isMounted &&
+        newest.getAttribute("aria-modal") === "true"
+      )
+        return newest;
       await delay();
     }
     throw new Error("sheet panel never mounted");
@@ -64,31 +75,34 @@ describe("sheet", () => {
     expect(sheet).toBeDefined();
   });
 
-  test.each(sheetVariants)("$style portals the overlay and panel with wired title and description", async (variant) => {
-    const sheet = mountSheet(variant, {
-      onClose: () => {},
-      title: "Edit profile",
-      description: "Make changes to your profile",
-    });
-    sheet.open(true);
-    const panel = await sheet.panel();
-    expect(panel.parentElement).toBe(document.body);
-    const overlay = panel.previousElementSibling!;
-    expect(overlay.getAttribute("data-slot")).toBe("sheet-overlay");
-    expect(panel.getAttribute("role")).toBe("dialog");
-    expect(panel.getAttribute("aria-modal")).toBe("true");
-    expect(panel.getAttribute("data-state")).toBe("open");
-    const titleId = panel.getAttribute("aria-labelledby")!;
-    const title = panel.querySelector("h2")!;
-    expect(title.id).toBe(titleId);
-    expect(title.getAttribute("data-slot")).toBe("sheet-title");
-    expect(title.textContent).toBe("Edit profile");
-    const descriptionId = panel.getAttribute("aria-describedby")!;
-    const description = panel.querySelector("p")!;
-    expect(description.id).toBe(descriptionId);
-    expect(description.getAttribute("data-slot")).toBe("sheet-description");
-    expect(description.textContent).toBe("Make changes to your profile");
-  });
+  test.each(sheetVariants)(
+    "$style portals the overlay and panel with wired title and description",
+    async (variant) => {
+      const sheet = mountSheet(variant, {
+        onClose: () => {},
+        title: "Edit profile",
+        description: "Make changes to your profile",
+      });
+      sheet.open(true);
+      const panel = await sheet.panel();
+      expect(panel.parentElement).toBe(document.body);
+      const overlay = panel.previousElementSibling!;
+      expect(overlay.getAttribute("data-slot")).toBe("sheet-overlay");
+      expect(panel.getAttribute("role")).toBe("dialog");
+      expect(panel.getAttribute("aria-modal")).toBe("true");
+      expect(panel.getAttribute("data-state")).toBe("open");
+      const titleId = panel.getAttribute("aria-labelledby")!;
+      const title = panel.querySelector("h2")!;
+      expect(title.id).toBe(titleId);
+      expect(title.getAttribute("data-slot")).toBe("sheet-title");
+      expect(title.textContent).toBe("Edit profile");
+      const descriptionId = panel.getAttribute("aria-describedby")!;
+      const description = panel.querySelector("p")!;
+      expect(description.id).toBe(descriptionId);
+      expect(description.getAttribute("data-slot")).toBe("sheet-description");
+      expect(description.textContent).toBe("Make changes to your profile");
+    },
+  );
 
   test.each(sheetVariants)("$style defaults to the right side", async (variant) => {
     const sheet = mountSheet(variant, { onClose: () => {}, title: "Menu" });
@@ -109,25 +123,32 @@ describe("sheet", () => {
     }
   });
 
-  test.each(sheetVariants)("$style carries its side's slide classes from the tailwind and css maps", async (variant) => {
-    const sheet = mountSheet(variant, { onClose: () => {}, title: "Menu", side: "left" });
-    sheet.open(true);
-    const panel = await sheet.panel();
-    // The side class is variant-specific: css flavor carries a hashed class,
-    // tailwind carries the verbatim slide utilities — both differ from the
-    // default right-side render.
-    const right = mountSheet(variant, { onClose: () => {}, title: "Menu" });
-    right.open(true);
-    const rightPanel = await right.panel();
-    const panelTokens = (panel.getAttribute("class") ?? "").split(" ").filter((token) => token.length > 0);
-    const rightTokens = (rightPanel.getAttribute("class") ?? "").split(" ").filter((token) => token.length > 0);
-    const sideTokens = panelTokens.filter((token) => !rightTokens.includes(token));
-    expect(sideTokens.length).toBeGreaterThan(0);
-    expect(panel.className).not.toBe(rightPanel.className);
-  });
+  test.each(sheetVariants)(
+    "$style carries its side's slide classes from the tailwind and css maps",
+    async (variant) => {
+      const sheet = mountSheet(variant, { onClose: () => {}, title: "Menu", side: "left" });
+      sheet.open(true);
+      const panel = await sheet.panel();
+      // The side class is variant-specific: css flavor carries a hashed class,
+      // tailwind carries the verbatim slide utilities — both differ from the
+      // default right-side render.
+      const right = mountSheet(variant, { onClose: () => {}, title: "Menu" });
+      right.open(true);
+      const rightPanel = await right.panel();
+      const panelTokens = (panel.getAttribute("class") ?? "")
+        .split(" ")
+        .filter((token) => token.length > 0);
+      const rightTokens = (rightPanel.getAttribute("class") ?? "")
+        .split(" ")
+        .filter((token) => token.length > 0);
+      const sideTokens = panelTokens.filter((token) => !rightTokens.includes(token));
+      expect(sideTokens.length).toBeGreaterThan(0);
+      expect(panel.className).not.toBe(rightPanel.className);
+    },
+  );
 
   test.each(sheetVariants)("$style closes on Escape by default", async (variant) => {
-    const onClose = mock(() => {});
+    const onClose = vi.fn(() => {});
     const sheet = mountSheet(variant, { onClose, title: "Menu" });
     sheet.open(true);
     const panel = await sheet.panel();
@@ -136,7 +157,7 @@ describe("sheet", () => {
   });
 
   test.each(sheetVariants)("$style closes on pointerdown outside the panel", async (variant) => {
-    const onClose = mock(() => {});
+    const onClose = vi.fn(() => {});
     const sheet = mountSheet(variant, { onClose, title: "Menu" });
     sheet.open(true);
     const panel = await sheet.panel();
@@ -145,110 +166,159 @@ describe("sheet", () => {
     expect(panel.isConnected).toBe(true);
   });
 
-  test.each(sheetVariants)("$style suppresses outside pointerdown when closeOnOutside is false", async (variant) => {
-    const onClose = mock(() => {});
-    const sheet = mountSheet(variant, { onClose, title: "Menu", closeOnOutside: false });
-    sheet.open(true);
-    await sheet.panel();
-    document.body.dispatchEvent(new Event("pointerdown"));
-    expect(onClose).not.toHaveBeenCalled();
-  });
+  test.each(sheetVariants)(
+    "$style suppresses outside pointerdown when closeOnOutside is false",
+    async (variant) => {
+      const onClose = vi.fn(() => {});
+      const sheet = mountSheet(variant, { onClose, title: "Menu", closeOnOutside: false });
+      sheet.open(true);
+      await sheet.panel();
+      document.body.dispatchEvent(new Event("pointerdown"));
+      expect(onClose).not.toHaveBeenCalled();
+    },
+  );
 
-  test.each(sheetVariants)("$style closes through the built-in close X with its sr-only label", async (variant) => {
-    const onClose = mock(() => {});
-    const sheet = mountSheet(variant, { onClose, title: "Menu" });
-    sheet.open(true);
-    const panel = await sheet.panel();
-    const close = panel.querySelector('[data-slot="sheet-close"]')!;
-    expect(close.tagName).toBe("BUTTON");
-    expect(close.querySelector("span")!.textContent).toBe("Close");
-    close.dispatchEvent(new Event("click"));
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
+  test.each(sheetVariants)(
+    "$style closes through the built-in close X with its sr-only label",
+    async (variant) => {
+      const onClose = vi.fn(() => {});
+      const sheet = mountSheet(variant, { onClose, title: "Menu" });
+      sheet.open(true);
+      const panel = await sheet.panel();
+      const close = panel.querySelector('[data-slot="sheet-close"]')!;
+      expect(close.tagName).toBe("BUTTON");
+      expect(close.querySelector("span")!.textContent).toBe("Close");
+      close.dispatchEvent(new Event("click"));
+      expect(onClose).toHaveBeenCalledTimes(1);
+    },
+  );
 
-  test.each(sheetVariants)("$style omits the close button when showCloseButton is false", async (variant) => {
-    const sheet = mountSheet(variant, { onClose: () => {}, title: "Menu", showCloseButton: false });
-    sheet.open(true);
-    const panel = await sheet.panel();
-    expect(panel.querySelector('[data-slot="sheet-close"]')).toBeNull();
-  });
+  test.each(sheetVariants)(
+    "$style omits the close button when showCloseButton is false",
+    async (variant) => {
+      const sheet = mountSheet(variant, {
+        onClose: () => {},
+        title: "Menu",
+        showCloseButton: false,
+      });
+      sheet.open(true);
+      const panel = await sheet.panel();
+      expect(panel.querySelector('[data-slot="sheet-close"]')).toBeNull();
+    },
+  );
 
-  test.each(sheetVariants)("$style stays mounted under data-state closed until the panel's animationend", async (variant) => {
-    const onClose = mock(() => {});
-    const sheet = mountSheet(variant, { onClose, title: "Menu" });
-    sheet.open(true);
-    const panel = await sheet.panel();
-    sheet.open(false);
-    expect(panel.getAttribute("data-state")).toBe("closed");
-    expect(panel.isConnected).toBe(true);
-    panel.dispatchEvent(new Event("animationend"));
-    await awaitUnmounted(panel);
-  });
+  test.each(sheetVariants)(
+    "$style stays mounted under data-state closed until the panel's animationend",
+    async (variant) => {
+      const onClose = vi.fn(() => {});
+      const sheet = mountSheet(variant, { onClose, title: "Menu" });
+      sheet.open(true);
+      const panel = await sheet.panel();
+      sheet.open(false);
+      expect(panel.getAttribute("data-state")).toBe("closed");
+      expect(panel.isConnected).toBe(true);
+      panel.dispatchEvent(new Event("animationend"));
+      await awaitUnmounted(panel);
+    },
+  );
 
-  test.each(sheetVariants)("$style unmounts through the fallback budget when no animationend fires", async (variant) => {
-    const sheet = mountSheet(variant, { onClose: () => {}, title: "Menu" });
-    sheet.open(true);
-    const panel = await sheet.panel();
-    sheet.open(false);
-    const budget = Date.now();
-    while (panel.isConnected && Date.now() - budget < 600) {
-      await delay(null, 20);
-    }
-    // Wall clock, not loop iterations: per-iteration lag under load must not read as an early unmount.
-    expect(Date.now() - budget).toBeGreaterThanOrEqual(300);
-    expect(panel.isConnected).toBe(false);
-  });
+  test.each(sheetVariants)(
+    "$style unmounts through the fallback budget when no animationend fires",
+    async (variant) => {
+      const sheet = mountSheet(variant, { onClose: () => {}, title: "Menu" });
+      sheet.open(true);
+      const panel = await sheet.panel();
+      sheet.open(false);
+      const budget = Date.now();
+      while (panel.isConnected && Date.now() - budget < 600) {
+        await delay(null, 20);
+      }
+      // Wall clock, not loop iterations: per-iteration lag under load must not read as an early unmount.
+      expect(Date.now() - budget).toBeGreaterThanOrEqual(300);
+      expect(panel.isConnected).toBe(false);
+    },
+  );
 
-  test.each(sheetVariants)("$style runs the exit unwired: no dismissal while leaving", async (variant) => {
-    const onClose = mock(() => {});
-    const sheet = mountSheet(variant, { onClose, title: "Menu" });
-    sheet.open(true);
-    const panel = await sheet.panel();
-    sheet.open(false);
-    expect(panel.getAttribute("data-state")).toBe("closed");
-    panel.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
-    document.body.dispatchEvent(new Event("pointerdown"));
-    expect(onClose).not.toHaveBeenCalled();
-    panel.dispatchEvent(new Event("animationend"));
-    await awaitUnmounted(panel);
-  });
+  test.each(sheetVariants)(
+    "$style runs the exit unwired: no dismissal while leaving",
+    async (variant) => {
+      const onClose = vi.fn(() => {});
+      const sheet = mountSheet(variant, { onClose, title: "Menu" });
+      sheet.open(true);
+      const panel = await sheet.panel();
+      sheet.open(false);
+      expect(panel.getAttribute("data-state")).toBe("closed");
+      panel.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+      document.body.dispatchEvent(new Event("pointerdown"));
+      expect(onClose).not.toHaveBeenCalled();
+      panel.dispatchEvent(new Event("animationend"));
+      await awaitUnmounted(panel);
+    },
+  );
 
-  test.each(sheetVariants)("$style forwards user attrs onto the portaled panel across both styles", async (variant) => {
-    const sheet = mountSheet(variant, { onClose: () => {}, title: "Forward", "aria-label": "panel" });
-    sheet.open(true);
-    const panel = await sheet.panel();
-    expect(panel.getAttribute("aria-label")).toBe("panel");
-  });
+  test.each(sheetVariants)(
+    "$style forwards user attrs onto the portaled panel across both styles",
+    async (variant) => {
+      const sheet = mountSheet(variant, {
+        onClose: () => {},
+        title: "Forward",
+        "aria-label": "panel",
+      });
+      sheet.open(true);
+      const panel = await sheet.panel();
+      expect(panel.getAttribute("aria-label")).toBe("panel");
+    },
+  );
 
-  test.each(sheetVariants)("$style fires a user on:click handler on the portaled panel across both styles", async (variant) => {
-    const onPanelClick = mock(() => {});
-    const sheet = mountSheet(variant, { onClose: () => {}, title: "Forward", "on:click": onPanelClick });
-    sheet.open(true);
-    const panel = await sheet.panel();
-    panel.dispatchEvent(new Event("click"));
-    expect(onPanelClick).toHaveBeenCalledTimes(1);
-  });
+  test.each(sheetVariants)(
+    "$style fires a user on:click handler on the portaled panel across both styles",
+    async (variant) => {
+      const onPanelClick = vi.fn(() => {});
+      const sheet = mountSheet(variant, {
+        onClose: () => {},
+        title: "Forward",
+        "on:click": onPanelClick,
+      });
+      sheet.open(true);
+      const panel = await sheet.panel();
+      panel.dispatchEvent(new Event("click"));
+      expect(onPanelClick).toHaveBeenCalledTimes(1);
+    },
+  );
 
-  test.each(sheetVariants)("$style merges a user class into the portaled panel's class across both styles", async (variant) => {
-    const sheet = mountSheet(variant, { onClose: () => {}, title: "Forward", class: "user-class" });
-    sheet.open(true);
-    const panel = await sheet.panel();
-    expect(classTokens(panel).at(-1)).toBe("user-class");
-  });
+  test.each(sheetVariants)(
+    "$style merges a user class into the portaled panel's class across both styles",
+    async (variant) => {
+      const sheet = mountSheet(variant, {
+        onClose: () => {},
+        title: "Forward",
+        class: "user-class",
+      });
+      sheet.open(true);
+      const panel = await sheet.panel();
+      expect(classTokens(panel).at(-1)).toBe("user-class");
+    },
+  );
 
-  test.each(sheetPartVariants.filter((entry) => entry.part === "Close"))("$style Close chains a user on:click with its owned dismiss", (variant) => {
-    const onClose = mock(() => {});
-    const userClick = mock(() => {});
-    const close = renderPart(variant, [], { onClose, "on:click": userClick });
-    close.dispatchEvent(new Event("click"));
-    expect(userClick).toHaveBeenCalledTimes(1);
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
+  test.each(sheetPartVariants.filter((entry) => entry.part === "Close"))(
+    "$style Close chains a user on:click with its owned dismiss",
+    (variant) => {
+      const onClose = vi.fn(() => {});
+      const userClick = vi.fn(() => {});
+      const close = renderPart(variant, [], { onClose, "on:click": userClick });
+      close.dispatchEvent(new Event("click"));
+      expect(userClick).toHaveBeenCalledTimes(1);
+      expect(onClose).toHaveBeenCalledTimes(1);
+    },
+  );
 
-  test.each(sheetPartVariants.filter((entry) => entry.part === "Content"))("$style content part forwards the manual aria wiring attrs", (variant) => {
-    const el = renderPart(variant, [], { "aria-labelledby": "wired-title" });
-    expect(el.getAttribute("aria-labelledby")).toBe("wired-title");
-  });
+  test.each(sheetPartVariants.filter((entry) => entry.part === "Content"))(
+    "$style content part forwards the manual aria wiring attrs",
+    (variant) => {
+      const el = renderPart(variant, [], { "aria-labelledby": "wired-title" });
+      expect(el.getAttribute("aria-labelledby")).toBe("wired-title");
+    },
+  );
 
   test("keeps structural parity across both styles", () => {
     assertStructuralParity(
@@ -297,10 +367,20 @@ describe("sheet", () => {
  * resolves to the wrapper (its children land in document.body) — the dedicated
  * Portal test above asserts the portaled child instead.
  */
-function renderPart(variant: (typeof sheetPartVariants)[number], children?: HellaNode[], extra: Record<string, unknown> = {}): Element {
+function renderPart(
+  variant: (typeof sheetPartVariants)[number],
+  children?: HellaNode[],
+  extra: Record<string, unknown> = {},
+): Element {
   const container = setupContainer();
-  const rendered = variant.render({ children: children ?? [], ...extra } as unknown as Record<string, never>);
+  const rendered = variant.render({ children: children ?? [], ...extra } as unknown as Record<
+    string,
+    never
+  >);
   // A reactive fn root cannot pass through mount's resolve-once unwrap — wrap it like the harness does.
-  mount(typeof rendered === "function" ? <div>{rendered as never}</div> : rendered as never, container);
+  mount(
+    typeof rendered === "function" ? <div>{rendered as never}</div> : (rendered as never),
+    container,
+  );
   return container.firstElementChild!;
 }

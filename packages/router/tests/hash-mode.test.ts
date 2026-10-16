@@ -1,7 +1,7 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, vi } from "vite-plus/test";
 import { effect } from "@hellajs/core";
 
-import { router, navigate, route } from "@hellajs/router/bundle";
+import { router, navigate, route } from "@hellajs/router";
 import { setupRouterEnv } from "./helpers";
 
 describe("router", () => {
@@ -24,9 +24,9 @@ describe("router", () => {
       router({
         routes: {
           "/": () => render("home"),
-          "/about": () => render("about")
+          "/about": () => render("about"),
         },
-        mode: "hash"
+        mode: "hash",
       });
 
       navigate("/about");
@@ -36,15 +36,15 @@ describe("router", () => {
 
     test("handles hashchange events", () => {
       const original = window.addEventListener;
-      const spy = mock(() => { });
+      const spy = vi.fn(() => {});
       window.addEventListener = spy as unknown as typeof window.addEventListener;
 
       try {
         router({
           routes: {
-            "/test": () => render("test-page")
+            "/test": () => render("test-page"),
           },
-          mode: "hash"
+          mode: "hash",
         });
 
         expect(spy).toHaveBeenCalledWith("hashchange", expect.any(Function));
@@ -56,9 +56,9 @@ describe("router", () => {
     test("extracts params in hash mode", () => {
       router({
         routes: {
-          "/users/:id": ({ id }) => render(`user-${id}`)
+          "/users/:id": ({ id }) => render(`user-${id}`),
         },
-        mode: "hash"
+        mode: "hash",
       });
 
       navigate("/users/123");
@@ -69,9 +69,9 @@ describe("router", () => {
     test("handles query params in hash mode", () => {
       router({
         routes: {
-          "/search": (_p, query) => render(`query-${query?.q}`)
+          "/search": (_p, query) => render(`query-${query?.q}`),
         },
-        mode: "hash"
+        mode: "hash",
       });
 
       navigate("/search", { query: { q: "test" } });
@@ -80,13 +80,13 @@ describe("router", () => {
     });
 
     test("ignores plain hash changes that are not route paths", () => {
-      const notFoundSpy = mock(() => { });
+      const notFoundSpy = vi.fn(() => {});
       router({
         routes: {
-          "/about": () => { }
+          "/about": () => {},
         },
         mode: "hash",
-        notFound: notFoundSpy
+        notFound: notFoundSpy,
       });
       // Init fires notFound for the env's unmatched start path (HappyDOM quirk) —
       // isolate the dispatched hashchange from it.
@@ -102,13 +102,15 @@ describe("router", () => {
     test("hashchange fires route subscribers exactly once per navigation", () => {
       router({
         routes: {
-          "/test": () => { },
-          "/about": () => { }
+          "/test": () => {},
+          "/about": () => {},
         },
-        mode: "hash"
+        mode: "hash",
       });
 
-      const tracker = mock(() => { route().path; });
+      const tracker = vi.fn(() => {
+        route().path;
+      });
       effect(tracker);
       tracker.mockClear();
       window.location.hash = "/test";

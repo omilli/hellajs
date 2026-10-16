@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { resetTestState } from "@utils/test-helpers.js";
 import { onOutside } from "@hellajs/dom";
 import { setupButtons, pointerDown } from "./helpers";
@@ -9,7 +9,7 @@ describe("onOutside", () => {
   });
 
   test("fires on document pointerdown outside every resolved target, never inside any", () => {
-    const handler = mock(() => {});
+    const handler = vi.fn(() => {});
     const { container, buttons } = setupButtons(["one", "two"]);
     const dismiss = onOutside(() => [container], handler);
 
@@ -26,7 +26,7 @@ describe("onOutside", () => {
   });
 
   test("ignores null getter entries, stops after dispose, and validates inputs", () => {
-    const handler = mock(() => {});
+    const handler = vi.fn(() => {});
     const { container } = setupButtons(["one"]);
     const dismiss = onOutside(() => [null, container], handler);
 
@@ -43,6 +43,8 @@ describe("onOutside", () => {
     expect(handler).toHaveBeenCalledTimes(1);
 
     expect(() => onOutside(null as never, handler)).toThrow("[dom] onOutside: targets is required");
-    expect(() => onOutside(() => [], null as never)).toThrow("[dom] onOutside: handler is required");
+    expect(() => onOutside(() => [], null as never)).toThrow(
+      "[dom] onOutside: handler is required",
+    );
   });
 });

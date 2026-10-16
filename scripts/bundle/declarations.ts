@@ -1,11 +1,7 @@
 import fsStat from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import {
-  ensureDir,
-  scanDirRecursive,
-  execCommand,
-} from "../utils/index.js";
+import { ensureDir, scanDirRecursive, execCommand, projectRoot } from "../utils/index.ts";
 
 /**
  * Generate TypeScript declaration files via tsc --emitDeclarationOnly.
@@ -28,34 +24,25 @@ export async function buildDeclarations(
   cwd: string,
 ): Promise<void> {
   const { distDir, tsconfigPath } = packageInfo;
-  const tscArgs = [
-    "tsc",
-    "--project",
-    tsconfigPath,
-    "--emitDeclarationOnly",
-    "--outDir",
-    distDir,
-  ];
-  await execCommand("bunx", tscArgs, { cwd });
+  const tscArgs = ["--project", tsconfigPath, "--emitDeclarationOnly", "--outDir", distDir];
+  await execCommand(path.join(projectRoot, "node_modules/.bin/tsc"), tscArgs, { cwd });
 }
 
 /**
  * Copy hand-written .d.ts files from lib/ to dist/, preserving directory structure.
  */
-export async function copyDeclarationFiles(
-  packageInfo: {
-    dir: string;
-    distDir: string;
-    name: string;
-    fullName: string;
-    version: string;
-    entryPoint: string;
-    tsconfigPath: string;
-    cacheDir: string;
-    peerDeps: string[];
-    packageJson: Record<string, unknown>;
-  },
-): Promise<void> {
+export async function copyDeclarationFiles(packageInfo: {
+  dir: string;
+  distDir: string;
+  name: string;
+  fullName: string;
+  version: string;
+  entryPoint: string;
+  tsconfigPath: string;
+  cacheDir: string;
+  peerDeps: string[];
+  packageJson: Record<string, unknown>;
+}): Promise<void> {
   const { dir, distDir } = packageInfo;
   const libDir = path.join(dir, "lib");
 

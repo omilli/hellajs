@@ -30,7 +30,7 @@ const VELOCITY_WINDOW = 100;
 export function onSwipe(
   el: HTMLElement,
   handlers: SwipeHandlers,
-  options?: SwipeOptions
+  options?: SwipeOptions,
 ): () => void {
   if (el == null) {
     throw new Error("[dom] onSwipe: el is required");

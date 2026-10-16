@@ -1,5 +1,5 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
-import { router, navigate, route } from "@hellajs/router/bundle";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
+import { router, navigate, route } from "@hellajs/router";
 import { setupRouterEnv } from "./helpers";
 
 describe("router", () => {
@@ -15,28 +15,31 @@ describe("router", () => {
   describe("history integration", () => {
     test("handles browser popstate events", () => {
       const originalWindow = global.window;
-      const mockAddEventListener = mock(() => { });
-      const mockRemoveEventListener = mock(() => { });
+      const mockAddEventListener = vi.fn(() => {});
+      const mockRemoveEventListener = vi.fn(() => {});
 
       global.window = {
         addEventListener: mockAddEventListener,
         removeEventListener: mockRemoveEventListener,
         location: {
           pathname: "/test",
-          search: "?q=hello"
-        }
+          search: "?q=hello",
+        },
       } as unknown as typeof global.window;
 
       try {
         router({
           routes: {
-            "/test": () => render("test-page")
-          }
+            "/test": () => render("test-page"),
+          },
         });
 
         expect(mockAddEventListener).toHaveBeenCalledWith("popstate", expect.any(Function));
 
-        const calls = mockAddEventListener.mock.calls as unknown as [string, (...args: unknown[]) => void][];
+        const calls = mockAddEventListener.mock.calls as unknown as [
+          string,
+          (...args: unknown[]) => void,
+        ][];
         const popstateHandler = calls[0]?.[1];
         popstateHandler?.();
 
@@ -53,8 +56,8 @@ describe("router", () => {
       router({
         routes: {
           "/": homeHandler,
-          "/about": aboutHandler
-        }
+          "/about": aboutHandler,
+        },
       });
 
       navigate("/");
@@ -69,8 +72,8 @@ describe("router", () => {
         routes: {
           "/": () => render("home"),
           "/page1": () => render("page1"),
-          "/page2": () => render("page2")
-        }
+          "/page2": () => render("page2"),
+        },
       });
 
       navigate("/");
@@ -87,8 +90,8 @@ describe("router", () => {
     router({
       routes: {
         "/": () => render("home"),
-        "/test": () => render("test-page")
-      }
+        "/test": () => render("test-page"),
+      },
     });
 
     navigate("/test");

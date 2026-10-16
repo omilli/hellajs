@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { resetTestState, getStylesheet, getHostStylesheet } from "@utils/test-helpers.js";
-import { style, removeStyle } from "@hellajs/css/bundle";
+import { style, removeStyle } from "@hellajs/css";
 import { createShadowHost } from "./helpers";
 
 beforeEach(() => {
@@ -11,7 +11,9 @@ describe("style", () => {
   test("returns the labeled class and injects the rule under it", () => {
     const cls = style({ background: "white", "&:hover": { opacity: 0.8 } }, { label: "card" });
     expect(cls).toBe("card-nxlglqt");
-    expect(getStylesheet("hella-css")).toBe(".card-nxlglqt{background:white}.card-nxlglqt:hover{opacity:0.8}");
+    expect(getStylesheet("hella-css")).toBe(
+      ".card-nxlglqt{background:white}.card-nxlglqt:hover{opacity:0.8}",
+    );
   });
 
   test("same object and label derive the identical class", () => {
@@ -92,12 +94,15 @@ describe("style", () => {
   });
 
   test("definitional at-rules stay global under a class", () => {
-    const cls = style({
-      color: "red",
-      "@keyframes spin": { from: { opacity: 0 }, to: { opacity: 1 } },
-    }, { label: "anim" });
+    const cls = style(
+      {
+        color: "red",
+        "@keyframes spin": { from: { opacity: 0 }, to: { opacity: 1 } },
+      },
+      { label: "anim" },
+    );
     expect(getStylesheet("hella-css")).toBe(
-      `.${cls}{color:red}@keyframes spin{0%{opacity:0}100%{opacity:1}}`
+      `.${cls}{color:red}@keyframes spin{0%{opacity:0}100%{opacity:1}}`,
     );
   });
 
@@ -110,14 +115,14 @@ describe("style", () => {
       content: "Hello",
     });
     expect(getStylesheet("hella-css")).toBe(
-      `.${cls}{width:5px;opacity:0.5;font-family:Helvetica,Arial;--custom:10;content:"Hello"}`
+      `.${cls}{width:5px;opacity:0.5;font-family:Helvetica,Arial;--custom:10;content:"Hello"}`,
     );
   });
 
   test("function leaf values throw the css error", () => {
     // @ts-expect-error - testing invalid input
     expect(() => style({ padding: () => "1px" })).toThrow(
-      "[css] function values are not supported in css objects — use vars() for reactive values, key: padding"
+      "[css] function values are not supported in css objects — use vars() for reactive values, key: padding",
     );
   });
 

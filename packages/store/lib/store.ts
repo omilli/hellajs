@@ -12,7 +12,7 @@ import { createStore } from "./internal/create";
  */
 export function store<T extends Record<string, unknown>, R extends readonly (keyof T)[]>(
   initial: T,
-  options: { readonly: R; equals?: StoreEquals<T> }
+  options: { readonly: R; equals?: StoreEquals<T> },
 ): Store<T, R[number]>;
 
 /**
@@ -25,7 +25,7 @@ export function store<T extends Record<string, unknown>, R extends readonly (key
  */
 export function store<T extends Record<string, unknown>>(
   initial: T,
-  options: { readonly: true; equals?: StoreEquals<T> }
+  options: { readonly: true; equals?: StoreEquals<T> },
 ): Store<T, keyof T>;
 
 /**
@@ -38,7 +38,7 @@ export function store<T extends Record<string, unknown>>(
  */
 export function store<T extends Record<string, unknown>>(
   initial: T,
-  options: { middleware: StoreMiddleware<T>; equals?: StoreEquals<T> }
+  options: { middleware: StoreMiddleware<T>; equals?: StoreEquals<T> },
 ): Store<T, never>;
 
 /**
@@ -52,7 +52,7 @@ export function store<T extends Record<string, unknown>>(
  */
 export function store<T extends Record<string, unknown>, R extends readonly (keyof T)[]>(
   initial: T,
-  options: { readonly: R; middleware: StoreMiddleware<T>; equals?: StoreEquals<T> }
+  options: { readonly: R; middleware: StoreMiddleware<T>; equals?: StoreEquals<T> },
 ): Store<T, R[number]>;
 
 /**
@@ -65,12 +65,12 @@ export function store<T extends Record<string, unknown>, R extends readonly (key
  */
 export function store<T extends Record<string, unknown>>(
   initial: T,
-  options?: { readonly?: false | undefined; equals?: StoreEquals<T> }
+  options?: { readonly?: false | undefined; equals?: StoreEquals<T> },
 ): Store<T, never>;
 
 export function store<T extends Record<string, unknown>>(
   initial: T,
-  options?: StoreOptions<T>
+  options?: StoreOptions<T>,
 ): Store<T, never> {
   return createStore(initial, options);
 }

@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { signal } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components import the bare
@@ -30,14 +30,25 @@ function newestPanel(): HTMLElement | undefined {
  * (earlier tests can leave stale panels attached) that has finished the
  * observer-driven mount walk.
  */
-function mountAlertDialog(variant: AlertDialogVariant, props: Partial<AlertDialogVariantProps> & { onClose: () => void }) {
+function mountAlertDialog(
+  variant: AlertDialogVariant,
+  props: Partial<AlertDialogVariantProps> & { onClose: () => void },
+) {
   const open = signal(false);
   const container = setupContainer();
-  mount(<div>{variant.render({ ...props, open: () => open(), children: props.children ?? [] })}</div>, container);
+  mount(
+    <div>{variant.render({ ...props, open: () => open(), children: props.children ?? [] })}</div>,
+    container,
+  );
   const panel = async (): Promise<HTMLElement> => {
     for (let i = 0; i < 50; i++) {
       const newest = newestPanel();
-      if (newest !== undefined && peekState(newest)?.isMounted && newest.getAttribute("aria-modal") === "true") return newest;
+      if (
+        newest !== undefined &&
+        peekState(newest)?.isMounted &&
+        newest.getAttribute("aria-modal") === "true"
+      )
+        return newest;
       await delay();
     }
     throw new Error("alert dialog panel never mounted");
@@ -64,52 +75,61 @@ describe("alert-dialog", () => {
     expect(dlg).toBeDefined();
   });
 
-  test.each(alertDialogVariants)("$style portals the overlay and panel with wired title, description, and role", async (variant) => {
-    const dlg = mountAlertDialog(variant, {
-      onClose: () => {},
-      title: "Delete account",
-      description: "This action cannot be undone",
-    });
-    dlg.open(true);
-    const panel = await dlg.panel();
-    expect(panel.parentElement).toBe(document.body);
-    const overlay = panel.previousElementSibling!;
-    expect(overlay.getAttribute("data-slot")).toBe("alert-dialog-overlay");
-    expect(panel.getAttribute("role")).toBe("alertdialog");
-    expect(panel.getAttribute("aria-modal")).toBe("true");
-    expect(panel.getAttribute("data-state")).toBe("open");
-    expect(panel.getAttribute("data-size")).toBe("default");
-    const titleId = panel.getAttribute("aria-labelledby")!;
-    const title = panel.querySelector("h2")!;
-    expect(title.id).toBe(titleId);
-    expect(title.getAttribute("data-slot")).toBe("alert-dialog-title");
-    expect(title.textContent).toBe("Delete account");
-    const descriptionId = panel.getAttribute("aria-describedby")!;
-    const description = panel.querySelector("p")!;
-    expect(description.id).toBe(descriptionId);
-    expect(description.getAttribute("data-slot")).toBe("alert-dialog-description");
-    expect(description.textContent).toBe("This action cannot be undone");
-  });
+  test.each(alertDialogVariants)(
+    "$style portals the overlay and panel with wired title, description, and role",
+    async (variant) => {
+      const dlg = mountAlertDialog(variant, {
+        onClose: () => {},
+        title: "Delete account",
+        description: "This action cannot be undone",
+      });
+      dlg.open(true);
+      const panel = await dlg.panel();
+      expect(panel.parentElement).toBe(document.body);
+      const overlay = panel.previousElementSibling!;
+      expect(overlay.getAttribute("data-slot")).toBe("alert-dialog-overlay");
+      expect(panel.getAttribute("role")).toBe("alertdialog");
+      expect(panel.getAttribute("aria-modal")).toBe("true");
+      expect(panel.getAttribute("data-state")).toBe("open");
+      expect(panel.getAttribute("data-size")).toBe("default");
+      const titleId = panel.getAttribute("aria-labelledby")!;
+      const title = panel.querySelector("h2")!;
+      expect(title.id).toBe(titleId);
+      expect(title.getAttribute("data-slot")).toBe("alert-dialog-title");
+      expect(title.textContent).toBe("Delete account");
+      const descriptionId = panel.getAttribute("aria-describedby")!;
+      const description = panel.querySelector("p")!;
+      expect(description.id).toBe(descriptionId);
+      expect(description.getAttribute("data-slot")).toBe("alert-dialog-description");
+      expect(description.textContent).toBe("This action cannot be undone");
+    },
+  );
 
-  test.each(alertDialogVariants)("$style carries the data-size prop through to the panel", async (variant) => {
-    const dlg = mountAlertDialog(variant, { onClose: () => {}, title: "Confirm", size: "sm" });
-    dlg.open(true);
-    const panel = await dlg.panel();
-    expect(panel.getAttribute("data-size")).toBe("sm");
-  });
+  test.each(alertDialogVariants)(
+    "$style carries the data-size prop through to the panel",
+    async (variant) => {
+      const dlg = mountAlertDialog(variant, { onClose: () => {}, title: "Confirm", size: "sm" });
+      dlg.open(true);
+      const panel = await dlg.panel();
+      expect(panel.getAttribute("data-size")).toBe("sm");
+    },
+  );
 
-  test.each(alertDialogVariants)("$style does NOT close on outside pointerdown", async (variant) => {
-    const onClose = mock(() => {});
-    const dlg = mountAlertDialog(variant, { onClose, title: "Confirm" });
-    dlg.open(true);
-    const panel = await dlg.panel();
-    document.body.dispatchEvent(new Event("pointerdown"));
-    expect(onClose).not.toHaveBeenCalled();
-    expect(panel.getAttribute("data-state")).toBe("open");
-  });
+  test.each(alertDialogVariants)(
+    "$style does NOT close on outside pointerdown",
+    async (variant) => {
+      const onClose = vi.fn(() => {});
+      const dlg = mountAlertDialog(variant, { onClose, title: "Confirm" });
+      dlg.open(true);
+      const panel = await dlg.panel();
+      document.body.dispatchEvent(new Event("pointerdown"));
+      expect(onClose).not.toHaveBeenCalled();
+      expect(panel.getAttribute("data-state")).toBe("open");
+    },
+  );
 
   test.each(alertDialogVariants)("$style closes on Escape by default", async (variant) => {
-    const onClose = mock(() => {});
+    const onClose = vi.fn(() => {});
     const dlg = mountAlertDialog(variant, { onClose, title: "Confirm" });
     dlg.open(true);
     const panel = await dlg.panel();
@@ -117,126 +137,177 @@ describe("alert-dialog", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  test.each(alertDialogVariants)("$style suppresses Escape when closeOnEscape is false", async (variant) => {
-    const onClose = mock(() => {});
-    const dlg = mountAlertDialog(variant, { onClose, title: "Confirm", closeOnEscape: false });
-    dlg.open(true);
-    const panel = await dlg.panel();
-    panel.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
-    expect(onClose).not.toHaveBeenCalled();
-  });
+  test.each(alertDialogVariants)(
+    "$style suppresses Escape when closeOnEscape is false",
+    async (variant) => {
+      const onClose = vi.fn(() => {});
+      const dlg = mountAlertDialog(variant, { onClose, title: "Confirm", closeOnEscape: false });
+      dlg.open(true);
+      const panel = await dlg.panel();
+      panel.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+      expect(onClose).not.toHaveBeenCalled();
+    },
+  );
 
-  test.each(alertDialogVariants)("$style focuses the first focusable child on open (trap on)", async (variant) => {
-    const dlg = mountAlertDialog(variant, {
-      onClose: () => {},
-      title: "Confirm",
-      children: [<button id="ad-first">First</button>],
-    });
-    dlg.open(true);
-    const panel = await dlg.panel();
-    const first = document.getElementById("ad-first")!;
-    first.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab" }));
-    expect(panel.contains(document.activeElement)).toBe(true);
-  });
+  test.each(alertDialogVariants)(
+    "$style focuses the first focusable child on open (trap on)",
+    async (variant) => {
+      const dlg = mountAlertDialog(variant, {
+        onClose: () => {},
+        title: "Confirm",
+        children: [<button id="ad-first">First</button>],
+      });
+      dlg.open(true);
+      const panel = await dlg.panel();
+      const first = document.getElementById("ad-first")!;
+      first.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab" }));
+      expect(panel.contains(document.activeElement)).toBe(true);
+    },
+  );
 
-  test.each(alertDialogPartVariants.filter((entry) => entry.part === "Action"))("$style Action calls onClose on click", (variant) => {
-    const onClose = mock(() => {});
-    const action = renderPart(variant, [], { onClose });
-    action.dispatchEvent(new Event("click"));
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
+  test.each(alertDialogPartVariants.filter((entry) => entry.part === "Action"))(
+    "$style Action calls onClose on click",
+    (variant) => {
+      const onClose = vi.fn(() => {});
+      const action = renderPart(variant, [], { onClose });
+      action.dispatchEvent(new Event("click"));
+      expect(onClose).toHaveBeenCalledTimes(1);
+    },
+  );
 
-  test.each(alertDialogPartVariants.filter((entry) => entry.part === "Action"))("$style Action chains a user on:click with its owned dismiss", (variant) => {
-    const onClose = mock(() => {});
-    const userClick = mock(() => {});
-    const action = renderPart(variant, [], { onClose, "on:click": userClick });
-    action.dispatchEvent(new Event("click"));
-    expect(userClick).toHaveBeenCalledTimes(1);
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
+  test.each(alertDialogPartVariants.filter((entry) => entry.part === "Action"))(
+    "$style Action chains a user on:click with its owned dismiss",
+    (variant) => {
+      const onClose = vi.fn(() => {});
+      const userClick = vi.fn(() => {});
+      const action = renderPart(variant, [], { onClose, "on:click": userClick });
+      action.dispatchEvent(new Event("click"));
+      expect(userClick).toHaveBeenCalledTimes(1);
+      expect(onClose).toHaveBeenCalledTimes(1);
+    },
+  );
 
-  test.each(alertDialogPartVariants.filter((entry) => entry.part === "Cancel"))("$style Cancel calls onClose on click", (variant) => {
-    const onClose = mock(() => {});
-    const cancel = renderPart(variant, [], { onClose });
-    cancel.dispatchEvent(new Event("click"));
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
+  test.each(alertDialogPartVariants.filter((entry) => entry.part === "Cancel"))(
+    "$style Cancel calls onClose on click",
+    (variant) => {
+      const onClose = vi.fn(() => {});
+      const cancel = renderPart(variant, [], { onClose });
+      cancel.dispatchEvent(new Event("click"));
+      expect(onClose).toHaveBeenCalledTimes(1);
+    },
+  );
 
-  test.each(alertDialogPartVariants.filter((entry) => entry.part === "Cancel"))("$style Cancel chains a user on:click with its owned dismiss", (variant) => {
-    const onClose = mock(() => {});
-    const userClick = mock(() => {});
-    const cancel = renderPart(variant, [], { onClose, "on:click": userClick });
-    cancel.dispatchEvent(new Event("click"));
-    expect(userClick).toHaveBeenCalledTimes(1);
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
+  test.each(alertDialogPartVariants.filter((entry) => entry.part === "Cancel"))(
+    "$style Cancel chains a user on:click with its owned dismiss",
+    (variant) => {
+      const onClose = vi.fn(() => {});
+      const userClick = vi.fn(() => {});
+      const cancel = renderPart(variant, [], { onClose, "on:click": userClick });
+      cancel.dispatchEvent(new Event("click"));
+      expect(userClick).toHaveBeenCalledTimes(1);
+      expect(onClose).toHaveBeenCalledTimes(1);
+    },
+  );
 
-  test.each(alertDialogPartVariants.filter((entry) => entry.part === "Content"))("$style content part forwards the manual aria wiring attrs", (variant) => {
-    const el = renderPart(variant, [], { "aria-labelledby": "wired-title" });
-    expect(el.getAttribute("aria-labelledby")).toBe("wired-title");
-  });
+  test.each(alertDialogPartVariants.filter((entry) => entry.part === "Content"))(
+    "$style content part forwards the manual aria wiring attrs",
+    (variant) => {
+      const el = renderPart(variant, [], { "aria-labelledby": "wired-title" });
+      expect(el.getAttribute("aria-labelledby")).toBe("wired-title");
+    },
+  );
 
-  test.each(alertDialogVariants)("$style forwards user attrs onto the portaled panel across both styles", async (variant) => {
-    const dlg = mountAlertDialog(variant, { onClose: () => {}, title: "Forward", "aria-label": "panel" });
-    dlg.open(true);
-    const panel = await dlg.panel();
-    expect(panel.getAttribute("aria-label")).toBe("panel");
-  });
+  test.each(alertDialogVariants)(
+    "$style forwards user attrs onto the portaled panel across both styles",
+    async (variant) => {
+      const dlg = mountAlertDialog(variant, {
+        onClose: () => {},
+        title: "Forward",
+        "aria-label": "panel",
+      });
+      dlg.open(true);
+      const panel = await dlg.panel();
+      expect(panel.getAttribute("aria-label")).toBe("panel");
+    },
+  );
 
-  test.each(alertDialogVariants)("$style fires a user on:click handler on the portaled panel across both styles", async (variant) => {
-    const onPanelClick = mock(() => {});
-    const dlg = mountAlertDialog(variant, { onClose: () => {}, title: "Forward", "on:click": onPanelClick });
-    dlg.open(true);
-    const panel = await dlg.panel();
-    panel.dispatchEvent(new Event("click"));
-    expect(onPanelClick).toHaveBeenCalledTimes(1);
-  });
+  test.each(alertDialogVariants)(
+    "$style fires a user on:click handler on the portaled panel across both styles",
+    async (variant) => {
+      const onPanelClick = vi.fn(() => {});
+      const dlg = mountAlertDialog(variant, {
+        onClose: () => {},
+        title: "Forward",
+        "on:click": onPanelClick,
+      });
+      dlg.open(true);
+      const panel = await dlg.panel();
+      panel.dispatchEvent(new Event("click"));
+      expect(onPanelClick).toHaveBeenCalledTimes(1);
+    },
+  );
 
-  test.each(alertDialogVariants)("$style merges a user class into the portaled panel's class across both styles", async (variant) => {
-    const dlg = mountAlertDialog(variant, { onClose: () => {}, title: "Forward", class: "user-class" });
-    dlg.open(true);
-    const panel = await dlg.panel();
-    expect(classTokens(panel).at(-1)).toBe("user-class");
-  });
+  test.each(alertDialogVariants)(
+    "$style merges a user class into the portaled panel's class across both styles",
+    async (variant) => {
+      const dlg = mountAlertDialog(variant, {
+        onClose: () => {},
+        title: "Forward",
+        class: "user-class",
+      });
+      dlg.open(true);
+      const panel = await dlg.panel();
+      expect(classTokens(panel).at(-1)).toBe("user-class");
+    },
+  );
 
-  test.each(alertDialogVariants)("$style stays mounted under data-state closed until the panel's animationend", async (variant) => {
-    const onClose = mock(() => {});
-    const dlg = mountAlertDialog(variant, { onClose, title: "Confirm" });
-    dlg.open(true);
-    const panel = await dlg.panel();
-    dlg.open(false);
-    expect(panel.getAttribute("data-state")).toBe("closed");
-    expect(panel.isConnected).toBe(true);
-    panel.dispatchEvent(new Event("animationend"));
-    await awaitUnmounted(panel);
-  });
+  test.each(alertDialogVariants)(
+    "$style stays mounted under data-state closed until the panel's animationend",
+    async (variant) => {
+      const onClose = vi.fn(() => {});
+      const dlg = mountAlertDialog(variant, { onClose, title: "Confirm" });
+      dlg.open(true);
+      const panel = await dlg.panel();
+      dlg.open(false);
+      expect(panel.getAttribute("data-state")).toBe("closed");
+      expect(panel.isConnected).toBe(true);
+      panel.dispatchEvent(new Event("animationend"));
+      await awaitUnmounted(panel);
+    },
+  );
 
-  test.each(alertDialogVariants)("$style unmounts through the fallback budget when no animationend fires", async (variant) => {
-    const dlg = mountAlertDialog(variant, { onClose: () => {}, title: "Confirm" });
-    dlg.open(true);
-    const panel = await dlg.panel();
-    dlg.open(false);
-    const budget = Date.now();
-    while (panel.isConnected && Date.now() - budget < 450) {
-      await delay(null, 20);
-    }
-    // Wall clock, not loop iterations: per-iteration lag under load must not read as an early unmount.
-    expect(Date.now() - budget).toBeGreaterThanOrEqual(200);
-    expect(panel.isConnected).toBe(false);
-  });
+  test.each(alertDialogVariants)(
+    "$style unmounts through the fallback budget when no animationend fires",
+    async (variant) => {
+      const dlg = mountAlertDialog(variant, { onClose: () => {}, title: "Confirm" });
+      dlg.open(true);
+      const panel = await dlg.panel();
+      dlg.open(false);
+      const budget = Date.now();
+      while (panel.isConnected && Date.now() - budget < 450) {
+        await delay(null, 20);
+      }
+      // Wall clock, not loop iterations: per-iteration lag under load must not read as an early unmount.
+      expect(Date.now() - budget).toBeGreaterThanOrEqual(200);
+      expect(panel.isConnected).toBe(false);
+    },
+  );
 
-  test.each(alertDialogVariants)("$style runs the exit unwired: no Escape dismissal while leaving", async (variant) => {
-    const onClose = mock(() => {});
-    const dlg = mountAlertDialog(variant, { onClose, title: "Confirm" });
-    dlg.open(true);
-    const panel = await dlg.panel();
-    dlg.open(false);
-    expect(panel.getAttribute("data-state")).toBe("closed");
-    panel.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
-    expect(onClose).not.toHaveBeenCalled();
-    panel.dispatchEvent(new Event("animationend"));
-    await awaitUnmounted(panel);
-  });
+  test.each(alertDialogVariants)(
+    "$style runs the exit unwired: no Escape dismissal while leaving",
+    async (variant) => {
+      const onClose = vi.fn(() => {});
+      const dlg = mountAlertDialog(variant, { onClose, title: "Confirm" });
+      dlg.open(true);
+      const panel = await dlg.panel();
+      dlg.open(false);
+      expect(panel.getAttribute("data-state")).toBe("closed");
+      panel.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+      expect(onClose).not.toHaveBeenCalled();
+      panel.dispatchEvent(new Event("animationend"));
+      await awaitUnmounted(panel);
+    },
+  );
 
   test("keeps structural parity across both styles", () => {
     assertStructuralParity(
@@ -290,10 +361,20 @@ describe("alert-dialog", () => {
  * resolves to the wrapper (its children land in document.body) — the dedicated
  * Portal test above asserts the portaled child instead.
  */
-function renderPart(variant: (typeof alertDialogPartVariants)[number], children?: HellaNode[], extra: Record<string, unknown> = {}): Element {
+function renderPart(
+  variant: (typeof alertDialogPartVariants)[number],
+  children?: HellaNode[],
+  extra: Record<string, unknown> = {},
+): Element {
   const container = setupContainer();
-  const rendered = variant.render({ children: children ?? [], ...extra } as unknown as Record<string, never>);
+  const rendered = variant.render({ children: children ?? [], ...extra } as unknown as Record<
+    string,
+    never
+  >);
   // A reactive fn root cannot pass through mount's resolve-once unwrap — wrap it like the harness does.
-  mount(typeof rendered === "function" ? <div>{rendered as never}</div> : rendered as never, container);
+  mount(
+    typeof rendered === "function" ? <div>{rendered as never}</div> : (rendered as never),
+    container,
+  );
   return container.firstElementChild!;
 }

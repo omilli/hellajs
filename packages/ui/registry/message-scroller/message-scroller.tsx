@@ -1,7 +1,14 @@
 import { signal } from "@hellajs/core";
 import type { Signal } from "@hellajs/core";
 import type { HellaChild, HellaChildren } from "@hellajs/dom";
-import type { MessageScrollerProviderProps, MessageScrollerViewportProps, MessageScrollerContentProps, MessageScrollerItemProps, MessageScrollerButtonProps, MessageScrollerProps } from "./message-scroller-types.js";
+import type {
+  MessageScrollerProviderProps,
+  MessageScrollerViewportProps,
+  MessageScrollerContentProps,
+  MessageScrollerItemProps,
+  MessageScrollerButtonProps,
+  MessageScrollerProps,
+} from "./message-scroller-types.js";
 // @hella:styles
 declare const base: string;
 declare const buttonBase: string;
@@ -23,7 +30,15 @@ export function MessageScrollerProvider(props: MessageScrollerProviderProps): JS
   return <>{props.children}</>;
 }
 
-export function MessageScrollerViewport({ atBottom, scrollToBottom, threshold, observe, children, class: cls, ...attrs }: MessageScrollerViewportProps): JSX.Element {
+export function MessageScrollerViewport({
+  atBottom,
+  scrollToBottom,
+  threshold,
+  observe,
+  children,
+  class: cls,
+  ...attrs
+}: MessageScrollerViewportProps): JSX.Element {
   const fallback = signal(true);
   const teardown: (() => void)[] = [];
   let el: HTMLElement | undefined;
@@ -85,7 +100,11 @@ export function MessageScrollerViewport({ atBottom, scrollToBottom, threshold, o
   );
 }
 
-export function MessageScrollerContent({ children, class: cls, ...attrs }: MessageScrollerContentProps): JSX.Element {
+export function MessageScrollerContent({
+  children,
+  class: cls,
+  ...attrs
+}: MessageScrollerContentProps): JSX.Element {
   return (
     <div
       data-slot="message-scroller-content"
@@ -101,7 +120,11 @@ export function MessageScrollerContent({ children, class: cls, ...attrs }: Messa
   );
 }
 
-export function MessageScrollerItem({ children, class: cls, ...attrs }: MessageScrollerItemProps): JSX.Element {
+export function MessageScrollerItem({
+  children,
+  class: cls,
+  ...attrs
+}: MessageScrollerItemProps): JSX.Element {
   return (
     <div
       data-slot="message-scroller-item"
@@ -117,7 +140,17 @@ export function MessageScrollerItem({ children, class: cls, ...attrs }: MessageS
   );
 }
 
-export function MessageScrollerButton({ atBottom, scrollToBottom, direction: dir, variant, size, "on:click": userClick, children, class: cls, ...attrs }: MessageScrollerButtonProps): JSX.Element {
+export function MessageScrollerButton({
+  atBottom,
+  scrollToBottom,
+  direction: dir,
+  variant,
+  size,
+  "on:click": userClick,
+  children,
+  class: cls,
+  ...attrs
+}: MessageScrollerButtonProps): JSX.Element {
   const direction = (): "start" | "end" => dir ?? "end";
 
   const active = (): "true" | "false" => {
@@ -133,7 +166,9 @@ export function MessageScrollerButton({ atBottom, scrollToBottom, direction: dir
       return;
     }
     if (!(event.target instanceof Element)) return;
-    const viewport = event.target.closest('[data-slot="message-scroller"]')?.querySelector('[data-slot="message-scroller-viewport"]');
+    const viewport = event.target
+      .closest('[data-slot="message-scroller"]')
+      ?.querySelector('[data-slot="message-scroller-viewport"]');
     if (viewport instanceof HTMLElement) {
       viewport.scrollTop = viewport.scrollHeight;
       atBottom?.(true);
@@ -159,7 +194,10 @@ export function MessageScrollerButton({ atBottom, scrollToBottom, direction: dir
         ]
         // @hella:end
       }
-      on:click={function (e) { userClick?.call(this, e); click(e); }}
+      on:click={function (e) {
+        userClick?.call(this, e);
+        click(e);
+      }}
       {...attrs}
     >
       {children ?? (
@@ -190,7 +228,16 @@ export function MessageScrollerButton({ atBottom, scrollToBottom, direction: dir
  * children in a viewport + content stack, and renders the jump-to-end button
  * whose visibility the at-bottom state drives.
  */
-export function MessageScroller({ atBottom, scrollToBottom, threshold, observe, showScrollButton, children, class: cls, ...attrs }: MessageScrollerProps): JSX.Element {
+export function MessageScroller({
+  atBottom,
+  scrollToBottom,
+  threshold,
+  observe,
+  showScrollButton,
+  children,
+  class: cls,
+  ...attrs
+}: MessageScrollerProps): JSX.Element {
   const bottom = atBottom ?? signal(true);
   return (
     <div

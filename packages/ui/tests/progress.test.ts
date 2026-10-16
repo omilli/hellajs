@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState } from "@utils/test-helpers.js";
 import {
@@ -32,14 +32,17 @@ describe("progress", () => {
     expect(indicator.getAttribute("style")).toContain("translateX(-75%)");
   });
 
-  test.each(progressVariants)("$style renders the indeterminate state without aria-valuenow", (variant) => {
-    const root = renderVariant(variant, {});
-    expect(root.getAttribute("data-state")).toBe("indeterminate");
-    expect(root.hasAttribute("aria-valuenow")).toBe(false);
-    const indicator = root.querySelector("[data-slot='progress-indicator']")!;
-    expect(indicator.getAttribute("data-state")).toBe("indeterminate");
-    expect(indicator.getAttribute("style")).toContain("translateX(-100%)");
-  });
+  test.each(progressVariants)(
+    "$style renders the indeterminate state without aria-valuenow",
+    (variant) => {
+      const root = renderVariant(variant, {});
+      expect(root.getAttribute("data-state")).toBe("indeterminate");
+      expect(root.hasAttribute("aria-valuenow")).toBe(false);
+      const indicator = root.querySelector("[data-slot='progress-indicator']")!;
+      expect(indicator.getAttribute("data-state")).toBe("indeterminate");
+      expect(indicator.getAttribute("style")).toContain("translateX(-100%)");
+    },
+  );
 
   test.each(progressVariants)("$style carries the animation class in the css flavor", (variant) => {
     const root = renderVariant(variant, { value: null });
@@ -56,30 +59,38 @@ describe("progress", () => {
   test.each(progressVariants)("$style completes at the max value", (variant) => {
     const root = renderVariant(variant, { value: 100 });
     expect(root.getAttribute("data-state")).toBe("complete");
-    expect(root.querySelector("[data-slot='progress-indicator']")!.getAttribute("style")).toContain("translateX(-0%)");
+    expect(root.querySelector("[data-slot='progress-indicator']")!.getAttribute("style")).toContain(
+      "translateX(-0%)",
+    );
   });
 
-  test.each(progressVariants)("$style updates the width when a reactive value changes", (variant) => {
-    const value = signal(20);
-    const root = renderVariant(variant, { value: () => value() });
-    const indicator = root.querySelector("[data-slot='progress-indicator']")!;
-    expect(root.getAttribute("aria-valuenow")).toBe("20");
-    expect(indicator.getAttribute("style")).toContain("translateX(-80%)");
-    value(70);
-    flush();
-    expect(root.getAttribute("aria-valuenow")).toBe("70");
-    expect(indicator.getAttribute("style")).toContain("translateX(-30%)");
-  });
+  test.each(progressVariants)(
+    "$style updates the width when a reactive value changes",
+    (variant) => {
+      const value = signal(20);
+      const root = renderVariant(variant, { value: () => value() });
+      const indicator = root.querySelector("[data-slot='progress-indicator']")!;
+      expect(root.getAttribute("aria-valuenow")).toBe("20");
+      expect(indicator.getAttribute("style")).toContain("translateX(-80%)");
+      value(70);
+      flush();
+      expect(root.getAttribute("aria-valuenow")).toBe("70");
+      expect(indicator.getAttribute("style")).toContain("translateX(-30%)");
+    },
+  );
 
-  test.each(progressVariants)("$style merges props.class into the root class attribute", (variant) => {
-    const root = renderVariant(variant, { class: "my-progress" });
-    expect(classTokens(root).at(-1)).toBe("my-progress");
-    if (variant.style === "css") {
-      expect(classTokens(root)[0]!.startsWith("progress-")).toBe(true);
-    } else {
-      expect(classTokens(root)).toContain("bg-primary/20");
-    }
-  });
+  test.each(progressVariants)(
+    "$style merges props.class into the root class attribute",
+    (variant) => {
+      const root = renderVariant(variant, { class: "my-progress" });
+      expect(classTokens(root).at(-1)).toBe("my-progress");
+      if (variant.style === "css") {
+        expect(classTokens(root)[0]!.startsWith("progress-")).toBe(true);
+      } else {
+        expect(classTokens(root)).toContain("bg-primary/20");
+      }
+    },
+  );
 
   test("keeps structural parity across both styles", () => {
     assertStructuralParity(progressVariants, { value: 50 });
@@ -90,7 +101,7 @@ describe("progress", () => {
   });
 
   test("fires a user on:click handler across both styles", () => {
-    const onClick = mock(() => {});
+    const onClick = vi.fn(() => {});
     assertHandlerForwarded(progressVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 });

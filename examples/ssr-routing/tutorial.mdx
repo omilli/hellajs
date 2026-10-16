@@ -144,17 +144,17 @@ import { route } from '@hellajs/router';
 export const currentView = signal(<h1>Loading…</h1>);
 
 const Home = () => <h1>Home</h1>;
-const User = ({ id }) => <h1>User {id}</h1>;
+const User = ({ id }: { id: string }) => <h1>User {id}</h1>;
 const NotFound = () => <h1>Not Found</h1>;
 
 export const routes = {
   '/': () => currentView(Home()),
-  '/users/:id': (params) => currentView(User({ id: params.id })),
+  '/users/:id': (params: Record<string, string>) => currentView(User({ id: params.id! })),
 };
 
 export const notFound = () => currentView(NotFound());
 
-const activeClass = (path) => route().active(path) ? 'active' : '';
+const activeClass = (path: string) => route().active(path) ? 'active' : '';
 
 export const App = () => (
   <>
@@ -348,8 +348,8 @@ After the client script loads, clicking a nav link updates the view and the acti
 ### `src/app.tsx`
 
 ```tsx
-import { signal } from '@hellajs/core';
-import { route } from '@hellajs/router';
+import { signal } from "@hellajs/core";
+import { route } from "@hellajs/router";
 
 // The view signal holds the currently-rendered view node. Route handlers are
 // pure setters; they update this signal and nothing else. The same handlers
@@ -360,23 +360,27 @@ import { route } from '@hellajs/router';
 export const currentView = signal(<h1>Loading…</h1>);
 
 const Home = () => <h1>Home</h1>;
-const User = ({ id }) => <h1>User {id}</h1>;
+const User = ({ id }: { id: string }) => <h1>User {id}</h1>;
 const NotFound = () => <h1>Not Found</h1>;
 
 export const routes = {
-  '/': () => currentView(Home()),
-  '/users/:id': (params) => currentView(User({ id: params.id })),
+  "/": () => currentView(Home()),
+  "/users/:id": (params: Record<string, string>) => currentView(User({ id: params.id! })),
 };
 
 export const notFound = () => currentView(NotFound());
 
-const activeClass = (path) => route().active(path) ? 'active' : '';
+const activeClass = (path: string) => (route().active(path) ? "active" : "");
 
 export const App = () => (
   <>
     <nav>
-      <a href="/" class={activeClass('/')}>Home</a>
-      <a href="/users/1" class={activeClass('/users/1')}>User</a>
+      <a href="/" class={activeClass("/")}>
+        Home
+      </a>
+      <a href="/users/1" class={activeClass("/users/1")}>
+        User
+      </a>
     </nav>
     <main>{currentView}</main>
   </>
@@ -386,35 +390,35 @@ export const App = () => (
 ### `src/theme.js`
 
 ```js
-import { css, vars, cssText } from '@hellajs/css';
+import { css, vars, cssText } from "@hellajs/css";
 
 // vars() registers the custom-property declarations on both platforms and returns
 // the var() proxy everywhere; css() registers its rules the same way. cssText()
 // then collects both (the css-side rules in registration order, then the vars
 // buckets) as the text for one <style> tag via doc({ head: { styles } }).
 export const tokens = vars({
-  color: { primary: '#2563eb', text: '#333' },
-  space: { nav: '1rem' },
+  color: { primary: "#2563eb", text: "#333" },
+  space: { nav: "1rem" },
 });
 
 css({
   body: {
-    fontFamily: 'sans-serif',
-    margin: '0',
+    fontFamily: "sans-serif",
+    margin: "0",
     color: tokens.color.text,
   },
   nav: {
-    display: 'flex',
+    display: "flex",
     gap: tokens.space.nav,
     padding: tokens.space.nav,
-    borderBottom: '1px solid #e5e7eb',
+    borderBottom: "1px solid #e5e7eb",
     a: {
       color: tokens.color.primary,
-      textDecoration: 'none',
-      '&.active': {
-        fontWeight: '700',
-        textDecoration: 'underline',
-      }
+      textDecoration: "none",
+      "&.active": {
+        fontWeight: "700",
+        textDecoration: "underline",
+      },
     },
   },
   main: {
@@ -429,27 +433,29 @@ export const stylesheet = cssText();
 ### `src/server.tsx`
 
 ```tsx
-import { readFileSync } from 'node:fs';
-import { Hono } from 'hono';
-import { serve } from '@hono/node-server';
-import { router } from '@hellajs/router';
-import { ssr, doc } from '@hellajs/ssr';
-import { routes, App, notFound } from './app.js';
-import { stylesheet } from './theme.js';
+import { readFileSync } from "node:fs";
+import { Hono } from "hono";
+import { serve } from "@hono/node-server";
+import { router } from "@hellajs/router";
+import { ssr, doc } from "@hellajs/ssr";
+import { routes, App, notFound } from "./app.js";
+import { stylesheet } from "./theme.js";
 
 // Serve the client bundle emitted by build.mjs. The server no longer bundles at
 // startup: JSX cannot run under raw `node`, so build.mjs compiles both entries
 // (client + server) before this file ever boots.
-const client = readFileSync(new URL('../dist/client.js', import.meta.url), 'utf8');
+const client = readFileSync(new URL("../dist/client.js", import.meta.url), "utf8");
 
 const app = new Hono();
 
 // Serve the client bundle from disk.
-app.get('/client.js', (c) => c.body(client, 200, { 'content-type': 'text/javascript; charset=utf-8' }));
+app.get("/client.js", (c) =>
+  c.body(client, 200, { "content-type": "text/javascript; charset=utf-8" }),
+);
 
 // One catch-all: Hono never routes. `@hellajs/router` matches the request URL
 // against the shared route map, on the server and on the client alike.
-app.get('*', (c) => {
+app.get("*", (c) => {
   const { pathname, search } = new URL(c.req.url);
 
   // url overrides window.location (there is none on the server); router init
@@ -463,15 +469,17 @@ app.get('*', (c) => {
   // hydrate('#app') adopts the existing nodes instead of rebuilding them.
   const body = `<div id="app">${ssr(<App />)}</div>`;
 
-  return c.html(doc({
-    lang: 'en',
-    head: {
-      title: 'SSR Routing',
-      styles: [stylesheet],
-      scripts: [{ src: '/client.js', type: 'module' }],
-    },
-    body,
-  }));
+  return c.html(
+    doc({
+      lang: "en",
+      head: {
+        title: "SSR Routing",
+        styles: [stylesheet],
+        scripts: [{ src: "/client.js", type: "module" }],
+      },
+      body,
+    }),
+  );
 });
 
 serve({ fetch: app.fetch, port: 3000 });
@@ -480,9 +488,9 @@ serve({ fetch: app.fetch, port: 3000 });
 ### `src/client.tsx`
 
 ```tsx
-import { hydrate } from '@hellajs/dom';
-import { router } from '@hellajs/router';
-import { routes, App, notFound } from './app.js';
+import { hydrate } from "@hellajs/dom";
+import { router } from "@hellajs/router";
+import { routes, App, notFound } from "./app.js";
 
 // Omit `url`: the client reads window.location and resolves synchronously (the
 // same URL the server resolved), so currentView matches the server-rendered view
@@ -490,5 +498,5 @@ import { routes, App, notFound } from './app.js';
 router({ routes, notFound });
 
 // afterMount fires automatically during hydrate; no flush() needed.
-hydrate(<App />, '#app');
+hydrate(<App />, "#app");
 ```

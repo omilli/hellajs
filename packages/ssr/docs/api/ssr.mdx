@@ -61,45 +61,35 @@ interface StreamOptions extends SsrOptions {
 The client receives the static shell before any async value settles. Pipe it into a `Response` for a streaming server handler. Bare Promises are awaited in tree order; a rejected bare Promise errors the stream, while a rejected `<Suspense>` region is isolated (see [Errors Propagate](#errors-propagate)). [`Lazy`](/reference/dom/lazy) loaders are awaited like bare Promises: in-order outside [`<Suspense>`](/reference/dom/suspense), resolved within the staged `<template>` inside one.
 
 ```jsx
+import { createServer } from 'node:http';
+import { Readable } from 'node:stream';
 import { ssr } from '@hellajs/ssr';
 
 const user = (id: string) => fetch(`/api/users/${id}`).then(r => r.text());
 const page = (id: string) => <div><h1>Hello</h1><p>{() => user(id)}</p></div>;
 
-Bun.serve({
-  port: 3000,
-  fetch: (req) => {
-    const id = new URL(req.url).searchParams.get('id') ?? '1';
-    return new Response(
-      ssr.stream(page(id)).pipeThrough(new TextEncoderStream()),
-      { headers: { 'content-type': 'text/html' } }
-    );
-  }
-});
+createServer((req, res) => {
+  const id = new URL(req.url, `http://${req.headers.host}`).searchParams.get('id') ?? '1';
+  res.setHeader('content-type', 'text/html');
+  Readable.fromWeb(ssr.stream(page(id)).pipeThrough(new TextEncoderStream())).pipe(res);
+}).listen(3000);
 ```
 
 Under a strict `Content-Security-Policy` (no `unsafe-inline`), the browser blocks the inline `<Suspense>` swap scripts. Pass a per-response `nonce` and mirror it in the response header; every script the stream emits (the [`$hs` bootstrap](#in-order-streaming) and each per-region swap script) then carries `nonce="…"`:
 
 ```jsx
+import { createServer } from 'node:http';
+import { Readable } from 'node:stream';
 import { ssr } from '@hellajs/ssr';
 
 const page = () => <div><h1>Hello</h1></div>;
 
-Bun.serve({
-  port: 3000,
-  fetch: (req) => {
-    const nonce = crypto.randomUUID();   // fresh per response
-    return new Response(
-      ssr.stream(page(), { nonce }).pipeThrough(new TextEncoderStream()),
-      {
-        headers: {
-          'content-type': 'text/html',
-          'content-security-policy': `script-src 'self' 'nonce-${nonce}'`
-        }
-      }
-    );
-  }
-});
+createServer((req, res) => {
+  const nonce = crypto.randomUUID();   // fresh per response
+  res.setHeader('content-type', 'text/html');
+  res.setHeader('content-security-policy', `script-src 'self' 'nonce-${nonce}'`);
+  Readable.fromWeb(ssr.stream(page(), { nonce }).pipeThrough(new TextEncoderStream())).pipe(res);
+}).listen(3000);
 ```
 
 Without a `nonce` (or with no options at all) the scripts are emitted unattributed, byte-identical to a stream rendered before the option existed.

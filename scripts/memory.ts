@@ -1,6 +1,7 @@
-import { logger } from "./utils/index.js";
-import { isThinkingLevel } from "./agent/rpc.js";
-import { runMemory } from "./memory/run.js";
+import type {} from "bun";
+import { logger } from "./utils/index.ts";
+import { isThinkingLevel } from "./agent/rpc.ts";
+import { runMemory } from "./memory/run.ts";
 
 /** Parsed CLI configuration. */
 interface MemoryArgs {

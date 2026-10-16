@@ -933,7 +933,7 @@ const BASE = "https://dummyjson.com";
 const cacheTime = 300000; // 5 minutes
 
 export const postsResource = resource<PostsResponse, string>(
-  (urlPath) => fetch(`${BASE}/${urlPath}`).then(r => r.json()),
+  (urlPath) => fetch(`${BASE}/${urlPath}`).then((r) => r.json()),
   {
     key: () => {
       const search = appStore.searchValue();
@@ -945,22 +945,22 @@ export const postsResource = resource<PostsResponse, string>(
     },
     staleTime: 30000,
     cacheTime,
-  }
+  },
 );
 
 export const postResource = resource<Post, string>(
-  (id) => fetch(`${BASE}/posts/${id}`).then(r => r.json()),
-  { key: () => appStore.postId(), cacheTime, }
+  (id) => fetch(`${BASE}/posts/${id}`).then((r) => r.json()),
+  { key: () => appStore.postId(), cacheTime },
 );
 
 export const userResource = resource<User, string>(
-  (id) => fetch(`${BASE}/users/${id}`).then(r => r.json()),
-  { key: () => appStore.userId(), cacheTime, }
+  (id) => fetch(`${BASE}/users/${id}`).then((r) => r.json()),
+  { key: () => appStore.userId(), cacheTime },
 );
 
 export const userPostsResource = resource<PostsResponse, string>(
-  (id) => fetch(`${BASE}/users/${id}/posts`).then(r => r.json()),
-  { key: () => appStore.userId(), cacheTime, }
+  (id) => fetch(`${BASE}/users/${id}/posts`).then((r) => r.json()),
+  { key: () => appStore.userId(), cacheTime },
 );
 ```
 
@@ -998,25 +998,34 @@ css({
 
 // Shared card styles; composed by PostCard via style(card, ...) and consumed
 // directly by UserProfile.
-export const card = style({
-  backgroundColor: theme.color.surface,
-  borderRadius: theme.radius.md,
-  padding: "1rem",
-  marginBottom: "0.75rem",
-  border: `1px solid ${theme.color.border}`,
-}, { label: "card" });
+export const card = style(
+  {
+    backgroundColor: theme.color.surface,
+    borderRadius: theme.radius.md,
+    padding: "1rem",
+    marginBottom: "0.75rem",
+    border: `1px solid ${theme.color.border}`,
+  },
+  { label: "card" },
+);
 
-export const cardTitle = style({
-  fontSize: "1.1rem",
-  fontWeight: 600,
-  margin: "0 0 0.5rem",
-}, { label: "card-title" });
+export const cardTitle = style(
+  {
+    fontSize: "1.1rem",
+    fontWeight: 600,
+    margin: "0 0 0.5rem",
+  },
+  { label: "card-title" },
+);
 
-export const cardBody = style({
-  color: theme.color.muted,
-  fontSize: "0.9rem",
-  lineHeight: 1.5,
-}, { label: "card-body" });
+export const cardBody = style(
+  {
+    color: theme.color.muted,
+    fontSize: "0.9rem",
+    lineHeight: 1.5,
+  },
+  { label: "card-body" },
+);
 ```
 
 ### `src/main.tsx`
@@ -1036,10 +1045,10 @@ import { PostList } from "./pages/PostList.tsx";
 const title = signal("");
 const view = signal(<Placeholder message="Loading..." />);
 
-effect(() => document.title = `Blog - ${title}`);
+effect(() => (document.title = `Blog - ${title}`));
 
 router({
-  scrollBehavior: 'top',
+  scrollBehavior: "top",
   routes: {
     "/": "/posts",
     "/posts": (_params, query) => {
@@ -1061,20 +1070,28 @@ router({
   notFound: () => view(PostList()),
 });
 
-const appContainer = style({
-  maxWidth: "48rem",
-  margin: "0 auto",
-  padding: "1rem",
-}, { label: "app-container" });
+const appContainer = style(
+  {
+    maxWidth: "48rem",
+    margin: "0 auto",
+    padding: "1rem",
+  },
+  { label: "app-container" },
+);
 
-const appTitle = style({
-  fontSize: "1.5rem",
-}, { label: "app-title" });
+const appTitle = style(
+  {
+    fontSize: "1.5rem",
+  },
+  { label: "app-title" },
+);
 
-const App = <div class={appContainer}>
-  <h1 class={appTitle}>{title}</h1>
-  {view}
-</div>;
+const App = (
+  <div class={appContainer}>
+    <h1 class={appTitle}>{title}</h1>
+    {view}
+  </div>
+);
 
 mount(App, "#app");
 ```
@@ -1084,11 +1101,14 @@ mount(App, "#app");
 import { style } from "@hellajs/css";
 import { theme } from "../theme.ts";
 
-const placeholder = style({
-  textAlign: "center",
-  color: theme.color.subtle,
-  padding: "2rem 0",
-}, { label: "placeholder" });
+const placeholder = style(
+  {
+    textAlign: "center",
+    color: theme.color.subtle,
+    padding: "2rem 0",
+  },
+  { label: "placeholder" },
+);
 
 export const Placeholder = ({ message }: { message: string }) => (
   <div class={placeholder}>{message}</div>
@@ -1102,16 +1122,25 @@ import { style } from "@hellajs/css";
 import { navigate } from "@hellajs/router";
 import { theme } from "../theme.ts";
 
-const backLink = style({
-  display: "inline-block",
-  marginBottom: "1rem",
-  color: theme.color.link,
-  cursor: "pointer",
-  fontSize: "0.9rem",
-}, { label: "back-link" });
+const backLink = style(
+  {
+    display: "inline-block",
+    marginBottom: "1rem",
+    color: theme.color.link,
+    cursor: "pointer",
+    fontSize: "0.9rem",
+  },
+  { label: "back-link" },
+);
 
 export const BackLink = () => (
-  <a class={backLink} on:click={e => { e.preventDefault(); navigate("/posts"); }}>
+  <a
+    class={backLink}
+    on:click={(e) => {
+      e.preventDefault();
+      navigate("/posts");
+    }}
+  >
     &larr; Back to posts
   </a>
 );
@@ -1124,20 +1153,26 @@ import { ForEach } from "@hellajs/dom";
 import { style } from "@hellajs/css";
 import { theme } from "../theme.ts";
 
-const tagList = style({
-  display: "flex",
-  gap: "0.4rem",
-  flexWrap: "wrap",
-  marginTop: "0.5rem",
-}, { label: "tags" });
+const tagList = style(
+  {
+    display: "flex",
+    gap: "0.4rem",
+    flexWrap: "wrap",
+    marginTop: "0.5rem",
+  },
+  { label: "tags" },
+);
 
-const tag = style({
-  fontSize: "0.75rem",
-  padding: "0.15rem 0.5rem",
-  borderRadius: theme.radius.pill,
-  backgroundColor: theme.color.tag,
-  color: theme.color.muted,
-}, { label: "tag" });
+const tag = style(
+  {
+    fontSize: "0.75rem",
+    padding: "0.15rem 0.5rem",
+    borderRadius: theme.radius.pill,
+    backgroundColor: theme.color.tag,
+    color: theme.color.muted,
+  },
+  { label: "tag" },
+);
 
 interface TagsProps {
   tags: string[];
@@ -1145,9 +1180,7 @@ interface TagsProps {
 
 export const Tags = ({ tags = [] }: TagsProps) => (
   <div class={tagList}>
-    <ForEach each={tags} use={(t: string) => (
-      <span class={tag}>{t}</span>
-    )} />
+    <ForEach each={tags} use={(t: string) => <span class={tag}>{t}</span>} />
   </div>
 );
 ```
@@ -1158,11 +1191,14 @@ export const Tags = ({ tags = [] }: TagsProps) => (
 import { style } from "@hellajs/css";
 import { theme } from "../theme.ts";
 
-const reactions = style({
-  fontSize: "0.8rem",
-  color: theme.color.subtle,
-  marginTop: "0.5rem",
-}, { label: "reactions" });
+const reactions = style(
+  {
+    fontSize: "0.8rem",
+    color: theme.color.subtle,
+    marginTop: "0.5rem",
+  },
+  { label: "reactions" },
+);
 
 interface ReactionsProps {
   likes: number;
@@ -1183,27 +1219,30 @@ import { style } from "@hellajs/css";
 import type { Signal } from "@hellajs/core";
 import { theme } from "../theme.ts";
 
-const searchBar = style({
-  display: "flex",
-  gap: "0.5rem",
-  marginBottom: "1rem",
-  "input": {
-    flex: 1,
-    padding: "0.5rem 0.75rem",
-    borderRadius: theme.radius.sm,
-    border: `1px solid ${theme.color.border}`,
-    fontSize: "0.9rem",
+const searchBar = style(
+  {
+    display: "flex",
+    gap: "0.5rem",
+    marginBottom: "1rem",
+    input: {
+      flex: 1,
+      padding: "0.5rem 0.75rem",
+      borderRadius: theme.radius.sm,
+      border: `1px solid ${theme.color.border}`,
+      fontSize: "0.9rem",
+    },
+    button: {
+      cursor: "pointer",
+      borderRadius: theme.radius.sm,
+      border: `1px solid ${theme.color.border}`,
+      backgroundColor: theme.color.surface,
+      color: theme.color.text,
+      padding: "0.5rem 1rem",
+      fontSize: "0.9rem",
+    },
   },
-  "button": {
-    cursor: "pointer",
-    borderRadius: theme.radius.sm,
-    border: `1px solid ${theme.color.border}`,
-    backgroundColor: theme.color.surface,
-    color: theme.color.text,
-    padding: "0.5rem 1rem",
-    fontSize: "0.9rem",
-  },
-}, { label: "search-bar" });
+  { label: "search-bar" },
+);
 
 interface SearchBarProps {
   value: Signal<string>;
@@ -1222,7 +1261,7 @@ export const SearchBar = ({ value, onSearch }: SearchBarProps) => {
         placeholder={"Search..."}
         value={value}
 
-        on:input={e => value((e.target as HTMLInputElement).value)}
+        on:input={(e) => value((e.target as HTMLInputElement).value)}
         on:keyup={handleKeyup}
       />
       <button on:click={onSearch}>Search</button>
@@ -1248,23 +1287,30 @@ interface PostCardProps {
 
 // Compose onto the shared card class; the returned class string carries both
 // ("card-… post-card-…"), each side keeping its own rule.
-const postCard = style(card, {
-  "&:hover": {
-    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+const postCard = style(
+  card,
+  {
+    "&:hover": {
+      boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+    },
   },
-}, { label: "post-card" });
+  { label: "post-card" },
+);
 
-const userLink = style({
-  color: theme.color.link,
-  display: "inline-block",
-  fontSize: "0.9rem",
-  marginTop: "0.5rem",
-  cursor: "pointer",
-  textDecoration: "none",
-  "&:hover": {
-    textDecoration: "underline"
+const userLink = style(
+  {
+    color: theme.color.link,
+    display: "inline-block",
+    fontSize: "0.9rem",
+    marginTop: "0.5rem",
+    cursor: "pointer",
+    textDecoration: "none",
+    "&:hover": {
+      textDecoration: "underline",
+    },
   },
-}, { label: "user-link" });
+  { label: "user-link" },
+);
 
 const openUser = (id: number) => navigate(`/users/${id}`);
 
@@ -1276,7 +1322,13 @@ export const PostCard = ({ post, onClick }: PostCardProps) => (
       <Tags tags={post.tags} />
       <Reactions likes={post.reactions?.likes} views={post.views} />
     </div>
-    <a class={userLink} on:click={e => { e.stopPropagation(); openUser(post.userId); }}>
+    <a
+      class={userLink}
+      on:click={(e) => {
+        e.stopPropagation();
+        openUser(post.userId);
+      }}
+    >
       User {post.userId}
     </a>
   </div>
@@ -1290,22 +1342,28 @@ import { style } from "@hellajs/css";
 import type { Signal } from "@hellajs/core";
 import { theme } from "../theme.ts";
 
-const pagination = style({
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  gap: "0.5rem",
-  marginTop: "1rem",
-  "button": {
-    cursor: "pointer",
+const pagination = style(
+  {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: "0.5rem",
+    marginTop: "1rem",
+    button: {
+      cursor: "pointer",
+    },
   },
-}, { label: "pagination" });
+  { label: "pagination" },
+);
 
-const pageInfo = style({
-  fontSize: "0.85rem",
-  color: theme.color.subtle,
-  padding: "0 0.5rem",
-}, { label: "page-info" });
+const pageInfo = style(
+  {
+    fontSize: "0.85rem",
+    color: theme.color.subtle,
+    padding: "0 0.5rem",
+  },
+  { label: "page-info" },
+);
 
 interface PaginationProps {
   page: Signal<number>;
@@ -1315,10 +1373,7 @@ interface PaginationProps {
 
 export const Pagination = ({ page, totalPages, onPageChange }: PaginationProps) => (
   <div class={pagination}>
-    <button
-      on:click={() => onPageChange(Math.max(1, page() - 1))}
-      disabled={() => page() <= 1}
-    >
+    <button on:click={() => onPageChange(Math.max(1, page() - 1))} disabled={() => page() <= 1}>
       Prev
     </button>
     <span class={pageInfo}>
@@ -1359,28 +1414,30 @@ const goToPage = (p: number) => navigate("/posts", { query: { page: String(p) } 
 export const PostList = () => {
   fetch();
 
-  return <>
-    <SearchBar
-      value={searchValue}
-      onSearch={fetch}
-    />
+  return (
+    <>
+      <SearchBar value={searchValue} onSearch={fetch} />
 
-    {() => {
-      const posts = data()?.posts ?? [];
+      {() => {
+        const posts = data()?.posts ?? [];
 
-      return isFetching() ?
-        <Placeholder message="Loading posts..." /> :
-        posts.length > 0 ?
-          <ForEach each={posts} use={(post) =>
-            <PostCard post={post} onClick={() => navigate(`/posts/${post.id}`)} />
-          } /> :
-          <Placeholder message={`No posts found "${searchValue()}".`} />;
-    }}
+        return isFetching() ? (
+          <Placeholder message="Loading posts..." />
+        ) : posts.length > 0 ? (
+          <ForEach
+            each={posts}
+            use={(post) => <PostCard post={post} onClick={() => navigate(`/posts/${post.id}`)} />}
+          />
+        ) : (
+          <Placeholder message={`No posts found "${searchValue()}".`} />
+        );
+      }}
 
-    {totalPages() > 1 &&
-      <Pagination page={page} totalPages={totalPages} onPageChange={goToPage} />
-    }
-  </>;
+      {totalPages() > 1 && (
+        <Pagination page={page} totalPages={totalPages} onPageChange={goToPage} />
+      )}
+    </>
+  );
 };
 ```
 ### `src/pages/PostDetail.tsx`
@@ -1396,22 +1453,27 @@ const { fetch, isFetching, data } = postResource;
 export const PostDetail = () => {
   fetch();
 
-  return <>
-    <BackLink />
+  return (
+    <>
+      <BackLink />
 
-    {() => {
-      const post = data();
+      {() => {
+        const post = data();
 
-      return <div class="post-detail">
-        {isFetching() ?
-          <Placeholder message="Loading post..." /> :
-          post?.body ?
-            <PostCard post={post!} /> :
-            <Placeholder message="Post not found" />
-        }
-      </div>;
-    }}
-  </>;
+        return (
+          <div class="post-detail">
+            {isFetching() ? (
+              <Placeholder message="Loading post..." />
+            ) : post?.body ? (
+              <PostCard post={post!} />
+            ) : (
+              <Placeholder message="Post not found" />
+            )}
+          </div>
+        );
+      }}
+    </>
+  );
 };
 ```
 ### `src/pages/UserProfile.tsx`
@@ -1426,82 +1488,92 @@ import { Placeholder } from "../components/Placeholder.tsx";
 import { PostCard } from "../components/PostCard.tsx";
 import { BackLink } from "../components/BackLink.tsx";
 
-const avatar = style({
-  width: "4rem",
-  height: "4rem",
-  borderRadius: "50%",
-  objectFit: "cover",
-}, { label: "avatar" });
+const avatar = style(
+  {
+    width: "4rem",
+    height: "4rem",
+    borderRadius: "50%",
+    objectFit: "cover",
+  },
+  { label: "avatar" },
+);
 
-const userInfo = style({
-  display: "flex",
-  gap: "1rem",
-  alignItems: "center",
-  marginBottom: "1rem",
-}, { label: "user-info" });
+const userInfo = style(
+  {
+    display: "flex",
+    gap: "1rem",
+    alignItems: "center",
+    marginBottom: "1rem",
+  },
+  { label: "user-info" },
+);
 
-const userMeta = style({
-  fontSize: "0.85rem",
-  color: theme.color.subtle,
-  "& p": { margin: "0.15rem 0" },
-}, { label: "user-meta" });
+const userMeta = style(
+  {
+    fontSize: "0.85rem",
+    color: theme.color.subtle,
+    "& p": { margin: "0.15rem 0" },
+  },
+  { label: "user-meta" },
+);
 
-const {
-  fetch: fetchUser,
-  isFetching: isFetchingUser,
-  data: userData
-} = userResource;
+const { fetch: fetchUser, isFetching: isFetchingUser, data: userData } = userResource;
 
-const {
-  fetch: fetchPosts,
-  data: postsData,
-  isFetching: isFetchingPosts
-} = userPostsResource;
+const { fetch: fetchPosts, data: postsData, isFetching: isFetchingPosts } = userPostsResource;
 
 export const UserProfile = () => {
   fetchUser();
   fetchPosts();
 
-  return <div class="user-profile">
-    <BackLink />
+  return (
+    <div class="user-profile">
+      <BackLink />
 
-    {() => {
-      const user = userData();
-      const { firstName, lastName, email, image, company } = user || {};
+      {() => {
+        const user = userData();
+        const { firstName, lastName, email, image, company } = user || {};
 
-      if (isFetchingUser()) return <Placeholder message="Loading user..." />;
+        if (isFetchingUser()) return <Placeholder message="Loading user..." />;
 
-      if (!user?.id) return <Placeholder message="User not found." />;
+        if (!user?.id) return <Placeholder message="User not found." />;
 
-      return <div class={card}>
-        <div class={userInfo}>
-          <img class={avatar} src={image} alt={`${firstName} ${lastName}`} />
-          <div>
-            <h2 class="title" style="margin-bottom: 0.25rem">
-              {firstName} {lastName}
-            </h2>
-            <div class={userMeta}>
-              <p>{email}</p>
-              <p>{company?.title} at {company?.name}</p>
+        return (
+          <div class={card}>
+            <div class={userInfo}>
+              <img class={avatar} src={image} alt={`${firstName} ${lastName}`} />
+              <div>
+                <h2 class="title" style="margin-bottom: 0.25rem">
+                  {firstName} {lastName}
+                </h2>
+                <div class={userMeta}>
+                  <p>{email}</p>
+                  <p>
+                    {company?.title} at {company?.name}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>;
-    }}
+        );
+      }}
 
-    <h3>Recent Posts</h3>
+      <h3>Recent Posts</h3>
 
-    {() => {
-      const posts = postsData()?.posts ?? [];
+      {() => {
+        const posts = postsData()?.posts ?? [];
 
-      return isFetchingPosts() ?
-        <Placeholder message="Loading posts..." /> :
-        posts.length > 0 ?
-          <ForEach each={posts} use={(post) =>
-            <PostCard post={post} onClick={() => navigate(`/posts/${post.id}`)} />
-          } /> :
-          <Placeholder message="No posts found." />;
-    }}
-  </div>;
+        return isFetchingPosts() ? (
+          <Placeholder message="Loading posts..." />
+        ) : posts.length > 0 ? (
+          <ForEach
+            each={posts}
+            use={(post) => <PostCard post={post} onClick={() => navigate(`/posts/${post.id}`)} />}
+          />
+        ) : (
+          <Placeholder message="No posts found." />
+        );
+      }}
+    </div>
+  );
 };
 ```

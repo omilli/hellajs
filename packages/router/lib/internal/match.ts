@@ -83,7 +83,7 @@ function matchSegments(
   pathParts: string[],
   params: Record<string, string>,
   pi: number,
-  si: number
+  si: number,
 ): number {
   if (pi === patternParts.length) {
     return si;
@@ -124,7 +124,11 @@ function matchSegments(
  * @param isNested Whether this is a nested route match.
  * @returns Match result with parameters and remaining path, or null.
  */
-export function matchPattern(pattern: string, path: string, isNested = false): { params: Params; remainingPath: string } | null {
+export function matchPattern(
+  pattern: string,
+  path: string,
+  isNested = false,
+): { params: Params; remainingPath: string } | null {
   const patternParts = pattern.split("/").filter(Boolean);
   const pathParts = path.split("/").filter(Boolean);
 
@@ -162,7 +166,7 @@ export function matchPattern(pattern: string, path: string, isNested = false): {
 
   return {
     params: Object.keys(params).length ? params : EMPTY_OBJECT,
-    remainingPath
+    remainingPath,
   };
 }
 
@@ -177,7 +181,7 @@ export function matchPattern(pattern: string, path: string, isNested = false): {
 export function matchNestedEntry(
   pattern: string,
   routeValue: RouteValue | string,
-  path: string
+  path: string,
 ): RouteMatch[] | null {
   const [pathWithoutQuery, queryString] = path.split("?") as [string, string | undefined];
 
@@ -191,20 +195,20 @@ export function matchNestedEntry(
     pattern,
     params: match.params,
     query: parseQuery(queryString),
-    remainingPath: match.remainingPath
+    remainingPath: match.remainingPath,
   };
 
   const nonStringRouteValue = routeValue as RouteValue;
   if (hasChildren(nonStringRouteValue) && match.remainingPath) {
     const childMatches = matchNestedRoute(
       nonStringRouteValue.children as Record<string, RouteValue | string>,
-      match.remainingPath + (queryString ? `?${queryString}` : "")
+      match.remainingPath + (queryString ? `?${queryString}` : ""),
     );
 
     if (childMatches) {
-      const updatedChildMatches = childMatches.map(childMatch => ({
+      const updatedChildMatches = childMatches.map((childMatch) => ({
         ...childMatch,
-        params: { ...match.params, ...childMatch.params }
+        params: { ...match.params, ...childMatch.params },
       }));
       return [currentMatch, ...updatedChildMatches];
     }
@@ -225,7 +229,7 @@ export function matchNestedEntry(
  */
 export function matchNestedRoute(
   routeMap: Record<string, RouteValue | string>,
-  path: string
+  path: string,
 ): RouteMatch[] | null {
   const routeEntries = getCachedRouteEntries(routeMap).child;
 
@@ -251,12 +255,17 @@ export function matchNestedRoute(
  * @param path The path to match.
  * @returns Match result with parameters and query, or null.
  */
-export function matchRoute(routePattern: string, path: string): { params: Params; query: Params } | null {
+export function matchRoute(
+  routePattern: string,
+  path: string,
+): { params: Params; query: Params } | null {
   const [pathWithoutQuery, queryString] = path.split("?") as [string, string | undefined];
   const match = matchPattern(routePattern, pathWithoutQuery, false);
 
-  return match ? {
-    params: match.params,
-    query: parseQuery(queryString)
-  } : null;
+  return match
+    ? {
+        params: match.params,
+        query: parseQuery(queryString),
+      }
+    : null;
 }

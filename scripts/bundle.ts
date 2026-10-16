@@ -1,16 +1,12 @@
 import fsStat from "node:fs";
-import {
-  logger,
-  projectRoot,
-  packagesDir,
-} from "./utils/index.js";
-import { derivePackageGraph } from "./bundle/config.js";
+import { logger, projectRoot, packagesDir } from "./utils/index.ts";
+import { derivePackageGraph } from "./bundle/config.ts";
 import {
   buildPackageEntry,
   buildAllPackagesFromOrder,
   reportSummary,
   reportSingleResult,
-} from "./bundle/orchestrate.js";
+} from "./bundle/orchestrate.ts";
 
 const PACKAGE_GRAPH = derivePackageGraph();
 const args = process.argv.slice(2);
@@ -33,12 +29,7 @@ async function main(): Promise<void> {
       );
       reportSummary(results, summary);
     } else if (packageName) {
-      const result = await buildPackageEntry(
-        packageName,
-        projectRoot,
-        bundleMode,
-        shouldClean,
-      );
+      const result = await buildPackageEntry(packageName, projectRoot, bundleMode, shouldClean);
       reportSingleResult(packageName, result);
     }
   } catch (error) {
@@ -47,7 +38,7 @@ async function main(): Promise<void> {
   }
 }
 
-if (import.meta.main) {
+if (process.argv[1] === import.meta.filename) {
   main().catch((error: Error) => {
     logger.error("Fatal error:", error);
     process.exit(1);

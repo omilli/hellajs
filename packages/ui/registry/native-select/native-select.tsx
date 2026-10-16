@@ -1,4 +1,8 @@
-import type { NativeSelectProps, NativeSelectOptionProps, NativeSelectOptGroupProps } from "./native-select-types.js";
+import type {
+  NativeSelectProps,
+  NativeSelectOptionProps,
+  NativeSelectOptGroupProps,
+} from "./native-select-types.js";
 
 // @hella:styles
 declare const base: string;
@@ -10,7 +14,13 @@ declare const option: string;
 declare const wrapper: string;
 // @hella:end
 
-export function NativeSelect({ value, size, children, class: cls, ...attrs }: NativeSelectProps): JSX.Element {
+export function NativeSelect({
+  value,
+  size,
+  children,
+  class: cls,
+  ...attrs
+}: NativeSelectProps): JSX.Element {
   return (
     <div
       data-slot="native-select-wrapper"
@@ -32,18 +42,14 @@ export function NativeSelect({ value, size, children, class: cls, ...attrs }: Na
         }}
         class={
           // @hella:compose
-          [
-            base,
-            focus,
-            invalid,
-            cls,
-          ]
+          [base, focus, invalid, cls]
           // @hella:end
         }
         {...attrs}
       >
         {children}
-      </select>      <svg
+      </select>{" "}
+      <svg
         xmlns="http://www.w3.org/2000/svg"
         width="24"
         height="24"
@@ -67,7 +73,11 @@ export function NativeSelect({ value, size, children, class: cls, ...attrs }: Na
   );
 }
 
-export function NativeSelectOption({ children, class: cls, ...attrs }: NativeSelectOptionProps): JSX.Element {
+export function NativeSelectOption({
+  children,
+  class: cls,
+  ...attrs
+}: NativeSelectOptionProps): JSX.Element {
   return (
     <option
       data-slot="native-select-option"
@@ -83,7 +93,11 @@ export function NativeSelectOption({ children, class: cls, ...attrs }: NativeSel
   );
 }
 
-export function NativeSelectOptGroup({ children, class: cls, ...attrs }: NativeSelectOptGroupProps): JSX.Element {
+export function NativeSelectOptGroup({
+  children,
+  class: cls,
+  ...attrs
+}: NativeSelectOptGroupProps): JSX.Element {
   return (
     <optgroup
       data-slot="native-select-optgroup"

@@ -25,7 +25,7 @@ import type { Signal, SignalMap, CollectionOptions } from "./types";
  */
 export function signalMap<K, V>(
   initial?: Iterable<readonly [K, V]>,
-  options?: CollectionOptions<V>
+  options?: CollectionOptions<V>,
 ): SignalMap<K, V> {
   const hooks = createHooks("signalMap", options);
   if (initial !== undefined && !isFunction(initial?.[Symbol.iterator])) {

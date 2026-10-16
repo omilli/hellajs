@@ -1,6 +1,20 @@
 {
   "name": "@hellajs/router",
   "version": "1.0.3",
+  "homepage": "git+https://github.com/omilli/hellajs.git",
+  "bugs": {
+    "url": "https://github.com/omilli/hellajs/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/omilli/hellajs.git",
+    "directory": "packages/router"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -18,25 +32,11 @@
       "import": "./dist/*.js"
     }
   },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
-  "peerDependencies": {
-    "@hellajs/core": "^1.0.6"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+ssh://git@github.com/omilli/hellajs.git",
-    "directory": "packages/router"
-  },
-  "homepage": "git+https://github.com/omilli/hellajs.git",
-  "bugs": {
-    "url": "https://github.com/omilli/hellajs/issues"
-  },
   "publishConfig": {
     "access": "public",
     "provenance": true
+  },
+  "peerDependencies": {
+    "@hellajs/core": "^1.0.6"
   }
 }

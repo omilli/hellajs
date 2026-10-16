@@ -20,23 +20,27 @@ export function filterEmptyChildren(t, children, isComponent) {
     const child = children[i++];
     if (t.isJSXText(child)) {
       if (typeof child.value === "string" && child.value.trim()) {
-        // Normalize whitespace but preserve meaningful spaces
-        const normalized = child.value.replace(/\s+/g, " ");
-        result.push(t.stringLiteral(normalized));
+        // JSX whitespace semantics: padding whitespace that touches a newline
+        // is a reflow artifact, never meaningful space, and strips; interior
+        // whitespace runs collapse to one space.
+        let value = child.value;
+        if (/^\s*\n/.test(value)) value = value.replace(/^\s+/, "");
+        if (/\n\s*$/.test(value)) value = value.replace(/\s+$/, "");
+        const normalized = value.replace(/\s+/g, " ");
+        if (normalized) result.push(t.stringLiteral(normalized));
       }
     } else if (t.isJSXExpressionContainer(child)) {
       // Skip JSX comments (expression == null or JSXEmptyExpression)
-      if (
-        child.expression == null ||
-        t.isJSXEmptyExpression(child.expression)
-      ) continue;
+      if (child.expression == null || t.isJSXEmptyExpression(child.expression)) continue;
 
       const expression = child.expression;
 
       // Check if this is props.children - if so, spread it
-      if (t.isMemberExpression(expression) &&
+      if (
+        t.isMemberExpression(expression) &&
         t.isIdentifier(expression.object, { name: "props" }) &&
-        t.isIdentifier(expression.property, { name: "children" })) {
+        t.isIdentifier(expression.property, { name: "children" })
+      ) {
         // Return a spread element for props.children
         result.push(t.spreadElement(expression));
         continue;

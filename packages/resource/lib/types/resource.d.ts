@@ -19,10 +19,10 @@ export type ResourceStatus = "idle" | "loading" | "success" | "error";
  * Used for structured error handling and user feedback.
  */
 export type ResourceErrorCategory =
-  | "not_found"    // Resource not found (404)
-  | "server"       // Server errors (5xx)
-  | "client"       // Client errors (4xx)
-  | "unknown";     // Unclassified errors
+  | "not_found" // Resource not found (404)
+  | "server" // Server errors (5xx)
+  | "client" // Client errors (4xx)
+  | "unknown"; // Unclassified errors
 
 /**
  * Structured error information providing details about failed resource operations.
@@ -106,7 +106,12 @@ export interface ResourceOptions<T, K, TTransformed = T> {
   /** Hook called before mutation for optimistic updates */
   onMutate?: (variables: unknown) => unknown;
   /** Callback fired after mutation completes (success or error) */
-  onSettled?: (data?: T, error?: unknown, variables?: unknown, context?: unknown) => Promise<void> | void;
+  onSettled?: (
+    data?: T,
+    error?: unknown,
+    variables?: unknown,
+    context?: unknown,
+  ) => Promise<void> | void;
   /**
    * After a successful mutation, invalidate cache entries matching any prefix
    * (string) or pattern (RegExp). Strings dispatch to `invalidateByPrefix`;

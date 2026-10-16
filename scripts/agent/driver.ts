@@ -1,7 +1,7 @@
-import { logger } from "../utils/index.js";
-import { TerminalRelay, type Relay } from "./relay.js";
-import { PiRpc, type UiRequest, type UiResponsePayload } from "./rpc.js";
-import { streamEvent } from "./stream.js";
+import { logger } from "../utils/index.ts";
+import { TerminalRelay, type Relay } from "./relay.ts";
+import { PiRpc, type UiRequest, type UiResponsePayload } from "./rpc.ts";
+import { streamEvent } from "./stream.ts";
 
 /** Options for driving one fresh pi instance. */
 export interface DriveOptions {

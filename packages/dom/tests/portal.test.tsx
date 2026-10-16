@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
 import { mount, Portal, component } from "@hellajs/dom";
@@ -19,16 +19,57 @@ describe("dom", () => {
     };
 
     test.each([
-      { name: "append", initial: '<div id="app"></div><div id="modal-root"><span>Existing</span></div>', target: "#modal-root", type: "append" as const, expected: "Last" },
-      { name: "prepend", initial: '<div id="app"></div><div id="modal-root"><span>Existing</span></div>', target: "#modal-root", type: "prepend", expected: "First" },
-      { name: "replace", initial: '<div id="app"></div><div id="modal-root"><span>Old</span></div>', target: "#modal-root", type: "replace", expected: "New" },
-      { name: "before", initial: '<div id="app"></div><div id="target"></div>', target: "#target", type: "before", expected: "Before" },
-      { name: "after", initial: '<div id="app"></div><div id="target"></div>', target: "#target", type: "after", expected: "After" },
+      {
+        name: "append",
+        initial: '<div id="app"></div><div id="modal-root"><span>Existing</span></div>',
+        target: "#modal-root",
+        type: "append" as const,
+        expected: "Last",
+      },
+      {
+        name: "prepend",
+        initial: '<div id="app"></div><div id="modal-root"><span>Existing</span></div>',
+        target: "#modal-root",
+        type: "prepend",
+        expected: "First",
+      },
+      {
+        name: "replace",
+        initial: '<div id="app"></div><div id="modal-root"><span>Old</span></div>',
+        target: "#modal-root",
+        type: "replace",
+        expected: "New",
+      },
+      {
+        name: "before",
+        initial: '<div id="app"></div><div id="target"></div>',
+        target: "#target",
+        type: "before",
+        expected: "Before",
+      },
+      {
+        name: "after",
+        initial: '<div id="app"></div><div id="target"></div>',
+        target: "#target",
+        type: "after",
+        expected: "After",
+      },
     ] as const)("renders target with $name insert type", ({ initial, target, type, expected }) => {
       resetTestState(initial);
-      const portal = type === "append"
-        ? <div><Portal to={target}><b>{expected}</b></Portal></div>
-        : <div><Portal to={target} type={type}><b>{expected}</b></Portal></div>;
+      const portal =
+        type === "append" ? (
+          <div>
+            <Portal to={target}>
+              <b>{expected}</b>
+            </Portal>
+          </div>
+        ) : (
+          <div>
+            <Portal to={target} type={type}>
+              <b>{expected}</b>
+            </Portal>
+          </div>
+        );
       mount(portal);
       expect(getResult[type](target)).toBe(expected);
     });
@@ -37,7 +78,11 @@ describe("dom", () => {
       resetTestState('<div id="app"></div><div id="modal-root"></div>');
       const text = signal("initial");
 
-      mount(<div><Portal to="#modal-root">{text}</Portal></div>);
+      mount(
+        <div>
+          <Portal to="#modal-root">{text}</Portal>
+        </div>,
+      );
       expect(document.querySelector("#modal-root")?.textContent).toBe("initial");
 
       text("updated");
@@ -49,7 +94,11 @@ describe("dom", () => {
       resetTestState('<div id="app"></div><div id="modal-root"></div>');
       const text = signal("initial");
 
-      mount(<div><Portal to="#modal-root">{text}</Portal></div>);
+      mount(
+        <div>
+          <Portal to="#modal-root">{text}</Portal>
+        </div>,
+      );
 
       const nodeBefore = document.querySelector("#modal-root")!.firstChild!;
       expect(nodeBefore.textContent).toBe("initial");
@@ -65,7 +114,13 @@ describe("dom", () => {
     test("cleans up when marker removed", () => {
       resetTestState('<div id="app"></div><div id="modal-root"></div>');
 
-      const app = mount(<div id="wrapper"><Portal to="#modal-root"><span id="portal-span">Content</span></Portal></div>);
+      const app = mount(
+        <div id="wrapper">
+          <Portal to="#modal-root">
+            <span id="portal-span">Content</span>
+          </Portal>
+        </div>,
+      );
 
       expect(document.querySelector("#modal-root #portal-span")).not.toBeNull();
 
@@ -78,7 +133,13 @@ describe("dom", () => {
       resetTestState('<div id="app"></div><div id="modal-root"></div>');
       const content = signal("initial");
 
-      mount(<div><Portal to="#modal-root" type="prepend"><span>{content}</span></Portal></div>);
+      mount(
+        <div>
+          <Portal to="#modal-root" type="prepend">
+            <span>{content}</span>
+          </Portal>
+        </div>,
+      );
 
       expect(document.querySelector("#modal-root span")?.textContent).toBe("initial");
       content("updated");
@@ -91,7 +152,16 @@ describe("dom", () => {
       const a = signal("A");
       const b = signal("B");
 
-      mount(<div><Portal to="#target"><span id="pa">{a}</span></Portal><Portal to="#target"><span id="pb">{b}</span></Portal></div>);
+      mount(
+        <div>
+          <Portal to="#target">
+            <span id="pa">{a}</span>
+          </Portal>
+          <Portal to="#target">
+            <span id="pb">{b}</span>
+          </Portal>
+        </div>,
+      );
 
       const target = document.querySelector("#target")!;
       expect(target.querySelector("#pa")?.textContent).toBe("A");
@@ -106,7 +176,15 @@ describe("dom", () => {
     test("replace type with multiple children", () => {
       resetTestState('<div id="app"></div><div id="target"><p>Old 1</p><p>Old 2</p></div>');
 
-      mount(<div><Portal to="#target" type="replace"><span>New A</span><span>New B</span><span>New C</span></Portal></div>);
+      mount(
+        <div>
+          <Portal to="#target" type="replace">
+            <span>New A</span>
+            <span>New B</span>
+            <span>New C</span>
+          </Portal>
+        </div>,
+      );
 
       const target = document.querySelector("#target")!;
       expect(target.querySelectorAll("p").length).toBe(0);
@@ -118,7 +196,7 @@ describe("dom", () => {
     test("renders a single JSX array child into the portal target", () => {
       resetTestState('<div id="app"></div><div id="modal-root"></div>');
 
-      mount(<div>{(component(Portal, { to: "#modal-root", children: [<b id="pjsx">x</b>] }))}</div>);
+      mount(<div>{component(Portal, { to: "#modal-root", children: [<b id="pjsx">x</b>] })}</div>);
 
       expect(document.querySelector("#modal-root #pjsx")?.textContent).toBe("x");
     });
@@ -126,11 +204,15 @@ describe("dom", () => {
     test("renders JSX array children in document order with type replace", () => {
       resetTestState('<div id="app"></div><div id="target"><p>Old 1</p><p>Old 2</p></div>');
 
-      mount(<div>{(component(Portal, { to: "#target", type: "replace" as const, children: [
-        <span>New A</span>,
-        <span>New B</span>,
-        <span>New C</span>
-      ] }))}</div>);
+      mount(
+        <div>
+          {component(Portal, {
+            to: "#target",
+            type: "replace" as const,
+            children: [<span>New A</span>, <span>New B</span>, <span>New C</span>],
+          })}
+        </div>,
+      );
 
       const target = document.querySelector("#target")!;
       expect(target.querySelectorAll("p").length).toBe(0);
@@ -142,7 +224,17 @@ describe("dom", () => {
       resetTestState('<div id="app"></div><div id="modal-root"></div>');
       const show = signal(true);
 
-      mount(<div>{(() => show() && <Portal to="#modal-root"><span id="cond-portal">Conditional</span></Portal>)}</div>);
+      mount(
+        <div>
+          {() =>
+            show() && (
+              <Portal to="#modal-root">
+                <span id="cond-portal">Conditional</span>
+              </Portal>
+            )
+          }
+        </div>,
+      );
 
       expect(document.querySelector("#modal-root #cond-portal")).not.toBeNull();
 
@@ -152,14 +244,24 @@ describe("dom", () => {
     });
 
     test("throws on an invalid insert type", () => {
-      expect(() => Portal({ to: "#app", type: "apend" as never, children: [] })).toThrow("[dom] Portal: type must be one of");
+      expect(() => Portal({ to: "#app", type: "apend" as never, children: [] })).toThrow(
+        "[dom] Portal: type must be one of",
+      );
     });
 
     test("cleans nested portal content when the ancestor unmounts", async () => {
       resetTestState('<div id="app"></div><div id="modal-root"></div>');
 
-      const inner = <div id="outer-panel"><Portal to="#modal-root"><p id="nested-panel">nested</p></Portal></div>;
-      const handle = mount(<div>{component(Portal, { to: "#modal-root", children: [inner] })}</div>);
+      const inner = (
+        <div id="outer-panel">
+          <Portal to="#modal-root">
+            <p id="nested-panel">nested</p>
+          </Portal>
+        </div>
+      );
+      const handle = mount(
+        <div>{component(Portal, { to: "#modal-root", children: [inner] })}</div>,
+      );
 
       await delay();
       expect(document.querySelector("#nested-panel")?.isConnected).toBe(true);
@@ -177,7 +279,13 @@ describe("dom", () => {
       resetTestState('<div id="app"></div>');
 
       expect(() => {
-        mount(<div><Portal to="#nonexistent"><span>Content</span></Portal></div>);
+        mount(
+          <div>
+            <Portal to="#nonexistent">
+              <span>Content</span>
+            </Portal>
+          </div>,
+        );
       }).toThrow('[dom] Portal: target "#nonexistent" not found in document');
     });
   });

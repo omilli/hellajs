@@ -31,7 +31,16 @@ const isMarked = (fn: unknown): boolean =>
  * args) — gets a throwing stub, so any write path fails closed on readonly
  * keys instead of silently mutating or silently no-oping.
  */
-const collectionReaders = new Set(["get", "has", "length", "size", "keys", "values", "forEach", "map"]);
+const collectionReaders = new Set([
+  "get",
+  "has",
+  "length",
+  "size",
+  "keys",
+  "values",
+  "forEach",
+  "map",
+]);
 
 /**
  * @internal
@@ -60,7 +69,10 @@ interface CollectionKeyOptions {
  */
 const convertElement = (element: unknown, key: string, readonly: boolean): unknown => {
   if (isPlainObject(element)) {
-    return createStore(element as Record<string, unknown>, readonly ? { readonly: true } : undefined);
+    return createStore(
+      element as Record<string, unknown>,
+      readonly ? { readonly: true } : undefined,
+    );
   }
   if (Array.isArray(element) || element instanceof Map || element instanceof Set) {
     return installCollection(element, { key, readonly });
@@ -80,7 +92,7 @@ const convertElement = (element: unknown, key: string, readonly: boolean): unkno
  */
 export function installCollection(
   value: Array<unknown> | Map<unknown, unknown> | Set<unknown>,
-  options: CollectionKeyOptions
+  options: CollectionKeyOptions,
 ): (...args: unknown[]) => unknown {
   const { key, readonly } = options;
   const wrap = (element: unknown): unknown => convertElement(element, key, readonly);
@@ -89,13 +101,17 @@ export function installCollection(
     // place (per-field wakes, untouched fields sleep) instead of replacing
     if (isStore(prev) && isPlainObject(next)) {
       (prev as { $update: (partial: Record<string, unknown>) => unknown }).$update(
-        next as Record<string, unknown>
+        next as Record<string, unknown>,
       );
       return true;
     }
     return false;
   };
-  const hooks = { wrap, merge, ...(options.equals ? { equals: options.equals } : {}) } as CollectionOptions<unknown>;
+  const hooks = {
+    wrap,
+    merge,
+    ...(options.equals ? { equals: options.equals } : {}),
+  } as CollectionOptions<unknown>;
 
   let container: (...args: unknown[]) => unknown;
   if (Array.isArray(value)) {
@@ -149,10 +165,10 @@ export function installCollection(
           value: collectionReaders.has(name)
             ? member
             : (): never => {
-              throw new Error(`[store] readonly key "${key}"`);
-            },
+                throw new Error(`[store] readonly key "${key}"`);
+              },
           writable: true,
-          configurable: true
+          configurable: true,
         });
       }
       i++;

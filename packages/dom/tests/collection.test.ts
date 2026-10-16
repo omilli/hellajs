@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
 import { $collection, checkMultiSelectors, multiSelectors, getState } from "@hellajs/dom";
@@ -45,7 +45,7 @@ describe("dom", () => {
 
       $collection("#app").bind({
         "data-static": "value",
-        class: () => isActive() ? "active" : "inactive"
+        class: () => (isActive() ? "active" : "inactive"),
       });
 
       $collection("#text-input").bind(inputValue);
@@ -67,7 +67,9 @@ describe("dom", () => {
     });
 
     test("attaches event handlers with context", () => {
-      const clickHandler = mock((text: string) => { void text; });
+      const clickHandler = vi.fn((text: string) => {
+        void text;
+      });
 
       $collection(".item").on("click", function (this: Element) {
         clickHandler(this.textContent);
@@ -96,13 +98,10 @@ describe("dom", () => {
     });
 
     test("lazy binding for dynamic elements", () => {
-      const clickHandler = mock(() => { });
+      const clickHandler = vi.fn(() => {});
       const content = signal("lazy");
 
-      $collection(".lazy")
-        .bind(content)
-        .bind({ "data-test": "value" })
-        .on("click", clickHandler);
+      $collection(".lazy").bind(content).bind({ "data-test": "value" }).on("click", clickHandler);
 
       expect(document.querySelector(".lazy")).toBeNull();
 
@@ -153,9 +152,9 @@ describe("dom", () => {
       document.getElementById("container")?.appendChild(div1);
       document.getElementById("container")?.appendChild(div2);
 
-      const mountHandler = mock(() => { });
+      const mountHandler = vi.fn(() => {});
       $collection(".hookable").hooks({
-        afterMount: mountHandler
+        afterMount: mountHandler,
       });
 
       expect(mountHandler).toHaveBeenCalledTimes(2);

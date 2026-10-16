@@ -1,5 +1,5 @@
-import { describe, test, expect, beforeEach } from "bun:test";
-import { router, navigate, route, href } from "@hellajs/router/bundle";
+import { describe, test, expect, beforeEach } from "vite-plus/test";
+import { router, navigate, route, href } from "@hellajs/router";
 import { setupRouterEnv } from "./helpers";
 
 describe("router", () => {
@@ -16,9 +16,9 @@ describe("router", () => {
     test("matches /users/:id? with the segment present or skipped", () => {
       router({
         routes: {
-          "/users/:id?": () => render("users")
+          "/users/:id?": () => render("users"),
         },
-        notFound: () => render("missing")
+        notFound: () => render("missing"),
       });
 
       navigate("/users");
@@ -35,9 +35,9 @@ describe("router", () => {
     test("matches a mid-pattern optional at /posts/:id?/edit", () => {
       router({
         routes: {
-          "/posts/:id?/edit": () => render("editor")
+          "/posts/:id?/edit": () => render("editor"),
         },
-        notFound: () => render("missing")
+        notFound: () => render("missing"),
       });
 
       navigate("/posts/edit");
@@ -55,9 +55,9 @@ describe("router", () => {
     test("matches an optional param before a wildcard", () => {
       router({
         routes: {
-          "/files/:id?/*": () => render("files")
+          "/files/:id?/*": () => render("files"),
         },
-        notFound: () => render("missing")
+        notFound: () => render("missing"),
       });
 
       navigate("/files/a/b/c");
@@ -73,11 +73,11 @@ describe("router", () => {
           "/users/:id?": {
             handler: () => render("users"),
             children: {
-              "/detail/:section?": () => render("detail")
-            }
-          }
+              "/detail/:section?": () => render("detail"),
+            },
+          },
         },
-        notFound: () => render("missing")
+        notFound: () => render("missing"),
       });
 
       navigate("/users");
@@ -96,8 +96,8 @@ describe("router", () => {
     test("strips absent optional tokens with their preceding slash in navigate and href", () => {
       router({
         routes: {
-          "/users/:id?": () => render("users")
-        }
+          "/users/:id?": () => render("users"),
+        },
       });
 
       navigate("/users/:id?");
@@ -113,9 +113,9 @@ describe("router", () => {
       router({
         routes: {
           "/users": () => render("list"),
-          "/users/:id": () => render("profile")
+          "/users/:id": () => render("profile"),
         },
-        notFound: () => render("missing")
+        notFound: () => render("missing"),
       });
 
       navigate("/users");
@@ -129,9 +129,9 @@ describe("router", () => {
     test("no longer splits a pattern at ? — /a?b does not match /a", () => {
       router({
         routes: {
-          "/a?b": () => render("ab")
+          "/a?b": () => render("ab"),
         },
-        notFound: () => render("missing")
+        notFound: () => render("missing"),
       });
 
       navigate("/a");
@@ -142,9 +142,9 @@ describe("router", () => {
     test("lights active() links for an optional-param pattern", () => {
       router({
         routes: {
-          "/users/:id?": () => render("users")
+          "/users/:id?": () => render("users"),
         },
-        notFound: () => render("missing")
+        notFound: () => render("missing"),
       });
 
       navigate("/users");

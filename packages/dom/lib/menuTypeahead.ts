@@ -18,7 +18,7 @@
 export function menuTypeahead(
   container: ParentNode,
   resolveItems: () => { node: HTMLElement; text: string }[],
-  onSelect: (item: { node: HTMLElement; text: string }) => void
+  onSelect: (item: { node: HTMLElement; text: string }) => void,
 ): () => void {
   if (container == null) {
     throw new Error("[dom] menuTypeahead: container is required");

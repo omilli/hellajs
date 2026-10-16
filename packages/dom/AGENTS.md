@@ -216,7 +216,7 @@ Branch order: `key` → early-out, never renders (reconciliation metadata — Fo
 
 ## Headless behaviors (`lib/{trapFocus,onEscape,onOutside,rovingTabIndex,anchorPosition,computeAnchorPosition,hoverIntent,menuTypeahead,onDrag,onSwipe,onPinch,onLongPress,onDoubleTap,layerDismissal}.ts`)
 
-Flat dispose-handle wiring over real nodes, zero deps by design: no core shim, raw `== null` validation (the guide's stays-raw form; never convert to `typeof` comparisons — eslint-banned in `packages/*/lib`). State stays in caller signals.
+Flat dispose-handle wiring over real nodes, zero deps by design: no core shim, raw `== null` validation (the guide's stays-raw form; never convert to `typeof` comparisons — `hella/no-raw-typeof-compare`-banned in `packages/*/lib`). State stays in caller signals.
 
 | File | Responsibility |
 |---|---|
@@ -302,5 +302,5 @@ Integration-style, public API only. Runtime and type imports from **`@hellajs/do
 
 **Pattern across all tests:** `mount` → drive signals → `flush()` (core, sync, no `await`) → assert DOM. `afterMount` fires during `mount()`/`hydrate()` already; the handle's `flush()` is only needed to drain the cleanup queue synchronously (e.g. `afterDestroy` assertions). For removal assertions, `el.remove()` then `await delay()` to let the MutationObserver fire and process cleanup. Never test two behaviors in one test; aim for 100% coverage.
 
-Run with `bun coverage dom`.
+Run with `vp run coverage dom`.
 </dom-package-instructions>

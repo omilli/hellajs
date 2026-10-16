@@ -10,7 +10,7 @@ Method, scope discipline, discovery, and tool economy live in the always-loaded 
 
 ## Layering contract
 
-Skills carry workflow logic — loop steps, gates, evidence rules — and name HellaJS artifacts by pointer: `bun coverage <pkg>` (AGENTS.md §Scripts), `guides/tests.md`, `memory/`, `plans/…`. They never restate an always-loaded rule. A section duplicating always-loaded context is deleted, not maintained; a rule genuinely absent everywhere routes through `feedback`, not into the skill.
+Skills carry workflow logic — loop steps, gates, evidence rules — and name HellaJS artifacts by pointer: `vp run coverage <pkg>` (AGENTS.md §Scripts), `guides/tests.md`, `memory/`, `plans/…`. They never restate an always-loaded rule. A section duplicating always-loaded context is deleted, not maintained; a rule genuinely absent everywhere routes through `feedback`, not into the skill.
 
 ## The loop
 
@@ -45,11 +45,11 @@ Skills carry workflow logic — loop steps, gates, evidence rules — and name H
 After any substantive work (skill used, files edited, commands run, decision made), scan both tracks and invoke the matching skill yourself — do not wait for the user. Root AGENTS.md §Response protocol carries the summary table; this section is the authoritative protocol.
 
 - **Downstream** — the next skill if work continues (entry → `plan`; `plan` → `worker`; `worker` → `plan` on a gap, `idea` on a fork). One sentence + justification, or "nothing downstream."
-- **Self-improvement** — run the `feedback` thread scan (`bun .agents/skills/feedback/scripts/scan.ts`, that skill's Step 1), then evaluate its trigger table: any trigger fired → `feedback`, reusing the fresh report. A recallable verified fact/decision → `memory`.
+- **Self-improvement** — run the `feedback` thread scan (`node .agents/skills/feedback/scripts/scan.ts`, that skill's Step 1), then evaluate its trigger table: any trigger fired → `feedback`, reusing the fresh report. A recallable verified fact/decision → `memory`.
 
 Worker completions fire the completion pipeline (matching audit-* skill → redo → feedback → memory) without offering; every other handoff invokes the target skill rather than offering it. Clean run → skip self-improvement; trivial change → skip everything. Mandatory — silently skipping the gate equals skipping a verification step.
 
-**Where the loop lands here:** plan contracts are files under `plans/<package>/<category>/<topic>/`; a DoD gate is a §Scripts command (`bun coverage <pkg>`; plugin exception — `guides/tests.md` §Triage & Gate Semantics); evidence cites file + symbol anchors, never line numbers; a Break-severity finding needs an empirical repro (§Skills).
+**Where the loop lands here:** plan contracts are files under `plans/<package>/<category>/<topic>/`; a DoD gate is a §Scripts command (`vp run coverage <pkg>` / `<plugin>`; plugin-suite scope semantics — `guides/tests.md` §Triage & Gate Semantics); evidence cites file + symbol anchors, never line numbers; a Break-severity finding needs an empirical repro (§Skills).
 
 ## Memory
 

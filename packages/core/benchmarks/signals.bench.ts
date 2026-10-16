@@ -59,7 +59,6 @@ group("Computed Evaluation", () => {
   });
 });
 
-
 group("Batching", () => {
   const s1 = signal(0);
   const s2 = signal(0);
@@ -83,7 +82,6 @@ group("Batching", () => {
       });
     }
   });
-
 });
 
 run({

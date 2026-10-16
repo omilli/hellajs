@@ -2,7 +2,13 @@ import type { HellaNode, MountHandle } from "../types/nodes";
 import { isFunction, isObject } from "./core";
 import { resolveValue } from "./utils";
 import { dispatchError, toError } from "./dispatch";
-import { processMountQueue, processCleanupQueue, mountQueue, beginMountPhase, endMountPhase } from "./queue";
+import {
+  processMountQueue,
+  processCleanupQueue,
+  mountQueue,
+  beginMountPhase,
+  endMountPhase,
+} from "./queue";
 import { cleanupSubtree } from "./cleanup";
 
 /**
@@ -23,7 +29,7 @@ export function createMountHandle(
   container: Element | ShadowRoot,
   node: HellaNode | (() => HellaNode) | (() => Promise<HellaNode | (() => HellaNode)>),
   attachImpl: (resolvedNode: HellaNode | (() => HellaNode)) => Node[],
-  afterFlush?: () => void
+  afterFlush?: () => void,
 ): MountHandle {
   let mountedNodes: Node[] = [];
   let attached = false;
@@ -35,8 +41,7 @@ export function createMountHandle(
       const children = container.childNodes;
       let i = 0;
       const len = children.length;
-      while (i < len)
-        mountQueue.add(children[i++]!);
+      while (i < len) mountQueue.add(children[i++]!);
     }
     processMountQueue();
     processCleanupQueue();
@@ -63,7 +68,7 @@ export function createMountHandle(
     try {
       mountedNodes = attachImpl(resolvedNode);
       attached = true;
-      flush();   // fire afterMount + set isMounted (root + descendants) now — the scoped observer misses the initial attach (hydrate adds no nodes, so it never would)
+      flush(); // fire afterMount + set isMounted (root + descendants) now — the scoped observer misses the initial attach (hydrate adds no nodes, so it never would)
       afterFlush?.();
     } finally {
       endMountPhase();
@@ -72,9 +77,7 @@ export function createMountHandle(
 
   const resolved = resolveValue(node);
 
-  if (
-    isObject(resolved) &&
-    isFunction((resolved as { then?: unknown }).then)) {
+  if (isObject(resolved) && isFunction((resolved as { then?: unknown }).then)) {
     (resolved as Promise<HellaNode | (() => HellaNode)>).then(attach, (err: unknown) => {
       dispatchError(toError(err), { phase: "mount" });
     });

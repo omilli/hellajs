@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { resetTestState } from "@utils/test-helpers.js";
 import {
   assertAttrForwarded,
@@ -23,49 +23,68 @@ describe("button-group", () => {
     expect(root.textContent).toBe("x");
   });
 
-  test.each(buttonGroupVariants)("$style renders the orientation attribute per variant", (variant) => {
-    const vertical = renderVariant(variant, { orientation: "vertical", children: variant.child!("x") });
-    expect(vertical.getAttribute("data-orientation")).toBe("vertical");
-    if (variant.style === "css") {
-      const tokens = classTokens(vertical).filter((token) => token.startsWith("button-group-vertical"));
-      expect(tokens).toHaveLength(1);
-    } else {
-      expect(classTokens(vertical)).toContain("flex-col");
-    }
-  });
+  test.each(buttonGroupVariants)(
+    "$style renders the orientation attribute per variant",
+    (variant) => {
+      const vertical = renderVariant(variant, {
+        orientation: "vertical",
+        children: variant.child!("x"),
+      });
+      expect(vertical.getAttribute("data-orientation")).toBe("vertical");
+      if (variant.style === "css") {
+        const tokens = classTokens(vertical).filter((token) =>
+          token.startsWith("button-group-vertical"),
+        );
+        expect(tokens).toHaveLength(1);
+      } else {
+        expect(classTokens(vertical)).toContain("flex-col");
+      }
+    },
+  );
 
-  test.each(buttonGroupVariants)("$style composes the group base and orientation classes", (variant) => {
-    const root = renderVariant(variant, { children: variant.child!("x") });
-    const tokens = classTokens(root);
-    if (variant.style === "css") {
-      expect(tokens[0]!.startsWith("button-group-")).toBe(true);
-      expect(tokens.some((token) => token.startsWith("button-group-horizontal"))).toBe(true);
-    } else {
-      expect(tokens).toContain("w-fit");
-      expect(tokens).toContain("[&>*:not(:first-child)]:rounded-l-none");
-    }
-  });
+  test.each(buttonGroupVariants)(
+    "$style composes the group base and orientation classes",
+    (variant) => {
+      const root = renderVariant(variant, { children: variant.child!("x") });
+      const tokens = classTokens(root);
+      if (variant.style === "css") {
+        expect(tokens[0]!.startsWith("button-group-")).toBe(true);
+        expect(tokens.some((token) => token.startsWith("button-group-horizontal"))).toBe(true);
+      } else {
+        expect(tokens).toContain("w-fit");
+        expect(tokens).toContain("[&>*:not(:first-child)]:rounded-l-none");
+      }
+    },
+  );
 
-  test.each(buttonGroupPartVariants)("$part $style renders its slot and class composition", (variant) => {
-    const root = variant.part === "Text"
-      ? renderVariant(variant, { children: ["label"] })
-      : renderVariant(variant, { orientation: "vertical" });
-    expect(root.getAttribute("data-slot")).toBe(`button-group-${variant.part.toLowerCase()}`);
-    if (variant.part === "Text") {
-      expect(root.textContent).toBe("label");
-    } else {
-      expect(root.getAttribute("role")).toBe("separator");
-      expect(root.getAttribute("data-orientation")).toBe("vertical");
-    }
-  });
+  test.each(buttonGroupPartVariants)(
+    "$part $style renders its slot and class composition",
+    (variant) => {
+      const root =
+        variant.part === "Text"
+          ? renderVariant(variant, { children: ["label"] })
+          : renderVariant(variant, { orientation: "vertical" });
+      expect(root.getAttribute("data-slot")).toBe(`button-group-${variant.part.toLowerCase()}`);
+      if (variant.part === "Text") {
+        expect(root.textContent).toBe("label");
+      } else {
+        expect(root.getAttribute("role")).toBe("separator");
+        expect(root.getAttribute("data-orientation")).toBe("vertical");
+      }
+    },
+  );
 
   test("separator part keeps the group's own base and the self-stretch overrides apart", () => {
-    for (const variant of buttonGroupPartVariants.filter((candidate) => candidate.part === "Separator")) {
+    for (const variant of buttonGroupPartVariants.filter(
+      (candidate) => candidate.part === "Separator",
+    )) {
       const root = renderVariant(variant, {});
       const tokens = classTokens(root);
       if (variant.style === "css") {
         expect(tokens.some((token) => token.startsWith("button-group-separator-"))).toBe(true);
-        expect(tokens.some((token) => token.startsWith("button-group-separator-override"))).toBe(true);
+        expect(tokens.some((token) => token.startsWith("button-group-separator-override"))).toBe(
+          true,
+        );
       } else {
         expect(tokens).toContain("shrink-0");
         expect(tokens).toContain("self-stretch");
@@ -84,13 +103,22 @@ describe("button-group", () => {
   });
 
   test("fires a user on:click handler across both styles", () => {
-    const onClick = mock(() => {});
-    assertHandlerForwarded(buttonGroupVariants, { "on:click": onClick }, "on:click", "click", onClick);
+    const onClick = vi.fn(() => {});
+    assertHandlerForwarded(
+      buttonGroupVariants,
+      { "on:click": onClick },
+      "on:click",
+      "click",
+      onClick,
+    );
   });
 
   test("both styles agree on tag and attributes", () => {
     assertStructuralParity(buttonGroupVariants, { orientation: "horizontal", children: ["x"] });
     assertStructuralParity(buttonGroupVariants, { orientation: "vertical", children: ["x"] });
-    assertStructuralParity(buttonGroupPartVariants.filter((candidate) => candidate.part === "Text"), { children: ["x"] });
+    assertStructuralParity(
+      buttonGroupPartVariants.filter((candidate) => candidate.part === "Text"),
+      { children: ["x"] },
+    );
   });
 });

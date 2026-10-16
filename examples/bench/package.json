@@ -1,25 +1,28 @@
 {
   "name": "js-framework-benchmark-hellajs",
-  "private": true,
   "version": "1.0.0",
+  "private": true,
   "author": "omilli",
-  "js-framework-benchmark": {
-    "frameworkVersionFromPackage": "@hellajs/core",
-    "frameworkHomeURL": "https://hellajs.com"
-  },
   "scripts": {
     "bundle:j": "rollup -c rollup.config.jsx.mjs",
-    "bundle:all": "bun bundle:jsx && bun bundle:html && bun bundle:terser",
-    "up:j": "bun bundle:j && bun index.html"
+    "bundle:all": "npm run bundle:jsx && npm run bundle:html && npm run bundle:terser",
+    "up:j": "npm run bundle:j && npx serve index.html"
+  },
+  "dependencies": {
+    "@rollup/plugin-typescript": "^12.3.0"
   },
   "devDependencies": {
     "@rollup/plugin-babel": "^6.0.4",
     "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^12.3.0",
     "rollup": "^4.59.0",
-    "rollup-plugin-minify-template-literals": "^1.1.7"
+    "rollup-plugin-minify-template-literals": "^1.1.7",
+    "tslib": "^2.8.1",
+    "typescript": "~5.9.3"
   },
-  "dependencies": {
-    "@rollup/plugin-typescript": "^12.3.0"
+  "js-framework-benchmark": {
+    "frameworkVersionFromPackage": "@hellajs/core",
+    "frameworkHomeURL": "https://hellajs.com"
   }
 }

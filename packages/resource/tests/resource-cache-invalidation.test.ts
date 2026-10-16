@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { resetTestState } from "@utils/test-helpers.js";
-import { resourceCache } from "@hellajs/resource/bundle";
+import { resourceCache } from "@hellajs/resource";
 
 describe("resourceCache", () => {
   beforeEach(() => {
@@ -32,13 +32,10 @@ describe("resourceCache", () => {
     });
 
     test("invalidateResources calls invalidate on all resources", () => {
-      const invalidate1 = mock(() => {});
-      const invalidate2 = mock(() => {});
+      const invalidate1 = vi.fn(() => {});
+      const invalidate2 = vi.fn(() => {});
 
-      resourceCache.invalidateResources([
-        { invalidate: invalidate1 },
-        { invalidate: invalidate2 }
-      ]);
+      resourceCache.invalidateResources([{ invalidate: invalidate1 }, { invalidate: invalidate2 }]);
 
       expect(invalidate1).toHaveBeenCalled();
       expect(invalidate2).toHaveBeenCalled();

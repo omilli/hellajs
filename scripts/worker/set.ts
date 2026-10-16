@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { isAbsolute, join, relative, resolve } from "node:path";
-import { projectRoot } from "../utils/index.js";
+import { projectRoot } from "../utils/index.ts";
 
 /** One plan-set unit file: its filename and absolute path. */
 export interface PlanUnit {
@@ -71,7 +71,12 @@ export function readDependsOn(unitPath: string): string[] {
   }
   return (match[1] ?? "")
     .split(",")
-    .map((entry: string): string => entry.trim().replace(/\.md$/, "").replace(/^['"]|['"]$/g, ""))
+    .map((entry: string): string =>
+      entry
+        .trim()
+        .replace(/\.md$/, "")
+        .replace(/^['"]|['"]$/g, ""),
+    )
     .filter((entry: string): boolean => entry !== "");
 }
 

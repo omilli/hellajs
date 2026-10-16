@@ -22,7 +22,13 @@ export interface CopyOptions {
  * @param options Rename map and content transform. Identity defaults.
  * @internal
  */
-export function copyFiles(baseDir: string, files: string[], componentsDir: string, overwrite = false, options: CopyOptions = {}): void {
+export function copyFiles(
+  baseDir: string,
+  files: string[],
+  componentsDir: string,
+  overwrite = false,
+  options: CopyOptions = {},
+): void {
   mkdirSync(componentsDir, { recursive: true });
   let i = 0;
   const len = files.length;
@@ -31,7 +37,9 @@ export function copyFiles(baseDir: string, files: string[], componentsDir: strin
     const name = options.rename?.[file] ?? basename(file);
     const dest = join(componentsDir, name);
     if (!overwrite && existsSync(dest)) {
-      console.warn(`[ui] copyFiles: ${name} already exists in ${componentsDir}, skipped (pass --overwrite to replace)`);
+      console.warn(
+        `[ui] copyFiles: ${name} already exists in ${componentsDir}, skipped (pass --overwrite to replace)`,
+      );
       continue;
     }
     const text = readFileSync(join(baseDir, file), "utf8");

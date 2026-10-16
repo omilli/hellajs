@@ -43,7 +43,8 @@ export const trigger = style("navigation-menu-trigger", {
   outlineOffset: "2px",
   paddingBlock: "0.5rem",
   paddingInline: "1rem",
-  transition: "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
+  transition:
+    "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   width: "max-content",
   "&:hover": {
     backgroundColor: tokens.accent,
@@ -196,7 +197,8 @@ export const indicator = style("navigation-menu-indicator", {
   justifyContent: "center",
   overflow: "hidden",
   top: "100%",
-  transition: "transform 200ms cubic-bezier(0.4, 0, 0.2, 1), width 200ms cubic-bezier(0.4, 0, 0.2, 1)",
+  transition:
+    "transform 200ms cubic-bezier(0.4, 0, 0.2, 1), width 200ms cubic-bezier(0.4, 0, 0.2, 1)",
   zIndex: "1",
   "&[data-state='visible']": {
     animation: `${fadeIn} 150ms ease-out both`,

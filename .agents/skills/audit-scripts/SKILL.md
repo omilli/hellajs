@@ -14,7 +14,7 @@ Review build tooling against `guides/scripts.md`; report grounded findings. Rule
 - `guides/scripts.md` — a decision procedure: §Decision Precedence, §Canonical paths, the file-structure tree, then tick §Verification Checklist. Tick the checklist, don't reconstruct rules from prose.
 - Style shared with `guides/code.md` (§Style (shared with code.md)) — code-guide rules apply to script source; this skill is their enforcement point here.
 
-Scripts carry no dedicated test suite (`scripts/AGENTS.md` §Testing) — `bun lint` plus the guards are the mechanical floor; this skill targets what they cannot see. Rule absent for the case at hand → note the gap, don't substitute taste.
+Scripts carry no dedicated test suite (`scripts/AGENTS.md` §Testing) — `vp run lint` plus the guards are the mechanical floor; this skill targets what they cannot see. Rule absent for the case at hand → note the gap, don't substitute taste.
 
 ## Step 2 — Ground every finding
 

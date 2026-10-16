@@ -27,18 +27,16 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: ".nvmrc"
+          node-version-file: ".node-version"
           registry-url: "https://registry.npmjs.org"
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
       - name: Install dependencies
-        run: bun install
+        run: ./node_modules/.bin/vp install --frozen-lockfile
+      - name: Lint
+        run: ./node_modules/.bin/vp run lint
       - name: Run tests with coverage
         run: |
           set -o pipefail
-          bun coverage 2>&1 | tee coverage-output.txt
+          ./node_modules/.bin/vp run coverage 2>&1 | tee coverage-output.txt
       - name: Generate coverage badge
         run: |
           COVERAGE=$(grep "All files" coverage-output.txt | awk '{print $4}')
@@ -93,28 +91,21 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: ".nvmrc"
+          node-version-file: ".node-version"
           registry-url: "https://registry.npmjs.org"
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
       - name: Install dependencies
-        run: bun install
-
+        run: ./node_modules/.bin/vp install --frozen-lockfile
 
       - name: Create Release Pull Request or Publish to npm
         id: changesets
         uses: changesets/action@v1
         with:
           # The `publish` script handles building and testing
-          publish: bun run release
-          
+          publish: ./node_modules/.bin/vp run release
+
           commit: "chore: release packages"
           title: "chore: release packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-

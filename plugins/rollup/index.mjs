@@ -9,7 +9,7 @@ export default function rollupHellaJS() {
     enforce: "pre",
     resolveId(source, importer) {
       if (source.endsWith(".jsx") || source.endsWith(".tsx")) {
-        return this.resolve(source, importer, { skipSelf: true }).then(res => res && res.id);
+        return this.resolve(source, importer, { skipSelf: true }).then((res) => res && res.id);
       }
       return null;
     },
@@ -32,7 +32,13 @@ export default function rollupHellaJS() {
     },
     transform(code, id) {
       // Transform all JS/TS files for JSX
-      if (!id.endsWith(".jsx") && !id.endsWith(".tsx") && !id.endsWith(".js") && !id.endsWith(".ts")) return null;
+      if (
+        !id.endsWith(".jsx") &&
+        !id.endsWith(".tsx") &&
+        !id.endsWith(".js") &&
+        !id.endsWith(".ts")
+      )
+        return null;
 
       // Skip node_modules
       if (id.includes("node_modules")) return null;

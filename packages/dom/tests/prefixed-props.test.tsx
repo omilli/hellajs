@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { mount, hydrate } from "@hellajs/dom";
 import type { HellaNode } from "@hellajs/dom";
@@ -11,7 +11,7 @@ beforeEach(() => {
 describe("dom", () => {
   describe("prefixed props routing", () => {
     test("props on:click handler fires on delegated click after mount", () => {
-      const handler = mock(() => {});
+      const handler = vi.fn(() => {});
       const node = { tag: "button", props: { "on:click": handler } };
 
       mount(node as unknown as HellaNode, "#app");
@@ -22,7 +22,7 @@ describe("dom", () => {
     });
 
     test("props e:click attaches a direct listener", () => {
-      const handler = mock(() => {});
+      const handler = vi.fn(() => {});
       const node = { tag: "button", props: { "e:click": handler } };
 
       mount(node as unknown as HellaNode, "#app");
@@ -37,7 +37,11 @@ describe("dom", () => {
       let mounted: Element | undefined;
       const node = {
         tag: "button",
-        props: { "hook:afterMount": (el: Element) => { mounted = el; } }
+        props: {
+          "hook:afterMount": (el: Element) => {
+            mounted = el;
+          },
+        },
       };
 
       mount(node as unknown as HellaNode, "#app");
@@ -50,7 +54,11 @@ describe("dom", () => {
       const node = {
         tag: "div",
         props: { "error:fallback": (e: Error) => <span>Custom: {e.message}</span> },
-        children: [() => { throw new Error("oops"); }]
+        children: [
+          () => {
+            throw new Error("oops");
+          },
+        ],
       };
 
       const container = setupContainer();
@@ -60,7 +68,7 @@ describe("dom", () => {
     });
 
     test("the same hand-built node hydrates with the handler live", () => {
-      const handler = mock(() => {});
+      const handler = vi.fn(() => {});
       const node = { tag: "button", props: { "on:click": handler } };
       const container = setupContainer();
       container.innerHTML = "<button></button>";

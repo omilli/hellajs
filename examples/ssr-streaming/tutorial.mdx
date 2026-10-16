@@ -453,8 +453,8 @@ Open `http://localhost:5173/`. You see the header and three loading skeletons im
 ### `src/app.tsx`
 
 ```tsx
-import { Suspense } from '@hellajs/dom';
-import { dashboard, grid, card, bone } from './theme';
+import { Suspense } from "@hellajs/dom";
+import { dashboard, grid, card, bone } from "./theme";
 
 // Simulated async fetch; resolves with `data` after `ms`. Deterministic (no backend),
 // so the streamed shape is reproducible. Each card uses a distinct latency: the shell and
@@ -482,13 +482,16 @@ const Skeleton = ({ label }: { label: string }) => (
 const StatsCard = () => (
   <Suspense fallback={<Skeleton label="Stats" />}>
     {() =>
-      after({ revenue: '$48.2k', visitors: '12,904', churn: '2.1%' }, 120).then((d) => (
+      after({ revenue: "$48.2k", visitors: "12,904", churn: "2.1%" }, 120).then((d) => (
         <section class={card}>
           <h2>Stats</h2>
           <dl>
-            <dt>Revenue</dt><dd>{d.revenue}</dd>
-            <dt>Visitors</dt><dd>{d.visitors}</dd>
-            <dt>Churn</dt><dd>{d.churn}</dd>
+            <dt>Revenue</dt>
+            <dd>{d.revenue}</dd>
+            <dt>Visitors</dt>
+            <dd>{d.visitors}</dd>
+            <dt>Churn</dt>
+            <dd>{d.churn}</dd>
           </dl>
         </section>
       ))
@@ -499,11 +502,15 @@ const StatsCard = () => (
 const ActivityCard = () => (
   <Suspense fallback={<Skeleton label="Recent activity" />}>
     {() =>
-      after(['Ada upgraded to Pro', 'Build #281 deployed', 'Grace closed 3 tickets'], 600).then(
+      after(["Ada upgraded to Pro", "Build #281 deployed", "Grace closed 3 tickets"], 600).then(
         (items) => (
           <section class={card}>
             <h2>Recent activity</h2>
-            <ul>{items.map((t) => <li>{t}</li>)}</ul>
+            <ul>
+              {items.map((t) => (
+                <li>{t}</li>
+              ))}
+            </ul>
           </section>
         ),
       )
@@ -514,10 +521,14 @@ const ActivityCard = () => (
 const TopCard = () => (
   <Suspense fallback={<Skeleton label="Top items" />}>
     {() =>
-      after(['Accounting', 'Design system', 'Mobile app'], 1200).then((items) => (
+      after(["Accounting", "Design system", "Mobile app"], 1200).then((items) => (
         <section class={card}>
           <h2>Top items</h2>
-          <ol>{items.map((t) => <li>{t}</li>)}</ol>
+          <ol>
+            {items.map((t) => (
+              <li>{t}</li>
+            ))}
+          </ol>
         </section>
       ))
     }
@@ -544,7 +555,7 @@ export const Dashboard = () => (
 ### `src/theme.ts`
 
 ```ts
-import { css, style, cssText } from '@hellajs/css';
+import { css, style, cssText } from "@hellajs/css";
 
 // The dashboard's theme, one hashed class per styled element. css() registers the global
 // rules and style() the scoped ones, on both platforms; cssText() then collects the
@@ -553,66 +564,78 @@ import { css, style, cssText } from '@hellajs/css';
 // Deliberately minimal: layout and skeleton visibility only.
 css({
   body: {
-    fontFamily: 'system-ui, sans-serif',
-    maxWidth: '42rem',
-    margin: '2rem auto',
-    padding: '0 1rem',
+    fontFamily: "system-ui, sans-serif",
+    maxWidth: "42rem",
+    margin: "2rem auto",
+    padding: "0 1rem",
   },
 });
 
-export const dashboard = style({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '1.5rem',
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    borderBottom: '1px solid #e5e7eb',
-    paddingBottom: '1rem',
-    h1: {
-      margin: '0',
-      fontSize: '1.5rem',
+export const dashboard = style(
+  {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1.5rem",
+    header: {
+      display: "flex",
+      justifyContent: "space-between",
+      borderBottom: "1px solid #e5e7eb",
+      paddingBottom: "1rem",
+      h1: {
+        margin: "0",
+        fontSize: "1.5rem",
+      },
     },
   },
-}, { label: 'dashboard' });
+  { label: "dashboard" },
+);
 
-export const grid = style({
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(14rem, 1fr))',
-  gap: '1rem',
-}, { label: 'grid' });
+export const grid = style(
+  {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(14rem, 1fr))",
+    gap: "1rem",
+  },
+  { label: "grid" },
+);
 
-export const card = style({
-  border: '1px solid #e5e7eb',
-  padding: '1rem 1.25rem',
-  h2: {
-    margin: '0 0 0.75rem',
-    fontSize: '0.8rem',
-    color: '#6b7280',
+export const card = style(
+  {
+    border: "1px solid #e5e7eb",
+    padding: "1rem 1.25rem",
+    h2: {
+      margin: "0 0 0.75rem",
+      fontSize: "0.8rem",
+      color: "#6b7280",
+    },
+    dl: {
+      display: "grid",
+      gridTemplateColumns: "auto 1fr",
+      gap: "0.25rem 0.75rem",
+      margin: "0",
+    },
+    dd: {
+      margin: "0",
+      fontWeight: "600",
+    },
+    "& ul, & ol": {
+      margin: "0",
+      paddingLeft: "1.25rem",
+    },
   },
-  dl: {
-    display: 'grid',
-    gridTemplateColumns: 'auto 1fr',
-    gap: '0.25rem 0.75rem',
-    margin: '0',
-  },
-  dd: {
-    margin: '0',
-    fontWeight: '600',
-  },
-  '& ul, & ol': {
-    margin: '0',
-    paddingLeft: '1.25rem',
-  },
-}, { label: 'card' });
+  { label: "card" },
+);
 
 // The skeleton's loading bar; self-contained, so the skeleton card is just card + bones.
-export const bone = style({
-  display: 'block',
-  height: '0.75rem',
-  marginBottom: '0.5rem',
-  background: '#e5e7eb',
-}, { label: 'bone' });
+export const bone = style(
+  {
+    display: "block",
+    height: "0.75rem",
+    marginBottom: "0.5rem",
+    background: "#e5e7eb",
+  },
+  { label: "bone" },
+);
 
 // Collected after the registration above; joins in first-registration order.
 export const styles = cssText();
@@ -620,9 +643,9 @@ export const styles = cssText();
 ### `src/server.tsx`
 
 ```tsx
-import { ssr, doc } from '@hellajs/ssr';
-import { Dashboard } from './app';
-import { styles } from './theme';
+import { ssr, doc } from "@hellajs/ssr";
+import { Dashboard } from "./app";
+import { styles } from "./theme";
 
 // Single page; the URL is irrelevant, so render() takes no argument. The dev middleware
 // (vite.config.js) passes req.url, but render ignores it. The vite-plugin-hellajs transform
@@ -633,18 +656,18 @@ export function render(): ReadableStream<string> {
   // after the body closes; for ssr.stream that means after every staged <Suspense> swap, so
   // progressive paint holds end-to-end (nothing is collected).
   return doc({
-    lang: 'en',
+    lang: "en",
     // Emits <div id="app">…</div> around the streamed body; the same selector the client's
     // hydrate(<Dashboard />, '#app') targets, so server and client share one string.
-    mount: '#app',
+    mount: "#app",
     head: {
-      title: 'Dashboard',
-      meta: [{ charset: 'UTF-8' }],
+      title: "Dashboard",
+      meta: [{ charset: "UTF-8" }],
       // cssText() collected the registered CSS text; injected here, once.
       styles: [styles],
       // The client entry as a module script: module scripts defer, so head placement gives the
       // same timing as an end-of-body script (the ssr-islands/ssr-routing convention).
-      scripts: [{ type: 'module', src: '/src/client.tsx' }],
+      scripts: [{ type: "module", src: "/src/client.tsx" }],
     },
     body: ssr.stream(<Dashboard />),
   });
@@ -653,12 +676,12 @@ export function render(): ReadableStream<string> {
 ### `src/client.tsx`
 
 ```tsx
-import { hydrate } from '@hellajs/dom';
-import { Dashboard } from './app';
+import { hydrate } from "@hellajs/dom";
+import { Dashboard } from "./app";
 
 // No router init; this is a single streaming page. hydrate adopts the server-rendered
 // nodes instead of rebuilding them. Streamed <Suspense> regions stage resolved children in
 // <template>s; hydrate swaps each staged template in automatically (β: hydrate-swap).
 // afterMount fires automatically during hydrate; no flush() needed.
-hydrate(<Dashboard />, '#app');
+hydrate(<Dashboard />, "#app");
 ```

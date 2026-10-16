@@ -1,7 +1,7 @@
-import { describe, expect, test, beforeEach, mock } from "bun:test";
+import { describe, expect, test, beforeEach, vi } from "vite-plus/test";
 import { batch, computed, flush, signal } from "@hellajs/core";
 import { resetTestState, getStylesheet } from "@utils/test-helpers.js";
-import { vars, resetVars, removeVars } from "@hellajs/css/bundle";
+import { vars, resetVars, removeVars } from "@hellajs/css";
 
 beforeEach(() => {
   resetTestState();
@@ -53,7 +53,7 @@ describe("vars", () => {
   test("static vars populate the result without creating effects", () => {
     const varsObj = vars({
       colors: { primary: "red", secondary: "blue" },
-      spacing: { small: "4px", large: "16px" }
+      spacing: { small: "4px", large: "16px" },
     });
 
     expect(varsObj.colors.primary).toBe("var(--colors-primary)");
@@ -69,8 +69,8 @@ describe("vars", () => {
     vars({
       colors: {
         primary: primaryColor,
-        secondary: secondaryColor
-      }
+        secondary: secondaryColor,
+      },
     });
 
     flush();
@@ -94,7 +94,7 @@ describe("vars", () => {
       colors: {
         primary: color,
         secondary: () => "blue",
-      }
+      },
     });
 
     expect(varsObj.colors.primary).toBe("var(--colors-primary)");
@@ -108,9 +108,9 @@ describe("vars", () => {
       colors: {
         primary: dynamicColor,
         secondary: "orange",
-        accent: "pink"
+        accent: "pink",
       },
-      spacing: "8px"
+      spacing: "8px",
     });
 
     flush();
@@ -131,17 +131,17 @@ describe("vars", () => {
     const theme = signal("dark");
     const size = signal("large");
 
-    const getThemeColor = () => theme() === "dark" ? "#333" : "#fff";
-    const getSize = () => size() === "large" ? "20px" : "14px";
+    const getThemeColor = () => (theme() === "dark" ? "#333" : "#fff");
+    const getSize = () => (size() === "large" ? "20px" : "14px");
 
     vars({
       theme: {
         background: getThemeColor,
-        text: () => theme() === "dark" ? "#fff" : "#000"
+        text: () => (theme() === "dark" ? "#fff" : "#000"),
       },
       typography: {
-        size: getSize
-      }
+        size: getSize,
+      },
     });
 
     flush();
@@ -190,8 +190,8 @@ describe("vars", () => {
 
     vars({
       colors: {
-        primary: rgba
-      }
+        primary: rgba,
+      },
     });
 
     flush();
@@ -209,8 +209,8 @@ describe("vars", () => {
     const vars1 = vars({
       theme: {
         primary: "#ff0000",
-        secondary: "#00ff00"
-      }
+        secondary: "#00ff00",
+      },
     });
 
     flush();
@@ -221,8 +221,8 @@ describe("vars", () => {
     const vars2 = vars({
       spacing: {
         small: "8px",
-        large: "16px"
-      }
+        large: "16px",
+      },
     });
 
     flush();
@@ -242,11 +242,11 @@ describe("vars", () => {
     const color2 = signal("blue");
 
     vars({
-      theme: { primary: color1 }
+      theme: { primary: color1 },
     });
 
     vars({
-      theme: { secondary: color2 }
+      theme: { secondary: color2 },
     });
 
     flush();
@@ -281,12 +281,12 @@ describe("vars", () => {
 
   test("varsEffect cleanup removes individual effect", () => {
     const color = signal("red");
-    const tracker = mock(() => color());
+    const tracker = vi.fn(() => color());
 
     vars({
       theme: {
-        color: tracker
-      }
+        color: tracker,
+      },
     });
 
     flush();

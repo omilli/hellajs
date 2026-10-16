@@ -1,10 +1,12 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { resource } from "@hellajs/resource/bundle";
+import { resource } from "@hellajs/resource";
 
 describe("resource", () => {
   describe("loading", () => {
-    beforeEach(() => { resetTestState(); });
+    beforeEach(() => {
+      resetTestState();
+    });
 
     test("isFetching true during initial load", async () => {
       const r = resource(() => delay("data", 50));

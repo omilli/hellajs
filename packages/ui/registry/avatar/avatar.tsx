@@ -1,5 +1,12 @@
 import { signal } from "@hellajs/core";
-import type { AvatarProps, AvatarImageProps, AvatarFallbackProps, AvatarBadgeProps, AvatarGroupProps, AvatarGroupCountProps } from "./avatar-types.js";
+import type {
+  AvatarProps,
+  AvatarImageProps,
+  AvatarFallbackProps,
+  AvatarBadgeProps,
+  AvatarGroupProps,
+  AvatarGroupCountProps,
+} from "./avatar-types.js";
 
 // @hella:styles
 declare const badge: string;
@@ -27,7 +34,11 @@ export function Avatar({ size, children, class: cls, ...attrs }: AvatarProps): J
   );
 }
 
-export function AvatarImage({ loaded: loadedSignal, class: cls, ...attrs }: AvatarImageProps): JSX.Element {
+export function AvatarImage({
+  loaded: loadedSignal,
+  class: cls,
+  ...attrs
+}: AvatarImageProps): JSX.Element {
   const loaded = loadedSignal ?? signal(false);
   return (
     <img
@@ -45,7 +56,12 @@ export function AvatarImage({ loaded: loadedSignal, class: cls, ...attrs }: Avat
   );
 }
 
-export function AvatarFallback({ loaded, children, class: cls, ...attrs }: AvatarFallbackProps): JSX.Element {
+export function AvatarFallback({
+  loaded,
+  children,
+  class: cls,
+  ...attrs
+}: AvatarFallbackProps): JSX.Element {
   return (
     <span
       data-slot="avatar-fallback"
@@ -94,7 +110,11 @@ export function AvatarGroup({ children, class: cls, ...attrs }: AvatarGroupProps
   );
 }
 
-export function AvatarGroupCount({ children, class: cls, ...attrs }: AvatarGroupCountProps): JSX.Element {
+export function AvatarGroupCount({
+  children,
+  class: cls,
+  ...attrs
+}: AvatarGroupCountProps): JSX.Element {
   return (
     <div
       data-slot="avatar-group-count"

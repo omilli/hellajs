@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { effect, flush, signal } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
 import { ForEach, element } from "@hellajs/dom";
@@ -13,7 +13,14 @@ describe("dom", () => {
     test("renders the initial attribute value and increments on click", async () => {
       element("test-counter", (props: { initial: () => string | null }) => {
         const count = signal(Number(props.initial?.()) || 0);
-        return <div><span id="count">{count}</span><button id="inc" on:click={() => count(count() + 1)}>+</button></div>;
+        return (
+          <div>
+            <span id="count">{count}</span>
+            <button id="inc" on:click={() => count(count() + 1)}>
+              +
+            </button>
+          </div>
+        );
       });
 
       resetTestState('<test-counter initial="5"></test-counter>');
@@ -28,9 +35,11 @@ describe("dom", () => {
     });
 
     test("cleanup on disconnect and reinitialize", async () => {
-      const renderFn = mock(() => {
+      const renderFn = vi.fn(() => {
         const count = signal(0);
-        effect(() => { count(); });
+        effect(() => {
+          count();
+        });
         return <span>Count: {renderFn.mock.calls.length}</span>;
       });
 
@@ -49,10 +58,17 @@ describe("dom", () => {
     });
 
     test("reconnects do not stack attribute version bumps", async () => {
-      const readTitle = mock(() => "");
+      const readTitle = vi.fn(() => "");
       element("test-rewrap", (props: { title: () => string | null }) => {
         const title = props.title;
-        return <span>{() => { readTitle(); return title(); }}</span>;
+        return (
+          <span>
+            {() => {
+              readTitle();
+              return title();
+            }}
+          </span>
+        );
       });
 
       resetTestState('<test-rewrap title="first"></test-rewrap>');
@@ -79,9 +95,9 @@ describe("dom", () => {
     });
 
     test("reactive props handle attribute removal", async () => {
-      element("test-attr-remove", (props: { value: () => string | null }) =>
+      element("test-attr-remove", (props: { value: () => string | null }) => (
         <span>{() => props.value?.() ?? "fallback"}</span>
-      );
+      ));
 
       resetTestState('<test-attr-remove value="set"></test-attr-remove>');
       await delay();
@@ -93,9 +109,13 @@ describe("dom", () => {
     });
 
     test("default and named slots", async () => {
-      element("test-slots", (props: { children?: Node[]; slots?: Record<string, Node[]> }) =>
-        <article><header>{props.slots?.title}</header><main>{props.children}</main><aside>{props.slots?.sidebar}</aside></article>
-      );
+      element("test-slots", (props: { children?: Node[]; slots?: Record<string, Node[]> }) => (
+        <article>
+          <header>{props.slots?.title}</header>
+          <main>{props.children}</main>
+          <aside>{props.slots?.sidebar}</aside>
+        </article>
+      ));
 
       resetTestState(`
         <test-slots>
@@ -122,20 +142,44 @@ describe("dom", () => {
     });
 
     test("renders slotted content with nested components and updates reactively", async () => {
-      const Button = (props: { label: string; onClick: () => void }) =>
-        <button class="btn" on:click={props.onClick}>{props.label}</button>;
+      const Button = (props: { label: string; onClick: () => void }) => (
+        <button class="btn" on:click={props.onClick}>
+          {props.label}
+        </button>
+      );
 
-      element<{ title: () => string | null; children?: Node[]; slots?: Record<string, Node[]> }>("test-complex", (props) => {
-        const count = signal(0);
-        const items = signal<string[]>([]);
+      element<{ title: () => string | null; children?: Node[]; slots?: Record<string, Node[]> }>(
+        "test-complex",
+        (props) => {
+          const count = signal(0);
+          const items = signal<string[]>([]);
 
-        const addItem = () => {
-          items([...items(), `Item ${items().length + 1}`]);
-          count(count() + 1);
-        };
+          const addItem = () => {
+            items([...items(), `Item ${items().length + 1}`]);
+            count(count() + 1);
+          };
 
-        return <div class="card"><header><h2>{() => props.title?.() ?? "Untitled"}</h2><span class="badge">{count}</span></header><nav class="actions">{props.slots?.actions}</nav><main><div class="controls"><Button label="Add" onClick={addItem}></Button></div><ul class="item-list"><ForEach each={items} use={((item: string) => <li>{item}</li>)}></ForEach></ul><section class="slotted">{props.children}</section></main><footer>{props.slots?.footer}</footer></div>;
-      });
+          return (
+            <div class="card">
+              <header>
+                <h2>{() => props.title?.() ?? "Untitled"}</h2>
+                <span class="badge">{count}</span>
+              </header>
+              <nav class="actions">{props.slots?.actions}</nav>
+              <main>
+                <div class="controls">
+                  <Button label="Add" onClick={addItem}></Button>
+                </div>
+                <ul class="item-list">
+                  <ForEach each={items} use={(item: string) => <li>{item}</li>}></ForEach>
+                </ul>
+                <section class="slotted">{props.children}</section>
+              </main>
+              <footer>{props.slots?.footer}</footer>
+            </div>
+          );
+        },
+      );
 
       resetTestState(`
         <test-complex title="My Card">

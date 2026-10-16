@@ -22,11 +22,9 @@ interface RetryConfig {
  */
 export function resolveRetryConfig(
   retry: number | boolean | ((failureCount: number, error: ResourceError) => boolean),
-  retryDelay: number | ((attempt: number, error: ResourceError) => number)
+  retryDelay: number | ((attempt: number, error: ResourceError) => number),
 ): RetryConfig {
-  const maxRetries = isBoolean(retry)
-    ? (retry ? 1 : 0)
-    : (isNumber(retry) ? retry : 0);
+  const maxRetries = isBoolean(retry) ? (retry ? 1 : 0) : isNumber(retry) ? retry : 0;
   return {
     maxRetries,
     shouldRetry: isFunction(retry)
@@ -34,7 +32,7 @@ export function resolveRetryConfig(
       : (count: number) => count <= maxRetries,
     getDelay: isFunction(retryDelay)
       ? (retryDelay as (attempt: number, error: ResourceError) => number)
-      : () => retryDelay as number
+      : () => retryDelay as number,
   };
 }
 
@@ -53,7 +51,7 @@ export function resolveRetryConfig(
  */
 export function fetchWithRetry<T>(
   start: () => Promise<T>,
-  options: { signal: AbortSignal; retryConfig: RetryConfig }
+  options: { signal: AbortSignal; retryConfig: RetryConfig },
 ): Promise<T> {
   const { signal, retryConfig } = options;
 
@@ -69,8 +67,11 @@ export function fetchWithRetry<T>(
         const categorizedError = categorizeError(err);
         if (!retryConfig.shouldRetry(retryCount, categorizedError)) throw err;
         let onAbort!: () => void;
-        await new Promise<void>(resolve => {
-          const timeoutId = setTimeout(() => resolve(), retryConfig.getDelay(retryCount, categorizedError));
+        await new Promise<void>((resolve) => {
+          const timeoutId = setTimeout(
+            () => resolve(),
+            retryConfig.getDelay(retryCount, categorizedError),
+          );
           // Clear the delay timer if aborted during the wait; the top-of-loop check then exits.
           onAbort = () => {
             clearTimeout(timeoutId);

@@ -1,7 +1,7 @@
 import fsStat from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { logger, packagesDir, isValidPackage } from "./utils/index.js";
+import { logger, packagesDir, isValidPackage } from "./utils/index.ts";
 
 async function cleanPackage(packageName: string): Promise<boolean> {
   const packageDir = path.join(packagesDir, packageName);
@@ -62,9 +62,7 @@ async function main(): Promise<void> {
       if (totalCleaned === 0) {
         logger.info("Already clean - no artifacts found");
       } else {
-        logger.success(
-          `Cleaned ${totalCleaned} package${totalCleaned !== 1 ? "s" : ""}`,
-        );
+        logger.success(`Cleaned ${totalCleaned} package${totalCleaned !== 1 ? "s" : ""}`);
       }
     } else {
       logger.info(`Cleaning build artifacts for ${packageName}...`);
@@ -86,7 +84,7 @@ async function main(): Promise<void> {
   }
 }
 
-if (import.meta.main) {
+if (process.argv[1] === import.meta.filename) {
   main().catch((error: Error) => {
     logger.error("Fatal error:", error);
     process.exit(1);

@@ -8,20 +8,25 @@ const { fetch, isFetching, data } = postResource;
 export const PostDetail = () => {
   fetch();
 
-  return <>
-    <BackLink />
+  return (
+    <>
+      <BackLink />
 
-    {() => {
-      const post = data();
+      {() => {
+        const post = data();
 
-      return <div class="post-detail">
-        {isFetching() ?
-          <Placeholder message="Loading post..." /> :
-          post?.body ?
-            <PostCard post={post!} /> :
-            <Placeholder message="Post not found" />
-        }
-      </div>;
-    }}
-  </>;
+        return (
+          <div class="post-detail">
+            {isFetching() ? (
+              <Placeholder message="Loading post..." />
+            ) : post?.body ? (
+              <PostCard post={post!} />
+            ) : (
+              <Placeholder message="Post not found" />
+            )}
+          </div>
+        );
+      }}
+    </>
+  );
 };

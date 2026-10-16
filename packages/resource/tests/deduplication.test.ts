@@ -1,13 +1,15 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { resource, resourceCache } from "@hellajs/resource/bundle";
+import { resource, resourceCache } from "@hellajs/resource";
 
 describe("resource", () => {
   describe("deduplication", () => {
-    beforeEach(() => { resetTestState(); });
+    beforeEach(() => {
+      resetTestState();
+    });
 
     test("deduplicates concurrent requests with same key", async () => {
-      const fetcher = mock(async (key: string) => {
+      const fetcher = vi.fn(async (key: string) => {
         const result = `data-${key}-${fetcher.mock.calls.length}`;
         await delay(20);
         return result;
@@ -32,7 +34,7 @@ describe("resource", () => {
     });
 
     test("does not deduplicate requests with different keys", async () => {
-      const fetcher = mock(async (key: string) => {
+      const fetcher = vi.fn(async (key: string) => {
         const result = `data-${key}-${fetcher.mock.calls.length}`;
         await delay(20);
         return result;
@@ -52,7 +54,7 @@ describe("resource", () => {
     });
 
     test("respects deduplicate option when disabled", async () => {
-      const fetcher = mock(async (key: string) => {
+      const fetcher = vi.fn(async (key: string) => {
         const result = `data-${key}-${fetcher.mock.calls.length}`;
         await delay(20);
         return result;
@@ -72,7 +74,7 @@ describe("resource", () => {
     });
 
     test("force request bypasses deduplication", async () => {
-      const fetcher = mock((key: string) => delay(`data-${key}-${fetcher.mock.calls.length}`, 20));
+      const fetcher = vi.fn((key: string) => delay(`data-${key}-${fetcher.mock.calls.length}`, 20));
 
       const r1 = resource(fetcher, { key: () => "user-1", deduplicate: true });
       const r2 = resource(fetcher, { key: () => "user-1", deduplicate: true });
@@ -88,7 +90,7 @@ describe("resource", () => {
     });
 
     test("handles deduplication with errors", async () => {
-      const fetcher = mock((key: string) => {
+      const fetcher = vi.fn((key: string) => {
         return Promise.reject(`error-${key}-${fetcher.mock.calls.length}`);
       });
 
@@ -108,19 +110,21 @@ describe("resource", () => {
     });
 
     test("handles abort during deduplication", async () => {
-      let resolvePromise: (value: string) => void = () => { };
-      const promise = new Promise<string>((resolve) => { resolvePromise = resolve; });
+      let resolvePromise: (value: string) => void = () => {};
+      const promise = new Promise<string>((resolve) => {
+        resolvePromise = resolve;
+      });
       const fetcher = () => promise;
 
       const r1 = resource(fetcher, {
         key: () => "user-1",
         deduplicate: true,
-        initialData: "initial-1"
+        initialData: "initial-1",
       });
       const r2 = resource(fetcher, {
         key: () => "user-1",
         deduplicate: true,
-        initialData: "initial-2"
+        initialData: "initial-2",
       });
 
       r1.fetch();
@@ -143,7 +147,7 @@ describe("resource", () => {
     });
 
     test("deduplicates each new in-flight round sequentially", async () => {
-      const fetcher = mock(async (key: string) => {
+      const fetcher = vi.fn(async (key: string) => {
         const result = `data-${key}-${fetcher.mock.calls.length}`;
         await delay(20);
         return result;
@@ -170,7 +174,7 @@ describe("resource", () => {
     });
 
     test("deduplication works with cache", async () => {
-      const fetcher = mock(async (key: string) => {
+      const fetcher = vi.fn(async (key: string) => {
         const result = `data-${key}-${fetcher.mock.calls.length}`;
         await delay(20);
         return result;
@@ -179,12 +183,12 @@ describe("resource", () => {
       const r1 = resource(fetcher, {
         key: () => "user-1",
         deduplicate: true,
-        cacheTime: 100
+        cacheTime: 100,
       });
       const r2 = resource(fetcher, {
         key: () => "user-1",
         deduplicate: true,
-        cacheTime: 100
+        cacheTime: 100,
       });
 
       r1.fetch();
@@ -204,7 +208,7 @@ describe("resource", () => {
     });
 
     test("mix of deduplicated and non-deduplicated requests", async () => {
-      const fetcher = mock(async (key: string) => {
+      const fetcher = vi.fn(async (key: string) => {
         const result = `data-${key}-${fetcher.mock.calls.length}`;
         await delay(20);
         return result;
@@ -227,7 +231,7 @@ describe("resource", () => {
     });
 
     test("a non-force fetch joins a force request that superseded an in-flight request", async () => {
-      const fetcher = mock(async (key: string) => {
+      const fetcher = vi.fn(async (key: string) => {
         const result = `data-${key}-${fetcher.mock.calls.length}`;
         await delay(60);
         return result;
@@ -252,7 +256,7 @@ describe("resource", () => {
     });
 
     test("joining an already-aborted request clears activity flags", async () => {
-      const fetcher = mock(async (key: string) => {
+      const fetcher = vi.fn(async (key: string) => {
         await delay(60);
         return `data-${key}`;
       });
@@ -274,7 +278,7 @@ describe("resource", () => {
     });
 
     test("prefetch registration survives a superseding force fetch", async () => {
-      const fetcher = mock(async (key: string) => {
+      const fetcher = vi.fn(async (key: string) => {
         const result = `data-${key}-${fetcher.mock.calls.length}`;
         // Prefetch settles early; the force fetch stays in flight past the join
         await delay(fetcher.mock.calls.length === 1 ? 30 : 120);

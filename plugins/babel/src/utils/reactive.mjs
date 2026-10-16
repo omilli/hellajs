@@ -40,11 +40,7 @@ export function maybeReactive(t, expr) {
  */
 function containsCall(t, node) {
   if (!node || typeof node.type !== "string") return false;
-  if (
-    t.isCallExpression(node) ||
-    t.isNewExpression(node) ||
-    t.isOptionalCallExpression(node)
-  ) {
+  if (t.isCallExpression(node) || t.isNewExpression(node) || t.isOptionalCallExpression(node)) {
     return true;
   }
   const keys = t.VISITOR_KEYS[node.type];

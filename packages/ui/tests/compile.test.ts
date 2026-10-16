@@ -1,9 +1,9 @@
-import { describe, test, expect } from "bun:test";
+import { describe, test, expect } from "vite-plus/test";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
-const distRegistry = join(import.meta.dir, "..", "dist", "registry");
-const sourceRegistry = join(import.meta.dir, "..", "registry");
+const distRegistry = join(import.meta.dirname, "..", "dist", "registry");
+const sourceRegistry = join(import.meta.dirname, "..", "registry");
 
 /** Compiled artifact text under dist/registry. */
 function readArtifact(...parts: string[]): string {
@@ -99,7 +99,7 @@ describe("compile", () => {
     const tokensJs = readArtifact("theme", "tokens.js");
     expect(tokensJs).toContain(`import { css, vars } from "@hellajs/css";`);
     expect(tokensJs).toContain("cardForeground");
-    expect(tokensJs).toContain("\"--card-foreground\"");
+    expect(tokensJs).toContain('"--card-foreground"');
     expect(readArtifact("theme", "tokens.dark.js")).toContain("cardForeground");
     expect(readArtifact("theme", "tokens.dark.d.ts")).toContain("tokens");
     expect(readArtifact("theme", "tokens.d.ts")).toContain("tokens");

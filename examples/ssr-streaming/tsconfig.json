@@ -3,18 +3,12 @@
     "target": "ES2022",
     "useDefineForClassFields": true,
     "module": "ESNext",
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "skipLibCheck": true,
     "allowJs": true,
     "checkJs": false,
     "jsx": "preserve",
-    "types": [
-      "@hellajs/dom"
-    ],
+    "types": ["@hellajs/dom"],
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
@@ -27,7 +21,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": [
-    "src"
-  ]
+  "include": ["src"]
 }

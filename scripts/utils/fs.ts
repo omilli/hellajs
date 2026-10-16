@@ -19,17 +19,11 @@ export async function readJson<T = unknown>(filePath: string): Promise<T> {
   return JSON.parse(content);
 }
 
-export async function writeJson(
-  filePath: string,
-  data: unknown,
-): Promise<void> {
+export async function writeJson(filePath: string, data: unknown): Promise<void> {
   await fs.writeFile(filePath, JSON.stringify(data, null, 2), "utf8");
 }
 
-export async function scanDirRecursive(
-  dir: string,
-  pattern: RegExp,
-): Promise<string[]> {
+export async function scanDirRecursive(dir: string, pattern: RegExp): Promise<string[]> {
   const files: string[] = [];
   const entries = await fs
     .readdir(dir, { withFileTypes: true })

@@ -36,14 +36,19 @@ export function resolveDeep(value: unknown): unknown {
  * the sync walker warns on one (it cannot await) instead.
  */
 export function isPromise(value: unknown): value is Promise<unknown> {
-  return value !== null && typeof value === "object" && typeof (value as { then?: unknown }).then === "function";
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    typeof (value as { then?: unknown }).then === "function"
+  );
 }
 
 /**
  * @internal
  * The warn emitted when a thenable reaches the sync walk — it cannot await, so the value stringifies to `[object Promise]` into the HTML exactly as before; `ssr.async`/`ssr.stream` await it instead.
  */
-export const SYNC_PROMISE_WARN = "[ssr] Promise value under sync ssr - use ssr.async or ssr.stream, got [object Promise] emitted";
+export const SYNC_PROMISE_WARN =
+  "[ssr] Promise value under sync ssr - use ssr.async or ssr.stream, got [object Promise] emitted";
 
 /**
  * @internal

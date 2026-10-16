@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, vi } from "vite-plus/test";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { resource } from "@hellajs/resource/bundle";
+import { resource } from "@hellajs/resource";
 
 describe("resource", () => {
   describe("pauseWhenOffline", () => {
@@ -15,7 +15,7 @@ describe("resource", () => {
 
     test("defers fetch while offline without calling the fetcher", async () => {
       window.dispatchEvent(new Event("offline"));
-      const fetcher = mock(() => delay(`data-${fetcher.mock.calls.length}`));
+      const fetcher = vi.fn(() => delay(`data-${fetcher.mock.calls.length}`));
       const r = resource(fetcher, { pauseWhenOffline: true });
 
       await r.fetch();
@@ -30,7 +30,7 @@ describe("resource", () => {
 
     test("runs the deferred fetch when back online", async () => {
       window.dispatchEvent(new Event("offline"));
-      const fetcher = mock(() => delay(`data-${fetcher.mock.calls.length}`));
+      const fetcher = vi.fn(() => delay(`data-${fetcher.mock.calls.length}`));
       const r = resource(fetcher, { pauseWhenOffline: true });
 
       await r.fetch();
@@ -48,7 +48,7 @@ describe("resource", () => {
 
     test("resumes a deferred force fetch as a force fetch", async () => {
       window.dispatchEvent(new Event("online"));
-      const fetcher = mock(() => delay(`data-${fetcher.mock.calls.length}`));
+      const fetcher = vi.fn(() => delay(`data-${fetcher.mock.calls.length}`));
       const r = resource(fetcher, { pauseWhenOffline: true, cacheTime: 1000 });
 
       // Prime a fresh cache entry — a non-force resume would hit it and skip the fetcher
@@ -71,7 +71,7 @@ describe("resource", () => {
 
     test("attempts the fetcher and errors while offline without the option", async () => {
       window.dispatchEvent(new Event("offline"));
-      const fetcher = mock(() => Promise.reject(new Error("network down")));
+      const fetcher = vi.fn(() => Promise.reject(new Error("network down")));
       const r = resource(fetcher);
 
       await r.fetch();
@@ -86,7 +86,7 @@ describe("resource", () => {
 
     test("does not resurrect a disposed resource on reconnect", async () => {
       window.dispatchEvent(new Event("offline"));
-      const fetcher = mock(() => delay(`data-${fetcher.mock.calls.length}`));
+      const fetcher = vi.fn(() => delay(`data-${fetcher.mock.calls.length}`));
       const r = resource(fetcher, { pauseWhenOffline: true });
 
       await r.fetch();
@@ -102,7 +102,7 @@ describe("resource", () => {
 
     test("defers polling ticks while offline and resumes after reconnect", async () => {
       window.dispatchEvent(new Event("offline"));
-      const fetcher = mock(() => delay(`data-${fetcher.mock.calls.length}`));
+      const fetcher = vi.fn(() => delay(`data-${fetcher.mock.calls.length}`));
       const r = resource(fetcher, { pauseWhenOffline: true, refetchInterval: 20 });
 
       // Ticks fire while offline but defer — no fetcher call

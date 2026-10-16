@@ -65,14 +65,17 @@ export function createLink(source: Reactive, target: Reactive): void {
   // only costs the conservative path
   source.rf & COMPUTED && target.rf & SIGNAL_DEPS && (target.rf &= ~SIGNAL_DEPS);
   // Create new bidirectional link connecting source and target
-  const newLink = target.rpd = source.rps = {
-    ls: source,      // Link source (what we depend on)
-    lt: target,      // Link target (who depends on source)
-    lpd: rpd,        // Previous dependency in target's dependency list
-    lnd: nextDep,    // Next dependency in target's dependency list
-    lps: prevSub,    // Previous subscriber in source's subscriber list
-    lns: undefined,  // Next subscriber (will be set by next link creation)
-  };
+  const newLink =
+    (target.rpd =
+    source.rps =
+      {
+        ls: source, // Link source (what we depend on)
+        lt: target, // Link target (who depends on source)
+        lpd: rpd, // Previous dependency in target's dependency list
+        lnd: nextDep, // Next dependency in target's dependency list
+        lps: prevSub, // Previous subscriber in source's subscriber list
+        lns: undefined, // Next subscriber (will be set by next link creation)
+      });
   // Wire up the doubly-linked list pointers in target's dependency list
   nextDep && (nextDep.lpd = newLink); // Point next dependency back to new link
   // Insert new link into target's dependency list (either after rpd or as first)
@@ -119,7 +122,7 @@ export function removeLink(link: Link, target: Reactive): Link | undefined {
   } else {
     ls.rps = lps;
   }
-  lps && (lps.lns = lns);                     // Update previous subscriber's next pointer
+  lps && (lps.lns = lns); // Update previous subscriber's next pointer
 
   // Garbage collection: if source has no subscribers and no previous subscriber
   if (!lps && !(ls.rs = lns)) {

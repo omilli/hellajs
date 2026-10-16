@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { mount, peekState } from "@hellajs/dom";
@@ -51,11 +51,16 @@ describe("dom", () => {
       const container = setupContainer();
       const shouldThrow = signal(false);
       mount(
-        <div error:fallback={(() => <span>Caught</span>)}><span id="rt" data-x={() => {
+        <div error:fallback={() => <span>Caught</span>}>
+          <span
+            id="rt"
+            data-x={() => {
               if (shouldThrow()) throw new Error("prop");
               return "ok";
-            }}></span></div>,
-        container
+            }}
+          ></span>
+        </div>,
+        container,
       );
       expect(container.querySelector("#rt")!.getAttribute("data-x")).toBe("ok");
 

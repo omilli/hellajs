@@ -1,6 +1,7 @@
 import fs from "node:fs";
-import { getPackagePaths } from "./paths.js";
-import { readJson } from "./fs.js";
+import path from "node:path";
+import { getPackagePaths, pluginsDir } from "./paths.ts";
+import { readJson } from "./fs.ts";
 
 export interface PackageInfo {
   name: string;
@@ -15,10 +16,7 @@ export interface PackageInfo {
   packageJson: Record<string, unknown>;
 }
 
-export async function getPackageInfo(
-  packageName: string,
-  validate = true,
-): Promise<PackageInfo> {
+export async function getPackageInfo(packageName: string, validate = true): Promise<PackageInfo> {
   const paths = getPackagePaths(packageName);
 
   if (validate) {
@@ -36,12 +34,8 @@ export async function getPackageInfo(
     }
   }
 
-  const packageJson = await readJson<Record<string, unknown>>(
-    paths.packageJsonPath,
-  );
-  const peerDeps = Object.keys(
-    (packageJson.peerDependencies as Record<string, string>) || {},
-  );
+  const packageJson = await readJson<Record<string, unknown>>(paths.packageJsonPath);
+  const peerDeps = Object.keys((packageJson.peerDependencies as Record<string, string>) || {});
 
   return {
     name: packageName,
@@ -60,4 +54,16 @@ export async function getPackageInfo(
 export function isValidPackage(packageName: string): boolean {
   const { packageDir, packageJsonPath } = getPackagePaths(packageName);
   return fs.existsSync(packageDir) && fs.existsSync(packageJsonPath);
+}
+
+/**
+ * Whether `plugins/<pluginName>/` is a workspace (directory + package.json).
+ * The plugin-scope counterpart of `isValidPackage`.
+ *
+ * @param pluginName Bare plugin directory name (e.g. `babel`).
+ * @returns True when the plugin workspace exists.
+ */
+export function isValidPlugin(pluginName: string): boolean {
+  const pluginDir = path.join(pluginsDir, pluginName);
+  return fs.existsSync(pluginDir) && fs.existsSync(path.join(pluginDir, "package.json"));
 }

@@ -22,7 +22,8 @@ export const base = style("native-select", {
   paddingBlock: "0.5rem",
   paddingLeft: "0.75rem",
   paddingRight: "2.25rem",
-  transition: "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
+  transition:
+    "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   width: "100%",
   "&::placeholder": {
     color: tokens.mutedForeground,

@@ -14,11 +14,7 @@ export function Marker({ variant, children, class: cls, ...attrs }: MarkerProps)
       data-variant={variant ?? "default"}
       class={
         // @hella:compose
-        [
-          base,
-          variants[variant ?? "default"],
-          cls,
-        ]
+        [base, variants[variant ?? "default"], cls]
         // @hella:end
       }
       {...attrs}

@@ -17,11 +17,7 @@ export type CSSValue = string | number | (string | number)[] | CSSObject;
 /**
  * Represents a CSS selector: HTML tag, pseudo-selector, at-rule, or custom string
  */
-export type CSSSelector =
-  | keyof HTMLElementTagNameMap
-  | CSS.AtRules
-  | CSS.Pseudos
-  | (string & {});
+export type CSSSelector = keyof HTMLElementTagNameMap | CSS.AtRules | CSS.Pseudos | (string & {});
 
 /**
  * A CSS object: keys are CSS selectors, values are CSS properties or nested CSS objects
@@ -72,7 +68,7 @@ export type CVAMedia = Record<string, string>;
  * media conditions.
  */
 export type CVAPropValue<VK extends Record<string, StyleObject | string>, M extends CVAMedia> =
-  (keyof VK & string)
+  | (keyof VK & string)
   | ({ initial?: keyof VK & string } & { [B in keyof M]?: keyof VK & string });
 
 /**
@@ -156,5 +152,3 @@ export interface VarsOptions {
   /** Node the `<style>` element is created in — e.g. a `ShadowRoot` for web components. Defaults to `document.head`. */
   host?: ParentNode;
 }
-
-

@@ -1,8 +1,0 @@
-[test]
-preload = ["./utils/happydom.js", "./utils/jsx.js"]
-
-coveragePathIgnorePatterns = [
-  "**/lib/**/**.ts",
-  "utils/**.**",
-  "!{**/**/dist/bundle.js,**/**/dist/index.js,**/**/dist/registry/**/*.js,**/plugins/**/**.mjs}"
-]

@@ -12,23 +12,30 @@ interface PostCardProps {
 
 // Compose onto the shared card class; the returned class string carries both
 // ("card-… post-card-…"), each side keeping its own rule.
-const postCard = style(card, {
-  "&:hover": {
-    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+const postCard = style(
+  card,
+  {
+    "&:hover": {
+      boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+    },
   },
-}, { label: "post-card" });
+  { label: "post-card" },
+);
 
-const userLink = style({
-  color: theme.color.link,
-  display: "inline-block",
-  fontSize: "0.9rem",
-  marginTop: "0.5rem",
-  cursor: "pointer",
-  textDecoration: "none",
-  "&:hover": {
-    textDecoration: "underline"
+const userLink = style(
+  {
+    color: theme.color.link,
+    display: "inline-block",
+    fontSize: "0.9rem",
+    marginTop: "0.5rem",
+    cursor: "pointer",
+    textDecoration: "none",
+    "&:hover": {
+      textDecoration: "underline",
+    },
   },
-}, { label: "user-link" });
+  { label: "user-link" },
+);
 
 const openUser = (id: number) => navigate(`/users/${id}`);
 
@@ -40,7 +47,13 @@ export const PostCard = ({ post, onClick }: PostCardProps) => (
       <Tags tags={post.tags} />
       <Reactions likes={post.reactions?.likes} views={post.views} />
     </div>
-    <a class={userLink} on:click={e => { e.stopPropagation(); openUser(post.userId); }}>
+    <a
+      class={userLink}
+      on:click={(e) => {
+        e.stopPropagation();
+        openUser(post.userId);
+      }}
+    >
       User {post.userId}
     </a>
   </div>

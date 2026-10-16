@@ -1,10 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
-import { logger, packagesDir, projectRoot } from "./utils/index.js";
+import { logger, packagesDir, projectRoot } from "./utils/index.ts";
 
 /**
- * Audit tool (`bun doc-snippets`): typechecks every package-doc code block via
+ * Audit tool (`vp run doc-snippets`): typechecks every package-doc code block via
  * per-doc concatenation (decision: per-block scoping, js-tagged blocks loose).
  *
  * Model (user-resolved 2026-08-26):
@@ -184,7 +184,8 @@ function splitImports(text: string): { imports: string[]; body: string[] } {
 function isExecutableBlock(bodyLines: string[]): boolean {
   return bodyLines.some((l) => {
     const t = l.trim();
-    if (t.startsWith("declare ") || t.startsWith("type ") || t.startsWith("interface ")) return false;
+    if (t.startsWith("declare ") || t.startsWith("type ") || t.startsWith("interface "))
+      return false;
     if (t.startsWith("}")) return false; // closing a type/declare block
     if (/^(export\s+)?function\b/.test(t) && !t.includes("{")) return false; // signature line (type-param defaults carry `=`)
     if (/^const\s+\w+\s*:\s*[^=]+$/.test(t)) return false; // const signature (no initializer)
@@ -220,7 +221,11 @@ function extractBlocks(doc: string): Block[] {
     const { imports, body } = splitImports(text);
     if (imports.some((statement) => EXTERNAL_IMPORT_RE.test(statement))) continue;
     const bodyLines = body.filter(
-      (l) => l.trim() && !l.trim().startsWith("//") && !l.trim().startsWith("*") && !l.trim().startsWith("/*"),
+      (l) =>
+        l.trim() &&
+        !l.trim().startsWith("//") &&
+        !l.trim().startsWith("*") &&
+        !l.trim().startsWith("/*"),
     );
     if (bodyLines.length === 0) continue;
     if (!isExecutableBlock(bodyLines)) continue; // signature-only block
@@ -241,7 +246,10 @@ function mergeImports(statements: string[]): string[] {
   for (const statement of statements) {
     const m = statement.match(/^import\s+\{(.*)\}\s+from\s+["']([^"']+)["'];?$/);
     if (m) {
-      const names = m[1]!.split(",").map((n) => n.trim()).filter(Boolean);
+      const names = m[1]!
+        .split(",")
+        .map((n) => n.trim())
+        .filter(Boolean);
       named.set(m[2]!, [...(named.get(m[2]!) ?? []), ...names]);
       continue;
     }
@@ -329,11 +337,11 @@ function emitModules(doc: string, tier: "strict" | "tutorial", runDir: string): 
     // IIFE — TS1184 — so they hoist to module scope.
     const hoisted = scopes.filter((sc) => /^(declare|export) /m.test(sc));
     const inline = scopes.filter((sc) => !hoisted.includes(sc));
-    const bodyText = terminateStatements(inline.join("\n{\n")) + "\n" + "}".repeat(Math.max(inline.length - 1, 0));
+    const bodyText =
+      terminateStatements(inline.join("\n{\n")) + "\n" + "}".repeat(Math.max(inline.length - 1, 0));
 
     const isTsx = familyBlocks.some((b) => b.lang === "tsx" || b.lang === "jsx");
-    const file =
-      family === "ts" ? `${base}${isTsx ? ".tsx" : ".ts"}` : `${base}.js`;
+    const file = family === "ts" ? `${base}${isTsx ? ".tsx" : ".ts"}` : `${base}.js`;
     const content =
       family === "ts"
         ? `${imports}\n\n${hoisted.join("\n")}\n\nexport async function __doc() {\n${bodyText}\n}\n__doc();\n`
@@ -365,6 +373,11 @@ function writeTierConfig(dir: string, exclude: string[] = []): string {
     extends: `${rel}/tsconfig.base.json`,
     compilerOptions: {
       noEmit: true,
+      // The corpus is check-only, but the base config's declaration-emit
+      // flags leak TS6424 here under TypeScript 7 (the native engine runs
+      // declaration-emit serialization analysis even under `noEmit`).
+      declaration: false,
+      emitDeclarationOnly: false,
       allowJs: true,
       checkJs: false,
       noUncheckedIndexedAccess: true,
@@ -387,10 +400,14 @@ function writeTierConfig(dir: string, exclude: string[] = []): string {
  * @returns Raw tsc stdout
  */
 function runTsc(configPath: string): string {
-  const result = spawnSync("bunx", ["tsc", "-p", configPath, "--noEmit", "--pretty", "false"], {
-    encoding: "utf-8",
-    cwd: projectRoot,
-  });
+  const result = spawnSync(
+    path.join(projectRoot, "node_modules/.bin/tsc"),
+    ["-p", configPath, "--noEmit", "--pretty", "false"],
+    {
+      encoding: "utf-8",
+      cwd: projectRoot,
+    },
+  );
   return `${result.stdout ?? ""}${result.stderr ?? ""}`;
 }
 
@@ -402,7 +419,13 @@ function runTsc(configPath: string): string {
 function parseDiagnostics(raw: string): Diagnostic[] {
   const diagnostics: Diagnostic[] = [];
   for (const m of raw.matchAll(/^(.+?)\((\d+),(\d+)\): error (TS\d+): (.+)$/gm)) {
-    diagnostics.push({ file: m[1]!, line: Number(m[2]!), col: Number(m[3]!), code: m[4]!, message: m[5]! });
+    diagnostics.push({
+      file: m[1]!,
+      line: Number(m[2]!),
+      col: Number(m[3]!),
+      code: m[4]!,
+      message: m[5]!,
+    });
   }
   return diagnostics;
 }
@@ -447,7 +470,10 @@ function checkTier(
         (d) =>
           !grammarFiles.has(d.file) &&
           // Exempt: dynamic imports of notional doc-internal relative modules.
-          !(d.code === "TS2307" && /Cannot find module '\.\/|Cannot find module '\.\.\//.test(d.message)),
+          !(
+            d.code === "TS2307" &&
+            /Cannot find module '\.\/|Cannot find module '\.\.\//.test(d.message)
+          ),
       ),
     ];
     break;
@@ -474,7 +500,8 @@ function isPidAlive(pid: number): boolean {
 function pruneStaleRuns(outDir: string): void {
   for (const entry of fs.readdirSync(outDir, { withFileTypes: true })) {
     const owner = Number(entry.name.match(/^run-(\d+)-/)?.[1] ?? Number.NaN);
-    const liveSibling = entry.isDirectory() && Number.isInteger(owner) && owner !== process.pid && isPidAlive(owner);
+    const liveSibling =
+      entry.isDirectory() && Number.isInteger(owner) && owner !== process.pid && isPidAlive(owner);
     if (liveSibling) continue;
     fs.rmSync(path.join(outDir, entry.name), { recursive: true, force: true });
   }
@@ -493,7 +520,9 @@ function pruneStaleRuns(outDir: string): void {
 function resolveDiagnosticFile(file: string, runDir: string): { abs: string; display: string } {
   const abs = path.resolve(projectRoot, file);
   const fromRun = path.relative(runDir, abs);
-  const display = fromRun.startsWith("..") ? path.relative(projectRoot, abs) : path.join(".doc-snippets", fromRun);
+  const display = fromRun.startsWith("..")
+    ? path.relative(projectRoot, abs)
+    : path.join(".doc-snippets", fromRun);
   return { abs, display };
 }
 
@@ -511,18 +540,27 @@ async function main(): Promise<void> {
       const { abs, display } = resolveDiagnosticFile(d.file, runDir);
       const srcLine = fs.readFileSync(abs, "utf-8").split("\n")[d.line - 1] ?? "";
       const breadcrumb = srcLine.match(/AUDITSRC (.+)$/)?.[1] ?? "";
-      logger.info(`${display}(${d.line},${d.col}) ${d.code}: ${d.message}${breadcrumb ? ` — ${breadcrumb}` : ""}`);
+      logger.info(
+        `${display}(${d.line},${d.col}) ${d.code}: ${d.message}${breadcrumb ? ` — ${breadcrumb}` : ""}`,
+      );
     }
     for (const d of tutorial.relevant) {
       const { abs, display } = resolveDiagnosticFile(d.file, runDir);
       const srcLine = fs.readFileSync(abs, "utf-8").split("\n")[d.line - 1] ?? "";
       const breadcrumb = srcLine.match(/AUDITSRC (.+)$/)?.[1] ?? "";
-      logger.info(`[tutorial] ${display}(${d.line},${d.col}) ${d.code}: ${d.message}${breadcrumb ? ` — ${breadcrumb}` : ""}`);
+      logger.info(
+        `[tutorial] ${display}(${d.line},${d.col}) ${d.code}: ${d.message}${breadcrumb ? ` — ${breadcrumb}` : ""}`,
+      );
     }
 
     const docsChecked = new Set([...strict.modules, ...tutorial.modules].map((m) => m.doc)).size;
-    const blocksChecked = [...strict.modules, ...tutorial.modules].reduce((acc, m) => acc + m.blockCount, 0);
-    logger.info(`checked ${docsChecked} docs, ${blocksChecked} blocks (${strict.relevant.length} strict, ${tutorial.relevant.length} tutorial findings)`);
+    const blocksChecked = [...strict.modules, ...tutorial.modules].reduce(
+      (acc, m) => acc + m.blockCount,
+      0,
+    );
+    logger.info(
+      `checked ${docsChecked} docs, ${blocksChecked} blocks (${strict.relevant.length} strict, ${tutorial.relevant.length} tutorial findings)`,
+    );
 
     if (strict.relevant.length === 0) {
       logger.success("Doc snippets clean (strict tier)");
@@ -536,7 +574,7 @@ async function main(): Promise<void> {
   }
 }
 
-if (import.meta.main) {
+if (process.argv[1] === import.meta.filename) {
   main().catch((error: Error) => {
     logger.error("Fatal error:", error);
     process.exit(1);

@@ -1,7 +1,14 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { $ref, checkMultiSelectors, mount, getState, peekState, multiSelectors } from "@hellajs/dom";
+import {
+  $ref,
+  checkMultiSelectors,
+  mount,
+  getState,
+  peekState,
+  multiSelectors,
+} from "@hellajs/dom";
 
 beforeEach(() => {
   resetTestState(`
@@ -44,7 +51,7 @@ describe("dom", () => {
 
       $ref("#app").bind({
         "data-static": "value",
-        class: () => isActive() ? "active" : "inactive"
+        class: () => (isActive() ? "active" : "inactive"),
       });
 
       const app = document.getElementById("app")!;
@@ -88,7 +95,7 @@ describe("dom", () => {
     });
 
     test("attaches event handlers", () => {
-      const clickHandler = mock(() => { });
+      const clickHandler = vi.fn(() => {});
       $ref("#app").on("click", clickHandler);
 
       document.getElementById("app")?.dispatchEvent(new Event("click"));
@@ -99,16 +106,16 @@ describe("dom", () => {
       const app = document.getElementById("app")!;
       getState(app).isMounted = true;
 
-      const mountHandler = mock(() => { });
+      const mountHandler = vi.fn(() => {});
       $ref("#app").hooks({
-        afterMount: mountHandler
+        afterMount: mountHandler,
       });
 
       expect(mountHandler).toHaveBeenCalledTimes(1);
     });
 
     test("fires afterMount immediately on an element mounted without hooks", () => {
-      const mountHandler = mock(() => { });
+      const mountHandler = vi.fn(() => {});
       $ref("#app").hooks({ afterMount: mountHandler });
 
       expect(mountHandler).toHaveBeenCalledTimes(1);
@@ -118,9 +125,9 @@ describe("dom", () => {
       const app = document.getElementById("app")!;
       getState(app).isMounted = true;
 
-      const afterMountHandler = mock(() => { });
-      const beforeUpdateHandler = mock(() => { });
-      const afterUpdateHandler = mock(() => { });
+      const afterMountHandler = vi.fn(() => {});
+      const beforeUpdateHandler = vi.fn(() => {});
+      const afterUpdateHandler = vi.fn(() => {});
 
       $ref("#app").hooks({
         afterMount: (el) => {
@@ -134,7 +141,7 @@ describe("dom", () => {
         afterUpdate: (el) => {
           expect(el).toBe(app);
           afterUpdateHandler();
-        }
+        },
       });
 
       expect(afterMountHandler).toHaveBeenCalledTimes(1);
@@ -148,8 +155,8 @@ describe("dom", () => {
     });
 
     test("destroy hooks execute on removal", () => {
-      const beforeDestroyHandler = mock(() => { });
-      const afterDestroyHandler = mock(() => { });
+      const beforeDestroyHandler = vi.fn(() => {});
+      const afterDestroyHandler = vi.fn(() => {});
 
       const app = mount(<div class="destroy-test"></div>);
       const container = document.querySelector(".destroy-test")!;
@@ -159,7 +166,9 @@ describe("dom", () => {
           beforeDestroyHandler();
           expect(el).toBe(container);
         },
-        afterDestroy: () => { afterDestroyHandler(); }
+        afterDestroy: () => {
+          afterDestroyHandler();
+        },
       });
 
       app.unmount();
@@ -169,15 +178,15 @@ describe("dom", () => {
     });
 
     test("afterMount fires when element appears", async () => {
-      const mountHandler = mock(() => { });
-      const clickHandler = mock(() => { });
+      const mountHandler = vi.fn(() => {});
+      const clickHandler = vi.fn(() => {});
 
       $ref(".future-element")
         .hooks({
           afterMount: (el) => {
             mountHandler();
             el!.textContent = "Watched!";
-          }
+          },
         })
         .bind({ "data-test": "value" })
         .on("click", clickHandler);
@@ -210,16 +219,14 @@ describe("dom", () => {
 
       ref.bind("test");
       ref.bind({ class: "test" });
-      ref.on("click", () => { });
-      ref.hooks({ afterMount: () => { } });
+      ref.on("click", () => {});
+      ref.hooks({ afterMount: () => {} });
     });
 
     test("auto-watch when element doesn't exist", async () => {
-      const clickHandler = mock(() => { });
+      const clickHandler = vi.fn(() => {});
 
-      $ref(".auto-watch")
-        .bind({ "data-test": "value" })
-        .on("click", clickHandler);
+      $ref(".auto-watch").bind({ "data-test": "value" }).on("click", clickHandler);
 
       const newElement = document.createElement("div");
       newElement.className = "auto-watch";
@@ -235,7 +242,7 @@ describe("dom", () => {
     });
 
     test("refObserver auto-cleans tracked element on removal", async () => {
-      const clickHandler = mock(() => { });
+      const clickHandler = vi.fn(() => {});
       $ref(".auto-clean").on("click", clickHandler);
 
       const el = document.createElement("div");
@@ -243,12 +250,18 @@ describe("dom", () => {
       document.body.appendChild(el);
 
       checkMultiSelectors();
-      for (let __i = 0; __i < 50; __i++) { if ((peekState(el) !== undefined)) break; await delay(); }
+      for (let __i = 0; __i < 50; __i++) {
+        if (peekState(el) !== undefined) break;
+        await delay();
+      }
 
       expect(peekState(el)).toBeDefined();
 
       el.remove();
-      for (let __i = 0; __i < 50; __i++) { if ((peekState(el) === undefined)) break; await delay(); }
+      for (let __i = 0; __i < 50; __i++) {
+        if (peekState(el) === undefined) break;
+        await delay();
+      }
 
       expect(peekState(el)).toBeUndefined();
     });
@@ -293,13 +306,10 @@ describe("dom", () => {
       const el = document.createElement("button");
       document.body.appendChild(el);
 
-      const clickHandler = mock(() => { });
-      const mountHandler = mock(() => { });
+      const clickHandler = vi.fn(() => {});
+      const mountHandler = vi.fn(() => {});
 
-      $ref(el)
-        .bind("Hello")
-        .on("click", clickHandler)
-        .hooks({ afterMount: mountHandler });
+      $ref(el).bind("Hello").on("click", clickHandler).hooks({ afterMount: mountHandler });
 
       expect(el.textContent).toBe("Hello");
 
@@ -315,20 +325,18 @@ describe("dom", () => {
       expect(ref()).toBeNull();
 
       ref.bind("test");
-      ref.on("click", () => { });
-      ref.hooks({ afterMount: () => { } });
+      ref.on("click", () => {});
+      ref.hooks({ afterMount: () => {} });
 
       expect(multiSelectors.size).toBe(0);
     });
 
     test("afterMount on a detached element defers until insertion into a mount container", async () => {
-      const mountHandler = mock(() => { });
+      const mountHandler = vi.fn(() => {});
       const el = document.createElement("div");
       el.className = "detached-ref";
 
-      $ref(el)
-        .hooks({ afterMount: mountHandler })
-        .bind({ "data-test": "value" });
+      $ref(el).hooks({ afterMount: mountHandler }).bind({ "data-test": "value" });
 
       expect(el.getAttribute("data-test")).toBe("value");
       expect(mountHandler).toHaveBeenCalledTimes(0);
@@ -341,7 +349,7 @@ describe("dom", () => {
     });
 
     test("refObserver cleans a bound element removed inside a stateless wrapper", async () => {
-      const clickHandler = mock(() => { });
+      const clickHandler = vi.fn(() => {});
       $ref(".wrapped-clean").on("click", clickHandler);
 
       const wrapper = document.createElement("div");
@@ -351,12 +359,18 @@ describe("dom", () => {
       document.body.appendChild(wrapper);
 
       checkMultiSelectors();
-      for (let __i = 0; __i < 50; __i++) { if ((peekState(el) !== undefined)) break; await delay(); }
+      for (let __i = 0; __i < 50; __i++) {
+        if (peekState(el) !== undefined) break;
+        await delay();
+      }
       expect(peekState(el)).toBeDefined();
       expect(peekState(wrapper)).toBeUndefined();
 
       wrapper.remove();
-      for (let __i = 0; __i < 50; __i++) { if ((peekState(el) === undefined)) break; await delay(); }
+      for (let __i = 0; __i < 50; __i++) {
+        if (peekState(el) === undefined) break;
+        await delay();
+      }
       expect(peekState(el)).toBeUndefined();
     });
   });

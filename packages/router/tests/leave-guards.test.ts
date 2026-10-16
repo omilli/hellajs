@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, vi } from "vite-plus/test";
 import { delay, suppressConsole } from "@utils/test-helpers.js";
-import { router, navigate, route, resetRouter } from "@hellajs/router/bundle";
+import { router, navigate, route, resetRouter } from "@hellajs/router";
 import { setupRouterEnv, expectLoggedError } from "./helpers";
 
 describe("router", () => {
@@ -17,18 +17,18 @@ describe("router", () => {
     });
 
     test("leave runs global first, then child to parent", () => {
-      const globalLeave = mock(() => {});
-      const parentLeave = mock(() => {});
-      const childLeave = mock(() => {});
+      const globalLeave = vi.fn(() => {});
+      const parentLeave = vi.fn(() => {});
+      const childLeave = vi.fn(() => {});
       router({
         hooks: { leave: globalLeave },
         routes: {
           "/editor": {
             leave: parentLeave,
-            children: { "/doc": { leave: childLeave, handler: () => {} } }
+            children: { "/doc": { leave: childLeave, handler: () => {} } },
           },
-          "/dashboard": () => {}
-        }
+          "/dashboard": () => {},
+        },
       });
 
       navigate("/editor/doc");
@@ -37,19 +37,23 @@ describe("router", () => {
       expect(globalLeave).toHaveBeenCalledTimes(1);
       expect(parentLeave).toHaveBeenCalledTimes(1);
       expect(childLeave).toHaveBeenCalledTimes(1);
-      expect(globalLeave.mock.invocationCallOrder[0]!).toBeLessThan(childLeave.mock.invocationCallOrder[0]!);
-      expect(childLeave.mock.invocationCallOrder[0]!).toBeLessThan(parentLeave.mock.invocationCallOrder[0]!);
+      expect(globalLeave.mock.invocationCallOrder[0]!).toBeLessThan(
+        childLeave.mock.invocationCallOrder[0]!,
+      );
+      expect(childLeave.mock.invocationCallOrder[0]!).toBeLessThan(
+        parentLeave.mock.invocationCallOrder[0]!,
+      );
     });
 
     test("global leave returning false cancels before per-route leave runs", () => {
-      const leave = mock(() => {});
-      const dashboardHandler = mock(() => {});
+      const leave = vi.fn(() => {});
+      const dashboardHandler = vi.fn(() => {});
       router({
         hooks: { leave: () => false },
         routes: {
           "/editor": { leave, handler: () => {} },
-          "/dashboard": dashboardHandler
-        }
+          "/dashboard": dashboardHandler,
+        },
       });
 
       navigate("/editor");
@@ -62,13 +66,17 @@ describe("router", () => {
     });
 
     test("global leave throwing cancels and logs", () => {
-      const dashboardHandler = mock(() => {});
+      const dashboardHandler = vi.fn(() => {});
       router({
-        hooks: { leave: () => { throw new Error("global leave nope"); } },
+        hooks: {
+          leave: () => {
+            throw new Error("global leave nope");
+          },
+        },
         routes: {
           "/editor": { handler: () => {} },
-          "/dashboard": dashboardHandler
-        }
+          "/dashboard": dashboardHandler,
+        },
       });
 
       navigate("/editor");
@@ -81,15 +89,15 @@ describe("router", () => {
     });
 
     test("leave returning false cancels navigation with no URL change", () => {
-      const dashboardHandler = mock(() => {});
+      const dashboardHandler = vi.fn(() => {});
       router({
         routes: {
           "/editor": {
             leave: () => false,
-            children: { "/doc": { handler: () => {} } }
+            children: { "/doc": { handler: () => {} } },
           },
-          "/dashboard": { children: { "/home": { handler: dashboardHandler } } }
-        }
+          "/dashboard": { children: { "/home": { handler: dashboardHandler } } },
+        },
       });
 
       navigate("/editor/doc");
@@ -105,8 +113,8 @@ describe("router", () => {
 
     test("leave returning a string redirects via replace", () => {
       let dirty = true;
-      const saveHandler = mock(() => {});
-      const dashboardHandler = mock(() => {});
+      const saveHandler = vi.fn(() => {});
+      const dashboardHandler = vi.fn(() => {});
       router({
         routes: {
           "/editor": {
@@ -115,11 +123,11 @@ describe("router", () => {
               dirty = false;
               return "/save";
             },
-            handler: () => {}
+            handler: () => {},
           },
           "/save": saveHandler,
-          "/dashboard": dashboardHandler
-        }
+          "/dashboard": dashboardHandler,
+        },
       });
 
       navigate("/editor");
@@ -134,14 +142,14 @@ describe("router", () => {
     });
 
     test("force skips leave while incoming before still runs", () => {
-      const leave = mock(() => false);
-      const before = mock(() => {});
-      const dashboardHandler = mock(() => {});
+      const leave = vi.fn(() => false);
+      const before = vi.fn(() => {});
+      const dashboardHandler = vi.fn(() => {});
       router({
         routes: {
           "/editor": { leave, handler: () => {} },
-          "/dashboard": { before, handler: dashboardHandler }
-        }
+          "/dashboard": { before, handler: dashboardHandler },
+        },
       });
 
       navigate("/editor");
@@ -154,11 +162,11 @@ describe("router", () => {
     });
 
     test("same-path navigation skips leave entirely", () => {
-      const leave = mock(() => false);
+      const leave = vi.fn(() => false);
       router({
         routes: {
-          "/editor": { leave, handler: () => {} }
-        }
+          "/editor": { leave, handler: () => {} },
+        },
       });
 
       navigate("/editor");
@@ -172,8 +180,8 @@ describe("router", () => {
       router({
         routes: {
           "/editor": { leave: () => false, handler: () => {} },
-          "/dashboard": () => {}
-        }
+          "/dashboard": () => {},
+        },
       });
 
       navigate("/editor");
@@ -185,8 +193,8 @@ describe("router", () => {
     });
 
     test("leave does not run when the router resolves its initial route", () => {
-      const leave = mock(() => {});
-      const handler = mock(() => {});
+      const leave = vi.fn(() => {});
+      const handler = vi.fn(() => {});
       setupRouterEnv("http://localhost/editor");
 
       router({ routes: { "/editor": { leave, handler } } });
@@ -197,13 +205,13 @@ describe("router", () => {
     });
 
     test("resetRouter clears the chain so post-reset navigation fires no old leaves", () => {
-      const leave = mock(() => false);
-      const dashboardHandler = mock(() => {});
+      const leave = vi.fn(() => false);
+      const dashboardHandler = vi.fn(() => {});
       router({
         routes: {
           "/editor": { leave, handler: () => {} },
-          "/dashboard": dashboardHandler
-        }
+          "/dashboard": dashboardHandler,
+        },
       });
 
       navigate("/editor");
@@ -211,8 +219,8 @@ describe("router", () => {
       router({
         routes: {
           "/editor": { handler: () => {} },
-          "/dashboard": dashboardHandler
-        }
+          "/dashboard": dashboardHandler,
+        },
       });
 
       navigate("/dashboard");
@@ -223,13 +231,13 @@ describe("router", () => {
     });
 
     test("leave returning a rejected Promise blocks the navigation and logs", async () => {
-      const leave = mock(() => Promise.reject(new Error("async leave nope")));
-      const dashboardHandler = mock(() => {});
+      const leave = vi.fn(() => Promise.reject(new Error("async leave nope")));
+      const dashboardHandler = vi.fn(() => {});
       router({
         routes: {
           "/editor": { leave, handler: () => {} },
-          "/dashboard": dashboardHandler
-        }
+          "/dashboard": dashboardHandler,
+        },
       });
 
       navigate("/editor");

@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { delay, resetTestState } from "@utils/test-helpers.js";
 import { onDoubleTap } from "@hellajs/dom";
 import { pointerDown, pointerUp, pointerCancel } from "./helpers";
@@ -9,7 +9,7 @@ describe("onDoubleTap", () => {
   });
 
   test("fires onDoubleTap once with the second tap's event when two taps land within the interval", () => {
-    const onDouble = mock<(event: PointerEvent) => void>(() => {});
+    const onDouble = vi.fn<(event: PointerEvent) => void>(() => {});
     const el = document.createElement("div");
     document.body.append(el);
     const dispose = onDoubleTap(el, { onDoubleTap: onDouble, interval: 50 });
@@ -25,7 +25,7 @@ describe("onDoubleTap", () => {
   });
 
   test("fires nothing when one tap lands and no onSingleTap is provided", async () => {
-    const onDouble = mock<(event: PointerEvent) => void>(() => {});
+    const onDouble = vi.fn<(event: PointerEvent) => void>(() => {});
     const el = document.createElement("div");
     document.body.append(el);
     const dispose = onDoubleTap(el, { onDoubleTap: onDouble, interval: 5 });
@@ -38,8 +38,8 @@ describe("onDoubleTap", () => {
   });
 
   test("fires onSingleTap once with the first tap's event after the interval", async () => {
-    const onDouble = mock<(event: PointerEvent) => void>(() => {});
-    const onSingle = mock<(event: PointerEvent) => void>(() => {});
+    const onDouble = vi.fn<(event: PointerEvent) => void>(() => {});
+    const onSingle = vi.fn<(event: PointerEvent) => void>(() => {});
     const el = document.createElement("div");
     document.body.append(el);
     const dispose = onDoubleTap(el, { onDoubleTap: onDouble, onSingleTap: onSingle, interval: 5 });
@@ -55,8 +55,8 @@ describe("onDoubleTap", () => {
   });
 
   test("a double tap suppresses the pending single tap", async () => {
-    const onDouble = mock<(event: PointerEvent) => void>(() => {});
-    const onSingle = mock<(event: PointerEvent) => void>(() => {});
+    const onDouble = vi.fn<(event: PointerEvent) => void>(() => {});
+    const onSingle = vi.fn<(event: PointerEvent) => void>(() => {});
     const el = document.createElement("div");
     document.body.append(el);
     const dispose = onDoubleTap(el, { onDoubleTap: onDouble, onSingleTap: onSingle, interval: 5 });
@@ -72,8 +72,8 @@ describe("onDoubleTap", () => {
   });
 
   test("taps spaced beyond the interval count as two single taps", async () => {
-    const onDouble = mock<(event: PointerEvent) => void>(() => {});
-    const onSingle = mock<(event: PointerEvent) => void>(() => {});
+    const onDouble = vi.fn<(event: PointerEvent) => void>(() => {});
+    const onSingle = vi.fn<(event: PointerEvent) => void>(() => {});
     const el = document.createElement("div");
     document.body.append(el);
     const dispose = onDoubleTap(el, { onDoubleTap: onDouble, onSingleTap: onSingle, interval: 5 });
@@ -91,8 +91,8 @@ describe("onDoubleTap", () => {
   });
 
   test("a tap whose pointerup drifts beyond the tolerance does not count", async () => {
-    const onDouble = mock<(event: PointerEvent) => void>(() => {});
-    const onSingle = mock<(event: PointerEvent) => void>(() => {});
+    const onDouble = vi.fn<(event: PointerEvent) => void>(() => {});
+    const onSingle = vi.fn<(event: PointerEvent) => void>(() => {});
     const el = document.createElement("div");
     document.body.append(el);
     const dispose = onDoubleTap(el, { onDoubleTap: onDouble, onSingleTap: onSingle, interval: 50 });
@@ -108,8 +108,8 @@ describe("onDoubleTap", () => {
   });
 
   test("pointercancel voids the in-flight tap", async () => {
-    const onDouble = mock<(event: PointerEvent) => void>(() => {});
-    const onSingle = mock<(event: PointerEvent) => void>(() => {});
+    const onDouble = vi.fn<(event: PointerEvent) => void>(() => {});
+    const onSingle = vi.fn<(event: PointerEvent) => void>(() => {});
     const el = document.createElement("div");
     document.body.append(el);
     const dispose = onDoubleTap(el, { onDoubleTap: onDouble, onSingleTap: onSingle, interval: 5 });
@@ -124,8 +124,8 @@ describe("onDoubleTap", () => {
   });
 
   test("ignores non-primary buttons and disabled descendants", async () => {
-    const onDouble = mock<(event: PointerEvent) => void>(() => {});
-    const onSingle = mock<(event: PointerEvent) => void>(() => {});
+    const onDouble = vi.fn<(event: PointerEvent) => void>(() => {});
+    const onSingle = vi.fn<(event: PointerEvent) => void>(() => {});
     const el = document.createElement("div");
     const disabled = document.createElement("button");
     disabled.disabled = true;
@@ -144,8 +144,8 @@ describe("onDoubleTap", () => {
   });
 
   test("dispose clears the pending single tap", async () => {
-    const onDouble = mock<(event: PointerEvent) => void>(() => {});
-    const onSingle = mock<(event: PointerEvent) => void>(() => {});
+    const onDouble = vi.fn<(event: PointerEvent) => void>(() => {});
+    const onSingle = vi.fn<(event: PointerEvent) => void>(() => {});
     const el = document.createElement("div");
     document.body.append(el);
     const dispose = onDoubleTap(el, { onDoubleTap: onDouble, onSingleTap: onSingle, interval: 5 });
@@ -160,8 +160,12 @@ describe("onDoubleTap", () => {
 
   test("requires el, options, and onDoubleTap", () => {
     const el = document.createElement("div");
-    expect(() => onDoubleTap(null as never, { onDoubleTap: () => {} })).toThrow("[dom] onDoubleTap: el is required");
+    expect(() => onDoubleTap(null as never, { onDoubleTap: () => {} })).toThrow(
+      "[dom] onDoubleTap: el is required",
+    );
     expect(() => onDoubleTap(el, null as never)).toThrow("[dom] onDoubleTap: options is required");
-    expect(() => onDoubleTap(el, { onDoubleTap: null as never })).toThrow("[dom] onDoubleTap: onDoubleTap is required");
+    expect(() => onDoubleTap(el, { onDoubleTap: null as never })).toThrow(
+      "[dom] onDoubleTap: onDoubleTap is required",
+    );
   });
 });

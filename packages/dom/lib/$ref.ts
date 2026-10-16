@@ -50,8 +50,7 @@ export function $ref<T extends Element = Element>(target: string | T): DomRef<T>
 
       let i = 0;
       const len = queuedOps.length;
-      while (i < len)
-        queuedOps[i++]!(wrapper);
+      while (i < len) queuedOps[i++]!(wrapper);
 
       queuedOps.length = 0;
 
@@ -70,7 +69,7 @@ export function $ref<T extends Element = Element>(target: string | T): DomRef<T>
 
     const entry = multiSelectors.get(selector) || {
       ops: [],
-      processedNodes: new WeakSet()
+      processedNodes: new WeakSet(),
     };
     entry.ops.push(processNode);
     multiSelectors.set(selector, entry);
@@ -80,26 +79,29 @@ export function $ref<T extends Element = Element>(target: string | T): DomRef<T>
   const result = (() => targetNode) as DomRef<T>;
 
   result.bind = (value: HellaPrimitive | HellaProps) => {
-    applyOp(w => w.bind(value));
+    applyOp((w) => w.bind(value));
     !targetNode && startWatching();
     return result;
   };
 
-  result.on = <K extends keyof DOMEventMap>(event: K, handler: (this: T, event: DOMEventMap[K]) => void) => {
-    applyOp(w => w.on(event, handler as EventListener));
+  result.on = <K extends keyof DOMEventMap>(
+    event: K,
+    handler: (this: T, event: DOMEventMap[K]) => void,
+  ) => {
+    applyOp((w) => w.on(event, handler as EventListener));
     !targetNode && startWatching();
     return result;
   };
 
   result.hooks = (hooksObj: ElementHooks) => {
-    applyOp(w => w.hooks(hooksObj));
+    applyOp((w) => w.hooks(hooksObj));
     !targetNode && startWatching();
     return result;
   };
 
   Object.defineProperty(result, "node", {
     get: () => targetNode,
-    enumerable: true
+    enumerable: true,
   });
 
   return result;

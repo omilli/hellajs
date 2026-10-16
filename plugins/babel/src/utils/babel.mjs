@@ -18,5 +18,7 @@ export function getTagCallee(t, nameNode) {
     return t.memberExpression(object, property);
   }
 
-  throw new Error(`[babel-plugin-hellajs] getTagCallee: unsupported JSX tag name, received ${nameNode.type}`);
+  throw new Error(
+    `[babel-plugin-hellajs] getTagCallee: unsupported JSX tag name, received ${nameNode.type}`,
+  );
 }

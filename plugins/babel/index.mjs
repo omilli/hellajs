@@ -12,7 +12,7 @@ export default function babelHellaJS() {
   return {
     inherits: jsxSyntax.default || jsxSyntax,
     visitor: {
-      ...jsxTransformers
-    }
+      ...jsxTransformers,
+    },
   };
 }

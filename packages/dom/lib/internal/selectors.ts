@@ -116,7 +116,7 @@ export function checkMultiSelectors() {
 export function registerMultiOp(selector: string, op: MultiOp, initialNodes?: Element[]) {
   const entry = multiSelectors.get(selector) || {
     ops: [],
-    processedNodes: new WeakSet()
+    processedNodes: new WeakSet(),
   };
   entry.ops.push(op);
 

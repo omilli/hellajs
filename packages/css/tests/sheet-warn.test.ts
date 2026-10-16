@@ -1,15 +1,15 @@
-import { describe, expect, test, beforeEach, afterEach, mock } from "bun:test";
+import { describe, expect, test, beforeEach, afterEach, vi } from "vite-plus/test";
 import { resetTestState, getStylesheet } from "@utils/test-helpers.js";
-import { css, removeCss } from "@hellajs/css/bundle";
+import { css, removeCss } from "@hellajs/css";
 import { getCssSheet } from "./helpers";
 
 let originalWarn: typeof console.warn;
-let warn: ReturnType<typeof mock<(message: string) => void>>;
+let warn: ReturnType<typeof vi.fn<(message: string) => void>>;
 
 beforeEach(() => {
   resetTestState();
   originalWarn = console.warn;
-  warn = mock(() => {});
+  warn = vi.fn(() => {});
   console.warn = warn as unknown as typeof console.warn;
 });
 
@@ -22,7 +22,7 @@ describe("css platform-rejected rules", () => {
     css({ "@layer base": { body: { margin: 0 } } });
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn).toHaveBeenCalledWith(
-      "[css] rule rejected by the platform and skipped: @layer base {\n  body {\n    margin: 0px;\n  }\n}"
+      "[css] rule rejected by the platform and skipped: @layer base {\n  body {\n    margin: 0px;\n  }\n}",
     );
   });
 
@@ -69,7 +69,9 @@ describe("css platform-rejected rules", () => {
     // index — the same corruption shape pinned for @layer above.
     css({ "@import": 'url("x.css")' });
     expect(warn).toHaveBeenCalledTimes(1);
-    expect(warn).toHaveBeenCalledWith('[css] rule rejected by the platform and skipped: @import url("x.css");');
+    expect(warn).toHaveBeenCalledWith(
+      '[css] rule rejected by the platform and skipped: @import url("x.css");',
+    );
     css({ body: { margin: "0" } });
     const sheet = getCssSheet();
     expect(sheet.cssRules.length).toBe(1);

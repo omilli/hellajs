@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState } from "@utils/test-helpers.js";
 import {
@@ -29,29 +29,35 @@ describe("item", () => {
     expect(root.textContent).toBe("x");
   });
 
-  test.each(itemVariants)("$part $style renders variant and size attributes with matching classes", (variant) => {
-    const muted = renderVariant(variant, { variant: "muted", size: "sm", children: ["x"] });
-    expect(muted.getAttribute("data-variant")).toBe("muted");
-    expect(muted.getAttribute("data-size")).toBe("sm");
-    if (variant.style === "css") {
-      const tokens = classTokens(muted);
-      expect(tokens.some((token) => token.startsWith("item-muted"))).toBe(true);
-      expect(tokens.some((token) => token.startsWith("item-size-sm"))).toBe(true);
-    } else {
-      const tokens = classTokens(muted);
-      expect(tokens).toContain("bg-muted/50");
-      expect(tokens).toContain("gap-2.5");
-    }
-  });
+  test.each(itemVariants)(
+    "$part $style renders variant and size attributes with matching classes",
+    (variant) => {
+      const muted = renderVariant(variant, { variant: "muted", size: "sm", children: ["x"] });
+      expect(muted.getAttribute("data-variant")).toBe("muted");
+      expect(muted.getAttribute("data-size")).toBe("sm");
+      if (variant.style === "css") {
+        const tokens = classTokens(muted);
+        expect(tokens.some((token) => token.startsWith("item-muted"))).toBe(true);
+        expect(tokens.some((token) => token.startsWith("item-size-sm"))).toBe(true);
+      } else {
+        const tokens = classTokens(muted);
+        expect(tokens).toContain("bg-muted/50");
+        expect(tokens).toContain("gap-2.5");
+      }
+    },
+  );
 
-  test.each(itemVariants)("$part $style renders selected state from a static boolean", (variant) => {
-    const unselected = renderVariant(variant, { children: ["x"] });
-    expect(unselected.getAttribute("data-selected")).toBe("false");
-    expect(unselected.getAttribute("aria-selected")).toBe("false");
-    const selected = renderVariant(variant, { selected: true, children: ["x"] });
-    expect(selected.getAttribute("data-selected")).toBe("true");
-    expect(selected.getAttribute("aria-selected")).toBe("true");
-  });
+  test.each(itemVariants)(
+    "$part $style renders selected state from a static boolean",
+    (variant) => {
+      const unselected = renderVariant(variant, { children: ["x"] });
+      expect(unselected.getAttribute("data-selected")).toBe("false");
+      expect(unselected.getAttribute("aria-selected")).toBe("false");
+      const selected = renderVariant(variant, { selected: true, children: ["x"] });
+      expect(selected.getAttribute("data-selected")).toBe("true");
+      expect(selected.getAttribute("aria-selected")).toBe("true");
+    },
+  );
 
   test.each(itemVariants)("$part $style tracks a reactive selected() signal", (variant) => {
     const selected = signal(true);
@@ -64,19 +70,26 @@ describe("item", () => {
     expect(root.getAttribute("aria-selected")).toBe("false");
   });
 
-  test.each(itemPartVariants.filter((variant) => variant.part === "Media"))("$part $style renders media variants", (variant) => {
-    const icon = renderVariant(variant, { variant: "icon", children: ["x"] });
-    expect(icon.getAttribute("data-variant")).toBe("icon");
-    if (variant.style === "css") {
-      expect(classTokens(icon).some((token) => token.startsWith("item-media-icon"))).toBe(true);
-    } else {
-      expect(classTokens(icon)).toContain("size-8");
-    }
-    const image = renderVariant(variant, { variant: "image", children: ["x"] });
-    expect(image.getAttribute("data-variant")).toBe("image");
-  });
+  test.each(itemPartVariants.filter((variant) => variant.part === "Media"))(
+    "$part $style renders media variants",
+    (variant) => {
+      const icon = renderVariant(variant, { variant: "icon", children: ["x"] });
+      expect(icon.getAttribute("data-variant")).toBe("icon");
+      if (variant.style === "css") {
+        expect(classTokens(icon).some((token) => token.startsWith("item-media-icon"))).toBe(true);
+      } else {
+        expect(classTokens(icon)).toContain("size-8");
+      }
+      const image = renderVariant(variant, { variant: "image", children: ["x"] });
+      expect(image.getAttribute("data-variant")).toBe("image");
+    },
+  );
 
-  test.each(itemPartVariants.filter((variant) => variant.part === "Title" || variant.part === "Description"))("$part $style renders the text parts", (variant) => {
+  test.each(
+    itemPartVariants.filter(
+      (variant) => variant.part === "Title" || variant.part === "Description",
+    ),
+  )("$part $style renders the text parts", (variant) => {
     const root = renderVariant(variant, { children: ["content"] });
     expect(root.textContent).toBe("content");
     if (variant.part === "Description") {
@@ -91,7 +104,7 @@ describe("item", () => {
   });
 
   test("fires a user on:click handler on the root across both styles", () => {
-    const onClick = mock(() => {});
+    const onClick = vi.fn(() => {});
     assertHandlerForwarded(itemVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 
@@ -103,7 +116,15 @@ describe("item", () => {
   });
 
   test("both styles agree on tag and attributes", () => {
-    assertStructuralParity(itemVariants, { selected: true, variant: "outline", size: "sm", children: ["x"] });
-    assertStructuralParity(itemPartVariants.filter((candidate) => candidate.part === "Media"), { variant: "icon", children: ["x"] });
+    assertStructuralParity(itemVariants, {
+      selected: true,
+      variant: "outline",
+      size: "sm",
+      children: ["x"],
+    });
+    assertStructuralParity(
+      itemPartVariants.filter((candidate) => candidate.part === "Media"),
+      { variant: "icon", children: ["x"] },
+    );
   });
 });

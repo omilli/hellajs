@@ -127,7 +127,8 @@ export const content = style("bubble-content", {
     textAlign: "left",
   },
   "&:is(button, a)": {
-    transitionProperty: "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke",
+    transitionProperty:
+      "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke",
     transitionDuration: "150ms",
     transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
     outlineStyle: "none",

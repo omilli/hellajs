@@ -1,8 +1,20 @@
 import { existsSync } from "node:fs";
 import { join, relative } from "node:path";
-import { projectRoot } from "../utils/index.js";
-import { carrierTicked, parseWorktreeList, WT_ROOT, type WorktreeEntry } from "../agent/worktree.js";
-import { isTicked, listPlanUnits, partitionComponents, setSlug, countTicks, type PlanUnit } from "../worker/set.js";
+import { projectRoot } from "../utils/index.ts";
+import {
+  carrierTicked,
+  parseWorktreeList,
+  WT_ROOT,
+  type WorktreeEntry,
+} from "../agent/worktree.ts";
+import {
+  isTicked,
+  listPlanUnits,
+  partitionComponents,
+  setSlug,
+  countTicks,
+  type PlanUnit,
+} from "../worker/set.ts";
 
 /** One merge queue entry: a component worktree plus its plan units. */
 export interface QueueEntry {
@@ -96,7 +108,9 @@ export function deriveQueue(setDir: string, inventory: string): QueueResult {
   // components partition ALL units, and a standing slug resolves by the
   // carrier's own delivered ticks first, derived-slug arithmetic second.
   const components = partitionComponents(units);
-  const order = new Map(units.map((unit: PlanUnit, index: number): [string, number] => [unit.name, index]));
+  const order = new Map(
+    units.map((unit: PlanUnit, index: number): [string, number] => [unit.name, index]),
+  );
   const result: QueueResult = { queue: [], preMerged: [], anomalies: [] };
   for (const entry of parseWorktreeList(inventory)) {
     if (entry.plans !== relSetDir) {
@@ -156,5 +170,8 @@ export function allTickedInMainTree(entry: QueueEntry): boolean {
  * @returns Summed `[x]` occurrences.
  */
 export function mainTreeTickTotal(entry: QueueEntry): number {
-  return entry.units.reduce((total: number, unit: PlanUnit): number => total + countTicks(unit.path), 0);
+  return entry.units.reduce(
+    (total: number, unit: PlanUnit): number => total + countTicks(unit.path),
+    0,
+  );
 }

@@ -1,7 +1,7 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { signal, effect } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { resource } from "@hellajs/resource/bundle";
+import { resource } from "@hellajs/resource";
 
 describe("resource", () => {
   describe("keepPreviousData", () => {
@@ -11,10 +11,12 @@ describe("resource", () => {
 
     test("keeps previous data visible during a key-change fetch window by default", async () => {
       const userId = signal(1);
-      const fetcher = mock((id: number) => delay({ id, name: `User ${id}` }, 30));
+      const fetcher = vi.fn((id: number) => delay({ id, name: `User ${id}` }, 30));
       const r = resource(fetcher, { key: () => userId(), refetchOnKeyChange: true });
 
-      const cleanup = effect(() => { r.status(); });
+      const cleanup = effect(() => {
+        r.status();
+      });
 
       await delay(50);
       expect(r.data()?.name).toBe("User 1");
@@ -32,14 +34,16 @@ describe("resource", () => {
 
     test("clears data to a loading window on key change when false", async () => {
       const userId = signal(1);
-      const fetcher = mock((id: number) => delay({ id, name: `User ${id}` }, 30));
+      const fetcher = vi.fn((id: number) => delay({ id, name: `User ${id}` }, 30));
       const r = resource(fetcher, {
         key: () => userId(),
         refetchOnKeyChange: true,
-        keepPreviousData: false
+        keepPreviousData: false,
       });
 
-      const cleanup = effect(() => { r.status(); });
+      const cleanup = effect(() => {
+        r.status();
+      });
 
       await delay(50);
       expect(r.data()?.name).toBe("User 1");
@@ -59,15 +63,17 @@ describe("resource", () => {
     test("does not re-apply initialData when clearing on key change", async () => {
       const userId = signal(1);
       const initialUser = { id: 0, name: "Initial" };
-      const fetcher = mock((id: number) => delay({ id, name: `User ${id}` }, 30));
+      const fetcher = vi.fn((id: number) => delay({ id, name: `User ${id}` }, 30));
       const r = resource(fetcher, {
         key: () => userId(),
         refetchOnKeyChange: true,
         keepPreviousData: false,
-        initialData: initialUser
+        initialData: initialUser,
       });
 
-      const cleanup = effect(() => { r.status(); });
+      const cleanup = effect(() => {
+        r.status();
+      });
 
       expect(r.data()).toBe(initialUser);
       await delay(50);
@@ -86,15 +92,17 @@ describe("resource", () => {
     test("does not clear data when enabled flips with an unchanged key", async () => {
       const userId = signal(1);
       const enabled = signal(false);
-      const fetcher = mock((id: number) => delay({ id, name: `User ${id}` }, 30));
+      const fetcher = vi.fn((id: number) => delay({ id, name: `User ${id}` }, 30));
       const r = resource(fetcher, {
         key: () => userId(),
         refetchOnKeyChange: true,
         keepPreviousData: false,
-        enabled: () => enabled()
+        enabled: () => enabled(),
       });
 
-      const cleanup = effect(() => { r.status(); });
+      const cleanup = effect(() => {
+        r.status();
+      });
 
       await delay(50);
       expect(fetcher).toHaveBeenCalledTimes(0);

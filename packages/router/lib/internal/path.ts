@@ -36,8 +36,8 @@ export function buildPath(path: string, params: Params, query: Params): string {
   result = result.replace(/:([^/]+)/g, "");
 
   return Object.keys(query).length
-    ? `${result}?${Object.entries(query).map(([k, v]) =>
-      `${encodeURIComponent(k)}=${encodeURIComponent(v)}`
-    ).join("&")}`
+    ? `${result}?${Object.entries(query)
+        .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+        .join("&")}`
     : result;
 }

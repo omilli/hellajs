@@ -3,11 +3,14 @@
  *
  * Serves `.bench/` on an ephemeral port: `/<label>/` resolves to
  * `<label>/index.html`, every other path to the file under `.bench/`.
- * The caller stops the server (`server.stop(true)`) once the driver resolves.
+ * The caller stops the server (`server.close()`) once the driver resolves.
  */
 
+import fsStat from "node:fs";
+import fs from "node:fs/promises";
+import http from "node:http";
 import path from "node:path";
-import { projectRoot } from "../utils/index.js";
+import { projectRoot } from "../utils/index.ts";
 
 const benchDir = path.join(projectRoot, ".bench");
 
@@ -21,8 +24,8 @@ const MIME_TYPES: Record<string, string> = {
 };
 
 export interface BenchServer {
-  /** The underlying Bun server — call `stop(true)` when the run finishes. */
-  readonly server: Bun.Server<undefined>;
+  /** The underlying node HTTP server — call `close()` when the run finishes. */
+  readonly server: http.Server;
   /** The OS-assigned ephemeral port the server listens on. */
   readonly port: number;
 }
@@ -41,43 +44,65 @@ function contentTypeFor(filePath: string): string {
  * Serve one request from `.bench/`, blocking path traversal.
  *
  * @param request The incoming request.
- * @returns The file response, or a 404/403 error response.
+ * @param response The server response to write.
  */
-async function fetch(request: Request): Promise<Response> {
-  const { pathname } = new URL(request.url);
+async function serve(request: http.IncomingMessage, response: http.ServerResponse): Promise<void> {
+  const { pathname } = new URL(request.url ?? "/", "http://localhost");
   const relative = decodeURIComponent(pathname).replace(/^\/+/, "");
   if (relative === "") {
-    return new Response("Not found", { status: 404 });
+    response.statusCode = 404;
+    response.end("Not found");
+    return;
   }
 
   const resolved = path.resolve(benchDir, relative);
   if (!resolved.startsWith(benchDir + path.sep)) {
-    return new Response("Forbidden", { status: 403 });
+    response.statusCode = 403;
+    response.end("Forbidden");
+    return;
   }
 
   const target =
     pathname.endsWith("/") || path.extname(resolved) === ""
       ? path.join(resolved, "index.html")
       : resolved;
-  const file = Bun.file(target);
-  if (!(await file.exists())) {
-    return new Response("Not found", { status: 404 });
+  try {
+    const stat = await fs.stat(target);
+    if (!stat.isFile()) {
+      response.statusCode = 404;
+      response.end("Not found");
+      return;
+    }
+    response.writeHead(200, {
+      "content-type": contentTypeFor(target),
+      "content-length": stat.size,
+    });
+    fsStat.createReadStream(target).pipe(response);
+  } catch {
+    response.statusCode = 404;
+    response.end("Not found");
   }
-  return new Response(file, {
-    headers: { "content-type": contentTypeFor(target) },
-  });
 }
 
 /**
  * Start the bench static server on an ephemeral port.
  *
- * @returns The running server handle and its assigned port.
+ * @returns The running server handle and its assigned port, once bound.
  */
-export function startBenchServer(): BenchServer {
-  const server = Bun.serve({ port: 0, fetch });
-  const { port } = server;
-  if (port === undefined) {
-    throw new Error("bench server bound no TCP port (unix socket?)");
-  }
-  return { server, port };
+export function startBenchServer(): Promise<BenchServer> {
+  const server = http.createServer((request, response) => {
+    serve(request, response).catch(() => response.destroy());
+  });
+  return new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", () => {
+      const address = server.address();
+      if (address === null || typeof address === "string") {
+        server.close();
+        reject(new Error("bench server bound no TCP port (unix socket?)"));
+        return;
+      }
+      resolve({ server, port: address.port });
+    });
+  });
 }

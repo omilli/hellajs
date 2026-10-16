@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, vi } from "vite-plus/test";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { resource, resourceCache } from "@hellajs/resource/bundle";
+import { resource, resourceCache } from "@hellajs/resource";
 
 describe("resource", () => {
   describe("invalidates", () => {
@@ -19,10 +19,12 @@ describe("resource", () => {
     });
 
     const spyInvalidators = () => {
-      const prefixSpy = mock(() => 0);
-      const patternSpy = mock(() => 0);
-      resourceCache.invalidateByPrefix = prefixSpy as unknown as typeof resourceCache.invalidateByPrefix;
-      resourceCache.invalidateByPattern = patternSpy as unknown as typeof resourceCache.invalidateByPattern;
+      const prefixSpy = vi.fn(() => 0);
+      const patternSpy = vi.fn(() => 0);
+      resourceCache.invalidateByPrefix =
+        prefixSpy as unknown as typeof resourceCache.invalidateByPrefix;
+      resourceCache.invalidateByPattern =
+        patternSpy as unknown as typeof resourceCache.invalidateByPattern;
       return { prefixSpy, patternSpy };
     };
 
@@ -51,7 +53,12 @@ describe("resource", () => {
     test("does not invalidate on mutation error", async () => {
       const { prefixSpy, patternSpy } = spyInvalidators();
 
-      const failing = resource(async () => { throw new Error("boom"); }, { invalidates: ["user:"] });
+      const failing = resource(
+        async () => {
+          throw new Error("boom");
+        },
+        { invalidates: ["user:"] },
+      );
       await failing.mutate({}).catch(() => {});
 
       expect(prefixSpy).not.toHaveBeenCalled();
@@ -76,8 +83,12 @@ describe("resource", () => {
     });
 
     test("deletes cache entries without auto-refetching mounted resources", async () => {
-      const fetcher = mock(async () => ({ id: 1, name: "John" }));
-      const watcher = resource(fetcher, { key: "user:1", cacheTime: 60000, refetchOnKeyChange: true });
+      const fetcher = vi.fn(async () => ({ id: 1, name: "John" }));
+      const watcher = resource(fetcher, {
+        key: "user:1",
+        cacheTime: 60000,
+        refetchOnKeyChange: true,
+      });
       await delay(10);
       expect(resourceCache.map.has("user:1")).toBe(true);
       expect(watcher.data()).toEqual({ id: 1, name: "John" });

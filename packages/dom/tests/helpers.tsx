@@ -1,23 +1,32 @@
 import { setupContainer } from "@utils/test-helpers.js";
 import { ForEach, onError } from "@hellajs/dom";
-import { ssr } from "@hellajs/ssr/bundle";
+import { ssr } from "@hellajs/ssr";
 import type { HellaChild, HellaNode } from "@hellajs/dom";
 
 /**
  * Renders `items` through ForEach inside a `<ul>` — the default renderer wraps each item in a keyed
  * `<li>`; pass `itemRenderer` to control the per-item markup. Shared by the ForEach test files.
  */
-export const createList = <T,>(items: T[] | (() => T[]), itemRenderer?: (item: T) => HellaChild): HellaNode =>
-  <ul><ForEach each={items} use={(itemRenderer || ((item: T) => <li key={item}>Item {item}</li>))}></ForEach></ul>;
+export const createList = <T,>(
+  items: T[] | (() => T[]),
+  itemRenderer?: (item: T) => HellaChild,
+): HellaNode => (
+  <ul>
+    <ForEach
+      each={items}
+      use={itemRenderer || ((item: T) => <li key={item}>Item {item}</li>)}
+    ></ForEach>
+  </ul>
+);
 
 /** Text content of every `<li>` currently in the document, in DOM order. */
-export const getListTexts = () => Array.from(document.querySelectorAll("li")).map(li => li.textContent);
+export const getListTexts = () =>
+  Array.from(document.querySelectorAll("li")).map((li) => li.textContent);
 
-export const fallbackHandler = (
-  def: HellaNode | (() => HellaNode) | null = null
-) =>
-  onError((error: Error, context) =>
-    context.config?.fallback?.(error) ?? (def as HellaNode | null));
+export const fallbackHandler = (def: HellaNode | (() => HellaNode) | null = null) =>
+  onError(
+    (error: Error, context) => context.config?.fallback?.(error) ?? (def as HellaNode | null),
+  );
 
 /**
  * Suppresses `console.warn` for the duration of `fn`, restoring it afterward even if `fn` throws.
@@ -27,7 +36,9 @@ export const fallbackHandler = (
 export const suppressWarn = <T,>(fn: () => T): { result: T; warnings: unknown[][] } => {
   const orig = console.warn;
   const warnings: unknown[][] = [];
-  console.warn = (...args: unknown[]) => { warnings.push(args); };
+  console.warn = (...args: unknown[]) => {
+    warnings.push(args);
+  };
   try {
     const result = fn();
     return { result, warnings };
@@ -72,7 +83,10 @@ export function pointerCancel(target: Node): void {
  * Creates a container with one button per label, appended to the document body —
  * the standard focusable group for trap and roving scenarios.
  */
-export function setupButtons(labels: string[]): { container: HTMLDivElement; buttons: HTMLButtonElement[] } {
+export function setupButtons(labels: string[]): {
+  container: HTMLDivElement;
+  buttons: HTMLButtonElement[];
+} {
   const container = document.createElement("div");
   const buttons = labels.map((label) => {
     const button = document.createElement("button");
@@ -129,7 +143,10 @@ export const streamContainer = async (node: HellaNode | (() => HellaNode)): Prom
   const reader = ssr.stream(resolved).getReader();
   let html = "";
   let chunk = await reader.read();
-  while (!chunk.done) { html += chunk.value; chunk = await reader.read(); }
+  while (!chunk.done) {
+    html += chunk.value;
+    chunk = await reader.read();
+  }
   container.innerHTML = html;
   return container;
 };

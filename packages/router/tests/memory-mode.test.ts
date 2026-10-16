@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 
-import { router, navigate, route, resetRouter } from "@hellajs/router/bundle";
+import { router, navigate, route, resetRouter } from "@hellajs/router";
 import { setupRouterEnv } from "./helpers";
 
 describe("router", () => {
@@ -19,9 +19,9 @@ describe("router", () => {
       router({
         routes: {
           "/": () => render("home"),
-          "/users/:id": ({ id }) => render(`user-${id}`)
+          "/users/:id": ({ id }) => render(`user-${id}`),
         },
-        mode: "memory"
+        mode: "memory",
       });
 
       expect(route().path).toBe("/");
@@ -32,10 +32,10 @@ describe("router", () => {
       router({
         routes: {
           "/": () => render("home"),
-          "/users/:id": ({ id }) => render(`user-${id}`)
+          "/users/:id": ({ id }) => render(`user-${id}`),
         },
         mode: "memory",
-        url: "/users/7"
+        url: "/users/7",
       });
 
       expect(route().path).toBe("/users/7");
@@ -48,9 +48,9 @@ describe("router", () => {
       router({
         routes: {
           "/": () => render("home"),
-          "/users/:id": userHandler
+          "/users/:id": userHandler,
         },
-        mode: "memory"
+        mode: "memory",
       });
 
       const pathnameBefore = window.location.pathname;
@@ -70,8 +70,8 @@ describe("router", () => {
     test("attaches no window or document listeners", () => {
       const originalWindow = window.addEventListener;
       const originalDocument = document.addEventListener;
-      const windowSpy = mock(() => { });
-      const documentSpy = mock(() => { });
+      const windowSpy = vi.fn(() => {});
+      const documentSpy = vi.fn(() => {});
       window.addEventListener = windowSpy as unknown as typeof window.addEventListener;
       document.addEventListener = documentSpy as unknown as typeof document.addEventListener;
 
@@ -79,9 +79,9 @@ describe("router", () => {
         router({
           routes: {
             "/": () => render("home"),
-            "/about": () => render("about")
+            "/about": () => render("about"),
           },
-          mode: "memory"
+          mode: "memory",
         });
 
         navigate("/about");
@@ -99,10 +99,10 @@ describe("router", () => {
           "/": () => render("home"),
           "/admin": {
             before: () => false,
-            handler: () => render("admin")
-          }
+            handler: () => render("admin"),
+          },
         },
-        mode: "memory"
+        mode: "memory",
       });
 
       navigate("/admin");
@@ -116,9 +116,9 @@ describe("router", () => {
         routes: {
           "/": () => render("home"),
           "/new": () => render("new-home"),
-          "/old": "/new"
+          "/old": "/new",
         },
-        mode: "memory"
+        mode: "memory",
       });
 
       navigate("/old");
@@ -130,10 +130,10 @@ describe("router", () => {
       router({
         routes: {
           "/": () => render("home"),
-          "/new": () => render("new-home")
+          "/new": () => render("new-home"),
         },
         redirects: [{ from: ["/legacy"], to: "/new" }],
-        mode: "memory"
+        mode: "memory",
       });
 
       navigate("/legacy");
@@ -142,13 +142,13 @@ describe("router", () => {
     });
 
     test("resolves notFound for unmatched paths", () => {
-      const notFoundHandler = mock(() => render("not-found"));
+      const notFoundHandler = vi.fn(() => render("not-found"));
       router({
         routes: {
-          "/": () => render("home")
+          "/": () => render("home"),
         },
         mode: "memory",
-        notFound: notFoundHandler
+        notFound: notFoundHandler,
       });
 
       navigate("/nowhere");
@@ -165,11 +165,11 @@ describe("router", () => {
           "/admin": {
             handler: () => render("admin"),
             children: {
-              "/users/:id": ({ id }) => render(`user-${id}`)
-            }
-          }
+              "/users/:id": ({ id }) => render(`user-${id}`),
+            },
+          },
         },
-        mode: "memory"
+        mode: "memory",
       });
 
       expect(route().active("/admin")).toBe(false);

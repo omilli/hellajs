@@ -1,13 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
-import { logger, packagesDir, pluginsDir, projectRoot } from "./utils/index.js";
+import { logger, packagesDir, pluginsDir, projectRoot } from "./utils/index.ts";
 
 /**
- * Guard (`bun doc-links`): two checks over every docs surface.
+ * Guard (`vp run doc-links`): two checks over every docs surface.
  *
  * 1. Export-name check — fail if a doc link's display name (the `` `NAME` `` in
  * `` [`NAME`](URL) ``) is not a barrel export of the package the link targets. Catches
- * the `streamSsr` vs `ssr` rename drift that `tsc`, `eslint`, and every other
+ * the `streamSsr` vs `ssr` rename drift that `vp lint` and every other
  * guard miss: a stale display name compiles, lints, and ships while pointing readers
  * at a symbol that no longer exists. The barrel (`packages/<pkg>/lib/index.ts`) is the
  * truth for the public surface; a symbol exported only from a non-barrel file is not
@@ -183,7 +183,9 @@ function collectBarrelExports(pkg: string): Set<string> {
   }
 
   // export (async )?(function|const|let|class) NAME
-  for (const m of content.matchAll(/export\s+(?:async\s+)?(?:function|const|let|class)\s+([A-Za-z_$][\w$]*)/g)) {
+  for (const m of content.matchAll(
+    /export\s+(?:async\s+)?(?:function|const|let|class)\s+([A-Za-z_$][\w$]*)/g,
+  )) {
     names.add(m[1]!);
   }
 
@@ -338,7 +340,8 @@ function buildSitePages(): Set<string> {
 async function main(): Promise<void> {
   try {
     const packageDirs = new Set(
-      fs.readdirSync(packagesDir, { withFileTypes: true })
+      fs
+        .readdirSync(packagesDir, { withFileTypes: true })
         .filter((e) => e.isDirectory())
         .map((e) => e.name),
     );
@@ -372,7 +375,9 @@ async function main(): Promise<void> {
 
     for (const v of violations) {
       const relFile = path.relative(projectRoot, v.file);
-      logger.info(`${v.pkg}:${relFile} — [\`${v.name}\`](${v.url}) is not exported by @hellajs/${v.pkg}`);
+      logger.info(
+        `${v.pkg}:${relFile} — [\`${v.name}\`](${v.url}) is not exported by @hellajs/${v.pkg}`,
+      );
     }
     for (const m of missing) {
       const relFile = path.relative(projectRoot, m.file);
@@ -390,7 +395,7 @@ async function main(): Promise<void> {
   }
 }
 
-if (import.meta.main) {
+if (process.argv[1] === import.meta.filename) {
   main().catch((error: Error) => {
     logger.error("Fatal error:", error);
     process.exit(1);

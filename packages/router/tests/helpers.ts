@@ -1,11 +1,13 @@
-import { expect } from "bun:test";
+import { expect } from "vite-plus/test";
 import { resetTestState, setupContainer } from "@utils/test-helpers.js";
 
 export const renderInto = (container: HTMLElement) => (content: string) => {
   container.textContent = content;
 };
 
-export const setupRouterEnv = (pageUrl = "http://localhost/"): {
+export const setupRouterEnv = (
+  pageUrl = "http://localhost/",
+): {
   container: HTMLDivElement;
   render: (content: string) => void;
 } => {
@@ -21,14 +23,12 @@ export const setupRouterEnv = (pageUrl = "http://localhost/"): {
 export const expectLoggedError = (
   sup: { errors: [string, unknown][] },
   prefix: string,
-  message?: string
+  message?: string,
 ): void => {
   expect(
     sup.errors.some(
       ([p, e]) =>
-        p === prefix &&
-        e instanceof Error &&
-        (message === undefined || e.message === message)
-    )
+        p === prefix && e instanceof Error && (message === undefined || e.message === message),
+    ),
   ).toBe(true);
 };

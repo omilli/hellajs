@@ -1,9 +1,9 @@
 import { readFileSync } from "node:fs";
 import { join, sep } from "node:path";
-import { execCommandInherited, isValidPackage, logger, projectRoot } from "../utils/index.js";
-import { listPlanUnits } from "../worker/set.js";
-import { dialogHook, driveAgent } from "../agent/driver.js";
-import type { Relay } from "../agent/relay.js";
+import { execCommandInherited, isValidPackage, logger, projectRoot } from "../utils/index.ts";
+import { listPlanUnits } from "../worker/set.ts";
+import { dialogHook, driveAgent } from "../agent/driver.ts";
+import type { Relay } from "../agent/relay.ts";
 
 /** Options for the union gate: the fix instance's model pattern and thinking level. */
 export interface GateOptions {
@@ -50,10 +50,11 @@ function derivedPackageScopes(setDir: string): string[] {
  * Derive the union-gate commands from the set folder path.
  *
  * `plans/<pkg>/...` gates through the package coverage run;
- * `plans/plugins/<p>/...` hits the plugin exception (§Testing): a dom bundle
- * refresh first (`tests/parity.test.ts` imports the `@hellajs/dom` dist
- * bundle, which a merge's cherry-pick does not rebuild), then scoped tests
- * and the repo-wide lint.
+ * `plans/plugins/<p>/...` gates through the plugin-scoped coverage run (which
+ * bundles first, so the stale-dist guard is subsumed — the merge's cherry-pick
+ * lands dom lib changes without rebuilding the gitignored dist that
+ * `tests/parity.test.ts` imports) then the repo-wide lint (coverage runs no
+ * lint).
  *
  * A scope naming no `packages/` workspace (`plans/docs/...`, `plans/scripts/...`
  * — cross-cutting sets filed by area, not by package) falls back to the
@@ -71,18 +72,21 @@ export function gateCommands(relSetDir: string): string[][] {
   const segments = relSetDir.split(sep);
   const scope = segments[1] ?? "";
   if (scope === "") {
-    throw new Error(`cannot derive a union gate for ${relSetDir} (expected plans/<pkg>/... or plans/plugins/<p>/...)`);
+    throw new Error(
+      `cannot derive a union gate for ${relSetDir} (expected plans/<pkg>/... or plans/plugins/<p>/...)`,
+    );
   }
   if (scope === "plugins") {
     const plugin = segments[2] ?? "";
     if (plugin === "") {
-      throw new Error(`cannot derive a plugin union gate for ${relSetDir} (expected plans/plugins/<p>/...)`);
+      throw new Error(
+        `cannot derive a plugin union gate for ${relSetDir} (expected plans/plugins/<p>/...)`,
+      );
     }
     return [
-      // Stale-dist guard: the merge's cherry-pick lands dom lib changes without
-      // rebuilding the gitignored dist that parity.test.ts imports (§Testing)
-      ["bun", "bundle", "dom", "--quiet"],
-      ["bun", "test", `plugins/${plugin}/tests`],
+      // coverage bundles before its scoped test run, rebuilding the gitignored
+      // dom dist that parity.test.ts imports (§Testing)
+      ["bun", "coverage", plugin],
       ["bun", "lint"],
     ];
   }
@@ -141,7 +145,9 @@ function buildFixPrompt(relSetDir: string, failedCommand: string): string {
  */
 async function askFixGate(relay: Relay): Promise<"retry" | "halt"> {
   for (;;) {
-    const line = (await relay.askOrchestrator("union gate still RED after fix — retry-fix / halt?")).trim().toLowerCase();
+    const line = (await relay.askOrchestrator("union gate still RED after fix — retry-fix / halt?"))
+      .trim()
+      .toLowerCase();
     if (line === "r" || line === "retry" || line === "retry-fix") {
       return "retry";
     }
@@ -170,7 +176,9 @@ export async function unionGate(
   relSetDir: string,
 ): Promise<boolean> {
   const commands = gateCommands(relSetDir);
-  logger.info(`union gate: ${commands.map((command: string[]): string => command.join(" ")).join(" && ")}`);
+  logger.info(
+    `union gate: ${commands.map((command: string[]): string => command.join(" ")).join(" && ")}`,
+  );
   let failed = await runGateCommands(commands);
   if (failed === null) {
     logger.success("union gate green — merged union verified");

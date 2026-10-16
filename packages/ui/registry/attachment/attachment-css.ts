@@ -13,7 +13,8 @@ export const base = style("attachment", {
   border: `1px solid ${tokens.border}`,
   backgroundColor: tokens.card,
   color: tokens.cardForeground,
-  transitionProperty: "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke",
+  transitionProperty:
+    "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke",
   transitionDuration: "150ms",
   transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
   "&:focus-within": {
@@ -351,14 +352,16 @@ css({
   "[data-slot='attachment'][data-orientation='vertical'] [data-slot='attachment-media']": {
     width: "100%",
   },
-  "[data-slot='attachment'][data-orientation='vertical'] [data-slot='attachment-media'] > [data-slot='spinner']": {
-    height: "1.5rem !important",
-    width: "1.5rem !important",
-  },
-  "[data-slot='attachment'][data-orientation='vertical'] [data-slot='attachment-media'] svg:not([class*='size-'])": {
-    height: "1.5rem",
-    width: "1.5rem",
-  },
+  "[data-slot='attachment'][data-orientation='vertical'] [data-slot='attachment-media'] > [data-slot='spinner']":
+    {
+      height: "1.5rem !important",
+      width: "1.5rem !important",
+    },
+  "[data-slot='attachment'][data-orientation='vertical'] [data-slot='attachment-media'] svg:not([class*='size-'])":
+    {
+      height: "1.5rem",
+      width: "1.5rem",
+    },
   "[data-slot='attachment'][data-size='sm'] [data-slot='attachment-media']": {
     width: "2rem",
   },
@@ -366,10 +369,11 @@ css({
     width: "1.75rem",
     borderRadius: `calc(${tokens.radius} * 0.8)`,
   },
-  "[data-slot='attachment'][data-size='xs'] [data-slot='attachment-media'] svg:not([class*='size-'])": {
-    height: "0.875rem",
-    width: "0.875rem",
-  },
+  "[data-slot='attachment'][data-size='xs'] [data-slot='attachment-media'] svg:not([class*='size-'])":
+    {
+      height: "0.875rem",
+      width: "0.875rem",
+    },
   "[data-slot='attachment'][data-state='error'] [data-slot='attachment-media']": {
     backgroundColor: `color-mix(in oklab, ${tokens.destructive} 10%, transparent)`,
     color: tokens.destructive,
@@ -377,12 +381,14 @@ css({
   "[data-slot='attachment'][data-orientation='vertical'] [data-slot='attachment-content']": {
     paddingInline: "0.25rem",
   },
-  "[data-slot='attachment'][data-state='done'] [data-slot='attachment-media'][data-variant='image']": {
-    opacity: "1",
-  },
-  "[data-slot='attachment'][data-state='idle'] [data-slot='attachment-media'][data-variant='image']": {
-    opacity: "1",
-  },
+  "[data-slot='attachment'][data-state='done'] [data-slot='attachment-media'][data-variant='image']":
+    {
+      opacity: "1",
+    },
+  "[data-slot='attachment'][data-state='idle'] [data-slot='attachment-media'][data-variant='image']":
+    {
+      opacity: "1",
+    },
   "[data-slot='attachment'][data-state='error'] [data-slot='attachment-description']": {
     color: `color-mix(in oklab, ${tokens.destructive} 80%, transparent)`,
   },

@@ -1,4 +1,4 @@
-import { describe, expect, test, mock } from "bun:test";
+import { describe, expect, test, vi } from "vite-plus/test";
 import { batch, effect, scope, signal } from "@hellajs/core";
 import { delay } from "@utils/test-helpers.js";
 
@@ -9,7 +9,9 @@ describe("core", () => {
       let lastValue = 0;
 
       // Basic effect with cleanup
-      const runs = mock(() => { lastValue = count(); });
+      const runs = vi.fn(() => {
+        lastValue = count();
+      });
       const cleanup = effect(runs);
 
       expect(runs).toHaveBeenCalledTimes(1);
@@ -27,7 +29,7 @@ describe("core", () => {
 
     test("nested effects created during a parent re-run execute immediately", () => {
       const trigger = signal(0);
-      const nestedRuns = mock(() => { });
+      const nestedRuns = vi.fn(() => {});
       effect(() => {
         trigger();
         effect(nestedRuns);
@@ -88,7 +90,7 @@ describe("core", () => {
 
       effect(() => {
         const currentId = id();
-        Promise.resolve(`data-${currentId}`).then(data => {
+        Promise.resolve(`data-${currentId}`).then((data) => {
           result(data);
         });
       });
@@ -107,7 +109,10 @@ describe("core", () => {
       const a = signal(0);
       const b = signal(0);
 
-      const runs = mock(() => { a(); b(); });
+      const runs = vi.fn(() => {
+        a();
+        b();
+      });
       effect(runs);
       expect(runs).toHaveBeenCalledTimes(1);
 
@@ -154,7 +159,9 @@ describe("core", () => {
       const a = signal(1);
       const b = signal(10);
       const c = signal(100);
-      const level3Count = mock(() => { c(); });
+      const level3Count = vi.fn(() => {
+        c();
+      });
 
       effect(() => {
         a();
@@ -177,7 +184,7 @@ describe("core", () => {
 
     test("effect cleanup return value runs on re-execution and disposal", () => {
       const count = signal(0);
-      const cleanupRuns = mock(() => { });
+      const cleanupRuns = vi.fn(() => {});
 
       const cleanup = effect(() => {
         count();
@@ -195,7 +202,7 @@ describe("core", () => {
 
     test("ignores non-function return values while capturing function returns as cleanup", () => {
       const count = signal(0);
-      const fnCleanup = mock(() => { });
+      const fnCleanup = vi.fn(() => {});
 
       const stopValue = effect(() => {
         count();
@@ -219,8 +226,12 @@ describe("core", () => {
     test("effect error during flush stops queue processing", () => {
       const a = signal(0);
       const b = signal(0);
-      const effectAMock = mock(() => { a(); });
-      const effectBMock = mock(() => { b(); });
+      const effectAMock = vi.fn(() => {
+        a();
+      });
+      const effectBMock = vi.fn(() => {
+        b();
+      });
 
       // Schedule both effects
       effect(effectAMock);
@@ -246,7 +257,7 @@ describe("core", () => {
 
     test("disposes an effect whose first run throws", () => {
       const count = signal(0);
-      const body = mock(() => {
+      const body = vi.fn(() => {
         count();
         throw new Error("first run");
       });
@@ -260,7 +271,7 @@ describe("core", () => {
 
     test("scoped effect whose first run throws leaves no trace", () => {
       const count = signal(0);
-      const body = mock(() => {
+      const body = vi.fn(() => {
         count();
         throw new Error("first run");
       });

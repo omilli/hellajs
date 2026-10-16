@@ -127,11 +127,11 @@ export function dispatchError(error: Error, context: ErrorContext): HellaNode | 
   const originalNode = boundary ? peekState(boundary)?.originalNode : undefined;
   const reset = originalNode
     ? () => {
-      const node = peekState(boundary!)?.originalNode;
-      if (node && mountNodeFn) {
-        boundary!.replaceChildren(mountNodeFn(node));
+        const node = peekState(boundary!)?.originalNode;
+        if (node && mountNodeFn) {
+          boundary!.replaceChildren(mountNodeFn(node));
+        }
       }
-    }
     : undefined;
 
   const contextWithReset = boundary ? { ...context, reset } : context;

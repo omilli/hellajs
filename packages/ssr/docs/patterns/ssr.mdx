@@ -2,22 +2,20 @@
 
 Copy-paste recipes for server rendering with [`@hellajs/ssr`](/reference/ssr/ssr). For URL→view routing on the server (a request URL driving the rendered view, with shared client [`hydrate`](/reference/dom/hydrate)), see the [Routing](/learn/patterns/routing) SSR recipes.
 
-### Plain HTML with Bun.serve
+### Plain HTML with node:http
 
 Render a template to a string and return a full document via [`doc`](/reference/ssr/doc).
 
 ```jsx
+import { createServer } from 'node:http';
 import { ssr, doc } from '@hellajs/ssr';
 
 const page = (name: string) => <div><h1>Hello {name}</h1></div>;
 
-Bun.serve({
-  port: 3000,
-  fetch: () => new Response(
-    doc({ head: { title: 'Hello' }, body: ssr(page('World')) }),
-    { headers: { 'content-type': 'text/html' } }
-  )
-});
+createServer((req, res) => {
+  res.setHeader('content-type', 'text/html');
+  res.end(doc({ head: { title: 'Hello' }, body: ssr(page('World')) }));
+}).listen(3000);
 ```
 
 ### Render from JSX
@@ -75,7 +73,7 @@ app.get('/', (c) => {
   const body = ssr(<div><h1>Hello {c.req.query('name') ?? 'World'}</h1></div>);
   return c.html(doc({ head: { title: 'Hello' }, body }));
 });
-export default app; // mount anywhere: Bun.serve({ fetch: app.fetch }), @hono/node-server, Deno, workers
+export default app; // mount anywhere: @hono/node-server, Deno, workers
 ```
 
 ### Bind an existing node with $ref
@@ -181,6 +179,7 @@ userResource.isLoading(); // false; initialData counts as data
 Let each route component carry its own `<title>`/`<meta>` instead of assembling the head at the handler: [`ssr.head()`](/reference/ssr/ssr#head) creates the bag, the walk hoists the tree's head tags into it, and [`doc`](/reference/ssr/doc) emits them.
 
 ```jsx
+import { createServer } from 'node:http';
 import { ssr, doc } from '@hellajs/ssr';
 const Profile = (user: { name: string; tagline: string; id: string }) => (
   <div>
@@ -190,18 +189,13 @@ const Profile = (user: { name: string; tagline: string; id: string }) => (
     <h1>{user.name}</h1>
   </div>
 );
-Bun.serve({
-  port: 3000,
-  async fetch() {
-    const user = await fetch('/api/users/1').then(r => r.json());
-    const head = ssr.head();
-    const body = await ssr.async(Profile(user), { head });   // <title>/<meta>/<link> hoist out of the body
-    return new Response(
-      doc({ body, head, mount: '#app' }),
-      { headers: { 'content-type': 'text/html' } }
-    );
-  }
-});
+createServer(async (req, res) => {
+  const user = await fetch('/api/users/1').then(r => r.json());
+  const head = ssr.head();
+  const body = await ssr.async(Profile(user), { head });   // <title>/<meta>/<link> hoist out of the body
+  res.setHeader('content-type', 'text/html');
+  res.end(doc({ body, head, mount: '#app' }));
+}).listen(3000);
 ```
 
 With the [Routing](/learn/patterns/routing) SSR recipes, each route view owns its entries the same way. Under [`ssr.stream`](/reference/ssr/ssr#stream) the bag fills as the walk proceeds, but a streamed document emits its `<head>` up front; pass head entries to `doc` explicitly when streaming.
@@ -211,42 +205,38 @@ With the [Routing](/learn/patterns/routing) SSR recipes, each route view owns it
 Stream HTML to the client as it renders with [`ssr.stream`](/reference/ssr/ssr#stream): the static shell flushes before async values resolve.
 
 ```jsx
+import { createServer } from 'node:http';
+import { Readable } from 'node:stream';
 import { ssr } from '@hellajs/ssr';
 const user = (id: string) => fetch(`/api/users/${id}`).then(r => r.text());
 const page = (id: string) => <div><h1>Hello</h1><p>{() => user(id)}</p></div>;
-Bun.serve({
-  port: 3000,
-  fetch: (req) => {
-    const id = new URL(req.url).searchParams.get('id') ?? '1';
-    return new Response(
-      ssr.stream(page(id)).pipeThrough(new TextEncoderStream()),
-      { headers: { 'content-type': 'text/html' } }
-    );
-  }
-});
+createServer((req, res) => {
+  const id = new URL(req.url, `http://${req.headers.host}`).searchParams.get('id') ?? '1';
+  res.setHeader('content-type', 'text/html');
+  Readable.fromWeb(ssr.stream(page(id)).pipeThrough(new TextEncoderStream())).pipe(res);
+}).listen(3000);
 ```
 
 Wrap the stream in a full document with [`doc`](/reference/ssr/doc): the shell (head, `lang`, the `mount` wrapper) flushes first and the closing tags land only after the body closes, so nothing is collected:
 
 ```jsx
+import { createServer } from 'node:http';
+import { Readable } from 'node:stream';
 import { ssr, doc } from '@hellajs/ssr';
 const user = (id: string) => fetch(`/api/users/${id}`).then(r => r.text());
 const page = (id: string) => <div><h1>Hello</h1><p>{() => user(id)}</p></div>;
-Bun.serve({
-  port: 3000,
-  fetch: (req) => {
-    const id = new URL(req.url).searchParams.get('id') ?? '1';
-    return new Response(
-      doc({
-        lang: 'en',
-        mount: '#app',                              // the wrapper hydrate(node, '#app') targets
-        head: { scripts: [{ type: 'module', src: '/client.js' }] },
-        body: ssr.stream(page(id)),
-      }).pipeThrough(new TextEncoderStream()),
-      { headers: { 'content-type': 'text/html' } }
-    );
-  }
-});
+createServer((req, res) => {
+  const id = new URL(req.url, `http://${req.headers.host}`).searchParams.get('id') ?? '1';
+  res.setHeader('content-type', 'text/html');
+  Readable.fromWeb(
+    doc({
+      lang: 'en',
+      mount: '#app',                              // the wrapper hydrate(node, '#app') targets
+      head: { scripts: [{ type: 'module', src: '/client.js' }] },
+      body: ssr.stream(page(id)),
+    }).pipeThrough(new TextEncoderStream())
+  ).pipe(res);
+}).listen(3000);
 ```
 
 ### Out-of-order streaming with Suspense

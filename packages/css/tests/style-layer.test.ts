@@ -1,6 +1,6 @@
-import { describe, expect, test, beforeEach, afterEach } from "bun:test";
+import { describe, expect, test, beforeEach, afterEach } from "vite-plus/test";
 import { resetTestState, suppressConsole } from "@utils/test-helpers.js";
-import { style, removeStyle, cssText } from "@hellajs/css/bundle";
+import { style, removeStyle, cssText } from "@hellajs/css";
 
 let sup: ReturnType<typeof suppressConsole>;
 
@@ -22,7 +22,9 @@ describe("style layer", () => {
     const layered = style(obj, { layer: "hella" });
 
     expect(layered).toBe(bare);
-    expect(cssText()).toBe(`.${bare} {\n  color: red;\n}\n\n@layer hella {\n  .${bare} {\n    color: red;\n  }\n}`);
+    expect(cssText()).toBe(
+      `.${bare} {\n  color: red;\n}\n\n@layer hella {\n  .${bare} {\n    color: red;\n  }\n}`,
+    );
   });
 
   test("a label and layer bag reads as options, not an override", () => {
@@ -31,7 +33,9 @@ describe("style layer", () => {
     const layered = style(obj, { label: "btn", layer: "hella" });
 
     expect(layered).toBe(labeled);
-    expect(cssText()).toBe(`.${labeled} {\n  padding: 4px;\n}\n\n@layer hella {\n  .${labeled} {\n    padding: 4px;\n  }\n}`);
+    expect(cssText()).toBe(
+      `.${labeled} {\n  padding: 4px;\n}\n\n@layer hella {\n  .${labeled} {\n    padding: 4px;\n  }\n}`,
+    );
   });
 
   test("a positional label composes with a layer bag", () => {

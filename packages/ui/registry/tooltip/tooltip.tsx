@@ -1,7 +1,14 @@
 import { effect, signal } from "@hellajs/core";
 import { anchorPosition, hoverIntent, Portal } from "@hellajs/dom";
 import type { HellaChild, HellaChildren, Placement } from "@hellajs/dom";
-import type { AnchorSide, AnchorAlign, TooltipProviderProps, TooltipTriggerProps, TooltipContentProps, TooltipProps } from "./tooltip-types.js";
+import type {
+  AnchorSide,
+  AnchorAlign,
+  TooltipProviderProps,
+  TooltipTriggerProps,
+  TooltipContentProps,
+  TooltipProps,
+} from "./tooltip-types.js";
 
 // @hella:styles
 declare const content: string;
@@ -15,7 +22,11 @@ const placementOf = (side: AnchorSide, align: AnchorAlign): Placement =>
  * Divergence: delay config is the per-Tooltip `delayDuration` prop here, so
  * the provider carries children only.
  */
-export function TooltipProvider({ children, class: cls, ...attrs }: TooltipProviderProps): JSX.Element {
+export function TooltipProvider({
+  children,
+  class: cls,
+  ...attrs
+}: TooltipProviderProps): JSX.Element {
   return (
     <div
       data-slot="tooltip-provider"
@@ -32,7 +43,11 @@ export function TooltipProvider({ children, class: cls, ...attrs }: TooltipProvi
 }
 
 /** The manual trigger span; the composed Tooltip renders the same shape wired to hoverIntent. */
-export function TooltipTrigger({ children, class: cls, ...attrs }: TooltipTriggerProps): JSX.Element {
+export function TooltipTrigger({
+  children,
+  class: cls,
+  ...attrs
+}: TooltipTriggerProps): JSX.Element {
   return (
     <span
       data-slot="tooltip-trigger"
@@ -48,7 +63,17 @@ export function TooltipTrigger({ children, class: cls, ...attrs }: TooltipTrigge
   );
 }
 
-export function TooltipContent({ state, id, side: sideProp, align: alignProp, anchor, onExited, children, class: cls, ...attrs }: TooltipContentProps): JSX.Element {
+export function TooltipContent({
+  state,
+  id,
+  side: sideProp,
+  align: alignProp,
+  anchor,
+  onExited,
+  children,
+  class: cls,
+  ...attrs
+}: TooltipContentProps): JSX.Element {
   const side = sideProp ?? "top";
   const align = alignProp ?? "center";
   const stateOf = (): "open" | "closed" => state?.() ?? "open";
@@ -70,7 +95,8 @@ export function TooltipContent({ state, id, side: sideProp, align: alignProp, an
       hook:afterMount={(node) => {
         if (!(node instanceof HTMLElement)) return;
         const anchorEl = anchor?.();
-        if (anchorEl != null) wirings.push(anchorPosition(anchorEl, node, { placement: placementOf(side, align) }));
+        if (anchorEl != null)
+          wirings.push(anchorPosition(anchorEl, node, { placement: placementOf(side, align) }));
         // The exit's animationend (state already "closed") is the primary
         // unmount trigger; the entry's animationend is ignored.
         const onAnimationEnd = (): void => {
@@ -92,7 +118,15 @@ export function TooltipContent({ state, id, side: sideProp, align: alignProp, an
 
 let tooltipCount = 0;
 
-export function Tooltip({ content: contentSlot, delayDuration, side: sideProp, align: alignProp, children, class: cls, ...attrs }: TooltipProps): JSX.Element {
+export function Tooltip({
+  content: contentSlot,
+  delayDuration,
+  side: sideProp,
+  align: alignProp,
+  children,
+  class: cls,
+  ...attrs
+}: TooltipProps): JSX.Element {
   const contentId = `hella-tooltip-content-${++tooltipCount}`;
   const open = signal(false);
   // `visible` alone gates the render so an open→closed flip never unmounts
@@ -146,11 +180,13 @@ export function Tooltip({ content: contentSlot, delayDuration, side: sideProp, a
         triggerNode = node;
         // hoverIntent stays armed for the trigger's lifetime - reopen works
         // without a remount (the skip-delay window is the primitive's global).
-        disposals.push(hoverIntent(node, {
-          onOpen: () => open(true),
-          onClose: () => open(false),
-          openDelay: delayDuration ?? 700,
-        }));
+        disposals.push(
+          hoverIntent(node, {
+            onOpen: () => open(true),
+            onClose: () => open(false),
+            openDelay: delayDuration ?? 700,
+          }),
+        );
       }}
       hook:beforeDestroy={() => {
         while (disposals.length) disposals.pop()!();
@@ -158,19 +194,21 @@ export function Tooltip({ content: contentSlot, delayDuration, side: sideProp, a
       {...attrs}
     >
       {triggerChildren}
-      {() => visible() && (
-        <Portal to="body">
-          <TooltipContent
-            state={state}
-            id={contentId}
-            side={side}
-            align={align}
-            anchor={() => triggerNode}
-            onExited={finishExit}
-            children={contentSlot}
-          />
-        </Portal>
-      )}
+      {() =>
+        visible() && (
+          <Portal to="body">
+            <TooltipContent
+              state={state}
+              id={contentId}
+              side={side}
+              align={align}
+              anchor={() => triggerNode}
+              onExited={finishExit}
+              children={contentSlot}
+            />
+          </Portal>
+        )
+      }
     </span>
   );
 }

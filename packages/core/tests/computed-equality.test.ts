@@ -1,15 +1,17 @@
-import { describe, expect, test, mock } from "bun:test";
+import { describe, expect, test, vi } from "vite-plus/test";
 import { computed, effect, signal } from "@hellajs/core";
 
 describe("core", () => {
   describe("computed equality option", () => {
     test("equals returning true keeps the old reference and skips downstream effects", () => {
       const items = signal([1, 2, 3]);
-      const doubled = computed(() => items().map(x => x * 2), {
-        equals: (a, b) => a.length === b.length && a.every((v, i) => v === b[i])
+      const doubled = computed(() => items().map((x) => x * 2), {
+        equals: (a, b) => a.length === b.length && a.every((v, i) => v === b[i]),
       });
 
-      const runs = mock(() => { doubled(); });
+      const runs = vi.fn(() => {
+        doubled();
+      });
       effect(runs);
       expect(runs).toHaveBeenCalledTimes(1);
 
@@ -21,11 +23,13 @@ describe("core", () => {
 
     test("equals returning false propagates to subscribers", () => {
       const items = signal([1, 2, 3]);
-      const doubled = computed(() => items().map(x => x * 2), {
-        equals: (a, b) => a.length === b.length && a.every((v, i) => v === b[i])
+      const doubled = computed(() => items().map((x) => x * 2), {
+        equals: (a, b) => a.length === b.length && a.every((v, i) => v === b[i]),
       });
 
-      const runs = mock(() => { doubled(); });
+      const runs = vi.fn(() => {
+        doubled();
+      });
       effect(runs);
 
       items([4]); // Content-different: propagates
@@ -34,8 +38,9 @@ describe("core", () => {
     });
 
     test("non-function equals throws a validation error", () => {
-      expect(() => computed(() => 1, { equals: "nope" as unknown as (a: number, b: number) => boolean }))
-        .toThrow("[core] computed: equals must be a function, received string");
+      expect(() =>
+        computed(() => 1, { equals: "nope" as unknown as (a: number, b: number) => boolean }),
+      ).toThrow("[core] computed: equals must be a function, received string");
     });
   });
 });

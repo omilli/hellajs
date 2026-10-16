@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { resetTestState } from "@utils/test-helpers.js";
 import { rovingTabIndex } from "@hellajs/dom";
 import { setupButtons, pressKey } from "./helpers";
@@ -108,6 +108,8 @@ describe("rovingTabIndex", () => {
     pressKey(first, "ArrowRight");
     expect(document.activeElement).toBe(first);
 
-    expect(() => rovingTabIndex(null as never)).toThrow("[dom] rovingTabIndex: container is required");
+    expect(() => rovingTabIndex(null as never)).toThrow(
+      "[dom] rovingTabIndex: container is required",
+    );
   });
 });

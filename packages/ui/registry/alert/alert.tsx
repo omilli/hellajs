@@ -14,11 +14,7 @@ export function Alert({ variant, children, class: cls, ...attrs }: AlertProps): 
       role="alert"
       class={
         // @hella:compose
-        [
-          base,
-          variants[variant ?? "default"],
-          cls,
-        ]
+        [base, variants[variant ?? "default"], cls]
         // @hella:end
       }
       {...attrs}

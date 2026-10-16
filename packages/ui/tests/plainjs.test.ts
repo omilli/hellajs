@@ -1,8 +1,8 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach } from "vite-plus/test";
 import { cpSync, existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { resetTestState } from "@utils/test-helpers.js";
-import { addComponent, readConfig } from "@hellajs/ui/bundle";
+import { addComponent, readConfig } from "@hellajs/ui";
 import { Button as ButtonTsJsx } from "../dist/registry/button/css/button";
 import { transformSync } from "@babel/core";
 import babelHellaJS from "babel-plugin-hellajs";
@@ -12,8 +12,8 @@ import type { ButtonVariantProps, ComponentVariant } from "./helpers/variants";
 import { renderVariant } from "./helpers/variants";
 import { runCli } from "./helpers/cli";
 
-const fixtureApp = join(import.meta.dir, "fixtures", "empty-app");
-const scratch = join(import.meta.dir, ".tmp", "plainjs");
+const fixtureApp = join(import.meta.dirname, "fixtures", "empty-app");
+const scratch = join(import.meta.dirname, ".tmp", "plainjs");
 
 /** Fresh fixture copy under the scratch root; per-test names keep dynamic imports from colliding. */
 function fixture(name: string): string {
@@ -28,10 +28,7 @@ function componentsDir(root: string): string {
   return join(root, "src", "components");
 }
 
-const COMBOS: { style: UiStyle }[] = [
-  { style: "css" },
-  { style: "tailwind" },
-];
+const COMBOS: { style: UiStyle }[] = [{ style: "css" }, { style: "tailwind" }];
 
 /** The TS comparator for the parity test: the compiled css Button, wrapped as a harness variant. */
 const ButtonCssVariant: ComponentVariant<ButtonVariantProps> = {
@@ -76,7 +73,15 @@ describe("plain-js delivery", () => {
     addComponent(["card"], { dir: root, lang: "js" });
     const card = readFileSync(join(componentsDir(root), "card.jsx"), "utf8");
     expect(card).toContain("<div");
-    for (const part of ["Card", "CardHeader", "CardTitle", "CardDescription", "CardAction", "CardContent", "CardFooter"]) {
+    for (const part of [
+      "Card",
+      "CardHeader",
+      "CardTitle",
+      "CardDescription",
+      "CardAction",
+      "CardContent",
+      "CardFooter",
+    ]) {
       expect(card).toContain(`function ${part}({ children, class: cls, ...attrs })`);
     }
     expect(card).not.toMatch(/\binterface\b/);
@@ -112,17 +117,11 @@ describe("plain-js delivery", () => {
     })!.code!;
     const compiledPath = join(componentsDir(root), "button.compiled.js");
     writeFileSync(compiledPath, compiled);
-    const written = await import(compiledPath) as {
+    const written = (await import(compiledPath)) as {
       Button: ComponentVariant<ButtonVariantProps>["render"];
     };
-    const stripped = renderVariant(
-      { style: "css", render: written.Button },
-      { children: "Save" },
-    );
-    const tsVariant = renderVariant(
-      ButtonCssVariant,
-      { children: "Save" },
-    );
+    const stripped = renderVariant({ style: "css", render: written.Button }, { children: "Save" });
+    const tsVariant = renderVariant(ButtonCssVariant, { children: "Save" });
     expect(stripped.outerHTML).toBe(tsVariant.outerHTML);
   });
 
@@ -146,7 +145,12 @@ describe("plain-js delivery", () => {
 
   test("lang defaults to ts in readConfig", () => {
     const root = fixture("config-default");
-    expect(readConfig(root)).toEqual({ componentsDir: "src/components", style: "css", themeMode: "light", lang: "ts" });
+    expect(readConfig(root)).toEqual({
+      componentsDir: "src/components",
+      style: "css",
+      themeMode: "light",
+      lang: "ts",
+    });
   });
 
   test("hella.ui.json lang override reaches addComponent", () => {
@@ -160,13 +164,15 @@ describe("plain-js delivery", () => {
   test("invalid lang throws the readConfig contract", () => {
     const root = fixture("config-invalid");
     writeFileSync(join(root, "hella.ui.json"), JSON.stringify({ lang: "weird" }));
-    expect(() => readConfig(root))
-      .toThrow('[ui] readConfig: lang must be js or ts, received "weird"');
+    expect(() => readConfig(root)).toThrow(
+      '[ui] readConfig: lang must be js or ts, received "weird"',
+    );
   });
 
   test("invalid lang throws the addComponent contract", () => {
     const root = fixture("option-invalid");
-    expect(() => addComponent(["button"], { dir: root, lang: "weird" as UiLang }))
-      .toThrow('[ui] addComponent: lang must be js or ts, received "weird"');
+    expect(() => addComponent(["button"], { dir: root, lang: "weird" as UiLang })).toThrow(
+      '[ui] addComponent: lang must be js or ts, received "weird"',
+    );
   });
 });

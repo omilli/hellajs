@@ -1,9 +1,9 @@
-import { buildAndStage } from "./bench/build.js";
-import { runBench } from "./bench/driver.js";
-import { BENCH_OPS, getOpIds } from "./bench/ops.js";
-import { appendReport, getGitDescriptor, printReport, type BenchReport } from "./bench/report.js";
-import { startBenchServer } from "./bench/serve.js";
-import { logger } from "./utils/index.js";
+import { buildAndStage } from "./bench/build.ts";
+import { runBench } from "./bench/driver.ts";
+import { BENCH_OPS, getOpIds } from "./bench/ops.ts";
+import { appendReport, getGitDescriptor, printReport, type BenchReport } from "./bench/report.ts";
+import { startBenchServer } from "./bench/serve.ts";
+import { logger } from "./utils/index.ts";
 
 interface BenchArgs {
   runs: number;
@@ -56,13 +56,14 @@ function parseArgs(argv: string[]): BenchArgs {
       }
       args.label = value;
     } else if (key === "--ops") {
-      const requested = value.split(",").map((id) => id.trim()).filter(Boolean);
+      const requested = value
+        .split(",")
+        .map((id) => id.trim())
+        .filter(Boolean);
       const valid = new Set(getOpIds());
       for (const id of requested) {
         if (!valid.has(id)) {
-          throw new Error(
-            `unknown op "${id}" (valid ops: ${getOpIds().join(", ")})`,
-          );
+          throw new Error(`unknown op "${id}" (valid ops: ${getOpIds().join(", ")})`);
         }
       }
       if (requested.length === 0) {
@@ -87,7 +88,7 @@ async function main(): Promise<void> {
     logger.info("Building packages + example bundle…");
     await buildAndStage("jsx");
 
-    const { server, port } = startBenchServer();
+    const { server, port } = await startBenchServer();
     const url = `http://localhost:${port}/current/`;
     let result;
     try {
@@ -99,7 +100,7 @@ async function main(): Promise<void> {
         headless: !args.headed,
       });
     } finally {
-      server.stop(true);
+      server.close();
     }
 
     const report: BenchReport = {
@@ -118,7 +119,7 @@ async function main(): Promise<void> {
   }
 }
 
-if (import.meta.main) {
+if (process.argv[1] === import.meta.filename) {
   main().catch((error: Error) => {
     logger.error("Fatal error:", error);
     process.exit(1);

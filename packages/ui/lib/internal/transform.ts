@@ -18,10 +18,13 @@ const TYPES_SPECIFIER_REGEX = /^\.\/[\w-]+-types\.js$/;
 // line importing from the same source (duplicate names would double-declare).
 const TYPE_IMPORT_REGEX = /^import\s+type\s+\{([^}]*)\}\s+from\s+/;
 const REQUIRED_SECTIONS = ["styles", "compose"] as const;
-// Inline-candidate shape: a single-line `const NAME = "…";` declaration.
-// Anything else (template literal, concatenation, multi-line) fails the full-line
-// match and stays verbatim in the styles region.
+// Inline-candidate shape: a `const NAME = "…";` declaration on one line, or
+// printWidth-wrapped by oxfmt to `const NAME =` with the quoted literal on the
+// continuation line. Anything else (template literal, concatenation) fails the
+// full-line matches and stays verbatim in the styles region.
 const STRING_DECL_REGEX = /^const ([A-Za-z_$][\w$]*) = ("[^"]*");$/;
+const WRAPPED_STRING_DECL_REGEX = /^const ([A-Za-z_$][\w$]*) =$/;
+const WRAPPED_STRING_VALUE_REGEX = /^("[^"]*");$/;
 const OBJECT_DECL_REGEX = /^const ([A-Za-z_$][\w$]*) = \{$/;
 const COMMENT_LINE_REGEX = /^(\/\/|\/\*|\*)/;
 // Keyword-introduced local bindings of a candidate name: `const|let|var NAME`
@@ -56,7 +59,7 @@ interface MarkerSection {
  * A parsed source split into top-level lines and marker sections, preserving
  * the original order so a transform can rebuild the file around the sections.
  */
-type SourceBlock = { kind: "line"; text: string } | MarkerSection & { kind: "section" };
+type SourceBlock = { kind: "line"; text: string } | (MarkerSection & { kind: "section" });
 
 /**
  * Splits source text into ordered line and section blocks. Section openers
@@ -79,7 +82,9 @@ function parseBlocks(source: string): SourceBlock[] {
     const opener = SECTION_REGEX.exec(line);
     if (opener !== null) {
       if (current !== undefined) {
-        throw new Error(`[ui] applyStyleVariant: section "${current.name}" is still open when section "${opener[1]}" opens`);
+        throw new Error(
+          `[ui] applyStyleVariant: section "${current.name}" is still open when section "${opener[1]}" opens`,
+        );
       }
       current = { name: opener[1]!, body: [] };
       blocks.push({ kind: "section", name: opener[1]!, body: current.body });
@@ -99,7 +104,9 @@ function parseBlocks(source: string): SourceBlock[] {
     else current.body.push(line);
   }
   if (current !== undefined) {
-    throw new Error(`[ui] applyStyleVariant: section "${current.name}" is never closed with @hella:end`);
+    throw new Error(
+      `[ui] applyStyleVariant: section "${current.name}" is never closed with @hella:end`,
+    );
   }
   return blocks;
 }
@@ -116,18 +123,92 @@ function importSpecifier(line: string): string {
   let match: RegExpExecArray | null;
   while ((match = QUOTE_REGEX.exec(line)) !== null) spec = match[1];
   if (spec === undefined) {
-    throw new Error(`[ui] applyStyleVariant: style module import has no specifier: "${line.trim()}"`);
+    throw new Error(
+      `[ui] applyStyleVariant: style module import has no specifier: "${line.trim()}"`,
+    );
   }
   return spec;
 }
 
 /**
- * Extracts the named bindings of a single-line `import type { … }` statement.
- * @param line Type-import statement line.
+ * Start and end line indexes of every top-level import statement. A statement
+ * opens at an IMPORT_REGEX line and spans through the line where its bracket
+ * depth (braces, brackets, parens — quoted strings and `//` comments skipped)
+ * returns to zero, so a printWidth-wrapped import is one span instead of only
+ * its opener; adjacent statements keep separate spans.
+ * @param lines Source lines to scan.
+ * @returns Spans in order of appearance.
+ */
+function importSpans(lines: string[]): Array<{ start: number; end: number }> {
+  const spans: Array<{ start: number; end: number }> = [];
+  let i = 0;
+  const len = lines.length;
+  while (i < len) {
+    if (!IMPORT_REGEX.test(lines[i]!)) {
+      i++;
+      continue;
+    }
+    let depth = 0;
+    let quote: string | undefined;
+    let end = i;
+    while (end < len) {
+      const line = lines[end]!;
+      let c = 0;
+      const cLen = line.length;
+      while (c < cLen) {
+        const ch = line[c]!;
+        if (quote !== undefined) {
+          if (ch === "\\") c++;
+          else if (ch === quote) quote = undefined;
+        } else if (ch === '"' || ch === "'" || ch === "`") quote = ch;
+        else if (ch === "/" && line[c + 1] === "/") break;
+        else if (ch === "(" || ch === "[" || ch === "{") depth++;
+        else if (ch === ")" || ch === "]" || ch === "}") depth--;
+        c++;
+      }
+      end++;
+      if (depth <= 0) break;
+    }
+    spans.push({ start: i, end: end - 1 });
+    i = end;
+  }
+  return spans;
+}
+
+/**
+ * Marks which lines belong to top-level import statements, per importSpans.
+ * @param lines Source lines to classify.
+ * @returns True per line index when the line sits inside an import statement.
+ */
+function importLineFlags(lines: string[]): boolean[] {
+  const flags = new Array<boolean>(lines.length).fill(false);
+  const spans = importSpans(lines);
+  let s = 0;
+  const len = spans.length;
+  while (s < len) {
+    let l = spans[s]!.start;
+    const end = spans[s]!.end;
+    while (l <= end) {
+      flags[l] = true;
+      l++;
+    }
+    s++;
+  }
+  return flags;
+}
+
+/**
+ * Extracts the named bindings of an `import type { … }` statement's text.
+ * Callers fold printWidth-wrapped statements to a single line first, so the
+ * text is always one line here.
+ * @param line Type-import statement text.
  * @returns The declared names in source order.
  */
 function importTypeNames(line: string): string[] {
-  return (TYPE_IMPORT_REGEX.exec(line)![1]!).split(",").map((name) => name.trim()).filter((name) => name !== "");
+  return TYPE_IMPORT_REGEX.exec(line)![1]!
+    .split(",")
+    .map((name) => name.trim())
+    .filter((name) => name !== "");
 }
 
 /**
@@ -146,27 +227,42 @@ function importTypeNames(line: string): string[] {
  */
 function parseStyleModule(text: string): string[] {
   const lines = text.split("\n");
+  const spans = importSpans(lines);
   const body: string[] = [];
   let i = 0;
+  let s = 0;
   const len = lines.length;
   while (i < len) {
-    const line = lines[i++]!;
-    if (IMPORT_REGEX.test(line)) {
-      const spec = importSpecifier(line);
-      if (spec === "../theme/tokens.js") {
-        body.push(line.replace(`"${spec}"`, '"./tokens.js"'));
-        continue;
+    const span = s < spans.length && spans[s]!.start === i ? spans[s] : undefined;
+    if (span === undefined) {
+      const line = lines[i]!;
+      if (EXPORT_DEFAULT_REGEX.test(line)) {
+        throw new Error(`[ui] applyStyleVariant: style module cannot use "${line.trim()}"`);
       }
-      if (spec.startsWith(".") || spec.startsWith("/")) {
-        throw new Error(`[ui] applyStyleVariant: style module imports must use package specifiers, got "${spec}"`);
-      }
-      body.push(line);
+      body.push(line.startsWith(EXPORT_PREFIX) ? line.slice(EXPORT_PREFIX.length) : line);
+      i++;
       continue;
     }
-    if (EXPORT_DEFAULT_REGEX.test(line)) {
-      throw new Error(`[ui] applyStyleVariant: style module cannot use "${line.trim()}"`);
+    const spec = importSpecifier(lines.slice(span.start, span.end + 1).join(" "));
+    s++;
+    if (spec === "../theme/tokens.js") {
+      let l = span.start;
+      while (l <= span.end) {
+        body.push(lines[l]!.replace(`"${spec}"`, '"./tokens.js"'));
+        l++;
+      }
+    } else if (spec.startsWith(".") || spec.startsWith("/")) {
+      throw new Error(
+        `[ui] applyStyleVariant: style module imports must use package specifiers, got "${spec}"`,
+      );
+    } else {
+      let l = span.start;
+      while (l <= span.end) {
+        body.push(lines[l]!);
+        l++;
+      }
     }
-    body.push(line.startsWith(EXPORT_PREFIX) ? line.slice(EXPORT_PREFIX.length) : line);
+    i = span.end + 1;
   }
   let start = 0;
   let end = body.length;
@@ -181,16 +277,18 @@ function parseStyleModule(text: string): string[] {
  * name and quoted literal for the tailwind inline transpose; object and other
  * blocks splice into the styles region verbatim.
  */
-type DeclBlock = { lines: string[]; kind: "other" }
+type DeclBlock =
+  | { lines: string[]; kind: "other" }
   | { lines: string[]; kind: "string"; name: string; literal: string }
   | { lines: string[]; kind: "object" };
 
 /**
  * Splits a style module body into classified blocks: a block is a declaration
  * plus its contiguous preceding comment lines. A string declaration (`const
- * NAME = "…";`, single line) becomes an inline candidate; an object
- * declaration (`const NAME = {` through the trimmed `};` line) and any other
- * line (package import, blank) are kept for the styles region.
+ * NAME = "…";` on one line, or printWidth-wrapped to `const NAME =` with the
+ * quoted literal on the continuation line) becomes an inline candidate; an
+ * object declaration (`const NAME = {` through the trimmed `};` line) and any
+ * other line (package import, blank) are kept for the styles region.
  * @param body Style module body lines, export prefixes already stripped.
  * @returns Blocks in order of appearance.
  */
@@ -212,7 +310,12 @@ function classifyDecls(body: string[]): DeclBlock[] {
     }
     const stringDecl = STRING_DECL_REGEX.exec(line);
     if (stringDecl !== null) {
-      blocks.push({ lines: [...comments, line], kind: "string", name: stringDecl[1]!, literal: stringDecl[2]! });
+      blocks.push({
+        lines: [...comments, line],
+        kind: "string",
+        name: stringDecl[1]!,
+        literal: stringDecl[2]!,
+      });
     } else if (OBJECT_DECL_REGEX.test(line)) {
       const lines = [...comments, line];
       while (i < len) {
@@ -222,7 +325,20 @@ function classifyDecls(body: string[]): DeclBlock[] {
       }
       blocks.push({ lines, kind: "object" });
     } else {
-      blocks.push({ lines: [...comments, line], kind: "other" });
+      const wrappedHead = WRAPPED_STRING_DECL_REGEX.exec(line);
+      const valueLine =
+        wrappedHead !== null && i < len ? WRAPPED_STRING_VALUE_REGEX.exec(body[i]!.trim()) : null;
+      if (wrappedHead !== null && valueLine !== null) {
+        const value = body[i++]!;
+        blocks.push({
+          lines: [...comments, line, value],
+          kind: "string",
+          name: wrappedHead[1]!,
+          literal: valueLine[1]!,
+        });
+      } else {
+        blocks.push({ lines: [...comments, line], kind: "other" });
+      }
     }
     comments = [];
   }
@@ -236,7 +352,10 @@ function classifyDecls(body: string[]): DeclBlock[] {
  * interpolation (empty stack) pops the interpolation itself; string and
  * template frames consume their content opaquely.
  */
-type MaskFrame = { kind: "code"; brackets: string[] } | { kind: "string"; quote: string } | { kind: "template" };
+type MaskFrame =
+  | { kind: "code"; brackets: string[] }
+  | { kind: "string"; quote: string }
+  | { kind: "template" };
 
 /**
  * Marks which character offsets of a canonical's outside text are executable
@@ -311,7 +430,7 @@ function codeMask(text: string): { mask: boolean[]; contexts: string[] } {
       }
       continue;
     }
-    if (ch === "'" || ch === "\"") {
+    if (ch === "'" || ch === '"') {
       mask[i] = false;
       stack.push({ kind: "string", quote: ch });
       i++;
@@ -371,13 +490,19 @@ function matchKind(line: string, start: number, end: number, ctx: string): NameP
   const lineLen = line.length;
   while (q < lineLen && /\s/.test(line[q]!)) q++;
   const next = q < lineLen ? line[q]! : "";
-  if (ctx === "(" && (prev === "(" || prev === ",") && (next === ")" || next === "," || next === ":" || next === "=")) {
+  if (
+    ctx === "(" &&
+    (prev === "(" || prev === ",") &&
+    (next === ")" || next === "," || next === ":" || next === "=")
+  ) {
     const isCall = prev === "(" && (p === 0 ? false : CALL_CONTEXT_REGEX.test(line[p - 1]!));
     if (!isCall) return "binding";
   }
-  if ((next === "?" || next === ":") && (p === -1 || prev === "{" || prev === "," || prev === ";")) return "noise";
+  if ((next === "?" || next === ":") && (p === -1 || prev === "{" || prev === "," || prev === ";"))
+    return "noise";
   if (next === "=" && line[q + 1] !== "=" && line[q + 1] !== ">") return "noise";
-  if ((p === -1 || REF_PRECEDERS.includes(prev)) && (q >= lineLen || REF_FOLLOWERS.includes(next))) return "ref";
+  if ((p === -1 || REF_PRECEDERS.includes(prev)) && (q >= lineLen || REF_FOLLOWERS.includes(next)))
+    return "ref";
   return "noise";
 }
 
@@ -395,8 +520,17 @@ function matchKind(line: string, start: number, end: number, ctx: string): NameP
  * @param skipLast Last line index to exclude (inclusive), or -1.
  * @returns True when a local binding of the name exists outside marker regions.
  */
-function bindsLocal(name: string, lines: string[], offsets: number[], mask: boolean[], contexts: string[], skipFirst: number, skipLast: number): boolean {
+function bindsLocal(
+  name: string,
+  lines: string[],
+  offsets: number[],
+  mask: boolean[],
+  contexts: string[],
+  skipFirst: number,
+  skipLast: number,
+): boolean {
   const ref = new RegExp(`(?<![\\w$."'-])${name}(?![\\w$-])`, "g");
+  const importFlags = importLineFlags(lines);
   let i = 0;
   const len = lines.length;
   while (i < len) {
@@ -404,12 +538,13 @@ function bindsLocal(name: string, lines: string[], offsets: number[], mask: bool
     const at = offsets[i]!;
     const excluded = i >= skipFirst && i <= skipLast;
     i++;
-    if (excluded || COMMENT_LINE_REGEX.test(line.trim()) || IMPORT_REGEX.test(line)) continue;
+    if (excluded || COMMENT_LINE_REGEX.test(line.trim()) || importFlags[i - 1]!) continue;
     let match: RegExpExecArray | null;
     while ((match = ref.exec(line)) !== null) {
       const pos = at + match.index;
       if (!mask[pos]) continue;
-      if (matchKind(line, match.index, match.index + name.length, contexts[pos]!) === "binding") return true;
+      if (matchKind(line, match.index, match.index + name.length, contexts[pos]!) === "binding")
+        return true;
     }
   }
   return false;
@@ -445,21 +580,27 @@ function lineOffsets(lines: string[]): number[] {
  */
 function substituteLiterals(lines: string[], literals: Map<string, string>): string[] {
   if (literals.size === 0) return lines;
+  const importFlags = importLineFlags(lines);
   const alts = Array.from(literals.keys()).join("|");
   const collapse = new RegExp(`class=(?:\\{(${alts})\\}|"\\$\\{(${alts})\\}")`, "g");
-  const collapsed = lines.map((line) => {
-    if (line === "" || COMMENT_LINE_REGEX.test(line.trim()) || IMPORT_REGEX.test(line)) return line;
-    return line.replace(collapse, (attr, braces, quoted) => `class=${literals.get(braces ?? quoted)!}`);
+  const collapsed = lines.map((line, i) => {
+    if (line === "" || importFlags[i]!) return line;
+    return line.replace(
+      collapse,
+      (attr, braces, quoted) => `class=${literals.get(braces ?? quoted)!}`,
+    );
   });
   const { mask, contexts } = codeMask(collapsed.join("\n"));
   const offsets = lineOffsets(collapsed);
   const ref = new RegExp(`(?<![\\w$."'-])(${alts})(?![\\w$-])`, "g");
   return collapsed.map((line, i) => {
-    if (line === "" || COMMENT_LINE_REGEX.test(line.trim()) || IMPORT_REGEX.test(line)) return line;
+    if (line === "" || importFlags[i]!) return line;
     const at = offsets[i]!;
     return line.replace(ref, (name: string, matched: string, index: number): string => {
       const pos = at + index;
-      return mask[pos] && matchKind(line, index, index + name.length, contexts[pos]!) === "ref" ? literals.get(name)! : name;
+      return mask[pos] && matchKind(line, index, index + name.length, contexts[pos]!) === "ref"
+        ? literals.get(name)!
+        : name;
     });
   });
 }
@@ -499,7 +640,10 @@ function inlineStringDecls(
   const bLen = moduleBlocks.length;
   while (i < bLen) {
     const block = moduleBlocks[i++]!;
-    if (block.kind === "string" && !bindsLocal(block.name, outsideLines, offsets, mask, contexts, -1, -1)) {
+    if (
+      block.kind === "string" &&
+      !bindsLocal(block.name, outsideLines, offsets, mask, contexts, -1, -1)
+    ) {
       literals.set(block.name, block.literal);
       continue;
     }
@@ -516,7 +660,10 @@ function inlineStringDecls(
     const first = at;
     const last = at + block.lines.length - 1;
     at = last + 1;
-    if (block.kind === "string" && !bindsLocal(block.name, outsideLines, offsets, mask, contexts, first, last)) {
+    if (
+      block.kind === "string" &&
+      !bindsLocal(block.name, outsideLines, offsets, mask, contexts, first, last)
+    ) {
       literals.set(block.name, block.literal);
       let l = first;
       while (l <= last) dropped[l++] = true;
@@ -578,13 +725,17 @@ function wrapComposeWithCn(body: string[]): string[] {
   }
   const open = wrapped[first]!.indexOf("[");
   if (open === -1) {
-    throw new Error("[ui] applyStyleVariant: compose region must be a plain class array (no \"[\" found)");
+    throw new Error(
+      '[ui] applyStyleVariant: compose region must be a plain class array (no "[" found)',
+    );
   }
   const head = wrapped[first]!;
   wrapped[first] = `${head.slice(0, open)}cn(${head.slice(open + 1)}`;
   const close = wrapped[last]!.lastIndexOf("]");
   if (close === -1) {
-    throw new Error("[ui] applyStyleVariant: compose region must be a plain class array (no \"]\" found)");
+    throw new Error(
+      '[ui] applyStyleVariant: compose region must be a plain class array (no "]" found)',
+    );
   }
   const tail = wrapped[last]!;
   wrapped[last] = `${tail.slice(0, close)})${tail.slice(close + 1)}`;
@@ -649,7 +800,14 @@ export function applyStyleVariant(source: string, styleModuleText: string, style
     }
     const offsets = lineOffsets(outside);
     const { mask, contexts } = codeMask(outside.join("\n"));
-    const inlined = inlineStringDecls(classifyDecls(moduleBody), classifyDecls(outside), outside, offsets, mask, contexts);
+    const inlined = inlineStringDecls(
+      classifyDecls(moduleBody),
+      classifyDecls(outside),
+      outside,
+      offsets,
+      mask,
+      contexts,
+    );
     stylesBody = inlined.styles;
     literals = inlined.literals;
     rewritten = inlined.outside;
@@ -671,73 +829,139 @@ export function applyStyleVariant(source: string, styleModuleText: string, style
       while (s < moduleLen) out.push(stylesBody[s++]!);
       continue;
     }
-    const compose = style === "css" ? block.body : inlineComposeMembers(wrapComposeWithCn(block.body), literals);
+    const compose =
+      style === "css" ? block.body : inlineComposeMembers(wrapComposeWithCn(block.body), literals);
     let c = 0;
     const composeLen = compose.length;
     while (c < composeLen) out.push(compose[c++]!);
   }
   if (style === "tailwind") {
-    let lastImport = -1;
-    let k = out.length - 1;
-    while (k >= 0 && lastImport === -1) {
-      if (IMPORT_REGEX.test(out[k]!)) lastImport = k;
-      k--;
-    }
-    out.splice(lastImport + 1, 0, CN_IMPORT);
+    const spans = importSpans(out);
+    const last = spans.length > 0 ? spans[spans.length - 1]!.end : -1;
+    out.splice(last + 1, 0, CN_IMPORT);
   }
   const text = out.join("\n");
   return style === "tailwind" ? text.replace(/\n{3,}/g, "\n\n") : text;
 }
 
 /**
+ * Locates the canonical's `./<name>-types.js` import statement: the single
+ * top-level import whose specifier matches TYPES_SPECIFIER_REGEX, scanned
+ * statement-wise so a printWidth-wrapped import is found whole.
+ * @param lines Canonical lines to scan.
+ * @returns The first matching statement's start and end line indexes (the -1
+ * pair when absent) and the total match count.
+ */
+function typesImportRun(lines: string[]): { start: number; end: number; count: number } {
+  const spans = importSpans(lines);
+  let start = -1;
+  let end = -1;
+  let count = 0;
+  let s = 0;
+  const len = spans.length;
+  while (s < len) {
+    const span = spans[s]!;
+    if (
+      TYPES_SPECIFIER_REGEX.test(importSpecifier(lines.slice(span.start, span.end + 1).join(" ")))
+    ) {
+      if (count === 0) {
+        start = span.start;
+        end = span.end;
+      }
+      count++;
+    }
+    s++;
+  }
+  return { start, end, count };
+}
+
+/**
  * Inlines a canonical's shared types module at its import site: the single
- * top-level `import … from "./<name>-types.js";` line is replaced with the
- * module's normalized body (package imports ride along verbatim, `export `
+ * top-level `import … from "./<name>-types.js";` statement is replaced with
+ * the module's normalized body (package imports ride along verbatim, `export `
  * prefixes strip, blank edges trim), so the copied output stays one
  * standalone file with the shared interfaces declared at the
  * import site. A module `import type` whose source the canonical already
- * type-imports folds into that existing line instead of riding along — the
- * names dedupe (canonical order first), since a second import of the same
- * name from the same source would double-declare it in the output.
+ * type-imports folds into that existing statement instead of riding along —
+ * the names dedupe (canonical order first), since a second import of the same
+ * name from the same source would double-declare it in the output; folding
+ * replaces a printWidth-wrapped target statement with the merged single-line
+ * import. Statement-aware throughout: wrapped imports match and rewrite as
+ * whole statements, never line fragments.
  * Deterministic — the same inputs always produce the same text.
  * @param source Canonical file text carrying the types-module import.
  * @param typesModuleText Shared types module text spliced at the import line.
- * @returns The source with the import line replaced by the inlined body.
+ * @returns The source with the import statement replaced by the inlined body.
  * @throws {Error} When the source carries no types-module import or more than
  * one, or the types module is not spliceable through `parseStyleModule`
  * (relative/absolute specifiers, `export default` / `export { … }`).
  */
 export function inlineTypes(source: string, typesModuleText: string): string {
   const lines = source.split("\n");
-  let at = -1;
-  let count = 0;
-  let i = 0;
-  const len = lines.length;
-  while (i < len) {
-    const line = lines[i++]!;
-    if (!IMPORT_REGEX.test(line) || !TYPES_SPECIFIER_REGEX.test(importSpecifier(line))) continue;
-    at = i - 1;
-    count++;
+  const found = typesImportRun(lines);
+  if (found.count === 0) {
+    throw new Error('[ui] inlineTypes: canonical imports no "./*-types.js" module');
   }
-  if (count === 0) {
-    throw new Error("[ui] inlineTypes: canonical imports no \"./*-types.js\" module");
-  }
-  if (count > 1) {
+  if (found.count > 1) {
     throw new Error("[ui] inlineTypes: duplicate types module import");
   }
-  const moduleBody = parseStyleModule(typesModuleText).flatMap((line) => {
-    const typeImport = TYPE_IMPORT_REGEX.exec(line);
-    if (typeImport === null) return [line];
-    const spec = importSpecifier(line);
-    const target = lines.findIndex((candidate, index) => index !== at && candidate.startsWith("import type") && importSpecifier(candidate) === spec);
-    if (target === -1) return [line];
-    const names = new Set(importTypeNames(lines[target]!));
-    const additions = importTypeNames(line);
-    let n = 0;
-    while (n < additions.length) names.add(additions[n++]!);
-    lines[target] = `import type { ${[...names].join(", ")} } from "${spec}";`;
-    return [];
-  });
-  lines[at] = moduleBody.join("\n");
+  const spans = importSpans(lines);
+  const runs = spans.filter((span) => !(span.start === found.start && span.end === found.end));
+  const moduleBody = parseStyleModule(typesModuleText);
+  const moduleSpans = importSpans(moduleBody);
+  const rewrites: Array<{ start: number; end: number; line: string }> = [];
+  const body: string[] = [];
+  let m = 0;
+  let ms = 0;
+  const mLen = moduleBody.length;
+  while (m < mLen) {
+    const span =
+      ms < moduleSpans.length && moduleSpans[ms]!.start === m ? moduleSpans[ms] : undefined;
+    if (span === undefined) {
+      body.push(moduleBody[m]!);
+      m++;
+      continue;
+    }
+    ms++;
+    const folded = moduleBody.slice(span.start, span.end + 1).join(" ");
+    const spec = TYPE_IMPORT_REGEX.exec(folded) === null ? undefined : importSpecifier(folded);
+    const target =
+      spec === undefined
+        ? undefined
+        : runs.find(
+            (run) =>
+              lines
+                .slice(run.start, run.end + 1)
+                .join(" ")
+                .startsWith("import type") &&
+              importSpecifier(lines.slice(run.start, run.end + 1).join(" ")) === spec,
+          );
+    if (spec === undefined || target === undefined) {
+      let l = span.start;
+      while (l <= span.end) {
+        body.push(moduleBody[l]!);
+        l++;
+      }
+    } else {
+      const names = new Set(importTypeNames(lines.slice(target.start, target.end + 1).join(" ")));
+      const additions = importTypeNames(folded);
+      let n = 0;
+      while (n < additions.length) names.add(additions[n++]!);
+      rewrites.push({
+        start: target.start,
+        end: target.end,
+        line: `import type { ${[...names].join(", ")} } from "${spec}";`,
+      });
+    }
+    m = span.end + 1;
+  }
+  let w = rewrites.length;
+  while (w > 0) {
+    w--;
+    const rewrite = rewrites[w]!;
+    lines.splice(rewrite.start, rewrite.end - rewrite.start + 1, rewrite.line);
+  }
+  const at = typesImportRun(lines);
+  lines.splice(at.start, at.end - at.start + 1, ...body);
   return lines.join("\n");
 }

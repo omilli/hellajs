@@ -12,12 +12,7 @@ export function Textarea({ class: cls, ...attrs }: TextareaProps): JSX.Element {
       data-slot="textarea"
       class={
         // @hella:compose
-        [
-          base,
-          focus,
-          invalid,
-          cls,
-        ]
+        [base, focus, invalid, cls]
         // @hella:end
       }
       {...attrs}

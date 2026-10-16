@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { resource, resourceCache } from "@hellajs/resource/bundle";
+import { resource, resourceCache } from "@hellajs/resource";
 
 describe("resource", () => {
   describe("cache isolation", () => {
@@ -27,7 +27,9 @@ describe("resource", () => {
     });
 
     test("same fetcher with same key shares cache", async () => {
-      const sharedFetcher = mock((key: string) => delay({ key, count: sharedFetcher.mock.calls.length }, 5));
+      const sharedFetcher = vi.fn((key: string) =>
+        delay({ key, count: sharedFetcher.mock.calls.length }, 5),
+      );
 
       const r1 = resource(sharedFetcher, { key: () => "shared", cacheTime: 60000 });
       const r2 = resource(sharedFetcher, { key: () => "shared", cacheTime: 60000 });
@@ -147,7 +149,7 @@ describe("resource", () => {
       expect(resourceCache.map.size).toBe(2);
 
       // rA's entry was evicted, so it needs a fresh fetch
-      const aFetcher = mock((key: string) => delay(`a-${key}-fresh`, 5));
+      const aFetcher = vi.fn((key: string) => delay(`a-${key}-fresh`, 5));
       const rA2 = resource(aFetcher, { key: () => "1", cacheTime: 60000 });
 
       rA2.fetch();

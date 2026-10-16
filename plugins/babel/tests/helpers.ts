@@ -4,7 +4,7 @@ import babelHellaJS from "../index.mjs";
 export function transformJSX(code: string): string {
   const result = babel.transformSync(code, {
     plugins: [[babelHellaJS]],
-    configFile: false
+    configFile: false,
   });
   return result?.code || "";
 }
@@ -19,7 +19,7 @@ export function getNamedImports(code: string, source: string): string[] {
   const importRegex = new RegExp(`import\\s*{([^}]+)}\\s*from\\s*['"]${source}['"]`, "g");
   const match = importRegex.exec(output);
   if (match) {
-    const names = match[1]!.split(",").map(s => s.trim());
+    const names = match[1]!.split(",").map((s) => s.trim());
     imports.push(...names);
   }
   return imports;

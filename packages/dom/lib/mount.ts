@@ -19,7 +19,7 @@ setMountNode((node: HellaNode) => mountNode(node) as Node);
  */
 export function mount(
   node: HellaNode | (() => HellaNode) | (() => Promise<HellaNode | (() => HellaNode)>),
-  target: string | Element | ShadowRoot = "#app"
+  target: string | Element | ShadowRoot = "#app",
 ): MountHandle {
   const container = isString(target) ? document.querySelector(target) : target;
   if (!container) throw new Error(`[dom] mount: target "${target}" not found in document`);

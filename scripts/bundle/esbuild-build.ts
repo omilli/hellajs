@@ -1,15 +1,13 @@
 import fsStat from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import {
-  ensureDir,
-  scanDirRecursive,
-  logger,
-  execCommand,
-} from "../utils/index.js";
-import { VARIANTS } from "./config.js";
-import { applyTerser, fixMinifiedImports } from "./optimize.js";
-import { calculateFileMetrics } from "./metrics.js";
+import { ensureDir, scanDirRecursive, logger, execCommand, projectRoot } from "../utils/index.ts";
+import { VARIANTS } from "./config.ts";
+import { applyTerser, fixMinifiedImports } from "./optimize.ts";
+import { calculateFileMetrics } from "./metrics.ts";
+
+/** The esbuild binary from the local npm tree (PM-agnostic spawn target). */
+const esbuildBin = path.join(projectRoot, "node_modules/.bin/esbuild");
 
 /**
  * Build a JavaScript bundle with esbuild.
@@ -27,7 +25,6 @@ export async function buildWithEsbuild(
   cwd: string,
 ): Promise<void> {
   const buildArgs = [
-    "esbuild",
     inputPath,
     "--bundle",
     `--outfile=${outputPath}`,
@@ -43,7 +40,7 @@ export async function buildWithEsbuild(
     buildArgs.push("--minify", "--sourcemap");
   }
 
-  await execCommand("bunx", buildArgs, { cwd });
+  await execCommand(esbuildBin, buildArgs, { cwd });
 }
 
 async function getAllSourceModules(packageDir: string): Promise<string[]> {
@@ -70,9 +67,7 @@ function externalFlags(packageInfo: {
   const dependencies = Object.keys(
     (packageInfo.packageJson.dependencies as Record<string, string>) || {},
   );
-  return [...packageInfo.peerDeps, ...dependencies].map(
-    (dep) => `--external:${dep}`,
-  );
+  return [...packageInfo.peerDeps, ...dependencies].map((dep) => `--external:${dep}`);
 }
 
 /**
@@ -98,44 +93,28 @@ export async function buildBundle(
 ): Promise<Record<string, unknown>> {
   const { dir, distDir } = packageInfo;
   const externals = externalFlags(packageInfo);
-  const variants: (typeof VARIANTS)[number][] =
-    bundleMode === "size" ? [VARIANTS[1]!] : VARIANTS;
+  const variants: (typeof VARIANTS)[number][] = bundleMode === "size" ? [VARIANTS[1]!] : VARIANTS;
   const bundleMetrics: Record<string, unknown> = {};
 
   for (const variant of variants) {
     const bundlePath = path.join(distDir, `bundle${variant.suffix}.js`);
     const isMinified = variant.suffix === ".min";
 
-    await buildWithEsbuild(
-      path.join(dir, "lib/index.ts"),
-      bundlePath,
-      externals,
-      isMinified,
-      cwd,
-    );
+    await buildWithEsbuild(path.join(dir, "lib/index.ts"), bundlePath, externals, isMinified, cwd);
 
     if (fsStat.existsSync(bundlePath)) {
       let content = await fs.readFile(bundlePath, "utf8");
 
       if (isMinified) {
-        content = content.replace(
-          /from\s+["']([^"']*\.js)["']/g,
-          (match, importPath: string) => {
-            if (importPath.endsWith(".min.js")) return match;
-            return match.replace(
-              importPath,
-              importPath.replace(".js", ".min.js"),
-            );
-          },
-        );
+        content = content.replace(/from\s+["']([^"']*\.js)["']/g, (match, importPath: string) => {
+          if (importPath.endsWith(".min.js")) return match;
+          return match.replace(importPath, importPath.replace(".js", ".min.js"));
+        });
         content = content.replace(
           /import\s*\(\s*["']([^"']*\.js)["']\s*\)/g,
           (match, importPath: string) => {
             if (importPath.endsWith(".min.js")) return match;
-            return match.replace(
-              importPath,
-              importPath.replace(".js", ".min.js"),
-            );
+            return match.replace(importPath, importPath.replace(".js", ".min.js"));
           },
         );
       }
@@ -196,22 +175,17 @@ export async function buildIndividualModules(
     const moduleName = relativePath.replace(/\.ts$/, "").replace(/\\/g, "/");
     const moduleDir = path.dirname(relativePath);
     const baseName = path.basename(relativePath, ".ts");
-    const outputDir =
-      moduleDir === "." ? distDir : path.join(distDir, moduleDir);
+    const outputDir = moduleDir === "." ? distDir : path.join(distDir, moduleDir);
 
     await ensureDir(outputDir);
 
     const moduleMetrics: Record<string, unknown> = {};
 
     for (const variant of VARIANTS) {
-      const outputPath = path.join(
-        outputDir,
-        `${baseName}${variant.suffix}.js`,
-      );
+      const outputPath = path.join(outputDir, `${baseName}${variant.suffix}.js`);
       const isMinified = variant.suffix === ".min";
 
       const buildArgs = [
-        "esbuild",
         modulePath,
         `--outfile=${outputPath}`,
         "--format=esm",
@@ -223,7 +197,7 @@ export async function buildIndividualModules(
         buildArgs.push("--minify", "--sourcemap");
       }
 
-      await execCommand("bunx", buildArgs, { cwd });
+      await execCommand(esbuildBin, buildArgs, { cwd });
 
       if (fsStat.existsSync(outputPath)) {
         let content = await fs.readFile(outputPath, "utf8");
@@ -231,8 +205,7 @@ export async function buildIndividualModules(
         content = content.replace(
           /from\s+["'](\.\.?\/[^"']+)["']/g,
           (match, importPath: string) => {
-            if (importPath.endsWith(".js") || importPath.endsWith(".json"))
-              return match;
+            if (importPath.endsWith(".js") || importPath.endsWith(".json")) return match;
 
             const sourceDir = path.dirname(modulePath);
             const sourcePath = path.resolve(sourceDir, importPath);
@@ -248,8 +221,7 @@ export async function buildIndividualModules(
         content = content.replace(
           /import\s*\(\s*["'](\.\.?\/[^"']+)["']\s*\)/g,
           (match, importPath: string) => {
-            if (importPath.endsWith(".js") || importPath.endsWith(".json"))
-              return match;
+            if (importPath.endsWith(".js") || importPath.endsWith(".json")) return match;
 
             const sourceDir = path.dirname(modulePath);
             const sourcePath = path.resolve(sourceDir, importPath);
@@ -263,24 +235,15 @@ export async function buildIndividualModules(
         );
 
         if (isMinified) {
-          content = content.replace(
-            /from\s+["']([^"']*\.js)["']/g,
-            (match, importPath: string) => {
-              if (importPath.endsWith(".min.js")) return match;
-              return match.replace(
-                importPath,
-                importPath.replace(".js", ".min.js"),
-              );
-            },
-          );
+          content = content.replace(/from\s+["']([^"']*\.js)["']/g, (match, importPath: string) => {
+            if (importPath.endsWith(".min.js")) return match;
+            return match.replace(importPath, importPath.replace(".js", ".min.js"));
+          });
           content = content.replace(
             /import\s*\(\s*["']([^"']*\.js)["']\s*\)/g,
             (match, importPath: string) => {
               if (importPath.endsWith(".min.js")) return match;
-              return match.replace(
-                importPath,
-                importPath.replace(".js", ".min.js"),
-              );
+              return match.replace(importPath, importPath.replace(".js", ".min.js"));
             },
           );
         }
@@ -300,13 +263,11 @@ export async function buildIndividualModules(
       }
 
       if (fsStat.existsSync(outputPath)) {
-        moduleMetrics[variant.suffix || "regular"] =
-          await calculateFileMetrics(outputPath);
+        moduleMetrics[variant.suffix || "regular"] = await calculateFileMetrics(outputPath);
       }
     }
 
-    (bundleMetrics.modules as Record<string, unknown>)[moduleName] =
-      moduleMetrics;
+    (bundleMetrics.modules as Record<string, unknown>)[moduleName] = moduleMetrics;
   }
 
   return bundleMetrics;

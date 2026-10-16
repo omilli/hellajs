@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState } from "@utils/test-helpers.js";
 import { mount, hydrate } from "@hellajs/dom";
@@ -11,7 +11,12 @@ beforeEach(() => {
 describe("dom", () => {
   describe("fragment roots", () => {
     test("unmount removes every root of a multi-root mount", () => {
-      const app = mount(<><span>a</span><span>b</span></>);
+      const app = mount(
+        <>
+          <span>a</span>
+          <span>b</span>
+        </>,
+      );
       expect(app.container.childNodes.length).toBe(2);
 
       app.unmount();
@@ -21,8 +26,13 @@ describe("dom", () => {
 
     test("unmount of a multi-root mount disposes effects inside the roots", () => {
       const count = signal(0);
-      const tracker = mock(() => count());
-      const app = mount(<><span id="fx">{tracker}</span><span>b</span></>);
+      const tracker = vi.fn(() => count());
+      const app = mount(
+        <>
+          <span id="fx">{tracker}</span>
+          <span>b</span>
+        </>,
+      );
       expect(tracker).toHaveBeenCalledTimes(1);
 
       app.unmount();
@@ -34,7 +44,12 @@ describe("dom", () => {
     });
 
     test("unmount removes every adopted child of a hydrated fragment root", () => {
-      const view = <><span id="a">a</span><span id="b">b</span></>;
+      const view = (
+        <>
+          <span id="a">a</span>
+          <span id="b">b</span>
+        </>
+      );
       const container = ssrContainer(view);
 
       const app = hydrate(view, container);
@@ -47,7 +62,14 @@ describe("dom", () => {
 
     test("unmount of a hydrated fragment root disposes prop effects", () => {
       const cls = signal("initial");
-      const view = <><span id="a" class={cls}>a</span><span id="b">b</span></>;
+      const view = (
+        <>
+          <span id="a" class={cls}>
+            a
+          </span>
+          <span id="b">b</span>
+        </>
+      );
       const container = ssrContainer(view);
       const span = container.querySelector("#a")!;
 
@@ -61,9 +83,18 @@ describe("dom", () => {
     });
 
     test("afterMount fires for every root of a multi-root mount", () => {
-      const first = mock(() => {});
-      const second = mock(() => {});
-      mount(<><span id="h1" hook:afterMount={first}>a</span><span id="h2" hook:afterMount={second}>b</span></>);
+      const first = vi.fn(() => {});
+      const second = vi.fn(() => {});
+      mount(
+        <>
+          <span id="h1" hook:afterMount={first}>
+            a
+          </span>
+          <span id="h2" hook:afterMount={second}>
+            b
+          </span>
+        </>,
+      );
 
       expect(first).toHaveBeenCalledTimes(1);
       expect(second).toHaveBeenCalledTimes(1);

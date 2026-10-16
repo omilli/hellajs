@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState } from "@utils/test-helpers.js";
 import {
@@ -45,7 +45,7 @@ describe("input", () => {
   });
 
   test.each(inputVariants)("$style passes the typed value to on:input via e.target", (variant) => {
-    const onInput = mock((e: Event) => (e.target as HTMLInputElement).value);
+    const onInput = vi.fn((e: Event) => (e.target as HTMLInputElement).value);
     const input = renderVariant(variant, { "on:input": onInput }) as HTMLInputElement;
     input.value = "typed";
     input.dispatchEvent(new Event("input"));
@@ -88,7 +88,7 @@ describe("input", () => {
   });
 
   test("fires a user on:click handler across both styles", () => {
-    const onClick = mock(() => {});
+    const onClick = vi.fn(() => {});
     assertHandlerForwarded(inputVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 

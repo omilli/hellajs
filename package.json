@@ -1,18 +1,38 @@
 {
   "name": "hellajs",
+  "version": "0.0.0",
   "private": true,
   "license": "MIT",
-  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/omilli/hellajs.git"
+  },
   "workspaces": [
     "packages/*",
     "plugins/*"
   ],
-  "engines": {
-    "node": ">=18.0.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/omilli/hellajs.git"
+  "type": "module",
+  "scripts": {
+    "audits": "bun ./scripts/audits.ts",
+    "bench": "node ./scripts/bench.ts",
+    "bundle": "node ./scripts/bundle.ts",
+    "changeset": "changeset",
+    "clean": "node ./scripts/clean.ts",
+    "coverage": "node ./scripts/coverage.ts",
+    "dead-exports": "node ./scripts/dead-exports.ts",
+    "doc-links": "node ./scripts/doc-links.ts",
+    "doc-snippets": "node ./scripts/doc-snippets.ts",
+    "docs-ui": "node ./scripts/docs-ui.ts",
+    "em-dash": "node ./scripts/em-dash.ts",
+    "jsdoc-params": "node ./scripts/jsdoc-params.ts",
+    "lint": "npx vp check && npm run lint:guards && npm run lint:structure",
+    "lint:guards": "node ./scripts/type-visibility.ts && node ./scripts/dead-exports.ts && node ./scripts/jsdoc-params.ts && node ./scripts/doc-links.ts && node ./scripts/doc-structure.ts && node ./scripts/em-dash.ts",
+    "lint:structure": "node ./scripts/doc-structure.ts",
+    "memory": "bun ./scripts/memory.ts",
+    "merge": "bun ./scripts/merge.ts",
+    "release": "node ./scripts/bundle.ts --quiet && node ./scripts/release.ts",
+    "visibility": "node ./scripts/type-visibility.ts",
+    "worker": "bun ./scripts/worker.ts"
   },
   "devDependencies": {
     "@babel/core": "^7.28.6",
@@ -22,57 +42,39 @@
     "@commitlint/cli": "^20.3.1",
     "@commitlint/config-conventional": "^20.3.1",
     "@commitlint/types": "^20.5.0",
-    "@eslint/js": "^10.0.1",
-    "@happy-dom/global-registrator": "^20.3.4",
-    "@hellajs/core": "workspace:*",
-    "@hellajs/css": "workspace:*",
-    "@hellajs/dom": "workspace:*",
-    "@hellajs/resource": "workspace:*",
-    "@hellajs/router": "workspace:*",
-    "@hellajs/store": "workspace:*",
-    "@hellajs/ssr": "workspace:*",
+    "@hellajs/core": "*",
+    "@hellajs/css": "*",
+    "@hellajs/dom": "*",
+    "@hellajs/resource": "*",
+    "@hellajs/router": "*",
+    "@hellajs/ssr": "*",
+    "@hellajs/store": "*",
     "@rollup/plugin-commonjs": "^29.0.0",
     "@rollup/plugin-node-resolve": "^16.0.3",
-    "@stylistic/eslint-plugin": "^5.10.0",
     "@types/babel__core": "^7.20.5",
     "@types/bun": "^1.3.14",
     "@types/node": "^25.0.9",
-    "astro-plugin-hellajs": "workspace:*",
-    "babel-plugin-hellajs": "workspace:*",
-    "vite-plugin-hellajs": "workspace:*",
-    "rollup-plugin-hellajs": "workspace:*",
+    "@vitest/coverage-v8": "5.0.4",
+    "astro-plugin-hellajs": "*",
+    "babel-plugin-hellajs": "*",
     "esbuild": "^0.27.2",
-    "eslint": "^10.4.1",
-    "globals": "^17.6.0",
+    "happy-dom": "^20.14.5",
     "mitata": "^1.0.34",
     "playwright": "^1.62.1",
+    "rollup-plugin-hellajs": "*",
     "terser": "^5.46.0",
-    "typescript-eslint": "^8.61.0"
+    "vite-plugin-hellajs": "*",
+    "vite-plus": "1.2.0"
   },
   "peerDependencies": {
-    "typescript": "~6.0.3"
+    "typescript": "~7.0.2"
   },
-  "scripts": {
-    "lint": "tsc -p tsconfig.lint.json --noEmit && eslint . && bun lint:guards",
-    "lint:guards": "bun visibility && bun dead-exports && bun jsdoc-params && bun doc-links && bun lint:structure && bun em-dash",
-    "bundle": "bun ./scripts/bundle.ts",
-    "clean": "bun ./scripts/clean.ts",
-    "coverage": "bun ./scripts/coverage.ts",
-    "bench": "bun ./scripts/bench.ts",
-    "changeset": "changeset",
-    "worker": "bun ./scripts/worker.ts",
-    "merge": "bun ./scripts/merge.ts",
-    "audits": "bun ./scripts/audits.ts",
-    "memory": "bun ./scripts/memory.ts",
-    "release": "bun bundle --quiet && bun ./scripts/release.ts",
-    "visibility": "bun ./scripts/type-visibility.ts",
-    "dead-exports": "bun ./scripts/dead-exports.ts",
-    "jsdoc-params": "bun ./scripts/jsdoc-params.ts",
-    "doc-links": "bun ./scripts/doc-links.ts",
-    "em-dash": "bun ./scripts/em-dash.ts",
-    "lint:structure": "bun ./scripts/doc-structure.ts",
-    "doc-snippets": "bun ./scripts/doc-snippets.ts",
-    "docs-ui": "bun ./scripts/docs-ui.ts"
+  "overrides": {
+    "vite": "npm:@voidzero-dev/vite-plus-core@1.2.0",
+    "vitest": "5.0.4"
   },
-  "version": ""
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "packageManager": "npm@12.0.2"
 }

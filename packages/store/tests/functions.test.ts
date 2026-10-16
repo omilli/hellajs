@@ -1,6 +1,6 @@
-import { describe, test, expect, mock } from "bun:test";
+import { describe, test, expect, vi } from "vite-plus/test";
 import { computed, effect } from "@hellajs/core";
-import { store } from "@hellajs/store/bundle";
+import { store } from "@hellajs/store";
 import type { Store } from "@hellajs/store";
 
 describe("store", () => {
@@ -8,7 +8,7 @@ describe("store", () => {
     test("computed function inside store is reactive", () => {
       const data: Store<{ count: number; double: () => number }> = store({
         count: 0,
-        double: computed(() => data.count() * 2)
+        double: computed(() => data.count() * 2),
       });
 
       expect(data.double()).toBe(0);
@@ -23,11 +23,13 @@ describe("store", () => {
     test("computed function inside store triggers effects", () => {
       const data: Store<{ count: number; double: () => number }> = store({
         count: 0,
-        double: computed(() => data.count() * 2)
+        double: computed(() => data.count() * 2),
       });
 
-      const tracker = mock<(value: number) => void>(() => {});
-      effect(() => { tracker(data.double()); });
+      const tracker = vi.fn<(value: number) => void>(() => {});
+      effect(() => {
+        tracker(data.double());
+      });
 
       expect(tracker).toHaveBeenCalledTimes(1);
       expect(tracker).toHaveBeenNthCalledWith(1, 0);
@@ -41,7 +43,7 @@ describe("store", () => {
     test("computed function is preserved in snapshot", () => {
       const data: Store<{ count: number; double: () => number }> = store({
         count: 0,
-        double: computed(() => data.count() * 2)
+        double: computed(() => data.count() * 2),
       });
 
       const snap = data.$snapshot();
@@ -54,7 +56,7 @@ describe("store", () => {
     test("raw function reads live store state", () => {
       const data = store({
         count: 0,
-        getCount: () => data.count()
+        getCount: () => data.count(),
       });
 
       expect(data.getCount()).toBe(0);
@@ -66,7 +68,7 @@ describe("store", () => {
     test("raw function in snapshot reflects current state", () => {
       const data = store({
         count: 0,
-        logCount: () => `Count is ${data.count()}`
+        logCount: () => `Count is ${data.count()}`,
       });
 
       const snap = data.$snapshot();
@@ -77,8 +79,11 @@ describe("store", () => {
     });
 
     test("function properties swap via direct assignment", () => {
-      const onSave = mock((): string => "new");
-      const data: Store<{ count: number; onSave: () => string }> = store({ count: 0, onSave: () => "old" });
+      const onSave = vi.fn((): string => "new");
+      const data: Store<{ count: number; onSave: () => string }> = store({
+        count: 0,
+        onSave: () => "old",
+      });
 
       data.onSave = onSave;
 

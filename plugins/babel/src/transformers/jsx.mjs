@@ -20,15 +20,16 @@ export function createJSXTransformers(t) {
 
       const tagCallee = getTagCallee(t, opening.name);
       const tagName = t.isJSXIdentifier(opening.name) ? opening.name.name : null;
-      const isComponent = (
-        t.isJSXIdentifier(opening.name) && opening.name.name[0] === opening.name.name[0].toUpperCase()
-      ) || t.isJSXMemberExpression(opening.name);
+      const isComponent =
+        (t.isJSXIdentifier(opening.name) &&
+          opening.name.name[0] === opening.name.name[0].toUpperCase()) ||
+        t.isJSXMemberExpression(opening.name);
 
       // Fully-static subtree — hoist to a module const (staticDom clone path);
       // skips the normal pipeline entirely, so children are never traversed
       // (static subtrees contain no components, so no import injection is lost)
       if (!isComponent) {
-        const program = path.findParent(p => t.isProgram(p));
+        const program = path.findParent((p) => t.isProgram(p));
         const hoisted = hoistStaticJSX(t, program, path.node);
         if (hoisted) {
           path.replaceWith(hoisted);
@@ -40,7 +41,7 @@ export function createJSXTransformers(t) {
       const children = filterEmptyChildren(t, path.node.children, isComponent);
 
       if (isComponent) {
-        const program = path.findParent(p => t.isProgram(p));
+        const program = path.findParent((p) => t.isProgram(p));
         if (tagName && PASSTHROUGH_INJECTORS[tagName]) {
           PASSTHROUGH_INJECTORS[tagName](t, program);
         } else {
@@ -59,7 +60,7 @@ export function createJSXTransformers(t) {
     },
 
     JSXFragment(path) {
-      const program = path.findParent(p => t.isProgram(p));
+      const program = path.findParent((p) => t.isProgram(p));
       const hoisted = hoistStaticJSX(t, program, path.node);
       if (hoisted) {
         path.replaceWith(hoisted);
@@ -68,6 +69,6 @@ export function createJSXTransformers(t) {
       const children = filterEmptyChildren(t, path.node.children, false);
       // Fragment: pass empty error array
       path.replaceWith(buildHellaNode(t, FRAGMENT_TAG, [], [], [], [], children, []));
-    }
+    },
   };
 }

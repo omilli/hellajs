@@ -6,15 +6,22 @@ description: Test patterns for HellaJS applications covering cleanup, lifecycle 
 
 # Testing Patterns
 
-Common test patterns for applications built with HellaJS. Every pattern works with any test framework (`bun:test`, `vitest`, `jest`) using only public package imports.
+Common test patterns for applications built with HellaJS. Every pattern works with any test framework (`vitest`, `bun:test`, `jest`) using only public package imports.
 
 ### Author Tests as JSX
 
-Test markup is JSX. Test files are `.test.tsx`, compiled at load by the `utils/jsx.js` Bun plugin registered beside the HappyDOM preload in `bunfig.toml`:
+Test markup is JSX. Test files are `.test.tsx`; under vitest, the `vite-plugin-hellajs` transform in `vite.config.ts` compiles them while `happy-dom` supplies the document:
 
-```toml
-[test]
-preload = ["./utils/happydom.js", "./utils/jsx.js"]
+```ts
+import { defineConfig } from "vite-plus";
+import viteHellaJS from "vite-plugin-hellajs";
+
+export default defineConfig({
+  plugins: [viteHellaJS()],
+  test: {
+    environment: "happy-dom",
+  },
+});
 ```
 
 The plugin transforms test entries and their imports, so mounted JSX compiles through the same `babel-plugin-hellajs` pass production code ships through.
@@ -24,7 +31,7 @@ The plugin transforms test entries and their imports, so mounted JSX compiles th
 Reset shared state between tests so each test runs in a clean environment. Import per-package reset functions and call them in `beforeEach`:
 
 ```typescript
-import { beforeEach, afterEach } from "bun:test";
+import { beforeEach, afterEach } from "vitest";
 import { resetDom } from "@hellajs/dom";
 import { resetCss, resetVars } from "@hellajs/css";
 import { resetResource } from "@hellajs/resource";

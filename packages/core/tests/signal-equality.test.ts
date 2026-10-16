@@ -1,14 +1,16 @@
-import { describe, expect, test, mock } from "bun:test";
+import { describe, expect, test, vi } from "vite-plus/test";
 import { effect, signal } from "@hellajs/core";
 
 describe("core", () => {
   describe("signal equality option", () => {
     test("equals returning true suppresses propagation and keeps the old reference", () => {
       const todos = signal<{ id: number }[]>([{ id: 1 }], {
-        equals: (a, b) => a.length === b.length && a.every((t, i) => t.id === b[i]!.id)
+        equals: (a, b) => a.length === b.length && a.every((t, i) => t.id === b[i]!.id),
       });
 
-      const runs = mock(() => { todos(); });
+      const runs = vi.fn(() => {
+        todos();
+      });
       effect(runs);
       expect(runs).toHaveBeenCalledTimes(1);
 
@@ -20,10 +22,12 @@ describe("core", () => {
 
     test("equals returning false propagates and stores the new value", () => {
       const todos = signal<{ id: number }[]>([{ id: 1 }], {
-        equals: (a, b) => a.length === b.length && a.every((t, i) => t.id === b[i]!.id)
+        equals: (a, b) => a.length === b.length && a.every((t, i) => t.id === b[i]!.id),
       });
 
-      const runs = mock(() => { todos(); });
+      const runs = vi.fn(() => {
+        todos();
+      });
       effect(runs);
 
       todos([{ id: 1 }, { id: 2 }]); // Content-different
@@ -34,7 +38,9 @@ describe("core", () => {
     test("Object.is equals stabilizes NaN writes", () => {
       const s = signal(NaN, { equals: Object.is });
 
-      const runs = mock(() => { s(); });
+      const runs = vi.fn(() => {
+        s();
+      });
       effect(runs);
       expect(runs).toHaveBeenCalledTimes(1);
 
@@ -48,7 +54,9 @@ describe("core", () => {
     test("equals compares against the freshest value across sequential writes", () => {
       const s = signal<number>(1, { equals: Object.is });
 
-      const runs = mock(() => { s(); });
+      const runs = vi.fn(() => {
+        s();
+      });
       effect(runs);
 
       s(2);
@@ -66,7 +74,9 @@ describe("core", () => {
 
       expect(s()).toBeUndefined();
 
-      const runs = mock(() => { s(); });
+      const runs = vi.fn(() => {
+        s();
+      });
       effect(runs);
 
       s("hello");
@@ -82,9 +92,13 @@ describe("core", () => {
       const withEmpty = signal(1, {});
       const withUndefined = signal(1, { equals: undefined });
 
-      const runsEmpty = mock(() => { withEmpty(); });
+      const runsEmpty = vi.fn(() => {
+        withEmpty();
+      });
       effect(runsEmpty);
-      const runsUndefined = mock(() => { withUndefined(); });
+      const runsUndefined = vi.fn(() => {
+        withUndefined();
+      });
       effect(runsUndefined);
 
       withEmpty(1); // Same reference/value: no propagation
@@ -99,8 +113,9 @@ describe("core", () => {
     });
 
     test("non-function equals throws a validation error", () => {
-      expect(() => signal(0, { equals: 42 as unknown as (a: number, b: number) => boolean }))
-        .toThrow("[core] signal: equals must be a function, received number");
+      expect(() =>
+        signal(0, { equals: 42 as unknown as (a: number, b: number) => boolean }),
+      ).toThrow("[core] signal: equals must be a function, received number");
     });
   });
 });

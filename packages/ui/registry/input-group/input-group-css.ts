@@ -11,7 +11,8 @@ export const base = style("input-group", {
   minWidth: "0",
   outlineStyle: "none",
   position: "relative",
-  transition: "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
+  transition:
+    "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   width: "100%",
   "&:is(.dark *)": {
     background: `color-mix(in oklab, ${tokens.input} 30%, transparent)`,
@@ -49,9 +50,10 @@ export const base = style("input-group", {
   "&:has([data-slot][aria-invalid='true']):has([data-slot='input-group-control']:focus-visible)": {
     boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 20%, transparent)`,
   },
-  "&:is(.dark *):has([data-slot][aria-invalid='true']):has([data-slot='input-group-control']:focus-visible)": {
-    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
-  },
+  "&:is(.dark *):has([data-slot][aria-invalid='true']):has([data-slot='input-group-control']:focus-visible)":
+    {
+      boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
+    },
 });
 
 export const addon = style("input-group-addon", {
@@ -339,7 +341,8 @@ export const inputBase = style("input-group-input", {
   outlineStyle: "none",
   paddingBlock: "0.25rem",
   paddingInline: "0.75rem",
-  transition: "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
+  transition:
+    "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   width: "100%",
   "&::file-selector-button": {
     background: "transparent",
@@ -416,7 +419,8 @@ export const textareaBase = style("input-group-textarea", {
   outlineStyle: "none",
   paddingBlock: "0.5rem",
   paddingInline: "0.75rem",
-  transition: "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
+  transition:
+    "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   width: "100%",
   "&::placeholder": {
     color: tokens.mutedForeground,
@@ -475,16 +479,19 @@ css({
   "[data-slot='input-group'][data-disabled='true'] [data-slot='input-group-addon']": {
     opacity: "0.5",
   },
-  "[data-slot='input-group']:has(input) [data-slot='input-group-addon'][data-align='block-start']": {
-    paddingTop: "0.625rem",
-  },
+  "[data-slot='input-group']:has(input) [data-slot='input-group-addon'][data-align='block-start']":
+    {
+      paddingTop: "0.625rem",
+    },
   "[data-slot='input-group']:has(input) [data-slot='input-group-addon'][data-align='block-end']": {
     paddingBottom: "0.625rem",
   },
-  ".border-b [data-slot='input-group-addon'][data-align='block-start'], .border-b ~ [data-slot='input-group-addon'][data-align='block-start']": {
-    paddingBottom: "0.75rem",
-  },
-  ".border-t [data-slot='input-group-addon'][data-align='block-end'], .border-t ~ [data-slot='input-group-addon'][data-align='block-end']": {
-    paddingTop: "0.75rem",
-  },
+  ".border-b [data-slot='input-group-addon'][data-align='block-start'], .border-b ~ [data-slot='input-group-addon'][data-align='block-start']":
+    {
+      paddingBottom: "0.75rem",
+    },
+  ".border-t [data-slot='input-group-addon'][data-align='block-end'], .border-t ~ [data-slot='input-group-addon'][data-align='block-end']":
+    {
+      paddingTop: "0.75rem",
+    },
 });

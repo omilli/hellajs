@@ -31,7 +31,7 @@ interface VarsBucket {
  * Flattened-input cache behind vars() result lookups, evicted LRU at CACHE_MAX.
  * @internal
  */
-export const cache = new Map<string, { flattened: Record<string, unknown>, result: unknown }>();
+export const cache = new Map<string, { flattened: Record<string, unknown>; result: unknown }>();
 
 /**
  * Cache size cap triggering oldest-entry eviction.
@@ -126,7 +126,13 @@ interface ResolvedVarsOptions {
  * path derives scope/prefix/media/layer/host through this — the single
  * definition (no per-site duplication to drift).
  */
-export function resolveVarsOptions({ scoped, prefix: rawPrefix = "", media, layer, host }: VarsOptions): ResolvedVarsOptions {
+export function resolveVarsOptions({
+  scoped,
+  prefix: rawPrefix = "",
+  media,
+  layer,
+  host,
+}: VarsOptions): ResolvedVarsOptions {
   return {
     scope: scoped || ":root",
     fullPrefix: rawPrefix ? `${rawPrefix}-` : "",
@@ -153,7 +159,12 @@ function varsBucketKey(scope: string, media: string, layer: string, host?: Paren
  * declaration per line indented under the scope selector.
  * @param entries Variable entries to serialize into the scope block
  */
-export function varsRuleText(scope: string, media: string, layer: string, entries: Iterable<[string, unknown]>): string {
+export function varsRuleText(
+  scope: string,
+  media: string,
+  layer: string,
+  entries: Iterable<[string, unknown]>,
+): string {
   const depth = (media ? 1 : 0) + (layer ? 1 : 0);
   const pairs = Array.from(entries);
   let decls = "";
@@ -175,7 +186,10 @@ export function varsRuleText(scope: string, media: string, layer: string, entrie
  * and upserts the scope rule into the stylesheet.
  * Takes the pre-resolved options from `resolveVarsOptions`.
  */
-export function applyRules(flat: Record<string, unknown>, { scope, fullPrefix, media, layer, host }: ResolvedVarsOptions) {
+export function applyRules(
+  flat: Record<string, unknown>,
+  { scope, fullPrefix, media, layer, host }: ResolvedVarsOptions,
+) {
   const entries = Object.entries(flat);
   const len = entries.length;
   const key = varsBucketKey(scope, media, layer, host);
@@ -202,7 +216,10 @@ export function applyRules(flat: Record<string, unknown>, { scope, fullPrefix, m
  * is removed entirely.
  * Takes the pre-resolved options from `resolveVarsOptions`.
  */
-export function removeFromScope(flatKeys: string[], { scope, fullPrefix, media, layer, host }: ResolvedVarsOptions): void {
+export function removeFromScope(
+  flatKeys: string[],
+  { scope, fullPrefix, media, layer, host }: ResolvedVarsOptions,
+): void {
   const key = varsBucketKey(scope, media, layer, host);
   const bucket = scopedVarsRulesMap.get(key);
   if (!bucket) return;
@@ -240,8 +257,8 @@ export function resetReactiveRegistries(): void {
 export function varsText(): string {
   const texts: string[] = [];
   scopedVarsRulesMap.forEach((bucket) => {
-    if (!bucket.host) texts.push(varsRuleText(bucket.scope, bucket.media, bucket.layer, bucket.vars));
+    if (!bucket.host)
+      texts.push(varsRuleText(bucket.scope, bucket.media, bucket.layer, bucket.vars));
   });
   return texts.join("\n\n");
 }
-

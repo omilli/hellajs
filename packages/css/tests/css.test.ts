@@ -1,6 +1,6 @@
-import { describe, expect, test, beforeEach } from "bun:test";
+import { describe, expect, test, beforeEach } from "vite-plus/test";
 import { resetTestState, getStylesheet } from "@utils/test-helpers.js";
-import { css, cssText, style, resetCss, removeCss } from "@hellajs/css/bundle";
+import { css, cssText, style, resetCss, removeCss } from "@hellajs/css";
 import { getCssSheet } from "./helpers";
 
 beforeEach(() => {
@@ -143,27 +143,33 @@ describe("css", () => {
   });
 
   describe("input validation", () => {
-    test.each([null, undefined, "not-an-object", 42])("css throws on non-object input", (invalid) => {
-      // @ts-expect-error - testing invalid input
-      expect(() => css(invalid)).toThrow("[css] css:");
-    });
+    test.each([null, undefined, "not-an-object", 42])(
+      "css throws on non-object input",
+      (invalid) => {
+        // @ts-expect-error - testing invalid input
+        expect(() => css(invalid)).toThrow("[css] css:");
+      },
+    );
 
-    test.each([null, undefined, "not-an-object"])("removeCss throws on non-object input", (invalid) => {
-      // @ts-expect-error - testing invalid input
-      expect(() => removeCss(invalid)).toThrow("[css] removeCss:");
-    });
+    test.each([null, undefined, "not-an-object"])(
+      "removeCss throws on non-object input",
+      (invalid) => {
+        // @ts-expect-error - testing invalid input
+        expect(() => removeCss(invalid)).toThrow("[css] removeCss:");
+      },
+    );
 
     test("css throws on function values", () => {
       // @ts-expect-error - testing invalid input
       expect(() => css({ padding: () => "1px" })).toThrow(
-        "[css] function values are not supported in css objects — use vars() for reactive values, key: padding"
+        "[css] function values are not supported in css objects — use vars() for reactive values, key: padding",
       );
     });
 
     test("removeCss throws on function values", () => {
       // @ts-expect-error - testing invalid input
       expect(() => removeCss({ padding: () => "1px" })).toThrow(
-        "[css] function values are not supported in css objects — use vars() for reactive values, key: padding"
+        "[css] function values are not supported in css objects — use vars() for reactive values, key: padding",
       );
     });
 
@@ -175,18 +181,18 @@ describe("css", () => {
       expect(() => css(nested)).toThrow("[css] function values are not supported in css objects");
     });
 
-    test.each([
-      { color: "red" },
-      { fontSize: 12 },
-    ])("css throws on top-level declarations", (invalid) => {
-      expect(() => css(invalid)).toThrow(
-        "[css] top-level declarations have no selector — nest them under a selector or at-rule"
-      );
-    });
+    test.each([{ color: "red" }, { fontSize: 12 }])(
+      "css throws on top-level declarations",
+      (invalid) => {
+        expect(() => css(invalid)).toThrow(
+          "[css] top-level declarations have no selector — nest them under a selector or at-rule",
+        );
+      },
+    );
 
     test("removeCss throws on top-level declarations", () => {
       expect(() => removeCss({ color: "red" })).toThrow(
-        "[css] top-level declarations have no selector — nest them under a selector or at-rule"
+        "[css] top-level declarations have no selector — nest them under a selector or at-rule",
       );
     });
   });

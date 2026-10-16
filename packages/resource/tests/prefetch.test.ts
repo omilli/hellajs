@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, vi } from "vite-plus/test";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { resource, resourceCache } from "@hellajs/resource/bundle";
+import { resource, resourceCache } from "@hellajs/resource";
 import { expectAbortError, expectErrorMessage } from "./helpers";
 
 describe("resourceCache", () => {
@@ -17,7 +17,7 @@ describe("resourceCache", () => {
     });
 
     test("prefetched entries are reused by a resource sharing the fetcher reference", async () => {
-      const fetcher = mock(async (id: number) => ({ id, name: "John" }));
+      const fetcher = vi.fn(async (id: number) => ({ id, name: "John" }));
       await resourceCache.prefetch({ fetcher, key: 1, cacheTime: 60000 });
 
       const r = resource(fetcher, { key: 1, cacheTime: 60000 });
@@ -29,7 +29,7 @@ describe("resourceCache", () => {
     });
 
     test("URL overload cannot share a prefetched entry", async () => {
-      const fetchMock = mock(async (url: string) => ({
+      const fetchMock = vi.fn(async (url: string) => ({
         ok: true,
         status: 200,
         statusText: "OK",
@@ -37,7 +37,7 @@ describe("resourceCache", () => {
       }));
       globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
 
-      const namedFetcher = mock(async () => ({ from: "prefetch" }));
+      const namedFetcher = vi.fn(async () => ({ from: "prefetch" }));
       await resourceCache.prefetch({ fetcher: namedFetcher, key: "/api/x", cacheTime: 60000 });
 
       const r = resource("/api/x", { cacheTime: 60000, refetchOnKeyChange: true });
@@ -48,7 +48,7 @@ describe("resourceCache", () => {
     });
 
     test("concurrent prefetch calls with the same fetcher and key share one request", async () => {
-      const fetcher = mock(async (id: number) => {
+      const fetcher = vi.fn(async (id: number) => {
         await delay(10);
         return { id };
       });
@@ -64,7 +64,7 @@ describe("resourceCache", () => {
     });
 
     test("retries on failure", async () => {
-      const retryingFetcher = mock(async (id: number) => {
+      const retryingFetcher = vi.fn(async (id: number) => {
         if (retryingFetcher.mock.calls.length === 1) throw new Error("transient");
         return { id };
       });
@@ -80,7 +80,7 @@ describe("resourceCache", () => {
 
     test("aborts on signal", async () => {
       const controller = new AbortController();
-      const hangingFetcher = mock(() => new Promise<{ done: boolean }>(() => {}));
+      const hangingFetcher = vi.fn(() => new Promise<{ done: boolean }>(() => {}));
       const hanging = resourceCache.prefetch({
         fetcher: hangingFetcher,
         key: 2,
@@ -91,15 +91,18 @@ describe("resourceCache", () => {
       await expectAbortError(hanging);
     });
 
-    test("rejects invalid options and non-function fetcher", () => {
+    test("rejects invalid options and non-function fetcher", async () => {
+      // prefetch is async: the validation throws a rejection, never a sync throw
       // @ts-expect-error intentionally invalid options
-      expect(() => resourceCache.prefetch(null)).toThrow("[resource] prefetch: options");
+      await expect(resourceCache.prefetch(null)).rejects.toThrow("[resource] prefetch: options");
       // @ts-expect-error fetcher must be a function
-      expect(() => resourceCache.prefetch({ fetcher: "nope", key: 1 })).toThrow("[resource] prefetch: fetcher");
+      await expect(resourceCache.prefetch({ fetcher: "nope", key: 1 })).rejects.toThrow(
+        "[resource] prefetch: fetcher",
+      );
     });
 
     test("aborts via timeout", async () => {
-      const fetcher = mock(() => new Promise<{ done: boolean }>(() => {}));
+      const fetcher = vi.fn(() => new Promise<{ done: boolean }>(() => {}));
       const p = resourceCache.prefetch({ fetcher, key: 1, timeout: 10 });
       await expectAbortError(p);
     });
@@ -107,18 +110,27 @@ describe("resourceCache", () => {
     test("aborts immediately with a pre-aborted signal", async () => {
       const controller = new AbortController();
       controller.abort();
-      const fetcher = mock(async (id: number) => ({ id }));
-      await expectAbortError(resourceCache.prefetch({ fetcher, key: 1, abortSignal: controller.signal }));
+      const fetcher = vi.fn(async (id: number) => ({ id }));
+      await expectAbortError(
+        resourceCache.prefetch({ fetcher, key: 1, abortSignal: controller.signal }),
+      );
     });
 
     test("rejects when retries are exhausted", async () => {
-      const fetcher = mock(async () => { throw new Error("always fails"); });
-      await expectErrorMessage(resourceCache.prefetch({ fetcher, key: 1, retry: 1, retryDelay: 1 }), "always fails");
+      const fetcher = vi.fn(async () => {
+        throw new Error("always fails");
+      });
+      await expectErrorMessage(
+        resourceCache.prefetch({ fetcher, key: 1, retry: 1, retryDelay: 1 }),
+        "always fails",
+      );
     });
 
     test("aborts during a retry delay", async () => {
       const controller = new AbortController();
-      const fetcher = mock(async () => { throw new Error("fail"); });
+      const fetcher = vi.fn(async () => {
+        throw new Error("fail");
+      });
       const p = resourceCache.prefetch({
         fetcher,
         key: 1,
@@ -135,8 +147,12 @@ describe("resourceCache", () => {
       const listenerCounts = { added: 0, removed: 0 };
       const fakeSignal = {
         aborted: false,
-        addEventListener: () => { listenerCounts.added++; },
-        removeEventListener: () => { listenerCounts.removed++; },
+        addEventListener: () => {
+          listenerCounts.added++;
+        },
+        removeEventListener: () => {
+          listenerCounts.removed++;
+        },
       } as unknown as AbortSignal;
 
       const fetcher = async (key: number) => `user-${key}`;

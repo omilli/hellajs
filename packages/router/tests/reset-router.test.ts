@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush } from "@hellajs/core";
-import { router, route, navigate, resetRouter } from "@hellajs/router/bundle";
+import { router, route, navigate, resetRouter } from "@hellajs/router";
 import { setupRouterEnv } from "./helpers";
 
 describe("resetRouter", () => {
@@ -13,7 +13,11 @@ describe("resetRouter", () => {
 
   test("resets config signals — after reset routes are empty so new navigation yields no match", () => {
     router({
-      routes: { "/test": () => { container.textContent = "test"; } },
+      routes: {
+        "/test": () => {
+          container.textContent = "test";
+        },
+      },
     });
     navigate("/test");
     expect(container.textContent).toBe("test");
@@ -26,7 +30,7 @@ describe("resetRouter", () => {
   });
 
   test("detaches prior listeners so re-init does not double-fire", () => {
-    const handler = mock(() => {});
+    const handler = vi.fn(() => {});
     router({
       routes: { "/": () => handler() },
     });

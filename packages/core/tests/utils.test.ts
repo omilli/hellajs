@@ -1,15 +1,22 @@
-import { describe, expect, test, mock } from "bun:test";
+import { describe, expect, test, vi } from "vite-plus/test";
 import {
-  isFunction, isPlainObject, isString, isNumber, isBoolean, isNull, isFalsy, isObject,
-  objectLoop
+  isFunction,
+  isPlainObject,
+  isString,
+  isNumber,
+  isBoolean,
+  isNull,
+  isFalsy,
+  isObject,
+  objectLoop,
 } from "@hellajs/core";
 
 describe("core", () => {
   describe("utils", () => {
     test("isFunction returns true for function declarations, arrow functions, and class constructors", () => {
-      expect(isFunction(function () { })).toBe(true);
-      expect(isFunction(() => { })).toBe(true);
-      expect(isFunction(class Foo { })).toBe(true);
+      expect(isFunction(function () {})).toBe(true);
+      expect(isFunction(() => {})).toBe(true);
+      expect(isFunction(class Foo {})).toBe(true);
     });
 
     test("isFunction returns false for non-function values", () => {
@@ -111,7 +118,7 @@ describe("core", () => {
     });
 
     test("isPlainObject returns false for class instances", () => {
-      class Foo { }
+      class Foo {}
       expect(isPlainObject(new Foo())).toBe(false);
     });
 
@@ -130,17 +137,21 @@ describe("core", () => {
       objectLoop(obj, (key, value) => {
         entries.push([key, value]);
       });
-      expect(entries).toEqual([["a", 1], ["b", "hello"], ["c", true]]);
+      expect(entries).toEqual([
+        ["a", 1],
+        ["b", "hello"],
+        ["c", true],
+      ]);
     });
 
     test("objectLoop is no-op for undefined input", () => {
-      const fn = mock(() => { });
+      const fn = vi.fn(() => {});
       objectLoop(undefined, fn);
       expect(fn).not.toHaveBeenCalled();
     });
 
     test("objectLoop iterates zero times for empty object", () => {
-      const fn = mock(() => { });
+      const fn = vi.fn(() => {});
       objectLoop({}, fn);
       expect(fn).not.toHaveBeenCalled();
     });

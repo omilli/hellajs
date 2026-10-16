@@ -1,4 +1,4 @@
-import { describe, expect, test, mock } from "bun:test";
+import { describe, expect, test, vi } from "vite-plus/test";
 import { computed, effect, signal } from "@hellajs/core";
 
 describe("core", () => {
@@ -48,7 +48,10 @@ describe("core", () => {
       const obj = signal({ a: 1, b: 2 });
       const arr = signal([1, 2, 3]);
 
-      const runs = mock(() => { obj(); arr(); });
+      const runs = vi.fn(() => {
+        obj();
+        arr();
+      });
       effect(runs);
 
       expect(runs).toHaveBeenCalledTimes(1);
@@ -75,7 +78,11 @@ describe("core", () => {
       const str = signal("hello");
       const bool = signal(false);
 
-      const runs = mock(() => { num(); str(); bool(); });
+      const runs = vi.fn(() => {
+        num();
+        str();
+        bool();
+      });
       effect(runs);
 
       expect(runs).toHaveBeenCalledTimes(1);
@@ -122,7 +129,9 @@ describe("core", () => {
     test("NaN-to-NaN writes do not propagate under the default equality", () => {
       const s = signal(NaN);
 
-      const runs = mock(() => { s(); });
+      const runs = vi.fn(() => {
+        s();
+      });
       effect(runs);
       expect(runs).toHaveBeenCalledTimes(1);
 

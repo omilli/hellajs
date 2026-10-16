@@ -35,7 +35,11 @@ const isFragmentItem = (item: TrackedItem): item is FragmentItemRecord =>
  * the fragment's child nodes captured while still inside it (insertion empties the husk).
  */
 function createFragmentItem(fragment: DocumentFragment): FragmentItemRecord {
-  return { itemAnchor: true, anchor: document.createTextNode(""), nodes: Array.from(fragment.childNodes) };
+  return {
+    itemAnchor: true,
+    anchor: document.createTextNode(""),
+    nodes: Array.from(fragment.childNodes),
+  };
 }
 
 /**
@@ -73,7 +77,7 @@ function removeTrackedItem(item: TrackedItem, parent: Element): void {
 function resolveItemKey<T>(
   element: HellaChild,
   item: T,
-  index: number
+  index: number,
 ): { key: unknown; hasExplicitKey: boolean } {
   if (element && isHellaNode(element)) {
     const explicitKey = element.props?.key;
@@ -142,7 +146,9 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
           }
           if (hctx) {
             // count mismatch (server/client divergence) — warn, clear the region's server nodes, fresh-build
-            console.warn(`[dom] hydrate mismatch: ForEach region had ${hctx.existingNodes.length} nodes, expected ${arr.length}`);
+            console.warn(
+              `[dom] hydrate mismatch: ForEach region had ${hctx.existingNodes.length} nodes, expected ${arr.length}`,
+            );
             let ri = 0;
             const rLen = hctx.existingNodes.length;
             while (ri < rLen) {
@@ -197,9 +203,10 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
           const oldItem = keyToItem.get(key);
           if (!node || (!hasExplicitKey && oldItem !== item)) {
             const resolved = resolveNode(element, undefined, itemNs);
-            node = resolved.nodeType === Node.DOCUMENT_FRAGMENT_NODE
-              ? createFragmentItem(resolved as DocumentFragment)
-              : resolved;
+            node =
+              resolved.nodeType === Node.DOCUMENT_FRAGMENT_NODE
+                ? createFragmentItem(resolved as DocumentFragment)
+                : resolved;
           }
           newKeyToNode.set(key, node);
           newKeyToItem.set(key, item);
@@ -291,7 +298,8 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
               continue;
             }
 
-            let left = 0, right = tails.length;
+            let left = 0,
+              right = tails.length;
 
             while (left < right) {
               const mid = Math.floor((left + right) / 2);
@@ -364,8 +372,7 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
         newKeyToNode = tempNode;
         newKeyToItem = tempItem;
         newKeys = tempKeys;
-      }
-      else {
+      } else {
         const entries = Array.from(keyToNode.entries());
         let ei = 0;
         const eLen = entries.length;

@@ -68,9 +68,10 @@ export const orientation = {
     "&:has([data-slot='field-content'])": {
       alignItems: "flex-start",
     },
-    "&:has([data-slot='field-content']) > [role='checkbox'], &:has([data-slot='field-content']) > [role='radio']": {
-      marginTop: "1px",
-    },
+    "&:has([data-slot='field-content']) > [role='checkbox'], &:has([data-slot='field-content']) > [role='radio']":
+      {
+        marginTop: "1px",
+      },
   }),
   responsive: style("field-responsive", {
     flexDirection: "column",
@@ -95,9 +96,10 @@ export const orientation = {
       "&:has([data-slot='field-content'])": {
         alignItems: "flex-start",
       },
-      "&:has([data-slot='field-content']) > [role='checkbox'], &:has([data-slot='field-content']) > [role='radio']": {
-        marginTop: "1px",
-      },
+      "&:has([data-slot='field-content']) > [role='checkbox'], &:has([data-slot='field-content']) > [role='radio']":
+        {
+          marginTop: "1px",
+        },
     },
   }),
 };

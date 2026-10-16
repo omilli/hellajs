@@ -21,7 +21,9 @@ export function isAbortError(err: unknown): err is DOMException {
 export function categorizeError(error: unknown): ResourceError {
   const message = isAbortError(error)
     ? "Request was aborted"
-    : error instanceof Error ? error.message : String(error);
+    : error instanceof Error
+      ? error.message
+      : String(error);
 
   const statusMatch = error instanceof Error ? error.message.match(/^HTTP (\d+):/) : null;
   const statusCode = statusMatch ? parseInt(statusMatch[1]!, 10) : undefined;
@@ -39,6 +41,6 @@ export function categorizeError(error: unknown): ResourceError {
     message,
     category,
     ...(statusCode && { statusCode }),
-    originalError: error
+    originalError: error,
   };
 }

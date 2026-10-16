@@ -6,9 +6,7 @@ import path from "node:path";
  * Verify all expected build artifacts exist and are non-empty.
  * Throws on missing or empty bundle.js, index.d.ts, or source maps.
  */
-export async function validateBuildArtifacts(
-  packageDir: string,
-): Promise<void> {
+export async function validateBuildArtifacts(packageDir: string): Promise<void> {
   const distDir = path.join(packageDir, "dist");
   const baseFiles = ["index.d.ts"];
   const possibleBundleFiles = ["bundle.js", "bundle.min.js"];

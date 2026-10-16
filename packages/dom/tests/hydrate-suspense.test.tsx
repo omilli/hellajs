@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState, setupContainer, suppressConsole } from "@utils/test-helpers.js";
 import { hydrate, mount, Suspense, component, onError } from "@hellajs/dom";
@@ -12,33 +12,58 @@ beforeEach(() => {
 describe("dom hydrate <Suspense>", () => {
   test("swaps staged children in, removes the template, and hydrates them reactively", async () => {
     const count = signal(0);
-    const App = () => <div id="root"><Suspense fallback={(<span id="fb">loading</span>)}>{(<b id="b" data-n={count}>x</b>)}</Suspense></div>;
-    const container = await streamContainer(<App></App> as HellaNode);
-    expect(container.querySelector("#fb")).not.toBeNull();   // fallback present pre-hydrate
+    const App = () => (
+      <div id="root">
+        <Suspense fallback={<span id="fb">loading</span>}>
+          {
+            <b id="b" data-n={count}>
+              x
+            </b>
+          }
+        </Suspense>
+      </div>
+    );
+    const container = await streamContainer((<App></App>) as HellaNode);
+    expect(container.querySelector("#fb")).not.toBeNull(); // fallback present pre-hydrate
 
     hydrate(<App></App>, container);
-    expect(container.querySelector("#fb")).toBeNull();        // fallback swapped out
-    expect(container.querySelector("template")).toBeNull();   // template removed
+    expect(container.querySelector("#fb")).toBeNull(); // fallback swapped out
+    expect(container.querySelector("template")).toBeNull(); // template removed
     const b = container.querySelector("#b")!;
     expect(b.getAttribute("data-n")).toBe("0");
 
     count(7);
     flush();
-    expect(b.getAttribute("data-n")).toBe("7");               // children hydrated + reactive
+    expect(b.getAttribute("data-n")).toBe("7"); // children hydrated + reactive
   });
 
   test("hydrates async-resolved children (Promise getter) from the staged template", async () => {
-    const App = () => <div id="root"><Suspense fallback={(<i>wait</i>)}>{(() => Promise.resolve(<p id="p">data</p>))}</Suspense></div>;
-    const container = await streamContainer(<App></App> as HellaNode);
+    const App = () => (
+      <div id="root">
+        <Suspense fallback={<i>wait</i>}>{() => Promise.resolve(<p id="p">data</p>)}</Suspense>
+      </div>
+    );
+    const container = await streamContainer((<App></App>) as HellaNode);
 
     hydrate(<App></App>, container);
     expect(container.querySelector("#p")!.textContent).toBe("data");
-    expect(container.querySelector("i")).toBeNull();          // fallback gone
+    expect(container.querySelector("i")).toBeNull(); // fallback gone
   });
 
   test("hydrates a fragment child (multiple resolved nodes)", async () => {
-    const App = () => <div id="root"><Suspense fallback={(<i>wait</i>)}>{(<><b id="b1">1</b><b id="b2">2</b></>)}</Suspense></div>;
-    const container = await streamContainer(<App></App> as HellaNode);
+    const App = () => (
+      <div id="root">
+        <Suspense fallback={<i>wait</i>}>
+          {
+            <>
+              <b id="b1">1</b>
+              <b id="b2">2</b>
+            </>
+          }
+        </Suspense>
+      </div>
+    );
+    const container = await streamContainer((<App></App>) as HellaNode);
 
     hydrate(<App></App>, container);
     expect(container.querySelector("#b1")!.textContent).toBe("1");
@@ -47,9 +72,20 @@ describe("dom hydrate <Suspense>", () => {
 
   test("hydrates array children and wires each reactive binding", async () => {
     // JSX compiles multiple children to an array; hydrate must bind each swapped child, not just place it.
-    const handler = mock(() => {});
-    const App = () => <div id="root"><Suspense fallback={(<i>wait</i>)}><button id="hx-a" on:click={handler}>A</button><button id="hx-b" on:click={handler}>B</button></Suspense></div>;
-    const container = await streamContainer(<App></App> as HellaNode);
+    const handler = vi.fn(() => {});
+    const App = () => (
+      <div id="root">
+        <Suspense fallback={<i>wait</i>}>
+          <button id="hx-a" on:click={handler}>
+            A
+          </button>
+          <button id="hx-b" on:click={handler}>
+            B
+          </button>
+        </Suspense>
+      </div>
+    );
+    const container = await streamContainer((<App></App>) as HellaNode);
 
     hydrate(<App></App>, container);
     container.querySelector("#hx-a")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
@@ -58,12 +94,20 @@ describe("dom hydrate <Suspense>", () => {
   });
 
   test("mounts children directly on a fresh client mount (no server HTML, fallback not shown)", () => {
-    const handler = mock(() => {});
-    const App = () => <div id="root"><Suspense fallback={(<i>wait</i>)}><button id="btn" on:click={handler}>go</button></Suspense></div>;
+    const handler = vi.fn(() => {});
+    const App = () => (
+      <div id="root">
+        <Suspense fallback={<i>wait</i>}>
+          <button id="btn" on:click={handler}>
+            go
+          </button>
+        </Suspense>
+      </div>
+    );
     const container = setupContainer();
     mount(<App></App>, container);
     expect(container.querySelector("#btn")).not.toBeNull();
-    expect(container.querySelector("i")).toBeNull();   // fallback is server-stream-only
+    expect(container.querySelector("i")).toBeNull(); // fallback is server-stream-only
     document.getElementById("btn")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     expect(handler).toHaveBeenCalledTimes(1);
   });
@@ -71,9 +115,21 @@ describe("dom hydrate <Suspense>", () => {
   test("fresh-mount renders JSX array children instead of stringifying them", () => {
     // JSX compiles <Suspense><b/></Suspense> to component(Suspense, { children: [<b/>] }) — an array.
     // resolveNode must mount the element, not fall through to a stringified text node.
-    const handler = mock(() => {});
+    const handler = vi.fn(() => {});
     const container = setupContainer();
-    mount(<div>{(component(Suspense, { fallback: <i>wait</i>, children: [<button id="jsx-one" on:click={handler}>go</button>] }))}</div>, container);
+    mount(
+      <div>
+        {component(Suspense, {
+          fallback: <i>wait</i>,
+          children: [
+            <button id="jsx-one" on:click={handler}>
+              go
+            </button>,
+          ],
+        })}
+      </div>,
+      container,
+    );
     const btn = container.querySelector("#jsx-one");
     expect(btn).not.toBeNull();
     expect(container.textContent).not.toContain("[object Object]");
@@ -83,19 +139,31 @@ describe("dom hydrate <Suspense>", () => {
 
   test("fresh-mount renders multiple JSX children in document order", () => {
     const container = setupContainer();
-    mount(<div>{(component(Suspense, { children: [
-      <b id="jsx-first">A</b>,
-      <i id="jsx-second">B</i>,
-    ] }))}</div>, container);
-    const ordered = Array.from(container.querySelectorAll("#jsx-first, #jsx-second")).map((el) => el.id);
+    mount(
+      <div>
+        {component(Suspense, { children: [<b id="jsx-first">A</b>, <i id="jsx-second">B</i>] })}
+      </div>,
+      container,
+    );
+    const ordered = Array.from(container.querySelectorAll("#jsx-first, #jsx-second")).map(
+      (el) => el.id,
+    );
     expect(ordered).toEqual(["jsx-first", "jsx-second"]);
     expect(container.textContent).not.toContain("[object Object]");
   });
 
   test("adopts children from an ssr.async render (no stage — children already present)", async () => {
-    const handler = mock(() => {});
-    const App = () => <div id="root"><Suspense fallback={(<i>wait</i>)}><button id="btn" on:click={handler}>go</button></Suspense></div>;
-    const container = ssrContainer(<App></App> as HellaNode);   // sync ssr → children present, no template
+    const handler = vi.fn(() => {});
+    const App = () => (
+      <div id="root">
+        <Suspense fallback={<i>wait</i>}>
+          <button id="btn" on:click={handler}>
+            go
+          </button>
+        </Suspense>
+      </div>
+    );
+    const container = ssrContainer((<App></App>) as HellaNode); // sync ssr → children present, no template
     expect(container.querySelector("#btn")).not.toBeNull();
 
     hydrate(<App></App>, container);
@@ -105,16 +173,28 @@ describe("dom hydrate <Suspense>", () => {
 
   test("fresh-mount Promise child shows fallback, then swaps resolved content in", async () => {
     const container = setupContainer();
-    mount(<div><Suspense fallback={(<i id="fb">wait</i>)}>{(() => Promise.resolve(<p id="p">data</p>))}</Suspense></div>, container);
-    expect(container.querySelector("#fb")).not.toBeNull();        // fallback shown immediately
+    mount(
+      <div>
+        <Suspense fallback={<i id="fb">wait</i>}>
+          {() => Promise.resolve(<p id="p">data</p>)}
+        </Suspense>
+      </div>,
+      container,
+    );
+    expect(container.querySelector("#fb")).not.toBeNull(); // fallback shown immediately
     await delay(0);
-    expect(container.querySelector("#fb")).toBeNull();            // fallback removed
-    expect(container.querySelector("#p")!.textContent).toBe("data");   // resolved swapped in
+    expect(container.querySelector("#fb")).toBeNull(); // fallback removed
+    expect(container.querySelector("#p")!.textContent).toBe("data"); // resolved swapped in
   });
 
   test("fresh-mount function child returning a sync node renders the node (not [object Object])", () => {
     const container = setupContainer();
-    mount(<div><Suspense fallback={(<i>wait</i>)}>{(() => <b id="b">sync</b>)}</Suspense></div>, container);
+    mount(
+      <div>
+        <Suspense fallback={<i>wait</i>}>{() => <b id="b">sync</b>}</Suspense>
+      </div>,
+      container,
+    );
     const b = container.querySelector("#b");
     expect(b).not.toBeNull();
     expect(b!.textContent).toBe("sync");
@@ -125,7 +205,15 @@ describe("dom hydrate <Suspense>", () => {
     // babel compiles <Suspense>{() => …}</Suspense> to component(Suspense, { children: [fn] }) — an array.
     // The fresh-mount branch must unwrap the length-1 array and evaluate the producer, not stringify it.
     const container = setupContainer();
-    mount(<div>{(component(Suspense, { fallback: <i id="fb">wait</i>, children: [() => Promise.resolve(<p id="p">data</p> as HellaNode)] }))}</div>, container);
+    mount(
+      <div>
+        {component(Suspense, {
+          fallback: <i id="fb">wait</i>,
+          children: [() => Promise.resolve((<p id="p">data</p>) as HellaNode)],
+        })}
+      </div>,
+      container,
+    );
     expect(container.querySelector("#fb")).not.toBeNull();
     await delay(0);
     expect(container.querySelector("#fb")).toBeNull();
@@ -135,22 +223,34 @@ describe("dom hydrate <Suspense>", () => {
 
   test("fresh-mount Promise child with no fallback shows nothing until resolve", async () => {
     const container = setupContainer();
-    mount(<div><Suspense>{(() => Promise.resolve(<p id="p">data</p>))}</Suspense></div>, container);
-    expect(container.querySelector("#p")).toBeNull();              // nothing while pending
+    mount(
+      <div>
+        <Suspense>{() => Promise.resolve(<p id="p">data</p>)}</Suspense>
+      </div>,
+      container,
+    );
+    expect(container.querySelector("#p")).toBeNull(); // nothing while pending
     await delay(0);
     expect(container.querySelector("#p")!.textContent).toBe("data");
   });
 
   test("fresh-mount Promise rejection bubbles to onError and renders its fallback", async () => {
-    const handler = mock(() => <p id="err">failed</p> as HellaNode);
+    const handler = vi.fn(() => (<p id="err">failed</p>) as HellaNode);
     const off = onError(handler);
     const container = setupContainer();
-    mount(<div><Suspense fallback={(<i id="fb">wait</i>)}>{() => Promise.reject(new Error("boom"))}</Suspense></div>, container);
-    expect(container.querySelector("#fb")).not.toBeNull();        // pending fallback shown
+    mount(
+      <div>
+        <Suspense fallback={<i id="fb">wait</i>}>
+          {() => Promise.reject(new Error("boom"))}
+        </Suspense>
+      </div>,
+      container,
+    );
+    expect(container.querySelector("#fb")).not.toBeNull(); // pending fallback shown
     await delay(0);
-    expect(handler).toHaveBeenCalledTimes(1);                    // bubbled to onError
-    expect(container.querySelector("#fb")).toBeNull();            // pending fallback removed
-    expect(container.querySelector("#err")!.textContent).toBe("failed");   // error fallback rendered
+    expect(handler).toHaveBeenCalledTimes(1); // bubbled to onError
+    expect(container.querySelector("#fb")).toBeNull(); // pending fallback removed
+    expect(container.querySelector("#err")!.textContent).toBe("failed"); // error fallback rendered
     off();
   });
 
@@ -158,11 +258,18 @@ describe("dom hydrate <Suspense>", () => {
     const suppressed = suppressConsole();
     try {
       const container = setupContainer();
-      mount(<div><Suspense fallback={(<i id="fb">wait</i>)}>{() => Promise.reject(new Error("boom"))}</Suspense></div>, container);
+      mount(
+        <div>
+          <Suspense fallback={<i id="fb">wait</i>}>
+            {() => Promise.reject(new Error("boom"))}
+          </Suspense>
+        </div>,
+        container,
+      );
       await delay(0);
-      expect(container.querySelector("#fb")).toBeNull();          // pending fallback removed
-      expect(suppressed.errors.length).toBeGreaterThan(0);         // [dom] logged
-      expect(container.querySelector("i")).toBeNull();             // nothing rendered
+      expect(container.querySelector("#fb")).toBeNull(); // pending fallback removed
+      expect(suppressed.errors.length).toBeGreaterThan(0); // [dom] logged
+      expect(container.querySelector("i")).toBeNull(); // nothing rendered
     } finally {
       suppressed.restore();
     }
@@ -170,27 +277,39 @@ describe("dom hydrate <Suspense>", () => {
 
   test("fresh-mount Promise cancellation: unmounted before resolve → resolved content not inserted", async () => {
     let resolvePromise!: (v: HellaNode) => void;
-    const pending = new Promise<HellaNode>(r => { resolvePromise = r; });
-    const handle = mount(<div id="c"><Suspense fallback={(<i id="fb">wait</i>)}>{() => pending}</Suspense></div>);
+    const pending = new Promise<HellaNode>((r) => {
+      resolvePromise = r;
+    });
+    const handle = mount(
+      <div id="c">
+        <Suspense fallback={<i id="fb">wait</i>}>{() => pending}</Suspense>
+      </div>,
+    );
     const container = document.getElementById("c")!;
-    expect(container.querySelector("#fb")).not.toBeNull();        // pending fallback shown
-    handle.unmount();                                             // suspenseCleanup → cancelled
-    resolvePromise(<p id="late">late</p> as HellaNode);                 // resolve after unmount
+    expect(container.querySelector("#fb")).not.toBeNull(); // pending fallback shown
+    handle.unmount(); // suspenseCleanup → cancelled
+    resolvePromise((<p id="late">late</p>) as HellaNode); // resolve after unmount
     await pending;
     await delay(0);
-    expect(container.querySelector("#late")).toBeNull();         // cancelled — resolved content never inserted
+    expect(container.querySelector("#late")).toBeNull(); // cancelled — resolved content never inserted
   });
 
   test("fresh-mount Promise cancellation guards .catch: unmounted before reject → no onError fires", async () => {
     let rejectPromise!: (e: Error) => void;
-    const pending = new Promise<HellaNode>((_, rej) => { rejectPromise = rej; });
-    const handler = mock(() => <p id="err"></p> as HellaNode);
+    const pending = new Promise<HellaNode>((_, rej) => {
+      rejectPromise = rej;
+    });
+    const handler = vi.fn(() => (<p id="err"></p>) as HellaNode);
     const off = onError(handler);
-    const handle = mount(<div id="c"><Suspense fallback={(<i>wait</i>)}>{() => pending}</Suspense></div>);
-    handle.unmount();                                             // suspenseCleanup → cancelled
-    rejectPromise(new Error("boom"));                             // reject after unmount
+    const handle = mount(
+      <div id="c">
+        <Suspense fallback={<i>wait</i>}>{() => pending}</Suspense>
+      </div>,
+    );
+    handle.unmount(); // suspenseCleanup → cancelled
+    rejectPromise(new Error("boom")); // reject after unmount
     await delay(0);
-    expect(handler).not.toHaveBeenCalled();                       // cancelled → no dispatchError
+    expect(handler).not.toHaveBeenCalled(); // cancelled → no dispatchError
     off();
   });
 });

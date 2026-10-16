@@ -20,7 +20,7 @@ import type { LongPressOptions } from "./types/behaviors";
 export function onLongPress(
   el: HTMLElement,
   handler: (event: PointerEvent) => void,
-  options?: LongPressOptions
+  options?: LongPressOptions,
 ): () => void {
   if (el == null) {
     throw new Error("[dom] onLongPress: el is required");

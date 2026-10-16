@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { signal } from "@hellajs/core";
 import { resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { mount, onError } from "@hellajs/dom";
@@ -16,7 +16,14 @@ describe("dom", () => {
       });
 
       const container = setupContainer();
-      mount(<div error:fallback={(() => <span>F</span>)}>{() => { throw new Error("test"); }}</div>, container);
+      mount(
+        <div error:fallback={() => <span>F</span>}>
+          {() => {
+            throw new Error("test");
+          }}
+        </div>,
+        container,
+      );
 
       expect(resetFn).toBeDefined();
       expect(typeof resetFn).toBe("function");
@@ -32,7 +39,15 @@ describe("dom", () => {
       });
 
       const container = setupContainer();
-      const app = mount(<div error:fallback={((e: Error) => <span>E: {e.message}</span>)}>{(() => { if (shouldThrow()) throw new Error("oops"); return <span>OK</span>; })}</div>, container);
+      const app = mount(
+        <div error:fallback={(e: Error) => <span>E: {e.message}</span>}>
+          {() => {
+            if (shouldThrow()) throw new Error("oops");
+            return <span>OK</span>;
+          }}
+        </div>,
+        container,
+      );
 
       expect(container.textContent).toBe("E: oops");
 
@@ -51,7 +66,14 @@ describe("dom", () => {
       });
 
       const container = setupContainer();
-      mount(<div>{() => { throw new Error("test"); }}</div>, container);
+      mount(
+        <div>
+          {() => {
+            throw new Error("test");
+          }}
+        </div>,
+        container,
+      );
 
       expect(resetFn).toBeUndefined();
     });
@@ -60,14 +82,22 @@ describe("dom", () => {
       const shouldThrow = signal(true);
       let resetFn: (() => void) | undefined;
 
-      const errorHandler = mock((_error: Error, context: { reset?: () => void }) => {
+      const errorHandler = vi.fn((_error: Error, context: { reset?: () => void }) => {
         if (!resetFn) resetFn = context.reset;
         return <span>Error #{errorHandler.mock.calls.length}</span>;
       });
       onError(errorHandler);
 
       const container = setupContainer();
-      const app = mount(<div error:fallback={(() => <span>F</span>)}>{(() => { if (shouldThrow()) throw new Error("oops"); return <span>OK</span>; })}</div>, container);
+      const app = mount(
+        <div error:fallback={() => <span>F</span>}>
+          {() => {
+            if (shouldThrow()) throw new Error("oops");
+            return <span>OK</span>;
+          }}
+        </div>,
+        container,
+      );
 
       expect(container.textContent).toBe("Error #1");
 
@@ -85,14 +115,22 @@ describe("dom", () => {
       const shouldThrow = signal(true);
       let firstReset: (() => void) | undefined;
 
-      const errorHandler = mock((_error: Error, context: { reset?: () => void }) => {
+      const errorHandler = vi.fn((_error: Error, context: { reset?: () => void }) => {
         if (!firstReset) firstReset = context.reset;
         return <span>Error #{errorHandler.mock.calls.length}</span>;
       });
       onError(errorHandler);
 
       const container = setupContainer();
-      mount(<div error:fallback={(() => <span>F</span>)}>{(() => { if (shouldThrow()) throw new Error("oops"); return <span>OK</span>; })}</div>, container);
+      mount(
+        <div error:fallback={() => <span>F</span>}>
+          {() => {
+            if (shouldThrow()) throw new Error("oops");
+            return <span>OK</span>;
+          }}
+        </div>,
+        container,
+      );
 
       expect(container.textContent).toBe("Error #1");
 
@@ -117,7 +155,15 @@ describe("dom", () => {
       });
 
       const container = setupContainer();
-      const app = mount(<div error:fallback={(() => <span>F</span>)}>{(() => { if (shouldThrow()) throw new Error("oops"); return <span>Original</span>; })}</div>, container);
+      const app = mount(
+        <div error:fallback={() => <span>F</span>}>
+          {() => {
+            if (shouldThrow()) throw new Error("oops");
+            return <span>Original</span>;
+          }}
+        </div>,
+        container,
+      );
 
       expect(container.textContent).toBe("Error");
 

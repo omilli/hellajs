@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { flush, signal, batch } from "@hellajs/core";
-import {resetTestState} from "@utils/test-helpers.js";
+import { resetTestState } from "@utils/test-helpers.js";
 import { mount } from "@hellajs/dom";
 import type { HellaNode } from "@hellajs/dom";
 
@@ -24,7 +24,11 @@ describe("dom", () => {
     test("a shared static vnode mounts as a distinct clone per mount", () => {
       // the shape the babel plugin emits for fully-static subtrees:
       // one module-level hoisted object, `static: true`, mounted many times
-      const shared: HellaNode = <div id="shared" class="box">static text<span>nested</span></div>;
+      const shared: HellaNode = (
+        <div id="shared" class="box">
+          static text<span>nested</span>
+        </div>
+      );
 
       const hostA = document.createElement("div");
       const hostB = document.createElement("div");
@@ -46,12 +50,21 @@ describe("dom", () => {
     });
 
     test("creates nested element structures", () => {
-      const nested = <div><span>Nested</span></div>;
+      const nested = (
+        <div>
+          <span>Nested</span>
+        </div>
+      );
       expect(nested.children![0] as HellaNode).toHaveProperty("tag", "span");
     });
 
     test("wraps multiple root elements in fragment", () => {
-      const multi = <><div>A</div><div>B</div></>;
+      const multi = (
+        <>
+          <div>A</div>
+          <div>B</div>
+        </>
+      );
       expect(multi.tag).toBe("$");
       expect(multi.children!.length).toBe(2);
     });
@@ -71,7 +84,11 @@ describe("dom", () => {
       const count = signal(0);
       const className = signal("initial");
 
-      mount(<div id="reactive" class={className}>{count}</div>);
+      mount(
+        <div id="reactive" class={className}>
+          {count}
+        </div>,
+      );
       const el = document.getElementById("reactive")!;
 
       expect(el.textContent).toBe("0");
@@ -90,7 +107,11 @@ describe("dom", () => {
       const a = signal(1);
       const b = signal(2);
 
-      mount(<div id="computed">{a} + {b} = {() => a() + b()}</div>);
+      mount(
+        <div id="computed">
+          {a} + {b} = {() => a() + b()}
+        </div>,
+      );
       const el = document.getElementById("computed")!;
 
       expect(el.textContent).toBe("1 + 2 = 3");
@@ -104,7 +125,11 @@ describe("dom", () => {
     test("conditionals rendering", () => {
       const show = signal(true);
 
-      mount(<div id="cond-container"><span id="toggle">{(() => show() ? <b>Yes</b> : <b>No</b>)}</span></div>);
+      mount(
+        <div id="cond-container">
+          <span id="toggle">{() => (show() ? <b>Yes</b> : <b>No</b>)}</span>
+        </div>,
+      );
 
       expect(document.querySelector("#toggle b")?.textContent).toBe("Yes");
 
@@ -116,7 +141,11 @@ describe("dom", () => {
     test("nullable values render as empty string", () => {
       const value = signal<string | null | undefined>("content");
 
-      mount(<div><span id="nullable">{value}</span></div>);
+      mount(
+        <div>
+          <span id="nullable">{value}</span>
+        </div>,
+      );
 
       expect(document.getElementById("nullable")?.textContent).toBe("content");
 
@@ -131,7 +160,13 @@ describe("dom", () => {
     });
 
     test("static falsy values render as empty string", () => {
-      mount(<div id="static-falsy">before{false}{null}{undefined}after</div>);
+      mount(
+        <div id="static-falsy">
+          before{false}
+          {null}
+          {undefined}after
+        </div>,
+      );
       expect(document.getElementById("static-falsy")?.textContent).toBe("beforeafter");
     });
 
@@ -144,7 +179,11 @@ describe("dom", () => {
     test("static and reactive props", () => {
       const isDisabled = signal(true);
 
-      mount(<button id="prop-test" type="submit" data-custom="value" disabled={() => !!isDisabled()}>Submit</button>);
+      mount(
+        <button id="prop-test" type="submit" data-custom="value" disabled={() => !!isDisabled()}>
+          Submit
+        </button>,
+      );
 
       const btn = document.getElementById("prop-test") as HTMLButtonElement;
       expect(btn.getAttribute("type")).toBe("submit");
@@ -162,7 +201,12 @@ describe("dom", () => {
     });
 
     test("fragments render", () => {
-      mount(<div id="frag-container"><span>Static 1</span><span>Static 2</span></div>);
+      mount(
+        <div id="frag-container">
+          <span>Static 1</span>
+          <span>Static 2</span>
+        </div>,
+      );
 
       const container = document.getElementById("frag-container")!;
       expect(container.querySelectorAll("span").length).toBe(2);
@@ -171,7 +215,11 @@ describe("dom", () => {
     test("dynamic fragments from signal items", () => {
       const items = signal(["a", "b"]);
 
-      mount(<div id="frag-container">{() => ({ tag: "$", children: items().map(i => ({ tag: "em", children: [i] })) })}</div>);
+      mount(
+        <div id="frag-container">
+          {() => ({ tag: "$", children: items().map((i) => ({ tag: "em", children: [i] })) })}
+        </div>,
+      );
 
       const container = document.getElementById("frag-container")!;
       expect(container.querySelectorAll("em").length).toBe(2);
@@ -183,7 +231,9 @@ describe("dom", () => {
     });
 
     test("throws for selector that does not match any element", () => {
-      expect(() => mount(<div>test</div>, "#nonexistent")).toThrow('[dom] mount: target "#nonexistent" not found in document');
+      expect(() => mount(<div>test</div>, "#nonexistent")).toThrow(
+        '[dom] mount: target "#nonexistent" not found in document',
+      );
     });
   });
 });

@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { resetTestState, getStylesheet } from "@utils/test-helpers.js";
-import { cva, cssText, removeStyle } from "@hellajs/css/bundle";
+import { cva, cssText, removeStyle } from "@hellajs/css";
 
 beforeEach(() => {
   resetTestState();
@@ -84,7 +84,7 @@ describe("cva", () => {
     expect(toneCls).toMatch(/^tone-danger-/);
     expect(compoundCls).toMatch(/^size-lg-tone-danger-[a-z]+$/);
     expect(getStylesheet("hella-css")).toBe(
-      `.${sizeCls}{font-size:16px}.${toneCls}{background:red}.${compoundCls}{font-weight:700}`
+      `.${sizeCls}{font-size:16px}.${toneCls}{background:red}.${compoundCls}{font-weight:700}`,
     );
   });
 
@@ -198,6 +198,8 @@ describe("cva", () => {
 
   test("throws on a value absent from its variant", () => {
     const button = cva({ variants: { size: { sm: { fontSize: 12 } } } });
-    expect(() => button({ size: "xxl" } as never)).toThrow('[css] cva: unknown value "xxl" for variant "size"');
+    expect(() => button({ size: "xxl" } as never)).toThrow(
+      '[css] cva: unknown value "xxl" for variant "size"',
+    );
   });
 });

@@ -28,9 +28,9 @@ export function buildChildrenValue(t, children) {
   }
 
   if (!hasSpread) {
-    const allStringLiterals = children.every(child => t.isStringLiteral(child));
+    const allStringLiterals = children.every((child) => t.isStringLiteral(child));
     if (allStringLiterals) {
-      const joinedText = children.map(child => child.value).join("");
+      const joinedText = children.map((child) => child.value).join("");
       return t.arrayExpression([t.stringLiteral(joinedText)]);
     }
     return t.arrayExpression(children);
@@ -44,8 +44,5 @@ export function buildChildrenValue(t, children) {
     // they append individually alongside the spliced passthrough.
     parts.push(t.isSpreadElement(child) ? child.argument : t.arrayExpression([child]));
   }
-  return t.callExpression(
-    t.memberExpression(t.arrayExpression([]), t.identifier("concat")),
-    parts
-  );
+  return t.callExpression(t.memberExpression(t.arrayExpression([]), t.identifier("concat")), parts);
 }

@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState, delay, suppressConsole } from "@utils/test-helpers.js";
 import { hydrate, ForEach, Transition, Portal, Lazy } from "@hellajs/dom";
@@ -9,10 +9,14 @@ import { ssrContainer, ssrAsyncContainer, suppressWarn } from "./helpers";
 const phasedLoader = (server: HellaNode) => {
   let settleClient!: (v: HellaNode) => void;
   let failClient!: (e: Error) => void;
-  const loader = mock((): Promise<HellaNode> =>
+  const loader = vi.fn((): Promise<HellaNode> =>
     loader.mock.calls.length === 1
       ? Promise.resolve(server)
-      : new Promise<HellaNode>((res, rej) => { settleClient = res; failClient = rej; }));
+      : new Promise<HellaNode>((res, rej) => {
+          settleClient = res;
+          failClient = rej;
+        }),
+  );
   return {
     loader,
     resolveClient: (v: HellaNode) => settleClient(v),
@@ -27,8 +31,21 @@ beforeEach(() => {
 describe("dom", () => {
   describe("hydrate adoption", () => {
     test("adopts keyed server-rendered items and reconciles updates", () => {
-      const items = signal([{ id: 1, text: "a" }, { id: 2, text: "b" }, { id: 3, text: "c" }]);
-      const App = () => <ul id="list"><ForEach each={items} use={((item: { id: number; text: string }) => <li id={"item-" + item.id}>{item.text}</li>)}></ForEach></ul>;
+      const items = signal([
+        { id: 1, text: "a" },
+        { id: 2, text: "b" },
+        { id: 3, text: "c" },
+      ]);
+      const App = () => (
+        <ul id="list">
+          <ForEach
+            each={items}
+            use={(item: { id: number; text: string }) => (
+              <li id={"item-" + item.id}>{item.text}</li>
+            )}
+          ></ForEach>
+        </ul>
+      );
       const container = ssrContainer(<App></App>);
       const li1Before = container.querySelector("#item-1")!;
       const li2Before = container.querySelector("#item-2")!;
@@ -41,15 +58,30 @@ describe("dom", () => {
       flush();
       expect(container.querySelector("#item-4")!.textContent).toBe("d");
 
-      items(items().filter(i => i.id !== 2));
+      items(items().filter((i) => i.id !== 2));
       flush();
       expect(container.querySelector("#item-2")).toBeNull();
       expect(container.querySelectorAll("li").length).toBe(3);
     });
 
     test("adopts server-rendered keyed items without key attributes and reconciles a prepend", () => {
-      const items = signal([{ uid: 1, text: "a" }, { uid: 2, text: "b" }, { uid: 3, text: "c" }]);
-      const App = () => <ul id="list"><ForEach each={items} use={((item: { uid: number; text: string }) => <li key={item.uid} id={"item-" + item.uid}>{item.text}</li>)}></ForEach></ul>;
+      const items = signal([
+        { uid: 1, text: "a" },
+        { uid: 2, text: "b" },
+        { uid: 3, text: "c" },
+      ]);
+      const App = () => (
+        <ul id="list">
+          <ForEach
+            each={items}
+            use={(item: { uid: number; text: string }) => (
+              <li key={item.uid} id={"item-" + item.uid}>
+                {item.text}
+              </li>
+            )}
+          ></ForEach>
+        </ul>
+      );
       const container = ssrContainer(<App></App>);
       expect(container.querySelector("li")!.outerHTML).toBe('<li id="item-1">a</li>');
       const bBefore = container.querySelector("#item-2")!;
@@ -67,7 +99,11 @@ describe("dom", () => {
 
     test("adopts index-keyed items by position", () => {
       const items = signal([{ v: "a" }, { v: "b" }]);
-      const App = () => <ul id="list"><ForEach each={items} use={((item: { v: string }) => <li>{item.v}</li>)}></ForEach></ul>;
+      const App = () => (
+        <ul id="list">
+          <ForEach each={items} use={(item: { v: string }) => <li>{item.v}</li>}></ForEach>
+        </ul>
+      );
       const container = ssrContainer(<App></App>);
       const lisBefore = Array.from(container.querySelectorAll("li"));
 
@@ -83,7 +119,21 @@ describe("dom", () => {
         { id: "g1", items: [{ id: "a" }, { id: "b" }] },
         { id: "g2", items: [{ id: "c" }] },
       ]);
-      const App = () => <div id="root"><ForEach each={groups} use={((g: { id: string; items: { id: string }[] }) => <ul id={g.id}><ForEach each={g.items} use={((i: { id: string }) => <li id={g.id + "-" + i.id}>{i.id}</li>)}></ForEach></ul>)}></ForEach></div>;
+      const App = () => (
+        <div id="root">
+          <ForEach
+            each={groups}
+            use={(g: { id: string; items: { id: string }[] }) => (
+              <ul id={g.id}>
+                <ForEach
+                  each={g.items}
+                  use={(i: { id: string }) => <li id={g.id + "-" + i.id}>{i.id}</li>}
+                ></ForEach>
+              </ul>
+            )}
+          ></ForEach>
+        </div>
+      );
       const container = ssrContainer(<App></App>);
       const aBefore = container.querySelector("#g1-a")!;
       const cBefore = container.querySelector("#g2-c")!;
@@ -95,7 +145,14 @@ describe("dom", () => {
 
     test("falls back to re-mount on a ForEach count-mismatch", () => {
       const items = signal([{ id: 1 }, { id: 2 }, { id: 3 }]);
-      const App = () => <ul id="list"><ForEach each={items} use={((i: { id: number }) => <li id={"item-" + i.id}>{i.id}</li>)}></ForEach></ul>;
+      const App = () => (
+        <ul id="list">
+          <ForEach
+            each={items}
+            use={(i: { id: number }) => <li id={"item-" + i.id}>{i.id}</li>}
+          ></ForEach>
+        </ul>
+      );
       const container = ssrContainer(<App></App>);
       container.querySelector("#item-2")!.remove();
 
@@ -107,7 +164,18 @@ describe("dom", () => {
 
     test("preserves siblings outside a ForEach region on count-mismatch", () => {
       const items = signal([{ id: 1 }, { id: 2 }, { id: 3 }]);
-      const App = () => <div id="root"><span id="lead">L</span><ul id="list"><ForEach each={items} use={((i: { id: number }) => <li id={"item-" + i.id}>{i.id}</li>)}></ForEach></ul><span id="trail">T</span></div>;
+      const App = () => (
+        <div id="root">
+          <span id="lead">L</span>
+          <ul id="list">
+            <ForEach
+              each={items}
+              use={(i: { id: number }) => <li id={"item-" + i.id}>{i.id}</li>}
+            ></ForEach>
+          </ul>
+          <span id="trail">T</span>
+        </div>
+      );
       const container = ssrContainer(<App></App>);
       container.querySelector("#item-2")!.remove();
 
@@ -121,7 +189,11 @@ describe("dom", () => {
 
     test("adopts a Transition child when show is true and reconciles toggles", () => {
       const show = signal(true);
-      const App = () => <div id="root"><Transition show={show}>{(<span id="t">visible</span>)}</Transition></div>;
+      const App = () => (
+        <div id="root">
+          <Transition show={show}>{<span id="t">visible</span>}</Transition>
+        </div>
+      );
       const container = ssrContainer(<App></App>);
       const tBefore = container.querySelector("#t")!;
 
@@ -139,7 +211,13 @@ describe("dom", () => {
 
     test("applies the appear class on hydrate when show is true", () => {
       const show = signal(true);
-      const App = () => <div id="root"><Transition show={show} appear="fade-in">{(<span id="t">visible</span>)}</Transition></div>;
+      const App = () => (
+        <div id="root">
+          <Transition show={show} appear="fade-in">
+            {<span id="t">visible</span>}
+          </Transition>
+        </div>
+      );
       const container = ssrContainer(<App></App>);
 
       hydrate(<App></App>, container);
@@ -148,7 +226,11 @@ describe("dom", () => {
 
     test("hydrates a Transition with show false and enters on toggle", () => {
       const show = signal(false);
-      const App = () => <div id="root"><Transition show={show}>{(<span id="t">visible</span>)}</Transition></div>;
+      const App = () => (
+        <div id="root">
+          <Transition show={show}>{<span id="t">visible</span>}</Transition>
+        </div>
+      );
       const container = ssrContainer(<App></App>);
       expect(container.querySelector("#t")).toBeNull();
 
@@ -164,7 +246,11 @@ describe("dom", () => {
       const target = document.createElement("div");
       target.id = "portal-target";
       document.body.appendChild(target);
-      const App = () => <div id="root">before<Portal to="#portal-target">{(<span id="ported">ported</span>)}</Portal>after</div>;
+      const App = () => (
+        <div id="root">
+          before<Portal to="#portal-target">{<span id="ported">ported</span>}</Portal>after
+        </div>
+      );
       const container = ssrContainer(<App></App>);
       expect(target.querySelector("#ported")).toBeNull();
 
@@ -175,15 +261,24 @@ describe("dom", () => {
 
     test("re-runs a Lazy loader and replaces the server loading node on resolve", async () => {
       let resolveLoader!: (v: () => HellaNode) => void;
-      const loader = mock(() => new Promise<() => HellaNode>((r) => { resolveLoader = r; }));
-      const App = () => <div id="root"><Lazy loader={loader} loading={(<span id="loading">loading</span>)}></Lazy></div>;
+      const loader = vi.fn(
+        () =>
+          new Promise<() => HellaNode>((r) => {
+            resolveLoader = r;
+          }),
+      );
+      const App = () => (
+        <div id="root">
+          <Lazy loader={loader} loading={<span id="loading">loading</span>}></Lazy>
+        </div>
+      );
       const container = ssrContainer(<App></App>);
       expect(container.querySelector("#loading")).not.toBeNull();
 
       hydrate(<App></App>, container);
-      await delay();                                 // sync-rendered loading UI stays visible while the loader runs (not cleared at hydrate)
+      await delay(); // sync-rendered loading UI stays visible while the loader runs (not cleared at hydrate)
       expect(container.querySelector("#loading")).not.toBeNull();
-      resolveLoader(() => <span id="loaded">loaded</span> as HellaNode);
+      resolveLoader(() => (<span id="loaded">loaded</span>) as HellaNode);
       await delay(0);
       expect(loader).toHaveBeenCalledTimes(1);
       expect(container.querySelector("#loaded")!.textContent).toBe("loaded");
@@ -191,27 +286,35 @@ describe("dom", () => {
     });
 
     test("keeps server-rendered Lazy content until the loader re-run replaces it", async () => {
-      const phased = phasedLoader(<b id="c">server</b> as HellaNode);
-      const App = () => <div id="root"><Lazy loader={phased.loader} loading={(<i>loading</i>)}></Lazy></div>;
+      const phased = phasedLoader((<b id="c">server</b>) as HellaNode);
+      const App = () => (
+        <div id="root">
+          <Lazy loader={phased.loader} loading={<i>loading</i>}></Lazy>
+        </div>
+      );
       const container = await ssrAsyncContainer(<App></App>);
       const serverNode = container.querySelector("#c")!;
-      expect(container.textContent).toBe("server");                 // async render awaited the loader — loaded content shipped
+      expect(container.textContent).toBe("server"); // async render awaited the loader — loaded content shipped
 
       hydrate(<App></App>, container);
-      await delay();                                                // client loader pending — server content adopted, loading never inserted
+      await delay(); // client loader pending — server content adopted, loading never inserted
       expect(container.querySelector("#c")).toBe(serverNode);
       expect(container.textContent).toBe("server");
       expect(container.textContent).not.toContain("loading");
 
-      phased.resolveClient(<span id="fresh">fresh</span> as HellaNode);
+      phased.resolveClient((<span id="fresh">fresh</span>) as HellaNode);
       await delay(0);
-      expect(container.textContent).toBe("fresh");                 // fresh render replaced the server content
+      expect(container.textContent).toBe("fresh"); // fresh render replaced the server content
       expect(container.querySelector("#c")).toBeNull();
     });
 
     test("replaces server-rendered Lazy content with the fallback when the loader rejects", async () => {
-      const phased = phasedLoader(<b id="c">server</b> as HellaNode);
-      const App = () => <div id="root"><Lazy loader={phased.loader} fallback={(<p id="fb">fb</p>)}></Lazy></div>;
+      const phased = phasedLoader((<b id="c">server</b>) as HellaNode);
+      const App = () => (
+        <div id="root">
+          <Lazy loader={phased.loader} fallback={<p id="fb">fb</p>}></Lazy>
+        </div>
+      );
       const container = await ssrAsyncContainer(<App></App>);
       expect(container.textContent).toBe("server");
 
@@ -224,8 +327,12 @@ describe("dom", () => {
     });
 
     test("keeps server-rendered Lazy content and logs when the loader rejects without a fallback", async () => {
-      const phased = phasedLoader(<b id="c">server</b> as HellaNode);
-      const App = () => <div id="root"><Lazy loader={phased.loader}></Lazy></div>;
+      const phased = phasedLoader((<b id="c">server</b>) as HellaNode);
+      const App = () => (
+        <div id="root">
+          <Lazy loader={phased.loader}></Lazy>
+        </div>
+      );
       const container = await ssrAsyncContainer(<App></App>);
       const serverNode = container.querySelector("#c")!;
 
@@ -238,7 +345,7 @@ describe("dom", () => {
       } finally {
         suppressed.restore();
       }
-      expect(container.querySelector("#c")).toBe(serverNode);     // no fallback — server content stays (static degradation)
+      expect(container.querySelector("#c")).toBe(serverNode); // no fallback — server content stays (static degradation)
       expect(container.textContent).toBe("server");
       expect(suppressed.errors).toHaveLength(1);
       expect(suppressed.errors[0]![0]).toBe("[dom] Lazy:");

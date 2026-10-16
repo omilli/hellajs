@@ -5,11 +5,11 @@ import type { RegistryManifest } from "./types";
 /**
  * Absolute path to the shipped registry folder. Anchored one level up from this
  * file: every runtime form (lib source, per-module `dist/*.js`, flattened
- * `dist/bundle.js`) evaluates `import.meta.dir` at the package's `dist/` root
+ * `dist/bundle.js`) evaluates `import.meta.dirname` at the package's `dist/` root
  * because per-module bundling inlines `internal/` imports one level up.
  * @internal
  */
-export const REGISTRY_DIR = join(import.meta.dir, "..", "registry");
+export const REGISTRY_DIR = join(import.meta.dirname, "..", "registry");
 
 /**
  * Loads the registry manifest shipped with the package.

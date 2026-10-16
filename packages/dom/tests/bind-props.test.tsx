@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState } from "@utils/test-helpers.js";
 import { mount, $ref } from "@hellajs/dom";
@@ -41,7 +41,9 @@ describe("dom", () => {
       mount(<div id="hero"></div>);
       $ref("#hero").bind({ style: { color: "red", fontSize: "12px" } });
 
-      expect(document.getElementById("hero")!.getAttribute("style")).toBe("color:red; font-size:12px");
+      expect(document.getElementById("hero")!.getAttribute("style")).toBe(
+        "color:red; font-size:12px",
+      );
     });
 
     test("re-serializes a reactive style object when the signal changes", () => {

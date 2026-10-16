@@ -10,7 +10,10 @@ import { resourceCache } from "../resourceCache";
  * @param run - Callback invoked on refetch (receives force flag)
  * @returns An object with setup and clear methods
  */
-export function createFocus(run: (force: boolean) => void): { setup: () => void; clear: () => void } {
+export function createFocus(run: (force: boolean) => void): {
+  setup: () => void;
+  clear: () => void;
+} {
   const cleanups: (() => void)[] = [];
 
   /** Removes the visibilitychange and focus listeners and clears the cleanup list. */
@@ -52,7 +55,10 @@ export function createFocus(run: (force: boolean) => void): { setup: () => void;
  * @param run - Callback invoked on refetch (receives force flag)
  * @returns An object with setup and clear methods
  */
-export function createReconnect(run: (force: boolean) => void): { setup: () => void; clear: () => void } {
+export function createReconnect(run: (force: boolean) => void): {
+  setup: () => void;
+  clear: () => void;
+} {
   let cleanup: (() => void) | undefined;
 
   /** Tears down the online/offline reconnect subscription and clears its cleanup function. */

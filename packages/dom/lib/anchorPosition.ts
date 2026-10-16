@@ -19,7 +19,11 @@ import type { AnchorPositionOptions } from "./types/behaviors";
  * @returns Dispose handle — removes the window scroll/resize listeners.
  * @throws {Error} When anchor or floating is null or undefined.
  */
-export function anchorPosition(anchor: Element, floating: HTMLElement, options?: AnchorPositionOptions): () => void {
+export function anchorPosition(
+  anchor: Element,
+  floating: HTMLElement,
+  options?: AnchorPositionOptions,
+): () => void {
   if (anchor == null) {
     throw new Error("[dom] anchorPosition: anchor is required");
   }
@@ -39,7 +43,7 @@ export function anchorPosition(anchor: Element, floating: HTMLElement, options?:
       anchorRect,
       { width: floating.offsetWidth, height: floating.offsetHeight },
       { width: window.innerWidth, height: window.innerHeight },
-      { ...options, dir }
+      { ...options, dir },
     );
     floating.style.left = `${result.x}px`;
     floating.style.top = `${result.y}px`;

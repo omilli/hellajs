@@ -8,7 +8,10 @@ import type { CXArg } from "./types";
  * @param parts Accumulated class fragments
  * @param mix The argument value to flatten
  */
-function appendValue(parts: string[], mix: string | number | Record<string, unknown> | CXArg[]): void {
+function appendValue(
+  parts: string[],
+  mix: string | number | Record<string, unknown> | CXArg[],
+): void {
   if (isString(mix) || isNumber(mix)) {
     parts.push(`${mix}`);
     return;

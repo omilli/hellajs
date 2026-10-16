@@ -1,8 +1,4 @@
-import type {
-  DOMEventMap,
-  HTMLAttributeMap,
-  HTMLAttributes,
-} from "./attributes";
+import type { DOMEventMap, HTMLAttributeMap, HTMLAttributes } from "./attributes";
 
 // ============================================================================
 // CORE VIRTUAL DOM
@@ -19,7 +15,12 @@ export type HTMLTagName = keyof HTMLAttributeMap;
  * Can be a string, number, boolean, or a function that returns a value.
  * @template T
  */
-export type HellaPrimitive<T = unknown> = string | string[] | number | boolean | ((...args: unknown[]) => T);
+export type HellaPrimitive<T = unknown> =
+  | string
+  | string[]
+  | number
+  | boolean
+  | ((...args: unknown[]) => T);
 
 /**
  * Any value that can be rendered as a child in a HellaNode.
@@ -231,7 +232,13 @@ export interface ElementHooks {
 /**
  * Standard lifecycle hook types.
  */
-export type HookType = "beforeMount" | "afterMount" | "beforeDestroy" | "afterDestroy" | "beforeUpdate" | "afterUpdate";
+export type HookType =
+  | "beforeMount"
+  | "afterMount"
+  | "beforeDestroy"
+  | "afterDestroy"
+  | "beforeUpdate"
+  | "afterUpdate";
 
 // ============================================================================
 // REFERENCE SYSTEM
@@ -277,7 +284,10 @@ export interface DomRef<T extends Element = Element> extends DomWrapper<T> {
  * Array-like collection of DomWrapper instances with declarative methods.
  * @template T - The HTML element type
  */
-export interface DomCollection<T extends Element = Element> extends DomWrapperBase<T, DomCollection<T>> {
+export interface DomCollection<T extends Element = Element> extends DomWrapperBase<
+  T,
+  DomCollection<T>
+> {
   /** Get raw DOM node at index (default: 0) */
   (index?: number): T | undefined;
   readonly length: number;

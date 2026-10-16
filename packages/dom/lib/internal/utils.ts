@@ -123,15 +123,24 @@ export function routePrefixedProps(
   on: Record<string, unknown> | undefined,
   e: Record<string, unknown> | undefined,
   hooks: Partial<ElementHooks> | undefined,
-  error: ErrorConfig | undefined
-): { props: Record<string, unknown> | undefined; on: Record<string, unknown> | undefined; e: Record<string, unknown> | undefined; hooks: Partial<ElementHooks> | undefined; error: ErrorConfig | undefined } {
+  error: ErrorConfig | undefined,
+): {
+  props: Record<string, unknown> | undefined;
+  on: Record<string, unknown> | undefined;
+  e: Record<string, unknown> | undefined;
+  hooks: Partial<ElementHooks> | undefined;
+  error: ErrorConfig | undefined;
+} {
   if (!props) return { props, on, e, hooks, error };
 
   const keys = Object.keys(props);
   let i = 0;
   let hasColon = false;
   while (i < keys.length) {
-    if (keys[i++]!.includes(":")) { hasColon = true; break; }
+    if (keys[i++]!.includes(":")) {
+      hasColon = true;
+      break;
+    }
   }
   if (!hasColon) return { props, on, e, hooks, error };
 
@@ -166,8 +175,12 @@ export function routePrefixedProps(
     props: rest,
     on: Object.keys(routedOn).length > 0 ? { ...on, ...routedOn } : on,
     e: Object.keys(routedE).length > 0 ? { ...e, ...routedE } : e,
-    hooks: Object.keys(routedHooks).length > 0 ? { ...hooks, ...routedHooks } as Partial<ElementHooks> : hooks,
-    error: Object.keys(routedError).length > 0 ? { ...error, ...routedError } as ErrorConfig : error
+    hooks:
+      Object.keys(routedHooks).length > 0
+        ? ({ ...hooks, ...routedHooks } as Partial<ElementHooks>)
+        : hooks,
+    error:
+      Object.keys(routedError).length > 0 ? ({ ...error, ...routedError } as ErrorConfig) : error,
   };
 }
 
@@ -182,7 +195,12 @@ export function routePrefixedProps(
  * @returns The combined dispose function
  */
 export function chainScopes(prev: (() => void) | undefined, next: () => void): () => void {
-  return prev ? () => { prev(); next(); } : next;
+  return prev
+    ? () => {
+        prev();
+        next();
+      }
+    : next;
 }
 
 /**
@@ -201,8 +219,12 @@ export function chainScopes(prev: (() => void) | undefined, next: () => void): (
  */
 export function wireFragmentScope(start: Node | null, bound: Node | null, scope: () => void): void {
   let node = start;
-  while (node && node !== bound && node.nodeType === Node.COMMENT_NODE &&
-    (node.nodeValue === "[" || node.nodeValue === "]")) {
+  while (
+    node &&
+    node !== bound &&
+    node.nodeType === Node.COMMENT_NODE &&
+    (node.nodeValue === "[" || node.nodeValue === "]")
+  ) {
     node = node.nextSibling;
   }
   if (node && node !== bound) {

@@ -56,7 +56,8 @@ export function keyframesRule(obj: KeyframesObject): { name: string; cssText: st
  * @throws {Error} When obj is not a plain object, or when a property value is a function — use `vars()` for reactive values.
  */
 export function keyframes(obj: KeyframesObject): string {
-  if (!isPlainObject(obj)) throw new Error(`[css] keyframes: expected a CSS object, received ${String(obj)}`);
+  if (!isPlainObject(obj))
+    throw new Error(`[css] keyframes: expected a CSS object, received ${String(obj)}`);
 
   const { name, cssText: text } = keyframesRule(obj);
   registerText(text);

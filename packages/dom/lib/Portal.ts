@@ -11,7 +11,7 @@ const INSERT_METHODS: Record<string, keyof Element> = {
   replace: "replaceChildren",
   before: "before",
   after: "after",
-  append: "appendChild"
+  append: "appendChild",
 };
 
 /**
@@ -26,7 +26,10 @@ export function Portal(props: PortalProps): JSX.Element {
   const { to, type = "append", children = [] } = props;
 
   if (!Object.hasOwn(INSERT_METHODS, type)) {
-    throw new Error('[dom] Portal: type must be one of "append" | "prepend" | "replace" | "before" | "after", received ' + JSON.stringify(type));
+    throw new Error(
+      '[dom] Portal: type must be one of "append" | "prepend" | "replace" | "before" | "after", received ' +
+        JSON.stringify(type),
+    );
   }
   const childNodes = Array.isArray(children) ? children : [children];
 

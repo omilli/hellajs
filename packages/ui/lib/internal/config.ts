@@ -62,16 +62,22 @@ export function readConfig(dir?: string): UiConfig {
   try {
     raw = JSON.parse(readFileSync(configPath, "utf8")) as Partial<UiConfig>;
   } catch (error) {
-    throw new Error(`[ui] readConfig: invalid JSON in ${configPath}: ${(error as Error).message}`, { cause: error });
+    throw new Error(`[ui] readConfig: invalid JSON in ${configPath}: ${(error as Error).message}`, {
+      cause: error,
+    });
   }
   const style = raw.style ?? DEFAULT_CONFIG.style;
   const themeMode = raw.themeMode ?? DEFAULT_CONFIG.themeMode;
   const lang = raw.lang ?? DEFAULT_CONFIG.lang;
   if (!UI_STYLES.includes(style)) {
-    throw new Error(`[ui] readConfig: style must be one of css, tailwind, received "${String(raw.style)}"`);
+    throw new Error(
+      `[ui] readConfig: style must be one of css, tailwind, received "${String(raw.style)}"`,
+    );
   }
   if (!UI_THEME_MODES.includes(themeMode)) {
-    throw new Error(`[ui] readConfig: themeMode must be light or dark, received "${String(raw.themeMode)}"`);
+    throw new Error(
+      `[ui] readConfig: themeMode must be light or dark, received "${String(raw.themeMode)}"`,
+    );
   }
   if (!UI_LANGS.includes(lang)) {
     throw new Error(`[ui] readConfig: lang must be js or ts, received "${String(raw.lang)}"`);

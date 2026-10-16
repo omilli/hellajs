@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { resetTestState } from "@utils/test-helpers.js";
 import {
   assertAttrForwarded,
@@ -23,14 +23,17 @@ describe("message", () => {
     expect(end.getAttribute("data-align")).toBe("end");
   });
 
-  test.each(messageVariants)("$part $style carries the row-reverse class on end alignment", (variant) => {
-    const root = renderVariant(variant, { align: "end", children: ["x"] });
-    if (variant.style === "css") {
-      expect(classTokens(root)[0]!.startsWith("message")).toBe(true);
-    } else {
-      expect(classTokens(root)).toContain("data-[align=end]:flex-row-reverse");
-    }
-  });
+  test.each(messageVariants)(
+    "$part $style carries the row-reverse class on end alignment",
+    (variant) => {
+      const root = renderVariant(variant, { align: "end", children: ["x"] });
+      if (variant.style === "css") {
+        expect(classTokens(root)[0]!.startsWith("message")).toBe(true);
+      } else {
+        expect(classTokens(root)).toContain("data-[align=end]:flex-row-reverse");
+      }
+    },
+  );
 
   test.each(messagePartVariants)("$part $style renders its slot", (variant) => {
     const root = renderVariant(variant, { children: ["x"] });
@@ -38,27 +41,35 @@ describe("message", () => {
     expect(root.textContent).toBe("x");
   });
 
-  test.each(messagePartVariants.filter((variant) => variant.part === "Group"))("$part $style renders the group stack", (variant) => {
-    const root = renderVariant(variant, { children: ["x"] });
-    expect(root.tagName).toBe("DIV");
-    if (variant.style === "css") {
-      expect(classTokens(root)[0]!.startsWith("message-group")).toBe(true);
-    } else {
-      expect(classTokens(root)).toContain("flex-col");
-    }
-  });
+  test.each(messagePartVariants.filter((variant) => variant.part === "Group"))(
+    "$part $style renders the group stack",
+    (variant) => {
+      const root = renderVariant(variant, { children: ["x"] });
+      expect(root.tagName).toBe("DIV");
+      if (variant.style === "css") {
+        expect(classTokens(root)[0]!.startsWith("message-group")).toBe(true);
+      } else {
+        expect(classTokens(root)).toContain("flex-col");
+      }
+    },
+  );
 
-  test.each(messagePartVariants.filter((variant) => variant.part === "Avatar"))("$part $style renders the avatar well", (variant) => {
-    const root = renderVariant(variant, { children: ["A"] });
-    expect(root.textContent).toBe("A");
-    if (variant.style === "css") {
-      expect(classTokens(root)[0]!.startsWith("message-avatar")).toBe(true);
-    } else {
-      expect(classTokens(root)).toContain("rounded-full");
-    }
-  });
+  test.each(messagePartVariants.filter((variant) => variant.part === "Avatar"))(
+    "$part $style renders the avatar well",
+    (variant) => {
+      const root = renderVariant(variant, { children: ["A"] });
+      expect(root.textContent).toBe("A");
+      if (variant.style === "css") {
+        expect(classTokens(root)[0]!.startsWith("message-avatar")).toBe(true);
+      } else {
+        expect(classTokens(root)).toContain("rounded-full");
+      }
+    },
+  );
 
-  test.each(messagePartVariants.filter((variant) => variant.part === "Header" || variant.part === "Footer"))("$part $style renders the meta rows", (variant) => {
+  test.each(
+    messagePartVariants.filter((variant) => variant.part === "Header" || variant.part === "Footer"),
+  )("$part $style renders the meta rows", (variant) => {
     const root = renderVariant(variant, { children: ["meta"] });
     expect(root.textContent).toBe("meta");
     if (variant.style === "css") {
@@ -70,7 +81,10 @@ describe("message", () => {
 
   test("both styles agree on tag and attributes", () => {
     assertStructuralParity(messageVariants, { align: "end", children: ["x"] });
-    assertStructuralParity(messagePartVariants.filter((candidate) => candidate.part === "Avatar"), { children: ["x"] });
+    assertStructuralParity(
+      messagePartVariants.filter((candidate) => candidate.part === "Avatar"),
+      { children: ["x"] },
+    );
   });
 
   test("forwards user attrs onto the root across both styles", () => {
@@ -78,7 +92,7 @@ describe("message", () => {
   });
 
   test("fires a user on:click handler across both styles", () => {
-    const onClick = mock(() => {});
+    const onClick = vi.fn(() => {});
     assertHandlerForwarded(messageVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 

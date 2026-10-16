@@ -1,4 +1,4 @@
-import { expect } from "bun:test";
+import { expect } from "vite-plus/test";
 import { delay } from "@utils/test-helpers.js";
 import { peekState } from "@hellajs/dom";
 
@@ -35,9 +35,25 @@ export async function awaitDetached(node: Element): Promise<void> {
 }
 
 /** Pins an anchor rect on the element - the injectable seam the positioning assertions read through anchorPosition. */
-export function pinRect(el: Element, top: number, left: number, width: number, height: number): void {
+export function pinRect(
+  el: Element,
+  top: number,
+  left: number,
+  width: number,
+  height: number,
+): void {
   el.getBoundingClientRect = () =>
-    ({ top, left, width, height, right: left + width, bottom: top + height, x: left, y: top, toJSON: () => ({}) }) as DOMRect;
+    ({
+      top,
+      left,
+      width,
+      height,
+      right: left + width,
+      bottom: top + height,
+      x: left,
+      y: top,
+      toJSON: () => ({}),
+    }) as DOMRect;
 }
 
 /** Dispatches a non-bubbling pointerenter at `target` (enter/leave never bubble). */
@@ -57,7 +73,9 @@ export function pointerDownOutside(): void {
 
 /** Dispatches a bubbling Escape keydown on document.body. */
 export function pressEscape(): void {
-  document.body.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+  document.body.dispatchEvent(
+    new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }),
+  );
 }
 
 /** Dispatches a bubbling, cancelable keydown at `target` (the menu keyboard model reads it there). */

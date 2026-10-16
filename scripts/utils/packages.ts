@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { packagesDir, pluginsDir, changesetDir } from "./paths.js";
+import { packagesDir, pluginsDir, changesetDir } from "./paths.ts";
 
 interface PackageEntry {
   name: string;
@@ -19,10 +19,7 @@ export function getAllPackages(): PackageEntry[] {
   return packages;
 }
 
-function getPackagesFromDirectory(
-  directory: string,
-  type: string,
-): PackageEntry[] {
+function getPackagesFromDirectory(directory: string, type: string): PackageEntry[] {
   if (!fs.existsSync(directory)) {
     return [];
   }
@@ -62,10 +59,7 @@ function getPackageDirsByType(directory: string): string[] {
 
   return fs.readdirSync(directory).filter((pkg) => {
     const pkgDir = path.join(directory, pkg);
-    return (
-      fs.statSync(pkgDir).isDirectory() &&
-      fs.existsSync(path.join(pkgDir, "package.json"))
-    );
+    return fs.statSync(pkgDir).isDirectory() && fs.existsSync(path.join(pkgDir, "package.json"));
   });
 }
 
@@ -89,10 +83,7 @@ export function getPackagesWithChangesets(): string[] {
         if (line.includes(":")) {
           const [pkg = ""] = line.split(":");
           const cleanPkg = pkg.trim().replace(/["']/g, "");
-          if (
-            cleanPkg.startsWith("@hellajs/") ||
-            cleanPkg.endsWith("-plugin-hellajs")
-          ) {
+          if (cleanPkg.startsWith("@hellajs/") || cleanPkg.endsWith("-plugin-hellajs")) {
             packagesWithChanges.add(cleanPkg);
           }
         }

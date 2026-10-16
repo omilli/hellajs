@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState } from "@utils/test-helpers.js";
 import { mount } from "@hellajs/dom";
@@ -12,7 +12,9 @@ describe("dom", () => {
     test("serializes a static style object to kebab-case declarations", () => {
       mount(<div id="el" style={{ color: "red", fontSize: "12px" }}></div>);
 
-      expect(document.getElementById("el")!.getAttribute("style")).toBe("color:red; font-size:12px");
+      expect(document.getElementById("el")!.getAttribute("style")).toBe(
+        "color:red; font-size:12px",
+      );
     });
 
     test("re-serializes a reactive style object when the signal changes", () => {

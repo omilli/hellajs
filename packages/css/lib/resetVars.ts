@@ -1,6 +1,12 @@
 import { cleanupVarsEffects } from "./internal/reactive";
 import { resetSheet } from "./internal/sheet";
-import { VARS_ID, scopedVarsRulesMap, cache, varsRegistryStatic, resetReactiveRegistries } from "./internal/vars";
+import {
+  VARS_ID,
+  scopedVarsRulesMap,
+  cache,
+  varsRegistryStatic,
+  resetReactiveRegistries,
+} from "./internal/vars";
 
 /**
  * Clears all CSS variables, caches, and reactive effects, resetting the CSS variables system to initial state.

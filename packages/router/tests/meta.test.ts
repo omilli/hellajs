@@ -1,5 +1,5 @@
-import { describe, test, expect, beforeEach } from "bun:test";
-import { router, navigate, route } from "@hellajs/router/bundle";
+import { describe, test, expect, beforeEach } from "vite-plus/test";
+import { router, navigate, route } from "@hellajs/router";
 import { setupRouterEnv } from "./helpers";
 
 describe("router", () => {
@@ -16,9 +16,9 @@ describe("router", () => {
         routes: {
           "/about": {
             meta: { title: "About Us", description: "Learn more" },
-            handler: () => render("about")
-          }
-        }
+            handler: () => render("about"),
+          },
+        },
       });
 
       navigate("/about");
@@ -28,8 +28,8 @@ describe("router", () => {
     test("meta is undefined for routes without meta", () => {
       router({
         routes: {
-          "/": () => render("home")
-        }
+          "/": () => render("home"),
+        },
       });
 
       navigate("/");
@@ -44,11 +44,11 @@ describe("router", () => {
             children: {
               "/users": {
                 meta: { title: "User Management" },
-                handler: () => render("users")
-              }
-            }
-          }
-        }
+                handler: () => render("users"),
+              },
+            },
+          },
+        },
       });
 
       navigate("/admin/users");
@@ -69,9 +69,9 @@ describe("router", () => {
             },
             handler: () => {
               handlerMeta = route().meta;
-            }
-          }
-        }
+            },
+          },
+        },
       });
 
       navigate("/");
@@ -87,20 +87,20 @@ describe("router", () => {
         routes: {
           "/": {
             meta: { title: "Home" },
-            handler: () => render("home")
+            handler: () => render("home"),
           },
           "/users/:id": {
             meta: { title: "User Profile" },
-            handler: ({ id }) => render(`user-${id}`)
-          }
-        }
+            handler: ({ id }) => render(`user-${id}`),
+          },
+        },
       });
 
       navigate("/");
-      expect((route().meta)?.title).toBe("Home");
+      expect(route().meta?.title).toBe("Home");
 
       navigate("/users/123");
-      expect((route().meta)?.title).toBe("User Profile");
+      expect(route().meta?.title).toBe("User Profile");
     });
   });
 });

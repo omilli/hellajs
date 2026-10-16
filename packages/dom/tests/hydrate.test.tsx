@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState, setupContainer, delay, suppressConsole } from "@utils/test-helpers.js";
 import { hydrate, onError } from "@hellajs/dom";
@@ -12,8 +12,12 @@ beforeEach(() => {
 describe("dom", () => {
   describe("hydrate", () => {
     test("registers an on: delegated handler on an existing element", () => {
-      const handler = mock(() => {});
-      const App = () => <button id="btn" on:click={handler}>Go</button>;
+      const handler = vi.fn(() => {});
+      const App = () => (
+        <button id="btn" on:click={handler}>
+          Go
+        </button>
+      );
       const container = ssrContainer(<App></App>);
 
       hydrate(<App></App>, container);
@@ -22,8 +26,12 @@ describe("dom", () => {
     });
 
     test("registers an e: direct handler on an existing element", () => {
-      const handler = mock(() => {});
-      const App = () => <button id="btn" e:click={handler}>Go</button>;
+      const handler = vi.fn(() => {});
+      const App = () => (
+        <button id="btn" e:click={handler}>
+          Go
+        </button>
+      );
       const container = ssrContainer(<App></App>);
 
       hydrate(<App></App>, container);
@@ -33,7 +41,9 @@ describe("dom", () => {
 
     test("skips re-applying static props but updates a function-ref prop reactively", () => {
       const disabled = signal(false);
-      const App = () => <input id="inp" type="text" data-static="kept" disabled={() => !!disabled()} />;
+      const App = () => (
+        <input id="inp" type="text" data-static="kept" disabled={() => !!disabled()} />
+      );
       const container = ssrContainer(<App></App>);
 
       hydrate(<App></App>, container);
@@ -48,7 +58,11 @@ describe("dom", () => {
 
     test("wires a function-ref prop as an effect and skips static props", () => {
       const className = signal("initial");
-      const App = () => <div id="root" class={className} data-static="kept">Hi</div>;
+      const App = () => (
+        <div id="root" class={className} data-static="kept">
+          Hi
+        </div>
+      );
       const container = ssrContainer(<App></App>);
       const elBefore = container.querySelector("#root")!;
 
@@ -66,10 +80,19 @@ describe("dom", () => {
     test("a function-ref prop that throws during hydrate dispatches to error:fallback", () => {
       fallbackHandler();
       const shouldThrow = signal(false);
-      const App = () => <div id="boundary" error:fallback={(() => <span>Caught</span>)}><span id="rt" data-x={() => {
-            if (shouldThrow()) throw new Error("hydrate-prop");
-            return "ok";
-          }}>x</span></div>;
+      const App = () => (
+        <div id="boundary" error:fallback={() => <span>Caught</span>}>
+          <span
+            id="rt"
+            data-x={() => {
+              if (shouldThrow()) throw new Error("hydrate-prop");
+              return "ok";
+            }}
+          >
+            x
+          </span>
+        </div>
+      );
       const container = ssrContainer(<App></App>);
       hydrate(<App></App>, container);
       expect(container.querySelector("#rt")!.getAttribute("data-x")).toBe("ok");
@@ -80,7 +103,13 @@ describe("dom", () => {
     });
 
     test("adopts nested static structure preserving node identity", () => {
-      const App = () => <div id="root"><span id="a"><b id="b">deep</b></span></div>;
+      const App = () => (
+        <div id="root">
+          <span id="a">
+            <b id="b">deep</b>
+          </span>
+        </div>
+      );
       const container = ssrContainer(<App></App>);
       const rootBefore = container.querySelector("#root")!;
       const spanBefore = container.querySelector("#a")!;
@@ -94,7 +123,13 @@ describe("dom", () => {
 
     test("hydrates an element-bounded signal text child with siblings preserved", () => {
       const count = signal(0);
-      const App = () => <div id="root"><span id="before">pre</span><span id="mid">{count}</span><span id="after">post</span></div>;
+      const App = () => (
+        <div id="root">
+          <span id="before">pre</span>
+          <span id="mid">{count}</span>
+          <span id="after">post</span>
+        </div>
+      );
       const container = ssrContainer(<App></App>);
 
       hydrate(<App></App>, container);
@@ -111,7 +146,9 @@ describe("dom", () => {
 
     test("hydrates a conditional signal child swapping content in place", () => {
       const show = signal(true);
-      const App = () => <div id="root">{(() => show() ? <b id="yes">Yes</b> : <b id="no">No</b>)}</div>;
+      const App = () => (
+        <div id="root">{() => (show() ? <b id="yes">Yes</b> : <b id="no">No</b>)}</div>
+      );
       const container = ssrContainer(<App></App>);
 
       hydrate(<App></App>, container);
@@ -144,7 +181,12 @@ describe("dom", () => {
     });
 
     test("hydrates a fragment root with multiple top-level children", () => {
-      const App = () => <><span id="a">A</span><span id="b">B</span></>;
+      const App = () => (
+        <>
+          <span id="a">A</span>
+          <span id="b">B</span>
+        </>
+      );
       const container = ssrContainer(<App></App>);
       const aBefore = container.querySelector("#a")!;
       const bBefore = container.querySelector("#b")!;
@@ -155,7 +197,18 @@ describe("dom", () => {
     });
 
     test("hydrates a nested fragment child inline", () => {
-      const App = () => <div id="root"><span id="first">a</span>{(<><b id="b">b</b><i id="i">i</i></>)}<span id="last">z</span></div>;
+      const App = () => (
+        <div id="root">
+          <span id="first">a</span>
+          {
+            <>
+              <b id="b">b</b>
+              <i id="i">i</i>
+            </>
+          }
+          <span id="last">z</span>
+        </div>
+      );
       const container = ssrContainer(<App></App>);
       const firstBefore = container.querySelector("#first")!;
       const bBefore = container.querySelector("#b")!;
@@ -182,7 +235,18 @@ describe("dom", () => {
 
     test("renders a reactive fragment toggled from null", () => {
       const show = signal(false);
-      const App = () => <div id="root">{(() => show() ? <><b id="b">b</b><i id="i">i</i></> : null)}</div>;
+      const App = () => (
+        <div id="root">
+          {() =>
+            show() ? (
+              <>
+                <b id="b">b</b>
+                <i id="i">i</i>
+              </>
+            ) : null
+          }
+        </div>
+      );
       const container = ssrContainer(<App></App>);
       expect(container.querySelector("#b")).toBeNull();
 
@@ -196,7 +260,13 @@ describe("dom", () => {
     });
 
     test("hydrates a static subtree preserving node identity", () => {
-      const App = () => <div id="root"><span><b>deep</b></span></div>;
+      const App = () => (
+        <div id="root">
+          <span>
+            <b>deep</b>
+          </span>
+        </div>
+      );
       const container = ssrContainer(<App></App>);
       const spanBefore = container.querySelector("#root")!.querySelector("span")!;
 
@@ -210,7 +280,13 @@ describe("dom", () => {
 
     test("warns and re-mounts when a server element is missing", () => {
       const cls = signal("c");
-      const App = () => <div id="root"><span id="s" class={cls}>x</span></div>;
+      const App = () => (
+        <div id="root">
+          <span id="s" class={cls}>
+            x
+          </span>
+        </div>
+      );
       const container = setupContainer();
       container.innerHTML = `<div id="root"></div>`;
 
@@ -224,7 +300,18 @@ describe("dom", () => {
       const captured = suppressConsole();
       try {
         const unregister = fallbackHandler();
-        const App = () => <div id="root" error:fallback={(() => <span id="fb">fallback</span>)}><span id="inner" class={() => { throw new Error("boom"); }}>x</span></div>;
+        const App = () => (
+          <div id="root" error:fallback={() => <span id="fb">fallback</span>}>
+            <span
+              id="inner"
+              class={() => {
+                throw new Error("boom");
+              }}
+            >
+              x
+            </span>
+          </div>
+        );
         const container = setupContainer();
         container.innerHTML = `<div id="root"><span id="inner">x</span></div>`;
 
@@ -252,11 +339,17 @@ describe("dom", () => {
     test("null/false children consume no server node (ssr renders nothing for them)", () => {
       // The exact shape the babel concat emission produces: [].concat(props.children, [sibling])
       // with a nullish passthrough — the trailing sibling must hydrate in place, not shift.
-      const App = () => ({
-        tag: "div",
-        props: { id: "root" },
-        children: [null, undefined, false, { tag: "span", props: { id: "after" }, children: ["end"] }]
-      }) as HellaNode & RenderFn;
+      const App = () =>
+        ({
+          tag: "div",
+          props: { id: "root" },
+          children: [
+            null,
+            undefined,
+            false,
+            { tag: "span", props: { id: "after" }, children: ["end"] },
+          ],
+        }) as HellaNode & RenderFn;
       const container = ssrContainer(<App></App>);
 
       const { warnings } = suppressWarn(() => {
@@ -269,14 +362,18 @@ describe("dom", () => {
     });
 
     test("nested array children hydrate positionally in order (the JSX `{items.map(…)}` shape)", () => {
-      const App = () => ({
-        tag: "ul",
-        props: { id: "root" },
-        children: [
-          { tag: "li", children: ["first"] },
-          [{ tag: "li", children: ["second"] }, { tag: "li", children: ["third"] }]
-        ]
-      }) as HellaNode & RenderFn;
+      const App = () =>
+        ({
+          tag: "ul",
+          props: { id: "root" },
+          children: [
+            { tag: "li", children: ["first"] },
+            [
+              { tag: "li", children: ["second"] },
+              { tag: "li", children: ["third"] },
+            ],
+          ],
+        }) as HellaNode & RenderFn;
       const container = ssrContainer(<App></App>);
 
       const { warnings } = suppressWarn(() => {
@@ -290,8 +387,12 @@ describe("dom", () => {
     });
 
     test("afterMount fires at hydrate; flush() is idempotent and unmount removes the tree", () => {
-      const afterMount = mock(() => {});
-      const App = () => <div id="root" hook:afterMount={afterMount}>x</div>;
+      const afterMount = vi.fn(() => {});
+      const App = () => (
+        <div id="root" hook:afterMount={afterMount}>
+          x
+        </div>
+      );
       const container = ssrContainer(<App></App>);
 
       const handle = hydrate(<App></App>, container);
@@ -305,8 +406,12 @@ describe("dom", () => {
     });
 
     test("fires beforeMount synchronously during hydrate", () => {
-      const beforeMount = mock(() => {});
-      const App = () => <div id="root" hook:beforeMount={beforeMount}>x</div>;
+      const beforeMount = vi.fn(() => {});
+      const App = () => (
+        <div id="root" hook:beforeMount={beforeMount}>
+          x
+        </div>
+      );
       const container = setupContainer();
       container.innerHTML = `<div id="root">x</div>`;
 
@@ -332,18 +437,25 @@ describe("dom", () => {
     });
 
     test("routes an async component rejection through onError", async () => {
-      const handler = mock(() => null);
+      const handler = vi.fn(() => null);
       onError(handler);
       const container = setupContainer();
       container.innerHTML = `<div id="root">x</div>`;
 
-      hydrate(async () => { throw new Error("boom"); }, container);
+      hydrate(async () => {
+        throw new Error("boom");
+      }, container);
       await delay();
       expect(handler).toHaveBeenCalledTimes(1);
     });
 
     test("preserves server DOM across hydrate", () => {
-      const App = () => <div id="root"><span>A</span><span>B</span></div>;
+      const App = () => (
+        <div id="root">
+          <span>A</span>
+          <span>B</span>
+        </div>
+      );
       const container = ssrContainer(<App></App>);
       const rootBefore = container.firstChild;
       const spansBefore = container.querySelectorAll("span").length;

@@ -1,5 +1,6 @@
-import { describe, expect, test, mock } from "bun:test";
+import { describe, expect, test, vi } from "vite-plus/test";
 import { computed, effect, signal } from "@hellajs/core";
+import { delay } from "@utils/test-helpers.js";
 
 describe("core", () => {
   describe("computed", () => {
@@ -15,13 +16,15 @@ describe("core", () => {
       expect(fullName()).toBe("John Doe");
 
       // Chained derivation with compute tracking
-      const subtotalTracker = mock(() => price() * quantity());
+      const subtotalTracker = vi.fn(() => price() * quantity());
       const subtotal = computed(subtotalTracker);
       const discountAmount = computed(() => subtotal() * discount());
       const total = computed(() => subtotal() - discountAmount());
 
       // Subscribe to trigger computation
-      effect(() => { total(); });
+      effect(() => {
+        total();
+      });
       expect(subtotalTracker).toHaveBeenCalledTimes(1);
       expect(total()).toBe(180);
 
@@ -144,7 +147,9 @@ describe("core", () => {
       const a = signal(1);
       const b = computed(() => a() * 10);
 
-      const runs = mock(() => { b(); });
+      const runs = vi.fn(() => {
+        b();
+      });
       const cleanup = effect(runs);
       expect(runs).toHaveBeenCalledTimes(1);
       expect(b()).toBe(10);
@@ -180,7 +185,9 @@ describe("core", () => {
       const b = computed(() => a() * 10);
 
       // Subscribe, verify, dispose
-      const runs = mock(() => { b(); });
+      const runs = vi.fn(() => {
+        b();
+      });
       const cleanup1 = effect(runs);
       expect(runs).toHaveBeenCalledTimes(1);
       a(2);
@@ -192,7 +199,9 @@ describe("core", () => {
       a(3);
 
       // Re-subscribe: dependency graph rebuilds from scratch
-      const runs2 = mock(() => { b(); });
+      const runs2 = vi.fn(() => {
+        b();
+      });
       const cleanup2 = effect(runs2);
       expect(runs2).toHaveBeenCalledTimes(1);
       expect(b()).toBe(30);
@@ -205,7 +214,7 @@ describe("core", () => {
       cleanup2();
     });
 
-    test("computed auto-GC releases every dependency for multi-dependency computeds", () => {
+    test("computed auto-GC releases every dependency for multi-dependency computeds", async () => {
       const a = signal(1);
       const b = signal(2);
 
@@ -214,19 +223,24 @@ describe("core", () => {
       const canary = (() => {
         const held = { tag: "multi-dep" };
         const sum = computed(() => ({ total: a() + b(), tag: held }));
-        const stop = effect(() => { sum(); });
+        const stop = effect(() => {
+          sum();
+        });
         stop(); // sum loses its only subscriber: auto-GC must drop both a and b links
         return new WeakRef(held);
       })();
 
-      // Repeated full GCs: a single pass can leave weak targets un-swept
-      Bun.gc(true);
-      Bun.gc(true);
-      Bun.gc(true);
+      // V8 conservative stack scanning pins fresh WeakRefs from stale stack
+      // words: hop a macrotask before collecting, then repeat full GCs — a
+      // single pass can leave weak targets un-swept
+      await delay(10);
+      gc?.();
+      gc?.();
+      gc?.();
       expect(canary.deref()).toBeUndefined();
     });
 
-    test("computed auto-GC cascades dependency release into inner computeds", () => {
+    test("computed auto-GC cascades dependency release into inner computeds", async () => {
       const a = signal(1);
       const b = signal(2);
 
@@ -239,14 +253,17 @@ describe("core", () => {
         const held = { tag: "inner" };
         const inner = computed(() => ({ total: a() + b(), tag: held }));
         const outer = computed(() => inner().total + 1);
-        const stop = effect(() => { outer(); });
+        const stop = effect(() => {
+          outer();
+        });
         stop();
         return new WeakRef(held);
       })();
 
-      Bun.gc(true);
-      Bun.gc(true);
-      Bun.gc(true);
+      await delay(10); // V8 conservative stack scanning: macrotask hop before collecting
+      gc?.();
+      gc?.();
+      gc?.();
       expect(canary.deref()).toBeUndefined();
     });
 
@@ -255,7 +272,9 @@ describe("core", () => {
       const b = signal(2);
       const sum = computed(() => a() + b());
 
-      const runs = mock(() => { sum(); });
+      const runs = vi.fn(() => {
+        sum();
+      });
       const stop1 = effect(runs);
       expect(runs).toHaveBeenCalledTimes(1);
       expect(sum()).toBe(3);
@@ -265,7 +284,9 @@ describe("core", () => {
       b(20);
 
       // Re-subscribe after the graph was torn down and both sources changed
-      const runs2 = mock(() => { sum(); });
+      const runs2 = vi.fn(() => {
+        sum();
+      });
       const stop2 = effect(runs2);
       expect(runs2).toHaveBeenCalledTimes(1);
       expect(sum()).toBe(30);
@@ -283,7 +304,7 @@ describe("core", () => {
 
     test("computed returning undefined detects no change", () => {
       const toggle = signal(true);
-      const c = computed(() => toggle() ? undefined : "value");
+      const c = computed(() => (toggle() ? undefined : "value"));
 
       expect(c()).toBe(undefined);
 
@@ -300,9 +321,11 @@ describe("core", () => {
 
     test("computed returning NaN detects no change", () => {
       const src = signal(0);
-      const c = computed(() => src() % 2 === 0 ? NaN : 1);
+      const c = computed(() => (src() % 2 === 0 ? NaN : 1));
 
-      const runs = mock(() => { c(); });
+      const runs = vi.fn(() => {
+        c();
+      });
       effect(runs);
       expect(runs).toHaveBeenCalledTimes(1);
 

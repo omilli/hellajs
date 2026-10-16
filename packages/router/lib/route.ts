@@ -24,11 +24,9 @@ export const route = signal<RouteInfo>({
   handler: null,
   params: EMPTY_OBJECT,
   query: EMPTY_OBJECT,
-  path: hasWindow()
-    ? window.location.pathname + window.location.search
-    : "/",
+  path: hasWindow() ? window.location.pathname + window.location.search : "/",
   pending: false,
   meta: undefined,
   crumbs: EMPTY_CRUMBS,
-  active: activeFn
+  active: activeFn,
 });

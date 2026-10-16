@@ -22,7 +22,7 @@ export {
   isNull,
   isFalsy,
   isObject,
-  objectLoop
+  objectLoop,
 } from "./internal/utils";
 
 export { hasWindow, hasDocument, hasNavigator } from "./internal/env";

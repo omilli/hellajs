@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { resetTestState, getStylesheet } from "@utils/test-helpers.js";
-import { cva, cssText } from "@hellajs/css/bundle";
+import { cva, cssText } from "@hellajs/css";
 
 const MEDIA = { md: "(min-width: 768px)", lg: "(min-width: 1024px)" };
 
@@ -18,10 +18,10 @@ describe("cva responsive", () => {
     expect(sm).toMatch(/^size-sm-/);
     expect(lg).toMatch(/^size-lg-/);
     expect(getStylesheet("hella-css")).toBe(
-      `.${sm}{font-size:12px}@media (min-width:768px){.${lg}{font-size:16px}}`
+      `.${sm}{font-size:12px}@media (min-width:768px){.${lg}{font-size:16px}}`,
     );
     expect(cssText()).toBe(
-      `.${sm} {\n  font-size: 12px;\n}\n\n@media (min-width: 768px) {\n  .${lg} {\n    font-size: 16px;\n  }\n}`
+      `.${sm} {\n  font-size: 12px;\n}\n\n@media (min-width: 768px) {\n  .${lg} {\n    font-size: 16px;\n  }\n}`,
     );
   });
 
@@ -33,7 +33,7 @@ describe("cva responsive", () => {
     const sm = button({ size: { initial: "sm", md: "sm" } });
     expect(sm.split(" ")).toHaveLength(1);
     expect(getStylesheet("hella-css")).toBe(
-      `.${sm}{font-size:12px}@media (min-width:768px){.${sm}{font-size:12px}}`
+      `.${sm}{font-size:12px}@media (min-width:768px){.${sm}{font-size:12px}}`,
     );
   });
 
@@ -47,7 +47,7 @@ describe("cva responsive", () => {
     expect(sm).toMatch(/^size-sm-/);
     expect(lg).toMatch(/^size-lg-/);
     expect(getStylesheet("hella-css")).toBe(
-      `.${sm}{font-size:12px}@media (min-width:768px){.${lg}{font-size:16px}}`
+      `.${sm}{font-size:12px}@media (min-width:768px){.${lg}{font-size:16px}}`,
     );
   });
 
@@ -61,7 +61,7 @@ describe("cva responsive", () => {
     const [sm, lg, compound] = resolved.split(" ");
     expect(compound).toMatch(/^size-md-lg-[a-z]+$/);
     expect(getStylesheet("hella-css")).toBe(
-      `.${sm}{font-size:12px}@media (min-width:768px){.${lg}{font-size:16px}}.${compound}{font-weight:700}`
+      `.${sm}{font-size:12px}@media (min-width:768px){.${lg}{font-size:16px}}.${compound}{font-weight:700}`,
     );
   });
 
@@ -82,7 +82,7 @@ describe("cva responsive", () => {
       variants: { size: { sm: { fontSize: 12 }, lg: { fontSize: 16 } } },
     });
     expect(() => button({ size: { xxl: "lg" } } as never)).toThrow(
-      '[css] cva: unknown breakpoint "xxl" for variant "size" — add it to the media config'
+      '[css] cva: unknown breakpoint "xxl" for variant "size" — add it to the media config',
     );
   });
 

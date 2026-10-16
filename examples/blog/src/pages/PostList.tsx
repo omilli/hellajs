@@ -20,26 +20,28 @@ const goToPage = (p: number) => navigate("/posts", { query: { page: String(p) } 
 export const PostList = () => {
   fetch();
 
-  return <>
-    <SearchBar
-      value={searchValue}
-      onSearch={fetch}
-    />
+  return (
+    <>
+      <SearchBar value={searchValue} onSearch={fetch} />
 
-    {() => {
-      const posts = data()?.posts ?? [];
+      {() => {
+        const posts = data()?.posts ?? [];
 
-      return isFetching() ?
-        <Placeholder message="Loading posts..." /> :
-        posts.length > 0 ?
-          <ForEach each={posts} use={(post) =>
-            <PostCard post={post} onClick={() => navigate(`/posts/${post.id}`)} />
-          } /> :
-          <Placeholder message={`No posts found "${searchValue()}".`} />;
-    }}
+        return isFetching() ? (
+          <Placeholder message="Loading posts..." />
+        ) : posts.length > 0 ? (
+          <ForEach
+            each={posts}
+            use={(post) => <PostCard post={post} onClick={() => navigate(`/posts/${post.id}`)} />}
+          />
+        ) : (
+          <Placeholder message={`No posts found "${searchValue()}".`} />
+        );
+      }}
 
-    {totalPages() > 1 &&
-      <Pagination page={page} totalPages={totalPages} onPageChange={goToPage} />
-    }
-  </>;
+      {totalPages() > 1 && (
+        <Pagination page={page} totalPages={totalPages} onPageChange={goToPage} />
+      )}
+    </>
+  );
 };

@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 
-import { router, route } from "@hellajs/router/bundle";
+import { router, route } from "@hellajs/router";
 import { setupRouterEnv } from "./helpers";
 
 describe("router", () => {
@@ -10,13 +10,13 @@ describe("router", () => {
     });
 
     test("resolves the initial route synchronously on router()", () => {
-      const home = mock(() => { });
+      const home = vi.fn(() => {});
 
       router({
         routes: {
-          "/": home
+          "/": home,
         },
-        url: "/"
+        url: "/",
       });
 
       // No flush()/await — route() is already resolved when router() returns.
@@ -25,15 +25,15 @@ describe("router", () => {
     });
 
     test("resolves against the url option instead of window.location", () => {
-      const home = mock(() => { });
-      const about = mock(() => { });
+      const home = vi.fn(() => {});
+      const about = vi.fn(() => {});
 
       router({
         routes: {
           "/": home,
-          "/about": about
+          "/about": about,
         },
-        url: "/about"
+        url: "/about",
       });
 
       expect(route().path).toBe("/about");
@@ -44,9 +44,9 @@ describe("router", () => {
     test("extracts path params from the url option synchronously", () => {
       router({
         routes: {
-          "/users/:id": () => { }
+          "/users/:id": () => {},
         },
-        url: "/users/123"
+        url: "/users/123",
       });
 
       expect(route().params["id"]).toBe("123");
@@ -55,22 +55,22 @@ describe("router", () => {
     test("parses the query string from the url option synchronously", () => {
       router({
         routes: {
-          "/search": () => { }
+          "/search": () => {},
         },
-        url: "/search?q=hello"
+        url: "/search?q=hello",
       });
 
       expect(route().query["q"]).toBe("hello");
     });
 
     test("accepts a full request URL for the url option", () => {
-      const user = mock(() => { });
+      const user = vi.fn(() => {});
 
       router({
         routes: {
-          "/users/:id": user
+          "/users/:id": user,
         },
-        url: "https://example.com/users/7"
+        url: "https://example.com/users/7",
       });
 
       expect(route().path).toBe("/users/7");
@@ -79,54 +79,56 @@ describe("router", () => {
     });
 
     test("parses the query string from a full URL", () => {
-      const search = mock(() => { });
+      const search = vi.fn(() => {});
 
       router({
         routes: {
-          "/search": search
+          "/search": search,
         },
-        url: "https://example.com/search?q=hello%20world"
+        url: "https://example.com/search?q=hello%20world",
       });
 
       expect(route().query["q"]).toBe("hello world");
     });
 
     test("ignores a hash fragment in the url option", () => {
-      const user = mock(() => { });
+      const user = vi.fn(() => {});
 
       router({
         routes: {
-          "/users/:id": user
+          "/users/:id": user,
         },
-        url: "https://example.com/users/7#section"
+        url: "https://example.com/users/7#section",
       });
 
       expect(route().params["id"]).toBe("7");
     });
 
     test("throws on an invalid url option", () => {
-      expect(() => router({ routes: {}, url: "http://[" })).toThrow("[router] router: invalid url, received \"http://[\"");
+      expect(() => router({ routes: {}, url: "http://[" })).toThrow(
+        '[router] router: invalid url, received "http://["',
+      );
     });
 
     test("fires the matched handler exactly once during router()", () => {
-      const home = mock(() => { });
+      const home = vi.fn(() => {});
 
       router({
         routes: {
-          "/": home
+          "/": home,
         },
-        url: "/"
+        url: "/",
       });
 
       expect(home).toHaveBeenCalledTimes(1);
     });
 
     test("re-resolves the url on each router() call in one process (SSR per-request)", () => {
-      const home = mock(() => { });
-      const users = mock(() => { });
+      const home = vi.fn(() => {});
+      const users = vi.fn(() => {});
       const routes = {
         "/": home,
-        "/users/:id": users
+        "/users/:id": users,
       };
 
       router({ routes, url: "/users/7" });

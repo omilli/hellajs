@@ -8,7 +8,10 @@ export async function collect(stream: ReadableStream<string>): Promise<string> {
   const reader = stream.getReader();
   let out = "";
   let chunk = await reader.read();
-  while (!chunk.done) { out += chunk.value; chunk = await reader.read(); }
+  while (!chunk.done) {
+    out += chunk.value;
+    chunk = await reader.read();
+  }
   return out;
 }
 
@@ -20,31 +23,78 @@ const bareDynamicFn = (() => {
 })();
 
 /** The vendored-component codegen shape: children re-interpolated through the compiled JSX path. */
-export const SlotBox = (props: { children?: unknown }) =>
-  <div>{() => props.children}</div>;
+export const SlotBox = (props: { children?: unknown }) => <div>{() => props.children}</div>;
 
 /** Parity node cases — inputs every walker (`ssr`/`ssr.async`/`ssr.stream`) must render byte-identically. */
 export const parityCases: { name: string; node: HellaNode }[] = [
-  { name: "falsy child (false)", node: <div>{false}</div> as HellaNode },
-  { name: "number child", node: <p>{5}</p> as HellaNode },
-  { name: "boolean true child", node: <div>{true}</div> as HellaNode },
-  { name: "escaped text child", node: <p>{signal('<b>&"x')}</p> as HellaNode },
-  { name: "fragment child among siblings", node: <div>a{(<><b></b><c></c></>)}d</div> as HellaNode },
-  { name: "reactive child resolving to an element", node: <div>{(signal(<b></b> as HellaNode))}</div> as HellaNode },
-  { name: "reactive getter returning an array of nodes", node: <ul>{(() => [1, 2, 3].map((n) => <li>{n}</li>))}</ul> as HellaNode },
-  { name: "reactive getter through a component child slot", node: <ul><SlotBox>{(() => [1, 2].map((n) => <li>{n}</li>))}</SlotBox></ul> as HellaNode },
-  { name: "reactive child resolving to a non-HellaNode object", node: <div>{signal({ notag: true } as unknown as HellaNode)}</div> as HellaNode },
-  { name: "reactive getter returning an isDynamic component", node: <div>{(() => ForEach({ each: signal([1, 2, 3]), use: (n: number) => <li>{n}</li> }))}</div> as HellaNode },
-  { name: "isDynamic function without ssr meta (empty region)", node: <div>{bareDynamicFn}</div> as HellaNode },
-  { name: "Transition with JSX array children (children: [child])", node: <div>{(component(Transition as unknown as (props: Record<string, unknown>) => HellaNode, { show: true, children: [<p>on</p>] }))}</div> as HellaNode },
+  { name: "falsy child (false)", node: (<div>{false}</div>) as HellaNode },
+  { name: "number child", node: (<p>{5}</p>) as HellaNode },
+  { name: "boolean true child", node: (<div>{true}</div>) as HellaNode },
+  { name: "escaped text child", node: (<p>{signal('<b>&"x')}</p>) as HellaNode },
+  {
+    name: "fragment child among siblings",
+    node: (
+      <div>
+        a
+        {
+          <>
+            <b></b>
+            <c></c>
+          </>
+        }
+        d
+      </div>
+    ) as HellaNode,
+  },
+  {
+    name: "reactive child resolving to an element",
+    node: (<div>{signal((<b></b>) as HellaNode)}</div>) as HellaNode,
+  },
+  {
+    name: "reactive getter returning an array of nodes",
+    node: (<ul>{() => [1, 2, 3].map((n) => <li>{n}</li>)}</ul>) as HellaNode,
+  },
+  {
+    name: "reactive getter through a component child slot",
+    node: (
+      <ul>
+        <SlotBox>{() => [1, 2].map((n) => <li>{n}</li>)}</SlotBox>
+      </ul>
+    ) as HellaNode,
+  },
+  {
+    name: "reactive child resolving to a non-HellaNode object",
+    node: (<div>{signal({ notag: true } as unknown as HellaNode)}</div>) as HellaNode,
+  },
+  {
+    name: "reactive getter returning an isDynamic component",
+    node: (
+      <div>{() => ForEach({ each: signal([1, 2, 3]), use: (n: number) => <li>{n}</li> })}</div>
+    ) as HellaNode,
+  },
+  {
+    name: "isDynamic function without ssr meta (empty region)",
+    node: (<div>{bareDynamicFn}</div>) as HellaNode,
+  },
+  {
+    name: "Transition with JSX array children (children: [child])",
+    node: (
+      <div>
+        {component(Transition as unknown as (props: Record<string, unknown>) => HellaNode, {
+          show: true,
+          children: [<p>on</p>],
+        })}
+      </div>
+    ) as HellaNode,
+  },
 ];
 
 /** Attribute-serialization parity cases — exercise the `serializeProp` branches (void / boolean / array / falsy). */
 export const attributeCases: { name: string; node: HellaNode }[] = [
-  { name: "void element", node: <img src={"a.jpg"} /> as HellaNode },
-  { name: "boolean attribute", node: <input disabled={true} /> as HellaNode },
-  { name: "array attribute", node: <div class={["a", "b"]}></div> as HellaNode },
-  { name: "falsy attributes", node: <div class={false} id={undefined}></div> as HellaNode },
+  { name: "void element", node: (<img src={"a.jpg"} />) as HellaNode },
+  { name: "boolean attribute", node: (<input disabled={true} />) as HellaNode },
+  { name: "array attribute", node: (<div class={["a", "b"]}></div>) as HellaNode },
+  { name: "falsy attributes", node: (<div class={false} id={undefined}></div>) as HellaNode },
 ];
 
 /**
@@ -53,29 +103,46 @@ export const attributeCases: { name: string; node: HellaNode }[] = [
  * against live): getter attrs resolve, reactive title text resolves, marker wrapping of the reactive
  * sibling is unchanged, and non-text children leave a `<title>`/`<style>` rendered in place.
  */
-export const headParityCases: { name: string; node: HellaNode; body: string; bag: HeadOptions }[] = [
-  {
-    name: "head tags among body content",
-    node: <div><title>Page - {signal("Home")}</title><meta charset="utf-8" /><meta name={() => "viewport"} content={() => "width=device-width"} /><link rel="icon" href="/f.ico" /><style>{"a > b { color: red }"}</style><p>count: {signal(5)}</p></div> as HellaNode,
-    body: "<div><p>count: <!--[-->5<!--]--></p></div>",
-    bag: {
-      title: "Page - Home",
-      meta: [{ charset: "utf-8" }, { name: "viewport", content: "width=device-width" }],
-      links: [{ rel: "icon", href: "/f.ico" }],
-      styles: ["a > b { color: red }"],
+export const headParityCases: { name: string; node: HellaNode; body: string; bag: HeadOptions }[] =
+  [
+    {
+      name: "head tags among body content",
+      node: (
+        <div>
+          <title>Page - {signal("Home")}</title>
+          <meta charset="utf-8" />
+          <meta name={() => "viewport"} content={() => "width=device-width"} />
+          <link rel="icon" href="/f.ico" />
+          <style>{"a > b { color: red }"}</style>
+          <p>count: {signal(5)}</p>
+        </div>
+      ) as HellaNode,
+      body: "<div><p>count: <!--[-->5<!--]--></p></div>",
+      bag: {
+        title: "Page - Home",
+        meta: [{ charset: "utf-8" }, { name: "viewport", content: "width=device-width" }],
+        links: [{ rel: "icon", href: "/f.ico" }],
+        styles: ["a > b { color: red }"],
+      },
     },
-  },
-  {
-    name: "non-text head children stay in place",
-    node: <div><title>{(<b>T</b>)}</title><style>{(<i>s</i>)}</style>keep</div> as HellaNode,
-    body: "<div><title><b>T</b></title><style><i>s</i></style>keep</div>",
-    bag: { title: undefined, meta: [], links: [], styles: [] },
-  },
-];
+    {
+      name: "non-text head children stay in place",
+      node: (
+        <div>
+          <title>{<b>T</b>}</title>
+          <style>{<i>s</i>}</style>keep
+        </div>
+      ) as HellaNode,
+      body: "<div><title><b>T</b></title><style><i>s</i></style>keep</div>",
+      bag: { title: undefined, meta: [], links: [], styles: [] },
+    },
+  ];
 
 /** Builds a HellaNode wrapping an isDynamic function with an unknown ssr kind (renders an empty region; the walk warns). */
 export function unknownKindNode(): HellaNode {
-  const fn = (() => { throw new Error("fn should not be called"); }) as unknown as { isDynamic?: true; ssr?: { kind: "unknown"; props: object } };
+  const fn = (() => {
+    throw new Error("fn should not be called");
+  }) as unknown as { isDynamic?: true; ssr?: { kind: "unknown"; props: object } };
   fn.isDynamic = true;
   fn.ssr = { kind: "unknown", props: {} };
   return <div>{fn}</div>;

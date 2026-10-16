@@ -12,12 +12,7 @@ export function Input({ class: cls, ...attrs }: InputProps): JSX.Element {
       data-slot="input"
       class={
         // @hella:compose
-        [
-          base,
-          focus,
-          invalid,
-          cls,
-        ]
+        [base, focus, invalid, cls]
         // @hella:end
       }
       {...attrs}

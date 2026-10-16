@@ -1,5 +1,5 @@
-import { describe, test, expect, beforeEach } from "bun:test";
-import { router, navigate, route } from "@hellajs/router/bundle";
+import { describe, test, expect, beforeEach } from "vite-plus/test";
+import { router, navigate, route } from "@hellajs/router";
 import { setupRouterEnv } from "./helpers";
 
 describe("router", () => {
@@ -22,11 +22,11 @@ describe("router", () => {
             children: {
               "/users": {
                 meta: { title: "Users" },
-                handler: () => render("users")
-              }
-            }
-          }
-        }
+                handler: () => render("users"),
+              },
+            },
+          },
+        },
       });
 
       navigate("/admin/users");
@@ -43,11 +43,11 @@ describe("router", () => {
             children: {
               "/users": {
                 meta: { title: "Users" },
-                handler: () => render("users")
-              }
-            }
-          }
-        }
+                handler: () => render("users"),
+              },
+            },
+          },
+        },
       });
 
       navigate("/admin/users");
@@ -66,13 +66,13 @@ describe("router", () => {
                 children: {
                   "/c": {
                     meta: { levelC: true, level: "c" },
-                    handler: () => render("c")
-                  }
-                }
-              }
-            }
-          }
-        }
+                    handler: () => render("c"),
+                  },
+                },
+              },
+            },
+          },
+        },
       });
 
       navigate("/a/b/c");
@@ -89,11 +89,11 @@ describe("router", () => {
             children: {
               "/users": {
                 meta: { title: "Users" },
-                handler: () => render("users")
-              }
-            }
-          }
-        }
+                handler: () => render("users"),
+              },
+            },
+          },
+        },
       });
 
       navigate("/admin/users", { meta: { title: "Override" } });
@@ -109,11 +109,11 @@ describe("router", () => {
             children: {
               "/users": {
                 meta: { title: "User Management" },
-                handler: () => render("users")
-              }
-            }
-          }
-        }
+                handler: () => render("users"),
+              },
+            },
+          },
+        },
       });
 
       navigate("/admin/users");
@@ -126,9 +126,9 @@ describe("router", () => {
         routes: {
           "/about": {
             meta: { title: "About" },
-            handler: () => render("about")
-          }
-        }
+            handler: () => render("about"),
+          },
+        },
       });
 
       navigate("/about");
@@ -148,13 +148,13 @@ describe("router", () => {
                 children: {
                   "/c": {
                     meta: { leaf: true },
-                    handler: () => render("c")
-                  }
-                }
-              }
-            }
-          }
-        }
+                    handler: () => render("c"),
+                  },
+                },
+              },
+            },
+          },
+        },
       });
 
       navigate("/a/b/c");
@@ -172,11 +172,11 @@ describe("router", () => {
               "/users": {
                 inheritMeta: false,
                 meta: { title: "Users" },
-                handler: () => render("users")
-              }
-            }
-          }
-        }
+                handler: () => render("users"),
+              },
+            },
+          },
+        },
       });
 
       navigate("/admin/users");
@@ -193,11 +193,11 @@ describe("router", () => {
               "/users": {
                 inheritMeta: true,
                 meta: { title: "Users" },
-                handler: () => render("users")
-              }
-            }
-          }
-        }
+                handler: () => render("users"),
+              },
+            },
+          },
+        },
       });
 
       navigate("/admin/users");
@@ -214,11 +214,11 @@ describe("router", () => {
             children: {
               "/users": {
                 meta: { title: "Users" },
-                handler: () => render("users")
-              }
-            }
-          }
-        }
+                handler: () => render("users"),
+              },
+            },
+          },
+        },
       });
 
       navigate("/admin/users");

@@ -18,7 +18,7 @@ function suspendChild(
   parent: Element,
   anchor: Node,
   value: HellaChild | HellaChild[],
-  clearFallback: () => void
+  clearFallback: () => void,
 ): void {
   const ns = childNamespaceOf(parent);
   const renderedNodes: Node[] = [];
@@ -59,7 +59,11 @@ function suspendChild(
       .catch((err: unknown) => {
         if (cancelled || !anchor.parentNode) return;
         clearFallback();
-        const errNode = dispatchError(toError(err), { phase: "mount", element: parent as HellaElement, config: resolveErrorConfig(parent) });
+        const errNode = dispatchError(toError(err), {
+          phase: "mount",
+          element: parent as HellaElement,
+          config: resolveErrorConfig(parent),
+        });
         if (errNode) insertTracked(resolveNode(errNode, undefined, ns));
       });
     return;
@@ -83,16 +87,26 @@ export function Suspense(props: SuspenseProps): JSX.Element {
       if (hctx.stageMissing) {
         // interrupted stream: the staged <template> never arrived — degrade to fresh-mount semantics
         console.warn("[dom] hydrate: suspense stage missing - re-suspending on client");
-        const child = Array.isArray(props.children) && props.children.length === 1 ? props.children[0] : props.children;
+        const child =
+          Array.isArray(props.children) && props.children.length === 1
+            ? props.children[0]
+            : props.children;
         const value = isFunction(child) ? (child as () => HellaChild | HellaChild[])() : child;
         // the gathered region nodes ARE the rendered fallback — removed once the child settles
-        suspendChild(parent, hctx.anchor, value, () => clearRenderedNodes(hctx.existingNodes, parent));
+        suspendChild(parent, hctx.anchor, value, () =>
+          clearRenderedNodes(hctx.existingNodes, parent),
+        );
         return;
       }
       // hydrate: existingNodes holds the (swapped) resolved children; hydrate each child against them.
       // Compiled JSX children arrive as an array — pass it flat so hydrateSequence binds each.
       const children = Array.isArray(props.children) ? props.children : [props.children];
-      hydrateSequence(parent as unknown as HellaElement, children, hctx.existingNodes[0] ?? null, undefined);
+      hydrateSequence(
+        parent as unknown as HellaElement,
+        children,
+        hctx.existingNodes[0] ?? null,
+        undefined,
+      );
       return;
     }
     // fresh mount: resolve children once. A thenable child suspends — render the
@@ -103,7 +117,10 @@ export function Suspense(props: SuspenseProps): JSX.Element {
     parent.appendChild(anchor);
     // Compiled JSX wraps a single child in an array (`children: [child]`).
     // Unwrap a length-1 array so an async producer is evaluated, not stringified by resolveNode.
-    const child = Array.isArray(props.children) && props.children.length === 1 ? props.children[0] : props.children;
+    const child =
+      Array.isArray(props.children) && props.children.length === 1
+        ? props.children[0]
+        : props.children;
     const value = isFunction(child) ? (child as () => HellaChild | HellaChild[])() : child;
     let fallbackNode: Node | null = null;
     const clearFallback = () => {

@@ -1,14 +1,24 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { resetTestState } from "@utils/test-helpers.js";
 import { onPinch } from "@hellajs/dom";
 import type { PinchState } from "@hellajs/dom";
 
 const pinchDown = (target: Node, pointerId: number, x = 0, y = 0): void => {
-  target.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, cancelable: true, pointerId, clientX: x, clientY: y }));
+  target.dispatchEvent(
+    new PointerEvent("pointerdown", {
+      bubbles: true,
+      cancelable: true,
+      pointerId,
+      clientX: x,
+      clientY: y,
+    }),
+  );
 };
 
 const pinchMove = (target: Node, pointerId: number, x: number, y: number): void => {
-  target.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, pointerId, clientX: x, clientY: y }));
+  target.dispatchEvent(
+    new PointerEvent("pointermove", { bubbles: true, pointerId, clientX: x, clientY: y }),
+  );
 };
 
 const pinchUp = (target: Node, pointerId: number): void => {
@@ -22,14 +32,16 @@ describe("onPinch", () => {
 
   test("requires el, handlers, and onMove", () => {
     const el = document.createElement("div");
-    expect(() => onPinch(null as never, { onMove: () => {} })).toThrow("[dom] onPinch: el is required");
+    expect(() => onPinch(null as never, { onMove: () => {} })).toThrow(
+      "[dom] onPinch: el is required",
+    );
     expect(() => onPinch(el, null as never)).toThrow("[dom] onPinch: handlers is required");
     expect(() => onPinch(el, {} as never)).toThrow("[dom] onPinch: onMove is required");
   });
 
   test("ignores a single pointer moving alone", () => {
-    const onStart = mock<(event: PointerEvent) => void>(() => {});
-    const onMove = mock<(state: PinchState) => void>(() => {});
+    const onStart = vi.fn<(event: PointerEvent) => void>(() => {});
+    const onMove = vi.fn<(state: PinchState) => void>(() => {});
     const el = document.createElement("div");
     document.body.append(el);
     const dispose = onPinch(el, { onStart, onMove });
@@ -42,8 +54,8 @@ describe("onPinch", () => {
   });
 
   test("starts on the second pointerdown and reports unit scale from the baseline", () => {
-    const onStart = mock<(event: PointerEvent) => void>(() => {});
-    const onMove = mock<(state: PinchState) => void>(() => {});
+    const onStart = vi.fn<(event: PointerEvent) => void>(() => {});
+    const onMove = vi.fn<(state: PinchState) => void>(() => {});
     const el = document.createElement("div");
     document.body.append(el);
     const dispose = onPinch(el, { onStart, onMove });
@@ -58,7 +70,7 @@ describe("onPinch", () => {
   });
 
   test("scales up as the pair spreads and down as it pinches", () => {
-    const onMove = mock<(state: PinchState) => void>(() => {});
+    const onMove = vi.fn<(state: PinchState) => void>(() => {});
     const el = document.createElement("div");
     document.body.append(el);
     const dispose = onPinch(el, { onMove });
@@ -73,7 +85,7 @@ describe("onPinch", () => {
   });
 
   test("follows the centroid when both pointers translate", () => {
-    const onMove = mock<(state: PinchState) => void>(() => {});
+    const onMove = vi.fn<(state: PinchState) => void>(() => {});
     const el = document.createElement("div");
     document.body.append(el);
     const dispose = onPinch(el, { onMove });
@@ -87,8 +99,8 @@ describe("onPinch", () => {
   });
 
   test("ends once when one tracked pointer lifts and ignores later single-pointer moves", () => {
-    const onEnd = mock(() => {});
-    const onMove = mock<(state: PinchState) => void>(() => {});
+    const onEnd = vi.fn(() => {});
+    const onMove = vi.fn<(state: PinchState) => void>(() => {});
     const el = document.createElement("div");
     document.body.append(el);
     const dispose = onPinch(el, { onMove, onEnd });
@@ -105,8 +117,8 @@ describe("onPinch", () => {
   });
 
   test("keeps the tracked pair stable when a third pointer joins", () => {
-    const onStart = mock<(event: PointerEvent) => void>(() => {});
-    const onMove = mock<(state: PinchState) => void>(() => {});
+    const onStart = vi.fn<(event: PointerEvent) => void>(() => {});
+    const onMove = vi.fn<(state: PinchState) => void>(() => {});
     const el = document.createElement("div");
     document.body.append(el);
     const dispose = onPinch(el, { onStart, onMove });
@@ -123,7 +135,7 @@ describe("onPinch", () => {
   });
 
   test("keeps non-primary buttons and disabled descendants out of the pointer map", () => {
-    const onStart = mock<(event: PointerEvent) => void>(() => {});
+    const onStart = vi.fn<(event: PointerEvent) => void>(() => {});
     const el = document.createElement("div");
     const disabled = document.createElement("button");
     disabled.disabled = true;
@@ -132,16 +144,25 @@ describe("onPinch", () => {
     const dispose = onPinch(el, { onStart, onMove: () => {} });
 
     pinchDown(el, 1, 100, 100);
-    el.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, cancelable: true, pointerId: 2, button: 2, clientX: 200, clientY: 100 }));
+    el.dispatchEvent(
+      new PointerEvent("pointerdown", {
+        bubbles: true,
+        cancelable: true,
+        pointerId: 2,
+        button: 2,
+        clientX: 200,
+        clientY: 100,
+      }),
+    );
     pinchDown(disabled, 2, 200, 100);
     expect(onStart).not.toHaveBeenCalled();
     dispose();
   });
 
   test("stops all wiring after dispose", () => {
-    const onStart = mock<(event: PointerEvent) => void>(() => {});
-    const onMove = mock<(state: PinchState) => void>(() => {});
-    const onEnd = mock(() => {});
+    const onStart = vi.fn<(event: PointerEvent) => void>(() => {});
+    const onMove = vi.fn<(state: PinchState) => void>(() => {});
+    const onEnd = vi.fn(() => {});
     const el = document.createElement("div");
     document.body.append(el);
     const dispose = onPinch(el, { onStart, onMove, onEnd });

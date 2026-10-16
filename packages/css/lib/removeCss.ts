@@ -17,7 +17,8 @@ import type { CSSObject, CSSOptions } from "./types";
  * or directly under a conditional at-rule) — the same rejections `css()` makes on the same object.
  */
 export function removeCss(obj: CSSObject, options: CSSOptions = {}): void {
-  if (!isPlainObject(obj)) throw new Error(`[css] removeCss: expected a CSS object, received ${String(obj)}`);
+  if (!isPlainObject(obj))
+    throw new Error(`[css] removeCss: expected a CSS object, received ${String(obj)}`);
 
   const host = options.host;
   const cssText = process(obj, "", true);

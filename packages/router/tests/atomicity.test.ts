@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { effect } from "@hellajs/core";
-import { router, route, navigate } from "@hellajs/router/bundle";
+import { router, route, navigate } from "@hellajs/router";
 import { setupRouterEnv } from "./helpers";
 
 describe("router", () => {
@@ -9,14 +9,16 @@ describe("router", () => {
       setupRouterEnv();
       router({
         routes: {
-          "/users/:id": () => { },
-          "/about": () => { }
-        }
+          "/users/:id": () => {},
+          "/about": () => {},
+        },
       });
     });
 
     test("navigate fires route subscribers exactly once per navigation", () => {
-      const tracker = mock(() => { route().path; });
+      const tracker = vi.fn(() => {
+        route().path;
+      });
       effect(tracker);
       tracker.mockClear();
       navigate("/users/123");
@@ -25,7 +27,9 @@ describe("router", () => {
 
     test("route signal never exposes stale handler alongside new path", () => {
       const snapshots: Array<{ path: string; handler: unknown }> = [];
-      effect(() => { snapshots.push({ path: route().path, handler: route().handler }); });
+      effect(() => {
+        snapshots.push({ path: route().path, handler: route().handler });
+      });
       navigate("/users/123");
       navigate("/about");
 
@@ -44,7 +48,9 @@ describe("router", () => {
     });
 
     test("popstate fires route subscribers exactly once per navigation", () => {
-      const tracker = mock(() => { route().path; });
+      const tracker = vi.fn(() => {
+        route().path;
+      });
       effect(tracker);
       tracker.mockClear();
       history.pushState({}, "", "/users/123");

@@ -54,6 +54,8 @@ const page = doc({
 Pass an [`ssr.stream`](/reference/ssr/ssr#stream) body and the same options produce a streaming document: the client receives the shell immediately and each chunk as it renders, nothing collected.
 
 ```js
+import { createServer } from 'node:http';
+import { Readable } from 'node:stream';
 import { ssr, doc } from '@hellajs/ssr';
 
 const page = doc({
@@ -66,12 +68,10 @@ const page = doc({
   body: ssr.stream(App()),
 });
 
-Bun.serve({
-  port: 3000,
-  fetch: () => new Response(page.pipeThrough(new TextEncoderStream()), {
-    headers: { 'content-type': 'text/html' },
-  }),
-});
+createServer((req, res) => {
+  res.setHeader('content-type', 'text/html');
+  Readable.fromWeb(page.pipeThrough(new TextEncoderStream())).pipe(res);
+}).listen(3000);
 ```
 
 ## Key Concepts

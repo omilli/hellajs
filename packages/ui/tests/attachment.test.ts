@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { resetTestState } from "@utils/test-helpers.js";
 import {
   assertAttrForwarded,
@@ -14,17 +14,25 @@ beforeEach(() => {
 });
 
 describe("attachment", () => {
-  test.each(attachmentVariants)("$part $style renders the state, size, and orientation attributes", (variant) => {
-    const root = renderVariant(variant, { children: ["x"] });
-    expect(root.getAttribute("data-slot")).toBe("attachment");
-    expect(root.getAttribute("data-state")).toBe("done");
-    expect(root.getAttribute("data-size")).toBe("default");
-    expect(root.getAttribute("data-orientation")).toBe("horizontal");
-    const errored = renderVariant(variant, { state: "error", size: "sm", orientation: "vertical", children: ["x"] });
-    expect(errored.getAttribute("data-state")).toBe("error");
-    expect(errored.getAttribute("data-size")).toBe("sm");
-    expect(errored.getAttribute("data-orientation")).toBe("vertical");
-  });
+  test.each(attachmentVariants)(
+    "$part $style renders the state, size, and orientation attributes",
+    (variant) => {
+      const root = renderVariant(variant, { children: ["x"] });
+      expect(root.getAttribute("data-slot")).toBe("attachment");
+      expect(root.getAttribute("data-state")).toBe("done");
+      expect(root.getAttribute("data-size")).toBe("default");
+      expect(root.getAttribute("data-orientation")).toBe("horizontal");
+      const errored = renderVariant(variant, {
+        state: "error",
+        size: "sm",
+        orientation: "vertical",
+        children: ["x"],
+      });
+      expect(errored.getAttribute("data-state")).toBe("error");
+      expect(errored.getAttribute("data-size")).toBe("sm");
+      expect(errored.getAttribute("data-orientation")).toBe("vertical");
+    },
+  );
 
   test.each(attachmentVariants)("$part $style carries the status classes per state", (variant) => {
     const idle = renderVariant(variant, { state: "idle", children: ["x"] });
@@ -47,38 +55,55 @@ describe("attachment", () => {
     }
   });
 
-  test.each(attachmentPartVariants.filter((variant) => variant.part === "Media"))("$part $style renders the media well", (variant) => {
-    const root = renderVariant(variant, { children: ["x"] });
-    expect(root.getAttribute("data-slot")).toBe("attachment-media");
-    expect(root.getAttribute("data-variant")).toBe("icon");
-    expect(root.textContent).toBe("x");
-    if (variant.style === "css") {
-      expect(classTokens(root)[0]!.startsWith("attachment-media")).toBe(true);
-    } else {
-      expect(classTokens(root)).toContain("aspect-square");
-    }
-    const image = renderVariant(variant, { variant: "image", children: ["x"] });
-    expect(image.getAttribute("data-variant")).toBe("image");
-  });
+  test.each(attachmentPartVariants.filter((variant) => variant.part === "Media"))(
+    "$part $style renders the media well",
+    (variant) => {
+      const root = renderVariant(variant, { children: ["x"] });
+      expect(root.getAttribute("data-slot")).toBe("attachment-media");
+      expect(root.getAttribute("data-variant")).toBe("icon");
+      expect(root.textContent).toBe("x");
+      if (variant.style === "css") {
+        expect(classTokens(root)[0]!.startsWith("attachment-media")).toBe(true);
+      } else {
+        expect(classTokens(root)).toContain("aspect-square");
+      }
+      const image = renderVariant(variant, { variant: "image", children: ["x"] });
+      expect(image.getAttribute("data-variant")).toBe("image");
+    },
+  );
 
-  test.each(attachmentPartVariants.filter((variant) => variant.part === "Media"))("$part $style inlines the loading spinner while uploading", (variant) => {
-    const root = renderVariant(variant, { state: "uploading" });
-    expect(root.querySelector("svg path")).not.toBeNull();
-    expect(root.querySelector("svg path")!.getAttribute("d")).toBe("M21 12a9 9 0 1 1-6.219-8.56");
-  });
+  test.each(attachmentPartVariants.filter((variant) => variant.part === "Media"))(
+    "$part $style inlines the loading spinner while uploading",
+    (variant) => {
+      const root = renderVariant(variant, { state: "uploading" });
+      expect(root.querySelector("svg path")).not.toBeNull();
+      expect(root.querySelector("svg path")!.getAttribute("d")).toBe("M21 12a9 9 0 1 1-6.219-8.56");
+    },
+  );
 
-  test.each(attachmentPartVariants.filter((variant) => variant.part === "Media"))("$part $style inlines the error glyph on error", (variant) => {
-    const root = renderVariant(variant, { state: "error" });
-    expect(root.querySelectorAll("svg path").length).toBe(3);
-  });
+  test.each(attachmentPartVariants.filter((variant) => variant.part === "Media"))(
+    "$part $style inlines the error glyph on error",
+    (variant) => {
+      const root = renderVariant(variant, { state: "error" });
+      expect(root.querySelectorAll("svg path").length).toBe(3);
+    },
+  );
 
-  test.each(attachmentPartVariants.filter((variant) => variant.part === "Media"))("$part $style renders authored children instead of the auto icons", (variant) => {
-    const root = renderVariant(variant, { state: "uploading", children: ["doc.pdf"] });
-    expect(root.querySelector("svg")).toBeNull();
-    expect(root.textContent).toBe("doc.pdf");
-  });
+  test.each(attachmentPartVariants.filter((variant) => variant.part === "Media"))(
+    "$part $style renders authored children instead of the auto icons",
+    (variant) => {
+      const root = renderVariant(variant, { state: "uploading", children: ["doc.pdf"] });
+      expect(root.querySelector("svg")).toBeNull();
+      expect(root.textContent).toBe("doc.pdf");
+    },
+  );
 
-  test.each(attachmentPartVariants.filter((variant) => variant.part === "Content" || variant.part === "Title" || variant.part === "Description"))("$part $style renders the text parts", (variant) => {
+  test.each(
+    attachmentPartVariants.filter(
+      (variant) =>
+        variant.part === "Content" || variant.part === "Title" || variant.part === "Description",
+    ),
+  )("$part $style renders the text parts", (variant) => {
     const root = renderVariant(variant, { children: ["file.txt"] });
     expect(root.textContent).toBe("file.txt");
     if (variant.part === "Title" || variant.part === "Description") {
@@ -86,41 +111,53 @@ describe("attachment", () => {
     }
   });
 
-  test.each(attachmentPartVariants.filter((variant) => variant.part === "Actions"))("$part $style renders the actions row", (variant) => {
-    const root = renderVariant(variant, { children: ["x"] });
-    expect(root.getAttribute("data-slot")).toBe("attachment-actions");
-    expect(root.textContent).toBe("x");
-  });
+  test.each(attachmentPartVariants.filter((variant) => variant.part === "Actions"))(
+    "$part $style renders the actions row",
+    (variant) => {
+      const root = renderVariant(variant, { children: ["x"] });
+      expect(root.getAttribute("data-slot")).toBe("attachment-actions");
+      expect(root.textContent).toBe("x");
+    },
+  );
 
-  test.each(attachmentPartVariants.filter((variant) => variant.part === "Action"))("$part $style fires the action click handler", (variant) => {
-    const onclick = mock(() => {});
-    const root = renderVariant(variant, { "on:click": onclick, children: ["x"] });
-    expect(root.getAttribute("data-slot")).toBe("attachment-action");
-    expect(root.getAttribute("data-variant")).toBe("ghost");
-    expect(root.getAttribute("data-size")).toBe("icon-xs");
-    root.dispatchEvent(new Event("click"));
-    expect(onclick).toHaveBeenCalledTimes(1);
-  });
+  test.each(attachmentPartVariants.filter((variant) => variant.part === "Action"))(
+    "$part $style fires the action click handler",
+    (variant) => {
+      const onclick = vi.fn(() => {});
+      const root = renderVariant(variant, { "on:click": onclick, children: ["x"] });
+      expect(root.getAttribute("data-slot")).toBe("attachment-action");
+      expect(root.getAttribute("data-variant")).toBe("ghost");
+      expect(root.getAttribute("data-size")).toBe("icon-xs");
+      root.dispatchEvent(new Event("click"));
+      expect(onclick).toHaveBeenCalledTimes(1);
+    },
+  );
 
-  test.each(attachmentPartVariants.filter((variant) => variant.part === "Trigger"))("$part $style fires the trigger click handler", (variant) => {
-    const onclick = mock(() => {});
-    const root = renderVariant(variant, { "on:click": onclick, children: ["x"] });
-    expect(root.getAttribute("data-slot")).toBe("attachment-trigger");
-    expect(root.getAttribute("type")).toBe("button");
-    root.dispatchEvent(new Event("click"));
-    expect(onclick).toHaveBeenCalledTimes(1);
-  });
+  test.each(attachmentPartVariants.filter((variant) => variant.part === "Trigger"))(
+    "$part $style fires the trigger click handler",
+    (variant) => {
+      const onclick = vi.fn(() => {});
+      const root = renderVariant(variant, { "on:click": onclick, children: ["x"] });
+      expect(root.getAttribute("data-slot")).toBe("attachment-trigger");
+      expect(root.getAttribute("type")).toBe("button");
+      root.dispatchEvent(new Event("click"));
+      expect(onclick).toHaveBeenCalledTimes(1);
+    },
+  );
 
-  test.each(attachmentPartVariants.filter((variant) => variant.part === "Group"))("$part $style renders the scroll group", (variant) => {
-    const root = renderVariant(variant, { children: ["x"] });
-    expect(root.getAttribute("data-slot")).toBe("attachment-group");
-    expect(root.textContent).toBe("x");
-    if (variant.style === "css") {
-      expect(classTokens(root)[0]!.startsWith("attachment-group")).toBe(true);
-    } else {
-      expect(classTokens(root)).toContain("snap-x");
-    }
-  });
+  test.each(attachmentPartVariants.filter((variant) => variant.part === "Group"))(
+    "$part $style renders the scroll group",
+    (variant) => {
+      const root = renderVariant(variant, { children: ["x"] });
+      expect(root.getAttribute("data-slot")).toBe("attachment-group");
+      expect(root.textContent).toBe("x");
+      if (variant.style === "css") {
+        expect(classTokens(root)[0]!.startsWith("attachment-group")).toBe(true);
+      } else {
+        expect(classTokens(root)).toContain("snap-x");
+      }
+    },
+  );
 
   test("forwards user attrs onto the root across both styles", () => {
     assertAttrForwarded(attachmentVariants, { title: "Hella" }, "title", "Hella");
@@ -134,15 +171,28 @@ describe("attachment", () => {
   });
 
   test("forwards the trigger type through the spread across both styles", () => {
-    for (const variant of attachmentPartVariants.filter((candidate) => candidate.part === "Trigger")) {
+    for (const variant of attachmentPartVariants.filter(
+      (candidate) => candidate.part === "Trigger",
+    )) {
       const root = renderVariant(variant, { type: "submit", children: ["x"] });
       expect(root.getAttribute("type")).toBe("submit");
     }
   });
 
   test("both styles agree on tag and attributes", () => {
-    assertStructuralParity(attachmentVariants, { state: "uploading", size: "sm", orientation: "vertical", children: ["x"] });
-    assertStructuralParity(attachmentPartVariants.filter((candidate) => candidate.part === "Media"), { state: "error", children: ["x"] });
-    assertStructuralParity(attachmentPartVariants.filter((candidate) => candidate.part === "Action"), { size: "icon-sm", children: ["x"] });
+    assertStructuralParity(attachmentVariants, {
+      state: "uploading",
+      size: "sm",
+      orientation: "vertical",
+      children: ["x"],
+    });
+    assertStructuralParity(
+      attachmentPartVariants.filter((candidate) => candidate.part === "Media"),
+      { state: "error", children: ["x"] },
+    );
+    assertStructuralParity(
+      attachmentPartVariants.filter((candidate) => candidate.part === "Action"),
+      { size: "icon-sm", children: ["x"] },
+    );
   });
 });

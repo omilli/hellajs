@@ -1,8 +1,8 @@
-import { describe, expect, test } from "bun:test";
-import { applyStyleVariant, inlineTypes } from "@hellajs/ui/bundle";
+import { describe, expect, test } from "vite-plus/test";
+import { applyStyleVariant, inlineTypes } from "@hellajs/ui";
 
 const canonical = [
-  "import type { HTMLAttributes } from \"@hellajs/dom\";",
+  'import type { HTMLAttributes } from "@hellajs/dom";',
   "",
   "// @hella:styles",
   "// @hella:end",
@@ -22,56 +22,57 @@ const canonical = [
 ].join("\n");
 
 const cssModule = [
-  "import { style } from \"@hellajs/css\";",
+  'import { style } from "@hellajs/css";',
   "",
-  "export const base = style({}, { label: \"x\" });",
+  'export const base = style({}, { label: "x" });',
   "",
 ].join("\n");
 
-const tailwindModule = [
-  "export const base = \"x-base\";",
-  "",
-].join("\n");
+const tailwindModule = ['export const base = "x-base";', ""].join("\n");
 
 describe("applyStyleVariant", () => {
   test("css pass splices the style module body and keeps the compose array verbatim", () => {
-    expect(applyStyleVariant(canonical, cssModule, "css")).toBe([
-      "import type { HTMLAttributes } from \"@hellajs/dom\";",
-      "",
-      "import { style } from \"@hellajs/css\";",
-      "",
-      "const base = style({}, { label: \"x\" });",
-      "",
-      "interface P { class?: string }",
-      "",
-      "export default function X(p: P) {",
-      "  return <p class={",
-      "    [",
-      "      base,",
-      "      p.class,",
-      "    ]",
-      "  }></p>;",
-      "}",
-    ].join("\n"));
+    expect(applyStyleVariant(canonical, cssModule, "css")).toBe(
+      [
+        'import type { HTMLAttributes } from "@hellajs/dom";',
+        "",
+        'import { style } from "@hellajs/css";',
+        "",
+        'const base = style({}, { label: "x" });',
+        "",
+        "interface P { class?: string }",
+        "",
+        "export default function X(p: P) {",
+        "  return <p class={",
+        "    [",
+        "      base,",
+        "      p.class,",
+        "    ]",
+        "  }></p>;",
+        "}",
+      ].join("\n"),
+    );
   });
 
   test("tailwind pass wraps the compose array in cn, inlines string consts, and injects the cn import", () => {
     const out = applyStyleVariant(canonical, tailwindModule, "tailwind");
-    expect(out).toBe([
-      "import type { HTMLAttributes } from \"@hellajs/dom\";",
-      "import { cn } from \"./cn.js\";",
-      "",
-      "interface P { class?: string }",
-      "",
-      "export default function X(p: P) {",
-      "  return <p class={",
-      "    cn(",
-      "      \"x-base\",",
-      "      p.class,",
-      "    )",
-      "  }></p>;",
-      "}",
-    ].join("\n"));
+    expect(out).toBe(
+      [
+        'import type { HTMLAttributes } from "@hellajs/dom";',
+        'import { cn } from "./cn.js";',
+        "",
+        "interface P { class?: string }",
+        "",
+        "export default function X(p: P) {",
+        "  return <p class={",
+        "    cn(",
+        '      "x-base",',
+        "      p.class,",
+        "    )",
+        "  }></p>;",
+        "}",
+      ].join("\n"),
+    );
     expect(out.includes("const base")).toBe(false);
     expect(out.includes("@hella:")).toBe(false);
     expect(out.includes("@hellajs/css")).toBe(false);
@@ -90,31 +91,37 @@ describe("applyStyleVariant", () => {
       "  }></p>;",
       "}",
     ].join("\n");
-    expect(applyStyleVariant(single, tailwindModule, "tailwind")).toContain("cn(\"x-base\", p.class)");
+    expect(applyStyleVariant(single, tailwindModule, "tailwind")).toContain(
+      'cn("x-base", p.class)',
+    );
   });
 
   test("an unclosed section in the canonical throws", () => {
-    const unbalanced = "// @hella:styles\nconst base = \"a\";\n";
-    expect(() => applyStyleVariant(unbalanced, cssModule, "css"))
-      .toThrow('[ui] applyStyleVariant: section "styles" is never closed with @hella:end');
+    const unbalanced = '// @hella:styles\nconst base = "a";\n';
+    expect(() => applyStyleVariant(unbalanced, cssModule, "css")).toThrow(
+      '[ui] applyStyleVariant: section "styles" is never closed with @hella:end',
+    );
   });
 
   test("an end marker without an open section throws", () => {
-    const orphaned = "const base = \"a\";\n// @hella:end\n";
-    expect(() => applyStyleVariant(orphaned, cssModule, "css"))
-      .toThrow("[ui] applyStyleVariant: @hella:end without an open section");
+    const orphaned = 'const base = "a";\n// @hella:end\n';
+    expect(() => applyStyleVariant(orphaned, cssModule, "css")).toThrow(
+      "[ui] applyStyleVariant: @hella:end without an open section",
+    );
   });
 
   test("a section opening inside another section throws", () => {
-    const nested = "// @hella:styles\n// @hella:compose\nconst base = \"a\";\n// @hella:end\n";
-    expect(() => applyStyleVariant(nested, cssModule, "css"))
-      .toThrow('[ui] applyStyleVariant: section "styles" is still open when section "compose" opens');
+    const nested = '// @hella:styles\n// @hella:compose\nconst base = "a";\n// @hella:end\n';
+    expect(() => applyStyleVariant(nested, cssModule, "css")).toThrow(
+      '[ui] applyStyleVariant: section "styles" is still open when section "compose" opens',
+    );
   });
 
   test("an unknown marker line throws instead of shipping as a comment", () => {
-    const legacy = "// @hella:imports\nimport { style } from \"@hellajs/css\";\n// @hella:end\n";
-    expect(() => applyStyleVariant(legacy, cssModule, "css"))
-      .toThrow('[ui] applyStyleVariant: unknown marker "// @hella:imports"');
+    const legacy = '// @hella:imports\nimport { style } from "@hellajs/css";\n// @hella:end\n';
+    expect(() => applyStyleVariant(legacy, cssModule, "css")).toThrow(
+      '[ui] applyStyleVariant: unknown marker "// @hella:imports"',
+    );
   });
 
   test("a duplicate styles region throws", () => {
@@ -127,8 +134,9 @@ describe("applyStyleVariant", () => {
       "[base]",
       "// @hella:end",
     ].join("\n");
-    expect(() => applyStyleVariant(doubled, cssModule, "css"))
-      .toThrow("[ui] applyStyleVariant: duplicate @hella:styles region");
+    expect(() => applyStyleVariant(doubled, cssModule, "css")).toThrow(
+      "[ui] applyStyleVariant: duplicate @hella:styles region",
+    );
   });
 
   test("repeated compose regions splice once per region", () => {
@@ -180,27 +188,30 @@ describe("applyStyleVariant", () => {
       "}",
     ].join("\n");
     const out = applyStyleVariant(multi, tailwindModule, "tailwind");
-    expect(out).toContain("cn(\"x-base\", a.class)");
-    expect(out).toContain("cn(\"x-base\", b.class)");
+    expect(out).toContain('cn("x-base", a.class)');
+    expect(out).toContain('cn("x-base", b.class)');
     expect(out.split('import { cn } from "./cn.js";').length - 1).toBe(1);
   });
 
   test("a canonical missing its compose region throws", () => {
     const stylesOnly = "// @hella:styles\n// @hella:end\n";
-    expect(() => applyStyleVariant(stylesOnly, cssModule, "css"))
-      .toThrow("[ui] applyStyleVariant: canonical is missing its @hella:compose region");
+    expect(() => applyStyleVariant(stylesOnly, cssModule, "css")).toThrow(
+      "[ui] applyStyleVariant: canonical is missing its @hella:compose region",
+    );
   });
 
   test("a canonical missing a required region throws", () => {
     const composeOnly = "// @hella:compose\n[base]\n// @hella:end\n";
-    expect(() => applyStyleVariant(composeOnly, cssModule, "css"))
-      .toThrow("[ui] applyStyleVariant: canonical is missing its @hella:styles region");
+    expect(() => applyStyleVariant(composeOnly, cssModule, "css")).toThrow(
+      "[ui] applyStyleVariant: canonical is missing its @hella:styles region",
+    );
   });
 
   test("a style module with a relative import throws", () => {
-    const relative = "import { cn } from \"../cn/cn\";\n\nexport const base = \"a\";\n";
-    expect(() => applyStyleVariant(canonical, relative, "tailwind"))
-      .toThrow('[ui] applyStyleVariant: style module imports must use package specifiers, got "../cn/cn"');
+    const relative = 'import { cn } from "../cn/cn";\n\nexport const base = "a";\n';
+    expect(() => applyStyleVariant(canonical, relative, "tailwind")).toThrow(
+      '[ui] applyStyleVariant: style module imports must use package specifiers, got "../cn/cn"',
+    );
   });
 
   test("a style module importing the theme sheet rewrites to the components-dir sibling", () => {
@@ -214,7 +225,7 @@ describe("applyStyleVariant", () => {
     const out = applyStyleVariant(canonical, themeModule, "css");
     expect(out).toContain('import { tokens } from "./tokens.js";');
     expect(out).not.toContain("../theme/tokens.js");
-    expect(out).toContain("const base = style(\"x\", { color: tokens.foreground });");
+    expect(out).toContain('const base = style("x", { color: tokens.foreground });');
   });
 
   test("a style module importing a non-theme relative sibling still throws", () => {
@@ -225,20 +236,23 @@ describe("applyStyleVariant", () => {
       'export const base = style("x", { color: tokens.foreground });',
       "",
     ].join("\n");
-    expect(() => applyStyleVariant(canonical, sibling, "css"))
-      .toThrow('[ui] applyStyleVariant: style module imports must use package specifiers, got "./sibling.ts"');
+    expect(() => applyStyleVariant(canonical, sibling, "css")).toThrow(
+      '[ui] applyStyleVariant: style module imports must use package specifiers, got "./sibling.ts"',
+    );
   });
 
   test("a style module import without a double-quoted specifier throws", () => {
     const singleQuoted = "import { base } from 'some-pkg';\n";
-    expect(() => applyStyleVariant(canonical, singleQuoted, "css"))
-      .toThrow('[ui] applyStyleVariant: style module import has no specifier: "import { base } from \'some-pkg\';"');
+    expect(() => applyStyleVariant(canonical, singleQuoted, "css")).toThrow(
+      "[ui] applyStyleVariant: style module import has no specifier: \"import { base } from 'some-pkg';\"",
+    );
   });
 
   test("a style module exporting through default or braces throws", () => {
-    const defaulted = "export default \"a\";\n";
-    expect(() => applyStyleVariant(canonical, defaulted, "css"))
-      .toThrow('[ui] applyStyleVariant: style module cannot use "export default "a";"');
+    const defaulted = 'export default "a";\n';
+    expect(() => applyStyleVariant(canonical, defaulted, "css")).toThrow(
+      '[ui] applyStyleVariant: style module cannot use "export default "a";"',
+    );
   });
 
   test("a compose region that is not a plain array throws on the tailwind wrap", () => {
@@ -249,8 +263,9 @@ describe("applyStyleVariant", () => {
       "base",
       "// @hella:end",
     ].join("\n");
-    expect(() => applyStyleVariant(notArray, tailwindModule, "tailwind"))
-      .toThrow('[ui] applyStyleVariant: compose region must be a plain class array (no "[" found)');
+    expect(() => applyStyleVariant(notArray, tailwindModule, "tailwind")).toThrow(
+      '[ui] applyStyleVariant: compose region must be a plain class array (no "[" found)',
+    );
   });
 
   test("a compose region without a closing bracket throws on the tailwind wrap", () => {
@@ -261,19 +276,18 @@ describe("applyStyleVariant", () => {
       "[base",
       "// @hella:end",
     ].join("\n");
-    expect(() => applyStyleVariant(unclosed, tailwindModule, "tailwind"))
-      .toThrow('[ui] applyStyleVariant: compose region must be a plain class array (no "]" found)');
+    expect(() => applyStyleVariant(unclosed, tailwindModule, "tailwind")).toThrow(
+      '[ui] applyStyleVariant: compose region must be a plain class array (no "]" found)',
+    );
   });
 
   test("an empty compose region throws on the tailwind wrap", () => {
-    const empty = [
-      "// @hella:styles",
-      "// @hella:end",
-      "// @hella:compose",
-      "// @hella:end",
-    ].join("\n");
-    expect(() => applyStyleVariant(empty, tailwindModule, "tailwind"))
-      .toThrow("[ui] applyStyleVariant: compose region is empty");
+    const empty = ["// @hella:styles", "// @hella:end", "// @hella:compose", "// @hella:end"].join(
+      "\n",
+    );
+    expect(() => applyStyleVariant(empty, tailwindModule, "tailwind")).toThrow(
+      "[ui] applyStyleVariant: compose region is empty",
+    );
   });
 
   test("leading whitespace on marker lines is tolerated", () => {
@@ -288,27 +302,29 @@ describe("applyStyleVariant", () => {
       "  }></p>;",
       "}",
     ].join("\n");
-    expect(applyStyleVariant(indented, tailwindModule, "tailwind")).toBe([
-      "import { cn } from \"./cn.js\";",
-      "function X() {",
-      "  return <p class={",
-      "    cn(\"x-base\")",
-      "  }></p>;",
-      "}",
-    ].join("\n"));
+    expect(applyStyleVariant(indented, tailwindModule, "tailwind")).toBe(
+      [
+        'import { cn } from "./cn.js";',
+        "function X() {",
+        "  return <p class={",
+        '    cn("x-base")',
+        "  }></p>;",
+        "}",
+      ].join("\n"),
+    );
   });
 
   test("tailwind pass keeps an object map in styles while inlining its string sibling", () => {
     const mixedModule = [
-      "export const base = \"x-base\";",
+      'export const base = "x-base";',
       "",
       "export const variants = {",
-      "  default: \"x-default\",",
+      '  default: "x-default",',
       "};",
       "",
     ].join("\n");
     const lookup = [
-      "import type { HTMLAttributes } from \"@hellajs/dom\";",
+      'import type { HTMLAttributes } from "@hellajs/dom";',
       "",
       "// @hella:styles",
       "// @hella:end",
@@ -318,36 +334,38 @@ describe("applyStyleVariant", () => {
       "    // @hella:compose",
       "    [",
       "      base,",
-      "      variants[props.variant ?? \"default\"],",
+      '      variants[props.variant ?? "default"],',
       "      p.class,",
       "    ]",
       "    // @hella:end",
       "  }></p>;",
       "}",
     ].join("\n");
-    expect(applyStyleVariant(lookup, mixedModule, "tailwind")).toBe([
-      "import type { HTMLAttributes } from \"@hellajs/dom\";",
-      "import { cn } from \"./cn.js\";",
-      "",
-      "const variants = {",
-      "  default: \"x-default\",",
-      "};",
-      "",
-      "export default function X(p: P) {",
-      "  return <p class={",
-      "    cn(",
-      "      \"x-base\",",
-      "      variants[props.variant ?? \"default\"],",
-      "      p.class,",
-      "    )",
-      "  }></p>;",
-      "}",
-    ].join("\n"));
+    expect(applyStyleVariant(lookup, mixedModule, "tailwind")).toBe(
+      [
+        'import type { HTMLAttributes } from "@hellajs/dom";',
+        'import { cn } from "./cn.js";',
+        "",
+        "const variants = {",
+        '  default: "x-default",',
+        "};",
+        "",
+        "export default function X(p: P) {",
+        "  return <p class={",
+        "    cn(",
+        '      "x-base",',
+        '      variants[props.variant ?? "default"],',
+        "      p.class,",
+        "    )",
+        "  }></p>;",
+        "}",
+      ].join("\n"),
+    );
   });
 
   test("tailwind pass inlines a string const referenced outside the marker regions", () => {
     const referencing = [
-      "import { helper } from \"@hellajs/dom\";",
+      'import { helper } from "@hellajs/dom";',
       "",
       "// @hella:styles",
       "// @hella:end",
@@ -365,32 +383,34 @@ describe("applyStyleVariant", () => {
       "  }></p>;",
       "}",
     ].join("\n");
-    expect(applyStyleVariant(referencing, tailwindModule, "tailwind")).toBe([
-      "import { helper } from \"@hellajs/dom\";",
-      "import { cn } from \"./cn.js\";",
-      "",
-      "const wrapper = (cls: string) => helper(\"x-base\", cls);",
-      "",
-      "export default function X(p: P) {",
-      "  return <p class={",
-      "    cn(",
-      "      \"x-base\",",
-      "      p.class,",
-      "    )",
-      "  }></p>;",
-      "}",
-    ].join("\n"));
+    expect(applyStyleVariant(referencing, tailwindModule, "tailwind")).toBe(
+      [
+        'import { helper } from "@hellajs/dom";',
+        'import { cn } from "./cn.js";',
+        "",
+        'const wrapper = (cls: string) => helper("x-base", cls);',
+        "",
+        "export default function X(p: P) {",
+        "  return <p class={",
+        "    cn(",
+        '      "x-base",',
+        "      p.class,",
+        "    )",
+        "  }></p>;",
+        "}",
+      ].join("\n"),
+    );
   });
 
   test("tailwind pass keeps a string const whose name binds a local outside the marker regions", () => {
     const shadowed = [
-      "import { helper } from \"@hellajs/dom\";",
+      'import { helper } from "@hellajs/dom";',
       "",
       "// @hella:styles",
       "// @hella:end",
       "",
       "export default function X(p: P) {",
-      "  const base = p.class ?? \"\";",
+      '  const base = p.class ?? "";',
       "  return <p class={",
       "    // @hella:compose",
       "    [",
@@ -402,14 +422,14 @@ describe("applyStyleVariant", () => {
       "}",
     ].join("\n");
     const out = applyStyleVariant(shadowed, tailwindModule, "tailwind");
-    expect(out).toContain("const base = \"x-base\";");
+    expect(out).toContain('const base = "x-base";');
     expect(out).toContain("      base,");
-    expect(out).toContain("const base = p.class ?? \"\";");
+    expect(out).toContain('const base = p.class ?? "";');
   });
 
   test("a comment mentioning the const name stays verbatim while the const inlines", () => {
     const commented = [
-      "import type { HTMLAttributes } from \"@hellajs/dom\";",
+      'import type { HTMLAttributes } from "@hellajs/dom";',
       "",
       "// @hella:styles",
       "// @hella:end",
@@ -427,13 +447,13 @@ describe("applyStyleVariant", () => {
     ].join("\n");
     const out = applyStyleVariant(commented, tailwindModule, "tailwind");
     expect(out).toContain("// The base class resolves through cn below.");
-    expect(out).toContain("cn(\"x-base\", p.class)");
+    expect(out).toContain('cn("x-base", p.class)');
     expect(out.includes("const base")).toBe(false);
   });
 
   test("an interface member sharing the const name stays verbatim while the const inlines", () => {
     const propTyped = [
-      "import type { HTMLAttributes } from \"@hellajs/dom\";",
+      'import type { HTMLAttributes } from "@hellajs/dom";',
       "",
       "// @hella:styles",
       "// @hella:end",
@@ -453,13 +473,13 @@ describe("applyStyleVariant", () => {
     ].join("\n");
     const out = applyStyleVariant(propTyped, tailwindModule, "tailwind");
     expect(out).toContain("  base?: string;");
-    expect(out).toContain("cn(\"x-base\", p.class)");
+    expect(out).toContain('cn("x-base", p.class)');
     expect(out.includes("const base")).toBe(false);
   });
 
   test("a JSX tag sharing the const name stays verbatim while the const inlines", () => {
     const tagged = [
-      "import type { HTMLAttributes } from \"@hellajs/dom\";",
+      'import type { HTMLAttributes } from "@hellajs/dom";',
       "",
       "// @hella:styles",
       "// @hella:end",
@@ -475,19 +495,19 @@ describe("applyStyleVariant", () => {
     const out = applyStyleVariant(tagged, tailwindModule, "tailwind");
     expect(out).toContain("<base class={");
     expect(out).toContain("</base>");
-    expect(out).toContain("cn(\"x-base\", p.class)");
+    expect(out).toContain('cn("x-base", p.class)');
     expect(out.includes("const base")).toBe(false);
   });
 
   test("string content sharing the const name stays verbatim while the const inlines", () => {
     const quoted = [
-      "import type { HTMLAttributes } from \"@hellajs/dom\";",
+      'import type { HTMLAttributes } from "@hellajs/dom";',
       "",
       "// @hella:styles",
       "// @hella:end",
       "",
       "export default function X(p: P) {",
-      "  const label = \"the base class\";",
+      '  const label = "the base class";',
       "  return <p title={label} class={",
       "    // @hella:compose",
       "    [base, p.class]",
@@ -497,13 +517,13 @@ describe("applyStyleVariant", () => {
     ].join("\n");
     const out = applyStyleVariant(quoted, tailwindModule, "tailwind");
     expect(out).toContain("title={label}");
-    expect(out).toContain("cn(\"x-base\", p.class)");
+    expect(out).toContain('cn("x-base", p.class)');
     expect(out.includes("const base")).toBe(false);
   });
 
   test("an import line sharing the const name stays verbatim while the const inlines", () => {
     const imported = [
-      "import { base } from \"@hellajs/dom\";",
+      'import { base } from "@hellajs/dom";',
       "",
       "// @hella:styles",
       "// @hella:end",
@@ -517,14 +537,14 @@ describe("applyStyleVariant", () => {
       "}",
     ].join("\n");
     const out = applyStyleVariant(imported, tailwindModule, "tailwind");
-    expect(out).toContain("import { base } from \"@hellajs/dom\";");
-    expect(out).toContain("cn(\"x-base\", p.class)");
+    expect(out).toContain('import { base } from "@hellajs/dom";');
+    expect(out).toContain('cn("x-base", p.class)');
     expect(out.includes("const base")).toBe(false);
   });
 
   test("a static class attribute collapses to the literal", () => {
     const jsxAttr = [
-      "import type { HellaChildren } from \"@hellajs/dom\";",
+      'import type { HellaChildren } from "@hellajs/dom";',
       "",
       "// @hella:styles",
       "// @hella:end",
@@ -544,24 +564,21 @@ describe("applyStyleVariant", () => {
       "  );",
       "}",
     ].join("\n");
-    const srModule = [
-      "export const srOnly = \"sr-only\";",
-      "",
-    ].join("\n");
+    const srModule = ['export const srOnly = "sr-only";', ""].join("\n");
     const jsxOut = applyStyleVariant(jsxAttr, srModule, "tailwind");
-    expect(jsxOut).toContain("<span class=\"sr-only\">");
+    expect(jsxOut).toContain('<span class="sr-only">');
     expect(jsxOut.includes("srOnly")).toBe(false);
   });
 
   test("a canonical-level runtime constant inlines at its references and drops with its comment", () => {
     const runtime = [
-      "import type { HTMLAttributes } from \"@hellajs/dom\";",
+      'import type { HTMLAttributes } from "@hellajs/dom";',
       "",
       "// @hella:styles",
       "// @hella:end",
       "",
       "/** Document-level activation event. */",
-      "const ACTIVATE_EVENT = \"x:activate\";",
+      'const ACTIVATE_EVENT = "x:activate";',
       "",
       "export function fire() {",
       "  dispatch(new CustomEvent(ACTIVATE_EVENT, { detail: true }));",
@@ -576,10 +593,10 @@ describe("applyStyleVariant", () => {
       "}",
     ].join("\n");
     const out = applyStyleVariant(runtime, tailwindModule, "tailwind");
-    expect(out).toContain("new CustomEvent(\"x:activate\", { detail: true })");
+    expect(out).toContain('new CustomEvent("x:activate", { detail: true })');
     expect(out.includes("ACTIVATE_EVENT")).toBe(false);
     expect(out.includes("Document-level activation event")).toBe(false);
-    expect(out).toContain("cn(\"x-base\", p.class)");
+    expect(out).toContain('cn("x-base", p.class)');
   });
 
   test("a string-only module leaves no styles residue or blank-line runs", () => {
@@ -611,126 +628,341 @@ describe("applyStyleVariant", () => {
   test("a comment above a dropped string const drops with it and a comment above a kept map stays", () => {
     const documented = [
       "/** Base classes. */",
-      "export const base = \"x-base\";",
+      'export const base = "x-base";',
       "",
       "/** Variant map. */",
       "export const variants = {",
-      "  default: \"x-default\",",
+      '  default: "x-default",',
       "};",
       "",
     ].join("\n");
-    expect(applyStyleVariant(canonical, documented, "tailwind")).toBe([
-      "import type { HTMLAttributes } from \"@hellajs/dom\";",
-      "import { cn } from \"./cn.js\";",
+    expect(applyStyleVariant(canonical, documented, "tailwind")).toBe(
+      [
+        'import type { HTMLAttributes } from "@hellajs/dom";',
+        'import { cn } from "./cn.js";',
+        "",
+        "/** Variant map. */",
+        "const variants = {",
+        '  default: "x-default",',
+        "};",
+        "",
+        "interface P { class?: string }",
+        "",
+        "export default function X(p: P) {",
+        "  return <p class={",
+        "    cn(",
+        '      "x-base",',
+        "      p.class,",
+        "    )",
+        "  }></p>;",
+        "}",
+      ].join("\n"),
+    );
+  });
+
+  test("a printWidth-wrapped style-module import rides along verbatim", () => {
+    const cssModule = [
+      "import {",
+      "  style,",
+      '} from "@hellajs/css";',
       "",
-      "/** Variant map. */",
-      "const variants = {",
-      "  default: \"x-default\",",
-      "};",
+      'export const base = style({}, { label: "x" });',
       "",
-      "interface P { class?: string }",
+    ].join("\n");
+    expect(applyStyleVariant(canonical, cssModule, "css")).toBe(
+      [
+        'import type { HTMLAttributes } from "@hellajs/dom";',
+        "",
+        "import {",
+        "  style,",
+        '} from "@hellajs/css";',
+        "",
+        'const base = style({}, { label: "x" });',
+        "",
+        "interface P { class?: string }",
+        "",
+        "export default function X(p: P) {",
+        "  return <p class={",
+        "    [",
+        "      base,",
+        "      p.class,",
+        "    ]",
+        "  }></p>;",
+        "}",
+      ].join("\n"),
+    );
+  });
+
+  test("the cn import injects after a wrapped last import statement", () => {
+    const source = [
+      "import type {",
+      "  WidgetProps,",
+      '} from "./widget-types.js";',
+      "",
+      "// @hella:styles",
+      "// @hella:end",
+      "",
+      "export default function W(props: WidgetProps) {",
+      "  return <p class={",
+      "    // @hella:compose",
+      '    ["y-class"],',
+      "    // @hella:end",
+      "  }></p>;",
+      "}",
+    ].join("\n");
+    expect(applyStyleVariant(source, tailwindModule, "tailwind")).toBe(
+      [
+        "import type {",
+        "  WidgetProps,",
+        '} from "./widget-types.js";',
+        'import { cn } from "./cn.js";',
+        "",
+        "export default function W(props: WidgetProps) {",
+        "  return <p class={",
+        '    cn("y-class"),',
+        "  }></p>;",
+        "}",
+      ].join("\n"),
+    );
+  });
+
+  test("a wrapped import continuation line sharing an inlineable name stays verbatim while the const inlines", () => {
+    const source = [
+      "import {",
+      "  base,",
+      '} from "@hellajs/css";',
+      "",
+      "// @hella:styles",
+      "// @hella:end",
       "",
       "export default function X(p: P) {",
       "  return <p class={",
-      "    cn(",
-      "      \"x-base\",",
+      "    // @hella:compose",
+      "    [",
+      "      base,",
       "      p.class,",
-      "    )",
+      "    ]",
+      "    // @hella:end",
       "  }></p>;",
       "}",
-    ].join("\n"));
+    ].join("\n");
+    expect(applyStyleVariant(source, tailwindModule, "tailwind")).toBe(
+      [
+        "import {",
+        "  base,",
+        '} from "@hellajs/css";',
+        'import { cn } from "./cn.js";',
+        "",
+        "export default function X(p: P) {",
+        "  return <p class={",
+        "    cn(",
+        '      "x-base",',
+        "      p.class,",
+        "    )",
+        "  }></p>;",
+        "}",
+      ].join("\n"),
+    );
   });
 });
 
 describe("inlineTypes", () => {
   test("replaces the types-module import line with the export-stripped body, package import riding along", () => {
     const source = [
-      "import type { WidgetProps } from \"./widget-types.js\";",
+      'import type { WidgetProps } from "./widget-types.js";',
       "",
       "export default function W(props: WidgetProps): string {",
-      "  return props.label ?? \"\";",
+      '  return props.label ?? "";',
       "}",
     ].join("\n");
     const typesModule = [
-      "import type { HTMLAttributes } from \"@hellajs/dom\";",
+      'import type { HTMLAttributes } from "@hellajs/dom";',
       "",
-      "export interface WidgetProps extends HTMLAttributes<\"p\"> {",
+      'export interface WidgetProps extends HTMLAttributes<"p"> {',
       "  label?: string;",
       "}",
     ].join("\n");
-    expect(inlineTypes(source, typesModule)).toBe([
-      "import type { HTMLAttributes } from \"@hellajs/dom\";",
-      "",
-      "interface WidgetProps extends HTMLAttributes<\"p\"> {",
-      "  label?: string;",
-      "}",
-      "",
-      "export default function W(props: WidgetProps): string {",
-      "  return props.label ?? \"\";",
-      "}",
-    ].join("\n"));
+    expect(inlineTypes(source, typesModule)).toBe(
+      [
+        'import type { HTMLAttributes } from "@hellajs/dom";',
+        "",
+        'interface WidgetProps extends HTMLAttributes<"p"> {',
+        "  label?: string;",
+        "}",
+        "",
+        "export default function W(props: WidgetProps): string {",
+        '  return props.label ?? "";',
+        "}",
+      ].join("\n"),
+    );
   });
 
   test("folds a module type-import into the canonical's existing same-source line instead of double-declaring", () => {
     const source = [
-      "import { signal } from \"@hellajs/core\";",
-      "import type { HellaChildren } from \"@hellajs/dom\";",
-      "import type { AccordionProps } from \"./accordion-types.js\";",
+      'import { signal } from "@hellajs/core";',
+      'import type { HellaChildren } from "@hellajs/dom";',
+      'import type { AccordionProps } from "./accordion-types.js";',
       "",
       "export default function A(props: AccordionProps): string {",
-      "  return props.class ?? \"\";",
+      '  return props.class ?? "";',
       "}",
     ].join("\n");
     const typesModule = [
-      "import type { HTMLAttributes, HellaChildren } from \"@hellajs/dom\";",
+      'import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";',
       "",
-      "export interface AccordionProps extends HTMLAttributes<\"div\"> {",
+      'export interface AccordionProps extends HTMLAttributes<"div"> {',
       "  class?: string;",
       "  children?: HellaChildren;",
       "}",
     ].join("\n");
-    expect(inlineTypes(source, typesModule)).toBe([
-      "import { signal } from \"@hellajs/core\";",
-      "import type { HellaChildren, HTMLAttributes } from \"@hellajs/dom\";",
-      "",
-      "interface AccordionProps extends HTMLAttributes<\"div\"> {",
-      "  class?: string;",
-      "  children?: HellaChildren;",
-      "}",
-      "",
-      "export default function A(props: AccordionProps): string {",
-      "  return props.class ?? \"\";",
-      "}",
-    ].join("\n"));
+    expect(inlineTypes(source, typesModule)).toBe(
+      [
+        'import { signal } from "@hellajs/core";',
+        'import type { HellaChildren, HTMLAttributes } from "@hellajs/dom";',
+        "",
+        'interface AccordionProps extends HTMLAttributes<"div"> {',
+        "  class?: string;",
+        "  children?: HellaChildren;",
+        "}",
+        "",
+        "export default function A(props: AccordionProps): string {",
+        '  return props.class ?? "";',
+        "}",
+      ].join("\n"),
+    );
   });
 
   test("throws the no-import contract when the source imports no types module", () => {
-    expect(() => inlineTypes("export const x = 1;", "export interface P {}"))
-      .toThrow('[ui] inlineTypes: canonical imports no "./*-types.js" module');
+    expect(() => inlineTypes("export const x = 1;", "export interface P {}")).toThrow(
+      '[ui] inlineTypes: canonical imports no "./*-types.js" module',
+    );
   });
 
   test("throws on duplicate types-module import lines", () => {
     const source = [
-      "import type { P } from \"./x-types.js\";",
-      "import type { Q } from \"./y-types.js\";",
+      'import type { P } from "./x-types.js";',
+      'import type { Q } from "./y-types.js";',
     ].join("\n");
-    expect(() => inlineTypes(source, "export interface P {}"))
-      .toThrow("[ui] inlineTypes: duplicate types module import");
+    expect(() => inlineTypes(source, "export interface P {}")).toThrow(
+      "[ui] inlineTypes: duplicate types module import",
+    );
   });
 
   test("throws on export default inside the types module, parseStyleModule's error reaching the caller", () => {
-    const source = "import type { P } from \"./x-types.js\";";
-    expect(() => inlineTypes(source, "export default interface P {}"))
-      .toThrow('[ui] applyStyleVariant: style module cannot use "export default interface P {}"');
+    const source = 'import type { P } from "./x-types.js";';
+    expect(() => inlineTypes(source, "export default interface P {}")).toThrow(
+      '[ui] applyStyleVariant: style module cannot use "export default interface P {}"',
+    );
   });
 
   test("throws on a relative import specifier inside the types module", () => {
-    const source = "import type { P } from \"./x-types.js\";";
-    const typesModule = [
-      "import { tokens } from \"./tokens.js\";",
-      "export interface P {}",
+    const source = 'import type { P } from "./x-types.js";';
+    const typesModule = ['import { tokens } from "./tokens.js";', "export interface P {}"].join(
+      "\n",
+    );
+    expect(() => inlineTypes(source, typesModule)).toThrow(
+      '[ui] applyStyleVariant: style module imports must use package specifiers, got "./tokens.js"',
+    );
+  });
+
+  test("a printWidth-wrapped canonical types import inlines at the import site", () => {
+    const source = [
+      "import type {",
+      "  WidgetProps,",
+      '} from "./widget-types.js";',
+      "",
+      "export default function W(props: WidgetProps): string {",
+      '  return props.label ?? "";',
+      "}",
     ].join("\n");
-    expect(() => inlineTypes(source, typesModule))
-      .toThrow('[ui] applyStyleVariant: style module imports must use package specifiers, got "./tokens.js"');
+    const typesModule = [
+      'import type { HTMLAttributes } from "@hellajs/dom";',
+      "",
+      'export interface WidgetProps extends HTMLAttributes<"p"> {',
+      "  label?: string;",
+      "}",
+    ].join("\n");
+    expect(inlineTypes(source, typesModule)).toBe(
+      [
+        'import type { HTMLAttributes } from "@hellajs/dom";',
+        "",
+        'interface WidgetProps extends HTMLAttributes<"p"> {',
+        "  label?: string;",
+        "}",
+        "",
+        "export default function W(props: WidgetProps): string {",
+        '  return props.label ?? "";',
+        "}",
+      ].join("\n"),
+    );
+  });
+
+  test("a wrapped module type-import folds into the canonical's wrapped same-source import", () => {
+    const source = [
+      "import type {",
+      "  HellaChildren,",
+      '} from "@hellajs/dom";',
+      'import type { WidgetProps } from "./widget-types.js";',
+      "",
+      "export default function W(props: WidgetProps): string {",
+      '  return props.label ?? "";',
+      "}",
+    ].join("\n");
+    const typesModule = [
+      "import type {",
+      "  HTMLAttributes,",
+      '} from "@hellajs/dom";',
+      "",
+      'export interface WidgetProps extends HTMLAttributes<"p"> {',
+      "  label?: string;",
+      "}",
+    ].join("\n");
+    expect(inlineTypes(source, typesModule)).toBe(
+      [
+        'import type { HellaChildren, HTMLAttributes } from "@hellajs/dom";',
+        "",
+        'interface WidgetProps extends HTMLAttributes<"p"> {',
+        "  label?: string;",
+        "}",
+        "",
+        "export default function W(props: WidgetProps): string {",
+        '  return props.label ?? "";',
+        "}",
+      ].join("\n"),
+    );
+  });
+
+  test("a wrapped module type-import without a same-source target rides verbatim", () => {
+    const source = [
+      'import type { WidgetProps } from "./widget-types.js";',
+      "",
+      "export default function W(props: WidgetProps): string {",
+      '  return props.label ?? "";',
+      "}",
+    ].join("\n");
+    const typesModule = [
+      "import type {",
+      "  Variants,",
+      '} from "@hellajs/css";',
+      "",
+      "export interface WidgetProps {",
+      "  label?: string;",
+      "}",
+    ].join("\n");
+    expect(inlineTypes(source, typesModule)).toBe(
+      [
+        "import type {",
+        "  Variants,",
+        '} from "@hellajs/css";',
+        "",
+        "interface WidgetProps {",
+        "  label?: string;",
+        "}",
+        "",
+        "export default function W(props: WidgetProps): string {",
+        '  return props.label ?? "";',
+        "}",
+      ].join("\n"),
+    );
   });
 });

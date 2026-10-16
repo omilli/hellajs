@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, vi } from "vite-plus/test";
 import { resetTestState } from "@utils/test-helpers.js";
-import { resourceCache } from "@hellajs/resource/bundle";
+import { resourceCache } from "@hellajs/resource";
 
 describe("resourceCache", () => {
   beforeEach(() => {
@@ -14,7 +14,7 @@ describe("resourceCache", () => {
     });
 
     test("subscribes to online status changes", () => {
-      const callback = mock(() => { });
+      const callback = vi.fn(() => {});
       const unsubscribe = resourceCache.onOnlineChange(callback);
 
       // Dispatch online event
@@ -26,7 +26,7 @@ describe("resourceCache", () => {
     });
 
     test("subscribes to offline status changes", () => {
-      const callback = mock(() => { });
+      const callback = vi.fn(() => {});
       const unsubscribe = resourceCache.onOnlineChange(callback);
 
       // Dispatch offline event
@@ -38,7 +38,7 @@ describe("resourceCache", () => {
     });
 
     test("unsubscribe removes callback", () => {
-      const callback = mock(() => { });
+      const callback = vi.fn(() => {});
       const unsubscribe = resourceCache.onOnlineChange(callback);
 
       unsubscribe();
@@ -49,8 +49,8 @@ describe("resourceCache", () => {
     });
 
     test("multiple subscribers receive updates", () => {
-      const callback1 = mock(() => { });
-      const callback2 = mock(() => { });
+      const callback1 = vi.fn(() => {});
+      const callback2 = vi.fn(() => {});
 
       const unsub1 = resourceCache.onOnlineChange(callback1);
       const unsub2 = resourceCache.onOnlineChange(callback2);

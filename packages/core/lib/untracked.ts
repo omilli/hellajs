@@ -10,7 +10,9 @@ import { isFunction } from "./internal/utils";
  */
 export function untracked<T>(untrackedFn: () => T): T {
   if (!isFunction(untrackedFn)) {
-    throw new Error(`[core] untracked: untrackedFn must be a function, received ${typeof untrackedFn}`);
+    throw new Error(
+      `[core] untracked: untrackedFn must be a function, received ${typeof untrackedFn}`,
+    );
   }
   const prevSub = setCurrentSub(undefined); // Disable dependency tracking
   try {

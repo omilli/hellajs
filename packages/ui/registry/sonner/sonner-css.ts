@@ -89,7 +89,8 @@ export const item = style("sonner-item", {
   pointerEvents: "auto",
   position: "relative",
   transformOrigin: "var(--stack-origin, bottom)",
-  transition: "opacity 200ms ease-out, transform 200ms ease-out, max-height 200ms ease-out, padding 200ms ease-out",
+  transition:
+    "opacity 200ms ease-out, transform 200ms ease-out, max-height 200ms ease-out, padding 200ms ease-out",
   width: "356px",
   zIndex: "4",
   "&[data-depth='1']": {

@@ -1,4 +1,4 @@
-import { describe, test, expect, mock } from "bun:test";
+import { describe, test, expect, vi } from "vite-plus/test";
 import { signalMap, effect, batch, untracked } from "@hellajs/core";
 
 describe("signalMap", () => {
@@ -7,7 +7,7 @@ describe("signalMap", () => {
       ["alice", 1],
       ["bob", 2],
     ]);
-    const alice = mock((value: number | undefined) => value);
+    const alice = vi.fn((value: number | undefined) => value);
     effect(() => alice(scores.get("alice")));
     scores.set("bob", 20);
     expect(alice).toHaveBeenCalledTimes(1);
@@ -18,7 +18,7 @@ describe("signalMap", () => {
 
   test("delete wakes key readers with undefined", () => {
     const scores = signalMap<string, number>([["alice", 1]]);
-    const alice = mock((value: number | undefined) => value);
+    const alice = vi.fn((value: number | undefined) => value);
     effect(() => alice(scores.get("alice")));
     expect(scores.delete("alice")).toBe(true);
     expect(alice).toHaveBeenCalledTimes(2);
@@ -28,7 +28,7 @@ describe("signalMap", () => {
 
   test("keys readers wake on membership changes but not value writes", () => {
     const scores = signalMap<string, number>([["alice", 1]]);
-    const keys = mock((value: string[]) => value);
+    const keys = vi.fn((value: string[]) => value);
     effect(() => keys(scores.keys()));
     scores.set("alice", 10); // Value-only write
     expect(keys).toHaveBeenCalledTimes(1);
@@ -42,7 +42,7 @@ describe("signalMap", () => {
 
   test("has readers track membership without waking on value writes", () => {
     const scores = signalMap<string, number>([["alice", 1]]);
-    const aliceHas = mock((present: boolean) => present);
+    const aliceHas = vi.fn((present: boolean) => present);
     effect(() => aliceHas(scores.has("alice")));
     scores.set("alice", 10); // Value write: membership unchanged
     expect(aliceHas).toHaveBeenCalledTimes(1);
@@ -53,7 +53,7 @@ describe("signalMap", () => {
 
   test("size readers wake on membership changes", () => {
     const scores = signalMap<string, number>();
-    const size = mock((value: number) => value);
+    const size = vi.fn((value: number) => value);
     effect(() => size(scores.size()));
     expect(size).toHaveBeenLastCalledWith(0);
     scores.set("alice", 1);
@@ -65,7 +65,7 @@ describe("signalMap", () => {
     const scores = signalMap<string, number>();
     const alice = scores.entry("alice");
     expect(alice()).toBeUndefined();
-    const reader = mock((value: number | undefined) => value);
+    const reader = vi.fn((value: number | undefined) => value);
     effect(() => reader(alice()));
     scores.set("alice", 5);
     expect(reader).toHaveBeenCalledTimes(2);
@@ -85,7 +85,7 @@ describe("signalMap", () => {
     snapshot.set("zoe", 0);
     expect(scores.size()).toBe(1); // Snapshot mutation never touches the container
 
-    const reader = mock((value: Map<string, number>) => value);
+    const reader = vi.fn((value: Map<string, number>) => value);
     effect(() => reader(scores()));
     scores.set("alice", 10);
     expect(reader).toHaveBeenCalledTimes(2);
@@ -99,13 +99,13 @@ describe("signalMap", () => {
       ["alice", 1],
       ["bob", 2],
     ]);
-    const each = mock((value: number, key: string) => `${key}:${value}`);
+    const each = vi.fn((value: number, key: string) => `${key}:${value}`);
     effect(() => scores.forEach(each));
     expect(each).toHaveBeenCalledTimes(2);
     scores.set("alice", 10);
     expect(each).toHaveBeenCalledTimes(4); // Full re-iteration
 
-    const values = mock((value: number[]) => value);
+    const values = vi.fn((value: number[]) => value);
     effect(() => values(scores.values()));
     expect(values).toHaveBeenLastCalledWith([10, 2]);
   });
@@ -116,27 +116,27 @@ describe("signalMap", () => {
       ["bob", 2],
     ]);
     // An entry handle tracks only its key's signal: it reruns iff the child was written
-    const alice = mock((value: number | undefined) => value);
+    const alice = vi.fn((value: number | undefined) => value);
     effect(() => alice(scores.entry("alice")()));
     scores(
       new Map([
         ["alice", 1],
         ["carol", 3],
-      ])
+      ]),
     );
     expect(alice).toHaveBeenCalledTimes(1); // Equal value kept: no child write
     expect(scores()).toEqual(
       new Map([
         ["alice", 1],
         ["carol", 3],
-      ])
+      ]),
     );
     expect(scores.has("bob")).toBe(false);
   });
 
   test("wrap and merge flow through value writes", () => {
     type Item = { n: number };
-    const merge = mock<(prev: Item, next: Item) => boolean>((prev, next) => {
+    const merge = vi.fn<(prev: Item, next: Item) => boolean>((prev, next) => {
       prev.n = next.n;
       return true;
     });
@@ -144,7 +144,7 @@ describe("signalMap", () => {
       merge,
       equals: (a, b) => a.n === b.n,
     });
-    const reader = mock((value: Item | undefined) => value);
+    const reader = vi.fn((value: Item | undefined) => value);
     effect(() => reader(rows.get("a")));
     rows.set("a", { n: 5 });
     expect(reader).toHaveBeenCalledTimes(1); // Merged in place: no child write
@@ -153,7 +153,7 @@ describe("signalMap", () => {
 
   test("mutations inside batch propagate once", () => {
     const scores = signalMap<string, number>([["alice", 1]]);
-    const reader = mock((value: Map<string, number>) => value);
+    const reader = vi.fn((value: Map<string, number>) => value);
     effect(() => reader(scores()));
     batch(() => {
       scores.set("alice", 10);
@@ -164,13 +164,13 @@ describe("signalMap", () => {
       new Map([
         ["alice", 10],
         ["bob", 2],
-      ])
+      ]),
     );
   });
 
   test("reads inside untracked subscribe to nothing", () => {
     const scores = signalMap<string, number>([["alice", 1]]);
-    const reader = mock((value: number | undefined) => value);
+    const reader = vi.fn((value: number | undefined) => value);
     effect(() => reader(untracked(() => scores.get("alice"))));
     scores.set("alice", 10);
     scores.delete("alice");
@@ -179,23 +179,23 @@ describe("signalMap", () => {
 
   test("throws when options members are not functions", () => {
     expect(() => signalMap([["a", 1]], { equals: 1 as unknown as undefined })).toThrow(
-      "[core] signalMap: equals must be a function, received number"
+      "[core] signalMap: equals must be a function, received number",
     );
     expect(() => signalMap([["a", 1]], { wrap: "x" as unknown as undefined })).toThrow(
-      "[core] signalMap: wrap must be a function, received string"
+      "[core] signalMap: wrap must be a function, received string",
     );
     expect(() => signalMap([["a", 1]], { merge: true as unknown as undefined })).toThrow(
-      "[core] signalMap: merge must be a function, received boolean"
+      "[core] signalMap: merge must be a function, received boolean",
     );
   });
 
   test("throws on structurally invalid input", () => {
     expect(() => signalMap(42 as unknown as Iterable<readonly [string, number]>)).toThrow(
-      "[core] signalMap: initial must be iterable, received number"
+      "[core] signalMap: initial must be iterable, received number",
     );
     const scores = signalMap<string, number>([["a", 1]]);
     expect(() => scores(42 as unknown as Map<string, number>)).toThrow(
-      "[core] signalMap: value must be a Map, received number"
+      "[core] signalMap: value must be a Map, received number",
     );
     expect(scores()).toEqual(new Map([["a", 1]])); // The rejected input leaves membership untouched
   });

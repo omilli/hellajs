@@ -1,7 +1,7 @@
-import { describe, expect, test, beforeEach } from "bun:test";
+import { describe, expect, test, beforeEach } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState, getStylesheet } from "@utils/test-helpers.js";
-import { vars, removeVars, cssText } from "@hellajs/css/bundle";
+import { vars, removeVars, cssText } from "@hellajs/css";
 
 beforeEach(() => {
   resetTestState();
@@ -12,7 +12,9 @@ describe("vars media", () => {
     vars({ bg: "#000" }, { media: "(prefers-color-scheme: dark)" });
 
     flush();
-    expect(getStylesheet("hella-vars")).toBe("@media (prefers-color-scheme:dark){:root{--bg:#000}}");
+    expect(getStylesheet("hella-vars")).toBe(
+      "@media (prefers-color-scheme:dark){:root{--bg:#000}}",
+    );
   });
 
   test("media composes with scoped and prefix options", () => {
@@ -28,7 +30,7 @@ describe("vars media", () => {
 
     flush();
     expect(getStylesheet("hella-vars")).toBe(
-      "@media (prefers-color-scheme:light){:root{--bg:#fff}}@media (prefers-color-scheme:dark){:root{--bg:#000}}"
+      "@media (prefers-color-scheme:light){:root{--bg:#fff}}@media (prefers-color-scheme:dark){:root{--bg:#000}}",
     );
   });
 
@@ -37,11 +39,15 @@ describe("vars media", () => {
     vars({ bg }, { media: "(prefers-color-scheme: dark)" });
 
     flush();
-    expect(getStylesheet("hella-vars")).toBe("@media (prefers-color-scheme:dark){:root{--bg:#111}}");
+    expect(getStylesheet("hella-vars")).toBe(
+      "@media (prefers-color-scheme:dark){:root{--bg:#111}}",
+    );
 
     bg("#222");
     flush();
-    expect(getStylesheet("hella-vars")).toBe("@media (prefers-color-scheme:dark){:root{--bg:#222}}");
+    expect(getStylesheet("hella-vars")).toBe(
+      "@media (prefers-color-scheme:dark){:root{--bg:#222}}",
+    );
   });
 
   test("removeVars removes only its media bucket", () => {
@@ -51,12 +57,14 @@ describe("vars media", () => {
 
     flush();
     expect(getStylesheet("hella-vars")).toBe(
-      "@media (min-width:600px){:root{--pad:4px}}@media (prefers-color-scheme:dark){:root{--bg:#000}}"
+      "@media (min-width:600px){:root{--pad:4px}}@media (prefers-color-scheme:dark){:root{--bg:#000}}",
     );
 
     removeVars(compact, { media: "(min-width: 600px)" });
     flush();
-    expect(getStylesheet("hella-vars")).toBe("@media (prefers-color-scheme:dark){:root{--bg:#000}}");
+    expect(getStylesheet("hella-vars")).toBe(
+      "@media (prefers-color-scheme:dark){:root{--bg:#000}}",
+    );
   });
 
   test("reactive same-ref repeat call with differing media throws and writes no stray rule", () => {

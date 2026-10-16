@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { resetTestState } from "@utils/test-helpers.js";
 import { layerDismissal } from "@hellajs/dom";
 import { pointerDown, pressKey } from "./helpers";
@@ -9,8 +9,8 @@ describe("layerDismissal", () => {
   });
 
   test("Escape dismisses only the top layer", () => {
-    const onDismissOne = mock(() => {});
-    const onDismissTwo = mock(() => {});
+    const onDismissOne = vi.fn(() => {});
+    const onDismissTwo = vi.fn(() => {});
     const panelOne = document.createElement("div");
     const panelTwo = document.createElement("div");
     document.body.append(panelOne, panelTwo);
@@ -25,8 +25,8 @@ describe("layerDismissal", () => {
   });
 
   test("the lower layer becomes top once the top disposes", () => {
-    const onDismissOne = mock(() => {});
-    const onDismissTwo = mock(() => {});
+    const onDismissOne = vi.fn(() => {});
+    const onDismissTwo = vi.fn(() => {});
     const panelOne = document.createElement("div");
     const panelTwo = document.createElement("div");
     document.body.append(panelOne, panelTwo);
@@ -40,8 +40,8 @@ describe("layerDismissal", () => {
   });
 
   test("an outside pointerdown dismisses only the top layer", () => {
-    const onDismissOne = mock(() => {});
-    const onDismissTwo = mock(() => {});
+    const onDismissOne = vi.fn(() => {});
+    const onDismissTwo = vi.fn(() => {});
     const panelOne = document.createElement("div");
     const panelTwo = document.createElement("div");
     document.body.append(panelOne, panelTwo);
@@ -58,8 +58,8 @@ describe("layerDismissal", () => {
   });
 
   test("a pointerdown inside the top layer's nodes dismisses nothing", () => {
-    const onDismissOne = mock(() => {});
-    const onDismissTwo = mock(() => {});
+    const onDismissOne = vi.fn(() => {});
+    const onDismissTwo = vi.fn(() => {});
     const panelOne = document.createElement("div");
     const panelTwo = document.createElement("div");
     document.body.append(panelOne, panelTwo);
@@ -74,7 +74,11 @@ describe("layerDismissal", () => {
   });
 
   test("requires nodes and onDismiss", () => {
-    expect(() => layerDismissal(null as never, () => {})).toThrow("[dom] layerDismissal: nodes is required");
-    expect(() => layerDismissal(() => [], null as never)).toThrow("[dom] layerDismissal: onDismiss is required");
+    expect(() => layerDismissal(null as never, () => {})).toThrow(
+      "[dom] layerDismissal: nodes is required",
+    );
+    expect(() => layerDismissal(() => [], null as never)).toThrow(
+      "[dom] layerDismissal: onDismiss is required",
+    );
   });
 });

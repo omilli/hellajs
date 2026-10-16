@@ -1,6 +1,6 @@
-import { describe, expect, test, beforeEach } from "bun:test";
+import { describe, expect, test, beforeEach } from "vite-plus/test";
 import { resetTestState, getStylesheet, getHostStylesheet } from "@utils/test-helpers.js";
-import { css, removeCss, resetCss, vars } from "@hellajs/css/bundle";
+import { css, removeCss, resetCss, vars } from "@hellajs/css";
 import { createShadowHost } from "./helpers";
 
 beforeEach(() => {
@@ -98,6 +98,8 @@ describe("css style host", () => {
 
     vars(varsObj, { host: first });
 
-    expect(() => vars(varsObj, { host: second })).toThrow("[css] vars: reactive vars object already registered with different options");
+    expect(() => vars(varsObj, { host: second })).toThrow(
+      "[css] vars: reactive vars object already registered with different options",
+    );
   });
 });

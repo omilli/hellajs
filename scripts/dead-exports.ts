@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { logger, packagesDir, pluginsDir } from "./utils/index.js";
+import { logger, packagesDir, pluginsDir } from "./utils/index.ts";
 
 /**
  * Out of scope for v1: type-only exports (export type, export interface).
@@ -278,7 +278,9 @@ async function main(): Promise<void> {
 
     for (const { pkg, file, symbol } of dead) {
       const relFile = path.relative(cwd, file);
-      logger.info(`${pkg}:${relFile}:${symbol} — exported but has zero references across repo source/tests/docs`);
+      logger.info(
+        `${pkg}:${relFile}:${symbol} — exported but has zero references across repo source/tests/docs`,
+      );
     }
     process.exit(1);
   } catch (error) {
@@ -287,7 +289,7 @@ async function main(): Promise<void> {
   }
 }
 
-if (import.meta.main) {
+if (process.argv[1] === import.meta.filename) {
   main().catch((error: Error) => {
     logger.error("Fatal error:", error);
     process.exit(1);

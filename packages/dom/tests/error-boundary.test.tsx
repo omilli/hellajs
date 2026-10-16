@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { signal } from "@hellajs/core";
 import { resetTestState, setupContainer, suppressConsole } from "@utils/test-helpers.js";
 import { mount, onError, peekState } from "@hellajs/dom";
@@ -15,9 +15,25 @@ describe("dom", () => {
       fallbackHandler(<span>E</span>);
 
       const container = setupContainer();
-      const app = mount(<div id="b" error:fallback={(() => <span>F</span>)}><div id="mid"><span id="deep"><button id="btn" on:click={() => { throw new Error("click"); }}>X</button></span></div></div>, container);
+      const app = mount(
+        <div id="b" error:fallback={() => <span>F</span>}>
+          <div id="mid">
+            <span id="deep">
+              <button
+                id="btn"
+                on:click={() => {
+                  throw new Error("click");
+                }}
+              >
+                X
+              </button>
+            </span>
+          </div>
+        </div>,
+        container,
+      );
 
-      const btn = (container.querySelector("#btn") as HTMLElement) as Element;
+      const btn = container.querySelector("#btn") as HTMLElement as Element;
       btn.dispatchEvent(new MouseEvent("click", { bubbles: true }));
       app.flush();
 
@@ -29,7 +45,17 @@ describe("dom", () => {
 
       const shouldThrow = signal(false);
       const container = setupContainer();
-      const app = mount(<div id="b" error:fallback={(() => <span>F</span>)}><span id="deep">{() => { if (shouldThrow()) throw new Error("up"); return "OK"; }}</span></div>, container);
+      const app = mount(
+        <div id="b" error:fallback={() => <span>F</span>}>
+          <span id="deep">
+            {() => {
+              if (shouldThrow()) throw new Error("up");
+              return "OK";
+            }}
+          </span>
+        </div>,
+        container,
+      );
 
       const deep = container.querySelector("#deep") as Element;
 
@@ -49,17 +75,41 @@ describe("dom", () => {
       fallbackHandler(<span>D</span>);
 
       const container = setupContainer();
-      mount(<div id="explicit" error:boundary error:fallback={(() => <span>FB</span>)}><button on:click={() => { throw new Error("click"); }}>X</button></div>, container);
+      mount(
+        <div id="explicit" error:boundary error:fallback={() => <span>FB</span>}>
+          <button
+            on:click={() => {
+              throw new Error("click");
+            }}
+          >
+            X
+          </button>
+        </div>,
+        container,
+      );
 
       container.querySelector("button")!.click();
       expect(container.textContent).toBe("FB");
     });
 
     test("element with only error:category is NOT a boundary", () => {
-      onError(() => <span>Global</span> as HellaNode);
+      onError(() => (<span>Global</span>) as HellaNode);
 
       const container = setupContainer();
-      mount(<div id="parent" error:category="sidebar"><span id="child"><button on:click={() => { throw new Error("click"); }}>X</button></span></div>, container);
+      mount(
+        <div id="parent" error:category="sidebar">
+          <span id="child">
+            <button
+              on:click={() => {
+                throw new Error("click");
+              }}
+            >
+              X
+            </button>
+          </span>
+        </div>,
+        container,
+      );
 
       container.querySelector("button")!.click();
       expect(container.textContent).toBe("Global");
@@ -70,14 +120,25 @@ describe("dom", () => {
       fallbackHandler(<span>D</span>);
 
       const container = setupContainer();
-      mount(<div id="implicit" error:fallback={(() => <span>FB</span>)}><button on:click={() => { throw new Error("click"); }}>X</button></div>, container);
+      mount(
+        <div id="implicit" error:fallback={() => <span>FB</span>}>
+          <button
+            on:click={() => {
+              throw new Error("click");
+            }}
+          >
+            X
+          </button>
+        </div>,
+        container,
+      );
 
       container.querySelector("button")!.click();
       expect(container.textContent).toBe("FB");
     });
 
     test("nested boundaries with explicit designation", () => {
-      const outerCalled = mock(() => {});
+      const outerCalled = vi.fn(() => {});
       onError((_, context) => {
         if (context.config?.category === "inner") return <span>Inner</span>;
         outerCalled();
@@ -85,7 +146,20 @@ describe("dom", () => {
       });
 
       const container = setupContainer();
-      mount(<div error:boundary error:category="outer" error:fallback={(() => <span>O</span>)}><div error:boundary error:category="inner" error:fallback={(() => <span>I</span>)}><button on:click={() => { throw new Error("click"); }}>X</button></div></div>, container);
+      mount(
+        <div error:boundary error:category="outer" error:fallback={() => <span>O</span>}>
+          <div error:boundary error:category="inner" error:fallback={() => <span>I</span>}>
+            <button
+              on:click={() => {
+                throw new Error("click");
+              }}
+            >
+              X
+            </button>
+          </div>
+        </div>,
+        container,
+      );
 
       container.querySelector("button")!.click();
       expect(outerCalled).not.toHaveBeenCalled();
@@ -93,10 +167,21 @@ describe("dom", () => {
     });
 
     test("error:boundary without error:fallback still acts as boundary", () => {
-      onError(() => <span>Handler FB</span> as HellaNode);
+      onError(() => (<span>Handler FB</span>) as HellaNode);
 
       const container = setupContainer();
-      mount(<div error:boundary><button on:click={() => { throw new Error("click"); }}>X</button></div>, container);
+      mount(
+        <div error:boundary>
+          <button
+            on:click={() => {
+              throw new Error("click");
+            }}
+          >
+            X
+          </button>
+        </div>,
+        container,
+      );
 
       container.querySelector("button")!.click();
       expect(container.textContent).toBe("Handler FB");
@@ -109,7 +194,17 @@ describe("dom", () => {
 
         const shouldThrow = signal(false);
         const container = setupContainer();
-        const app = mount(<div id="b" error:fallback={(() => <span>F</span>)}><span id="deep">{() => { if (shouldThrow()) throw new Error("up"); return "OK"; }}</span></div>, container);
+        const app = mount(
+          <div id="b" error:fallback={() => <span>F</span>}>
+            <span id="deep">
+              {() => {
+                if (shouldThrow()) throw new Error("up");
+                return "OK";
+              }}
+            </span>
+          </div>,
+          container,
+        );
 
         const deep = container.querySelector("#deep") as Element;
 
@@ -136,14 +231,27 @@ describe("dom", () => {
       fallbackHandler(<span>E</span>);
 
       const container = setupContainer();
-      mount(<div id="b" error:fallback={((e: Error) => <span>FB: {e.message}</span>)}><button id="btn" e:click={() => { throw new Error("direct"); }}>X</button><span id="sib">Sibling</span></div>, container);
+      mount(
+        <div id="b" error:fallback={(e: Error) => <span>FB: {e.message}</span>}>
+          <button
+            id="btn"
+            e:click={() => {
+              throw new Error("direct");
+            }}
+          >
+            X
+          </button>
+          <span id="sib">Sibling</span>
+        </div>,
+        container,
+      );
 
-      expect((container.querySelector("#btn") as HTMLElement)).not.toBeNull();
+      expect(container.querySelector("#btn") as HTMLElement).not.toBeNull();
 
       (container.querySelector("#btn") as HTMLElement)!.click();
 
       expect(container.textContent).toBe("FB: direct");
-      expect((container.querySelector("#btn") as HTMLElement)).toBeNull();
+      expect(container.querySelector("#btn") as HTMLElement).toBeNull();
       expect(container.querySelector("#sib")).toBeNull();
     });
 
@@ -152,7 +260,22 @@ describe("dom", () => {
 
       const shouldThrow = signal(false);
       const container = setupContainer();
-      const app = mount(<div id="b" error:fallback={((e: Error) => <span>FB: {e.message}</span>)}><span id="sib1">{() => { if (shouldThrow()) throw new Error("oops1"); return "OK1"; }}</span><span id="sib2">{() => { return "OK2"; }}</span></div>, container);
+      const app = mount(
+        <div id="b" error:fallback={(e: Error) => <span>FB: {e.message}</span>}>
+          <span id="sib1">
+            {() => {
+              if (shouldThrow()) throw new Error("oops1");
+              return "OK1";
+            }}
+          </span>
+          <span id="sib2">
+            {() => {
+              return "OK2";
+            }}
+          </span>
+        </div>,
+        container,
+      );
 
       expect(container.textContent).toBe("OK1OK2");
 
@@ -172,7 +295,19 @@ describe("dom", () => {
 
       const shouldThrow = signal(false);
       const container = setupContainer();
-      const app = mount(<div id="b" error:fallback={((e: Error) => <span>FB: {e.message}</span>)}><span>Static Before</span><span id="dynamic">{() => { if (shouldThrow()) throw new Error("static"); return "Dynamic"; }}</span><span>Static After</span></div>, container);
+      const app = mount(
+        <div id="b" error:fallback={(e: Error) => <span>FB: {e.message}</span>}>
+          <span>Static Before</span>
+          <span id="dynamic">
+            {() => {
+              if (shouldThrow()) throw new Error("static");
+              return "Dynamic";
+            }}
+          </span>
+          <span>Static After</span>
+        </div>,
+        container,
+      );
 
       expect(container.textContent).toBe("Static BeforeDynamicStatic After");
 
@@ -190,7 +325,14 @@ describe("dom", () => {
       fallbackHandler(<span>Default</span>);
 
       const container = setupContainer();
-      mount(<div id="b" error:fallback={(() => <span>Mount FB</span>)}>{() => { throw new Error("direct"); }}</div>, container);
+      mount(
+        <div id="b" error:fallback={() => <span>Mount FB</span>}>
+          {() => {
+            throw new Error("direct");
+          }}
+        </div>,
+        container,
+      );
 
       expect(container.querySelector("#b")?.textContent).toContain("Mount FB");
     });
@@ -200,7 +342,22 @@ describe("dom", () => {
 
       const shouldThrow = signal(false);
       const container = setupContainer();
-      const app = mount(<div id="b" error:fallback={((e: Error) => <span>FB: {e.message}</span>)}><span id="c1">C1</span><span id="c2" test={() => { if (shouldThrow()) throw new Error("bind"); return "ok"; }}>C2</span><span id="c3">C3</span></div>, container);
+      const app = mount(
+        <div id="b" error:fallback={(e: Error) => <span>FB: {e.message}</span>}>
+          <span id="c1">C1</span>
+          <span
+            id="c2"
+            test={() => {
+              if (shouldThrow()) throw new Error("bind");
+              return "ok";
+            }}
+          >
+            C2
+          </span>
+          <span id="c3">C3</span>
+        </div>,
+        container,
+      );
 
       expect(container.querySelector("#c1")).not.toBeNull();
 
@@ -217,7 +374,20 @@ describe("dom", () => {
 
       const shouldThrowInner = signal(false);
       const container = setupContainer();
-      const app = mount(<div id="outer" error:fallback={((e: Error) => <span>Outer FB: {e.message}</span>)}><span id="outer-static">Outer Static</span><div id="inner" error:fallback={((e: Error) => <span>Inner FB: {e.message}</span>)}><span id="inner-dynamic">{() => { if (shouldThrowInner()) throw new Error("inner"); return "Inner Dynamic"; }}</span></div></div>, container);
+      const app = mount(
+        <div id="outer" error:fallback={(e: Error) => <span>Outer FB: {e.message}</span>}>
+          <span id="outer-static">Outer Static</span>
+          <div id="inner" error:fallback={(e: Error) => <span>Inner FB: {e.message}</span>}>
+            <span id="inner-dynamic">
+              {() => {
+                if (shouldThrowInner()) throw new Error("inner");
+                return "Inner Dynamic";
+              }}
+            </span>
+          </div>
+        </div>,
+        container,
+      );
 
       expect(container.textContent).toBe("Outer StaticInner Dynamic");
 

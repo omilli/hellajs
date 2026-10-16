@@ -1,5 +1,5 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
-import { router, navigate, route } from "@hellajs/router/bundle";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
+import { router, navigate, route } from "@hellajs/router";
 import { setupRouterEnv } from "./helpers";
 
 describe("router", () => {
@@ -17,8 +17,8 @@ describe("router", () => {
       router({
         routes: {
           "/": () => render("home"),
-          "/about": () => render("about")
-        }
+          "/about": () => render("about"),
+        },
       });
 
       navigate("/");
@@ -34,11 +34,11 @@ describe("router", () => {
           "/": () => render("home"),
           "/api": {
             children: {
-              "/v1": () => render("api-v1")
-            }
+              "/v1": () => render("api-v1"),
+            },
           },
-          "/contact": () => render("contact")
-        }
+          "/contact": () => render("contact"),
+        },
       });
 
       navigate("/");
@@ -54,8 +54,8 @@ describe("router", () => {
     test("extracts route parameters", () => {
       router({
         routes: {
-          "/users/:id": ({ id }) => render(`user-${id}`)
-        }
+          "/users/:id": ({ id }) => render(`user-${id}`),
+        },
       });
 
       navigate("/users/123");
@@ -66,8 +66,8 @@ describe("router", () => {
     test("handles wildcard routes", () => {
       router({
         routes: {
-          "/files/*": () => render(`path-${route().path}`)
-        }
+          "/files/*": () => render(`path-${route().path}`),
+        },
       });
 
       navigate("/files/docs/readme.md");
@@ -77,8 +77,8 @@ describe("router", () => {
     test("processes query parameters", () => {
       router({
         routes: {
-          "/search": (_p, query) => render(`query-${query?.q}`)
-        }
+          "/search": (_p, query) => render(`query-${query?.q}`),
+        },
       });
 
       navigate("/search", { query: { q: "test" } });
@@ -89,9 +89,8 @@ describe("router", () => {
     test("passes params and query to a populated route handler", () => {
       router({
         routes: {
-          "/users/:id": (params, query) =>
-            render(`user-${params["id"]}-page-${query["page"]}`)
-        }
+          "/users/:id": (params, query) => render(`user-${params["id"]}-page-${query["page"]}`),
+        },
       });
 
       navigate("/users/7", { query: { page: "2" } });
@@ -101,8 +100,8 @@ describe("router", () => {
     test("passes query as the only argument to a single-arity handler on a param-less route", () => {
       router({
         routes: {
-          "/search": (query) => render(`query-${query["q"]}`)
-        }
+          "/search": (query) => render(`query-${query["q"]}`),
+        },
       });
 
       navigate("/search", { query: { q: "test" } });
@@ -112,8 +111,8 @@ describe("router", () => {
     test("navigates using wildcard * parameter substitution", () => {
       router({
         routes: {
-          "/files/*": ({ "*": wildcard }) => render(`files-${wildcard}`)
-        }
+          "/files/*": ({ "*": wildcard }) => render(`files-${wildcard}`),
+        },
       });
 
       navigate("/files/*", { params: { "*": "docs/readme.md" } });
@@ -124,8 +123,9 @@ describe("router", () => {
     test("handles malformed query strings", () => {
       router({
         routes: {
-          "/search": (_p: unknown, query: Record<string, string>) => render(`q=${query?.q ?? "none"}`)
-        }
+          "/search": (_p: unknown, query: Record<string, string>) =>
+            render(`q=${query?.q ?? "none"}`),
+        },
       });
 
       navigate("/search", { query: { q: "" } });
@@ -139,8 +139,8 @@ describe("router", () => {
     test("removes unmatched :param patterns from URL", () => {
       router({
         routes: {
-          "/users/:id": ({ id }) => render(`user-${id}`)
-        }
+          "/users/:id": ({ id }) => render(`user-${id}`),
+        },
       });
       // @ts-expect-error - testing behavior when required param is missing
       navigate("/users/:id", { params: { wrongKey: "123" } });
@@ -154,10 +154,10 @@ describe("router", () => {
             handler: () => render("admin"),
             children: {
               "/users": () => render("users"),
-              "/:section": ({ section }) => render(`section-${section}`)
-            }
-          }
-        }
+              "/:section": ({ section }) => render(`section-${section}`),
+            },
+          },
+        },
       });
 
       navigate("/admin");
@@ -175,11 +175,10 @@ describe("router", () => {
         routes: {
           "/org/:orgId": {
             children: {
-              "/projects/:projectId": ({ orgId, projectId }) =>
-                render(`${orgId}-${projectId}`)
-            }
-          }
-        }
+              "/projects/:projectId": ({ orgId, projectId }) => render(`${orgId}-${projectId}`),
+            },
+          },
+        },
       });
 
       navigate("/org/acme/projects/website");
@@ -193,10 +192,10 @@ describe("router", () => {
         routes: {
           "/files": {
             children: {
-              "/*": ({ "*": wildcard }) => render(`files-${wildcard}`)
-            }
-          }
-        }
+              "/*": ({ "*": wildcard }) => render(`files-${wildcard}`),
+            },
+          },
+        },
       });
 
       navigate("/files/docs/readme.md");
@@ -210,10 +209,10 @@ describe("router", () => {
           "/admin": {
             handler: () => render("admin-fallback"),
             children: {
-              "/users": () => render("users")
-            }
-          }
-        }
+              "/users": () => render("users"),
+            },
+          },
+        },
       });
 
       navigate("/admin/nonexistent");
@@ -221,12 +220,12 @@ describe("router", () => {
     });
 
     test("wildcard route does not match path shorter than base pattern", () => {
-      const notFound = mock(() => { });
+      const notFound = vi.fn(() => {});
       router({
         routes: {
-          "/files/*": () => { }
+          "/files/*": () => {},
         },
-        notFound
+        notFound,
       });
 
       // Synchronous init may fire notFound for the unmatched initial path; isolate the navigate.
@@ -236,12 +235,12 @@ describe("router", () => {
     });
 
     test("passes the attempted path including query to the notFound handler", () => {
-      const notFound = mock((path: string) => render(path));
+      const notFound = vi.fn((path: string) => render(path));
       router({
         routes: {
-          "/": () => render("home")
+          "/": () => render("home"),
         },
-        notFound
+        notFound,
       });
 
       // Synchronous init may fire notFound for the unmatched initial path; isolate the navigate.
@@ -254,8 +253,8 @@ describe("router", () => {
       router({
         routes: {
           // @ts-expect-error - testing runtime behavior with invalid route value type
-          "/test": []
-        }
+          "/test": [],
+        },
       });
 
       navigate("/test");
@@ -275,8 +274,8 @@ describe("router", () => {
       router({
         routes: {
           "/": () => render("first-home"),
-          "/about": () => render("first-about")
-        }
+          "/about": () => render("first-about"),
+        },
       });
 
       navigate("/about");
@@ -285,8 +284,8 @@ describe("router", () => {
       router({
         routes: {
           "/": () => render("second-home"),
-          "/contact": () => render("second-contact")
-        }
+          "/contact": () => render("second-contact"),
+        },
       });
 
       navigate("/");

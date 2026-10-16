@@ -124,7 +124,7 @@ Four files under `tests/`: `transform.test.ts` (full pipeline), `processor.test.
 
 - **Helpers** — `transformJSX(code)` runs `babel.transformSync` with `configFile: false` and the plugin; `normalize(output)` collapses whitespace for full-output equality asserts; `getNamedImports(code, source)` regex-extracts specifier names.
 - **Style** — integration-style: most tests exercise the full transform and assert either `toContain` on substrings or `toBe` on `normalize()` output. Some tests import internals directly from `src/**/*.mjs` — a documented carveout (`guides/tests.md` §Test Coverage, `plugins/**` rule).
-- **Run** — `bun test plugins/babel/tests` (tests import from source `index.mjs`, not `dist/`). `bun lint` covers typecheck + eslint. **NEVER run `bun test` alone against the full repo without scoping to the plugin path.**
+- **Run** — `vp run coverage babel` (the scoped plugin gate; tests import from source `index.mjs`, not `dist/`) + `vp run lint` for rules + type-check. **NEVER run a bare `vp test` against the full repo without scoping to the plugin path.**
 
 ## Performance notes (verified)
 

@@ -16,7 +16,8 @@ export const icon = style("collapsible-icon", {
   height: "1rem",
   pointerEvents: "none",
   translate: "0 0.125rem",
-  transition: "rotate 200ms cubic-bezier(0.4, 0, 0.2, 1), translate 200ms cubic-bezier(0.4, 0, 0.2, 1)",
+  transition:
+    "rotate 200ms cubic-bezier(0.4, 0, 0.2, 1), translate 200ms cubic-bezier(0.4, 0, 0.2, 1)",
   width: "1rem",
 });
 
@@ -24,7 +25,8 @@ export const content = style("collapsible-content", {
   display: "grid",
   gridTemplateRows: "0fr",
   opacity: "0",
-  transition: "grid-template-rows 200ms cubic-bezier(0.4, 0, 0.2, 1), opacity 200ms cubic-bezier(0.4, 0, 0.2, 1)",
+  transition:
+    "grid-template-rows 200ms cubic-bezier(0.4, 0, 0.2, 1), opacity 200ms cubic-bezier(0.4, 0, 0.2, 1)",
   "&[data-state='open']": {
     gridTemplateRows: "1fr",
     opacity: "1",

@@ -1,9 +1,9 @@
 import { existsSync } from "node:fs";
 import { join, relative } from "node:path";
-import { logger, projectRoot } from "../utils/index.js";
-import { dialogHook, driveAgent, installSigint, makeRelay } from "../agent/driver.js";
-import type { Relay } from "../agent/relay.js";
-import { listPlanUnits } from "../worker/set.js";
+import { logger, projectRoot } from "../utils/index.ts";
+import { dialogHook, driveAgent, installSigint, makeRelay } from "../agent/driver.ts";
+import type { Relay } from "../agent/relay.ts";
+import { listPlanUnits } from "../worker/set.ts";
 
 /** Default model pattern for audit instances (`--model` overrides). */
 const DEFAULT_AUDITS_MODEL = "glm-5.3";
@@ -152,7 +152,9 @@ function buildSectionPrompt(plan: SectionPlan, packageName: string, setDir: stri
 async function askGate(relay: Relay, key: AuditSection): Promise<GateChoice> {
   for (;;) {
     const line = (
-      await relay.askOrchestrator(`${key}: no findings set and no clean statement — retry / clean / skip / halt?`)
+      await relay.askOrchestrator(
+        `${key}: no findings set and no clean statement — retry / clean / skip / halt?`,
+      )
     )
       .trim()
       .toLowerCase();
@@ -265,7 +267,9 @@ function printSummary(records: SectionRecord[], halted: boolean): void {
   }
   const sets = records.filter((record: SectionRecord): boolean => record.setRel !== null);
   if (sets.length > 0) {
-    const invocations = sets.map((record: SectionRecord): string => `bun worker ${record.setRel}`).join("  ·  ");
+    const invocations = sets
+      .map((record: SectionRecord): string => `bun worker ${record.setRel}`)
+      .join("  ·  ");
     logger.info(`review the plan sets, then execute each with: ${invocations}`);
   }
   if (halted) {
@@ -293,14 +297,21 @@ export async function runAudits(options: RunAuditsOptions): Promise<number> {
   options.model ??= DEFAULT_AUDITS_MODEL;
   options.thinking ??= DEFAULT_AUDITS_THINKING;
   const jobs: SectionJob[] = deriveSections(options.packageName)
-    .filter((plan: SectionPlan): boolean => options.section === undefined || plan.key === options.section)
-    .map((plan: SectionPlan): SectionJob => ({ ...plan, setDir: computeSetDir(options.packageName, plan.key) }));
+    .filter(
+      (plan: SectionPlan): boolean => options.section === undefined || plan.key === options.section,
+    )
+    .map((plan: SectionPlan): SectionJob => ({
+      ...plan,
+      setDir: computeSetDir(options.packageName, plan.key),
+    }));
   if (jobs.length === 0) {
     logger.error(`no sections derived for "${options.packageName}"`);
     return 1;
   }
   if (options.dryRun) {
-    logger.info(`audits ${options.packageName} · dry run · ${jobs.length} section(s), no instances spawned`);
+    logger.info(
+      `audits ${options.packageName} · dry run · ${jobs.length} section(s), no instances spawned`,
+    );
     for (const job of jobs) {
       logger.info(`  ${job.key} → /skill:${job.skill} · targets: ${job.targets.join(", ")}`);
       logger.info(`      findings set: ${relative(projectRoot, job.setDir)}/`);
@@ -324,6 +335,9 @@ export async function runAudits(options: RunAuditsOptions): Promise<number> {
   }
   printSummary(records, halted);
   const complete =
-    !halted && records.every((record: SectionRecord): boolean => record.status === "findings" || record.status === "clean");
+    !halted &&
+    records.every(
+      (record: SectionRecord): boolean => record.status === "findings" || record.status === "clean",
+    );
   return complete ? 0 : 1;
 }

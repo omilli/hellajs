@@ -21,8 +21,9 @@ export function raceAbort<T>(promise: Promise<T>, signal: AbortSignal): Promise<
     onAbort = () => reject(new DOMException("Request was aborted", "AbortError"));
     signal.addEventListener("abort", onAbort, { once: true });
   });
-  return Promise.race([promise, aborted])
-    .finally(() => signal.removeEventListener("abort", onAbort));
+  return Promise.race([promise, aborted]).finally(() =>
+    signal.removeEventListener("abort", onAbort),
+  );
 }
 
 /**
@@ -39,7 +40,7 @@ export function raceAbort<T>(promise: Promise<T>, signal: AbortSignal): Promise<
  */
 export function wireRequestControls(
   controller: AbortController,
-  options: { timeout?: number; abortSignal?: AbortSignal }
+  options: { timeout?: number; abortSignal?: AbortSignal },
 ): () => void {
   const { timeout, abortSignal } = options;
   const releases: Array<() => void> = [];

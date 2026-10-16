@@ -1,4 +1,4 @@
-import { describe, expect, test, mock } from "bun:test";
+import { describe, expect, test, vi } from "vite-plus/test";
 import { batch, computed, effect, signal } from "@hellajs/core";
 
 describe("core", () => {
@@ -7,7 +7,10 @@ describe("core", () => {
       const a = signal(0);
       const b = signal(0);
 
-      const runs = mock(() => { a(); b(); });
+      const runs = vi.fn(() => {
+        a();
+        b();
+      });
       effect(runs);
 
       expect(runs).toHaveBeenCalledTimes(1);
@@ -28,7 +31,9 @@ describe("core", () => {
     test("batched writes that cancel out still run signal-only effects once", () => {
       const a = signal(0);
 
-      const runs = mock(() => { a(); });
+      const runs = vi.fn(() => {
+        a();
+      });
       effect(runs);
       runs.mockClear();
 
@@ -46,7 +51,9 @@ describe("core", () => {
       const a = signal(0);
       const value = computed(() => a() + 1);
 
-      const runs = mock(() => { value(); });
+      const runs = vi.fn(() => {
+        value();
+      });
       effect(runs);
       runs.mockClear();
 
@@ -62,13 +69,19 @@ describe("core", () => {
       const a = signal(0);
       const b = signal(0);
 
-      const runs = mock(() => { a(); b(); });
+      const runs = vi.fn(() => {
+        a();
+        b();
+      });
       effect(runs);
       expect(runs).toHaveBeenCalledTimes(1);
 
       batch(() => {
         a(1);
-        batch(() => { a(2); b(3); });
+        batch(() => {
+          a(2);
+          b(3);
+        });
         b(4);
       });
 

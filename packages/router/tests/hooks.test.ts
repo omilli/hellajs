@@ -1,328 +1,319 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { delay } from "@utils/test-helpers.js";
 
-import { router, navigate, route } from "@hellajs/router/bundle";
+import { router, navigate, route } from "@hellajs/router";
 import { setupRouterEnv } from "./helpers";
 
 describe("router", () => {
-describe("hooks", () => {
-  let container: HTMLDivElement;
-  let render: (content: string) => void;
-  let log: string[];
+  describe("hooks", () => {
+    let container: HTMLDivElement;
+    let render: (content: string) => void;
+    let log: string[];
 
-  beforeEach(() => {
-    const env = setupRouterEnv();
-    container = env.container;
-    log = [];
-    render = (content: string) => {
-      log.push(content);
-      container.textContent = content;
-    };
-  });
-
-  const logHook = (name: string) => () => log.push(name);
-
-  test("executes global hooks around route", () => {
-    router({
-      routes: {
-        "/": () => render("home")
-      },
-      hooks: {
-        before: logHook("global-before"),
-        after: logHook("global-after")
-      }
+    beforeEach(() => {
+      const env = setupRouterEnv();
+      container = env.container;
+      log = [];
+      render = (content: string) => {
+        log.push(content);
+        container.textContent = content;
+      };
     });
 
-    log.length = 0;
-    navigate("/");
-    expect(log).toEqual(["global-before", "home", "global-after"]);
-  });
+    const logHook = (name: string) => () => log.push(name);
 
-  test("passes to and from paths to global before hook", () => {
-    const globalBefore = mock(() => {});
-    router({
-      routes: {
-        "/home": () => render("home"),
-        "/users/:id": ({ id }) => render(`user-${id}`)
-      },
-      hooks: { before: globalBefore }
+    test("executes global hooks around route", () => {
+      router({
+        routes: {
+          "/": () => render("home"),
+        },
+        hooks: {
+          before: logHook("global-before"),
+          after: logHook("global-after"),
+        },
+      });
+
+      log.length = 0;
+      navigate("/");
+      expect(log).toEqual(["global-before", "home", "global-after"]);
     });
 
-    navigate("/home");
-    globalBefore.mockClear();
+    test("passes to and from paths to global before hook", () => {
+      const globalBefore = vi.fn(() => {});
+      router({
+        routes: {
+          "/home": () => render("home"),
+          "/users/:id": ({ id }) => render(`user-${id}`),
+        },
+        hooks: { before: globalBefore },
+      });
 
-    navigate("/users/7?tab=posts");
+      navigate("/home");
+      globalBefore.mockClear();
 
-    expect(globalBefore).toHaveBeenCalledWith("/users/7?tab=posts", "/home");
-  });
+      navigate("/users/7?tab=posts");
 
-  test("passes to and from paths to global after hook", () => {
-    const globalAfter = mock(() => {});
-    router({
-      routes: {
-        "/home": () => render("home"),
-        "/users/:id": ({ id }) => render(`user-${id}`)
-      },
-      hooks: { after: globalAfter }
+      expect(globalBefore).toHaveBeenCalledWith("/users/7?tab=posts", "/home");
     });
 
-    navigate("/home");
-    globalAfter.mockClear();
+    test("passes to and from paths to global after hook", () => {
+      const globalAfter = vi.fn(() => {});
+      router({
+        routes: {
+          "/home": () => render("home"),
+          "/users/:id": ({ id }) => render(`user-${id}`),
+        },
+        hooks: { after: globalAfter },
+      });
 
-    navigate("/users/7");
+      navigate("/home");
+      globalAfter.mockClear();
 
-    expect(globalAfter).toHaveBeenCalledWith("/users/7", "/home");
-  });
+      navigate("/users/7");
 
-  test("redirects to login carrying the attempted path from global before", () => {
-    let authed = true;
-    router({
-      routes: {
-        "/home": () => render("home"),
-        "/login": (params, query) => render(`login?next=${query.next ?? "/"}`),
-        "/admin": () => render("admin")
-      },
-      hooks: {
-        before: (to) =>
-          authed || to.startsWith("/login")
-            ? true
-            : `/login?next=${encodeURIComponent(to)}`
-      }
+      expect(globalAfter).toHaveBeenCalledWith("/users/7", "/home");
     });
 
-    navigate("/home");
-    authed = false;
+    test("redirects to login carrying the attempted path from global before", () => {
+      let authed = true;
+      router({
+        routes: {
+          "/home": () => render("home"),
+          "/login": (params, query) => render(`login?next=${query.next ?? "/"}`),
+          "/admin": () => render("admin"),
+        },
+        hooks: {
+          before: (to) =>
+            authed || to.startsWith("/login") ? true : `/login?next=${encodeURIComponent(to)}`,
+        },
+      });
 
-    navigate("/admin");
+      navigate("/home");
+      authed = false;
 
-    expect(route().path).toBe("/login?next=%2Fadmin");
-    expect(container.textContent).toBe("login?next=/admin");
-  });
+      navigate("/admin");
 
-  test("executes route-specific hooks", () => {
-    router({
-      routes: {
-        "/test": {
-          before: logHook("route-before"),
-          handler: () => render("test"),
-          after: logHook("route-after")
-        }
-      }
+      expect(route().path).toBe("/login?next=%2Fadmin");
+      expect(container.textContent).toBe("login?next=/admin");
     });
 
-    navigate("/test");
-    expect(log).toEqual(["route-before", "test", "route-after"]);
-  });
-
-  test("passes parameters to hooks", () => {
-    const params: string[] = [];
-    router({
-      routes: {
-        "/users/:id": {
-          before: ({ id }) => params.push(`before-${id}`),
-          handler: ({ id }) => render(`user-${id}`),
-          after: ({ id }) => params.push(`after-${id}`)
-        }
-      }
-    });
-
-    navigate("/users/42");
-    expect(params).toEqual(["before-42", "after-42"]);
-    expect(container.textContent).toBe("user-42");
-  });
-
-  test("executes nested hooks in correct order", () => {
-    router({
-      routes: {
-        "/admin": {
-          before: logHook("admin-before"),
-          after: logHook("admin-after"),
-          children: {
-            "/users": {
-              before: logHook("users-before"),
-              handler: () => render("users"),
-              after: logHook("users-after")
-            }
-          }
-        }
-      }
-    });
-
-    navigate("/admin/users");
-    expect(log).toEqual([
-      "admin-before",
-      "users-before",
-      "users",
-      "users-after",
-      "admin-after"
-    ]);
-  });
-
-  test("executes global and nested hooks together", () => {
-    router({
-      routes: {
-        "/api": {
-          before: logHook("route-before"),
-          children: {
-            "/v1": () => render("api-v1")
+    test("executes route-specific hooks", () => {
+      router({
+        routes: {
+          "/test": {
+            before: logHook("route-before"),
+            handler: () => render("test"),
+            after: logHook("route-after"),
           },
-          after: logHook("route-after")
-        }
-      },
-      hooks: {
-        before: logHook("global-before"),
-        after: logHook("global-after")
-      }
+        },
+      });
+
+      navigate("/test");
+      expect(log).toEqual(["route-before", "test", "route-after"]);
     });
 
-    navigate("/api/v1");
-    expect(log).toEqual([
-      "global-before",
-      "route-before",
-      "api-v1",
-      "route-after",
-      "global-after"
-    ]);
-  });
-
-  test("defers the handler until an async before resolves", async () => {
-    const done = mock();
-
-    router({
-      routes: {
-        "/test": {
-          before: async () => {
-            await delay(10);
-            done();
+    test("passes parameters to hooks", () => {
+      const params: string[] = [];
+      router({
+        routes: {
+          "/users/:id": {
+            before: ({ id }) => params.push(`before-${id}`),
+            handler: ({ id }) => render(`user-${id}`),
+            after: ({ id }) => params.push(`after-${id}`),
           },
-          handler: () => render("test")
-        }
-      }
+        },
+      });
+
+      navigate("/users/42");
+      expect(params).toEqual(["before-42", "after-42"]);
+      expect(container.textContent).toBe("user-42");
     });
 
-    navigate("/test");
-    expect(container.textContent).toBe("");
-    expect(done).toHaveBeenCalledTimes(0);
-
-    await delay(20);
-    expect(done).toHaveBeenCalled();
-    expect(container.textContent).toBe("test");
-  });
-
-  test("supports mixed sync and async hooks", async () => {
-    const done = mock();
-
-    router({
-      routes: {
-        "/mixed": {
-          before: logHook("sync-before"),
-          handler: () => render("mixed"),
-          after: async () => {
-            await Promise.resolve();
-            done();
-          }
-        }
-      }
-    });
-
-    navigate("/mixed");
-    expect(log).toEqual(["sync-before", "mixed"]);
-    expect(done).toHaveBeenCalledTimes(0);
-
-    await delay(10);
-    expect(done).toHaveBeenCalled();
-  });
-
-  test("executes hooks for parent routes without handlers", () => {
-    router({
-      routes: {
-        "/parent": {
-          before: logHook("parent-before"),
-          after: logHook("parent-after"),
-          children: {
-            "/child": () => render("child")
-          }
-        }
-      }
-    });
-
-    navigate("/parent/child");
-    expect(log).toEqual(["parent-before", "child", "parent-after"]);
-  });
-
-  test("passes inherited parameters to nested hooks", () => {
-    const hookParams: Record<string, unknown>[] = [];
-
-    router({
-      routes: {
-        "/org/:orgId": {
-          before: ({ orgId }) =>
-            hookParams.push({ hook: "parent", orgId }),
-          children: {
-            "/projects/:projectId": {
-              before: ({ orgId, projectId }) =>
-                hookParams.push({ hook: "child", orgId, projectId }),
-              handler: () => render("project")
-            }
-          }
-        }
-      }
-    });
-
-    navigate("/org/acme/projects/website");
-    expect(hookParams).toEqual([
-      { hook: "parent", orgId: "acme" },
-      { hook: "child", orgId: "acme", projectId: "website" }
-    ]);
-  });
-
-  test("inherits parameters through three levels of nesting", () => {
-    const hookCalls: string[] = [];
-
-    router({
-      routes: {
-        "/users": {
-          children: {
-            "/:userId": {
-              before: ({ userId }) => {
-                hookCalls.push(`nested-before-${userId}`);
+    test("executes nested hooks in correct order", () => {
+      router({
+        routes: {
+          "/admin": {
+            before: logHook("admin-before"),
+            after: logHook("admin-after"),
+            children: {
+              "/users": {
+                before: logHook("users-before"),
+                handler: () => render("users"),
+                after: logHook("users-after"),
               },
-              children: {
-                "/posts": {
-                  children: {
-                    "/:postId": {
-                      before: ({ userId, postId }) => {
-                        hookCalls.push(`deep-before-${userId}-${postId}`);
-                      },
-                      handler: ({ userId, postId }) => {
-                        hookCalls.push(`handler-${userId}-${postId}`);
-                        render(`post-${userId}-${postId}`);
-                      },
-                      after: ({ userId, postId }) => {
-                        hookCalls.push(`deep-after-${userId}-${postId}`);
-                      }
-                    }
-                  }
-                }
-              },
-              after: ({ userId }) => {
-                hookCalls.push(`nested-after-${userId}`);
-              }
-            }
-          }
-        }
-      }
+            },
+          },
+        },
+      });
+
+      navigate("/admin/users");
+      expect(log).toEqual(["admin-before", "users-before", "users", "users-after", "admin-after"]);
     });
 
-    navigate("/users/john/posts/hello");
-    expect(hookCalls).toEqual([
-      "nested-before-john",
-      "deep-before-john-hello",
-      "handler-john-hello",
-      "deep-after-john-hello",
-      "nested-after-john"
-    ]);
-    expect(container.textContent).toBe("post-john-hello");
+    test("executes global and nested hooks together", () => {
+      router({
+        routes: {
+          "/api": {
+            before: logHook("route-before"),
+            children: {
+              "/v1": () => render("api-v1"),
+            },
+            after: logHook("route-after"),
+          },
+        },
+        hooks: {
+          before: logHook("global-before"),
+          after: logHook("global-after"),
+        },
+      });
+
+      navigate("/api/v1");
+      expect(log).toEqual([
+        "global-before",
+        "route-before",
+        "api-v1",
+        "route-after",
+        "global-after",
+      ]);
+    });
+
+    test("defers the handler until an async before resolves", async () => {
+      const done = vi.fn();
+
+      router({
+        routes: {
+          "/test": {
+            before: async () => {
+              await delay(10);
+              done();
+            },
+            handler: () => render("test"),
+          },
+        },
+      });
+
+      navigate("/test");
+      expect(container.textContent).toBe("");
+      expect(done).toHaveBeenCalledTimes(0);
+
+      await delay(20);
+      expect(done).toHaveBeenCalled();
+      expect(container.textContent).toBe("test");
+    });
+
+    test("supports mixed sync and async hooks", async () => {
+      const done = vi.fn();
+
+      router({
+        routes: {
+          "/mixed": {
+            before: logHook("sync-before"),
+            handler: () => render("mixed"),
+            after: async () => {
+              await Promise.resolve();
+              done();
+            },
+          },
+        },
+      });
+
+      navigate("/mixed");
+      expect(log).toEqual(["sync-before", "mixed"]);
+      expect(done).toHaveBeenCalledTimes(0);
+
+      await delay(10);
+      expect(done).toHaveBeenCalled();
+    });
+
+    test("executes hooks for parent routes without handlers", () => {
+      router({
+        routes: {
+          "/parent": {
+            before: logHook("parent-before"),
+            after: logHook("parent-after"),
+            children: {
+              "/child": () => render("child"),
+            },
+          },
+        },
+      });
+
+      navigate("/parent/child");
+      expect(log).toEqual(["parent-before", "child", "parent-after"]);
+    });
+
+    test("passes inherited parameters to nested hooks", () => {
+      const hookParams: Record<string, unknown>[] = [];
+
+      router({
+        routes: {
+          "/org/:orgId": {
+            before: ({ orgId }) => hookParams.push({ hook: "parent", orgId }),
+            children: {
+              "/projects/:projectId": {
+                before: ({ orgId, projectId }) =>
+                  hookParams.push({ hook: "child", orgId, projectId }),
+                handler: () => render("project"),
+              },
+            },
+          },
+        },
+      });
+
+      navigate("/org/acme/projects/website");
+      expect(hookParams).toEqual([
+        { hook: "parent", orgId: "acme" },
+        { hook: "child", orgId: "acme", projectId: "website" },
+      ]);
+    });
+
+    test("inherits parameters through three levels of nesting", () => {
+      const hookCalls: string[] = [];
+
+      router({
+        routes: {
+          "/users": {
+            children: {
+              "/:userId": {
+                before: ({ userId }) => {
+                  hookCalls.push(`nested-before-${userId}`);
+                },
+                children: {
+                  "/posts": {
+                    children: {
+                      "/:postId": {
+                        before: ({ userId, postId }) => {
+                          hookCalls.push(`deep-before-${userId}-${postId}`);
+                        },
+                        handler: ({ userId, postId }) => {
+                          hookCalls.push(`handler-${userId}-${postId}`);
+                          render(`post-${userId}-${postId}`);
+                        },
+                        after: ({ userId, postId }) => {
+                          hookCalls.push(`deep-after-${userId}-${postId}`);
+                        },
+                      },
+                    },
+                  },
+                },
+                after: ({ userId }) => {
+                  hookCalls.push(`nested-after-${userId}`);
+                },
+              },
+            },
+          },
+        },
+      });
+
+      navigate("/users/john/posts/hello");
+      expect(hookCalls).toEqual([
+        "nested-before-john",
+        "deep-before-john-hello",
+        "handler-john-hello",
+        "deep-after-john-hello",
+        "nested-after-john",
+      ]);
+      expect(container.textContent).toBe("post-john-hello");
+    });
   });
-});
 });

@@ -1,10 +1,10 @@
-import { describe, test, expect, mock } from "bun:test";
+import { describe, test, expect, vi } from "vite-plus/test";
 import { signalSet, effect, batch, untracked } from "@hellajs/core";
 
 describe("signalSet", () => {
   test("has readers wake on add and delete of their value only", () => {
     const tags = signalSet(["a"]);
-    const hasA = mock((present: boolean) => present);
+    const hasA = vi.fn((present: boolean) => present);
     effect(() => hasA(tags.has("a")));
     tags.add("b");
     expect(hasA).toHaveBeenCalledTimes(1); // Different value: no wake
@@ -20,9 +20,9 @@ describe("signalSet", () => {
 
   test("adding a present value wakes nothing", () => {
     const tags = signalSet(["a"]);
-    const reader = mock((value: Set<string>) => value);
+    const reader = vi.fn((value: Set<string>) => value);
     effect(() => reader(tags()));
-    const hasA = mock((present: boolean) => present);
+    const hasA = vi.fn((present: boolean) => present);
     effect(() => hasA(tags.has("a")));
     tags.add("a");
     expect(reader).toHaveBeenCalledTimes(1);
@@ -31,7 +31,7 @@ describe("signalSet", () => {
 
   test("size and the callable track structural changes", () => {
     const tags = signalSet<string>();
-    const size = mock((value: number) => value);
+    const size = vi.fn((value: number) => value);
     effect(() => size(tags.size()));
     expect(size).toHaveBeenLastCalledWith(0);
     expect(tags.add("a")).toBe(tags); // add returns the container
@@ -48,7 +48,7 @@ describe("signalSet", () => {
 
   test("delete of an absent value returns false without waking", () => {
     const tags = signalSet(["a"]);
-    const reader = mock((value: Set<string>) => value);
+    const reader = vi.fn((value: Set<string>) => value);
     effect(() => reader(tags()));
     expect(tags.delete("zz")).toBe(false);
     expect(reader).toHaveBeenCalledTimes(1);
@@ -56,7 +56,7 @@ describe("signalSet", () => {
 
   test("forEach readers wake on structural changes", () => {
     const tags = signalSet(["a"]);
-    const each = mock((value: string) => value);
+    const each = vi.fn((value: string) => value);
     effect(() => tags.forEach(each));
     expect(each).toHaveBeenCalledTimes(1);
     tags.add("b");
@@ -75,7 +75,7 @@ describe("signalSet", () => {
 
   test("mutations inside batch propagate once", () => {
     const tags = signalSet(["a"]);
-    const reader = mock((value: Set<string>) => value);
+    const reader = vi.fn((value: Set<string>) => value);
     effect(() => reader(tags()));
     batch(() => {
       tags.add("b");
@@ -87,7 +87,7 @@ describe("signalSet", () => {
 
   test("reads inside untracked subscribe to nothing", () => {
     const tags = signalSet(["a"]);
-    const reader = mock((present: boolean) => present);
+    const reader = vi.fn((present: boolean) => present);
     effect(() => reader(untracked(() => tags.has("a"))));
     tags.add("b");
     tags.delete("a");
@@ -115,22 +115,22 @@ describe("signalSet", () => {
 
   test("throws on structurally invalid input", () => {
     expect(() => signalSet(42 as unknown as Iterable<number>)).toThrow(
-      "[core] signalSet: initial must be iterable, received number"
+      "[core] signalSet: initial must be iterable, received number",
     );
     const tags = signalSet([1, 2, 3]);
     expect(() => tags(42 as unknown as Set<number>)).toThrow(
-      "[core] signalSet: value must be a Set, received number"
+      "[core] signalSet: value must be a Set, received number",
     );
     expect(tags.size()).toBe(3); // The rejected input leaves membership untouched
   });
 
   test("a rejected reconcile argument never wipes membership or wakes readers", () => {
     const tags = signalSet(["a", "b"]);
-    const reader = mock(() => tags.forEach((value: string) => value));
+    const reader = vi.fn(() => tags.forEach((value: string) => value));
     effect(reader);
     expect(reader).toHaveBeenCalledTimes(1);
     expect(() => tags(42 as unknown as Set<string>)).toThrow(
-      "[core] signalSet: value must be a Set, received number"
+      "[core] signalSet: value must be a Set, received number",
     );
     expect(tags.size()).toBe(2);
     expect(reader).toHaveBeenCalledTimes(1);
@@ -146,13 +146,13 @@ describe("signalSet", () => {
 
   test("throws when options members are not functions", () => {
     expect(() => signalSet(["a"], { equals: 1 as unknown as undefined })).toThrow(
-      "[core] signalSet: equals must be a function, received number"
+      "[core] signalSet: equals must be a function, received number",
     );
     expect(() => signalSet(["a"], { wrap: "x" as unknown as undefined })).toThrow(
-      "[core] signalSet: wrap must be a function, received string"
+      "[core] signalSet: wrap must be a function, received string",
     );
     expect(() => signalSet(["a"], { merge: true as unknown as undefined })).toThrow(
-      "[core] signalSet: merge must be a function, received boolean"
+      "[core] signalSet: merge must be a function, received boolean",
     );
   });
 });

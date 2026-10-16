@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { delay, resetTestState } from "@utils/test-helpers.js";
 import { mount, onError, resetDom } from "@hellajs/dom";
 
@@ -9,7 +9,7 @@ beforeEach(() => {
 
 describe("resetDom", () => {
   test("clears error-handler registry", () => {
-    const handler = mock(() => null);
+    const handler = vi.fn(() => null);
     onError(handler);
     resetDom();
     expect(handler).not.toHaveBeenCalled();
@@ -33,7 +33,9 @@ describe("resetDom", () => {
 
   test("unmount tears down the subtree and removes the mounted node", () => {
     const destroyOrder: string[] = [];
-    const app = mount(<div hook:beforeDestroy={() => destroyOrder.push("beforeDestroy")}>content</div>);
+    const app = mount(
+      <div hook:beforeDestroy={() => destroyOrder.push("beforeDestroy")}>content</div>,
+    );
     app.flush();
 
     app.unmount();

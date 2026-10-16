@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState, suppressConsole } from "@utils/test-helpers.js";
 import { mount, Transition, component } from "@hellajs/dom";
@@ -10,17 +10,24 @@ beforeEach(() => {
 describe("dom", () => {
   describe("Transition", () => {
     test("renders children when show is true", () => {
-      mount(<div id="container"><Transition show={true}><span id="content">Visible</span></Transition></div>);
+      mount(
+        <div id="container">
+          <Transition show={true}>
+            <span id="content">Visible</span>
+          </Transition>
+        </div>,
+      );
 
       expect(document.getElementById("content")).not.toBeNull();
       expect(document.getElementById("container")?.textContent).toContain("Visible");
     });
 
     test("renders array children (JSX compiles children to an array)", () => {
-      mount(<div id="tcontainer">{(component(Transition, { show: true, children: [
-        <b id="ta">A</b>,
-        <i id="tb">B</i>,
-      ] }))}</div>);
+      mount(
+        <div id="tcontainer">
+          {component(Transition, { show: true, children: [<b id="ta">A</b>, <i id="tb">B</i>] })}
+        </div>,
+      );
 
       expect(document.getElementById("ta")).not.toBeNull();
       expect(document.getElementById("tb")).not.toBeNull();
@@ -30,7 +37,13 @@ describe("dom", () => {
     test("removes children immediately when show is false without leave class", () => {
       const visible = signal(true);
 
-      mount(<div id="container"><Transition show={visible}><span id="content">Visible</span></Transition></div>);
+      mount(
+        <div id="container">
+          <Transition show={visible}>
+            <span id="content">Visible</span>
+          </Transition>
+        </div>,
+      );
 
       expect(document.getElementById("content")).not.toBeNull();
 
@@ -43,7 +56,13 @@ describe("dom", () => {
     test("adds enter class when show transitions to true", () => {
       const visible = signal(false);
 
-      mount(<div id="container"><Transition show={visible} enter="fade-in"><span id="content">Visible</span></Transition></div>);
+      mount(
+        <div id="container">
+          <Transition show={visible} enter="fade-in">
+            <span id="content">Visible</span>
+          </Transition>
+        </div>,
+      );
 
       expect(document.getElementById("content")).toBeNull();
 
@@ -56,7 +75,13 @@ describe("dom", () => {
     test("adds leave class when show transitions to false", () => {
       const visible = signal(true);
 
-      mount(<div id="container"><Transition show={visible} leave="fade-out" duration={100}><span id="content">Visible</span></Transition></div>);
+      mount(
+        <div id="container">
+          <Transition show={visible} leave="fade-out" duration={100}>
+            <span id="content">Visible</span>
+          </Transition>
+        </div>,
+      );
 
       visible(false);
       flush();
@@ -67,7 +92,13 @@ describe("dom", () => {
     test("removes element after duration via tick", async () => {
       const visible = signal(true);
 
-      mount(<div id="container"><Transition show={visible} leave="fade-out" duration={100}><span id="content">Visible</span></Transition></div>);
+      mount(
+        <div id="container">
+          <Transition show={visible} leave="fade-out" duration={100}>
+            <span id="content">Visible</span>
+          </Transition>
+        </div>,
+      );
 
       visible(false);
       flush();
@@ -82,7 +113,13 @@ describe("dom", () => {
     test("cancels leave and rescues node on rapid toggle to true", () => {
       const visible = signal(true);
 
-      mount(<div id="container"><Transition show={visible} enter="fade-in" leave="fade-out" duration={100}><span id="content">Visible</span></Transition></div>);
+      mount(
+        <div id="container">
+          <Transition show={visible} enter="fade-in" leave="fade-out" duration={100}>
+            <span id="content">Visible</span>
+          </Transition>
+        </div>,
+      );
 
       visible(false);
       flush();
@@ -102,7 +139,13 @@ describe("dom", () => {
     test("starts fresh leave after rescue and second false toggle", async () => {
       const visible = signal(true);
 
-      mount(<div id="container"><Transition show={visible} leave="fade-out" duration={100}><span id="content">Visible</span></Transition></div>);
+      mount(
+        <div id="container">
+          <Transition show={visible} leave="fade-out" duration={100}>
+            <span id="content">Visible</span>
+          </Transition>
+        </div>,
+      );
 
       visible(false);
       flush();
@@ -121,19 +164,37 @@ describe("dom", () => {
     });
 
     test("adds custom appear class on first mount", () => {
-      mount(<div id="container"><Transition show={true} appear="slide-in"><span id="content">Visible</span></Transition></div>);
+      mount(
+        <div id="container">
+          <Transition show={true} appear="slide-in">
+            <span id="content">Visible</span>
+          </Transition>
+        </div>,
+      );
 
       expect(document.getElementById("content")?.classList.contains("slide-in")).toBe(true);
     });
 
     test("reuses enter class for appear when appear is true", () => {
-      mount(<div id="container"><Transition show={true} enter="fade-in" appear={true}><span id="content">Visible</span></Transition></div>);
+      mount(
+        <div id="container">
+          <Transition show={true} enter="fade-in" appear={true}>
+            <span id="content">Visible</span>
+          </Transition>
+        </div>,
+      );
 
       expect(document.getElementById("content")?.classList.contains("fade-in")).toBe(true);
     });
 
     test("does not add enter class on first mount without appear prop", () => {
-      mount(<div id="container"><Transition show={true} enter="fade-in"><span id="content">Visible</span></Transition></div>);
+      mount(
+        <div id="container">
+          <Transition show={true} enter="fade-in">
+            <span id="content">Visible</span>
+          </Transition>
+        </div>,
+      );
 
       expect(document.getElementById("content")?.classList.contains("fade-in")).toBe(false);
     });
@@ -141,7 +202,13 @@ describe("dom", () => {
     test("uses enter class instead of appear when show starts false", () => {
       const visible = signal(false);
 
-      mount(<div id="container"><Transition show={visible} enter="fade-in" appear="slide-in"><span id="content">Visible</span></Transition></div>);
+      mount(
+        <div id="container">
+          <Transition show={visible} enter="fade-in" appear="slide-in">
+            <span id="content">Visible</span>
+          </Transition>
+        </div>,
+      );
 
       visible(true);
       flush();
@@ -154,7 +221,13 @@ describe("dom", () => {
     test("does not leak timer when parent removed mid-leave", async () => {
       const visible = signal(true);
 
-      const app = mount(<div id="container"><Transition show={visible} leave="fade-out" duration={100}><span id="content">Visible</span></Transition></div>);
+      const app = mount(
+        <div id="container">
+          <Transition show={visible} leave="fade-out" duration={100}>
+            <span id="content">Visible</span>
+          </Transition>
+        </div>,
+      );
 
       visible(false);
       flush();
@@ -175,7 +248,13 @@ describe("dom", () => {
     test("works with reactive show function wrapping a signal", () => {
       const visible = signal(true);
 
-      mount(<div id="container"><Transition show={visible}><span id="content">Visible</span></Transition></div>);
+      mount(
+        <div id="container">
+          <Transition show={visible}>
+            <span id="content">Visible</span>
+          </Transition>
+        </div>,
+      );
 
       expect(document.getElementById("content")).not.toBeNull();
 
@@ -186,7 +265,13 @@ describe("dom", () => {
     });
 
     test("static boolean false renders no content", () => {
-      mount(<div id="container"><Transition show={false}><span id="content">Hidden</span></Transition></div>);
+      mount(
+        <div id="container">
+          <Transition show={false}>
+            <span id="content">Hidden</span>
+          </Transition>
+        </div>,
+      );
 
       expect(document.getElementById("content")).toBeNull();
     });

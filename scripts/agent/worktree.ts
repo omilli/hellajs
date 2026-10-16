@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { execCommand, logger, projectRoot } from "../utils/index.js";
-import { isTicked } from "../worker/set.js";
+import { execCommand, logger, projectRoot } from "../utils/index.ts";
+import { isTicked } from "../worker/set.ts";
 
 /**
  * The bundled worktree protocol script. Orchestrators invoke it read-only
@@ -24,7 +24,9 @@ export async function worktreeScript(args: string[]): Promise<string | null> {
     const result = await execCommand("bun", [WORKTREE_SCRIPT, ...args]);
     return result.stdout;
   } catch (error) {
-    logger.warn(`worktree.mjs ${args.join(" ")} failed: ${(error as Error).message.split("\n")[0]}`);
+    logger.warn(
+      `worktree.mjs ${args.join(" ")} failed: ${(error as Error).message.split("\n")[0]}`,
+    );
     return null;
   }
 }

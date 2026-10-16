@@ -5,7 +5,13 @@ export type ToastType = "success" | "error" | "warning" | "info";
 
 export type ToastVariant = ToastType | "loading" | "default";
 
-export type ToasterPosition = "top-left" | "top-center" | "top-right" | "bottom-left" | "bottom-center" | "bottom-right";
+export type ToasterPosition =
+  | "top-left"
+  | "top-center"
+  | "top-right"
+  | "bottom-left"
+  | "bottom-center"
+  | "bottom-right";
 
 export interface ToastOptions {
   description?: string;

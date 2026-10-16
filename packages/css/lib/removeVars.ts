@@ -1,6 +1,12 @@
 import type { CSSVarInputObject, VarsOptions } from "./types";
 import { hash, stringify } from "./internal/shared";
-import { varsRegistryReactive, varsResultReactive, varsRegistryStatic, cache, removeFromScope } from "./internal/vars";
+import {
+  varsRegistryReactive,
+  varsResultReactive,
+  varsRegistryStatic,
+  cache,
+  removeFromScope,
+} from "./internal/vars";
 import { hostQualifier } from "./internal/sheet";
 import { isPlainObject } from "./internal/core";
 
@@ -15,7 +21,8 @@ import { isPlainObject } from "./internal/core";
  * @throws {Error} When vars is not a plain object.
  */
 export function removeVars<T extends CSSVarInputObject>(vars: T, options: VarsOptions = {}): void {
-  if (!isPlainObject(vars)) throw new Error(`[css] removeVars: expected a plain object, received ${String(vars)}`);
+  if (!isPlainObject(vars))
+    throw new Error(`[css] removeVars: expected a plain object, received ${String(vars)}`);
 
   const reactiveEntry = varsRegistryReactive.get(vars);
   if (reactiveEntry) {

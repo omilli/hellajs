@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { logger, projectRoot } from "../utils/index.js";
+import { logger, projectRoot } from "../utils/index.ts";
 
 /** The repo knowledge base root — flat `NNN-slug.md` entries. */
 const MEMORY_ROOT = join(projectRoot, "memory");
@@ -34,10 +34,7 @@ export interface QueueOptions {
 }
 
 /** Post-run outcome of one entry, classified from the before/after file state. */
-export type EntryOutcome =
-  | { kind: "changed" }
-  | { kind: "unchanged" }
-  | { kind: "removed" };
+export type EntryOutcome = { kind: "changed" } | { kind: "unchanged" } | { kind: "removed" };
 
 /**
  * Read one entry file's frontmatter into a queue record; null when
@@ -123,7 +120,9 @@ export function deriveQueue(options: QueueOptions): MemoryEntry[] {
     throw new Error(`no knowledge base at ${MEMORY_ROOT}`);
   }
   const entries: MemoryEntry[] = [];
-  for (const name of readdirSync(MEMORY_ROOT).filter((f: string): boolean => f.endsWith(".md")).sort()) {
+  for (const name of readdirSync(MEMORY_ROOT)
+    .filter((f: string): boolean => f.endsWith(".md"))
+    .sort()) {
     const entry = readEntry(join(MEMORY_ROOT, name), name);
     if (entry === null) {
       continue;

@@ -1,5 +1,5 @@
-import { describe, test, expect, beforeEach } from "bun:test";
-import { router, navigate, route, resetRouter } from "@hellajs/router/bundle";
+import { describe, test, expect, beforeEach } from "vite-plus/test";
+import { router, navigate, route, resetRouter } from "@hellajs/router";
 import { setupRouterEnv } from "./helpers";
 
 describe("router", () => {
@@ -12,7 +12,7 @@ describe("router", () => {
     test("strips the base from the initial URL", () => {
       router({
         base: "/app",
-        routes: { "/users/:id": () => {} }
+        routes: { "/users/:id": () => {} },
       });
 
       expect(route().path).toBe("/users/7");
@@ -22,7 +22,7 @@ describe("router", () => {
     test("commits navigate targets with the base prefix", () => {
       router({
         base: "/app",
-        routes: { "/users/:id": () => {} }
+        routes: { "/users/:id": () => {} },
       });
 
       navigate("/users/:id", { params: { id: "7" } });
@@ -34,7 +34,7 @@ describe("router", () => {
     test("routes intercepted base-prefixed anchor clicks logically", () => {
       router({
         base: "/app",
-        routes: { "/users/:id": () => {} }
+        routes: { "/users/:id": () => {} },
       });
 
       const el = document.createElement("a");
@@ -51,7 +51,7 @@ describe("router", () => {
     test("resolves popstate against the stripped path", () => {
       router({
         base: "/app",
-        routes: { "/users/:id": () => {} }
+        routes: { "/users/:id": () => {} },
       });
 
       history.pushState(null, "", "/app/users/9");
@@ -65,7 +65,7 @@ describe("router", () => {
       router({
         base: "/app",
         url: "/app/users/7?q=1",
-        routes: { "/users/:id": () => {} }
+        routes: { "/users/:id": () => {} },
       });
 
       expect(route().path).toBe("/users/7?q=1");
@@ -76,7 +76,7 @@ describe("router", () => {
       router({
         base: "/app",
         url: "/app",
-        routes: { "/": () => {} }
+        routes: { "/": () => {} },
       });
 
       expect(route().path).toBe("/");
@@ -86,7 +86,7 @@ describe("router", () => {
       router({
         base: "/app",
         url: "/app?tab=1",
-        routes: { "/": () => {} }
+        routes: { "/": () => {} },
       });
 
       expect(route().path).toBe("/?tab=1");
@@ -97,7 +97,7 @@ describe("router", () => {
       router({
         base: "/app",
         url: "/outside/page",
-        routes: { "/outside/page": () => {} }
+        routes: { "/outside/page": () => {} },
       });
 
       expect(route().path).toBe("/outside/page");
@@ -106,7 +106,7 @@ describe("router", () => {
     test("normalizes a trailing slash in the base", () => {
       router({
         base: "/app/",
-        routes: { "/users/:id": () => {} }
+        routes: { "/users/:id": () => {} },
       });
 
       navigate("/users/7");
@@ -119,7 +119,7 @@ describe("router", () => {
       router({
         mode: "hash",
         base: "/app",
-        routes: { "/about": () => {} }
+        routes: { "/about": () => {} },
       });
 
       navigate("/about");
@@ -133,8 +133,8 @@ describe("router", () => {
         router({
           routes: {},
           // @ts-expect-error - intentionally invalid: base must be '/'-prefixed
-          base: invalidBase
-        })
+          base: invalidBase,
+        }),
       ).toThrow("[router] router: base must be a '/'-prefixed string");
     });
   });

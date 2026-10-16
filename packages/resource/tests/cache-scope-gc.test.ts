@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, vi } from "vite-plus/test";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { resource, resourceCache } from "@hellajs/resource/bundle";
+import { resource, resourceCache } from "@hellajs/resource";
 import type { Fetcher } from "@hellajs/resource";
 
 describe("cache scope garbage collection", () => {
@@ -10,7 +10,10 @@ describe("cache scope garbage collection", () => {
   // Fetches from an unrelated fetcher scope so its cache write runs the throttled
   // cleanup pass across every scope in cacheMap.
   const triggerCleanup = async () => {
-    const other = resource(async (key: string) => `other-${key}`, { key: "other", cacheTime: 60000 });
+    const other = resource(async (key: string) => `other-${key}`, {
+      key: "other",
+      cacheTime: 60000,
+    });
     other.fetch();
     await delay(20);
   };
@@ -27,12 +30,12 @@ describe("cache scope garbage collection", () => {
   });
 
   test("releases the fetcher once its expired entry is cleaned up", async () => {
-    let fetcherRef: WeakRef<Fetcher<string, string>>;
-    // Block scope: fetcher and resource die at block exit — no explicit nulling
-    // (post-settle access to the resource pins its graph in this runtime).
-    {
+    // The canary rides an async IIFE that fully unwinds before collecting: V8
+    // conservative stack scanning pins objects from stale words in any
+    // still-live frame, so a direct test-local fetcher survives every gc().
+    const fetcherRef = await (async () => {
       const fetcher: Fetcher<string, string> = async (key: string) => `data-${key}`;
-      fetcherRef = new WeakRef(fetcher);
+      const ref = new WeakRef(fetcher);
       const r = resource(fetcher, { key: "k", cacheTime: 1000 });
 
       r.fetch();
@@ -42,21 +45,21 @@ describe("cache scope garbage collection", () => {
       mockTime += 61000;
       await triggerCleanup();
       expect(resourceCache.map.size).toBe(1);
-    }
+      return ref;
+    })();
 
-    // Flush a macrotask turn: JSC keeps objects reachable from scheduled-but-
-    // unprocessed async machinery, so a turn boundary before Bun.gc is required
-    // for a deterministic sweep. Pre-fix, cacheMap still holds the fetcher scope
-    // and the deref finds it alive.
-    await delay(0);
-    Bun.gc(true);
-    Bun.gc(true);
-    Bun.gc(true);
+    // Macrotask hop, then repeated full GCs: a single pass can leave weak
+    // targets un-swept. Pre-fix, cacheMap still holds the fetcher scope and
+    // the deref finds it alive.
+    await delay(10);
+    gc?.();
+    gc?.();
+    gc?.();
     expect(fetcherRef.deref()).toBeUndefined();
   });
 
   test("refetches and re-caches after the emptied scope is reaped", async () => {
-    const fetcher = mock(async (key: string) => `data-${key}`);
+    const fetcher = vi.fn(async (key: string) => `data-${key}`);
     const r = resource(fetcher, { key: "k", cacheTime: 60000 });
 
     r.fetch();
@@ -79,7 +82,7 @@ describe("cache scope garbage collection", () => {
   });
 
   test("keeps a scope holding a TTL-valid entry across the cleanup pass", async () => {
-    const fetcher = mock(async (key: string) => `data-${key}`);
+    const fetcher = vi.fn(async (key: string) => `data-${key}`);
     const r = resource(fetcher, { key: "k", cacheTime: 600000 });
 
     r.fetch();

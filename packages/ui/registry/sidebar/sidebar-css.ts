@@ -18,7 +18,9 @@ const slideInLeft = keyframes({ from: { opacity: "0", transform: "translateX(-10
 const slideOutLeft = keyframes({ to: { opacity: "0", transform: "translateX(-100%)" } });
 const slideInRight = keyframes({ from: { opacity: "0", transform: "translateX(100%)" } });
 const slideOutRight = keyframes({ to: { opacity: "0", transform: "translateX(100%)" } });
-const tooltipInRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem) scale(0.95)" } });
+const tooltipInRight = keyframes({
+  from: { opacity: "0", transform: "translateX(-0.5rem) scale(0.95)" },
+});
 
 export const base = style("sidebar-base", {
   display: "flex",
@@ -273,7 +275,8 @@ export const inputBase = style("sidebar-input-base", {
   outlineStyle: "none",
   paddingBlock: "0.25rem",
   paddingInline: "0.75rem",
-  transition: "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
+  transition:
+    "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   width: "100%",
   "&::file-selector-button": {
     background: "transparent",
@@ -728,9 +731,10 @@ css({
   "[data-collapsible='icon'][data-variant='sidebar'] [data-slot='sidebar-gap']": {
     width: "var(--sidebar-width-icon)",
   },
-  "[data-collapsible='icon'][data-variant='floating'] [data-slot='sidebar-gap'], [data-collapsible='icon'][data-variant='inset'] [data-slot='sidebar-gap']": {
-    width: "calc(var(--sidebar-width-icon) + 1rem)",
-  },
+  "[data-collapsible='icon'][data-variant='floating'] [data-slot='sidebar-gap'], [data-collapsible='icon'][data-variant='inset'] [data-slot='sidebar-gap']":
+    {
+      width: "calc(var(--sidebar-width-icon) + 1rem)",
+    },
   "[data-collapsible='offcanvas'] [data-slot='sidebar-gap']": {
     width: "0",
   },
@@ -747,18 +751,20 @@ css({
   "[data-collapsible='icon'][data-variant='sidebar'] [data-slot='sidebar-container']": {
     width: "var(--sidebar-width-icon)",
   },
-  "[data-collapsible='icon'][data-variant='floating'] [data-slot='sidebar-container'], [data-collapsible='icon'][data-variant='inset'] [data-slot='sidebar-container']": {
-    width: "calc(var(--sidebar-width-icon) + 1rem + 2px)",
-  },
+  "[data-collapsible='icon'][data-variant='floating'] [data-slot='sidebar-container'], [data-collapsible='icon'][data-variant='inset'] [data-slot='sidebar-container']":
+    {
+      width: "calc(var(--sidebar-width-icon) + 1rem + 2px)",
+    },
   "[data-side='left'][data-variant='sidebar'] [data-slot='sidebar-container']": {
     borderRight: `1px solid ${tokens.border}`,
   },
   "[data-side='right'][data-variant='sidebar'] [data-slot='sidebar-container']": {
     borderLeft: `1px solid ${tokens.border}`,
   },
-  "[data-variant='floating'] [data-slot='sidebar-container'], [data-variant='inset'] [data-slot='sidebar-container']": {
-    padding: "0.5rem",
-  },
+  "[data-variant='floating'] [data-slot='sidebar-container'], [data-variant='inset'] [data-slot='sidebar-container']":
+    {
+      padding: "0.5rem",
+    },
 
   "[data-variant='floating'] [data-slot='sidebar-inner']": {
     border: `1px solid ${sidebarTokens.sidebarBorder}`,
@@ -773,9 +779,10 @@ css({
       margin: "0.5rem",
       marginLeft: "0",
     },
-    "[data-slot='sidebar'][data-variant='inset'][data-state='collapsed'] ~ [data-slot='sidebar-inset']": {
-      marginLeft: "0.5rem",
-    },
+    "[data-slot='sidebar'][data-variant='inset'][data-state='collapsed'] ~ [data-slot='sidebar-inset']":
+      {
+        marginLeft: "0.5rem",
+      },
     "[data-sidebar='menu-action'][data-show-on-hover='true']": {
       opacity: "0",
     },
@@ -831,9 +838,10 @@ css({
   "[data-collapsible='icon'] [data-sidebar='menu-button'][data-size='lg']": {
     padding: "0",
   },
-  "[data-slot='sidebar-menu-item']:has([data-sidebar='menu-action']) [data-sidebar='menu-button']": {
-    paddingRight: "2rem",
-  },
+  "[data-slot='sidebar-menu-item']:has([data-sidebar='menu-action']) [data-sidebar='menu-button']":
+    {
+      paddingRight: "2rem",
+    },
 
   "[data-sidebar='menu-button']:hover ~ [data-sidebar='menu-action']": {
     color: sidebarTokens.sidebarAccentForeground,
@@ -851,12 +859,14 @@ css({
     display: "none",
   },
 
-  "[data-slot='sidebar-menu-item']:focus-within [data-sidebar='menu-action'][data-show-on-hover='true'], [data-slot='sidebar-menu-item']:hover [data-sidebar='menu-action'][data-show-on-hover='true']": {
-    opacity: "1",
-  },
-  "[data-sidebar='menu-button'][data-active='true'] ~ [data-sidebar='menu-action'][data-show-on-hover='true']": {
-    color: sidebarTokens.sidebarAccentForeground,
-  },
+  "[data-slot='sidebar-menu-item']:focus-within [data-sidebar='menu-action'][data-show-on-hover='true'], [data-slot='sidebar-menu-item']:hover [data-sidebar='menu-action'][data-show-on-hover='true']":
+    {
+      opacity: "1",
+    },
+  "[data-sidebar='menu-button'][data-active='true'] ~ [data-sidebar='menu-action'][data-show-on-hover='true']":
+    {
+      color: sidebarTokens.sidebarAccentForeground,
+    },
   "[data-sidebar='menu-action'][data-show-on-hover='true'][data-state='open']": {
     opacity: "1",
   },

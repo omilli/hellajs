@@ -74,11 +74,11 @@ export function ssrStream(node: HellaNode, options?: StreamOptions): ReadableStr
   const nonceAttr = options?.nonce !== undefined ? ` nonce="${escapeHtml(options.nonce)}"` : "";
   const pending: PendingSwap[] = [];
   const gen = ssrNodeGen(node, pending, options?.head);
-  let done = false;                         // shared by pull/cancel: suppress late enqueues once the stream is done (cancel/error)
-  let mainDone = false;                     // main walk finished — staged-swap flush phase (bootstrap + resolved templates)
-  let settled = true;                       // false while kicked swap drains are in flight — close only after the flush queue drains
-  const queue: string[] = [];               // staged-flush chunks (the $hs bootstrap + each resolved <template>+script), drained one per pull
-  let wake: (() => void) | undefined;       // resolves a pull parked on an empty flush queue (a swap appended, or all settled)
+  let done = false; // shared by pull/cancel: suppress late enqueues once the stream is done (cancel/error)
+  let mainDone = false; // main walk finished — staged-swap flush phase (bootstrap + resolved templates)
+  let settled = true; // false while kicked swap drains are in flight — close only after the flush queue drains
+  const queue: string[] = []; // staged-flush chunks (the $hs bootstrap + each resolved <template>+script), drained one per pull
+  let wake: (() => void) | undefined; // resolves a pull parked on an empty flush queue (a swap appended, or all settled)
   return new ReadableStream<string>({
     // pull-driven drain — `pull()` is the only backpressure signal a ReadableStream offers (a busy-wait on
     // `desiredSize` inside `start` is not real backpressure): the walk advances at most one chunk per pull,
@@ -89,9 +89,12 @@ export function ssrStream(node: HellaNode, options?: StreamOptions): ReadableStr
       if (done) return;
       try {
         if (!mainDone) {
-          const next = await gen.next();    // advance the main walk by exactly one chunk
-          if (done) return;                 // cancelled while parked in the generator
-          if (!next.done) { controller.enqueue(next.value); return; }
+          const next = await gen.next(); // advance the main walk by exactly one chunk
+          if (done) return; // cancelled while parked in the generator
+          if (!next.done) {
+            controller.enqueue(next.value);
+            return;
+          }
           mainDone = true;
           if (pending.length) {
             // flush deferred <Suspense> swaps concurrently: each region's resolved <template> is appended
@@ -105,37 +108,56 @@ export function ssrStream(node: HellaNode, options?: StreamOptions): ReadableStr
             // to the nearest error boundary — React $RX parity).
             queue.push(`<script${nonceAttr}>${HS_SWAP_SCRIPT}</script>`);
             settled = false;
-            void Promise.all(pending.map(async (swap) => {
-              let html = "";
-              try {
-                for await (const chunk of swap.childGen) html += chunk;
-              } catch (err) {
-                console.warn(`[ssr] suspense region ${swap.id} failed - template skipped; hydrate will re-suspend it`, err);
-                return;
-              }
-              queue.push(`<template id="${swap.id}">${html}</template><script${nonceAttr}>$hs("${swap.id}")</script>`);
-              if (wake) { wake(); wake = undefined; }  // deliver the parked pull (none parked → next pull shifts directly)
-            })).then(() => {
+            void Promise.all(
+              pending.map(async (swap) => {
+                let html = "";
+                try {
+                  for await (const chunk of swap.childGen) html += chunk;
+                } catch (err) {
+                  console.warn(
+                    `[ssr] suspense region ${swap.id} failed - template skipped; hydrate will re-suspend it`,
+                    err,
+                  );
+                  return;
+                }
+                queue.push(
+                  `<template id="${swap.id}">${html}</template><script${nonceAttr}>$hs("${swap.id}")</script>`,
+                );
+                if (wake) {
+                  wake();
+                  wake = undefined;
+                } // deliver the parked pull (none parked → next pull shifts directly)
+              }),
+            ).then(() => {
               settled = true;
-              if (wake) { wake(); wake = undefined; }  // close the parked pull — every drain settled
+              if (wake) {
+                wake();
+                wake = undefined;
+              } // close the parked pull — every drain settled
             });
           }
         }
-        while (queue.length === 0) {        // flush queue empty — park until a swap appends or all settle (pull stays pending: no progress without demand)
-          if (settled) { controller.close(); return; }  // guard mirrors doc.ts's suffix flush — a cancel between the last enqueue and close() would otherwise throw here
-          await new Promise<void>((resolve) => { wake = resolve; });
-          if (done) return;                 // cancelled while parked
+        while (queue.length === 0) {
+          // flush queue empty — park until a swap appends or all settle (pull stays pending: no progress without demand)
+          if (settled) {
+            controller.close();
+            return;
+          } // guard mirrors doc.ts's suffix flush — a cancel between the last enqueue and close() would otherwise throw here
+          await new Promise<void>((resolve) => {
+            wake = resolve;
+          });
+          if (done) return; // cancelled while parked
         }
         controller.enqueue(queue.shift()!);
       } catch (err) {
-        done = true;                        // a main-walk rejection — surface it (staged-swap rejections are isolated per drain above)
+        done = true; // a main-walk rejection — surface it (staged-swap rejections are isolated per drain above)
         controller.error(err);
       }
     },
     cancel() {
-      done = true;                          // best-effort: suppress further enqueues into the cancelled stream
-      void gen.return(undefined);           // stop the main generator when the consumer cancels
-      let i = 0;                            // also return any staged <Suspense> swaps, so their deferred work doesn't continue into a dead stream
+      done = true; // best-effort: suppress further enqueues into the cancelled stream
+      void gen.return(undefined); // stop the main generator when the consumer cancels
+      let i = 0; // also return any staged <Suspense> swaps, so their deferred work doesn't continue into a dead stream
       const len = pending.length;
       while (i < len) {
         void pending[i]!.childGen.return(undefined);

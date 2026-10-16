@@ -35,7 +35,11 @@ export interface PendingSwap {
 let suspenseSeq = 0;
 
 /** Renders an isDynamic component's content from its `ssr` descriptor — async generator yielding HTML chunks; awaits Promise `each`/`show` and the `Lazy` loader. `<Suspense>` defers a swap onto `pending` (streaming) or renders children directly (non-streaming). */
-async function* renderDynamicGen(meta: SsrMeta, pending?: PendingSwap[], head?: HeadOptions): AsyncGenerator<string> {
+async function* renderDynamicGen(
+  meta: SsrMeta,
+  pending?: PendingSwap[],
+  head?: HeadOptions,
+): AsyncGenerator<string> {
   const props = meta.props as Record<string, unknown>;
   switch (meta.kind) {
     case "forEach": {
@@ -50,7 +54,8 @@ async function* renderDynamicGen(meta: SsrMeta, pending?: PendingSwap[], head?: 
       return;
     }
     case "transition":
-      if (await resolveAsync(props.show)) yield* walkChildGen(props.children as HellaChild, pending, head);
+      if (await resolveAsync(props.show))
+        yield* walkChildGen(props.children as HellaChild, pending, head);
       return;
     case "portal":
       return;
@@ -61,8 +66,13 @@ async function* renderDynamicGen(meta: SsrMeta, pending?: PendingSwap[], head?: 
       // present (dom parity); with none it propagates, like a rejected bare Promise.
       let resolved: HellaChild;
       try {
-        const loaded = await (props.loader as (o: { signal: AbortSignal }) => unknown)({ signal: new AbortController().signal });
-        resolved = typeof loaded === "function" ? (loaded as (p: unknown) => HellaChild)(props.props) : loaded as HellaChild;
+        const loaded = await (props.loader as (o: { signal: AbortSignal }) => unknown)({
+          signal: new AbortController().signal,
+        });
+        resolved =
+          typeof loaded === "function"
+            ? (loaded as (p: unknown) => HellaChild)(props.props)
+            : (loaded as HellaChild);
       } catch (err) {
         if (props.fallback !== undefined) {
           yield* walkChildGen(props.fallback as HellaChild, pending, head);
@@ -74,18 +84,19 @@ async function* renderDynamicGen(meta: SsrMeta, pending?: PendingSwap[], head?: 
       return;
     }
     case "suspense":
-      if (pending) {                                                  // streaming — defer: emit fallback now, stage resolved children for hydrate to swap in
+      if (pending) {
+        // streaming — defer: emit fallback now, stage resolved children for hydrate to swap in
         const id = `hs${suspenseSeq++}`;
-        yield* walkChildGen(props.fallback as HellaChild, pending, head);   // fallback sits inside the region walkChildGen already opened
-        yield `<!--${id}-->`;                                         // sentinel comment carrying the <template> id
-        pending.push({ id, childGen: walkChildGen(props.children as HellaChild, undefined, head) });  // children collected non-streaming → nested suspense resolves eagerly; head keeps filling from staged swaps
+        yield* walkChildGen(props.fallback as HellaChild, pending, head); // fallback sits inside the region walkChildGen already opened
+        yield `<!--${id}-->`; // sentinel comment carrying the <template> id
+        pending.push({ id, childGen: walkChildGen(props.children as HellaChild, undefined, head) }); // children collected non-streaming → nested suspense resolves eagerly; head keeps filling from staged swaps
         return;
       }
-      yield* walkChildGen(props.children as HellaChild, undefined, head);   // non-streaming (ssr.async) — render children directly, fallback dropped
+      yield* walkChildGen(props.children as HellaChild, undefined, head); // non-streaming (ssr.async) — render children directly, fallback dropped
       return;
     default:
       console.warn(`[ssr] unknown isDynamic kind: ${String(meta.kind)}`);
-      return;                        // unknown kind — render nothing, never call the RenderFn
+      return; // unknown kind — render nothing, never call the RenderFn
   }
 }
 
@@ -94,7 +105,11 @@ async function* renderDynamicGen(meta: SsrMeta, pending?: PendingSwap[], head?: 
  * a Promise, awaited before classification. `MARK_OPEN` and `MARK_CLOSE` bracket the region's chunks, so
  * `hydrate` consumes `ssr.async`/`ssr.stream` output exactly as it consumes `ssr` output.
  */
-async function* walkChildGen(child: HellaChild, pending?: PendingSwap[], head?: HeadOptions): AsyncGenerator<string> {
+async function* walkChildGen(
+  child: HellaChild,
+  pending?: PendingSwap[],
+  head?: HeadOptions,
+): AsyncGenerator<string> {
   // Parity invariant: `walkChildGen` (async) and `walkChild` (sync, `lib/ssr.ts`) classify children
   // identically and emit byte-identical marker wrapping (`MARK_OPEN`…`MARK_CLOSE` around every dynamic
   // region). This path additionally awaits Promises before classifying. Any change to the classification
@@ -104,27 +119,42 @@ async function* walkChildGen(child: HellaChild, pending?: PendingSwap[], head?: 
   // Adding a new child classification or `SsrMeta.kind` requires a new entry in `tests/helpers.ts`
   // (`parityCases`/`attributeCases`), or the async pair can diverge silently.
   if (child === null || child === undefined || child === false) return;
-  if (Array.isArray(child)) { yield* walkChildrenGen(child, pending, head); return; }  // array (e.g. JSX component children) — iterate
-  if (typeof child === "string") { yield child; return; }              // static template text — raw
-  if (typeof child === "number") { yield escapeHtml(`${child}`); return; }
+  if (Array.isArray(child)) {
+    yield* walkChildrenGen(child, pending, head);
+    return;
+  } // array (e.g. JSX component children) — iterate
+  if (typeof child === "string") {
+    yield child;
+    return;
+  } // static template text — raw
+  if (typeof child === "number") {
+    yield escapeHtml(`${child}`);
+    return;
+  }
   if (typeof child === "function") {
     yield MARK_OPEN;
     if ((child as DynamicFn).isDynamic) {
       const meta = (child as DynamicFn).ssr;
-      if (meta) yield* renderDynamicGen(meta, pending, head);               // user-authored isDynamic fn with no ssr → empty region
+      if (meta) yield* renderDynamicGen(meta, pending, head); // user-authored isDynamic fn with no ssr → empty region
     } else {
-      const resolved = await resolveAsyncDeep(child);                 // reactive — deep-resolve fn chains (awaiting each hop), then classify (parity with dom resolveDeep)
+      const resolved = await resolveAsyncDeep(child); // reactive — deep-resolve fn chains (awaiting each hop), then classify (parity with dom resolveDeep)
       if (typeof resolved === "function" && (resolved as DynamicFn).isDynamic) {
-        const meta = (resolved as DynamicFn).ssr;                      // reactive getter returning an isDynamic component
+        const meta = (resolved as DynamicFn).ssr; // reactive getter returning an isDynamic component
         if (meta) yield* renderDynamicGen(meta, pending, head);
       } else if (Array.isArray(resolved)) {
-        yield* walkChildrenGen(resolved, pending, head);                     // reactive getter returning an array of children — walk each (parity with dom resolveNode)
+        yield* walkChildrenGen(resolved, pending, head); // reactive getter returning an array of children — walk each (parity with dom resolveNode)
       } else if (resolved !== null && typeof resolved === "object" && "raw" in resolved) {
-        yield (resolved as { raw: string }).raw;                             // reactive getter resolving to a raw region — verbatim inside the open region (parity with sync walkChild)
-      } else if (resolved !== null && typeof resolved === "object" && (resolved as HellaNode).tag !== undefined) {
+        yield (resolved as { raw: string }).raw; // reactive getter resolving to a raw region — verbatim inside the open region (parity with sync walkChild)
+      } else if (
+        resolved !== null &&
+        typeof resolved === "object" &&
+        (resolved as HellaNode).tag !== undefined
+      ) {
         yield* ssrNodeGen(resolved as HellaNode, pending, head);
       } else {
-        yield escapeHtml(resolved === false || resolved === null || resolved === undefined ? "" : `${resolved}`);
+        yield escapeHtml(
+          resolved === false || resolved === null || resolved === undefined ? "" : `${resolved}`,
+        );
       }
     }
     yield MARK_CLOSE;
@@ -132,21 +162,29 @@ async function* walkChildGen(child: HellaChild, pending?: PendingSwap[], head?: 
   }
   if (typeof child === "object" && "raw" in child) {
     yield MARK_OPEN;
-    yield child.raw;                                                 // raw HTML region — verbatim, marker-bounded (parity with sync walkChild)
+    yield child.raw; // raw HTML region — verbatim, marker-bounded (parity with sync walkChild)
     yield MARK_CLOSE;
     return;
   }
   if (typeof child === "object" && (child as HellaNode).tag !== undefined) {
     const node = child as HellaNode;
-    if (node.tag === "$") { yield MARK_OPEN; yield* walkChildrenGen(node.children, pending, head); yield MARK_CLOSE; }  // fragment — extent marker
-    else yield* ssrNodeGen(node, pending, head);                            // element — bounded, no marker
+    if (node.tag === "$") {
+      yield MARK_OPEN;
+      yield* walkChildrenGen(node.children, pending, head);
+      yield MARK_CLOSE;
+    } // fragment — extent marker
+    else yield* ssrNodeGen(node, pending, head); // element — bounded, no marker
     return;
   }
   // true / DOM Node / unknown — nothing
 }
 
 /** Walks children into HTML chunks — async generator. */
-async function* walkChildrenGen(children?: HellaChild[], pending?: PendingSwap[], head?: HeadOptions): AsyncGenerator<string> {
+async function* walkChildrenGen(
+  children?: HellaChild[],
+  pending?: PendingSwap[],
+  head?: HeadOptions,
+): AsyncGenerator<string> {
   if (!children) return;
   let i = 0;
   const len = children.length;
@@ -163,10 +201,17 @@ async function* walkChildrenGen(children?: HellaChild[], pending?: PendingSwap[]
  * `each`, `show`) is awaited when it is a Promise. Marker wrapping is byte-identical to `ssr`. When
  * `head` is present, head-eligible elements hoist into the bag (`hoistHeadAsync`) instead of emitting.
  */
-export async function* ssrNodeGen(node: HellaNode, pending?: PendingSwap[], head?: HeadOptions): AsyncGenerator<string> {
+export async function* ssrNodeGen(
+  node: HellaNode,
+  pending?: PendingSwap[],
+  head?: HeadOptions,
+): AsyncGenerator<string> {
   const tag = node.tag;
-  if (tag === "$") { yield* walkChildrenGen(node.children, pending, head); return; }   // fragment — concatenate, no markers
-  if (head !== undefined && (await hoistHeadAsync(node, head))) return;   // head-eligible element collected into the bag — omitted from the body
+  if (tag === "$") {
+    yield* walkChildrenGen(node.children, pending, head);
+    return;
+  } // fragment — concatenate, no markers
+  if (head !== undefined && (await hoistHeadAsync(node, head))) return; // head-eligible element collected into the bag — omitted from the body
   let open = `<${tag}`;
   if (node.props) {
     const keys = Object.keys(node.props);
@@ -179,7 +224,10 @@ export async function* ssrNodeGen(node: HellaNode, pending?: PendingSwap[], head
     }
   }
   // on:/e:/hooks/error: are DOM/runtime-only — not emitted
-  if (VOID.has(tag as string)) { yield `${open}>`; return; }           // void element — no body, no closing tag
+  if (VOID.has(tag as string)) {
+    yield `${open}>`;
+    return;
+  } // void element — no body, no closing tag
   yield `${open}>`;
   yield* walkChildrenGen(node.children, pending, head);
   yield `</${tag}>`;

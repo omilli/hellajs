@@ -17,14 +17,21 @@ import type { InitOptions } from "./types";
  */
 export function initProject(options: InitOptions = {}): void {
   if (options.themeMode !== undefined && !UI_THEME_MODES.includes(options.themeMode)) {
-    throw new Error(`[ui] initProject: themeMode must be light or dark, received "${String(options.themeMode)}"`);
+    throw new Error(
+      `[ui] initProject: themeMode must be light or dark, received "${String(options.themeMode)}"`,
+    );
   }
   const root = resolveRoot(options.dir);
   const configPath = join(root, "hella.ui.json");
   if (existsSync(configPath) && options.force !== true) {
-    console.warn(`[ui] initProject: hella.ui.json already exists in ${root}, keeping it (pass --force to rewrite)`);
+    console.warn(
+      `[ui] initProject: hella.ui.json already exists in ${root}, keeping it (pass --force to rewrite)`,
+    );
   } else {
-    writeFileSync(configPath, `${JSON.stringify({ ...DEFAULT_CONFIG, ...(options.themeMode ? { themeMode: options.themeMode } : {}) }, null, 2)}\n`);
+    writeFileSync(
+      configPath,
+      `${JSON.stringify({ ...DEFAULT_CONFIG, ...(options.themeMode ? { themeMode: options.themeMode } : {}) }, null, 2)}\n`,
+    );
   }
   const entries = readConfig(options.dir).style === "tailwind" ? ["theme", "cn"] : ["theme"];
   addComponent(entries, { dir: options.dir, themeMode: options.themeMode });

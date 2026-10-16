@@ -1,12 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
-import { logger, packagesDir, pluginsDir, projectRoot } from "./utils/index.js";
+import { logger, packagesDir, pluginsDir, projectRoot } from "./utils/index.ts";
 
 /**
- * Guard (`bun jsdoc-params`): fail if any `function` declaration's JSDoc carries
+ * Guard (`vp run jsdoc-params`): fail if any `function` declaration's JSDoc carries
  * a `@param` tag whose name does not match an actual parameter. Catches the
  * `@param boundaryElement` vs `currentBoundary` / `@param element` vs `node`
- * drift that `tsc` and `eslint` do not (TS does not validate `@param` names
+ * drift that `vp lint` does not (TS does not validate `@param` names
  * against signatures in `.ts` files). Mirrors the visibility/dead-exports guard
  * pattern: no package scoping, text-based, exit 1 on any violation.
  *
@@ -255,7 +255,12 @@ async function main(): Promise<void> {
 
         for (const tag of tags) {
           if (!names.includes(tag)) {
-            violations.push({ pkg: getPackageName(filePath), file: filePath, fn: fnName, param: tag });
+            violations.push({
+              pkg: getPackageName(filePath),
+              file: filePath,
+              fn: fnName,
+              param: tag,
+            });
           }
         }
       }
@@ -277,7 +282,7 @@ async function main(): Promise<void> {
   }
 }
 
-if (import.meta.main) {
+if (process.argv[1] === import.meta.filename) {
   main().catch((error: Error) => {
     logger.error("Fatal error:", error);
     process.exit(1);

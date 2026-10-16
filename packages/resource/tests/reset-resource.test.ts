@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, vi } from "vite-plus/test";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { resetResource, resourceCache, resource } from "@hellajs/resource/bundle";
+import { resetResource, resourceCache, resource } from "@hellajs/resource";
 
 describe("resetResource", () => {
   let mockTime = 0;
@@ -25,7 +25,7 @@ describe("resetResource", () => {
   });
 
   test("clears online callbacks", () => {
-    const cb = mock(() => {});
+    const cb = vi.fn(() => {});
     resourceCache.onOnlineChange(cb);
 
     resetResource();
@@ -51,7 +51,7 @@ describe("resetResource", () => {
 
   test("invalidateAll is not a full reset — leaves online callbacks registered", () => {
     resourceCache.set("key", "value", 10000);
-    const cb = mock(() => {});
+    const cb = vi.fn(() => {});
     resourceCache.onOnlineChange(cb);
 
     resourceCache.invalidateAll();
@@ -63,7 +63,7 @@ describe("resetResource", () => {
   });
 
   test("full reset clears dedup — fresh fetch after reset is not deduped against prior in-flight", async () => {
-    const fetcher = mock(async (key: string) => {
+    const fetcher = vi.fn(async (key: string) => {
       await delay(20);
       return `data-${key}`;
     });

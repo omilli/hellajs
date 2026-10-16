@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { delay, resetTestState } from "@utils/test-helpers.js";
 import { element } from "@hellajs/dom";
 import type { HellaElement } from "@hellajs/dom";
@@ -22,8 +22,11 @@ describe("dom", () => {
     });
 
     test("attribute changes re-render reactively inside the shadow root", async () => {
-      element("shadow-attr", (props: { label: () => string | null }) =>
-        <span>{() => props.label?.() ?? "none"}</span>, { shadow: true });
+      element(
+        "shadow-attr",
+        (props: { label: () => string | null }) => <span>{() => props.label?.() ?? "none"}</span>,
+        { shadow: true },
+      );
 
       resetTestState('<shadow-attr label="first"></shadow-attr>');
       await delay();
@@ -36,7 +39,7 @@ describe("dom", () => {
     });
 
     test("delegated on:click fires for a composed event inside the shadow root", async () => {
-      const handler = mock(() => {});
+      const handler = vi.fn(() => {});
       element("shadow-click", () => <button on:click={handler}>go</button>, { shadow: true });
 
       resetTestState("<shadow-click></shadow-click>");
@@ -49,15 +52,22 @@ describe("dom", () => {
     });
 
     test("removing a node inside the shadow root triggers observer cleanup", async () => {
-      const cleanup = mock(() => {});
-      element("shadow-cleanup", () =>
-        <div class="inner" hook:afterDestroy={cleanup}>inner</div>, { shadow: true });
+      const cleanup = vi.fn(() => {});
+      element(
+        "shadow-cleanup",
+        () => (
+          <div class="inner" hook:afterDestroy={cleanup}>
+            inner
+          </div>
+        ),
+        { shadow: true },
+      );
 
       resetTestState("<shadow-cleanup></shadow-cleanup>");
       await delay();
 
       document.querySelector("shadow-cleanup")!.shadowRoot!.querySelector(".inner")!.remove();
-      await delay(10);   // observer delivery + scheduleCleanup microtask → processCleanupQueue
+      await delay(10); // observer delivery + scheduleCleanup microtask → processCleanupQueue
 
       expect(cleanup).toHaveBeenCalledTimes(1);
     });
@@ -79,7 +89,7 @@ describe("dom", () => {
     });
 
     test("renders into a closed shadow root that stays unreachable via el.shadowRoot", async () => {
-      const renderFn = mock(() => <div class="secret">hidden</div>);
+      const renderFn = vi.fn(() => <div class="secret">hidden</div>);
       element("shadow-closed", renderFn, { shadow: { mode: "closed" } });
 
       resetTestState("<shadow-closed></shadow-closed>");
@@ -92,7 +102,7 @@ describe("dom", () => {
     });
 
     test("re-renders into the shadow root after disconnect and reconnect", async () => {
-      const renderFn = mock(() => <span>in shadow</span>);
+      const renderFn = vi.fn(() => <span>in shadow</span>);
       element("shadow-reconnect", renderFn, { shadow: true });
 
       resetTestState("<shadow-reconnect></shadow-reconnect>");
