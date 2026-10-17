@@ -1,6 +1,5 @@
 import rollupHellaJS from "rollup-plugin-hellajs";
 import resolve from "@rollup/plugin-node-resolve";
-import terser from "@rollup/plugin-terser";
 import typescript from "@rollup/plugin-typescript";
 
 export default {
@@ -9,5 +8,5 @@ export default {
     file: "dist/main.js",
     format: "iife",
   },
-  plugins: [typescript(), rollupHellaJS(), resolve(), terser()],
+  plugins: [typescript(), rollupHellaJS(), resolve()],
 };
