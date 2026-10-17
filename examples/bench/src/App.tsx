@@ -13,12 +13,12 @@ mount(
           </div>
           <div class="col-md-6">
             <div class="row">
-              <ActionButton id="run" onClick={() => create(1000)} text="Create 1,000 rows" />
-              <ActionButton id="runlots" onClick={() => create(10000)} text="Create 10,000 rows" />
-              <ActionButton id="add" onClick={() => append(1000)} text="Append 1,000 rows" />
-              <ActionButton id="update" onClick={update} text="Update every 10th row" />
-              <ActionButton id="clear" onClick={clear} text="Clear" />
-              <ActionButton id="swaprows" onClick={swap} text="Swap Rows" />
+              <ActionButton id="run" on:click={() => create(1000)} text="Create 1,000 rows" />
+              <ActionButton id="runlots" on:click={() => create(10000)} text="Create 10,000 rows" />
+              <ActionButton id="add" on:click={() => append(1000)} text="Append 1,000 rows" />
+              <ActionButton id="update" on:click={update} text="Update every 10th row" />
+              <ActionButton id="clear" on:click={clear} text="Clear" />
+              <ActionButton id="swaprows" on:click={swap} text="Swap Rows" />
             </div>
           </div>
         </div>

@@ -13,5 +13,6 @@ export const Row = ({ row }: { row: RowSchema }) => (
         <span class="glyphicon glyphicon-remove" ariaHidden="true"></span>
       </a>
     </td>
+    <td class="col-md-6" />
   </tr>
 );
