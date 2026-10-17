@@ -1,6 +1,6 @@
 import type { HellaNode, DirectListenerSpec } from "../types/nodes";
 import { dispatchError, findBoundary, resolveErrorConfig, toError, getMountNode } from "./dispatch";
-import { getState, peekState } from "./state";
+import { getState, peekState, popBuildParent, pushBuildParent } from "./state";
 
 const globalListeners = new Set<string>();
 
@@ -30,7 +30,12 @@ export function setNodeHandler(element: Element, type: string, handler: EventLis
 function renderEventFallback(element: Element, fallback: HellaNode) {
   const target = findBoundary(element) ?? element;
   const mountNode = getMountNode();
-  if (mountNode) target.replaceChildren(mountNode(fallback));
+  if (mountNode) {
+    pushBuildParent(target);
+    const fresh = mountNode(fallback);
+    popBuildParent();
+    target.replaceChildren(fresh);
+  }
 }
 
 /**

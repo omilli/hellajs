@@ -5,6 +5,7 @@ import { mountNode } from "./internal/render";
 import { hydrateNode, hydrateSequence } from "./internal/hydrate";
 import { hasDeferredRegions, startDeferredRegionWatch } from "./internal/deferred";
 import { registerContainer } from "./internal/queue";
+import { popBuildParent, pushBuildParent } from "./internal/state";
 import { createMountHandle } from "./internal/handle";
 
 /**
@@ -38,7 +39,9 @@ export function hydrate(
       let roots: Node[];
       if (!container.hasChildNodes()) {
         // nothing to hydrate — mount fresh (a fragment root spreads its children on insert)
+        pushBuildParent(container);
         const el = mountNode(n) as HellaElement;
+        popBuildParent();
         container.replaceChildren(el);
         roots = Array.from(container.childNodes);
       } else if (n.tag === "$") {

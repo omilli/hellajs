@@ -19,7 +19,7 @@ import {
 import { setNodeHandler, setDirectHandler } from "./events";
 import { dispatchError, toError } from "./dispatch";
 import { registry } from "../registry";
-import { getState } from "./state";
+import { getState, peekState, popBuildParent, pushBuildParent, registerOverlay } from "./state";
 import { deferSuspenseRegion, resetDeferredState, setDeferredAdopters } from "./deferred";
 import {
   mountNode,
@@ -357,7 +357,10 @@ function tagMatches(element: Element, tag: string): boolean {
  * Replaces a mismatched server node with a freshly mounted subtree in place.
  */
 function replaceMismatch(node: HellaNode, existing: Node | null, boundaryElement?: Element): Node {
+  const insertParent = existing?.parentNode;
+  if (insertParent) pushBuildParent(insertParent);
   const fresh = mountNode(node, boundaryElement, childNamespaceOf(existing));
+  if (insertParent) popBuildParent();
   if (existing && existing.parentNode) {
     existing.parentNode.replaceChild(fresh, existing);
   }
@@ -562,6 +565,11 @@ export function hydrateSequence(
         const result = hydrateNode(node, current, boundaryElement);
         if (result && !result.parentNode) {
           parent.appendChild(result);
+          // A replacement built without an insert-parent frame (mismatch with a detached/null
+          // server node) lands here — register it into `parent` so an ancestor fast-path clean
+          // reaches it.
+          const resultState = peekState(result);
+          if (resultState) registerOverlay(result, resultState);
         }
         current = result ? result.nextSibling : null;
       }

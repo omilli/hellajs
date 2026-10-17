@@ -1,5 +1,6 @@
 import { isFunction, isPlainObject, isObject, isFalsy, objectLoop } from "./core";
-import { getState } from "./state";
+import { getState, peekState, registerOverlay } from "./state";
+import { traverseDescendants } from "./cleanup";
 import type { HellaNode, HellaElement, RenderFn, ElementHooks, ErrorConfig } from "../types/nodes";
 
 /**
@@ -228,7 +229,19 @@ export function wireFragmentScope(start: Node | null, bound: Node | null, scope:
     node = node.nextSibling;
   }
   if (node && node !== bound) {
-    const state = getState(node);
+    // Every call site wires after the carrier's subtree rendered/adopted — when the carrier had
+    // no state, its state-carrying descendants registered nowhere at their creation (the
+    // ancestor did not exist yet, often while the fragment was detached). Registering them now
+    // keeps the cleanup overlay complete; only stateless carriers take the walk.
+    const existing = peekState(node);
+    const state = existing ?? getState(node);
+    if (!existing) {
+      traverseDescendants(node, (descendant) => {
+        if (descendant === node) return;
+        const descendantState = peekState(descendant);
+        if (descendantState) registerOverlay(descendant, descendantState);
+      });
+    }
     state.componentScope = chainScopes(state.componentScope, scope);
   } else {
     scope();

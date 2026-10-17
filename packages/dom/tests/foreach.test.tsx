@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState } from "@utils/test-helpers.js";
-import { mount, ForEach } from "@hellajs/dom";
+import { mount, ForEach, peekState } from "@hellajs/dom";
 import type { Signal } from "@hellajs/core";
 import { createList, getListTexts } from "./helpers";
 
@@ -512,6 +512,39 @@ describe("dom", () => {
       (links[1] as HTMLElement).click();
       flush();
       expect(selected()).toBe(1);
+    });
+
+    test("clears 300 effected rows and repopulates without stale state", () => {
+      const rows = signal(
+        Array.from({ length: 300 }, (_, i) => ({ id: i, label: signal(`Row ${i}`) })),
+      );
+
+      mount(
+        <ul>
+          <ForEach
+            each={rows}
+            use={(row: { id: number; label: Signal<string> }) => (
+              <li key={row.id} class="row" on:click={() => row.label(`clicked ${row.id}`)}>
+                {row.label}
+              </li>
+            )}
+          ></ForEach>
+        </ul>,
+      );
+      expect(document.querySelectorAll(".row").length).toBe(300);
+      const cleared = [...document.querySelectorAll(".row")] as HTMLElement[];
+
+      rows([]);
+      flush();
+
+      expect(document.querySelectorAll(".row").length).toBe(0);
+      expect(cleared.every((li) => peekState(li) === undefined)).toBe(true);
+
+      rows(Array.from({ length: 300 }, (_, i) => ({ id: i, label: signal(`New ${i}`) })));
+      flush();
+
+      expect(document.querySelectorAll(".row").length).toBe(300);
+      expect(getListTexts()[0]).toBe("New 0");
     });
   });
 });

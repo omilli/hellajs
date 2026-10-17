@@ -25,9 +25,35 @@ export interface ElementState {
   lazyCleanup?: () => void;
   transitionCleanup?: () => void;
   suspenseCleanup?: () => void;
+  /** Nearest state-carrying descendants, registered at their state creation; `clean` drains them transitively so subtree cleanup skips stateless nodes. Lifetime is bounded by this state's WeakMap entry. */
+  dirtyChildren?: Set<Node>;
+  /** Ancestor whose `dirtyChildren` holds this node — O(1) unregister when this node's state is cleaned. */
+  registeredIn?: Node;
 }
 
 const elementMap = new WeakMap<Node, ElementState>();
+
+/** Parents currently being built via `appendToParent` — the future ancestor chain for nodes mounted detached. */
+const buildParents: Node[] = [];
+
+/**
+ * @internal
+ * Marks `parent` as the DOM parent whose child is being mounted. `appendToParent` pushes around
+ * each `mountNode` call so the child's creation-time overlay climb can fall back to the stack —
+ * mount wiring completes before `appendChild`, leaving `parentNode` null at state creation.
+ * @param parent The parent the child will be appended to
+ */
+export function pushBuildParent(parent: Node): void {
+  buildParents.push(parent);
+}
+
+/**
+ * @internal
+ * Ends the build frame opened by `pushBuildParent`.
+ */
+export function popBuildParent(): void {
+  buildParents.pop();
+}
 
 /**
  * Gets or creates the state object for a DOM node.
@@ -41,8 +67,44 @@ export function getState(node: Node): ElementState {
       isMounted: false,
     };
     elementMap.set(node, state);
+    registerOverlay(node, state);
   }
   return state;
+}
+
+/**
+ * @internal
+ * Registers a state-carrying node in its nearest state-carrying ancestor's `dirtyChildren`
+ * overlay, so `clean` on that ancestor reaches this node transitively and subtree cleanup can
+ * skip stateless nodes. Runs at state creation (climb from the node to the nearest ancestor
+ * holding state) and on observer-visible moves (after the stale registration is dropped).
+ * @param node The state-carrying node to register
+ * @param state The node's own state — receives the `registeredIn` back-pointer
+ */
+export function registerOverlay(node: Node, state: ElementState): void {
+  let ancestor = node.parentNode;
+  while (ancestor) {
+    const ancestorState = elementMap.get(ancestor);
+    if (ancestorState) {
+      const dirty = ancestorState.dirtyChildren ?? (ancestorState.dirtyChildren = new Set());
+      dirty.add(node);
+      state.registeredIn = ancestor;
+      return;
+    }
+    ancestor = ancestor.parentNode;
+  }
+  let bi = buildParents.length;
+  while (bi-- > 0) {
+    const buildAncestor = buildParents[bi]!;
+    const ancestorState = elementMap.get(buildAncestor);
+    if (ancestorState) {
+      const dirty = ancestorState.dirtyChildren ?? (ancestorState.dirtyChildren = new Set());
+      dirty.add(node);
+      state.registeredIn = buildAncestor;
+      return;
+    }
+  }
+  state.registeredIn = undefined;
 }
 
 /**

@@ -20,7 +20,7 @@ import { setNodeHandler, setDirectHandler } from "./events";
 import { dispatchError, toError } from "./dispatch";
 import { registry } from "../registry";
 import { cleanupSubtree } from "./cleanup";
-import { getState, peekState } from "./state";
+import { getState, peekState, popBuildParent, pushBuildParent } from "./state";
 
 let staticDom = new WeakMap<HellaNode, Element | DocumentFragment>();
 
@@ -350,7 +350,12 @@ function appendToParent(
     if (isObject(child)) {
       // HellaNode first — the common object child; raw sentinels and DOM Nodes never carry tag
       if ((child as HellaNode).tag !== undefined) {
-        parent.appendChild(mountNode(child as HellaNode, currentBoundary, childNs));
+        // mountNode wires the child's state before any DOM link exists — the build frame lets
+        // the child's creation-time overlay climb see this parent as its future ancestor.
+        pushBuildParent(parent);
+        const mounted = mountNode(child as HellaNode, currentBoundary, childNs);
+        popBuildParent();
+        parent.appendChild(mounted);
       } else if ("raw" in child) {
         parent.appendChild(rawToFragment((child as { raw: string }).raw));
       } else if (child instanceof Node) {
@@ -412,7 +417,11 @@ function runReactiveChild(
           return isFunction(val) ? (val as (...args: unknown[]) => unknown).bind(target) : val;
         },
       });
+      // Build frame: the region content mounts detached during this run — the frame lets its
+      // creation-time overlay climb see the live parent (mount-path runs precede any observer).
+      pushBuildParent(actualParent);
       (resolved as RenderFn)(proxyParent as HellaElement);
+      popBuildParent();
       return;
     }
 
@@ -421,7 +430,9 @@ function runReactiveChild(
       (isObject(resolved) && ((resolved as HellaNode).tag !== undefined || "raw" in resolved))
     ) {
       anchor.textContent = "";
+      pushBuildParent(actualParent);
       const newNode = resolveNode(resolved as HellaChild, parent, ns);
+      popBuildParent();
 
       if (newNode.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
         let fragChild: ChildNode | null;
@@ -444,7 +455,9 @@ function runReactiveChild(
       clearRenderedNodes(renderedNodes, actualParent);
       anchor.textContent = "";
 
+      pushBuildParent(actualParent);
       const fbNode = mountNode(fallback);
+      popBuildParent();
       renderedNodes.push(fbNode);
       actualParent.insertBefore(fbNode, anchor);
     }

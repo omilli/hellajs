@@ -2,6 +2,7 @@ import { isHellaNode, resolveValue } from "./internal/utils";
 import { isFunction } from "./internal/core";
 import { registry } from "./registry";
 import { resolveNode, childNamespaceOf } from "./internal/render";
+import { popBuildParent, pushBuildParent } from "./internal/state";
 import { cleanupSubtree } from "./internal/cleanup";
 import { getState } from "./internal/state";
 import { peekHydrateContext } from "./internal/hydrate";
@@ -249,7 +250,9 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
             const item = arr[index]!;
             const element = use(item, index);
             const { key } = resolveItemKey(element, item, index);
+            pushBuildParent(actualParent);
             const node = resolveNode(element, undefined, itemNs);
+            popBuildParent();
             if (node.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
               const record = createFragmentItem(node as DocumentFragment);
               fragment.appendChild(record.anchor);
@@ -284,7 +287,9 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
           let node = keyToNode.get(key);
           const oldItem = keyToItem.get(key);
           if (!node || (!hasExplicitKey && oldItem !== item)) {
+            pushBuildParent(actualParent);
             const resolved = resolveNode(element, undefined, itemNs);
+            popBuildParent();
             node =
               resolved.nodeType === Node.DOCUMENT_FRAGMENT_NODE
                 ? createFragmentItem(resolved as DocumentFragment)

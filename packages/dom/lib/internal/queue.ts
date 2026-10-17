@@ -1,6 +1,11 @@
 import { hasDocument } from "./core";
-import { cleanupSubtree, traverseDescendants, runHooks } from "./cleanup";
-import { peekState, hasState } from "./state";
+import { cleanupSubtree, traverseDescendants, runHooks, setCleanedRootMarker } from "./cleanup";
+import { peekState, hasState, registerOverlay } from "./state";
+
+// Wiring breaks the import cycle: cleanup.ts marks cleaned roots after each sync clean, but
+// the mark state lives here with the observer (queue.ts imports cleanupSubtree from
+// cleanup.ts, so cleanup.ts cannot import this module) — mirrors setMountNode in mount.ts.
+setCleanedRootMarker(markCleanedRoot);
 
 /**
  * @internal
@@ -27,6 +32,9 @@ let activeMounts = 0;
 
 let observedContainers = new WeakSet<Element | ShadowRoot>();
 let containerObserver: MutationObserver | null = null;
+
+let cleanedRoots = new WeakSet<Node>();
+let cleanedMarksExist = false;
 
 /**
  * @internal
@@ -64,6 +72,19 @@ export function isMountInFlight(): boolean {
 
 /**
  * @internal
+ * Marks a root whose subtree state a sync `cleanupSubtree` just removed — `collectRemovedNode`
+ * skips re-walking such roots on the observer's removal records (the state is gone by
+ * construction). `cleanedMarksExist` gates the additions-side unmark climb: first-create
+ * workloads (the common page load) never iterate additions for this purpose.
+ * @param root The cleaned subtree root to mark
+ */
+export function markCleanedRoot(root: Node): void {
+  cleanedRoots.add(root);
+  cleanedMarksExist = true;
+}
+
+/**
+ * @internal
  * Schedules cleanup queue processing via microtask.
  */
 export function scheduleCleanup() {
@@ -83,6 +104,9 @@ export function scheduleCleanup() {
  * @returns Whether any state-carrying node was queued
  */
 export function collectRemovedNode(node: Node): boolean {
+  // A sync-cleaned root's subtree state is gone by construction (everything under it was
+  // `clean`ed) — re-walking it just burns the removal-path budget twice.
+  if (cleanedRoots.has(node)) return false;
   if (node.nodeType === Node.TEXT_NODE && !hasState(node)) return false;
   if (hasState(node)) {
     cleanupQueue.add(node);
@@ -124,10 +148,32 @@ function ensureContainerObserver() {
       const aLen = addedNodes.length;
       while (ai < aLen) {
         const addedNode = addedNodes[ai++]!;
+        const isElement = addedNode.nodeType === Node.ELEMENT_NODE;
+        // A moved state-carrying node keeps its state across re-parenting — without
+        // re-registration the new ancestor's overlay misses it and its subtree cleanup
+        // would skip it. Ungated: additions iteration cannot stay behind the hook gate.
+        const addedState = isElement ? peekState(addedNode) : undefined;
+        if (addedState) {
+          const registeredIn = addedState.registeredIn;
+          if (registeredIn) peekState(registeredIn)?.dirtyChildren?.delete(addedNode);
+          registerOverlay(addedNode, addedState);
+        }
+        // A cleaned root re-inserted with fresh state mounted under (or on) it must not skip
+        // the walk when removed again — unmark the added node and every ancestor up to the
+        // observed container (a marked grandparent is stale even when the direct parent is
+        // unmarked). Gated on cleanedMarksExist so first-create workloads never iterate.
+        if (cleanedMarksExist && isElement) {
+          cleanedRoots.delete(addedNode);
+          let p: Node | null = addedNode.parentNode;
+          while (p && !observedContainers.has(p as Element | ShadowRoot)) {
+            cleanedRoots.delete(p);
+            p = p.parentNode;
+          }
+        }
         // Track additions only while the afterMount walk can consume them. An ungated add
         // retains every inserted element in this strong Set forever — hook-free apps (the
         // common case) never schedule the drain, so cleared subtrees show as Detached memory.
-        if (mountHooksExist && addedNode.nodeType === Node.ELEMENT_NODE) {
+        if (mountHooksExist && isElement) {
           mountQueue.add(addedNode);
           hasAdditions = true;
         }
@@ -252,6 +298,8 @@ export function resetQueueState() {
   isMountScheduled = false;
   mountHooksExist = false;
   activeMounts = 0;
+  cleanedRoots = new WeakSet();
+  cleanedMarksExist = false;
   observedContainers = new WeakSet();
   if (containerObserver) {
     containerObserver.disconnect();
