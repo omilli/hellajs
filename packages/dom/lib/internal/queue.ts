@@ -124,7 +124,10 @@ function ensureContainerObserver() {
       const aLen = addedNodes.length;
       while (ai < aLen) {
         const addedNode = addedNodes[ai++]!;
-        if (addedNode.nodeType === Node.ELEMENT_NODE) {
+        // Track additions only while the afterMount walk can consume them. An ungated add
+        // retains every inserted element in this strong Set forever — hook-free apps (the
+        // common case) never schedule the drain, so cleared subtrees show as Detached memory.
+        if (mountHooksExist && addedNode.nodeType === Node.ELEMENT_NODE) {
           mountQueue.add(addedNode);
           hasAdditions = true;
         }
@@ -133,7 +136,7 @@ function ensureContainerObserver() {
 
     if (hasRemovals) scheduleCleanup();
 
-    if (hasAdditions && mountHooksExist && !isMountScheduled) {
+    if (hasAdditions && !isMountScheduled) {
       isMountScheduled = true;
       queueMicrotask(processMountQueue);
     }
@@ -187,8 +190,9 @@ export function processCleanupQueue() {
  */
 export function queueMountWalk(node: Node): void {
   if (node.nodeType !== Node.ELEMENT_NODE) return;
+  if (!mountHooksExist) return; // no walk can consume the queue — adding would only retain the node
   mountQueue.add(node);
-  if (mountHooksExist && !isMountScheduled) {
+  if (!isMountScheduled) {
     isMountScheduled = true;
     queueMicrotask(processMountQueue);
   }
@@ -216,13 +220,23 @@ export function processMountQueue() {
         if (!state) return;
         if (state.isMounted) return; // idempotent: a re-flush (or observer re-fire) must not double-fire afterMount
         state.isMounted = true;
-        if (state.hooks) runHooks(n, "afterMount");
+        if (state.hooks) runHooks(n, "afterMount", state);
       });
     }
   }
   mountQueue.clear();
 
   isMounting = false;
+}
+
+/**
+ * @internal
+ * Test/introspection: node counts currently held in the cleanup and mount queues.
+ * Both return to zero after the microtask drain; a nonzero mount count in a hook-free
+ * app means added elements are being retained (Detached memory).
+ */
+export function queueCounts(): { cleanup: number; mount: number } {
+  return { cleanup: cleanupQueue.size, mount: mountQueue.size };
 }
 
 /**

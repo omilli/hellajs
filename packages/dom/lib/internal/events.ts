@@ -111,10 +111,9 @@ export function setDirectHandler(
  * Removes all direct handlers from an element.
  * Called during cleanup when element is removed from DOM.
  * @param node Node to cleanup
+ * @param handlers The node's direct-handler map (caller already holds the state)
  */
-export function removeDirectHandlers(node: Node) {
-  const handlers = getState(node).directHandlers;
-  if (!handlers) return;
+export function removeDirectHandlers(node: Node, handlers: Map<string, DirectListenerSpec>) {
   const iter = handlers.keys();
   let result = iter.next();
   while (!result.done) {

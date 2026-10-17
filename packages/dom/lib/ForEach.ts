@@ -69,6 +69,28 @@ function removeTrackedItem(item: TrackedItem, parent: Element): void {
 }
 
 /**
+ * Cleans up one tracked item's nodes without removing them — the bulk-removal fast path
+ * runs this per item and removes every child with a single `replaceChildren`. Mirrors
+ * `removeTrackedItem`'s parent checks: nodes no longer under `parent` (e.g. portal-moved)
+ * are left untouched.
+ */
+function cleanupTrackedItem(item: TrackedItem, parent: Element): void {
+  if (isFragmentItem(item)) {
+    let ni = 0;
+    const nLen = item.nodes.length;
+    while (ni < nLen) {
+      const node = item.nodes[ni++]!;
+      if (node.parentNode !== parent) continue;
+      cleanupSubtree(node);
+    }
+    if (item.anchor.parentNode === parent) cleanupSubtree(item.anchor);
+    return;
+  }
+  if (item.parentNode !== parent) return;
+  cleanupSubtree(item);
+}
+
+/**
  * Resolves the reconciliation key for one list item: an explicit `key` prop on the rendered node,
  * else the item's `id` property, else the array index (implicit). The first two are explicit
  * identities (reuse by key); the index fallback is positional. The item's `id` is read only when
@@ -115,6 +137,66 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
     const hctx = peekHydrateContext();
     const anchor = hctx ? hctx.anchor : document.createTextNode("");
     if (!hctx) parent.appendChild(anchor);
+
+    /** Clears every live and temp tracking collection — nothing may hold a node after a wipe. */
+    const resetTracking = () => {
+      keyToNode.clear();
+      keyToItem.clear();
+      currentKeys.length = 0;
+      newKeys.length = 0;
+      newKeyToNode.clear();
+      newKeyToItem.clear();
+      nodesToRemove.length = 0;
+    };
+
+    /**
+     * Removes every tracked item from the list parent. Fast path: when the region owns the
+     * parent's entire child list (tracked nodes plus the anchor), one `replaceChildren(anchor)`
+     * replaces N `removeChild` calls — the engine allocates one mutation record instead of N,
+     * a full-list clear pays no per-node record or removal cost.
+     */
+    const removeAllTracked = (listParent: Element) => {
+      const tracked = new Set<Node>();
+      let iter = keyToNode.values();
+      let entry = iter.next();
+      while (!entry.done) {
+        const item = entry.value;
+        if (isFragmentItem(item)) {
+          tracked.add(item.anchor);
+          let ni = 0;
+          const nLen = item.nodes.length;
+          while (ni < nLen) tracked.add(item.nodes[ni++]!);
+        } else {
+          tracked.add(item);
+        }
+        entry = iter.next();
+      }
+      let child = listParent.firstChild as ChildNode | null;
+      let ownsParent = true;
+      while (child) {
+        if (child !== anchor && !tracked.has(child)) {
+          ownsParent = false;
+          break;
+        }
+        child = child.nextSibling;
+      }
+      if (!ownsParent) {
+        iter = keyToNode.values();
+        entry = iter.next();
+        while (!entry.done) {
+          removeTrackedItem(entry.value, listParent);
+          entry = iter.next();
+        }
+        return;
+      }
+      iter = keyToNode.values();
+      entry = iter.next();
+      while (!entry.done) {
+        cleanupTrackedItem(entry.value, listParent);
+        entry = iter.next();
+      }
+      listParent.replaceChildren(anchor);
+    };
 
     registry.addEffect(anchor, () => {
       const actualParent = anchor.parentNode as Element;
@@ -230,6 +312,7 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
           removeTrackedItem(nodesToRemove[ri]!, actualParent);
           ri++;
         }
+        nodesToRemove.length = 0;
 
         let hasMatchingKey = false;
         const newKeysLen = newKeys.length;
@@ -373,17 +456,8 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
         newKeyToItem = tempItem;
         newKeys = tempKeys;
       } else {
-        const entries = Array.from(keyToNode.entries());
-        let ei = 0;
-        const eLen = entries.length;
-        while (ei < eLen) {
-          const [, node] = entries[ei++]!;
-          removeTrackedItem(node, actualParent);
-        }
-
-        keyToNode.clear();
-        keyToItem.clear();
-        currentKeys.length = 0;
+        removeAllTracked(actualParent);
+        resetTracking();
       }
     });
 
@@ -392,17 +466,8 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
     // item against the live parent) and disposes the effect (clean/drainAnchorCleanup on the anchor)
     getState(anchor).forEachCleanup = () => {
       const liveParent = anchor.parentNode;
-      if (liveParent) {
-        const entries = Array.from(keyToNode.values());
-        let ei = 0;
-        const eLen = entries.length;
-        while (ei < eLen) {
-          removeTrackedItem(entries[ei++]!, liveParent as Element);
-        }
-      }
-      keyToNode.clear();
-      keyToItem.clear();
-      currentKeys.length = 0;
+      if (liveParent) removeAllTracked(liveParent as Element);
+      resetTracking();
     };
   }) as JSX.Element;
 

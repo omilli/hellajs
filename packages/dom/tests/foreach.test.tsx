@@ -260,6 +260,34 @@ describe("dom", () => {
       expect(document.querySelectorAll(".item").length).toBe(0);
     });
 
+    test("repopulates after a full clear", () => {
+      const items = signal<number[]>([1, 2]);
+      mount(() => createList(items));
+
+      items([]);
+      flush();
+      expect(getListTexts()).toEqual([]);
+
+      items([3, 4]);
+      flush();
+      expect(getListTexts()).toEqual(["Item 3", "Item 4"]);
+    });
+
+    test("clear preserves foreign siblings in the list parent", () => {
+      const items = signal<number[]>([1, 2]);
+      mount(
+        <ul id="mixed">
+          <li id="foreign">keep</li>
+          <ForEach each={items} use={(item: number) => <li key={item}>{item}</li>}></ForEach>
+        </ul>,
+      );
+
+      items([]);
+      flush();
+      expect(document.getElementById("foreign")?.textContent).toBe("keep");
+      expect(document.querySelectorAll("#mixed li").length).toBe(1);
+    });
+
     test("key-only reconciliation reuses DOM nodes and preserves signal children", () => {
       const name1 = signal("Alice");
       const name2 = signal("Bob");

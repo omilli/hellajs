@@ -1,5 +1,6 @@
 import { removeDirectHandlers } from "./events";
 import { deleteState, peekState } from "./state";
+import type { ElementState } from "./state";
 import type { HookType } from "../types/nodes";
 
 /**
@@ -8,9 +9,10 @@ import type { HookType } from "../types/nodes";
  * Passes the element to hooks that expect it (excludes beforeMount, afterDestroy).
  * @param node The DOM node to run hooks on
  * @param type The hook type to run
+ * @param state Pre-fetched state — pass when the caller already holds it to skip the WeakMap read
  */
-export function runHooks(node: Node, type: HookType) {
-  const hooks = peekState(node)?.hooks?.[type];
+export function runHooks(node: Node, type: HookType, state?: ElementState) {
+  const hooks = (state ?? peekState(node))?.hooks?.[type];
   if (!hooks) return;
   const len = hooks.length;
   if (len === 0) return;
@@ -37,7 +39,7 @@ function clean(node: Node) {
   const state = peekState(node);
   if (!state) return;
 
-  runHooks(node, "beforeDestroy");
+  runHooks(node, "beforeDestroy", state);
 
   state.componentScope?.();
   state.portalCleanup?.();
@@ -56,9 +58,9 @@ function clean(node: Node) {
     effects.length = 0;
   }
 
-  removeDirectHandlers(node);
+  if (state.directHandlers) removeDirectHandlers(node, state.directHandlers);
 
-  runHooks(node, "afterDestroy");
+  runHooks(node, "afterDestroy", state);
 
   deleteState(node);
 }

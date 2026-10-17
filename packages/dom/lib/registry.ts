@@ -33,7 +33,7 @@ export const registry = {
         (state.isMounted || (!isMountInFlight() && (state.isMounted = el.isConnected)))
       ) {
         try {
-          runHooks(node, "beforeUpdate");
+          runHooks(node, "beforeUpdate", state);
         } catch (err) {
           dispatchError(toError(err), {
             phase: "update",
@@ -45,7 +45,7 @@ export const registry = {
       effectFn();
       if (state.hooks && state.isMounted) {
         try {
-          runHooks(node, "afterUpdate");
+          runHooks(node, "afterUpdate", state);
         } catch (err) {
           dispatchError(toError(err), {
             phase: "update",
