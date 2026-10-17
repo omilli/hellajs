@@ -15,7 +15,7 @@ import path from "node:path";
 import { ensureDir, execCommandInherited, projectRoot } from "../utils/index.ts";
 
 const VARIANT_SCRIPTS: Record<BenchVariant, string> = {
-  jsx: "bundle:j",
+  jsx: "bundle",
 };
 
 export type BenchVariant = "jsx";
