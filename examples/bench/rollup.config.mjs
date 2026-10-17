@@ -9,10 +9,5 @@ export default {
     file: "dist/main.js",
     format: "iife",
   },
-  plugins: [
-    typescript(),
-    rollupHellaJS(),
-    resolve(),
-    terser(),
-  ],
+  plugins: [typescript(), rollupHellaJS(), resolve(), terser()],
 };

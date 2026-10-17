@@ -5,7 +5,7 @@ interface ButtonProps extends HTMLAttributes<"button"> {
   text: string;
 }
 
-export const ActionButton = ({id, text, ...attrs}: ButtonProps) => (
+export const ActionButton = ({ id, text, ...attrs }: ButtonProps) => (
   <div class="col-sm-6">
     <button
       id={id}
