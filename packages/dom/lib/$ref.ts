@@ -3,7 +3,7 @@ import type { DOMEventMap } from "./types/attributes";
 import { createReactive } from "./internal/reactive";
 import { isString } from "./internal/core";
 import { multiSelectors, ensureRefObserver } from "./internal/selectors";
-import { mountQueue, processMountQueue } from "./internal/queue";
+import { queueMountNode, drainMountQueue } from "./internal/queue";
 
 /**
  * Creates a reactive reference to a single DOM element found by CSS selector.
@@ -55,8 +55,8 @@ export function $ref<T extends Element = Element>(target: string | T): DomRef<T>
       queuedOps.length = 0;
 
       // Trigger mount processing for afterMount hooks
-      mountQueue.add(targetNode);
-      processMountQueue();
+      queueMountNode(targetNode);
+      drainMountQueue();
 
       const entry = multiSelectors.get(selector);
       if (!entry) return;

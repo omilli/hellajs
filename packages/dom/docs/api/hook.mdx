@@ -137,3 +137,5 @@ const dataSource = { subscribe: (onData: (data: string) => void) => ({ unsubscri
   }}
 />
 ```
+
+The compiler detects `hook:` syntax and emits the corresponding feature import, so hook wiring tree-shakes out of apps that never use it; see [templates](/learn/concepts/templates) for how bundle composition works.

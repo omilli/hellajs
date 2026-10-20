@@ -13,13 +13,13 @@ Build-time Babel transform (`babel-plugin-hellajs`) that compiles JSX into Hella
 | File | Responsibility |
 |---|---|
 | `index.mjs` | Plugin entry; spreads the JSX visitors; inherits `@babel/plugin-syntax-jsx`. |
-| `src/transformers/jsx.mjs` | `JSXElement` + `JSXFragment` visitors; tag-type dispatch (component / element / fragment). |
-| `src/processors/attributes.mjs` | `processAttributes`: prefix categorization, `JSXExpressionContainer` unwrap, camelCase→kebab conversion, element-path `maybeReactive` application. |
+| `src/transformers/jsx.mjs` | `Program` exit (feature-import emission) + `JSXElement` + `JSXFragment` visitors; tag-type dispatch (component / element / fragment); per-file feature collection. |
+| `src/processors/attributes.mjs` | `processAttributes`: prefix categorization, `JSXExpressionContainer` unwrap, camelCase→kebab conversion, element-path `maybeReactive` application; reports the `features` flags (`hooks`/`errors`/`direct`/`routed`) alongside the buckets. |
 | `src/processors/children.mjs` | `filterEmptyChildren`: drops empty/whitespace text + JSXEmptyExpression, normalizes whitespace, marks bare `props.children` as a SpreadElement. |
 | `src/builders/children.mjs` | `buildChildrenValue`: children list → array expression (joined when all-static); any SpreadElement flips the whole list to an `[].concat(...)` call so passthrough children are safe for every `HellaChildren` shape. |
 | `src/builders/vnode.mjs` | `buildHellaNode`: emits object expression with `tag` + non-empty category fields + `buildChildrenValue` children. |
 | `src/builders/component.mjs` | `buildComponentCall`: emits `component(Tag, props)` or passthrough `Tag(props)`; merges children into props. |
-| `src/utils/imports.mjs` | `ensureNamedImport` + helpers (`ensureCreateComponentImport`, `ensureForEachImport`, `ensurePortalImport`, `ensureLazyImport`). |
+| `src/utils/imports.mjs` | `ensureNamedImport` + `ensureSideEffectImport` + helpers (`ensureCreateComponentImport`, `ensureForEachImport`, `ensurePortalImport`, `ensureLazyImport`, `ensure{Hooks,Errors,DirectEvents,Namespaces,RoutedProps}FeatureImport`). |
 | `src/utils/passthrough.mjs` | `PASSTHROUGH_INJECTORS` map: passthrough tag name → its `ensure*Import` helper, keyed off `PASSTHROUGH_NAMES`. |
 | `src/utils/babel.mjs` | `getTagCallee`: JSXIdentifier → Identifier; JSXMemberExpression → MemberExpression (recursive); throws otherwise. |
 | `src/constants.mjs` | `FRAGMENT_TAG = '$'`, `PASSTHROUGH_NAMES`. |
@@ -33,7 +33,7 @@ Build-time Babel transform (`babel-plugin-hellajs`) that compiles JSX into Hella
 
 1. **Resolve callee** — `getTagCallee(t, opening.name)`; throws `[babel-plugin-hellajs] getTagCallee: unsupported JSX tag name, received <type>` on anything but JSXIdentifier / JSXMemberExpression.
 2. **Component detection** — `isComponent = (JSXIdentifier && first char uppercase) || JSXMemberExpression`. `<UI.Button>` and `<App.Components.Button>` both qualify.
-3. **Categorize attrs** — `processAttributes(t, opening.attributes, isComponent)` returns `{ props, on, hooks, e, error }` (five arrays, possibly all empty).
+3. **Categorize attrs** — `processAttributes(t, opening.attributes, isComponent)` returns `{ props, on, hooks, e, error, features }` (five arrays plus feature flags, possibly all empty/false).
 4. **Filter children** — `filterEmptyChildren(t, path.node.children, isComponent)`; JSXText whitespace-collapsed, comments dropped, bare `props.children` marked as a SpreadElement.
 5. **Branch**:
    - **Component** — find program parent. If `tagName ∈ {ForEach, Portal, Lazy}` inject matching import and emit `Tag(props)` via `buildComponentCall` (passthrough). Otherwise inject `component` from `@hellajs/dom` and emit `component(Tag, props)`. **All five category arrays are flattened back into a single props object** — components never receive `on` / `hooks` / `e` / `error` fields.
@@ -56,6 +56,20 @@ Five prefixes route attrs into five arrays. The `processAttributes` check order 
 | `on:` | `on` / `props["on:x"]` | element yes; component keeps the verbatim key | Delegated event handlers (capture-phase global delegation). |
 | *(none)* | `props` | no | Regular prop. camelCase `data*` / `aria*` → kebab-case (`dataTestId` → `"data-test-id"`); `data-*` / `aria-*` / hyphenated / namespaced keys emitted as quoted string keys; spread (`{...x}`) → `t.spreadElement` into props only. |
 | *(no value)* | (per prefix) | — | Boolean `true` (e.g. `<input required />`). Explicit `={false}` stays `false`. |
+
+## Feature-import emission
+
+Per file (the plugin instance is created per transform), each JSX element reports the dom feature modules its syntax needs; the `Program` exit emits one bare side-effect import per needed feature, idempotent per file and feature:
+
+| Syntax | Feature import |
+|---|---|
+| `hook:` attr (element or component position) | `@hellajs/dom/features/hooks` |
+| `error:` attr (element position) | `@hellajs/dom/features/errors` |
+| `e:` attr (element position) | `@hellajs/dom/features/direct-events` |
+| any prefixed attr in COMPONENT position (`on:`/`e:`/`hook:`/`error:` — forwarded onto elements at runtime) | `@hellajs/dom/features/routed-props` (+ the prefix's own feature for `hook:`/`error:`/`e:`) |
+| `svg` / `math` element tag (incl. inside a hoisted static subtree — the hoist skips child traversal, so `collectStaticNamespaces` scans the pre-replacement node) | `@hellajs/dom/features/namespaces` |
+
+`on:` in element position emits nothing (delegated events are core); `raw`/`onError`/`hydrate` named imports emit nothing (the API anchors load their features). Collection keys off the same prefixes `processAttributes` already buckets; emission order is fixed (hooks, errors, direct-events, namespaces, routed-props) for deterministic output.
 
 ## Component detection and wrapping
 

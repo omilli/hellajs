@@ -2,6 +2,7 @@ import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { signal } from "@hellajs/core";
 import { mount } from "@hellajs/dom";
 import { resetTestState, setupContainer } from "@utils/test-helpers.js";
+import "@hellajs/dom/features/routed-props";
 import type { HellaNode } from "@hellajs/dom";
 import {
   assertStructuralParity,

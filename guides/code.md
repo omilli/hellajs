@@ -33,6 +33,7 @@ Every `index.ts` / `lib/` reference resolves against these locations. The public
 | $-ref API | `lib/${name}.ts` | $-prefix |
 | Internal helper | `lib/internal/{concern}.ts` | single noun/gerund (`dedupe`, `polling`, `retry`) |
 | Public type | `lib/types/*.d.ts` (or `lib/types.d.ts` for single-file packages like core) | wholesale-re-exported via `export type *` |
+| Feature module | `lib/features/{name}.ts` | side-effect registration unit: wires one gated subsystem into the package's injection seams at module init; loaded by plugin-emitted bare imports or an API-anchor re-export, kept alive by the package's `sideEffects` array |
 | Internal type | co-located with owning module | `@internal` if a sibling needs it |
 | Tests | `tests/{surface}.test.ts` | surface-named; `.test.ts` is load-bearing |
 | Docs | `docs/api/{export}.mdx`, `docs/concepts/{topic}.mdx`, `docs/patterns/{topic}.mdx` | see `docs.md` |
@@ -297,7 +298,7 @@ Enforcement: the `hella/no-raw-typeof-compare` JS-plugin rule (`lint/hellajs.js`
 
 - (Pascal|Camel)case, no hyphens: `signal.ts`, `removeCss.ts`, `ForEach.ts`
 - One public API function per file, filename = export verbatim (`css`/`removeCss`/`resetCss` = three files; `vars`/`removeVars`/`resetVars` = three more). No "related pair" carve-outs — one export per file keeps the public surface scannable and mechanically auditable
-- `lib/internal/` files are organized by cohesive concern — one-export rules apply only to top-level `lib/*.ts`. Name an internal file after its concern as a single noun/gerund (`core`, `dedupe`, `errors`, `lifecycle`, `polling`, `retry`) — never a camelCase compound of its export (a file exporting `structuralShare` is `structural.ts`). The concern is one word; if it seems to need two, the file is two concerns (split it) or a concept not yet named
+- `lib/internal/` files are organized by cohesive concern — one-export rules apply only to top-level `lib/*.ts`. `lib/features/` files hold registration + moved wiring, not public API: they export only what an API anchor re-exports (`onError`, `raw`) or nothing at all, and their shape is fixed by the injection contract (call-site seams keep live bindings, feature files call the `set*` registrars at module init). Name an internal file after its concern as a single noun/gerund (`core`, `dedupe`, `errors`, `lifecycle`, `polling`, `retry`) — never a camelCase compound of its export (a file exporting `structuralShare` is `structural.ts`). The concern is one word; if it seems to need two, the file is two concerns (split it) or a concept not yet named
 - PascalCase component filenames matching exports (`ForEach.ts`) — required for JSX resolution; `$`-prefixed reference APIs (`$ref.ts`)
 
 ## File and Function Size
@@ -335,6 +336,7 @@ Describe what callbacks receive and when they are called:
 ```
 lib/
   internal/          # Internal helpers — not re-exported by index.ts
+  features/          # Gated subsystem wiring — registration units loaded by plugin-emitted imports (tree-shakeable when unused)
   types/             # Global type declarations (always .d.ts)
   [file].ts          # Public API — one function per file, filename matches export
   index.ts           # Pure re-export barrel only

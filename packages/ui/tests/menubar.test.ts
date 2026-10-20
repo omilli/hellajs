@@ -3,6 +3,7 @@ import { signal } from "@hellajs/core";
 import { mount } from "@hellajs/dom";
 import type { HellaChildren } from "@hellajs/dom";
 import { resetTestState, setupContainer } from "@utils/test-helpers.js";
+import "@hellajs/dom/features/routed-props";
 import {
   assertStructuralParity,
   classTokens,

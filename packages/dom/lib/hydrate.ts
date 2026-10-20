@@ -2,11 +2,20 @@ import type { HellaNode, HellaElement, MountHandle } from "./types/nodes";
 import { isString } from "./internal/core";
 import { resolveValue, wireFragmentScope } from "./internal/utils";
 import { mountNode } from "./internal/render";
-import { hydrateNode, hydrateSequence } from "./internal/hydrate";
+import { hydrateNode, hydrateSequence, peekHydrateContext } from "./internal/hydrate";
 import { hasDeferredRegions, startDeferredRegionWatch } from "./internal/deferred";
 import { registerContainer } from "./internal/queue";
 import { popBuildParent, pushBuildParent } from "./internal/state";
 import { createMountHandle } from "./internal/handle";
+import { setForEachHydrateContextSource } from "./ForEach";
+// The namespaces feature loads with this module: hydrate builds fresh nodes on mismatch,
+// which may be svg/math. ForEach's adoption branches read the walker's hydration context.
+import "./features/namespaces";
+
+// Registration at module init (the setMountNode injection pattern): importing `hydrate`
+// wires the walker's context peek into ForEach's adoption branches and installs the
+// namespace-aware element creation.
+setForEachHydrateContextSource(peekHydrateContext);
 
 /**
  * Hydrates server-rendered HTML in place — re-executes the component tree and

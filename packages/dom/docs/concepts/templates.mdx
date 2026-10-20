@@ -119,3 +119,26 @@ Inside `<foreignObject>` the namespace resets to HTML: its children are regular 
 ```
 
 One edge: error fallback UI (from [`error:fallback`](/reference/dom/error)) always renders as HTML, even when the failing boundary sits inside an SVG subtree; keep fallback markup HTML-only.
+
+## Bundle Composition
+
+Every prefix and namespace the compiler detects maps to a small runtime feature module: [`hook:`](/reference/dom/hook) and [`error:`](/reference/dom/error) load their lifecycle and boundary wiring, [`e:`](/reference/dom/e) loads direct-event binding, component-position [`attribute prefixes`](/learn/concepts/attribute-prefixes) load prop routing, and `<svg>`/`<math>` load namespace resolution. The compiler emits a side-effect import for each feature it sees, next to the component imports it already writes:
+
+```jsx
+import "@hellajs/dom/features/hooks";
+import "@hellajs/dom/features/errors";
+import { component, mount } from "@hellajs/dom";
+import { signal } from "@hellajs/core";
+
+const App = () => (
+  <div error:fallback={<span>Boom</span>}>
+    <span hook:afterMount={(el) => console.log(el)} />
+  </div>
+);
+
+mount(App, "#app");
+```
+
+Apps never import feature modules directly. Features your code does not use never load, and their wiring tree-shakes out of the bundle entirely: a hook-free, error-free app ships the mount core only.
+
+Nodes built by hand (no compiler pass) skip detection, so wiring a [`raw`](/reference/dom/raw) child, `hook:` buckets, or forwarded prefixes into a hand-built [`HellaNode`](/reference/dom) needs its feature imported once; see [`attribute prefixes`](/learn/concepts/attribute-prefixes) for the escape hatch.

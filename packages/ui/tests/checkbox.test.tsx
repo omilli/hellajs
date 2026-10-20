@@ -1,6 +1,7 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState, setupContainer } from "@utils/test-helpers.js";
+import "@hellajs/dom/features/routed-props";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components import the bare
 // specifier, so the harness mount shares one dom instance with the components.
 import { mount } from "@hellajs/dom";

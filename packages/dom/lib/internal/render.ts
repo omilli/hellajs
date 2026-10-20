@@ -4,7 +4,7 @@ import type {
   HellaElement,
   RenderFn,
   ErrorConfig,
-  ElementMountFn,
+  ElementHooks,
   DirectListenerSpec,
 } from "../types/nodes";
 import { isFunction, isString, isNumber, isObject, objectLoop } from "./core";
@@ -16,16 +16,13 @@ import {
   wireFragmentScope,
   routePrefixedProps,
 } from "./utils";
-import { setNodeHandler, setDirectHandler } from "./events";
+import { setNodeHandler, bindDirectHandler } from "./events";
 import { dispatchError, toError } from "./dispatch";
 import { registry } from "../registry";
 import { cleanupSubtree } from "./cleanup";
 import { getState, peekState, popBuildParent, pushBuildParent } from "./state";
 
 let staticDom = new WeakMap<HellaNode, Element | DocumentFragment>();
-
-const SVG_NS = "http://www.w3.org/2000/svg";
-const MATHML_NS = "http://www.w3.org/1998/Math/MathML";
 
 /**
  * @internal
@@ -35,18 +32,144 @@ export const HTML_NS = "http://www.w3.org/1999/xhtml";
 
 /**
  * @internal
+ * Creates an element in its authored namespace. The default (namespaces feature not
+ * loaded) is HTML-only — every tag creates with `document.createElement`; the
+ * namespaces feature (`lib/features/namespaces.ts`, loaded by svg/math JSX via the
+ * babel plugin, or by the hydrate entry) installs the SVG/MathML roots and
+ * createElementNS inheritance under foreign-namespace parents.
+ *
+ * Exported `let` is deliberate: the feature swaps the implementation at module init
+ * through {@link setNamespaceResolution} (the `setMountNode` injection pattern) while
+ * every importer keeps the live binding.
+ * @param tag The tag to create
+ * @param ns The namespace URI inherited from the insertion parent, or undefined for HTML
+ * @returns The created element
+ */
+export let createDomElement: (tag: string, ns: string | undefined) => HellaElement = (tag) =>
+  document.createElement(tag) as HellaElement;
+
+/**
+ * @internal
  * Derives the creation namespace for children of `parent`: the parent's own namespace when it is
  * a foreign (SVG/MathML) element; `undefined` for HTML parents, fragments, text anchors, and
- * `foreignObject` (an HTML integration point inside SVG — its children reset to HTML).
+ * `foreignObject` (an HTML integration point inside SVG — its children reset to HTML). The
+ * default (namespaces feature not loaded) resolves every parent to HTML — foreign-namespace
+ * parents only exist once the feature does.
+ *
+ * Exported `let` is deliberate: swapped at module init by the namespaces feature via
+ * {@link setNamespaceResolution} while every importer keeps the live binding.
  * @param parent The node whose children are being created
  * @returns The namespace URI to create children in, or undefined for HTML
  */
-export function childNamespaceOf(parent: Node | null): string | undefined {
-  if (!parent) return undefined;
-  const element = parent as Element;
-  if (element.localName === "foreignObject") return undefined;
-  const ns = element.namespaceURI;
-  return ns && ns !== HTML_NS ? ns : undefined;
+export let childNamespaceOf: (parent: Node | null) => string | undefined = () => undefined;
+
+/**
+ * The namespaces feature's resolution implementations, registered at its module init.
+ */
+interface NamespaceResolution {
+  createDomElement: (tag: string, ns: string | undefined) => HellaElement;
+  childNamespaceOf: (parent: Node | null) => string | undefined;
+}
+
+/**
+ * @internal
+ * Registers the namespaces feature's element-creation + child-namespace resolution (the
+ * `setMountNode` injection pattern — the SVG/MathML constants and the createElementNS
+ * branches live in `lib/features/namespaces.ts` so namespace wiring tree-shakes out of
+ * HTML-only bundles).
+ * @param resolution The namespace resolution implementations
+ */
+export function setNamespaceResolution(resolution: NamespaceResolution): void {
+  createDomElement = resolution.createDomElement;
+  childNamespaceOf = resolution.childNamespaceOf;
+}
+
+/**
+ * @internal
+ * Parses a raw HTML string into a fragment for insertion. The default (raw feature not
+ * loaded) yields an empty fragment — raw children reach the mount path only through
+ * `raw()` (which loads the feature) or the documented hand-built escape hatch.
+ *
+ * Exported `let` is deliberate: swapped at module init by the raw feature via
+ * {@link setRawHtmlParser} while every importer keeps the live binding.
+ * @param html The raw HTML string
+ * @returns The parsed fragment
+ */
+export let parseRawHtml: (html: string) => DocumentFragment = () =>
+  document.createDocumentFragment();
+
+/**
+ * @internal
+ * Registers the raw feature's HTML parser (the `setMountNode` injection pattern — the
+ * template parse lives in `lib/features/raw.ts` so it tree-shakes out of bundles that
+ * never import `raw`).
+ * @param parse The HTML parser implementation
+ */
+export function setRawHtmlParser(parse: (html: string) => DocumentFragment): void {
+  parseRawHtml = parse;
+}
+
+/**
+ * @internal
+ * Applies one element's routed error config and resolves the boundary its
+ * construction-time wiring dispatches against: the element itself when it carries an
+ * error config, else the inherited boundary. The default (errors feature not loaded)
+ * applies nothing and inherits — routed error configs only exist when the feature does.
+ *
+ * Exported `let` is deliberate: swapped at module init by the errors feature via
+ * {@link setMountBoundaryResolver} while every importer keeps the live binding.
+ * @param element The created element
+ * @param routed The vnode's routed buckets
+ * @param node The vnode (snapshotted as the reset target)
+ * @param boundaryElement The inherited boundary, or undefined
+ * @returns The boundary for this element's wiring
+ */
+export let resolveMountBoundary: (
+  element: HellaElement,
+  routed: {
+    error: ErrorConfig | undefined;
+  },
+  node: HellaNode,
+  boundaryElement: Element | undefined,
+) => Element | undefined = (_element, _routed, _node, boundaryElement) => boundaryElement;
+
+/**
+ * @internal
+ * Registers the errors feature's mount-boundary resolution (the `setMountNode`
+ * injection pattern — the error-config application lives in `lib/features/errors.ts`
+ * so error wiring tree-shakes out of bundles that never load the feature).
+ * @param resolver The mount-boundary resolver
+ */
+export function setMountBoundaryResolver(resolver: typeof resolveMountBoundary): void {
+  resolveMountBoundary = resolver;
+}
+
+/**
+ * @internal
+ * Wires one element's routed lifecycle hooks. The default (hooks feature not loaded)
+ * wires nothing — routed hook buckets only exist when the feature does.
+ *
+ * Exported `let` is deliberate: swapped at module init by the hooks feature via
+ * {@link setMountHookWiring} while every importer keeps the live binding.
+ * @param element Target element
+ * @param hooks The vnode's routed hooks bucket
+ * @param boundary The nearest error boundary element, or undefined
+ */
+export let wireMountHooks: (
+  element: Element,
+  hooks: Partial<ElementHooks> | undefined,
+  boundary: Element | undefined,
+) => void = () => {};
+
+/**
+ * @internal
+ * Registers the hooks feature's mount-hook wiring (the `setMountNode` injection
+ * pattern — the hook registration + beforeMount run live in `lib/features/hooks.ts`
+ * so hook wiring tree-shakes out of hook-free bundles).
+ * @param wiring The mount-hook wiring implementation
+ */
+export function setMountHookWiring(wiring: typeof wireMountHooks): void {
+  wireMountHooks = wiring;
 }
 
 /**
@@ -88,15 +211,6 @@ export function clearRenderedNodes(nodes: Node[], parent: Node) {
 }
 
 /**
- * Parses a raw HTML string into a fragment for insertion.
- */
-function rawToFragment(html: string): DocumentFragment {
-  const tpl = document.createElement("template");
-  tpl.innerHTML = html;
-  return tpl.content;
-}
-
-/**
  * @internal
  * Resolves a HellaChild to a DOM Node with reactive support. A `HellaChild[]` (compiled JSX
  * children arrive as an array) mounts each child into a `DocumentFragment`, mirroring the
@@ -120,7 +234,7 @@ export function resolveNode(value: HellaChild | HellaChild[], parent?: Node, ns?
   if (isObject(value)) {
     // HellaNode first — the common object child; DOM Nodes expose tagName, never tag
     if ((value as HellaNode).tag !== undefined) return mountNode(value as HellaNode, undefined, ns);
-    if ("raw" in value) return rawToFragment((value as { raw: string }).raw);
+    if ("raw" in value) return parseRawHtml((value as { raw: string }).raw);
   }
   if (isFunction(value)) {
     // A reactive child is a region, not text: deep-resolve, then swap nodes or text ahead of a
@@ -143,8 +257,10 @@ export function resolveNode(value: HellaChild | HellaChild[], parent?: Node, ns?
 /**
  * @internal
  * Mounts a HellaNode to a DOM element or fragment with all properties and lifecycle hooks.
- * A `svg` root always creates in the SVG namespace and a `math` root in MathML; other tags
- * inherit `ns` when mounted under a foreign-namespace parent.
+ * With the namespaces feature loaded (svg/math JSX, or the hydrate entry), a `svg` root
+ * always creates in the SVG namespace and a `math` root in MathML; other tags inherit
+ * `ns` when mounted under a foreign-namespace parent. Without the feature every tag
+ * creates in HTML (see {@link createDomElement}).
  * @param node The HellaNode to mount
  * @param boundaryElement The nearest error boundary element (for error propagation during construction)
  * @param ns Optional namespace URI inherited from the insertion parent
@@ -195,16 +311,7 @@ export function mountNode(
     return fragment;
   }
 
-  let element: HellaElement;
-  if (tag === "svg") {
-    element = document.createElementNS(SVG_NS, tag as string) as HellaElement;
-  } else if (tag === "math") {
-    element = document.createElementNS(MATHML_NS, tag as string) as HellaElement;
-  } else {
-    element = (
-      ns ? document.createElementNS(ns, tag as string) : document.createElement(tag as string)
-    ) as HellaElement;
-  }
+  const element = createDomElement(tag as string, ns);
 
   // Prefixed props keys ("on:click" from a component's rest-forwarding) slice
   // into their live buckets before wiring; other props render as attributes.
@@ -216,39 +323,13 @@ export function mountNode(
     error,
   );
 
-  if (componentScope || routed.error) {
+  if (componentScope) {
     const state = getState(element);
-    if (componentScope) state.componentScope = chainScopes(state.componentScope, componentScope);
-    if (routed.error) {
-      state.errorConfig = routed.error;
-      state.originalNode = node;
-    }
+    state.componentScope = chainScopes(state.componentScope, componentScope);
   }
 
-  const currentBoundary = routed.error ? element : boundaryElement;
-
-  if (routed.hooks) {
-    routed.hooks.beforeMount && registry.addHook(element, "beforeMount", routed.hooks.beforeMount);
-    routed.hooks.afterMount &&
-      registry.addHook(element, "afterMount", routed.hooks.afterMount as ElementMountFn);
-    routed.hooks.beforeDestroy &&
-      registry.addHook(element, "beforeDestroy", routed.hooks.beforeDestroy as ElementMountFn);
-    routed.hooks.afterDestroy &&
-      registry.addHook(element, "afterDestroy", routed.hooks.afterDestroy);
-    routed.hooks.beforeUpdate &&
-      registry.addHook(element, "beforeUpdate", routed.hooks.beforeUpdate as ElementMountFn);
-    routed.hooks.afterUpdate &&
-      registry.addHook(element, "afterUpdate", routed.hooks.afterUpdate as ElementMountFn);
-
-    if (routed.hooks.beforeMount) {
-      try {
-        routed.hooks.beforeMount();
-      } catch (err) {
-        const config = getBoundaryConfig(currentBoundary);
-        dispatchError(toError(err), { phase: "mount", element, config });
-      }
-    }
-  }
+  const currentBoundary = resolveMountBoundary(element, routed, node, boundaryElement);
+  wireMountHooks(element, routed.hooks, currentBoundary);
 
   objectLoop(routed.props, (key, value) => {
     if (!isFunction(value)) {
@@ -275,7 +356,7 @@ export function mountNode(
 
   if (routed.e) {
     objectLoop(routed.e, (eventName, handler) =>
-      setDirectHandler(element, eventName, handler as EventListener | DirectListenerSpec),
+      bindDirectHandler(element, eventName, handler as EventListener | DirectListenerSpec),
     );
   }
 
@@ -357,7 +438,7 @@ function appendToParent(
         popBuildParent();
         parent.appendChild(mounted);
       } else if ("raw" in child) {
-        parent.appendChild(rawToFragment((child as { raw: string }).raw));
+        parent.appendChild(parseRawHtml((child as { raw: string }).raw));
       } else if (child instanceof Node) {
         parent.appendChild(child);
       }

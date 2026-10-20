@@ -1,5 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach, vi } from "vite-plus/test";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
+import "@hellajs/dom/features/routed-props";
 import { mount, peekState, resetDom } from "@hellajs/dom";
 import {
   assertStructuralParity,

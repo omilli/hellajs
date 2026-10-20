@@ -108,7 +108,7 @@ describe("babel", () => {
     test("component keeps prefixed attrs verbatim in props", () => {
       const output = transformJSX("<Button on:click={h}>x</Button>");
       expect(normalize(output)).toBe(
-        'import { component } from "@hellajs/dom"; component(Button, { "on:click": h, children: ["x"] });',
+        'import "@hellajs/dom/features/routed-props"; import { component } from "@hellajs/dom"; component(Button, { "on:click": h, children: ["x"] });',
       );
     });
   });
@@ -231,6 +231,60 @@ describe("babel", () => {
     });
   });
 
+  describe("feature imports", () => {
+    test("hook: in element position emits the hooks feature import once", () => {
+      const output = transformJSX(
+        "<div><span hook:afterMount={a} /><p hook:beforeMount={b} /></div>",
+      );
+      const matches = output.match(/import\s+"@hellajs\/dom\/features\/hooks";/g);
+      expect(matches?.length).toBe(1);
+    });
+
+    test("error: in element position emits the errors feature import", () => {
+      const output = transformJSX("<div error:fallback={fn} />");
+      expect(output).toContain('import "@hellajs/dom/features/errors";');
+      expect(output).not.toContain('import "@hellajs/dom/features/hooks";');
+    });
+
+    test("e: in element position emits the direct-events feature import", () => {
+      const output = transformJSX("<button e:click={fn} />");
+      expect(output).toContain('import "@hellajs/dom/features/direct-events";');
+    });
+
+    test("on: in element position emits no feature import", () => {
+      const output = transformJSX("<button on:click={fn} />");
+      expect(output).not.toContain("@hellajs/dom/features");
+    });
+
+    test("prefixed attrs in component position emit routed-props plus the routed feature", () => {
+      const output = transformJSX(
+        "<Comp on:click={a} hook:afterMount={b} error:fallback={c} e:click={d} />",
+      );
+      expect(output).toContain('import "@hellajs/dom/features/routed-props";');
+      expect(output).toContain('import "@hellajs/dom/features/hooks";');
+      expect(output).toContain('import "@hellajs/dom/features/errors";');
+      expect(output).toContain('import "@hellajs/dom/features/direct-events";');
+    });
+
+    test("svg and math tags emit the namespaces feature import", () => {
+      const output = transformJSX("<div><svg><circle /></svg><math /></div>");
+      const matches = output.match(/import\s+"@hellajs\/dom\/features\/namespaces";/g);
+      expect(matches?.length).toBe(1);
+    });
+
+    test("files without feature syntax emit no feature imports", () => {
+      const output = transformJSX('<div><span>text</span><Comp name="x" /></div>');
+      expect(output).not.toContain("@hellajs/dom/features");
+    });
+
+    test("re-transforming emitted output is idempotent", () => {
+      const once = transformJSX("<div hook:afterMount={fn} error:fallback={fn} />");
+      const twice = transformJSX(once);
+      expect(twice.match(/import\s+"@hellajs\/dom\/features\//g)?.length).toBe(2);
+      expect(normalize(twice)).toBe(normalize(once));
+    });
+  });
+
   describe("complex transformations", () => {
     test("nested components and elements", () => {
       const output = transformJSX(`
@@ -274,7 +328,9 @@ describe("babel", () => {
 
     test("hook lifecycle", () => {
       const output = transformJSX("<div hook:mount={() => mounted = true} />");
-      expect(normalize(output)).toBe('({ tag: "div", hooks: { mount: () => mounted = true } });');
+      expect(normalize(output)).toBe(
+        'import "@hellajs/dom/features/hooks"; ({ tag: "div", hooks: { mount: () => mounted = true } });',
+      );
     });
   });
 
@@ -282,27 +338,29 @@ describe("babel", () => {
     test("transforms e:click to e property", () => {
       const output = transformJSX("<button e:click={handler}>Click</button>");
       expect(normalize(output)).toBe(
-        '({ tag: "button", e: { click: handler }, children: ["Click"] });',
+        'import "@hellajs/dom/features/direct-events"; ({ tag: "button", e: { click: handler }, children: ["Click"] });',
       );
     });
 
     test("e: with arrow function", () => {
       const output = transformJSX('<button e:click={() => console.log("clicked")}>Click</button>');
       expect(normalize(output)).toBe(
-        '({ tag: "button", e: { click: () => console.log("clicked") }, children: ["Click"] });',
+        'import "@hellajs/dom/features/direct-events"; ({ tag: "button", e: { click: () => console.log("clicked") }, children: ["Click"] });',
       );
     });
 
     test("e: and on: can coexist", () => {
       const output = transformJSX("<div e:click={direct} on:click={delegated} />");
       expect(normalize(output)).toBe(
-        '({ tag: "div", on: { click: delegated }, e: { click: direct } });',
+        'import "@hellajs/dom/features/direct-events"; ({ tag: "div", on: { click: delegated }, e: { click: direct } });',
       );
     });
 
     test("multiple e: handlers", () => {
       const output = transformJSX("<input e:click={onClick} e:input={onInput} />");
-      expect(normalize(output)).toBe('({ tag: "input", e: { click: onClick, input: onInput } });');
+      expect(normalize(output)).toBe(
+        'import "@hellajs/dom/features/direct-events"; ({ tag: "input", e: { click: onClick, input: onInput } });',
+      );
     });
 
     test("e: with other attributes", () => {
@@ -310,7 +368,7 @@ describe("babel", () => {
         '<button id="btn" class="primary" e:click={handler}>Click</button>',
       );
       expect(normalize(output)).toBe(
-        '({ tag: "button", props: { id: "btn", class: "primary" }, e: { click: handler }, children: ["Click"] });',
+        'import "@hellajs/dom/features/direct-events"; ({ tag: "button", props: { id: "btn", class: "primary" }, e: { click: handler }, children: ["Click"] });',
       );
     });
   });
@@ -333,17 +391,23 @@ describe("babel", () => {
 
     test("e: attribute disables hoisting", () => {
       const output = transformJSX("<button e:click={fn}>go</button>");
-      expect(normalize(output)).toBe('({ tag: "button", e: { click: fn }, children: ["go"] });');
+      expect(normalize(output)).toBe(
+        'import "@hellajs/dom/features/direct-events"; ({ tag: "button", e: { click: fn }, children: ["go"] });',
+      );
     });
 
     test("hook: attribute disables hoisting", () => {
       const output = transformJSX("<div hook:afterMount={fn} />");
-      expect(normalize(output)).toBe('({ tag: "div", hooks: { afterMount: fn } });');
+      expect(normalize(output)).toBe(
+        'import "@hellajs/dom/features/hooks"; ({ tag: "div", hooks: { afterMount: fn } });',
+      );
     });
 
     test("error: attribute disables hoisting", () => {
       const output = transformJSX("<div error:fallback={fn} />");
-      expect(normalize(output)).toBe('({ tag: "div", error: { fallback: fn } });');
+      expect(normalize(output)).toBe(
+        'import "@hellajs/dom/features/errors"; ({ tag: "div", error: { fallback: fn } });',
+      );
     });
 
     test("spread attribute disables hoisting", () => {

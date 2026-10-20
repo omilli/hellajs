@@ -16,7 +16,9 @@
     "LICENSE"
   ],
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [
+    "dist/features/*.js"
+  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {

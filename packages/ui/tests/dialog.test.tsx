@@ -1,6 +1,7 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { signal } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
+import "@hellajs/dom/features/routed-props";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components import the bare
 // specifier, and Portal's hook wiring (observer walk, element state) only works when the test's
 // mount and the component's Portal share one dom instance.

@@ -1,5 +1,4 @@
-import type { HellaNode, ErrorConfig, ErrorContext, ErrorFn } from "../types/nodes";
-import { peekState } from "./state";
+import type { HellaNode, ErrorConfig, ErrorContext } from "../types/nodes";
 
 /**
  * @internal
@@ -8,23 +7,75 @@ import { peekState } from "./state";
 let mountNodeFn: ((node: HellaNode) => Node) | null = null;
 
 /**
- * @internal
- * Global error handlers registered via onError. First non-null result wins.
+ * Clears all registered error handlers. The default (errors feature not loaded) does
+ * nothing — the handler set only exists when the feature does.
+ *
+ * Exported `let` is deliberate: swapped at module init by the errors feature via
+ * {@link setErrorDispatch} while every importer keeps the live binding.
  */
-export const handlers = new Set<ErrorFn>();
+export let resetErrorState: () => void = () => {};
 
 /**
  * @internal
- * Clears all registered error handlers.
+ * Dispatches an error for UI handling. The default is the no-feature path — log and
+ * continue without a UI change; the errors feature (`lib/features/errors.ts`, loaded by
+ * `lib/error.ts` or `error:` JSX via the babel plugin) installs boundary detection,
+ * handler iteration, and fallback rendering.
+ *
+ * Exported `let` is deliberate: the feature swaps the implementation at module init
+ * through {@link setErrorDispatch} (the `setMountNode` injection pattern) while every
+ * importer keeps the live binding.
+ * @param error The error that occurred
+ * @param context The error context with phase, element, and event info
+ * @returns Fallback HellaNode to render, or null for no UI change
  */
-export function resetErrorState() {
-  handlers.clear();
+export let dispatchError: (error: Error, context: ErrorContext) => HellaNode | null = (error) => {
+  console.error("[dom]", error);
+  return null;
+};
+
+/**
+ * @internal
+ * Finds the nearest error boundary element by walking up the DOM tree. The default
+ * (errors feature not loaded) finds none — boundary configs only exist when the
+ * feature does.
+ * @param origin The element where the error occurred
+ * @returns The boundary element, or null if none found
+ */
+export let findBoundary: (origin: Element | undefined) => Element | null = () => null;
+
+/**
+ * @internal
+ * Resolves error config by walking up the DOM tree. The default (errors feature not
+ * loaded) resolves none.
+ * @param origin The element where the error occurred
+ * @returns The error config, or undefined if none found
+ */
+export let resolveErrorConfig: (origin: Element) => ErrorConfig | undefined = () => undefined;
+
+/**
+ * The errors feature's dispatch implementations, registered at its module init.
+ */
+interface ErrorDispatch {
+  dispatchError: (error: Error, context: ErrorContext) => HellaNode | null;
+  findBoundary: (origin: Element | undefined) => Element | null;
+  resolveErrorConfig: (origin: Element) => ErrorConfig | undefined;
+  resetErrorState: () => void;
 }
 
 /**
- * Tracks elements currently handling errors to prevent infinite loops.
+ * @internal
+ * Registers the errors feature's dispatch machinery (the `setMountNode` injection
+ * pattern — the implementations live in `lib/features/errors.ts` so unused error
+ * wiring tree-shakes out of bundles that never load the feature).
+ * @param impl The error dispatch implementations
  */
-const handlingBoundaries = new WeakSet<Element>();
+export function setErrorDispatch(impl: ErrorDispatch): void {
+  dispatchError = impl.dispatchError;
+  findBoundary = impl.findBoundary;
+  resolveErrorConfig = impl.resolveErrorConfig;
+  resetErrorState = impl.resetErrorState;
+}
 
 /**
  * @internal
@@ -53,110 +104,4 @@ export function getMountNode(): ((node: HellaNode) => Node) | null {
  */
 export function toError(e: unknown): Error {
   return e instanceof Error ? e : new Error(String(e));
-}
-
-/**
- * @internal
- * Finds the nearest error boundary element by walking up the DOM tree.
- * Caches result on the origin element for O(1) subsequent lookups.
- * @param origin The element where the error occurred
- * @returns The boundary element, or null if none found
- */
-export function findBoundary(origin: Element | undefined): Element | null {
-  if (!origin) return null;
-
-  const cached = peekState(origin)?.cachedBoundary;
-  if (cached?.isConnected) {
-    const config = peekState(cached)?.errorConfig;
-    if (config && (config.boundary || config.fallback)) {
-      return cached;
-    }
-  }
-
-  let current: Element | null = origin;
-  while (current) {
-    const config = peekState(current)?.errorConfig;
-    if (config && (config.boundary || config.fallback)) {
-      const originState = peekState(origin);
-      if (originState) originState.cachedBoundary = current;
-      return current;
-    }
-    current = current.parentElement;
-  }
-
-  return null;
-}
-
-/**
- * @internal
- * Resolves error config by walking up the DOM tree.
- * Returns first found config (including category-only configs).
- * @param origin The element where the error occurred
- * @returns The error config, or undefined if none found
- */
-export function resolveErrorConfig(origin: Element): ErrorConfig | undefined {
-  let current: Element | null = origin;
-  while (current) {
-    const config = peekState(current)?.errorConfig;
-    if (config) return config;
-    current = current.parentElement;
-  }
-  return undefined;
-}
-
-/**
- * @internal
- * Dispatches an error through the handler stack.
- * Handles boundary detection, infinite loop prevention, and reset functionality.
- * @param error The error that occurred
- * @param context The error context with phase, element, and event info
- * @returns Fallback HellaNode to render, or null for no UI change
- */
-export function dispatchError(error: Error, context: ErrorContext): HellaNode | null {
-  const boundary = findBoundary(context.element);
-
-  if (boundary && handlingBoundaries.has(boundary)) {
-    console.error("[dom] Error during error handling - preventing infinite loop:", error);
-    return null;
-  }
-
-  if (boundary) {
-    handlingBoundaries.add(boundary);
-  }
-
-  const originalNode = boundary ? peekState(boundary)?.originalNode : undefined;
-  const reset = originalNode
-    ? () => {
-        const node = peekState(boundary!)?.originalNode;
-        if (node && mountNodeFn) {
-          boundary!.replaceChildren(mountNodeFn(node));
-        }
-      }
-    : undefined;
-
-  const contextWithReset = boundary ? { ...context, reset } : context;
-
-  try {
-    if (handlers.size === 0) {
-      console.error("[dom]", error);
-      return null;
-    }
-
-    const handlerArr = Array.from(handlers);
-    let i = 0;
-    const hLen = handlerArr.length;
-    while (i < hLen) {
-      const result = handlerArr[i++]!(error, contextWithReset);
-      if (result) return result;
-    }
-
-    return null;
-  } catch (e) {
-    console.error("[dom] Error handler threw:", e);
-    return null;
-  } finally {
-    if (boundary) {
-      handlingBoundaries.delete(boundary);
-    }
-  }
 }

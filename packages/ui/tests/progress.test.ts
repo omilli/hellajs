@@ -1,6 +1,7 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState } from "@utils/test-helpers.js";
+import "@hellajs/dom/features/routed-props";
 import {
   assertAttrForwarded,
   assertHandlerForwarded,

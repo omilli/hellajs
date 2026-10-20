@@ -1,6 +1,12 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { mount, hydrate } from "@hellajs/dom";
+// Hand-built vnodes carrying colon props reach the mount path without `hook:`/`e:`/`error:`
+// JSX for the babel plugin to detect — the documented escape hatch loads the features here
+// (routing itself, plus the direct-event and hook binding the routed buckets feed).
+import "@hellajs/dom/features/routed-props";
+import "@hellajs/dom/features/direct-events";
+import "@hellajs/dom/features/hooks";
 import type { HellaNode } from "@hellajs/dom";
 import { fallbackHandler } from "./helpers";
 

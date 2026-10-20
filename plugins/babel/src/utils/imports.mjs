@@ -83,3 +83,73 @@ export function ensurePortalImport(t, program) {
 export function ensureLazyImport(t, program) {
   ensureNamedImport(t, program, "@hellajs/dom", "Lazy");
 }
+
+/**
+ * Add a bare side-effect import for `source` to the program, or keep the existing one.
+ * Idempotent per source: an existing declaration from the same module short-circuits.
+ * @param {typeof import("@babel/core").types} t
+ * @param {import("@babel/core").NodePath} program
+ * @param {string} source Module specifier imported for side effects.
+ */
+function ensureSideEffectImport(t, program, source) {
+  const body = program.node.body;
+
+  let i = 0;
+  const len = body.length;
+  while (i < len) {
+    const node = body[i];
+    if (t.isImportDeclaration(node) && node.source.value === source) return;
+    i++;
+  }
+
+  program.node.body.unshift(t.importDeclaration([], t.stringLiteral(source)));
+}
+
+// dom gates each feature subsystem's runtime wiring behind a side-effect module
+// (@hellajs/dom/lib/features/<name>.ts); bundlers keep them alive via dom's
+// sideEffects array while feature-free apps tree-shake the wiring out.
+
+/**
+ * Ensure `import "@hellajs/dom/features/hooks"` in the program.
+ * @param {typeof import("@babel/core").types} t
+ * @param {import("@babel/core").NodePath} program
+ */
+export function ensureHooksFeatureImport(t, program) {
+  ensureSideEffectImport(t, program, "@hellajs/dom/features/hooks");
+}
+
+/**
+ * Ensure `import "@hellajs/dom/features/errors"` in the program.
+ * @param {typeof import("@babel/core").types} t
+ * @param {import("@babel/core").NodePath} program
+ */
+export function ensureErrorsFeatureImport(t, program) {
+  ensureSideEffectImport(t, program, "@hellajs/dom/features/errors");
+}
+
+/**
+ * Ensure `import "@hellajs/dom/features/direct-events"` in the program.
+ * @param {typeof import("@babel/core").types} t
+ * @param {import("@babel/core").NodePath} program
+ */
+export function ensureDirectEventsFeatureImport(t, program) {
+  ensureSideEffectImport(t, program, "@hellajs/dom/features/direct-events");
+}
+
+/**
+ * Ensure `import "@hellajs/dom/features/namespaces"` in the program.
+ * @param {typeof import("@babel/core").types} t
+ * @param {import("@babel/core").NodePath} program
+ */
+export function ensureNamespacesFeatureImport(t, program) {
+  ensureSideEffectImport(t, program, "@hellajs/dom/features/namespaces");
+}
+
+/**
+ * Ensure `import "@hellajs/dom/features/routed-props"` in the program.
+ * @param {typeof import("@babel/core").types} t
+ * @param {import("@babel/core").NodePath} program
+ */
+export function ensureRoutedPropsFeatureImport(t, program) {
+  ensureSideEffectImport(t, program, "@hellajs/dom/features/routed-props");
+}

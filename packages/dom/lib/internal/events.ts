@@ -25,9 +25,12 @@ export function setNodeHandler(element: Element, type: string, handler: EventLis
 
 /**
  * Renders an error-boundary fallback by replacing the boundary's (or the
- * element's own) children. Shared by the delegated and direct handler paths.
+ * element's own) children. Shared by the delegated and direct handler paths
+ * (the direct handler implementation lives in the direct-events feature).
+ * @param element The element whose handler threw
+ * @param fallback The fallback HellaNode to render
  */
-function renderEventFallback(element: Element, fallback: HellaNode) {
+export function renderEventFallback(element: Element, fallback: HellaNode) {
   const target = findBoundary(element) ?? element;
   const mountNode = getMountNode();
   if (mountNode) {
@@ -73,61 +76,61 @@ function delegatedHandler(event: Event) {
 
 /**
  * @internal
- * Sets a direct (non-delegated) event handler on an element.
- * Wraps handler with error boundary support - catches errors and
- * renders fallback UI if configured.
- * Replaces existing handler for same event type.
+ * Sets a direct (non-delegated) event handler on an element — wraps the handler with
+ * error-boundary support and replaces the previous handler for the same event type.
+ * The default (direct-events feature not loaded) registers nothing: `e:` JSX loads the
+ * feature via the babel plugin, and hand-built `e` buckets need the documented
+ * `import "@hellajs/dom/features/direct-events"` escape hatch.
+ *
+ * Exported `let` is deliberate: the feature swaps the implementation at module init
+ * through {@link setDirectEventFeature} (the `setMountNode` injection pattern) while
+ * every importer keeps the live binding.
  * @param element Target element
  * @param type Event type (e.g., 'focus', 'blur', 'load')
  * @param handler Event handler function, or a `{ handler, options }` spec whose
  * native listener options (once/passive/capture) are forwarded to addEventListener
  */
-export function setDirectHandler(
+export let bindDirectHandler: (
   element: Element,
   type: string,
   handler: EventListener | DirectListenerSpec,
-) {
-  const state = getState(element);
-  const handlers = state.directHandlers ?? (state.directHandlers = new Map());
+) => void = () => {};
 
-  const isSpec = "handler" in handler;
-  const listener = isSpec ? handler.handler : handler;
-  const options = isSpec ? handler.options : undefined;
+/**
+ * @internal
+ * Removes all direct handlers from an element during cleanup. The default
+ * (direct-events feature not loaded) does nothing — direct-handler maps are only
+ * allocated by the feature's registration.
+ * @param node Node to cleanup
+ * @param handlers The node's direct-handler map (caller already holds the state)
+ */
+export let removeDirectHandlers: (
+  node: Node,
+  handlers: Map<string, DirectListenerSpec>,
+) => void = () => {};
 
-  const wrappedHandler = (event: Event) => {
-    try {
-      listener.call(element, event);
-    } catch (e) {
-      const config = resolveErrorConfig(element);
-      const fallback = dispatchError(toError(e), { phase: "event", element, event, config });
-      if (fallback) renderEventFallback(element, fallback);
-    }
-  };
-
-  const prev = handlers.get(type);
-  if (prev) element.removeEventListener(type, prev.handler, prev.options);
-
-  element.addEventListener(type, wrappedHandler, options);
-  handlers.set(type, { handler: wrappedHandler, options });
+/**
+ * The direct-events feature's handler implementations, registered at its module init.
+ */
+interface DirectEventFeature {
+  bindDirectHandler: (
+    element: Element,
+    type: string,
+    handler: EventListener | DirectListenerSpec,
+  ) => void;
+  removeDirectHandlers: (node: Node, handlers: Map<string, DirectListenerSpec>) => void;
 }
 
 /**
  * @internal
- * Removes all direct handlers from an element.
- * Called during cleanup when element is removed from DOM.
- * @param node Node to cleanup
- * @param handlers The node's direct-handler map (caller already holds the state)
+ * Registers the direct-events feature's handler machinery (the `setMountNode` injection
+ * pattern — the implementations live in `lib/features/direct-events.ts` so unused
+ * `e:` wiring tree-shakes out of bundles that never load the feature).
+ * @param feature The direct-event handler implementations
  */
-export function removeDirectHandlers(node: Node, handlers: Map<string, DirectListenerSpec>) {
-  const iter = handlers.keys();
-  let result = iter.next();
-  while (!result.done) {
-    const key = result.value;
-    const stored = handlers.get(key)!;
-    node.removeEventListener(key, stored.handler, stored.options);
-    result = iter.next();
-  }
-  handlers.clear();
+export function setDirectEventFeature(feature: DirectEventFeature): void {
+  bindDirectHandler = feature.bindDirectHandler;
+  removeDirectHandlers = feature.removeDirectHandlers;
 }
 
 /**

@@ -58,6 +58,6 @@ The error context includes `phase`, `element`, `event`, `config`, and `reset`. W
 
 **Error phases:** The `phase` in the context object indicates where the error occurred: `'render'` (component render, no element context), `'mount'` (initial mount or reactive child mount), `'update'` (reactive binding update), or event handler phases.
 
-The error system prevents infinite loops when error handlers themselves throw errors.
+The error system prevents infinite loops when error handlers themselves throw errors. The compiler detects `error:` syntax and emits the corresponding feature import, so boundary wiring tree-shakes out of apps that never use it; see [templates](/learn/concepts/templates) for how bundle composition works.
 
 See [`onError`](/reference/dom/onerror) and [`error:`](/reference/dom/error) for full details.

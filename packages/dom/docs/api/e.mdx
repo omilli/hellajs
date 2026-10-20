@@ -78,3 +78,5 @@ const trackMove = (event: MouseEvent) => console.log(event.clientX);
 ```
 
 Use the spec form when a gesture must be cancelable: `passive: false` opts out of the browser's passive-by-default touch and wheel treatment; see [`on:`](/reference/dom/on) for why delegated handlers cannot do this.
+
+The compiler detects `e:` syntax and emits the corresponding feature import, so direct-event wiring tree-shakes out of apps that never use it; see [templates](/learn/concepts/templates) for how bundle composition works.

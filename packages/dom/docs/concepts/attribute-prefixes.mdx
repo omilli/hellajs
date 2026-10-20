@@ -154,3 +154,23 @@ mount(App, "#app");
 At a component boundary, `error:fallback` passes through verbatim: the component receives `props["error:fallback"]` and forwards it by re-emitting `error:fallback` on the root element, which wires the boundary config.
 
 See [`error:`](/reference/dom/error) for full details.
+
+## Hand-Built Prefixes
+
+Prefixes wired at runtime (a component forwarding them through rest props) load their routing module through the compiler's feature imports; see [templates](/learn/concepts/templates) for how bundle composition works. Nodes built by hand skip the compiler entirely, so prefixes reaching the mount path from hand-built [`HellaNode`](/reference/dom) objects need one explicit import per feature, at any entry point before mount:
+
+```js
+import { mount } from "@hellajs/dom";
+import "@hellajs/dom/features/routed-props";
+import "@hellajs/dom/features/hooks";
+
+const handler = (event) => console.log(event);
+const node = {
+  tag: "button",
+  props: { "on:click": handler, "hook:afterMount": (el) => console.log(el) },
+};
+
+mount(node, "#app");
+```
+
+Without the import the prefixed key renders as a plain attribute; the import routes it into its live bucket exactly as the compiler-emitted path does.

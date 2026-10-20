@@ -1,5 +1,6 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { resetTestState, setupContainer } from "@utils/test-helpers.js";
+import "@hellajs/dom/features/routed-props";
 import { mount } from "@hellajs/dom";
 import {
   assertAttrForwarded,

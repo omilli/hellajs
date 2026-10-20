@@ -27,7 +27,7 @@ HellaJS sits closest to Solid philosophically (signal-driven, no VDOM, surgical 
 
 Rendering is a one-way function from a plain-object AST to the live DOM, with reactivity attached per binding: there is no render loop, no reconciliation pass, and no tree to diff. The mechanism:
 
-- No virtual DOM. The Babel plugin compiles JSX to a plain-object HellaNode AST; `mountNode()` turns it into real DOM nodes directly, with no intermediate tree and no diffing (`lib/internal/render.ts`, driven by `lib/mount.ts`). Element creation is namespace-aware: `svg`/`math` roots and their descendants create via `createElementNS`, with `foreignObject` resetting children to HTML (`lib/internal/render.ts`).
+- No virtual DOM. The Babel plugin compiles JSX to a plain-object HellaNode AST; `mountNode()` turns it into real DOM nodes directly, with no intermediate tree and no diffing (`lib/internal/render.ts`, driven by `lib/mount.ts`). Element creation is namespace-aware: `svg`/`math` roots and their descendants create via `createElementNS`, with `foreignObject` resetting children to HTML (`lib/features/namespaces.ts`, wired through `lib/internal/render.ts`).
 - Surgical updates: each reactive binding registers its own effect. A function-valued prop gets one effect wrapping `renderProp` (`lib/internal/render.ts`); a reactive child gets a persistent empty text-node anchor plus a `renderedNodes` array and one effect that clears and re-inserts exactly the nodes it owns (`lib/internal/render.ts`). When a signal changes, only those bindings re-run: no tree walk, no sibling reconciliation.
 - Static-subtree hoisting happens at compile time: the Babel pass tags every fully-static subtree (literal props, no prefixed attributes, no expressions) as a module constant with `static: true` (`plugins/babel/src/utils/static.mjs`), and `mountNode` keeps a prototype DOM subtree in a `staticDom` WeakMap so re-mounting a static branch is one `cloneNode(true)` instead of O(nodes) construction (`lib/internal/render.ts`). Static children of a dynamic parent still hoist individually.
 - The client DOM carries no comment markers: list, portal, lazy, transition, suspense, and reactive-child regions all anchor on invisible empty text nodes (`lib/ForEach.ts`, `lib/Portal.ts`, `lib/Lazy.ts`, `lib/Transition.ts`, `lib/internal/render.ts`).
@@ -91,7 +91,7 @@ A distinctive HellaJS ergonomic: passing a bare signal reference creates a live 
 - The complex case runs a binary-search LIS and moves only non-longest-increasing-subsequence nodes, walking keys backwards with a rolling move anchor (`lib/ForEach.ts`).
 - Key resolution: `key` prop → `item.id` → array index (`lib/ForEach.ts`).
 - Explicit keys reuse nodes by key identity regardless of item reference; index-fallback keys additionally require the same item reference, preventing accidental reuse on shuffled data (`lib/ForEach.ts`).
-- Fragment-rendered items (a `use` result with multiple roots) reconcile as blocks: a persistent per-item text anchor plus a captured node list, so stale removal, LIS moves, and index-keyed replacement cover every node of the item (`lib/ForEach.ts`).
+- Items are single-root: a `use` result must resolve to one element or text node; a multi-root fragment (`<>…</>`), an array of nodes, or multi-root raw HTML throws at item build (`lib/ForEach.ts`). Multi-node rows require an explicit wrapper element.
 - Live collections (`keyToNode`, `keyToItem`, `currentKeys`) swap by reference with temp collections reused across renders: no per-update Map allocation (`lib/ForEach.ts`).
 
 | Framework | Algorithm |
@@ -113,7 +113,7 @@ HellaJS uses global event delegation by default through the `on:` prefix:
 
 - One `document.body.addEventListener(type, handler, true)` listener per event type, in the capture phase; a `globalListeners` Set short-circuits types with no handlers (`lib/internal/events.ts`).
 - Dispatch walks `event.composedPath()` and looks up `peekState(element)?.handlers[type]` on each path element: one WeakMap peek per ancestor, no DOM walking (`lib/internal/events.ts`).
-- The `e:` prefix attaches direct, bubble-phase listeners per element for cases delegation handles poorly (focus/blur semantics, opt-out of shared dispatch) or for native listener options (`once`/`passive`/`capture` via a `{ handler, options }` spec, `DirectListenerSpec` in `lib/types/nodes.d.ts`), wrapped in the same error-boundary handling (`lib/internal/events.ts`).
+- The `e:` prefix attaches direct, bubble-phase listeners per element for cases delegation handles poorly (focus/blur semantics, opt-out of shared dispatch) or for native listener options (`once`/`passive`/`capture` via a `{ handler, options }` spec, `DirectListenerSpec` in `lib/types/nodes.d.ts`), wrapped in the same error-boundary handling (`lib/features/direct-events.ts`).
 
 | Framework | Strategy |
 |---|---|
@@ -181,10 +181,10 @@ HellaJS is the only one here that auto-disposes effects when a node is removed b
 
 A hybrid global + element-level system:
 
-- Global `onError(fn)` handlers live in a `Set`; they run in insertion order and the first non-null HellaNode wins; `onError(null)` clears all (`lib/error.ts`, `lib/internal/dispatch.ts`).
+- Global `onError(fn)` handlers live in a `Set`; they run in insertion order and the first non-null HellaNode wins; `onError(null)` clears all (`lib/features/errors.ts`, re-exported by `lib/error.ts`).
 - Element-level config rides the `error:` prefix: `error:fallback` (render function), `error:category` (routing tag), `error:boundary` (explicit boundary) (`lib/internal/render.ts`).
-- `findBoundary` walks `parentElement` from the error origin and memoizes on `state.cachedBoundary` with revalidation; a `category`-only config is not a boundary (`lib/internal/dispatch.ts`).
-- A `handlingBoundaries` WeakSet detects a boundary erroring while handling and breaks the loop with a console error (`lib/internal/dispatch.ts`).
+- `findBoundary` walks `parentElement` from the error origin and memoizes on `state.cachedBoundary` with revalidation; a `category`-only config is not a boundary (`lib/features/errors.ts`).
+- A `handlingBoundaries` WeakSet detects a boundary erroring while handling and breaks the loop with a console error (`lib/features/errors.ts`).
 - `context.reset()` re-renders the boundary's `originalNode`, recovery without remounting the app (`lib/internal/dispatch.ts`).
 - Fallback rendering is site-appropriate: reactive-child errors insert the fallback at the anchor preserving siblings; prop/event errors replace the boundary's content (`lib/internal/render.ts`, `lib/internal/events.ts`).
 
@@ -197,7 +197,7 @@ A hybrid global + element-level system:
 | Vue | `errorCaptured` hook per component |
 | Angular | Global `ErrorHandler` |
 
-HellaJS's DOM-tree-walking boundary lookup is unique: errors find their boundary by position in the rendered DOM, not by component wrapper structure, so any element can be hardened with one attribute and no refactoring. The honest trade: without an `onError` handler registered, errors log to the console and no UI appears at all (`lib/internal/dispatch.ts`), and Svelte's boundary additionally suspends `await` expressions with a `pending` snippet, a combination HellaJS splits between `<Suspense>` and this system (`lib/Suspense.ts`).
+HellaJS's DOM-tree-walking boundary lookup is unique: errors find their boundary by position in the rendered DOM, not by component wrapper structure, so any element can be hardened with one attribute and no refactoring. The honest trade: without an `onError` handler registered, errors log to the console and no UI appears at all (`lib/features/errors.ts`), and Svelte's boundary additionally suspends `await` expressions with a `pending` snippet, a combination HellaJS splits between `<Suspense>` and this system (`lib/Suspense.ts`).
 
 ---
 
@@ -211,8 +211,8 @@ HellaJS's DOM-tree-walking boundary lookup is unique: errors find their boundary
 | Transitions | `Transition` enter/leave/appear/rescue (`lib/Transition.ts`) | Transition components | `transition:` directive | CSS / framer-motion | `<Transition>` | `@angular/animations` |
 | Custom elements | First-class `element()` (`lib/element.ts`) | `solid-element` | Custom-element adapter | Full CE support | `defineCustomElement` | `@angular/elements` |
 | Existing-DOM refs | `$ref` / `$collection` auto-watch (`lib/$ref.ts`) | `ref` | `bind:this` | ref callback | template ref | `ViewChild` |
-| Lifecycle hooks | 6 element-level `hook:` hooks (`lib/internal/render.ts`) | `onMount`/`onCleanup` | Lifecycle module | `useEffect` | Options/composition hooks | `ngOnInit` et al. |
-| Error boundaries | `onError` + `error:` (`lib/internal/dispatch.ts`) | `ErrorBoundary` | `<svelte:boundary>` | Class + root callbacks | `errorCaptured` | `ErrorHandler` |
+| Lifecycle hooks | 6 element-level `hook:` hooks (`lib/features/hooks.ts`) | `onMount`/`onCleanup` | Lifecycle module | `useEffect` | Options/composition hooks | `ngOnInit` et al. |
+| Error boundaries | `onError` + `error:` (`lib/features/errors.ts`) | `ErrorBoundary` | `<svelte:boundary>` | Class + root callbacks | `errorCaptured` | `ErrorHandler` |
 | SSR + hydration | `ssr` + marker-reader `hydrate` w/ selective hydration (`lib/internal/hydrate.ts` + `internal/deferred.ts`) | `renderToString` + `data-hk` hydrate | Compiled SSR + hydrate | Streaming + selective hydration | `renderToString` + hydrate | Hydration (non-destructive) |
 | Streaming SSR | `ssr.stream` + `$hs` progressive reveal + deferred-region adoption (`lib/internal/deferred.ts`) | Streaming SSR | via SvelteKit | `renderToPipeableStream` | via meta-framework | - |
 | Keyed lists | `ForEach` LIS (`lib/ForEach.ts`) | `<For>` / `<Index>` | keyed `{#each}` | keys | `v-for :key` | `@for track` |
@@ -246,7 +246,7 @@ HellaJS is the only entry whose entire behavior surface is the wiring itself: th
 - `Lazy` cancellation is total: parent removal sets `isCancelled`, aborts an `AbortController`, and the loader receives `{ signal }` for network-level cancellation; both settle paths guard against a removed anchor (`lib/Lazy.ts`).
 - `Transition` rapid-toggle rescue: showing during a leave cancels the timer, strips the leave class, and keeps the node: no flicker or double nodes (`lib/Transition.ts`).
 - Hydrated `<Suspense>` regions degrade instead of breaking: a sentinel whose staged `<template>` never arrived (interrupted stream) flags the context and the boundary re-suspends client-side with fresh-mount semantics; and when hydrate runs mid-stream, such regions defer instead: each adopts the moment its stage lands, with buffered discrete events replayed positionally (selective hydration, React 19 parity) (`lib/internal/deferred.ts`).
-- `raw(html)` embeds foreign HTML as an opaque marker-bounded child that SSR emits verbatim and hydrate adopts without binding anything inside, the seam meta-framework renderers use for slot passthrough (`lib/raw.ts`, `lib/internal/hydrate.ts`).
+- `raw(html)` embeds foreign HTML as an opaque marker-bounded child that SSR emits verbatim and hydrate adopts without binding anything inside, the seam meta-framework renderers use for slot passthrough (`lib/features/raw.ts`, `lib/internal/hydrate.ts`).
 
 ---
 
@@ -271,7 +271,7 @@ Attribute prefixes are explicit and uniform in JSX:
 
 Spreads: JSX scatters `{...rest}` onto the element, merging at the spread's source position (a literal attribute after the spread wins; one before is overridden).
 
-The `on:`/`e:`/`hook:`/`error:` convention (`lib/internal/render.ts`'s `routePrefixedProps`) is closer to Svelte's directive style than React's `onClick` or Vue's `@click`, and it makes the delegated-vs-direct listener choice a prefix rather than a different API. Function-ref props separate reactive from static attributes syntactically, a clarity win over libraries where every attribute behaves the same way until you learn which ones track.
+The `on:`/`e:`/`hook:`/`error:` convention (`lib/features/routed-props.ts`'s `routePrefixedProps`) is closer to Svelte's directive style than React's `onClick` or Vue's `@click`, and it makes the delegated-vs-direct listener choice a prefix rather than a different API. Function-ref props separate reactive from static attributes syntactically, a clarity win over libraries where every attribute behaves the same way until you learn which ones track.
 
 Single-syntax JSX keeps the authoring surface small: one way to write a component, the same output on every site. Where Solid layers a second tagged-template entry and Svelte has no non-SFC option, HellaJS matches React, Vue, and Angular's one-syntax model while compiling to a plain-object AST any package (dom, ssr, a test harness) can consume.
 

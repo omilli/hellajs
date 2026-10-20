@@ -16,7 +16,7 @@ import {
   routePrefixedProps,
   toText,
 } from "./utils";
-import { setNodeHandler, setDirectHandler } from "./events";
+import { setNodeHandler, bindDirectHandler } from "./events";
 import { dispatchError, toError } from "./dispatch";
 import { registry } from "../registry";
 import { getState, peekState, popBuildParent, pushBuildParent, registerOverlay } from "./state";
@@ -478,7 +478,7 @@ export function hydrateNode(
 
   if (routed.e) {
     objectLoop(routed.e, (eventName, handler) =>
-      setDirectHandler(element, eventName, handler as EventListener | DirectListenerSpec),
+      bindDirectHandler(element, eventName, handler as EventListener | DirectListenerSpec),
     );
   }
 

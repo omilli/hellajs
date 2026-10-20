@@ -12,6 +12,11 @@ import { registry } from "../registry";
 import { isFunction, isPlainObject, objectLoop } from "./core";
 import { renderProp, resolveValue, resolveText } from "./utils";
 import { setNodeHandler } from "./events";
+// The hooks feature loads with the $ref/$collection wrappers: their `.hooks()` method
+// registers lifecycle hooks at runtime, with no `hook:` JSX for the babel plugin to
+// detect. Only reachable through those wrappers, so feature-free bundles still
+// tree-shake the hook wiring.
+import "../features/hooks";
 
 const FORM_ELEMENTS = Object.freeze(new Set(["INPUT", "TEXTAREA", "SELECT"]));
 

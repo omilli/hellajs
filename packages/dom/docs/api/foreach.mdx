@@ -80,9 +80,9 @@ Key resolution order:
 2. `id` property on the source item
 3. Array index (fallback)
 
-### Fragment Items
+### Single-Root Items
 
-A `use` renderer may return multiple root nodes as a fragment: `<>…</>`.
+Each item must render exactly one root node - an element or text node. A `use` renderer that returns multiple roots as a fragment (`<>…</>`), an array of nodes, or multi-root raw HTML throws `[dom] ForEach: use must return a single element`. A bare signal or function returned as the item root throws the same error - reactive content belongs inside an element root (see Reactive Content below).
 
 ```jsx
 import { signal } from "@hellajs/core";
@@ -93,7 +93,7 @@ const rows = signal([
   { id: 2, title: "Beta", note: "second" }
 ]);
 
-// Each item renders two roots (dt + dd) as one fragment item
+// ❌ Throws: the renderer returns two roots (dt + dd)
 <dl>
   <ForEach
     each={rows}
@@ -105,17 +105,24 @@ const rows = signal([
     )}
   />
 </dl>
+
+// ✅ One root per item: wrap the row's markup in a single element
+<dl>
+  <ForEach
+    each={rows}
+    use={(row: { id: number; title: string; note: string }) => (
+      <div class="row">
+        <dt>{row.title}</dt>
+        <dd>{row.note}</dd>
+      </div>
+    )}
+  />
+</dl>
 ```
 
-Fragment items are reconciled as a single block: an invisible empty text anchor marks the
-block start, and removal, reordering, and replacement always move or clean every node of the
-block together - including effects registered inside the item's nodes. Keys resolve like any
-other item (`id` property or array index; a fragment wrapper carries no `key` attribute).
-
 When hydrating server-rendered HTML, `ForEach` adopts existing nodes only when the region's
-server node count exactly matches the item count, so every item must render exactly one root
-node. Fragment-item lists take the mismatch path instead: the server nodes are cleared and the
-list is rebuilt fresh (a warning is logged).
+server node count exactly matches the item count - one node per item. On mismatch the server
+nodes are cleared and the list is rebuilt fresh (a warning is logged).
 
 ## Important Considerations
 

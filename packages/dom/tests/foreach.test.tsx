@@ -151,8 +151,8 @@ describe("dom", () => {
     });
 
     test("uses item.id as fallback key for non-HellaNode use return", () => {
-      const alice = { id: 1, name: signal("Alice") };
-      const bob = { id: 2, name: signal("Bob") };
+      const alice = { id: 1, name: "Alice" };
+      const bob = { id: 2, name: "Bob" };
       const items = signal([alice, bob]);
 
       mount(
@@ -439,7 +439,7 @@ describe("dom", () => {
       const signals = [signal("A"), signal("B")];
       mount(
         <span>
-          <ForEach each={signals} use={(item: (typeof signals)[0]) => item}></ForEach>
+          <ForEach each={signals} use={(item: (typeof signals)[0]) => <b>{item}</b>}></ForEach>
         </span>,
       );
 

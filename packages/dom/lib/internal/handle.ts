@@ -3,9 +3,9 @@ import { isFunction, isObject } from "./core";
 import { resolveValue } from "./utils";
 import { dispatchError, toError } from "./dispatch";
 import {
-  processMountQueue,
+  queueMountNode,
+  drainMountQueue,
   processCleanupQueue,
-  mountQueue,
   beginMountPhase,
   endMountPhase,
 } from "./queue";
@@ -41,9 +41,9 @@ export function createMountHandle(
       const children = container.childNodes;
       let i = 0;
       const len = children.length;
-      while (i < len) mountQueue.add(children[i++]!);
+      while (i < len) queueMountNode(children[i++]!);
     }
-    processMountQueue();
+    drainMountQueue();
     processCleanupQueue();
   };
 

@@ -1,5 +1,5 @@
 import { hasDocument } from "./core";
-import { cleanupSubtree, traverseDescendants, runHooks, setCleanedRootMarker } from "./cleanup";
+import { cleanupSubtree, setCleanedRootMarker } from "./cleanup";
 import { peekState, hasState, registerOverlay } from "./state";
 
 // Wiring breaks the import cycle: cleanup.ts marks cleaned roots after each sync clean, but
@@ -13,19 +13,8 @@ setCleanedRootMarker(markCleanedRoot);
  */
 export const cleanupQueue = new Set<Node>();
 
-/**
- * @internal
- * Queue of nodes pending mount processing.
- */
-export const mountQueue = new Set<Node>();
-
 let isCleaning = false;
-let isMounting = false;
 let isCleanupScheduled = false;
-let isMountScheduled = false;
-
-/** True once any lifecycle hook has been registered — gates the afterMount walk. */
-let mountHooksExist = false;
 
 /** Depth of mount()/hydrate() attaches currently running. */
 let activeMounts = 0;
@@ -38,11 +27,79 @@ let cleanedMarksExist = false;
 
 /**
  * @internal
- * Flags that at least one lifecycle hook exists — `processMountQueue` skips the
- * afterMount tree walk entirely while none has ever been registered.
+ * Queues an inserted root node for the afterMount mount walk and schedules the
+ * flush — the delivery path for content inserted into a target the scoped observer
+ * does not watch (Portal's remote target). The default (hooks feature not loaded)
+ * does nothing — no hook was ever registered, so no walk can consume the queue.
+ * The hooks feature (`lib/features/hooks.ts`, loaded by `hook:` JSX via the babel
+ * plugin) installs the real arm through {@link setMountQueueArm}.
+ *
+ * Exported `let` is deliberate: the feature swaps the implementation at module init
+ * (the `setMountNode` injection pattern) while every importer keeps the live binding.
+ * @param node The inserted root node to walk.
  */
-export function noteMountHook(): void {
-  mountHooksExist = true;
+export let queueMountWalk: (node: Node) => void = () => {};
+
+/**
+ * @internal
+ * Queues a node for the mount-queue flush and schedules it — the delivery path for
+ * mount()/hydrate() roots and `$ref` targets whose afterMount hooks the scoped
+ * observer misses. The default (hooks feature not loaded) does nothing.
+ *
+ * Exported `let` is deliberate: swapped at module init by the hooks feature via
+ * {@link setMountQueueArm} while every importer keeps the live binding.
+ * @param node The node to queue for the afterMount walk.
+ */
+export let queueMountNode: (node: Node) => void = () => {};
+
+/**
+ * @internal
+ * Drains the mount queue — sets `isMounted` and fires `afterMount` for root +
+ * descendants, idempotently. The default (hooks feature not loaded) does nothing:
+ * with no hook ever registered the queue stays empty and the flush is a no-op.
+ *
+ * Exported `let` is deliberate: swapped at module init by the hooks feature via
+ * {@link setMountQueueArm} while every importer keeps the live binding.
+ */
+export let drainMountQueue: () => void = () => {};
+
+/**
+ * The hooks feature's mount-queue arm, registered at its module init.
+ */
+interface MountQueueArm {
+  /** Queues a node unconditionally (mount/hydrate root flush + `$ref`). */
+  queueMount: (node: Node) => void;
+  /** Drains the mount queue (afterMount walk). */
+  drain: () => void;
+  /** Queues an inserted root for the walk after the element/gating checks. */
+  walk: (node: Node) => void;
+  /** Observes one added element — queues it for the walk when hooks exist. */
+  collectAdded: (node: Node) => void;
+  /** Resets the arm's queue and scheduling state. */
+  reset: () => void;
+  /** Reports the queue's current depth (test/introspection). */
+  count: () => number;
+}
+
+let collectAddedNode: (node: Node) => void = () => {};
+let resetMountQueue: () => void = () => {};
+let countMountQueue: () => number = () => 0;
+
+/**
+ * @internal
+ * Registers the hooks feature's mount-queue arm (the `setMountNode` injection
+ * pattern — the queue, its drain, and the observer's addition tracking live in
+ * `lib/features/hooks.ts` so the afterMount walk tree-shakes out of hook-free
+ * bundles).
+ * @param arm The mount-queue arm
+ */
+export function setMountQueueArm(arm: MountQueueArm): void {
+  queueMountNode = arm.queueMount;
+  drainMountQueue = arm.drain;
+  queueMountWalk = arm.walk;
+  collectAddedNode = arm.collectAdded;
+  resetMountQueue = arm.reset;
+  countMountQueue = arm.count;
 }
 
 /**
@@ -129,7 +186,6 @@ function ensureContainerObserver() {
   let hasRemovals = false;
 
   containerObserver = new MutationObserver((mutationsList) => {
-    let hasAdditions = false;
     hasRemovals = false;
 
     let i = 0;
@@ -170,22 +226,15 @@ function ensureContainerObserver() {
             p = p.parentNode;
           }
         }
-        // Track additions only while the afterMount walk can consume them. An ungated add
-        // retains every inserted element in this strong Set forever — hook-free apps (the
-        // common case) never schedule the drain, so cleared subtrees show as Detached memory.
-        if (mountHooksExist && isElement) {
-          mountQueue.add(addedNode);
-          hasAdditions = true;
-        }
+        // Track additions only while the afterMount walk can consume them — the hooks
+        // feature's arm queues + schedules its own drain. An ungated add retains every
+        // inserted element in a strong Set forever — hook-free apps (the common case)
+        // never schedule the drain, so cleared subtrees show as Detached memory.
+        if (isElement) collectAddedNode(addedNode);
       }
     }
 
     if (hasRemovals) scheduleCleanup();
-
-    if (hasAdditions && !isMountScheduled) {
-      isMountScheduled = true;
-      queueMicrotask(processMountQueue);
-    }
   });
 }
 
@@ -226,63 +275,13 @@ export function processCleanupQueue() {
 }
 
 /**
- * Queues an inserted root node for the afterMount mount walk and schedules the
- * flush. This is the delivery path for content inserted into a target the
- * scoped observer does not watch — Portal's remote target is the case: only
- * mount/hydrate roots are registered containers, so without this the inserted
- * subtree's afterMount hooks would never fire. Element nodes only, mirroring
- * the observer's addition filter; the walk itself is idempotent (isMounted).
- * @param node The inserted root node to walk.
- */
-export function queueMountWalk(node: Node): void {
-  if (node.nodeType !== Node.ELEMENT_NODE) return;
-  if (!mountHooksExist) return; // no walk can consume the queue — adding would only retain the node
-  mountQueue.add(node);
-  if (!isMountScheduled) {
-    isMountScheduled = true;
-    queueMicrotask(processMountQueue);
-  }
-}
-
-/**
- * @internal
- * Processes all pending mount operations.
- */
-export function processMountQueue() {
-  if (isMounting) return;
-  isMounting = true;
-  isMountScheduled = false;
-
-  if (mountHooksExist) {
-    const nodes = Array.from(mountQueue);
-    let i = 0;
-    const len = nodes.length;
-    while (i < len) {
-      const node = nodes[i++]!;
-      if (!(node as ChildNode).isConnected) continue;
-      traverseDescendants(node, (n) => {
-        if (n.nodeType !== Node.ELEMENT_NODE) return;
-        const state = peekState(n);
-        if (!state) return;
-        if (state.isMounted) return; // idempotent: a re-flush (or observer re-fire) must not double-fire afterMount
-        state.isMounted = true;
-        if (state.hooks) runHooks(n, "afterMount", state);
-      });
-    }
-  }
-  mountQueue.clear();
-
-  isMounting = false;
-}
-
-/**
  * @internal
  * Test/introspection: node counts currently held in the cleanup and mount queues.
  * Both return to zero after the microtask drain; a nonzero mount count in a hook-free
  * app means added elements are being retained (Detached memory).
  */
 export function queueCounts(): { cleanup: number; mount: number } {
-  return { cleanup: cleanupQueue.size, mount: mountQueue.size };
+  return { cleanup: cleanupQueue.size, mount: countMountQueue() };
 }
 
 /**
@@ -291,12 +290,9 @@ export function queueCounts(): { cleanup: number; mount: number } {
  */
 export function resetQueueState() {
   cleanupQueue.clear();
-  mountQueue.clear();
   isCleaning = false;
-  isMounting = false;
   isCleanupScheduled = false;
-  isMountScheduled = false;
-  mountHooksExist = false;
+  resetMountQueue();
   activeMounts = 0;
   cleanedRoots = new WeakSet();
   cleanedMarksExist = false;
