@@ -5,6 +5,7 @@ node_modules
 bun.lock
 pnpm-lock.yaml
 yarn.lock
+plans
 
 # output
 out
