@@ -1,7 +1,7 @@
 ---
 name: merge
 description: >
-  Merge ONE component worktree of a plan set into the main tree as one conventional commit (plan files never committed — ticks updated agent-side, unstaged). Invoked per component by `bun merge <set-folder>` — a fresh instance per outstanding worktree, this skill as its prompt target. Queue derivation, the set index top-marker flip, and the union gate are runner-owned. Use when a merge instance is driven against a named component, or when asked to hand-merge one specific component worktree; for a whole set, run `bun merge <set-folder>` instead of hand-merging components one by one.
+  Merge ONE component worktree of a plan set into the main tree as one conventional commit (plan files never committed — ticks updated agent-side, unstaged). Invoked per component by `bun merge <set-folder>` — a fresh instance per outstanding worktree, this skill as its prompt target. Queue derivation, the set index top-marker flip, the union gate, and the completed-set folder removal are runner-owned. Use when a merge instance is driven against a named component, or when asked to hand-merge one specific component worktree; for a whole set, run `bun merge <set-folder>` instead of hand-merging components one by one.
 ---
 
 # Merge
@@ -15,7 +15,7 @@ Two standing rules, user-authorized here, overriding the never-commit default fo
 - **One commit per component.** The component lands as its own conventional commit on the base branch, so review and revert work per task. Nothing else commits — no pushes, no amends beyond the memory-fix amend below.
 - **Plan files are never committed.** `plans/**` stays untracked; tick markers and index descriptions are updated by the agent in the main-tree copies, unstaged.
 
-**Orchestrator-owned — never do these inside a component merge:** queue derivation (slug matching, merged-state skip, ordering), the set `index.md` top-marker flip, and the union gate (`vp run coverage <pkg|plugin>` from the set's scope or its runtime-delta packages, `vp run lint` fallback). The runner executes the gate after the last component and, on red, re-enters this skill with a fix prompt. If the prompt names your component, merge that one and stop.
+**Orchestrator-owned — never do these inside a component merge:** queue derivation (slug matching, merged-state skip, ordering), the set `index.md` top-marker flip, the union gate (`vp run coverage <pkg|plugin>` from the set's scope or its runtime-delta packages, `vp run lint` fallback), and removing the set folder — the runner deletes it once every unit is ticked (never mid-merge: later components need the main-tree copies). The runner executes the gate after the last component and, on red, re-enters this skill with a fix prompt. If the prompt names your component, merge that one and stop.
 
 **Re-entry:** a continuation pass may resume partial progress — main-tree ticks or landed commits from a previous attempt. Verify what already landed (`git log`, `bun .agents/skills/worker/scripts/worktree.mjs status <slug>`) before doing anything; never re-merge landed commits.
 

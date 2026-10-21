@@ -1,5 +1,5 @@
-import { readFileSync, writeFileSync } from "node:fs";
-import { basename, join, relative } from "node:path";
+import { existsSync, readFileSync, rmSync, rmdirSync, writeFileSync } from "node:fs";
+import { basename, dirname, join, relative, sep } from "node:path";
 import { logger, projectRoot } from "../utils/index.ts";
 import { dialogHook, driveAgent, installSigint, makeRelay } from "../agent/driver.ts";
 import type { Relay } from "../agent/relay.ts";
@@ -72,7 +72,7 @@ function buildMergePrompt(
     `/skill:merge Merge the ONE component worktree "${entry.slug}" of plan set ${relSetDir} into the main tree. Set context lives in ${join(setDir, "index.md")} — read it first for shared scope.`,
     `Your component's units: ${unitNames}. Completeness ([x] in the worktree copy) was pre-checked by the orchestrator.`,
     "Execute the skill end-to-end for this component: its pre-commit checks, the commit-message derivation, worktree.mjs commit, git cherry-pick with agent-side plan-contract-grounded conflict resolution, the unstaged main-tree plan-copy updates (and index.md description lines for YOUR units only), memory-ID collision handling inside the component's commit, and the worktree cleanup.",
-    "Queue derivation, the index.md top-marker flip, and the union gate (bun coverage / plugin test + lint) are orchestrator-owned — never do them. Never merge another component's worktree.",
+    "Queue derivation, the index.md top-marker flip, the union gate (bun coverage / plugin test + lint), and the completed-set plans-folder removal are orchestrator-owned — never do them. Never merge another component's worktree.",
     "ask_user_question dialogs are relayed to a human operator at the terminal: use the tool for any load-bearing fork or clarification mid-task; free-text steering may also arrive from the operator.",
     "If the merge cannot complete (deeper completeness failure, ordering violation, unresolvable conflict), stop and report exactly that — leave the worktree standing. The orchestrator treats a still-standing worktree as failure and asks the operator.",
   ];
@@ -94,8 +94,9 @@ function buildMergePrompt(
  * fresh instance; no progress reaches the operator gate (retry / skip / halt).
  * Success = the worktree is cleaned AND every component unit ticks in the
  * main tree. After the last merged component the runner owns the set
- * aggregate (index.md top-marker flip) and the union gate, spawning one fix
- * instance per red round. Exit code 0 only when every queued component merged
+ * aggregate (index.md top-marker flip), the union gate (one fix instance per
+ * red round), and removing the spent set folder once every unit is ticked.
+ * Exit code 0 only when every queued component merged
  * and the gate ran green.
  *
  * @param options Set folder (absolute), optional model pattern, dry-run flag.
@@ -133,6 +134,9 @@ export async function runMerge(options: MergeOptions): Promise<number> {
   }
   if (derived.queue.length === 0) {
     logger.success("merge queue empty — nothing outstanding for this set");
+    if (!options.dryRun && removeMergedSet(options.setDir, units)) {
+      logger.success(`set complete — removed spent plans folder ${relSetDir}`);
+    }
     return 0;
   }
   if (options.dryRun) {
@@ -181,10 +185,12 @@ export async function runMerge(options: MergeOptions): Promise<number> {
     logger.info("no component merged — set aggregate and union gate skipped");
   }
   printSummary(records, gateGreen);
-  return gateGreen &&
-    records.every((record: ComponentRecord): boolean => record.status === "merged")
-    ? 0
-    : 1;
+  const complete =
+    gateGreen && records.every((record: ComponentRecord): boolean => record.status === "merged");
+  if (complete && removeMergedSet(options.setDir, units)) {
+    logger.success(`set complete — removed spent plans folder ${relSetDir}`);
+  }
+  return complete ? 0 : 1;
 }
 
 /**
@@ -339,6 +345,39 @@ function flipIndexMarker(setDir: string, units: PlanUnit[]): void {
   }
   writeFileSync(indexPath, flipped);
   logger.success("set aggregate: index.md top marker flipped [ ] → [x]");
+}
+
+/**
+ * Remove a fully-ticked set folder: once every unit reads `[x]` in the main
+ * tree the plans are spent protocol state (untracked, gitignored), and a
+ * completed merge run never leaves them behind. Prunes now-empty parent
+ * dirs up to (never including) `plans/`, and deletes nothing outside
+ * `<projectRoot>/plans/` — the set folder is operator input, so the guard
+ * is load-bearing, not ceremony.
+ *
+ * @param setDir Absolute path to the plan-set folder.
+ * @param units Every unit of the set.
+ * @returns True when the folder was removed.
+ */
+function removeMergedSet(setDir: string, units: PlanUnit[]): boolean {
+  if (!existsSync(setDir) || !units.every((unit: PlanUnit): boolean => isTicked(unit.path))) {
+    return false;
+  }
+  const plansRoot = join(projectRoot, "plans");
+  if (!setDir.startsWith(plansRoot + sep)) {
+    return false;
+  }
+  rmSync(setDir, { recursive: true });
+  let parent = dirname(setDir);
+  while (parent.startsWith(plansRoot + sep)) {
+    try {
+      rmdirSync(parent);
+    } catch {
+      break; // non-empty parent — sibling sets still live there
+    }
+    parent = dirname(parent);
+  }
+  return true;
 }
 
 /** Print the per-component summary with session names for audit. */
