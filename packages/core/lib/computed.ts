@@ -1,22 +1,23 @@
 import { currentValue } from "./internal/context";
-import { executeComputed } from "./internal/execution";
-import { propagate, validateStale } from "./internal/scheduler";
-import { createLink } from "./internal/links";
-import { WRITABLE, COMPUTED, DIRTY, PENDING } from "./internal/flags";
+import { updateComputed } from "./internal/execution";
+import { link, checkDirty, shallowPropagate } from "./internal/system";
+import { NONE, DIRTY, PENDING, SIGNAL_DEPS } from "./internal/flags";
 import { isFunction } from "./internal/utils";
-import type { Reactive } from "./internal/links";
+import type { ReactiveNode } from "./internal/system";
 import type { EqualsOptions } from "./types";
 
 /**
- * Base interface for a computed signal.
+ * Computed node: a lazily re-evaluated transform with a cached value. Starting
+ * from `NONE` routes the first read through the fresh-evaluation arm of the
+ * getter, which also re-marks DIRTY when that first evaluation throws.
  * @internal
  * @template T
  */
-export interface ComputedState<T = unknown> extends Reactive {
+export interface ComputedNode<T = unknown> extends ReactiveNode {
   /** The cached value of the computation. */
-  cbc: T | undefined;
-  /** The function that computes the value. */
-  cbf: (previousValue?: T) => T;
+  value: T | undefined;
+  /** The function that computes the value; receives the previous value on re-computation. */
+  getter: (previousValue?: T) => T;
   /** Optional equality comparator; an equal result keeps the old reference and stops propagation. */
   ce?: (oldValue: T, newValue: T) => boolean;
 }
@@ -55,33 +56,44 @@ export function computed<T>(
   if (ce !== undefined && !isFunction(ce)) {
     throw new Error(`[core] computed: equals must be a function, received ${typeof ce}`);
   }
-  const computedState: ComputedState<T> = {
-    cbc: undefined,
-    rs: undefined,
-    rps: undefined,
-    rd: undefined,
-    rpd: undefined,
-    rf: WRITABLE | COMPUTED | DIRTY,
-    cbf: computedFn,
+  const computedNode: ComputedNode<T> = {
+    value: undefined,
+    deps: undefined,
+    depsTail: undefined,
+    subs: undefined,
+    subsTail: undefined,
+    flags: NONE,
+    getter: computedFn,
     ce,
   };
 
   return () => {
-    const { rf, rd, rs } = computedState;
-    // Notify dependent computed/effects if dirty or pending with stale dependencies.
-    // The PENDING clear is folded into the condition: when validation confirms staleness,
-    // executeComputed rebuilds the flag word (PENDING already gone); when it does not,
-    // the comma arm clears it from the snapshot — which never carries DIRTY here (the
-    // DIRTY arm short-circuits first), so a fresh-clean rf is never clobbered stale
+    const { flags: rf, deps, subs } = computedNode;
+    // Re-evaluate if dirty or pending with stale dependencies. The PENDING clear is folded
+    // into the condition: when validation confirms staleness, updateComputed rebuilds the
+    // flag word (PENDING already gone); when it does not, the comma arm clears it from the
+    // snapshot — which never carries DIRTY here (the first arm short-circuits), so a
+    // fresh-clean flag word is never clobbered back to stale
     (rf & DIRTY ||
       (rf & PENDING &&
-        (validateStale(rd!, computedState) || ((computedState.rf = rf & ~PENDING), false)))) &&
-      executeComputed(computedState) &&
-      rs &&
-      propagate(rs);
+        (checkDirty(deps!, computedNode) || ((computedNode.flags = rf & ~PENDING), false)))) &&
+      updateComputed(computedNode) &&
+      subs !== undefined &&
+      shallowPropagate(subs);
+    if (!rf) {
+      // Fresh evaluation — routed through updateComputed so a throwing first run
+      // re-marks DIRTY and rethrows on every later read (never a stale cache)
+      updateComputed(computedNode);
+    }
     // Track this computed as a dependency if we're inside a reactive context
-    currentValue && createLink(computedState, currentValue);
+    const sub = currentValue;
+    if (sub !== undefined) {
+      link(computedNode, sub, 0);
+      // A computed dependency forces flush-time validation (its value may come out
+      // equal) — drop the subscriber's signals-only fast path. One-time: never re-armed
+      sub.flags &= ~SIGNAL_DEPS;
+    }
 
-    return computedState.cbc!;
+    return computedNode.value!;
   };
 }

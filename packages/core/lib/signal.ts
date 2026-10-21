@@ -1,28 +1,30 @@
 import { currentValue } from "./internal/context";
-import { executeSignal } from "./internal/execution";
-import { propagate, propagateChange, flush } from "./internal/scheduler";
-import { createLink } from "./internal/links";
+import { updateSignal } from "./internal/execution";
+import { flush } from "./internal/scheduler";
+import { link, propagate, shallowPropagate } from "./internal/system";
 import { isFunction, isEqual } from "./internal/utils";
-import { WRITABLE, DIRTY } from "./internal/flags";
+import { MUTABLE, DIRTY } from "./internal/flags";
+import type { ReactiveNode } from "./internal/system";
 import type { Signal, EqualsOptions } from "./types";
-import type { Reactive } from "./internal/links";
 import { batchDepth } from "./batch";
 
 /**
- * Base interface for a signal.
+ * Reactive signal node: a value source with a committed value and a pending
+ * write. The setter stages `pendingValue`; the getter (or a flush-time
+ * validation) commits it via `updateSignal`.
  * @internal
  * @template T
  */
-export interface SignalState<T = unknown> extends Reactive {
-  /** The last confirmed value. */
-  sbv: T;
-  /** The current (potentially uncommitted) value. */
-  sbc: T;
+export interface SignalNode<T = unknown> extends ReactiveNode {
+  /** The last committed value. */
+  currentValue: T;
+  /** The staged, not-yet-committed value. */
+  pendingValue: T;
 }
 
 // Note: the equality comparator is closure-captured by the returned signal function, not
-// stored on SignalState — nothing outside this module reads it, and a dead per-node field
-// costs every signal a hidden-class property. ComputedState.ce differs: executeComputed
+// stored on SignalNode — nothing outside this module reads it, and a dead per-node field
+// costs every signal a hidden-class property. ComputedNode.ce differs: updateComputed
 // lives in internal/execution.ts and must read the comparator from the state object.
 
 /**
@@ -53,38 +55,39 @@ export function signal<T>(initialValue?: T, options?: EqualsOptions<T>) {
   if (se !== undefined && !isFunction(se)) {
     throw new Error(`[core] signal: equals must be a function, received ${typeof se}`);
   }
-  const signalState: SignalState<T> = {
-    sbv: initialValue as T,
-    sbc: initialValue as T,
-    rs: undefined,
-    rps: undefined,
-    rd: undefined,
-    rpd: undefined,
-    rf: WRITABLE,
+  const signalNode: SignalNode<T> = {
+    currentValue: initialValue as T,
+    pendingValue: initialValue as T,
+    deps: undefined,
+    depsTail: undefined,
+    subs: undefined,
+    subsTail: undefined,
+    flags: MUTABLE,
   };
 
   return function (value?: T) {
-    const { sbc, rs, rf } = signalState;
-    // Setter path: update value and propagate changes.
-    // Equality gate: custom comparator (closure `se`) or the default (`isEqual` — reference equality, NaN self-equal); equal values skip the whole write block.
+    // Setter path: stage the value and propagate changes.
+    // Equality gate: custom comparator (closure `se`) or the default (`isEqual` — reference
+    // equality, NaN self-equal); equal values skip the whole write block.
     if (arguments.length > 0) {
-      if (se ? !se(sbc, value as T) : !isEqual(sbc, value)) {
-        signalState.sbc = value as T;
-        signalState.rf = WRITABLE | DIRTY; // Mark as writable and dirty
-        if (rs) {
-          propagateChange(rs); // Notify all subscribers
+      const previousValue = signalNode.pendingValue;
+      if (se ? !se(previousValue, value as T) : !isEqual(previousValue, value)) {
+        signalNode.pendingValue = value as T;
+        signalNode.flags = MUTABLE | DIRTY;
+        const subs = signalNode.subs;
+        if (subs !== undefined) {
+          propagate(subs, false); // Notify all subscribers
           !batchDepth && flush(); // Process effects immediately unless batching
         }
       }
       return;
     }
-    // Getter path: commit dirty value, then upgrade PENDING subscribers to DIRTY
-    rf & DIRTY && executeSignal(signalState, sbc) && rs && propagate(rs);
+    // Getter path: commit a staged write, then dirt-mark subscribers of the changed signal
+    const { flags: rf, subs } = signalNode;
+    rf & DIRTY && updateSignal(signalNode) && subs !== undefined && shallowPropagate(subs);
     // Track dependency if we're inside a reactive context
-    currentValue && createLink(signalState, currentValue);
+    currentValue && link(signalNode, currentValue, 0);
 
-    // sbc is committed by this point (or was never dirty), so it equals sbv — avoid the
-    // property reload
-    return sbc;
+    return signalNode.currentValue;
   };
 }

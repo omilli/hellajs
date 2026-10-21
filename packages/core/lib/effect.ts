@@ -1,19 +1,20 @@
 import { currentValue, setCurrentSub, addScopeEffect } from "./internal/context";
 import { disposeEffect } from "./internal/scheduler";
-import { createLink } from "./internal/links";
-import { GUARDED, EFFECT_DEP, SIGNAL_DEPS } from "./internal/flags";
+import { link } from "./internal/system";
+import { WATCHING, RECURSED_CHECK, SIGNAL_DEPS } from "./internal/flags";
 import { isFunction } from "./internal/utils";
-import type { Reactive } from "./internal/links";
+import type { ReactiveNode } from "./internal/system";
 
 /**
- * Interface for an effect.
+ * Effect node: a sink that re-runs its function when its dependencies change.
+ * Carries the function and the cleanup captured from its last run.
  * @internal
  */
-export interface EffectState extends Reactive {
+export interface EffectNode extends ReactiveNode {
   /** The function to execute as a side effect. */
-  ef(): void;
+  fn(): void;
   /** Cleanup function returned by the effect, called before re-execution and on disposal. */
-  ec?: () => void;
+  cleanup?: () => void;
 }
 
 /**
@@ -26,42 +27,41 @@ export function effect(effectFn: () => unknown): () => void {
   if (!isFunction(effectFn)) {
     throw new Error(`[core] effect: effectFn must be a function, received ${typeof effectFn}`);
   }
-  const effectState: EffectState = {
-    ef: effectFn,
-    rs: undefined,
-    rps: undefined,
-    rd: undefined,
-    rpd: undefined,
-    // SIGNAL_DEPS: assumes signals-only deps; a computed link clears it permanently
-    rf: GUARDED | SIGNAL_DEPS,
+  const effectNode: EffectNode = {
+    fn: effectFn,
+    cleanup: undefined,
+    deps: undefined,
+    depsTail: undefined,
+    subs: undefined,
+    subsTail: undefined,
+    // SIGNAL_DEPS: assumes signals-only deps; a computed link clears it.
+    // RECURSED_CHECK: executing now — re-entrant propagation must not queue this run
+    flags: WATCHING | RECURSED_CHECK | SIGNAL_DEPS,
   };
 
-  // Link to parent effect if nested: the link lands in parent.rd / child.rs so the
-  // scheduler's post-run SCHEDULED walk executes scheduled child effects in dependency order.
-  // Must happen before setCurrentSub so the link targets the parent, not this effect
-  if (currentValue) {
-    createLink(effectState, currentValue);
-    // Mark effect parents once: their skip path must walk scheduled child effects.
-    // The bit is never cleared — a stale bit only costs a no-op walk.
-    currentValue.rf & GUARDED && (currentValue.rf |= EFFECT_DEP);
-  }
+  // Link to the parent effect if nested: the parent subscribes to this child, so the
+  // scheduler's notify can queue ancestors ahead of children and a parent disposal
+  // detaches the child. Must happen before setCurrentSub so the link targets the parent
+  const parent = currentValue;
+  parent !== undefined && link(effectNode, parent, 0);
   // Set this effect as the current reactive context for dependency tracking
-  const prevSub = setCurrentSub(effectState);
+  const previousSub = setCurrentSub(effectNode);
 
   try {
-    const result = effectState.ef(); // Execute and track dependencies
-    effectState.ec = isFunction(result) ? result : undefined; // Capture cleanup return value
+    const result = effectNode.fn(); // Execute and track dependencies
+    effectNode.cleanup = isFunction(result) ? result : undefined; // Capture cleanup return value
   } catch (error) {
     // The first run threw: the effect never started, so it must leave no subscribed
     // state (no cleanup return exists and no disposer reaches the caller). Runs before
     // the finally restores the previous context; disposeEffect reads no global context.
-    disposeEffect(effectState);
+    disposeEffect(effectNode);
     throw error;
   } finally {
-    setCurrentSub(prevSub); // Restore previous context
+    setCurrentSub(previousSub); // Restore previous context
+    effectNode.flags &= ~RECURSED_CHECK; // The initial run is over — normal notification applies
   }
 
-  const cleanup = () => disposeEffect(effectState);
+  const cleanup = () => disposeEffect(effectNode);
 
   // Register with active scope if one exists
   addScopeEffect(cleanup);

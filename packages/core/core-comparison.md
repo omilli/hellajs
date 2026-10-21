@@ -27,9 +27,9 @@ HellaJS core sits in the standalone-signals camp with `@vue/reactivity` and (loo
 
 The package is a single reactive engine: three node kinds, one edge type, one state machine, no auxiliary structures.
 
-- Three node kinds share one `Reactive` base: `rd` (first dependency link), `rpd` (tracking bookmark), `rs` (first subscriber link), `rps` (prev subscriber pointer), `rf` (state bitmask) (`lib/internal/links.ts`). Edges are `Link` nodes carrying `ls`/`lt` (source/target) plus four list pointers, forming two parallel doubly-linked lists per node (`lib/internal/links.ts`).
-- A bitmask state machine drives every transition: `CLEAN`, `WRITABLE`, `GUARDED`, `TRACKING`, `DIRTY`, `PENDING`, `SCHEDULED` (`lib/internal/flags.ts`). All checks are inline bitwise tests with no method dispatch (`lib/signal.ts`).
-- Signals and computeds share the `WRITABLE` bit so propagation treats them identically; effects carry `GUARDED` and are scheduled rather than traversed (`lib/internal/scheduler.ts`). `updateValue` dispatches between signal and computed execution on the `COMPUTED` type bit (`lib/internal/execution.ts`).
+- Three node kinds share one `ReactiveNode` base: `deps` (dependency bookmark), `depsTail` (dependency-list tail), `subs` (first subscriber link), `subsTail` (subscriber-list tail), `flags` (state bitmask) (`lib/internal/system.ts`). Edges are version-stamped `Link` nodes carrying `dep`/`sub` plus four list pointers, forming two parallel doubly-linked lists per node (`lib/internal/system.ts`).
+- A bitmask state machine drives every transition: `NONE`, `MUTABLE`, `WATCHING`, `RECURSED_CHECK`, `DIRTY`, `PENDING`, plus the host-owned `SIGNAL_DEPS` fast-path bit (`lib/internal/flags.ts`). All checks are inline bitwise tests with no method dispatch (`lib/signal.ts`).
+- Signals and computeds share the `MUTABLE` bit so propagation descends into both; effects are sinks: the host's `notify` queues them (clearing `WATCHING`) rather than traversing into them (`lib/internal/scheduler.ts`). The host `update` callback dispatches between computed and signal execution by node kind (`"getter" in node`) (`lib/internal/scheduler.ts`); the vendored graph machinery itself is factory-isolated, with `createReactiveSystem` leaving node kinds, queueing, and disposal to the host (`lib/internal/system.ts`).
 - The whole surface is nine primitives (`signal`, `computed`, `effect`, `batch`, `untracked`, `scope`, and the collection factories `signalArray`, `signalMap`, `signalSet`) plus a `flush` drain for advanced use (`lib/index.ts`). No owner tree, no context system, no scheduler modes. The collection signals are pure composition over `signal`/`computed` (`lib/internal/collections.ts`): no new node kinds, no scheduler or flag changes.
 
 ### Solid
@@ -72,7 +72,7 @@ Angular's signals are a first-class graph with pull-based staleness, embedded in
 - Staleness is pull-based: each node carries `version` and `lastCleanEpoch`; writes bump a global `epoch`, and consumers poll their producers' versions on demand (`consumerPollProducersForChange`). Effects are "always live" consumers; computeds connect as live consumers only when something live reads them, and losing the last live consumer cascades teardown through the producer chain.
 - Effects are framework-coupled: `effect()` asserts an injection context (or takes `options.injector`), auto-registers on `DestroyRef`, and is scheduled through the `ChangeDetectionScheduler` (async by default, inside the change-detection cycle). Angular 22 boots zoneless by default; `zone.js` and `rxjs` remain peer dependencies.
 
-**Verdict:** HellaJS, Solid, Svelte, Vue, and Angular all implement some flavor of push/pull signal graph: the five converge on lazy computeds, per-binding subscriptions, and memoized propagation. React is the structural outlier with snapshot state and tree reconciliation. Within the signal camp, HellaJS's differentiators are representational (pointer-linked doubly-linked lists vs Solid's index arrays, Vue/Angular's version counters, Svelte's flat arrays) and operational (one effect primitive, synchronous flush, zero framework coupling). Solid and Vue are the closest architectural siblings; Svelte trades runtime flexibility for compile-time knowledge; Angular's signals are mechanically excellent but welded to DI and the CD cycle.
+**Verdict:** HellaJS, Solid, Svelte, Vue, and Angular all implement some flavor of push/pull signal graph: the five converge on lazy computeds, per-binding subscriptions, and memoized propagation. React is the structural outlier with snapshot state and tree reconciliation. Within the signal camp, HellaJS's differentiators are representational (pointer-linked doubly-linked lists vs Solid's index arrays, Vue/Angular's version counters, Svelte's flat arrays; HellaJS's links now carry version stamps, but they serve recursion dedup only, not Vue-style dirty short-circuits) and operational (one effect primitive, synchronous flush, zero framework coupling). Solid and Vue are the closest architectural siblings; Svelte trades runtime flexibility for compile-time knowledge; Angular's signals are mechanically excellent but welded to DI and the CD cycle.
 
 ---
 
@@ -104,7 +104,7 @@ HellaJS gives per-binding granularity with dynamic, per-execution dependency set
 
 Two consequences of HellaJS's model worth stating plainly:
 
-- Conditional re-tracking is total. `endTracking` prunes everything after `rpd` (`lib/internal/tracking.ts`), so `computed(() => view() === 'a' ? a() : b())` subscribes to exactly two signals at any moment, and switching branches swaps the set atomically within that execution.
+- Conditional re-tracking is total. `purgeDeps` prunes everything after the `depsTail` bookmark (`lib/internal/tracking.ts`), so `computed(() => view() === 'a' ? a() : b())` subscribes to exactly two signals at any moment, and switching branches swaps the set atomically within that execution.
 - `untracked` is a context swap, not an object flag. It nulls the current subscriber for the duration of the callback and restores it in `finally` (`lib/untracked.ts`); structurally identical to Solid's and Angular's equivalents, and lighter than Vue's `markRaw`, which permanently brands the object.
 
 Collection state extends the same granularity model (`signalArray`/`signalMap`/`signalSet`, `lib/signalArray.ts` + `lib/internal/collections.ts`): one child signal per element plus a container version signal, so value writes wake a single element's readers and in-place structural operations replace immutable spreads. The honest position against the proxy frameworks: per-element value granularity, keyed identity handles, and in-place ops are at parity; deep element proxies are absent (elements stay raw; depth belongs to the store package layered on the `wrap`/`merge` hooks); structural granularity is container-level (any structural change wakes every positional reader), weaker than Vue's per-key tracking.
@@ -115,24 +115,24 @@ React's granularity stands apart: without signals there is nothing to subscribe 
 
 ## 5. Dependency Graph & Propagation
 
-Three algorithms do HellaJS's work, all iterative with lightweight `{sv, sp}` stack frames (no recursion, no array allocation per propagation):
+Three algorithms do HellaJS's work, all iterative with lightweight `{value, prev}` stack frames (no recursion, no array allocation per propagation). They are the vendored, factory-isolated machinery of `lib/internal/system.ts`; the host supplies queueing and re-execution through callbacks (`lib/internal/scheduler.ts`):
 
-- **`propagateChange`**: the setter's entry. DFS through subscribers, descending `WRITABLE` nodes depth-first, scheduling `GUARDED` effects, marking clean nodes `PENDING`. Nodes already active (`TRACKING | DIRTY | PENDING`) get a local clean flag so they are neither re-marked nor re-scheduled; this is the no-double-queue guarantee and the reason synchronous self-writes stabilize instead of looping (`lib/internal/scheduler.ts`).
-- **`propagate`**: the confirmation pass. After a value change is committed, a linear walk upgrades `PENDING` subscribers to `DIRTY` and schedules effects (`lib/internal/scheduler.ts`).
-- **`validateStale`**: the skip-update optimization. When a `PENDING` node is read, a stack-based DFS checks whether underlying values actually changed; if a dependency recomputed to the same reference, the `PENDING` flag clears without re-execution (`lib/internal/scheduler.ts`). This is why a computed returning an identical value stops propagation cold.
+- **`propagate`**: the setter's entry. DFS through subscribers, descending `MUTABLE` nodes depth-first, handing armed (`WATCHING`) effects to the host's `notify`, marking clean nodes `PENDING`. Already-active nodes (`DIRTY | PENDING`) are neither re-marked nor re-queued, and an executing node (`RECURSED_CHECK`) goes through a recursion check against its live dependency span: this is the no-double-queue guarantee and the reason synchronous self-writes stabilize instead of looping (`lib/internal/system.ts`).
+- **`shallowPropagate`**: the confirmation pass. After a value change is committed, a linear walk upgrades `PENDING` subscribers to `DIRTY` and queues armed effects (`lib/internal/system.ts`).
+- **`checkDirty`**: the skip-update validation. When a `PENDING` node is validated, a stack-based DFS checks whether underlying values actually changed (re-committing intermediates through the host's `update`); if a dependency recomputed to the same reference, the `PENDING` flag clears without re-execution (`lib/internal/system.ts`). This is why a computed returning an identical value stops propagation cold.
 
 | Framework | Graph structure | Staleness strategy | Skip-update? |
 |---|---|---|---|
-| HellaJS | Doubly-linked lists, no Maps/Sets/arrays | DIRTY/PENDING bitmasks | Yes: `validateStale` |
+| HellaJS | Doubly-linked lists, no Maps/Sets/arrays | DIRTY/PENDING bitmasks | Yes: `checkDirty` |
 | Solid | Array-based `sources`/`observers` with slot indices | STALE/PENDING states + `updatedAt`/`ExecCount` | Yes: `lookUpstream` revalidation |
 | Svelte 5 | Flat `reactions` arrays + `rv`/`wv` version counters | DIRTY/MAYBE_DIRTY flags + version compare | Yes: `is_dirty` polling |
 | React 19 | Per-component hook list on the fiber | Lanes + reconciliation | No: renders regardless |
 | Vue 3 | `Dep`/`Link` linked lists + version counters | `isDirty`/`refreshComputed` with dirty flags | Yes: computed caching |
 | Angular | Linked producers/consumers + `version`/`epoch` | Pull-based `consumerPollProducersForChange` | Yes: memoized computed |
 
-The mechanism family splits three ways: HellaJS re-executes and compares values (`isEqual`: reference `===` with `NaN` self-equal, in `executeSignal`/`executeComputed`, `lib/internal/execution.ts`); Svelte, Vue, and Angular stamp version counters and compare integers; Solid re-runs upstream computations with an execution-timestamp guard. Version counters are cheaper per check but add a counter field and increment on every write; HellaJS's value-compare leans on the fact that propagation only reaches nodes that were structurally affected.
+The mechanism family splits three ways: HellaJS re-executes and compares values (`isEqual`: reference `===` with `NaN` self-equal, in `updateSignal`/`updateComputed`, `lib/internal/execution.ts`); Svelte, Vue, and Angular stamp version counters and compare integers; Solid re-runs upstream computations with an execution-timestamp guard. Version counters are cheaper per check but add a counter field and increment on every write; HellaJS's value-compare leans on the fact that propagation only reaches nodes that were structurally affected.
 
-The doubly-linked-list representation buys three concrete properties (`lib/internal/links.ts`): link removal is O(1) pointer surgery with no lookup; link creation splices into two lists with no dedup structure to maintain (the `rpd` bookmark checks the last-accessed source, and the tracking fast-path peeks one node ahead to reuse links: zero allocation when a computation re-reads the same signals in the same order); and there is no per-node collection to iterate, so propagation walks raw pointers. The cost is denser algorithms and more pointer bookkeeping on insertion.
+The doubly-linked-list representation buys three concrete properties (`lib/internal/system.ts`): link removal is O(1) pointer surgery with no lookup; link creation splices into two lists with no dedup structure to maintain (the `depsTail` bookmark checks the last-linked dependency, and version-stamped reuse re-links an upcoming dependency in place: zero allocation when a computation re-reads the same signals in the same order); and there is no per-node collection to iterate, so propagation walks raw pointers. The cost is denser algorithms and more pointer bookkeeping on insertion.
 
 ---
 
@@ -140,8 +140,8 @@ The doubly-linked-list representation buys three concrete properties (`lib/inter
 
 HellaJS has three distinct memory behaviors:
 
-- **Link reuse during tracking.** A re-executing computation that reads the same signals in the same order advances its bookmark and reuses existing link objects; steady-state re-runs allocate nothing (`lib/internal/links.ts`).
-- **Computed auto-GC.** When a computed loses its last subscriber, `removeLink` drops all of its dependency links (cascading into dependency computeds that lose their own last subscriber) and marks it `WRITABLE | DIRTY` for lazy rebuild on next read (`lib/internal/links.ts`). The behavior is verified by WeakRef canary tests proving full release of multi-dependency and nested-computed graphs (`packages/core/tests/computed.test.ts`).
+- **Link reuse during tracking.** A re-executing computation that reads the same signals in the same order advances its `depsTail` bookmark and reuses existing link objects (version-stamped in place); steady-state re-runs allocate nothing (`lib/internal/system.ts`).
+- **Computed auto-GC.** When a computed loses its last subscriber, `unlink` hands the childless computed to the host's `unwatched`, which drops all of its dependency links (cascading into dependency computeds that lose their own last subscriber) and marks it `MUTABLE | DIRTY` for lazy rebuild on next read (`lib/internal/scheduler.ts`). The behavior is verified by WeakRef canary tests proving full release of multi-dependency and nested-computed graphs (`packages/core/tests/computed.test.ts`).
 - **Effect queue hygiene.** The flush queue is a single shared array; each processed slot is cleared to `undefined` so the effect can be collected, and indices reset per flush; the queue is never reallocated (`lib/internal/scheduler.ts`).
 
 | Framework | Edge structure | Auto-disposal |
@@ -153,15 +153,15 @@ HellaJS has three distinct memory behaviors:
 | Vue 3 | `Dep`/`Link` linked lists | `effectScope.stop()`, watcher stop handles; dep links unlinked on effect stop |
 | Angular | Linked producers/consumers | Losing the last live consumer cascades link teardown; `DestroyRef`/`takeUntilDestroyed` for effects |
 
-HellaJS, Vue, and Angular all converge on linked-list edges with some form of "unsubscribe the middle of the chain and the dead branch collects itself." HellaJS's cascade is unconditional: any computed that loses all subscribers detaches completely, relying on `WRITABLE | DIRTY` re-initialization to rebuild costlessly on demand. Angular's analog gates on *live* consumers (effects are always live; computeds become live only when live-read); Svelte's gates on connection flags. Solid achieves disposal through the owner tree instead (correct, but it makes every computation carry ownership metadata). One honest asymmetry: HellaJS effects nested inside a re-running parent effect accumulate (old children keep running until explicitly disposed); Solid's owner tree cleans these up automatically (`packages/core/tests/effects.test.ts` documents the accumulation).
+HellaJS, Vue, and Angular all converge on linked-list edges with some form of "unsubscribe the middle of the chain and the dead branch collects itself." HellaJS's cascade is unconditional: any computed that loses all subscribers detaches completely, relying on `MUTABLE | DIRTY` re-initialization to rebuild costlessly on demand. Angular's analog gates on *live* consumers (effects are always live; computeds become live only when live-read); Svelte's gates on connection flags. Solid achieves disposal through the owner tree instead (correct, but it makes every computation carry ownership metadata). One honest asymmetry: HellaJS effects nested inside a re-running parent effect accumulate (old children keep running until explicitly disposed); Solid's owner tree cleans these up automatically (`packages/core/tests/effects.test.ts` documents the accumulation).
 
 ---
 
 ## 7. Batching & Scheduling
 
-HellaJS's default is a **synchronous flush**. A signal write outside a batch propagates and runs effects before the setter returns (`lib/signal.ts`: `propagateChange(rs)` then `!batchDepth && flush()`); a write to a signal with no subscribers does no work at all (`lib/signal.ts`).
+HellaJS's default is a **synchronous flush**. A signal write outside a batch propagates and runs effects before the setter returns (`lib/signal.ts`: `propagate(subs)` then `!batchDepth && flush()`); a write to a signal with no subscribers does no work at all (`lib/signal.ts`).
 
-`batch(fn)` is a depth counter: increments on entry, flushes when the count returns to zero, nested batches collapse into the outermost (`lib/batch.ts`). The `SCHEDULED` bitmask dedups queue entries when one propagation touches an effect through multiple paths (`lib/internal/scheduler.ts`). The flush itself is FIFO with per-effect staleness validation, then a dependency walk that runs scheduled child effects in dependency order (`lib/internal/scheduler.ts`). An uncaught effect error aborts the remaining queue; the next write starts a fresh flush with intact state (`packages/core/tests/effects.test.ts`).
+`batch(fn)` is a depth counter: increments on entry, flushes when the count returns to zero, nested batches collapse into the outermost (`lib/batch.ts`). The `WATCHING` bit dedups queue entries: `notify` clears it at queue time and propagation only notifies armed effects, so one propagation touching an effect through multiple paths queues it once (`lib/internal/scheduler.ts`). The flush itself drains the queue in order with per-effect staleness validation; a parent effect re-runs before effects subscribed to it through its own dependency write nesting a flush inside the child-notification pass (`lib/internal/scheduler.ts`). An uncaught effect error aborts the remaining queue (the queue indices stay untouched), and the next flush recovers the survivors (`packages/core/tests/flush.test.ts`).
 
 | Framework | Default timing | Batching primitive | Notes |
 |---|---|---|---|
@@ -200,10 +200,10 @@ Only HellaJS and Solid run effects synchronously at the write. That is a real tr
 
 - **Fused getter/setter callable**: one function, `arguments.length` discriminates read from write, and storing `undefined` is supported (`lib/signal.ts`)
 - **Previous-value compute fn**: `computed` receives the prior result for incremental computation (`lib/computed.ts`)
-- **Skip-update validation**: `validateStale` clears PENDING flags by comparing actual values, stopping propagation when a recomputed result is reference-identical (`lib/internal/scheduler.ts`)
-- **Computed auto-GC with cascade**: losing the last subscriber detaches the whole dependency branch and re-marks for lazy rebuild (`lib/internal/links.ts`)
-- **Zero-allocation steady-state tracking**: same-order re-reads reuse link objects via the `rpd` bookmark (`lib/internal/links.ts`)
-- **Manual-stack iterative DFS everywhere**: `propagateChange` and `validateStale` allocate one lightweight stack frame per branch, never recurse (`lib/internal/scheduler.ts`)
+- **Skip-update validation**: `checkDirty` clears PENDING flags by comparing actual values, stopping propagation when a recomputed result is reference-identical (`lib/internal/system.ts`)
+- **Computed auto-GC with cascade**: losing the last subscriber detaches the whole dependency branch and re-marks for lazy rebuild (`lib/internal/scheduler.ts`)
+- **Zero-allocation steady-state tracking**: same-order re-reads reuse link objects via the `depsTail` bookmark (`lib/internal/system.ts`)
+- **Manual-stack iterative DFS everywhere**: `propagate` and `checkDirty` allocate one lightweight stack frame per branch, never recurse (`lib/internal/system.ts`)
 - **Keyed identity handles**: `nodeAt(i)`/`entry(k)` hand out the per-element signal itself, surviving reorders and deletes (`lib/signalArray.ts`, `lib/signalMap.ts`)
 - **Synchronous flush with explicit batch**: no hidden microtask, ever (`lib/signal.ts`, `lib/batch.ts`)
 
@@ -253,8 +253,8 @@ What sets HellaJS apart (and no single competitor matches all of):
 1. **Zero dependencies, zero peers, no framework**: a complete reactive DAG usable in any JS runtime with nothing installed alongside it (`packages/core/package.json`). `@vue/reactivity` needs `@vue/shared`; Solid's core carries its runtime; Svelte and Angular require their compilers; React has no separable reactivity.
 2. **One primitive per concept**: one signal, one computed, one effect with cleanup-by-return; no memo/eager/render effect variants, no owner tree, no injection context, no compiler (`lib/index.ts`).
 3. **Synchronous flush by default with explicit `batch`**: nothing asynchronous happens implicitly; effects run at the write, once, in dependency order (`lib/signal.ts`, `lib/batch.ts`). Only Solid shares the synchronous default; none combine it with zero coupling.
-4. **Computed auto-GC with cascading rebuild**: a computed that loses its last subscriber detaches its entire dependency branch and rebuilds lazily on next read (`lib/internal/links.ts`).
+4. **Computed auto-GC with cascading rebuild**: a computed that loses its last subscriber detaches its entire dependency branch and rebuilds lazily on next read (`lib/internal/scheduler.ts`).
 5. **Previous-value compute functions**: `computed(prev => …)` enables incremental accumulation with no extra API surface (`lib/computed.ts`).
-6. **Zero-allocation steady state**: re-executions that read the same dependencies in the same order reuse link objects outright (`lib/internal/links.ts`).
+6. **Zero-allocation steady state**: re-executions that read the same dependencies in the same order reuse link objects outright (`lib/internal/system.ts`).
 
 Its gaps are the predictable ones: the default equality is reference-based (`===` with `NaN` self-equal, `lib/internal/utils.ts`) with an optional `equals` comparator (`lib/signal.ts`), and there is no deep reactivity, where Vue/Svelte proxy deeply; no async or resource primitives in core (Solid and Angular ship `createResource`/`resource`; HellaJS delegates to `@hellajs/resource`); no devtools, inspector, or external-store interop hook; an uncaught effect error aborts the remaining flush queue rather than being contained per-effect (`packages/core/tests/effects.test.ts`); nested effects accumulate under a re-running parent until explicitly disposed or scoped; and the ecosystem, community, and adoption maturity trail every framework listed here by years.

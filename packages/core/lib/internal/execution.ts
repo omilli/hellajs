@@ -1,68 +1,59 @@
-import type { SignalState } from "../signal";
-import type { ComputedState } from "../computed";
-import { WRITABLE, COMPUTED, DIRTY, TRACKING } from "./flags";
+import type { SignalNode } from "../signal";
+import type { ComputedNode } from "../computed";
+import { MUTABLE, DIRTY, RECURSED_CHECK } from "./flags";
 import { setCurrentSub } from "./context";
-import { endTracking } from "./tracking";
+import { purgeDeps } from "./tracking";
 import { isEqual } from "./utils";
 
 /**
- * @internal Executes a signal update, committing the current value to base and checking for changes.
- * @param signalValue The signal to execute.
- * @param value The new value to commit.
- * @returns True if the value actually changed.
+ * @internal Commits a signal's pending write: moves `pendingValue` into
+ * `currentValue` and reports whether the committed value actually changed.
+ * @param signalNode The signal to commit.
+ * @returns True if the value changed (callers propagate).
  */
-export function executeSignal(signalValue: SignalState, value: unknown): boolean {
-  signalValue.rf = WRITABLE; // Reset to writable state
-  const oldValue = signalValue.sbv;
-  signalValue.sbv = value; // Commit current value to base value
-  // Return true only if value actually changed (triggers propagation)
-  return !isEqual(oldValue, value);
+export function updateSignal(signalNode: SignalNode): boolean {
+  signalNode.flags = MUTABLE; // Reset to a clean value source
+  const previousValue = signalNode.currentValue;
+  signalNode.currentValue = signalNode.pendingValue;
+  // Default equality: reference equality with NaN self-equal, so a repeated NaN
+  // write never counts as a change
+  return !isEqual(previousValue, signalNode.pendingValue);
 }
 
 /**
- * @internal Executes a computed signal's computedFn function and updates its cached value.
+ * @internal Runs a computed's getter and commits its cached value.
  * @template T
- * @param computedValue The computed signal to execute.
+ * @param computedNode The computed to re-evaluate.
  * @returns True if the computed value changed.
  */
-export function executeComputed<T = unknown>(computedValue: ComputedState<T>): boolean {
-  const prevSubValue = setCurrentSub(computedValue);
-  const { cbc, cbf, ce } = computedValue;
-
-  // Computeds carry no transient bits here (callers validated DIRTY/PENDING first), so the
-  // flag word is rebuilt from constants — cheaper than a read-modify-write
-  computedValue.rf = WRITABLE | COMPUTED | TRACKING;
-  computedValue.rpd = undefined; // Reset dependency traversal pointer for fresh tracking
+export function updateComputed<T = unknown>(computedNode: ComputedNode<T>): boolean {
+  const previousSub = setCurrentSub(computedNode);
+  computedNode.depsTail = undefined; // Reset the tracking bookmark for a fresh pass
+  computedNode.flags = MUTABLE | RECURSED_CHECK;
 
   try {
-    const newValue = cbf(cbc);
+    const previousValue = computedNode.value;
+    const newValue = computedNode.getter(previousValue);
     // Equality override: an equal result keeps the old reference and reports no change.
-    // Skipped on the first evaluation (prev undefined) — comparators assume real values,
-    // and the default check below already treats that case identically.
-    if (ce && cbc !== undefined && ce(cbc, newValue)) return false;
-    computedValue.cbc = newValue;
-    return !isEqual(cbc, newValue);
+    // Skipped on the first evaluation (previous undefined) — comparators assume real
+    // values, and the default check below already treats that case identically.
+    if (
+      computedNode.ce &&
+      previousValue !== undefined &&
+      computedNode.ce(previousValue, newValue)
+    ) {
+      return false;
+    }
+    computedNode.value = newValue;
+    return !isEqual(previousValue, newValue);
   } catch (error) {
     // The flag rebuild above dropped DIRTY — without re-marking it, later reads skip
     // re-execution and serve the stale cache (undefined after a first-read throw)
-    computedValue.rf = WRITABLE | COMPUTED | DIRTY;
+    computedNode.flags = MUTABLE | DIRTY;
     throw error;
   } finally {
-    setCurrentSub(prevSubValue);
-    endTracking(computedValue);
+    setCurrentSub(previousSub);
+    computedNode.flags &= ~RECURSED_CHECK;
+    purgeDeps(computedNode);
   }
-}
-
-/**
- * @internal Updates the value of a signal or computed signal using type-bit dispatch.
- * @param value The reactive node to update.
- * @returns True if the value changed.
- */
-export function updateValue(value: SignalState | ComputedState): boolean {
-  // Type-bit dispatch: computed carries COMPUTED alongside WRITABLE — no property probe
-  if (value.rf & COMPUTED) {
-    return executeComputed(value as ComputedState);
-  }
-  const signalValue = value as SignalState;
-  return executeSignal(signalValue, signalValue.sbc);
 }

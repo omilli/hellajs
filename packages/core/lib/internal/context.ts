@@ -1,17 +1,17 @@
 import type { EffectScope } from "../scope";
-import type { Reactive } from "./links";
+import type { ReactiveNode } from "./system";
 
 /**
  * @internal The currently executing reactive context (effect or computed).
  */
-export let currentValue: Reactive | undefined;
+export let currentValue: ReactiveNode | undefined;
 
 /**
  * @internal Sets the current reactive subscriber, tracking dependencies.
  * @param sub The subscriber to set as current.
  * @returns The previous subscriber.
  */
-export function setCurrentSub(sub: Reactive | undefined) {
+export function setCurrentSub(sub: ReactiveNode | undefined) {
   const prev = currentValue;
   currentValue = sub;
   return prev;

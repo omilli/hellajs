@@ -1,15 +1,17 @@
-import type { Reactive } from "./links";
-import { TRACKING } from "./flags";
-import { removeLink } from "./links";
+import type { ReactiveNode } from "./system";
+import { unlink } from "./system";
 
 /**
- * @internal Ends tracking dependencies for a reactive subscriber and removes unused links.
- * @param subscriber The subscriber to end tracking for.
+ * @internal Unlinks every dependency after `depsTail` — the links the last
+ * execution did not re-access. The new-engine replacement for endTracking: the
+ * execute paths reset `depsTail` before running, so everything past it is stale.
+ * @param sub The subscriber whose stale dependency links should be purged.
+ * @returns Nothing; the graph is pruned in place.
  */
-export function endTracking(subscriber: Reactive): void {
-  // Remove stale dependencies that weren't accessed during this execution
-  // Everything after rpd (last accessed) or from rd (if nothing accessed) is stale
-  let remove = subscriber.rpd ? subscriber.rpd.lnd : subscriber.rd;
-  while (remove) remove = removeLink(remove, subscriber);
-  subscriber.rf &= ~TRACKING; // Clear TRACKING flag to end tracking phase
+export function purgeDeps(sub: ReactiveNode): void {
+  const depsTail = sub.depsTail;
+  let link = depsTail !== undefined ? depsTail.nextDep : sub.deps;
+  while (link !== undefined) {
+    link = unlink(link, sub);
+  }
 }
