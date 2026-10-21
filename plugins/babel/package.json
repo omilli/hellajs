@@ -13,6 +13,7 @@
   "files": [
     "./index.d.ts",
     "./index.mjs",
+    "./src",
     "README.md"
   ],
   "type": "module",
