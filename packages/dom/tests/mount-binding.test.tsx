@@ -48,5 +48,15 @@ describe("dom", () => {
       flush();
       expect(el.querySelector("i")?.textContent).toBe("italic");
     });
+
+    test.each([5, 0])("single number child renders as textContent", (n) => {
+      mount(
+        <div>
+          <span id="num-child">{n}</span>
+        </div>,
+      );
+
+      expect(document.getElementById("num-child")?.textContent).toBe(String(n));
+    });
   });
 });

@@ -22,6 +22,18 @@ export interface EqualsOptions<T> {
 }
 
 /**
+ * Options bag for effect creation.
+ */
+export interface EffectOptions {
+  /**
+   * Skips linking to the running parent effect — the effect tracks, runs, and
+   * disposes independently (registration in an external registry owns its
+   * lifetime).
+   */
+  separate?: boolean;
+}
+
+/**
  * Options bag for collection signals. `equals` applies per element (each child
  * signal receives it); `wrap` and `merge` are element-lifecycle hooks that let a
  * host package layer deep semantics on top without core knowing about it.

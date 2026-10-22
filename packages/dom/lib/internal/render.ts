@@ -15,6 +15,7 @@ import {
   chainScopes,
   wireFragmentScope,
   routePrefixedProps,
+  routedPropsActive,
 } from "./utils";
 import { setNodeHandler, bindDirectHandler } from "./events";
 import { dispatchError, toError } from "./dispatch";
@@ -23,6 +24,15 @@ import { cleanupSubtree } from "./cleanup";
 import { getState, peekState, popBuildParent, pushBuildParent } from "./state";
 
 let staticDom = new WeakMap<HellaNode, Element | DocumentFragment>();
+
+/**
+ * @internal
+ * Last-value memo sentinel for reactive prop effects — the mount and hydrate twins
+ * share this identity. It never equals a computed prop value (not even `undefined`),
+ * so an effect's first run always applies; a bare `undefined` sentinel would skip
+ * the hydrate twin's first-run removal of a server-rendered attribute.
+ */
+export const NO_VALUE: unknown = {};
 
 /**
  * @internal
@@ -196,10 +206,12 @@ export function getBoundaryConfig(boundary: Element | undefined): ErrorConfig | 
 /**
  * @internal
  * Clears a tracked rendered-nodes array, cleaning up each node before removal.
- * @param nodes The array of rendered nodes to clear
+ * @param nodes The array of rendered nodes to clear, or undefined when the region has
+ * rendered no nodes yet (lazy allocation — no-op)
  * @param parent The parent DOM node to remove children from
  */
-export function clearRenderedNodes(nodes: Node[], parent: Node) {
+export function clearRenderedNodes(nodes: Node[] | undefined, parent: Node) {
+  if (!nodes) return;
   let i = 0;
   const len = nodes.length;
   while (i < len) {
@@ -245,10 +257,10 @@ export function resolveNode(value: HellaChild | HellaChild[], parent?: Node, ns?
     const carrier = document.createDocumentFragment();
     carrier.appendChild(anchor);
     const effectNode = parent || anchor;
-    const renderedNodes: Node[] = [];
-    registry.addEffect(effectNode, () =>
-      runReactiveChild(anchor, renderedNodes, value, effectNode, undefined, ns),
-    );
+    let nodes: Node[] | undefined = undefined;
+    registry.addEffect(effectNode, () => {
+      nodes = runReactiveChild(anchor, nodes, value, effectNode, undefined, ns);
+    });
     return carrier;
   }
   return document.createTextNode(toText(value));
@@ -315,13 +327,11 @@ export function mountNode(
 
   // Prefixed props keys ("on:click" from a component's rest-forwarding) slice
   // into their live buckets before wiring; other props render as attributes.
-  const routed = routePrefixedProps(
-    props as Record<string, unknown>,
-    on as Record<string, unknown>,
-    e as Record<string, unknown>,
-    hooks,
-    error,
-  );
+  // Feature-free bundles skip the call entirely — the identity bundle rebuild stays
+  // by design (dual wiring paths would fork the error-boundary threading for a micro win).
+  const routed = routedPropsActive
+    ? routePrefixedProps(props as Record<string, unknown>, on, e, hooks, error)
+    : { props: props as Record<string, unknown> | undefined, on, e, hooks, error };
 
   if (componentScope) {
     const state = getState(element);
@@ -336,9 +346,13 @@ export function mountNode(
       renderProp(element, key, value);
       return;
     }
+    let last: unknown = NO_VALUE;
     registry.addEffect(element, () => {
       try {
-        renderProp(element, key, value());
+        const v = value();
+        if (v === last) return;
+        last = v;
+        renderProp(element, key, v);
       } catch (err) {
         const config = getBoundaryConfig(currentBoundary);
         const fallback = dispatchError(toError(err), { phase: "update", element, config });
@@ -383,9 +397,18 @@ function appendToParent(
 ) {
   if (!children || children.length === 0) return;
 
-  if (topLevel && children.length === 1 && isString(children[0])) {
-    parent.textContent = children[0];
-    return;
+  if (topLevel && children.length === 1) {
+    const only = children[0];
+    if (isString(only)) {
+      parent.textContent = only;
+      return;
+    }
+    // String(0): happy-dom's textContent setter drops falsy values, and a raw number
+    // relies on engine-side coercion — normalize to the createTextNode result instead.
+    if (isNumber(only)) {
+      parent.textContent = String(only);
+      return;
+    }
   }
 
   // Elements self-derive the child namespace; fragments carry the insertion context's ns
@@ -419,11 +442,11 @@ function appendToParent(
       const anchor = document.createTextNode("");
       parent.appendChild(anchor);
 
-      const renderedNodes: Node[] = [];
+      let nodes: Node[] | undefined = undefined;
 
-      registry.addEffect(parent, () =>
-        runReactiveChild(anchor, renderedNodes, child, parent, currentBoundary, childNs),
-      );
+      registry.addEffect(parent, () => {
+        nodes = runReactiveChild(anchor, nodes, child, parent, currentBoundary, childNs);
+      });
 
       continue;
     }
@@ -462,27 +485,29 @@ function appendToParent(
  * the effect's first (synchronous) run the anchor may still sit in `resolveNode`'s detached
  * carrier fragment — insertion then targets that fragment, and later runs find the live parent.
  * @param anchor The persistent empty text node marking the region's position
- * @param renderedNodes The region's live node list — cleared and refilled every run
+ * @param nodes The region's live node list — cleared and refilled every run; undefined
+ * until the first node push lazily allocates it (text-only regions never allocate)
  * @param child The unresolved function child
  * @param parent The effect-registration node, and registration parent for nested regions
  * @param currentBoundary The nearest error boundary element, or undefined when unknown
  * @param ns The namespace URI inherited at the insertion site
+ * @returns The region's node list after this run — the caller's closure rebinds it for the next run
  */
 function runReactiveChild(
   anchor: Node,
-  renderedNodes: Node[],
+  nodes: Node[] | undefined,
   child: unknown,
   parent: Node,
   currentBoundary: Element | undefined,
   ns?: string,
-): void {
+): Node[] | undefined {
   const actualParent = anchor.parentNode as HellaElement;
-  if (!actualParent) return;
+  if (!actualParent) return nodes;
 
   try {
     const resolved = resolveDeep(child);
 
-    clearRenderedNodes(renderedNodes, actualParent);
+    clearRenderedNodes(nodes, actualParent);
 
     if (isFunction(resolved) && (resolved as RenderFn).isDynamic) {
       anchor.textContent = "";
@@ -490,7 +515,7 @@ function runReactiveChild(
         get(target, prop) {
           if (prop === "appendChild") {
             return (node: Node) => {
-              renderedNodes.push(node);
+              (nodes ??= []).push(node);
               return target.insertBefore(node, anchor);
             };
           }
@@ -503,7 +528,7 @@ function runReactiveChild(
       pushBuildParent(actualParent);
       (resolved as RenderFn)(proxyParent as HellaElement);
       popBuildParent();
-      return;
+      return nodes;
     }
 
     if (
@@ -518,14 +543,14 @@ function runReactiveChild(
       if (newNode.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
         let fragChild: ChildNode | null;
         while ((fragChild = newNode.firstChild)) {
-          renderedNodes.push(fragChild);
+          (nodes ??= []).push(fragChild);
           actualParent.insertBefore(fragChild, anchor);
         }
       } else {
-        renderedNodes.push(newNode);
+        (nodes ??= []).push(newNode);
         actualParent.insertBefore(newNode, anchor);
       }
-      return;
+      return nodes;
     }
 
     anchor.textContent = toText(resolved);
@@ -533,14 +558,15 @@ function runReactiveChild(
     const config = getBoundaryConfig(currentBoundary);
     const fallback = dispatchError(toError(e), { phase: "mount", element: actualParent, config });
     if (fallback) {
-      clearRenderedNodes(renderedNodes, actualParent);
+      clearRenderedNodes(nodes, actualParent);
       anchor.textContent = "";
 
       pushBuildParent(actualParent);
       const fbNode = mountNode(fallback);
       popBuildParent();
-      renderedNodes.push(fbNode);
+      (nodes ??= []).push(fbNode);
       actualParent.insertBefore(fbNode, anchor);
     }
   }
+  return nodes;
 }

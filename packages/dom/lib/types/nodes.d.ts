@@ -335,6 +335,8 @@ export interface ForEachProps<T> {
   each: T[] | (() => T[]);
   /** Render function for each item */
   use: ForEachRenderFn<T>;
+  /** Key extractor for reconciliation — takes precedence over the rendered node's `key` prop, `item.id`, and the array index (return `undefined` to fall through). Retained keys reuse their node without re-invoking `use`. Client-side reconciliation metadata; SSR ignores it. */
+  key?: (item: T, index: number) => unknown;
 }
 
 // ============================================================================

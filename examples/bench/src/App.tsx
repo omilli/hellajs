@@ -25,7 +25,11 @@ mount(
       </div>
       <table class="table table-hover table-striped test-rows">
         <tbody>
-          <ForEach each={rows} use={(row: RowSchema) => <Row row={row} />} />
+          <ForEach
+            each={rows}
+            key={(row: RowSchema) => row.id}
+            use={(row: RowSchema) => <Row row={row} />}
+          />
         </tbody>
       </table>
       <span class="preloadicon glyphicon glyphicon-remove" ariaHidden="true"></span>

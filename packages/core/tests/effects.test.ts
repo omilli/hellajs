@@ -27,6 +27,33 @@ describe("core", () => {
       expect(runs).toHaveBeenCalledTimes(2);
     });
 
+    test("empty options behave identically to omitted options", () => {
+      const count = signal(0);
+      const runs = vi.fn(() => count());
+      const stop = effect(runs, {});
+      expect(runs).toHaveBeenCalledTimes(1);
+
+      count(1);
+      expect(runs).toHaveBeenCalledTimes(2);
+
+      // An options object without `separate` still links to the running parent:
+      // the nested child detaches on dispose like a no-options effect
+      const childRuns = vi.fn(() => {});
+      let childStop: () => void = () => {};
+      effect(() => {
+        childStop = effect(childRuns, {});
+      });
+      expect(childRuns).toHaveBeenCalledTimes(1);
+      childStop();
+      count(2);
+      expect(childRuns).toHaveBeenCalledTimes(1);
+      expect(runs).toHaveBeenCalledTimes(3);
+
+      stop();
+      count(3);
+      expect(runs).toHaveBeenCalledTimes(3);
+    });
+
     test("nested effects created during a parent re-run execute immediately", () => {
       const trigger = signal(0);
       const nestedRuns = vi.fn(() => {});

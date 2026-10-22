@@ -37,28 +37,8 @@ function removeTrackedItem(item: Node, parent: Element): void {
 }
 
 /**
- * Resolves the reconciliation key for one list item: an explicit `key` prop on the rendered node,
- * else the item's `id` property, else the array index (implicit). The first two are explicit
- * identities (reuse by key); the index fallback is positional. The item's `id` is read only when
- * no explicit `key` prop is present, so keyed items never touch it.
- */
-function resolveItemKey<T>(
-  element: HellaChild,
-  item: T,
-  index: number,
-): { key: unknown; hasExplicitKey: boolean } {
-  if (element && isHellaNode(element)) {
-    const explicitKey = element.props?.key;
-    if (explicitKey !== undefined) return { key: explicitKey, hasExplicitKey: true };
-  }
-  const id = (item as { id?: unknown })?.id;
-  if (id !== undefined) return { key: id, hasExplicitKey: true };
-  return { key: index, hasExplicitKey: false };
-}
-
-/**
  * Renders and updates a list of items using keyed reconciliation.
- * Uses LIS algorithm to minimize DOM moves with multiple fast paths for optimal performance.
+ * Trims unchanged prefix/suffix runs, then diffs the middle with LIS to minimize DOM moves.
  * @template T
  * @param props Component props with each and use
  * @returns Function that mounts the list into a parent element
@@ -68,12 +48,14 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
   if (!props.each) throw new Error("[dom] ForEach: each is required");
   if (!isFunction(props.use)) throw new Error("[dom] ForEach: use must be a function");
   const { each, use } = props;
+  const extractKey = isFunction(props.key) ? props.key : undefined;
   const fn = ((parent: Element) => {
     let keyToNode = new Map<unknown, Node>(),
       keyToItem = new Map<unknown, T>(),
       currentKeys: unknown[] = [];
 
     let newKeys: unknown[] = [];
+    let newExplicit: number[] = [];
     let newKeyToNode = new Map<unknown, Node>();
     let newKeyToItem = new Map<unknown, T>();
     const nodesToRemove: Node[] = [];
@@ -90,6 +72,7 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
       keyToItem.clear();
       currentKeys.length = 0;
       newKeys.length = 0;
+      newExplicit.length = 0;
       newKeyToNode.clear();
       newKeyToItem.clear();
       nodesToRemove.length = 0;
@@ -153,7 +136,18 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
             while (index < arrLen) {
               const item = arr[index]!;
               const element = use(item, index);
-              const { key } = resolveItemKey(element, item, index);
+              let key: unknown;
+              const extracted = extractKey !== undefined ? extractKey(item, index) : undefined;
+              if (extracted !== undefined) {
+                key = extracted;
+              } else if (element && isHellaNode(element)) {
+                const vnodeKey = element.props?.key;
+                if (vnodeKey !== undefined) key = vnodeKey;
+              }
+              if (key === undefined) {
+                const id = (item as { id?: unknown })?.id;
+                key = id !== undefined ? id : index;
+              }
               const existing = hctx.existingNodes[index]!;
               if (element && isHellaNode(element) && (element as HellaNode).tag !== "$") {
                 hctx.hydrateNode(element as HellaNode, existing);
@@ -187,7 +181,18 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
           while (index < arrLen) {
             const item = arr[index]!;
             const element = use(item, index);
-            const { key } = resolveItemKey(element, item, index);
+            let key: unknown;
+            const extracted = extractKey !== undefined ? extractKey(item, index) : undefined;
+            if (extracted !== undefined) {
+              key = extracted;
+            } else if (element && isHellaNode(element)) {
+              const vnodeKey = element.props?.key;
+              if (vnodeKey !== undefined) key = vnodeKey;
+            }
+            if (key === undefined) {
+              const id = (item as { id?: unknown })?.id;
+              key = id !== undefined ? id : index;
+            }
             pushBuildParent(actualParent);
             const node = resolveNode(element, undefined, itemNs);
             popBuildParent();
@@ -205,6 +210,7 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
         }
 
         newKeys.length = 0;
+        newExplicit.length = 0;
         newKeyToNode.clear();
         newKeyToItem.clear();
         nodesToRemove.length = 0;
@@ -213,14 +219,37 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
         let index = 0;
         while (index < arrLen) {
           const item = arr[index]!;
-          const element = use(item, index);
-          const { key, hasExplicitKey } = resolveItemKey(element, item, index);
-
-          newKeys.push(key);
+          let element: HellaChild | undefined;
+          let key: unknown;
+          let explicit = false;
+          const extracted = extractKey !== undefined ? extractKey(item, index) : undefined;
+          if (extracted !== undefined) {
+            key = extracted;
+            explicit = true;
+            // Extractor present: retained keys reuse their live node without re-invoking use.
+            if (!keyToNode.has(key)) element = use(item, index);
+          } else {
+            element = use(item, index);
+            if (element && isHellaNode(element)) {
+              const vnodeKey = element.props?.key;
+              if (vnodeKey !== undefined) {
+                key = vnodeKey;
+                explicit = true;
+              }
+            }
+            if (key === undefined) {
+              const id = (item as { id?: unknown })?.id;
+              if (id !== undefined) {
+                key = id;
+                explicit = true;
+              } else {
+                key = index;
+              }
+            }
+          }
 
           let node = keyToNode.get(key);
-          const oldItem = keyToItem.get(key);
-          if (!node || (!hasExplicitKey && oldItem !== item)) {
+          if (element !== undefined && (!node || (!explicit && keyToItem.get(key) !== item))) {
             pushBuildParent(actualParent);
             const resolved = resolveNode(element, undefined, itemNs);
             popBuildParent();
@@ -229,16 +258,19 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
             }
             node = resolved;
           }
-          newKeyToNode.set(key, node);
+          newKeys.push(key);
+          newExplicit.push(explicit ? 1 : 0);
+          newKeyToNode.set(key, node!);
           newKeyToItem.set(key, item);
           index++;
         }
 
-        const existingEntries = Array.from(keyToNode.entries());
-        let ki = 0;
-        const kLen = existingEntries.length;
-        while (ki < kLen) {
-          const [key, node] = existingEntries[ki++]!;
+        const iter = keyToNode.entries();
+        let entry = iter.next();
+        while (!entry.done) {
+          const key = entry.value[0];
+          const node = entry.value[1];
+          entry = iter.next();
           if (node.parentNode !== actualParent) continue;
           const newNode = newKeyToNode.get(key);
           (!newNode || newNode !== node) && nodesToRemove.push(node);
@@ -252,118 +284,143 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
         }
         nodesToRemove.length = 0;
 
-        let hasMatchingKey = false;
-        const newKeysLen = newKeys.length;
-        let k = 0;
-        while (k < newKeysLen) {
-          if (keyToNode.has(newKeys[k])) {
-            hasMatchingKey = true;
-            break;
-          }
-          k++;
+        // Prefix/suffix trim: positions whose key, node identity, and reuse class are unchanged
+        // skip the diff entirely. Index-fallback keys must also hold the item reference, or a
+        // positionally-equal replacement would trim stale content.
+        const newLen = newKeys.length;
+        const oldLen = currentKeys.length;
+        const maxTrim = newLen < oldLen ? newLen : oldLen;
+        let prefix = 0;
+        while (
+          prefix < maxTrim &&
+          newKeys[prefix] === currentKeys[prefix] &&
+          newKeyToNode.get(newKeys[prefix]) === keyToNode.get(currentKeys[prefix]) &&
+          (newExplicit[prefix] === 1 || keyToItem.get(currentKeys[prefix]) === arr[prefix])
+        ) {
+          prefix++;
         }
-        if (!hasMatchingKey && newKeysLen > 0) {
-          const fragment = document.createDocumentFragment();
-          let fi = 0;
-          const fLen = newKeys.length;
-          while (fi < fLen) {
-            fragment.appendChild(newKeyToNode.get(newKeys[fi]!)!);
-            fi++;
-          }
-          actualParent.insertBefore(fragment, anchor);
-        } else {
+        let suffix = 0;
+        const maxSuffix = maxTrim - prefix;
+        while (
+          suffix < maxSuffix &&
+          newKeys[newLen - 1 - suffix] === currentKeys[oldLen - 1 - suffix] &&
+          newKeyToNode.get(newKeys[newLen - 1 - suffix]) ===
+            keyToNode.get(currentKeys[oldLen - 1 - suffix]) &&
+          (newExplicit[newLen - 1 - suffix] === 1 ||
+            keyToItem.get(currentKeys[oldLen - 1 - suffix]) === arr[newLen - 1 - suffix])
+        ) {
+          suffix++;
+        }
+
+        const midEnd = newLen - suffix;
+        if (midEnd > prefix) {
           keyToOldIndex.clear();
           toMove.clear();
-          const currentKeysLen = currentKeys.length,
-            curKeysLen = newKeys.length;
-          let i = 0;
-          while (i < curKeysLen) {
-            toMove.add(i);
-            i++;
+          const oldMidEnd = oldLen - suffix;
+          let oi = prefix;
+          while (oi < oldMidEnd) {
+            keyToOldIndex.set(currentKeys[oi], oi);
+            oi++;
           }
 
-          i = 0;
-          while (i < currentKeysLen) {
-            keyToOldIndex.set(currentKeys[i], i);
-            i++;
-          }
-
-          const mapped = new Array(curKeysLen);
-          i = 0;
-          while (i < curKeysLen) {
-            const key = newKeys[i];
+          const midLen = midEnd - prefix;
+          const mapped = new Array(midLen);
+          let hasRetained = false;
+          let mi = 0;
+          while (mi < midLen) {
+            toMove.add(mi);
+            const key = newKeys[prefix + mi];
             const oldNode = keyToNode.get(key);
             const newNode = newKeyToNode.get(key);
-            mapped[i] = oldNode && oldNode === newNode ? (keyToOldIndex.get(key) ?? -1) : -1;
-            i++;
+            if (oldNode && oldNode === newNode) {
+              mapped[mi] = keyToOldIndex.get(key) ?? -1;
+              hasRetained = true;
+            } else {
+              mapped[mi] = -1;
+            }
+            mi++;
           }
 
-          const n = mapped.length;
-          const tails: number[] = [];
-          const prevIndices = new Array(n).fill(-1);
-          let keyIndexed = 0;
+          // Insertion boundary: first suffix node, else the region anchor. Moves and inserts
+          // never touch trimmed positions.
+          const boundary = suffix > 0 ? newKeyToNode.get(newKeys[midEnd])! : anchor;
+          if (!hasRetained) {
+            // Every middle key is fresh — one batched fragment insert before the boundary.
+            const fragment = document.createDocumentFragment();
+            let fi = prefix;
+            while (fi < midEnd) {
+              fragment.appendChild(newKeyToNode.get(newKeys[fi])!);
+              fi++;
+            }
+            actualParent.insertBefore(fragment, boundary);
+          } else {
+            const tails: number[] = [];
+            const prevIndices = new Array(midLen).fill(-1);
+            let ki = 0;
 
-          while (keyIndexed < n) {
-            if (mapped[keyIndexed] === -1) {
-              keyIndexed++;
-              continue;
+            while (ki < midLen) {
+              if (mapped[ki] === -1) {
+                ki++;
+                continue;
+              }
+
+              let left = 0,
+                right = tails.length;
+
+              while (left < right) {
+                const mid = Math.floor((left + right) / 2);
+                if (mapped[tails[mid]!] < mapped[ki]) {
+                  left = mid + 1;
+                } else {
+                  right = mid;
+                }
+              }
+
+              left > 0 && (prevIndices[ki] = tails[left - 1]);
+
+              if (left === tails.length) {
+                tails.push(ki);
+              } else {
+                tails[left] = ki;
+              }
+              ki++;
             }
 
-            let left = 0,
-              right = tails.length;
-
-            while (left < right) {
-              const mid = Math.floor((left + right) / 2);
-              if (mapped[tails[mid]!] < mapped[keyIndexed]) {
-                left = mid + 1;
-              } else {
-                right = mid;
+            const lis: number[] = [];
+            if (tails.length > 0) {
+              let curr = tails[tails.length - 1]!;
+              while (curr !== -1) {
+                lis.unshift(curr);
+                curr = prevIndices[curr]!;
               }
             }
 
-            left > 0 && (prevIndices[keyIndexed] = tails[left - 1]);
-
-            if (left === tails.length) {
-              tails.push(keyIndexed);
-            } else {
-              tails[left] = keyIndexed;
+            const lisLen = lis.length;
+            let li = 0;
+            while (li < lisLen) {
+              toMove.delete(lis[li]!);
+              li++;
             }
-            keyIndexed++;
-          }
 
-          const lis: number[] = [];
-          if (tails.length > 0) {
-            let curr = tails[tails.length - 1]!;
-            while (curr !== -1) {
-              lis.unshift(curr);
-              curr = prevIndices[curr]!;
+            let moveAnchor: Node | null = boundary;
+            let wi = midEnd - 1;
+            while (wi >= prefix) {
+              const node = newKeyToNode.get(newKeys[wi])!;
+              toMove.has(wi - prefix) && actualParent.insertBefore(node, moveAnchor);
+              moveAnchor = node;
+              wi--;
             }
-          }
-
-          const lisLen = lis.length;
-          let j = 0;
-          while (j < lisLen) {
-            toMove.delete(lis[j]!);
-            j++;
-          }
-
-          let moveAnchor: Node | null = anchor;
-          i = newKeys.length - 1;
-
-          while (i >= 0) {
-            const node = newKeyToNode.get(newKeys[i])!;
-            toMove.has(i) && actualParent.insertBefore(node, moveAnchor);
-            moveAnchor = node;
-            i--;
           }
         }
 
         const tempNode = keyToNode;
         const tempItem = keyToItem;
         const tempKeys = currentKeys;
+        const tempExplicit = newExplicit;
         keyToNode = newKeyToNode;
         keyToItem = newKeyToItem;
         currentKeys = newKeys;
+        newExplicit = tempExplicit;
         newKeyToNode = tempNode;
         newKeyToItem = tempItem;
         newKeys = tempKeys;

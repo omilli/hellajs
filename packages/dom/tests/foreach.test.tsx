@@ -1,9 +1,9 @@
-import { describe, test, expect, beforeEach } from "vite-plus/test";
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState } from "@utils/test-helpers.js";
 import { mount, ForEach, peekState } from "@hellajs/dom";
 import type { Signal } from "@hellajs/core";
-import { createList, getListTexts } from "./helpers";
+import { createList, createKeyedList, getListTexts } from "./helpers";
 
 interface TestItem {
   id: number;
@@ -545,6 +545,155 @@ describe("dom", () => {
 
       expect(document.querySelectorAll(".row").length).toBe(300);
       expect(getListTexts()[0]).toBe("New 0");
+    });
+
+    test("extractor reconciles retained keys without re-invoking use", () => {
+      const items = signal<TestItem[]>([
+        { id: 1, name: "A" },
+        { id: 2, name: "B" },
+      ]);
+      const renderer = vi.fn((item: TestItem) => <li>{item.name}</li>);
+
+      mount(() => createKeyedList(items, (item) => item.id, renderer));
+      expect(renderer).toHaveBeenCalledTimes(2);
+
+      const current = items();
+      items([current[0]!, current[1]!]);
+      flush();
+      expect(renderer).toHaveBeenCalledTimes(2);
+      expect(getListTexts()).toEqual(["A", "B"]);
+
+      items([current[0]!, current[1]!, { id: 3, name: "C" }]);
+      flush();
+      expect(renderer).toHaveBeenCalledTimes(3);
+      expect(getListTexts()).toEqual(["A", "B", "C"]);
+    });
+
+    test("extractor reuses the node for a same-key different-item reference", () => {
+      const items = signal<TestItem[]>([{ id: 1, name: "A" }]);
+      const renderer = (item: TestItem) => <li>{item.name}</li>;
+
+      mount(() => createKeyedList(items, (item) => item.id, renderer));
+      const nodeBefore = document.querySelector("li");
+
+      items([{ id: 1, name: "A-prime" }]);
+      flush();
+      expect(document.querySelector("li")).toBe(nodeBefore);
+      expect(nodeBefore?.textContent).toBe("A");
+    });
+
+    test("extractor reorders the DOM when two middle items swap", () => {
+      const alice = { id: 1, name: "Alice" };
+      const bob = { id: 2, name: "Bob" };
+      const charlie = { id: 3, name: "Charlie" };
+      const items = signal<TestItem[]>([alice, bob, charlie]);
+      const renderer = (item: TestItem) => <li>{item.name}</li>;
+
+      mount(() => createKeyedList(items, (item) => item.id, renderer));
+      const liNodes = Array.from(document.querySelectorAll("li"));
+
+      items([charlie, alice, bob]);
+      flush();
+
+      const reorderedNodes = Array.from(document.querySelectorAll("li"));
+      expect(getListTexts()).toEqual(["Charlie", "Alice", "Bob"]);
+      expect(reorderedNodes[0]).toBe(liNodes[2]);
+      expect(reorderedNodes[1]).toBe(liNodes[0]);
+      expect(reorderedNodes[2]).toBe(liNodes[1]);
+    });
+
+    test("extractor initial render invokes use once per item", () => {
+      const items = signal<TestItem[]>([
+        { id: 1, name: "A" },
+        { id: 2, name: "B" },
+      ]);
+      const renderer = vi.fn((item: TestItem) => <li>{item.name}</li>);
+
+      mount(() => createKeyedList(items, (item) => item.id, renderer));
+
+      expect(renderer).toHaveBeenCalledTimes(2);
+      expect(getListTexts()).toEqual(["A", "B"]);
+    });
+
+    test("append-only update leaves prefix nodes untouched and inserts the tail in order", () => {
+      const a = { id: 1, name: "A" };
+      const b = { id: 2, name: "B" };
+      const items = signal<TestItem[]>([a, b]);
+      const renderer = (item: TestItem) => <li>{item.name}</li>;
+
+      mount(() => createKeyedList(items, (item) => item.id, renderer));
+      const nodesBefore = Array.from(document.querySelectorAll("li"));
+
+      items([a, b, { id: 3, name: "C" }, { id: 4, name: "D" }]);
+      flush();
+
+      const nodesAfter = Array.from(document.querySelectorAll("li"));
+      expect(getListTexts()).toEqual(["A", "B", "C", "D"]);
+      expect(nodesAfter[0]).toBe(nodesBefore[0]);
+      expect(nodesAfter[1]).toBe(nodesBefore[1]);
+    });
+
+    test("removing a middle item removes exactly one node and leaves siblings untouched", () => {
+      const items = signal<TestItem[]>([
+        { id: 1, name: "A" },
+        { id: 2, name: "B" },
+        { id: 3, name: "C" },
+      ]);
+      const renderer = (item: TestItem) => <li>{item.name}</li>;
+
+      mount(() => createKeyedList(items, (item) => item.id, renderer));
+      const nodesBefore = Array.from(document.querySelectorAll("li"));
+
+      items([items()[0]!, items()[2]!]);
+      flush();
+
+      const nodesAfter = Array.from(document.querySelectorAll("li"));
+      expect(getListTexts()).toEqual(["A", "C"]);
+      expect(nodesAfter[0]).toBe(nodesBefore[0]);
+      expect(nodesAfter[1]).toBe(nodesBefore[2]);
+    });
+
+    test("full replacement mounts new items through one batched fragment insert", () => {
+      const items = signal<TestItem[]>([
+        { id: 1, name: "A" },
+        { id: 2, name: "B" },
+      ]);
+      const renderer = (item: TestItem) => <li>{item.name}</li>;
+
+      mount(() => createKeyedList(items, (item) => item.id, renderer));
+      const list = document.querySelector("ul")!;
+      const insertSpy = vi.spyOn(list, "insertBefore");
+
+      items([
+        { id: 10, name: "X" },
+        { id: 20, name: "Y" },
+        { id: 30, name: "Z" },
+      ]);
+      flush();
+
+      expect(getListTexts()).toEqual(["X", "Y", "Z"]);
+      const fragmentInserts = insertSpy.mock.calls.filter(
+        ([node]) => node.nodeType === Node.DOCUMENT_FRAGMENT_NODE,
+      );
+      expect(fragmentInserts.length).toBe(1);
+      insertSpy.mockRestore();
+    });
+
+    test("index-fallback keys re-create the node when a new item reference lands at the same position", () => {
+      interface IndexItem {
+        name: string;
+      }
+      const items = signal<IndexItem[]>([{ name: "A" }]);
+      const renderer = (item: IndexItem) => <li>{item.name}</li>;
+
+      mount(() => createList(items, renderer));
+      const nodeBefore = document.querySelector("li");
+
+      items([{ name: "A" }]);
+      flush();
+
+      expect(document.querySelector("li")).not.toBe(nodeBefore);
+      expect(getListTexts()).toEqual(["A"]);
     });
   });
 });

@@ -40,5 +40,45 @@ describe("core", () => {
       expect(childRuns).toHaveBeenCalledTimes(1);
       expect(parentRuns).toHaveBeenCalledTimes(1);
     });
+
+    test("a separate effect tracks and disposes independently of its creating parent", () => {
+      const count = signal(0);
+      const childRuns = vi.fn(() => count());
+      let childStop: () => void = () => {};
+      effect(() => {
+        childStop = effect(childRuns, { separate: true });
+      });
+      expect(childRuns).toHaveBeenCalledTimes(1);
+
+      // Tracks its own dependencies: re-runs on writes to them
+      count(1);
+      expect(childRuns).toHaveBeenCalledTimes(2);
+
+      // The returned cleanup disposes it
+      childStop();
+      count(2);
+      expect(childRuns).toHaveBeenCalledTimes(2);
+    });
+
+    test("a parent re-run neither disposes nor re-runs its separate child", () => {
+      const parentDep = signal(0);
+      const childDep = signal(0);
+      const childRuns = vi.fn(() => childDep());
+      effect(() => {
+        parentDep();
+        effect(childRuns, { separate: true });
+      });
+      expect(childRuns).toHaveBeenCalledTimes(1); // first child's synchronous first run
+
+      // The parent re-run registers a fresh separate child (+1 for its first run);
+      // the first child itself was neither re-run (would be 3) nor disposed (would
+      // stop at 1) by the parent's re-run
+      parentDep(1);
+      expect(childRuns).toHaveBeenCalledTimes(2);
+
+      // Both children are alive and track their own dependency (+2)
+      childDep(1);
+      expect(childRuns).toHaveBeenCalledTimes(4);
+    });
   });
 });

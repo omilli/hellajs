@@ -19,9 +19,17 @@ type RunEffectHooksFn = (node: Node, state: ElementState, effectFn: () => void) 
 const addHookNoop: AddHookFn = () => {};
 
 /**
+ * Registration-time gate: flipped only by {@link setHooksFeature}. Features load at
+ * module init (before any render), so an effect registered while this is false takes
+ * the bare path and never gains the update-hook bracket at run time.
+ */
+let hooksFeatureActive = false;
+
+/**
  * @internal
- * Runs one registered effect body. The default (hooks feature not loaded) runs the
- * body bare — no hook was ever registered, so the update-hook bracket is dead weight.
+ * Placeholder for the update-hook bracket — never invoked while default: the
+ * feature-less `addEffect` path registers the body bare, bypassing this seam
+ * entirely. Replaced when the hooks feature loads.
  *
  * Exported `let` is deliberate: the feature swaps the implementation at module init
  * through {@link setHooksFeature} (the `setMountNode` injection pattern) while every
@@ -51,16 +59,22 @@ export const registry = {
    * Registers a reactive effect on an element with update hooks.
    * Accumulative: multiple calls stack effects on the same element.
    * Effect is automatically disposed when element is removed from DOM.
-   * The beforeUpdate/afterUpdate bracket is the hooks feature's `runEffectHooks`
-   * (a bare body run when the feature is not loaded).
+   * The effect is registered `separate` — the effects array owns its lifetime, no
+   * parent link to the enclosing effect.
+   * While the hooks feature is loaded the body routes through the feature's
+   * `runEffectHooks` (the beforeUpdate/afterUpdate bracket); unloaded, the body
+   * registers bare — no wrapper closure.
    * @param node Target node
    * @param effectFn Effect function to run
    */
   addEffect(node: Node, effectFn: () => void) {
     const state = getState(node);
     const effects = state.effects ?? (state.effects = []);
-    const dispose = effect(() => runEffectHooks(node, state, effectFn));
-    effects.push(dispose);
+    if (hooksFeatureActive) {
+      effects.push(effect(() => runEffectHooks(node, state, effectFn), { separate: true }));
+    } else {
+      effects.push(effect(effectFn, { separate: true }));
+    }
   },
 
   /**
@@ -88,4 +102,5 @@ export const registry = {
 export function setHooksFeature(feature: HooksFeature): void {
   registry.addHook = feature.addHook;
   runEffectHooks = feature.runEffectHooks;
+  hooksFeatureActive = true;
 }

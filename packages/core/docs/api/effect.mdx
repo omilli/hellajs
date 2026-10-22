@@ -5,9 +5,14 @@ Runs automatically when reactive dependencies change.
 ## API
 
 ```typescript
-function effect(effectFn: () => unknown): () => void
+function effect(effectFn: () => unknown, options?: EffectOptions): () => void
+
+interface EffectOptions {
+  separate?: boolean;
+}
 ```
 - `effectFn`: Re-executed whenever a signal read inside it changes. May return a cleanup function that runs before re-execution and on disposal.
+- `options`: Optional behavior switches. Pass `{ separate: true }` to register the effect without linking it to the effect that is currently running: it tracks, runs, and disposes independently, and whoever holds the returned cleanup owns its lifetime.
 - **Returns**: A function that stops the effect and prevents further executions
 
 ## Basic Usage
@@ -81,6 +86,25 @@ const cleanup = effect(() => {
 
 active(false); // Cleanup runs (interval cleared), effect returns undefined
 cleanup();     // Effect stopped (no cleanup pending: last execution returned undefined)
+```
+
+### Separate Effects
+
+Passing `{ separate: true }` registers an effect that never links to the effect running at creation time. The separate effect still tracks the signals it reads and re-runs when they change, but only its own returned cleanup disposes it: re-running or disposing a surrounding effect leaves it untouched. Use it when an external registry owns the effect's lifetime.
+
+```typescript
+import { signal, effect } from "@hellajs/core";
+
+const name = signal("Ada");
+const el = document.createElement("div");
+
+// Registered separate: no parent link, the caller owns the lifetime
+const dispose = effect(() => (el.textContent = name()), { separate: true });
+
+name("Grace"); // el.textContent updates to "Grace"
+
+dispose(); // The caller disposes it when done
+name("Alan"); // No further updates
 ```
 
 ## Important Considerations

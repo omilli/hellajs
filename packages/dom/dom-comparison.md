@@ -87,16 +87,16 @@ A distinctive HellaJS ergonomic: passing a bare signal reference creates a live 
 
 `ForEach` (`lib/ForEach.ts`) is a hand-tuned keyed reconciler:
 
-- Three fast paths: **first render** builds into a `DocumentFragment` with a single `insertBefore`; **zero-overlap replacement** swaps the whole list via one fragment; **empty list** clears tracked nodes in one batch (`lib/ForEach.ts`).
-- The complex case runs a binary-search LIS and moves only non-longest-increasing-subsequence nodes, walking keys backwards with a rolling move anchor (`lib/ForEach.ts`).
-- Key resolution: `key` prop → `item.id` → array index (`lib/ForEach.ts`).
-- Explicit keys reuse nodes by key identity regardless of item reference; index-fallback keys additionally require the same item reference, preventing accidental reuse on shuffled data (`lib/ForEach.ts`).
+- Fast paths: **first render** builds into a `DocumentFragment` with a single `insertBefore`; **prefix/suffix trim** skips all diff machinery for unchanged runs at either end; a middle with **no retained keys** (zero-overlap replacement included) mounts through one fragment inserted before the boundary node; **empty list** clears tracked nodes in one batch (`lib/ForEach.ts`).
+- The complex case runs a binary-search LIS over the trimmed middle and moves only non-longest-increasing-subsequence nodes, walking keys backwards with a rolling move anchor (`lib/ForEach.ts`).
+- Key resolution: the `ForEach` `key` extractor → the rendered `key` prop → `item.id` → array index; with the extractor present, retained keys reuse their node without re-invoking `use` (`lib/ForEach.ts`).
+- Explicit-class keys (extractor, `key` prop, `item.id`) reuse nodes by key identity regardless of item reference; index-fallback keys additionally require the same item reference, preventing accidental reuse on shuffled data (`lib/ForEach.ts`).
 - Items are single-root: a `use` result must resolve to one element or text node; a multi-root fragment (`<>…</>`), an array of nodes, or multi-root raw HTML throws at item build (`lib/ForEach.ts`). Multi-node rows require an explicit wrapper element.
 - Live collections (`keyToNode`, `keyToItem`, `currentKeys`) swap by reference with temp collections reused across renders: no per-update Map allocation (`lib/ForEach.ts`).
 
 | Framework | Algorithm |
 |---|---|
-| HellaJS | LIS + three fast paths, keyed, collection reuse |
+| HellaJS | LIS + prefix/suffix trim, keyed, collection reuse |
 | Solid | `<For>` keyed by reference; `<Index>` unkeyed |
 | Svelte 5 | Compiled keyed `{#each}` with optimized diff |
 | React | Child-array reconciliation with keys (LIS-based moves) |
@@ -279,7 +279,7 @@ Single-syntax JSX keeps the authoring surface small: one way to write a componen
 
 ## Bottom Line
 
-Architecturally, HellaJS dom is a sibling to Solid and a cousin to Svelte, firmly in the fine-grained-reactive, no-virtual-DOM camp, with React and Vue on the other side of the diffing line and Angular running the heaviest platform. Its surgical per-binding effects, LIS reconciler with three fast paths, dual cleanup system, compile-time static hoisting, and WeakMap element state are competitive with the established players on raw mechanism.
+Architecturally, HellaJS dom is a sibling to Solid and a cousin to Svelte, firmly in the fine-grained-reactive, no-virtual-DOM camp, with React and Vue on the other side of the diffing line and Angular running the heaviest platform. Its surgical per-binding effects, LIS reconciler with trim fast paths, dual cleanup system, compile-time static hoisting, and WeakMap element state are competitive with the established players on raw mechanism.
 
 What sets HellaJS apart (and no single competitor matches all of):
 

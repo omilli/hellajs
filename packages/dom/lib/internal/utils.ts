@@ -1,4 +1,4 @@
-import { isFunction, isPlainObject, isObject, isFalsy } from "./core";
+import { isFunction, isPlainObject, isObject, isFalsy, isString } from "./core";
 import { getState, peekState, registerOverlay } from "./state";
 import { traverseDescendants } from "./cleanup";
 import type { HellaNode, HellaElement, RenderFn, ElementHooks, ErrorConfig } from "../types/nodes";
@@ -64,6 +64,15 @@ export function renderProp(element: HellaElement, key: string, value: unknown) {
   }
   if (isFalsyVal) {
     element.removeAttribute(key);
+    return;
+  }
+  if (key === "class" && isString(value) && element instanceof HTMLElement) {
+    // Hottest reactive prop: the className setter is spec-equivalent to
+    // setAttribute("class", …) for string values on HTML elements. The string guard
+    // keeps arrays (space-joined), `true` (empty attribute), and SVG elements —
+    // className is a readonly SVGAnimatedString accessor there in some engines — on
+    // the generic paths below.
+    element.className = value;
     return;
   }
   if (key === "style" && isPlainObject(value)) {
@@ -139,6 +148,17 @@ export let routePrefixedProps: (
 
 /**
  * @internal
+ * Whether the routed-props feature has registered its resolver — `mountNode` skips the
+ * {@link routePrefixedProps} seam call (and its live-binding indirection) entirely on
+ * feature-free bundles.
+ * Exported `let` is deliberate: flipped once at module init through
+ * {@link setRoutedPropsResolver} (the `setMountNode` injection pattern) while every
+ * importer keeps the live binding.
+ */
+export let routedPropsActive = false;
+
+/**
+ * @internal
  * Registers the routed-props feature's resolver (the `setMountNode` injection pattern —
  * the implementation lives in `lib/features/routed-props.ts` so unused prefixed-prop
  * routing tree-shakes out of bundles that never forward prefixed attrs to components).
@@ -146,6 +166,7 @@ export let routePrefixedProps: (
  */
 export function setRoutedPropsResolver(resolver: typeof routePrefixedProps): void {
   routePrefixedProps = resolver;
+  routedPropsActive = true;
 }
 
 /**

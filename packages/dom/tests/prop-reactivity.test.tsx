@@ -21,6 +21,54 @@ describe("dom", () => {
       expect(el.className).toBe("second");
     });
 
+    test("an identical recompute skips the attribute rewrite", () => {
+      // `equals: () => false` forces every write to propagate, so the effect re-runs
+      // and recomputes the same string — a plain signal short-circuits equal writes
+      // before the effect could re-run, which would pass vacuously.
+      const cls = signal("row", { equals: () => false });
+      mount(<div id="rt" class={cls}></div>);
+      const el = document.getElementById("rt")!;
+      expect(el.className).toBe("row");
+
+      el.className = "manual";
+      cls("row");
+      flush();
+      expect(el.className).toBe("manual");
+
+      cls("other");
+      flush();
+      expect(el.className).toBe("other");
+    });
+
+    test("a falsy computed value removes the attribute", () => {
+      const flag = signal<string | false>("on");
+      mount(<div id="rt" data-flag={flag}></div>);
+      const el = document.getElementById("rt")!;
+      expect(el.hasAttribute("data-flag")).toBe(true);
+
+      flag(false);
+      flush();
+      expect(el.hasAttribute("data-flag")).toBe(false);
+    });
+
+    test("an array-valued class prop still joins with spaces on an HTML element", () => {
+      mount(<div id="rt" class={["a", "b"]}></div>);
+      expect(document.getElementById("rt")!.getAttribute("class")).toBe("a b");
+    });
+
+    test("a reactive class prop renders via className and stays classList-visible", () => {
+      const cls = signal("btn primary");
+      mount(<div id="rt" class={cls}></div>);
+      const el = document.getElementById("rt")!;
+      expect(el.getAttribute("class")).toBe("btn primary");
+      expect(el.classList.contains("primary")).toBe(true);
+
+      cls("btn");
+      flush();
+      expect(el.getAttribute("class")).toBe("btn");
+      expect(el.classList.contains("primary")).toBe(false);
+    });
+
     test("an explicit wrapper prop is reactive", () => {
       const active = signal(false);
       mount(<div id="rt" data-state={() => (active() ? "on" : "off")}></div>);

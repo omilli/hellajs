@@ -8,10 +8,12 @@ Efficiently renders dynamic lists with intelligent DOM diffing and key-based opt
 function ForEach<T>(props: {
   each: T[] | (() => T[]);
   use: (item: T, index: number) => HellaChild;
+  key?: (item: T, index: number) => unknown;
 }): JSX.Element
 ```
 - `each`: An array, a [`signal`](/reference/core/signal) containing an array, or a function that returns an array. Signals work because they are callable.
 - `use`: A function that is called for each item in the array and should return a renderable node.
+- `key`: An optional key extractor called with each item and its index during reconciliation. Takes precedence over the rendered element's `key` prop, the item's `id`, and the array index. Client-side reconciliation metadata; SSR ignores it.
 
 ## Basic Usage
 
@@ -35,7 +37,7 @@ const items = signal(["Apple", "Banana", "Cherry"]);
 
 ### Key-Based Optimization
 
-Use the `key` prop for optimal reconciliation. Explicit keys use key-only comparison: same key always reuses the DOM node, even if the item reference changes. The `key` prop is reconciliation metadata only: it never appears as a DOM attribute, in mounted or server-rendered HTML.
+Use explicit keys for optimal reconciliation. Explicit keys use key-only comparison: same key always reuses the DOM node, even if the item reference changes. The `key` prop on a rendered element is reconciliation metadata only: it never appears as a DOM attribute, in mounted or server-rendered HTML.
 
 ```jsx
 import { signal } from "@hellajs/core";
@@ -75,10 +77,32 @@ const Users = () =>
   </ul>
 ```
 
+For the strongest key control, pass a `key` extractor directly to `ForEach`. It resolves before the rendered element's `key` prop, the item's `id`, and the array index (return `undefined` to fall through to that chain). On reconcile, retained keys reuse their live node without re-invoking `use`, so only new items render. The extractor is client-side reconciliation metadata: the server renderer reads only `each` and `use` from the list, so SSR output is unaffected.
+
+```jsx
+import { signal } from "@hellajs/core";
+import { ForEach } from "@hellajs/dom";
+
+const rows = signal([
+  { id: 1, label: "Foo" },
+  { id: 2, label: "Bar" }
+]);
+
+const Rows = () =>
+  <ul>
+    <ForEach
+      each={rows}
+      key={(row: { id: number; label: string }) => row.id}
+      use={(row: { id: number; label: string }) => <li>{row.label}</li>}
+    />
+  </ul>
+```
+
 Key resolution order:
-1. Explicit `key` prop on the rendered element
-2. `id` property on the source item
-3. Array index (fallback)
+1. The `ForEach` `key` extractor prop
+2. Explicit `key` prop on the rendered element
+3. `id` property on the source item
+4. Array index (fallback)
 
 ### Single-Root Items
 
@@ -139,7 +163,7 @@ todos().push(newItem);
 
 ### Key Stability
 
-Use stable, unique keys (like database IDs) rather than array indices. An explicit `key` (or the item's `id` property) reuses the DOM node by key identity even when the item reference changes, and the reused node's content is not re-rendered, so updates must flow through signals. Items with neither fall back to index keys, which compare by reference instead: a new item reference re-creates the DOM node. An explicit `key={index}` takes the reuse path too, keeping the old node for a new item and leaving non-signal content stale.
+Use stable, unique keys (like database IDs) rather than array indices. An explicit key (the `key` extractor, the rendered element's `key` prop, or the item's `id` property) reuses the DOM node by key identity even when the item reference changes, and the reused node's content is not re-rendered, so updates must flow through signals. Items with neither fall back to index keys, which compare by reference instead: a new item reference re-creates the DOM node. An explicit `key={index}` takes the reuse path too, keeping the old node for a new item and leaving non-signal content stale.
 
 ```jsx
 // ✅ Stable keys: same key reuses DOM node regardless of reference

@@ -19,6 +19,25 @@ export const createList = <T,>(
   </ul>
 );
 
+/**
+ * Renders `items` through ForEach with a `key` extractor inside a `<ul>` — the default renderer
+ * wraps each item in a keyless `<li>` (the extractor supersedes the vnode `key` prop); pass
+ * `itemRenderer` to control the per-item markup. Shared by the ForEach test files.
+ */
+export const createKeyedList = <T,>(
+  items: T[] | (() => T[]),
+  getKey: (item: T, index: number) => unknown,
+  itemRenderer?: (item: T) => HellaChild,
+): HellaNode => (
+  <ul>
+    <ForEach
+      each={items}
+      key={getKey}
+      use={itemRenderer || ((item: T) => <li>Item {item}</li>)}
+    ></ForEach>
+  </ul>
+);
+
 /** Text content of every `<li>` currently in the document, in DOM order. */
 export const getListTexts = () =>
   Array.from(document.querySelectorAll("li")).map((li) => li.textContent);

@@ -28,6 +28,7 @@ import {
   clearRenderedNodes,
   childNamespaceOf,
   HTML_NS,
+  NO_VALUE,
 } from "./render";
 import { drainAnchorCleanup } from "./cleanup";
 
@@ -458,9 +459,13 @@ export function hydrateNode(
   // Static props already applied by ssr(); wire only function-ref props as effects
   objectLoop(routed.props, (key, value) => {
     if (!isFunction(value)) return;
+    let last: unknown = NO_VALUE;
     registry.addEffect(element, () => {
       try {
-        renderProp(element, key, value());
+        const v = value();
+        if (v === last) return;
+        last = v;
+        renderProp(element, key, v);
       } catch (err) {
         const config = getBoundaryConfig(currentBoundary);
         const fallback = dispatchError(toError(err), { phase: "update", element, config });

@@ -37,7 +37,7 @@ registry.addEffect(element, () => {
 });
 ```
 
-Effects also trigger `beforeUpdate` and `afterUpdate` hooks when the element is mounted. Dynamic components (`ForEach`, `Transition`) register their internal effect on their own anchor, so a parent element's `hook:beforeUpdate`/`hook:afterUpdate` do not fire for list or visibility updates.
+Effects also trigger `beforeUpdate` and `afterUpdate` hooks when the element is mounted, provided the hooks feature is loaded. Any `hook:` prop or `$ref` usage loads it automatically at startup, so ordinary apps always see the bracket; only a custom bundle built without the feature registers effects without it (effects registered before the feature loads never gain the bracket retroactively). Dynamic components (`ForEach`, `Transition`) register their internal effect on their own anchor, so a parent element's `hook:beforeUpdate`/`hook:afterUpdate` do not fire for list or visibility updates.
 
 ### `addHook`
 

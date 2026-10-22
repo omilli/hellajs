@@ -102,6 +102,22 @@ describe("dom", () => {
       expect(text.textContent).toBe("b");
     });
 
+    test("sets a reactive class prop as an attribute on an svg path element", () => {
+      const cls = signal("edge");
+      mount(
+        <svg>
+          <path id="seg" class={cls} d="M0 0 L10 10"></path>
+        </svg>,
+      );
+
+      const path = document.getElementById("seg")!;
+      expect(path.getAttribute("class")).toBe("edge");
+
+      cls("hot");
+      flush();
+      expect(path.getAttribute("class")).toBe("hot");
+    });
+
     test("resolves Lazy children into the SVG namespace under an <svg> parent", async () => {
       const App = () => (
         <svg id="icon">

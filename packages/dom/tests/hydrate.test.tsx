@@ -77,6 +77,21 @@ describe("dom", () => {
       expect(elAfter.className).toBe("updated");
     });
 
+    test("removes a server-rendered attribute when the hydrate twin's first computed value is falsy", () => {
+      const flag = signal<string | undefined>("yes");
+      const App = () => (
+        <div id="root" data-on={flag}>
+          Hi
+        </div>
+      );
+      const container = ssrContainer(<App></App>);
+      expect(container.querySelector("#root")!.hasAttribute("data-on")).toBe(true);
+
+      flag(undefined);
+      hydrate(<App></App>, container);
+      expect(container.querySelector("#root")!.hasAttribute("data-on")).toBe(false);
+    });
+
     test("a function-ref prop that throws during hydrate dispatches to error:fallback", () => {
       fallbackHandler();
       const shouldThrow = signal(false);
