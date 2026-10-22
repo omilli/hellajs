@@ -1,5 +1,6 @@
 import type { AnchorPositionOptions, Placement } from "./types/behaviors";
 
+/** Anchor edge a placement resolves to — the vertical/horizontal axis pair placement flips within. */
 type AnchorSide = "top" | "bottom" | "left" | "right";
 
 /**

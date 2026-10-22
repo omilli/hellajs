@@ -14,7 +14,7 @@ Surgical DOM rendering — no virtual DOM diffing. Only elements with reactive d
 | `resetDom` | State reset (test/introspection) | `lib/internal/reset.ts` |
 | `queueCounts` | Cleanup/mount queue depths (test/introspection — retention regression checks) | `lib/internal/queue.ts` |
 | `checkMultiSelectors`, `multiSelectors` | Selector-watcher state (test/introspection) | `lib/internal/selectors.ts` |
-| `getState`, `hasState`, `peekState`, `deleteState`, `registerOverlay`, `pushBuildParent`, `popBuildParent` | ElementState access, overlay registration, build frames (test/introspection) | `lib/internal/state.ts` |
+| `getState`, `hasState`, `peekState`, `deleteState` | ElementState access (test/introspection) | `lib/internal/state.ts` |
 | `HellaNode`, `HellaChild`, `HellaChildren`, `ElementHooks`, `HookType`, `HookFn`, `ErrorConfig`, `ErrorContext`, `ErrorFn`, `DirectListenerSpec`, `DomWrapper`, `DomRef`, `DomCollection`, `ForEachProps`, `PortalProps`, `LazyProps`, `TransitionProps`, `SuspenseProps`, `ComponentFn`, `RenderFn`, … | Type-only | `lib/types/nodes.d.ts` |
 | `DOMEventMap`, `HTMLAttributeMap`, `HTMLAttributes`, `StyleObject` | Type-only | `lib/types/attributes.d.ts` |
 | `TrapFocusOptions`, `RovingTabIndexOptions`, `Placement`, `AnchorPositionOptions`, `HoverIntentOptions`, `DragHandlers`, `SwipeState`, `SwipeCommit`, `SwipeHandlers`, `SwipeOptions`, `PinchState`, `PinchHandlers`, `LongPressOptions`, `DoubleTapOptions` | Type-only | `lib/types/behaviors.d.ts` |

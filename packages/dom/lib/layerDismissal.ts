@@ -1,3 +1,4 @@
+/** One dismissal layer: its inside-nodes getter and dismissal callback, held in the shared stack. */
 interface LayerEntry {
   nodes: () => (Node | null)[];
   onDismiss: () => void;
@@ -5,7 +6,10 @@ interface LayerEntry {
 
 const layerStack: LayerEntry[] = [];
 
-const isTopLayer = (entry: LayerEntry): boolean => layerStack[layerStack.length - 1] === entry;
+/** True when `entry` is the top of the shared layer stack — the only layer a dismissal fires for. */
+function isTopLayer(entry: LayerEntry): boolean {
+  return layerStack[layerStack.length - 1] === entry;
+}
 
 /**
  * Dismisses stacked overlays one layer at a time — Escape (document, capture)

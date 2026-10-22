@@ -1,3 +1,5 @@
+import { isNull } from "./internal/core";
+
 /**
  * Wireable typeahead search for menu items — printable keystrokes buffer into
  * a query (auto-reset after 500ms) and the first matching item is selected.
@@ -35,7 +37,7 @@ export function menuTypeahead(
   const onKeyDown = (event: Event): void => {
     const e = event as KeyboardEvent;
     if (e.ctrlKey || e.metaKey || e.altKey || e.key.length !== 1) return;
-    if (bufferTimer !== null) clearTimeout(bufferTimer);
+    if (!isNull(bufferTimer)) clearTimeout(bufferTimer);
     buffer += e.key;
     bufferTimer = setTimeout(() => {
       buffer = "";
@@ -72,6 +74,6 @@ export function menuTypeahead(
   container.addEventListener("keydown", onKeyDown);
   return () => {
     container.removeEventListener("keydown", onKeyDown);
-    if (bufferTimer !== null) clearTimeout(bufferTimer);
+    if (!isNull(bufferTimer)) clearTimeout(bufferTimer);
   };
 }

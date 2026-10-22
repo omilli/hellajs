@@ -6,7 +6,7 @@ import type {
   ElementMountFn,
   DirectListenerSpec,
 } from "../types/nodes";
-import { isFunction, isObject, isNull, objectLoop } from "./core";
+import { isFalsy, isFunction, isObject, isNull, objectLoop } from "./core";
 import {
   renderProp,
   resolveDeep,
@@ -82,8 +82,9 @@ export function resetHydrateState(): void {
 }
 
 /** Region-open Comment node discriminator (parser strips `<!--`/`-->`, leaving nodeValue `[`). The close is read inline by `gatherRegion`. */
-const isMarkOpen = (n: Node | null): boolean =>
-  !isNull(n) && n.nodeType === Node.COMMENT_NODE && n.nodeValue === "[";
+function isMarkOpen(n: Node | null): boolean {
+  return !isNull(n) && n.nodeType === Node.COMMENT_NODE && n.nodeValue === "[";
+}
 
 /**
  * Gathers the nodes between an open marker and its matching close (depth-aware for nested regions).
@@ -607,7 +608,7 @@ export function hydrateSequence(
 
     // null/undefined/false render nothing server-side (ssr's child classification) —
     // consume no node, or every later positional match would shift by one
-    if (child === null || child === undefined || child === false) {
+    if (isFalsy(child)) {
       i++;
       continue;
     }

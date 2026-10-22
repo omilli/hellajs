@@ -1,3 +1,4 @@
+import { isNull } from "./internal/core";
 import type { HoverIntentOptions } from "./types/behaviors";
 
 const SKIP_DELAY_DURATION = 500;
@@ -38,13 +39,13 @@ export function hoverIntent(target: Element, handlers: HoverIntentOptions): () =
   let isOpen = false;
 
   const clearOpen = (): void => {
-    if (openTimer !== null) {
+    if (!isNull(openTimer)) {
       clearTimeout(openTimer);
       openTimer = null;
     }
   };
   const clearClose = (): void => {
-    if (closeTimer !== null) {
+    if (!isNull(closeTimer)) {
       clearTimeout(closeTimer);
       closeTimer = null;
     }

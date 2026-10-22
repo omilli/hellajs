@@ -131,13 +131,13 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
         if (currentKeys.length === 0) {
           if (hctx && hctx.existingNodes.length === arr.length) {
             // hydrate adoption: reuse the marker-gathered server nodes, no fresh build
-            let index = 0;
-            const arrLen = arr.length;
-            while (index < arrLen) {
-              const item = arr[index]!;
-              const element = use(item, index);
+            let i = 0;
+            const len = arr.length;
+            while (i < len) {
+              const item = arr[i]!;
+              const element = use(item, i);
               let key: unknown;
-              const extracted = extractKey !== undefined ? extractKey(item, index) : undefined;
+              const extracted = extractKey !== undefined ? extractKey(item, i) : undefined;
               if (extracted !== undefined) {
                 key = extracted;
               } else if (element && isHellaNode(element)) {
@@ -146,16 +146,16 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
               }
               if (key === undefined) {
                 const id = (item as { id?: unknown })?.id;
-                key = id !== undefined ? id : index;
+                key = id !== undefined ? id : i;
               }
-              const existing = hctx.existingNodes[index]!;
+              const existing = hctx.existingNodes[i]!;
               if (element && isHellaNode(element) && (element as HellaNode).tag !== "$") {
                 hctx.hydrateNode(element as HellaNode, existing);
               }
               keyToNode.set(key, existing);
               keyToItem.set(key, item);
               currentKeys.push(key);
-              index++;
+              i++;
             }
             return;
           }
@@ -176,13 +176,13 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
             }
           }
           const fragment = document.createDocumentFragment();
-          const arrLen = arr.length;
-          let index = 0;
-          while (index < arrLen) {
-            const item = arr[index]!;
-            const element = use(item, index);
+          const len = arr.length;
+          let i = 0;
+          while (i < len) {
+            const item = arr[i]!;
+            const element = use(item, i);
             let key: unknown;
-            const extracted = extractKey !== undefined ? extractKey(item, index) : undefined;
+            const extracted = extractKey !== undefined ? extractKey(item, i) : undefined;
             if (extracted !== undefined) {
               key = extracted;
             } else if (element && isHellaNode(element)) {
@@ -191,7 +191,7 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
             }
             if (key === undefined) {
               const id = (item as { id?: unknown })?.id;
-              key = id !== undefined ? id : index;
+              key = id !== undefined ? id : i;
             }
             pushBuildParent(actualParent);
             const node = resolveNode(element, undefined, itemNs);
@@ -203,7 +203,7 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
             keyToNode.set(key, node);
             keyToItem.set(key, item);
             currentKeys.push(key);
-            index++;
+            i++;
           }
           actualParent.insertBefore(fragment, anchor);
           return;
@@ -215,21 +215,21 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
         newKeyToItem.clear();
         nodesToRemove.length = 0;
 
-        const arrLen = arr.length;
-        let index = 0;
-        while (index < arrLen) {
-          const item = arr[index]!;
+        const len = arr.length;
+        let i = 0;
+        while (i < len) {
+          const item = arr[i]!;
           let element: HellaChild | undefined;
           let key: unknown;
           let explicit = false;
-          const extracted = extractKey !== undefined ? extractKey(item, index) : undefined;
+          const extracted = extractKey !== undefined ? extractKey(item, i) : undefined;
           if (extracted !== undefined) {
             key = extracted;
             explicit = true;
             // Extractor present: retained keys reuse their live node without re-invoking use.
-            if (!keyToNode.has(key)) element = use(item, index);
+            if (!keyToNode.has(key)) element = use(item, i);
           } else {
-            element = use(item, index);
+            element = use(item, i);
             if (element && isHellaNode(element)) {
               const vnodeKey = element.props?.key;
               if (vnodeKey !== undefined) {
@@ -243,7 +243,7 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
                 key = id;
                 explicit = true;
               } else {
-                key = index;
+                key = i;
               }
             }
           }
@@ -262,7 +262,7 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
           newExplicit.push(explicit ? 1 : 0);
           newKeyToNode.set(key, node!);
           newKeyToItem.set(key, item);
-          index++;
+          i++;
         }
 
         const iter = keyToNode.entries();

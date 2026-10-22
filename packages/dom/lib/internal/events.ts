@@ -24,6 +24,7 @@ export function setNodeHandler(element: Element, type: string, handler: EventLis
 }
 
 /**
+ * @internal
  * Renders an error-boundary fallback by replacing the boundary's (or the
  * element's own) children. Shared by the delegated and direct handler paths
  * (the direct handler implementation lives in the direct-events feature).

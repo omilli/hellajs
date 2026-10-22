@@ -110,10 +110,12 @@ export function renderProp(element: HellaElement, key: string, value: unknown) {
 }
 
 /**
+ * @internal
  * Effective buckets for one vnode after prefixed-prop routing — prefixed keys sliced
- * out of props, routed values merged over on/e/hooks/error.
+ * out of props, routed values merged over on/e/hooks/error. Shared with the routed-props
+ * feature, whose registered implementation must match this seam's shape.
  */
-interface RoutedBuckets {
+export interface RoutedBuckets {
   props: Record<string, unknown> | undefined;
   on: Record<string, unknown> | undefined;
   e: Record<string, unknown> | undefined;

@@ -5,7 +5,6 @@ import { isNull } from "../internal/core";
 import { getState, peekState } from "../internal/state";
 
 /**
- * @internal
  * Global error handlers registered via onError. First non-null result wins.
  */
 const handlers = new Set<ErrorFn>();

@@ -7,6 +7,7 @@ import type { HellaNode, ErrorConfig, ErrorContext } from "../types/nodes";
 let mountNodeFn: ((node: HellaNode) => Node) | null = null;
 
 /**
+ * @internal
  * Clears all registered error handlers. The default (errors feature not loaded) does
  * nothing — the handler set only exists when the feature does.
  *

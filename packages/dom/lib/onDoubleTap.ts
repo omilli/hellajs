@@ -1,3 +1,4 @@
+import { isNull } from "./internal/core";
 import type { DoubleTapOptions } from "./types/behaviors";
 
 /**
@@ -36,7 +37,7 @@ export function onDoubleTap(el: HTMLElement, options: DoubleTapOptions): () => v
   let startX = 0;
   let startY = 0;
   const cancel = (): void => {
-    if (timer === null) return;
+    if (isNull(timer)) return;
     clearTimeout(timer);
     timer = null;
   };
@@ -54,7 +55,7 @@ export function onDoubleTap(el: HTMLElement, options: DoubleTapOptions): () => v
     const dx = event.clientX - startX;
     const dy = event.clientY - startY;
     if (dx * dx + dy * dy > tolerance * tolerance) return;
-    if (timer !== null) {
+    if (!isNull(timer)) {
       cancel();
       options.onDoubleTap(event);
     } else {

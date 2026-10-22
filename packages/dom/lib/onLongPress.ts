@@ -1,3 +1,4 @@
+import { isNull } from "./internal/core";
 import type { LongPressOptions } from "./types/behaviors";
 
 /**
@@ -34,7 +35,7 @@ export function onLongPress(
   let startX = 0;
   let startY = 0;
   const cancel = (): void => {
-    if (timer === null) return;
+    if (isNull(timer)) return;
     clearTimeout(timer);
     timer = null;
   };
@@ -51,7 +52,7 @@ export function onLongPress(
     }, duration);
   };
   const onPointerMove = (event: PointerEvent): void => {
-    if (timer === null) return;
+    if (isNull(timer)) return;
     const dx = event.clientX - startX;
     const dy = event.clientY - startY;
     if (dx * dx + dy * dy > tolerance * tolerance) cancel();

@@ -1,18 +1,7 @@
 import type { ElementHooks, ErrorConfig } from "../types/nodes";
 import { objectLoop } from "../internal/core";
 import { setRoutedPropsResolver } from "../internal/utils";
-
-/**
- * Effective buckets for one vnode after prefixed-prop routing — prefixed keys sliced
- * out of props, routed values merged over on/e/hooks/error.
- */
-interface RoutedBuckets {
-  props: Record<string, unknown> | undefined;
-  on: Record<string, unknown> | undefined;
-  e: Record<string, unknown> | undefined;
-  hooks: Partial<ElementHooks> | undefined;
-  error: ErrorConfig | undefined;
-}
+import type { RoutedBuckets } from "../internal/utils";
 
 /**
  * Slices prefixed props keys ("on:x", "e:x", "hook:x", "error:x") into their live

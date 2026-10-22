@@ -414,11 +414,11 @@ function appendToParent(
   // Elements self-derive the child namespace; fragments carry the insertion context's ns
   const childNs = parent.nodeType === Node.ELEMENT_NODE ? childNamespaceOf(parent) : ns;
 
-  let index = 0;
-  const length = children.length;
-  while (index < length) {
-    const child = children[index];
-    index++;
+  let i = 0;
+  const len = children.length;
+  while (i < len) {
+    const child = children[i];
+    i++;
 
     if (Array.isArray(child)) {
       // Nested array children (e.g. a JSX `{items.map(…)}` expression evaluating to an
