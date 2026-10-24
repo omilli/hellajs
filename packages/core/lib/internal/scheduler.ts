@@ -1,5 +1,5 @@
 import type { Link, ReactiveNode } from "./system";
-import { unlink, checkDirty } from "./system";
+import { unlink, checkDirty, setSystemHost } from "./system";
 import type { EffectNode } from "../effect";
 import type { SignalNode } from "../signal";
 import type { ComputedNode } from "../computed";
@@ -72,6 +72,10 @@ export function unwatched(node: ReactiveNode): void {
     }
   }
 }
+
+// Registration breaks the circular import (setDeferredAdopters pattern): the graph
+// machinery dispatches through these callbacks, so system.ts must not import them.
+setSystemHost({ update, notify, unwatched });
 
 /**
  * Runs an effect if it is stale — the vendored `run` minus the child-effect

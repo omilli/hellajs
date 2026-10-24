@@ -6,7 +6,6 @@
  * callbacks in `lib/internal/scheduler.ts`.
  */
 import { NONE, MUTABLE, WATCHING, RECURSED_CHECK, RECURSED, DIRTY, PENDING } from "./flags";
-import { notify, unwatched, update } from "./scheduler";
 
 /**
  * Base shape of every reactive node (signals, computeds, effects): two
@@ -59,7 +58,9 @@ interface Stack<T> {
 
 /**
  * Host callbacks the bound system invokes. `lib/internal/scheduler.ts` provides
- * them; the factory leaves node kinds, queueing, and disposal to the host.
+ * them — bound at its module init via `setSystemHost`, so this module imports no
+ * scheduler values (cycle break); the factory leaves node kinds, queueing, and
+ * disposal to the host.
  */
 export interface ReactiveHost {
   /** Re-evaluates a mutable node (computed or signal); returns whether its committed value changed. */
@@ -158,7 +159,7 @@ export function createReactiveSystem(host: ReactiveHost) {
     if (prevSub !== undefined) {
       prevSub.nextSub = nextSub;
     } else if ((dep.subs = nextSub) === undefined) {
-      unwatched(dep);
+      host.unwatched(dep);
     }
     return nextDep;
   }
@@ -191,7 +192,7 @@ export function createReactiveSystem(host: ReactiveHost) {
         flags = NONE;
       }
       if (flags & WATCHING) {
-        notify(sub);
+        host.notify(sub);
       }
       if (flags & MUTABLE) {
         const subSubs = sub.subs;
@@ -297,7 +298,7 @@ export function createReactiveSystem(host: ReactiveHost) {
       if ((flags & (PENDING | DIRTY)) === PENDING) {
         sub.flags = flags | DIRTY;
         if ((flags & (WATCHING | RECURSED_CHECK)) === WATCHING) {
-          notify(sub);
+          host.notify(sub);
         }
       }
     } while ((link = link.nextSub!) !== undefined);
@@ -316,16 +317,25 @@ export function createReactiveSystem(host: ReactiveHost) {
   }
 }
 
-// update/notify/unwatched are scheduler-owned host callbacks; importing them here makes
-// system <-> scheduler the package's one intentional import cycle. It is safe because
-// both sides touch each other's bindings only inside hoisted function declarations or
-// after module evaluation — never in a module body that runs before the other side's
-// declarations hoist. Keep the scheduler callbacks as function declarations.
+// Host callbacks the graph machinery dispatches through — bound once at scheduler.ts
+// module init via setSystemHost so this module never imports scheduler values (cycle
+// break, the setDeferredAdopters pattern). Definite-assignment trust: scheduler evaluates
+// before any consumer can invoke a graph function.
+const host = {} as ReactiveHost;
+
+/**
+ * @internal Binds the scheduler-owned host callbacks (`update`, `notify`, `unwatched`) the
+ * five graph functions dispatch through. Runs once at `lib/internal/scheduler.ts` module
+ * init — before any consumer can invoke a graph function.
+ * @param callbacks The queue/disposal callbacks owned by the scheduler.
+ */
+export function setSystemHost(callbacks: ReactiveHost): void {
+  host.update = callbacks.update;
+  host.notify = callbacks.notify;
+  host.unwatched = callbacks.unwatched;
+}
+
 /**
  * @internal Links `dep` as a dependency of `sub` (creating or reusing an edge).
  */
-export const { link, unlink, propagate, checkDirty, shallowPropagate } = createReactiveSystem({
-  update,
-  notify,
-  unwatched,
-});
+export const { link, unlink, propagate, checkDirty, shallowPropagate } = createReactiveSystem(host);
