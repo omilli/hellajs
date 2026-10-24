@@ -54,12 +54,12 @@ Verification commands are fixed by AGENTS.md §Scripts + §Testing — never bar
 
 | Type | Baseline | Verification floor after |
 |---|---|---|
-| **Code/Tests** (`packages/*`) | `vp run coverage <pkg>` | DoD green; guides' structural rules hold on changed files (rules coverage can't see → the matching `audit-*` skill); new/changed exports documented; backward compatible or a migration note exists |
+| **Code/Tests** (`packages/*`) | `vp run coverage <pkg>` + `vp run lint` | DoD green; `vp run lint` exits 0 — lint red = not done, fix before ticking; guides' structural rules hold on changed files (rules coverage can't see → the matching `audit-*` skill); new/changed exports documented; backward compatible or a migration note exists |
 | **Code/Tests** (`plugins/*`) | `vp run coverage <plugin>` + `vp run lint` (plugin scope still bundles first — astro tests load `@hellajs/core`'s dist; `guides/tests.md` §Triage & Gate Semantics) | DoD green; same floor |
-| **Docs** | cross-check examples against current source | examples resolve; `vp run lint:structure` when mdx touched; no claim contradicts the implementation |
+| **Docs** | cross-check examples against current source | examples resolve; `vp run lint` exits 0; no claim contradicts the implementation |
 | **Config / agent files** | the runnable checks the plan names (`vp run lint`, guards as applicable) | checks pass; referenced scripts still resolve |
 
-Docs-only changes skip typecheck/lint/coverage — they verify code, not prose. A scoped run failing on files outside the target package is foreign, not yours — `guides/tests.md` §Triage & Gate Semantics.
+Docs-only changes skip typecheck/coverage — they verify code, not prose — never lint: `vp run lint`'s guard suite polices docs (structure, doc-links, em-dash). A scoped run failing on files outside the target package is foreign, not yours — `guides/tests.md` §Triage & Gate Semantics.
 
 ## Step 3 — Contract-consistency gate, then tick honestly
 

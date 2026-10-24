@@ -48,7 +48,7 @@ Derive each artifact from the project's own rules (guides, lint, config conventi
 - **State-wiring deltas** — when a delta attaches state (scope, dispose fn, handler, cleanup) to a DOM node, name the carrier's two properties, verified against the owning code: cleanup eligibility (the removal walk actually discovers state on that node kind) and lifetime (the carrier outlives the code being written). Both live outside the delta's own lines; a green typecheck says nothing about them.
 - **Behavioral scenarios** (if tests in scope) — one behavior per scenario, phrased as one test, so `worker` transcribes without re-deciding structure.
 - **Doc updates** (if docs in scope) — owning file/section + the content extending it.
-- **DoD** — binary items, exhaustive mirror of the contract: every Files entry, scenario, doc update, and delta line → a DoD item. Nothing goes unchecked.
+- **DoD** — binary items, exhaustive mirror of the contract: every Files entry, scenario, doc update, and delta line → a DoD item. Nothing goes unchecked. Plus one unconditional gate item on every unit: `vp run lint` exits 0 — coverage runs no lint (§Testing), and a lint-red unit is never done no matter what its DoD otherwise says.
 
 **The DoD trap list** (root AGENTS.md §Core rules points here; this is the authoritative enumeration):
 
@@ -112,6 +112,7 @@ Files: `packages/core/tests/signals.test.ts`.
 - [ ] A labeled signal stores the label; an unlabeled one leaves it undefined
   (both overload shapes exercised).
 - [ ] `vp run coverage core` green with the new scenarios.
+- [ ] `vp run lint` exits 0.
 
 ## [ ] Docs
 Files: `packages/core/docs/api/signal.mdx`.
@@ -126,4 +127,4 @@ Run the prime handoff gate; friction signals: intake missing scope/citations re-
 
 ## Self-check
 
-Cross-module callers checked for every public delta (grep + the grep-blind mirrors); each task executable from this plan alone; every DoD item tied to a contract artifact, no orphans; every file a true independently-shippable unit; every `depends_on` a real sibling and a true hard dep; N>1 → `index.md` exists with `[ ]` aggregate + links; test files named per `guides/tests.md`; multi-branch delta → Tests scope reaches the coverage DoD; the seven-trap list audited against every DoD item.
+Cross-module callers checked for every public delta (grep + the grep-blind mirrors); each task executable from this plan alone; every DoD item tied to a contract artifact, no orphans (the unconditional `vp run lint` gate item excepted — present on every unit); every file a true independently-shippable unit; every `depends_on` a real sibling and a true hard dep; N>1 → `index.md` exists with `[ ]` aggregate + links; test files named per `guides/tests.md`; multi-branch delta → Tests scope reaches the coverage DoD; the seven-trap list audited against every DoD item.

@@ -272,10 +272,10 @@ expect(document.getElementById("test")?.textContent).toBe("value");
 
 ## Triage & Gate Semantics
 
-How test gates are run and triaged. `vp run coverage` (§Scripts) is the single verification gate; these rules govern its scoped form and failure handling.
+How test gates are run and triaged. The verification gate is `vp run coverage` (§Scripts) paired with `vp run lint` — coverage runs no lint, so green coverage alone is never sufficient; these rules govern coverage's scoped form and failure handling.
 
-- **No bare `vp test`/`vitest` for verification.** Tests import from `dist/` bundles; a bare runner never rebuilds them and silently tests stale code. Mid-flight iteration uses the triage form: `vp run bundle <package> --quiet && ./node_modules/.bin/vp test packages/<package>/tests[/<file>.test.tsx]` (explicit rebuild + scoped tests). The green baseline and final gate are always `vp run coverage <package>`.
-- **Scoped-run scoping.** `vp run coverage <package>` scopes tests to the target package and runs no lint (`vp run lint` is its own gate, repo-wide). A scoped run failing on a file OUTSIDE the target is foreign, not yours: report the foreign failure, move on — CI's unscoped `vp run coverage` + `vp run lint` own the full-repo gate.
+- **No bare `vp test`/`vitest` for verification.** Tests import from `dist/` bundles; a bare runner never rebuilds them and silently tests stale code. Mid-flight iteration uses the triage form: `vp run bundle <package> --quiet && ./node_modules/.bin/vp test packages/<package>/tests[/<file>.test.tsx]` (explicit rebuild + scoped tests). The green baseline and final gate are always `vp run coverage <package>` + `vp run lint`.
+- **Scoped-run scoping.** `vp run coverage <package>` scopes tests to the target package and runs no lint (`vp run lint` is its own gate, repo-wide). A scoped run failing on a file OUTSIDE the target is foreign, not yours: report the foreign failure, move on — `vp run lint` pairs with every gate run and is itself repo-wide, so a foreign lint red reports the same way; CI's unscoped pair re-checks the full repo.
 - **Bundle-stage foreign block.** `bundle.ts --quiet` builds ALL packages before scoped tests run, so a foreign bundle failure blocks the target's own tests. Verify via `vp run bundle <package>` (explicit rebuild — honors no-stale-dist) followed by the scoped test command coverage runs internally (`vp test packages/<package>/tests --coverage`); report the foreign failure.
 - **Gate-failure attribution.** A check failing on files outside your diff → `git status -sb` first; verify the files carry no edits of yours (concurrent user changes) before debugging your own work. Re-run the gate after the foreign change settles.
 - **Plugin scoping.** `vp run coverage <plugin>` scopes tests to `plugins/<p>/tests` and narrows the coverage includes to the plugin's rows (source `.mjs` — plugins have no `dist/`; `vite`/`rollup` carry no suites and fail the tests-dir check). The bundle stage still runs before plugin tests: `plugins/astro`'s tests import `@hellajs/core`'s dist. Package-scoped runs still execute no plugin suites: a `packages/` change breaking them (serializer output, runtime contracts a plugin test asserts) surfaces only when a plugin unit executes — run the affected `vp run coverage <plugin>` (bare `./node_modules/.bin/vp test plugins/<p>/tests` mid-flight — plugin tests import source, not `dist/`) before declaring done when the change reaches what they assert.
@@ -330,7 +330,6 @@ Run this when holding a Tests file (`*.test.ts` / `*.spec.ts`). Each item is a y
 - [ ] Bug-encoding scenario verified to fail against pre-fix code (stash → rebuild → run) before the DoD tick (§Test Coverage, Discrimination rule)
 
 **Gate usage (§Triage & Gate Semantics)**
-- [ ] No bare `vp test`/`vitest` used for verification — mid-flight iteration used the triage form; final gate was `vp run coverage <package>`
+- [ ] No bare `vp test`/`vitest` used for verification — mid-flight iteration used the triage form; final gate was `vp run coverage <package|plugin>` + `vp run lint`
 - [ ] Foreign failure triaged per protocol (own package verified clean, failure reported), not debugged as own work
-- [ ] Plugin suites verified via `vp run coverage <plugin>` + `vp run lint` (never bare `vp test` as a final gate)
 - [ ] New file/structure/helper → `audit-tests` run (coverage's blind spots)
