@@ -5,6 +5,7 @@ import { cleanupSubtree } from "./internal/cleanup";
 import { registry } from "./registry";
 import { getState } from "./internal/state";
 import { peekHydrateContext } from "./internal/hydrate";
+import { adoptClaimFrame } from "./internal/claims";
 import type { TransitionProps } from "./types/nodes";
 
 /**
@@ -43,9 +44,21 @@ export function Transition(props: TransitionProps): JSX.Element {
         }
 
         if (!current && isFirst && hctx && hctx.existingNodes.length > 0) {
-          // hydrate: adopt the existing server-rendered child as current (bare adopt — wiring
-          // happened at claim time through the compiled build's own calls)
-          current = hctx.existingNodes[0] ?? null;
+          // hydrate: claim+wire the compiled children build against the server-rendered child —
+          // the frame seeds the claim cursor at the region head, so the build's construction
+          // calls adopt the existing nodes in place (handlers/effects attach to the server
+          // DOM); claimed nodes are already positioned, so nothing is inserted.
+          const child = Array.isArray(children) && children.length === 1 ? children[0] : children;
+          let adopted!: Node;
+          adoptClaimFrame(
+            parent,
+            hctx.existingNodes[0] ?? null,
+            () => {
+              adopted = resolveNode(child, parent, childNamespaceOf(parent));
+            },
+            hctx.claimBound ?? null,
+          );
+          current = adopted;
           if (appear) {
             const appearClass = isString(appear) ? appear : enter;
             if (appearClass && current instanceof Element) {

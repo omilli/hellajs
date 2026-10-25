@@ -4,7 +4,7 @@ import { registry } from "./registry";
 import { resolveNode, childNamespaceOf } from "./internal/render";
 import { popBuildParent, pushBuildParent } from "./internal/state";
 import { cleanupSubtree } from "./internal/cleanup";
-import { constructFresh } from "./internal/adoption";
+import { claims, constructFresh } from "./internal/adoption";
 import { getState } from "./internal/state";
 import type { HydrateCtx } from "./internal/hydrate";
 import type { HellaChild, ForEachProps } from "./types/nodes";
@@ -131,7 +131,9 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
       if (arr.length > 0) {
         if (currentKeys.length === 0) {
           if (hctx && hctx.existingNodes.length === arr.length) {
-            // hydrate adoption: reuse the marker-gathered server nodes, no fresh build
+            // hydrate adoption: reuse the marker-gathered server nodes. A flagged-build item
+            // claims+wires its server node in place (the compiled build's construction calls
+            // attach its handlers/effects); a non-build result pairs positionally as before.
             let i = 0;
             const len = arr.length;
             while (i < len) {
@@ -149,13 +151,38 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
                 const id = (item as { id?: unknown })?.id;
                 key = id !== undefined ? id : i;
               }
-              // Bare adopt: the gathered server node pairs positionally and rides the key maps;
-              // wiring happened at claim time through the compiled build's own calls.
-              keyToNode.set(key, hctx.existingNodes[i]!);
+              if (element && isTemplateBuild(element)) {
+                // Claim+wire: the build's construction calls claim this item's server node
+                // (head = the item's gathered node) and attach its handlers/effects. The
+                // per-item bound is the next item's head, so the leftover-marker scan never
+                // walks into sibling items; the last item owns the region's remaining span.
+                let node!: Node;
+                claims!.adoptClaimFrame(
+                  actualParent,
+                  hctx.existingNodes[i]!,
+                  () => {
+                    pushBuildParent(actualParent);
+                    const resolved = resolveNode(element, undefined, itemNs);
+                    popBuildParent();
+                    if (resolved.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
+                      throw new Error("[dom] ForEach: use must return a single element");
+                    }
+                    node = resolved;
+                  },
+                  i + 1 < len ? hctx.existingNodes[i + 1]! : (hctx.claimBound ?? null),
+                );
+                keyToNode.set(key, node);
+              } else {
+                keyToNode.set(key, hctx.existingNodes[i]!);
+              }
               keyToItem.set(key, item);
               currentKeys.push(key);
               i++;
             }
+            // Mount-semantics anchor placement: reconcile inserts land before the boundary
+            // (first suffix node, else the anchor), so the anchor must trail the adopted
+            // items — post-hydrate appends then land after them, not in front of them.
+            actualParent.insertBefore(anchor, hctx.existingNodes[len - 1]!.nextSibling);
             return;
           }
           if (hctx) {

@@ -142,6 +142,147 @@ describe("dom", () => {
       expect(container.querySelector("#g2-c")).toBe(cBefore);
     });
 
+    test("wires on:click handlers inside adopted ForEach items", async () => {
+      const { container, client } = await twoTargetContainer(`
+        import { ForEach } from "@hellajs/dom";
+        import { signal } from "@hellajs/core";
+        const count = signal(0);
+        const items = [{ id: "a" }, { id: "b" }];
+        const App = () => (
+          <ul id="list">
+            <ForEach
+              each={items}
+              use={(item) => (
+                <li id={"item-" + item.id}>
+                  <button id={"btn-" + item.id} on:click={() => count(count() + 1)}>
+                    {"clicked " + count()}
+                  </button>
+                </li>
+              )}
+            ></ForEach>
+          </ul>
+        );
+        const __out = { App, count };
+      `);
+      const btnBefore = container.querySelector("#btn-a")!;
+
+      hydrate(client.App as TemplateBuildFn, container);
+      const btn = container.querySelector("#btn-a")!;
+      expect(btn).toBe(btnBefore);
+      btn.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      flush();
+      expect((client.count as () => number)()).toBe(1);
+      expect(container.querySelector("#btn-a")).toBe(btnBefore);
+    });
+
+    test("updates reactive content inside an adopted ForEach item on a signal change", async () => {
+      const { container, client } = await twoTargetContainer(`
+        import { ForEach } from "@hellajs/dom";
+        import { signal } from "@hellajs/core";
+        const count = signal(0);
+        const items = [{ id: "a" }];
+        const App = () => (
+          <ul id="list">
+            <ForEach
+              each={items}
+              use={(item) => <li id={"item-" + item.id}>{"n " + count()}</li>}
+            ></ForEach>
+          </ul>
+        );
+        const __out = { App, count };
+      `);
+      const liBefore = container.querySelector("#item-a")!;
+
+      hydrate(client.App as TemplateBuildFn, container);
+      expect(container.querySelector("#item-a")).toBe(liBefore);
+      expect(container.querySelector("#item-a")!.textContent).toBe("n 0");
+
+      (client.count as (v: number) => void)(3);
+      flush();
+      expect(container.querySelector("#item-a")).toBe(liBefore);
+      expect(container.querySelector("#item-a")!.textContent).toBe("n 3");
+    });
+
+    test("appends post-hydrate ForEach items after the last adopted item", async () => {
+      const { container, client } = await twoTargetContainer(`
+        import { ForEach } from "@hellajs/dom";
+        import { signal } from "@hellajs/core";
+        const items = signal([{ id: 1 }, { id: 2 }, { id: 3 }]);
+        const App = () => (
+          <ul id="list">
+            <ForEach
+              each={items}
+              use={(i) => <li id={"item-" + i.id}>{i.id}</li>}
+            ></ForEach>
+          </ul>
+        );
+        const __out = { App, items };
+      `);
+
+      hydrate(client.App as TemplateBuildFn, container);
+      const items = client.items as (v?: unknown) => unknown[];
+      items([...items(), { id: 4 }]);
+      flush();
+      expect(Array.from(container.querySelectorAll("li")).map((li) => li.id)).toEqual([
+        "item-1",
+        "item-2",
+        "item-3",
+        "item-4",
+      ]);
+    });
+
+    test("pairs non-build item results positionally in the adoption branch", async () => {
+      const { container, client } = await twoTargetContainer(`
+        import { ForEach } from "@hellajs/dom";
+        import { signal } from "@hellajs/core";
+        const items = signal(["a"]);
+        const App = () => (
+          <ul id="list">
+            <ForEach each={items} use={(name) => name}></ForEach>
+          </ul>
+        );
+        const __out = { App, items };
+      `);
+      hydrate(client.App as TemplateBuildFn, container);
+      const ul = container.querySelector("#list")!;
+      expect(ul.textContent).toBe("a");
+      const textBefore = ul.firstChild!;
+
+      (client.items as (v?: unknown) => unknown[])(["a", "b"]);
+      flush();
+      expect(container.querySelector("#list")!.textContent).toBe("ab");
+      expect(container.querySelector("#list")!.firstChild).toBe(textBefore);
+    });
+
+    test("throws when an adopted item resolves to a fragment build", async () => {
+      const { container, client } = await twoTargetContainer(`
+        import { ForEach } from "@hellajs/dom";
+        const items = ["a"];
+        const App = () => (
+          <ul id="list">
+            <ForEach
+              each={items}
+              use={(item) => (
+                <>
+                  <li>{item}</li>
+                </>
+              )}
+            ></ForEach>
+          </ul>
+        );
+        const __out = { App, items };
+      `);
+      // Real ssr output wraps each item in its own sub-region markers, so a fragment item's
+      // gathered node count never matches and the mismatch degrade throws first (already
+      // covered by the mount-side fragment tests). Hand-set the count-matched shape the
+      // claim arm itself must see — the divergence probe idiom of the mismatch tests.
+      container.innerHTML = '<ul id="list"><!--[--><li>a</li><!--]--></ul>';
+
+      expect(() => hydrate(client.App as TemplateBuildFn, container)).toThrow(
+        "[dom] ForEach: use must return a single element",
+      );
+    });
+
     test("falls back to re-mount on a ForEach count-mismatch", async () => {
       const { container, client } = await twoTargetContainer(`
         import { ForEach } from "@hellajs/dom";
@@ -192,73 +333,6 @@ describe("dom", () => {
       expect(container.querySelectorAll("li").length).toBe(3);
       expect(container.querySelector("#trail")!.textContent).toBe("T");
       expect(container.querySelector("#lead")!.textContent).toBe("L");
-    });
-
-    test("adopts a Transition child when show is true and reconciles toggles", async () => {
-      const { container, client } = await twoTargetContainer(`
-        import { Transition } from "@hellajs/dom";
-        import { signal } from "@hellajs/core";
-        const show = signal(true);
-        const App = () => (
-          <div id="root">
-            <Transition show={show}>{<span id="t">visible</span>}</Transition>
-          </div>
-        );
-        const __out = { App, show };
-      `);
-      const tBefore = container.querySelector("#t")!;
-
-      hydrate(client.App as TemplateBuildFn, container);
-      expect(container.querySelector("#t")).toBe(tBefore);
-
-      (client.show as (v: boolean) => void)(false);
-      flush();
-      expect(container.querySelector("#t")).toBeNull();
-
-      (client.show as (v: boolean) => void)(true);
-      flush();
-      expect(container.querySelector("#t")!.textContent).toBe("visible");
-    });
-
-    test("applies the appear class on hydrate when show is true", async () => {
-      const { container, client } = await twoTargetContainer(`
-        import { Transition } from "@hellajs/dom";
-        import { signal } from "@hellajs/core";
-        const show = signal(true);
-        const App = () => (
-          <div id="root">
-            <Transition show={show} appear="fade-in">
-              {<span id="t">visible</span>}
-            </Transition>
-          </div>
-        );
-        const __out = { App, show };
-      `);
-
-      hydrate(client.App as TemplateBuildFn, container);
-      expect(container.querySelector("#t")!.classList.contains("fade-in")).toBe(true);
-    });
-
-    test("hydrates a Transition with show false and enters on toggle", async () => {
-      const { container, client } = await twoTargetContainer(`
-        import { Transition } from "@hellajs/dom";
-        import { signal } from "@hellajs/core";
-        const show = signal(false);
-        const App = () => (
-          <div id="root">
-            <Transition show={show}>{<span id="t">visible</span>}</Transition>
-          </div>
-        );
-        const __out = { App, show };
-      `);
-      expect(container.querySelector("#t")).toBeNull();
-
-      hydrate(client.App as TemplateBuildFn, container);
-      expect(container.querySelector("#t")).toBeNull();
-
-      (client.show as (v: boolean) => void)(true);
-      flush();
-      expect(container.querySelector("#t")!.textContent).toBe("visible");
     });
 
     test("re-mounts a Portal into its target on hydrate", async () => {

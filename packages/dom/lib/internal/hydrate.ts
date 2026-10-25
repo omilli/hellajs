@@ -12,6 +12,7 @@ import {
   HTML_NS,
 } from "./render";
 import { drainAnchorCleanup } from "./cleanup";
+import { claims } from "./adoption";
 
 /**
  * @internal
@@ -254,11 +255,43 @@ export function adoptReactiveRegion(
       }
       const isDyn = isFunction(resolved) && (resolved as RenderFn).isDynamic;
       if (firstRun && !isDyn) {
-        // First run adopts the gathered server nodes as-is (bare adopt): resolved values under
-        // dom-target output are flagged builds/primitives, which claim positionally through the
-        // compiled wiring calls instead — this arm only covers regions the walker's reactive
-        // machinery owns. resolveDeep already registered the closure's own dependencies.
         firstRun = false;
+        // Flagged-build resolutions claim+wire the gathered server nodes in place — the
+        // build's construction calls attach handlers/effects to the adopted DOM, and claims
+        // preserve identity, so `renderedNodes` (== `existing`) still tracks the region for
+        // later re-runs' clear. Claimed nodes are already positioned — no insertion. For an
+        // array resolution each build element claims positionally (construction order =
+        // document order); non-build elements keep their server-rendered output. Primitives
+        // keep the bare adopt: the server already rendered them and this effect tracks the
+        // getter for re-runs. resolveDeep already registered the closure's own dependencies.
+        const last = existing[existing.length - 1]!;
+        if (isTemplateBuild(resolved)) {
+          claims!.adoptClaimFrame(
+            actualParent as Element,
+            existing[0] ?? null,
+            () => resolveNode(resolved as HellaChild, parent, childNamespaceOf(parent)),
+            last.nextSibling,
+          );
+          return;
+        }
+        if (Array.isArray(resolved) && resolved.some((el) => isTemplateBuild(el))) {
+          claims!.adoptClaimFrame(
+            actualParent as Element,
+            existing[0] ?? null,
+            () => {
+              let bi = 0;
+              const bLen = resolved.length;
+              while (bi < bLen) {
+                const el: unknown = resolved[bi++];
+                if (isTemplateBuild(el)) {
+                  resolveNode(el as HellaChild, parent, childNamespaceOf(parent));
+                }
+              }
+            },
+            last.nextSibling,
+          );
+          return;
+        }
         return;
       }
       firstRun = false;
