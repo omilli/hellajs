@@ -33,7 +33,7 @@ Write only if ALL hold: verified this session against source, a passing check, o
 
 ## Step 3 — Write the entry
 
-`memory.ts add "<imperative title>"` allocates the ID, derives the slug, and writes the template (title + today's `confirmed` pre-filled); fill `description`, `tags`, and the body in the file afterward. Done — the file is the only artifact; nothing else to regenerate.
+`memory.ts add "<imperative title>"` allocates the ID, derives the slug, and writes the template (title + today's `confirmed` pre-filled); fill `description`, `tags`, and the body in the file afterward. Done — the file is the only artifact; nothing else to regenerate. In a component worktree the auto-resolver still targets the main repo's KB: re-home the written file into the worktree's carried `memory/` under the next free ID of the CARRIED set, and delete the main-tree write — its ID collides with the uncommitted deltas `merge` carries back.
 
 ## Step 4 — Refuted or reversed → delete
 
