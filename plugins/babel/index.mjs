@@ -1,4 +1,3 @@
-import { appendFileSync } from "node:fs";
 import { types as t } from "@babel/core";
 import jsxSyntax from "@babel/plugin-syntax-jsx";
 import { createJSXTransformers } from "./src/transformers/jsx.mjs";
@@ -21,16 +20,6 @@ const VALID_TARGETS = new Set(["ast", "dom"]);
  */
 export default function babelHellaJS(_babel, options) {
   let target = "ast";
-  try {
-    appendFileSync(
-      "node_modules/.cache/gate/babel-calls.log",
-      "target=" +
-        String(options && options.target) +
-        " STACK=" +
-        String(new Error().stack).replace(/\n/g, " | ").slice(0, 600) +
-        "\n",
-    );
-  } catch {}
   if (options !== undefined) {
     if (options === null || typeof options !== "object" || Array.isArray(options)) {
       throw new Error(`[babel-plugin-hellajs] options must be an object, received ${options}`);

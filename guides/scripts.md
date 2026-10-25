@@ -149,7 +149,7 @@ Run this when holding a scripts file (`scripts/**/*.ts`, `utils/**/*.ts`). Each 
 
 **Pipeline (build scripts only)**
 - [ ] Build order derived from `package.json` dependencies, not a hardcoded constant
-- [ ] Cache (if present) keyed on file hashes + git status, invalidated correctly
+- [ ] Cache (if present) keyed on file hashes + git status + a pipeline fingerprint (bundle scripts + babel plugin sources), invalidated correctly
 
 **Toolchain**
 - [ ] Relative script imports carry `.ts` specifiers (never `.js`)

@@ -22,6 +22,32 @@ export async function calculateFileHash(filePath: string): Promise<string | null
   }
 }
 
+/**
+ * Fingerprint the bundle pipeline's own sources so a pipeline edit invalidates
+ * every package cache. The per-package hash set covers only the package's own
+ * files; a transform change (babel plugin, bundle scripts) must never leave a
+ * stale `dist/` behind a "valid" cache.
+ * @returns sha256 digest over the sorted relative paths + per-file hashes of
+ * `scripts/bundle.ts`, `scripts/bundle/**`, `scripts/utils/**`, and
+ * `plugins/babel`'s entry + `src/**`.
+ */
+export async function calculatePipelineFingerprint(): Promise<string> {
+  const files = [
+    path.join(projectRoot, "scripts", "bundle.ts"),
+    ...(await scanDirRecursive(path.join(projectRoot, "scripts", "bundle"), /\.ts$/)),
+    ...(await scanDirRecursive(path.join(projectRoot, "scripts", "utils"), /\.ts$/)),
+    path.join(projectRoot, "plugins", "babel", "index.mjs"),
+    ...(await scanDirRecursive(path.join(projectRoot, "plugins", "babel", "src"), /\.mjs$/)),
+  ].sort();
+  const entries = await Promise.all(
+    files.map(async (file) => {
+      const hash = await calculateFileHash(file);
+      return `${path.relative(projectRoot, file)}:${hash ?? "missing"}`;
+    }),
+  );
+  return createHash("sha256").update(entries.join("\n")).digest("hex");
+}
+
 async function getAllSourceFiles(packageDir: string): Promise<string[]> {
   const coreFiles = [path.join(packageDir, "package.json"), path.join(packageDir, "tsconfig.json")];
   const sourceFiles = coreFiles.filter(fsStat.existsSync);
@@ -68,6 +94,8 @@ export async function isCacheValid(
 
     const currentGitStatus = await getGitStatus(packageDir);
     if (currentGitStatus !== cacheData.gitStatus) return false;
+
+    if (cacheData.pipelineHash !== (await calculatePipelineFingerprint())) return false;
 
     const currentFiles = (await getAllSourceFiles(packageDir)).filter(fsStat.existsSync);
     const cachedFiles = Object.keys(cacheData.hashes);
@@ -126,8 +154,9 @@ export async function updateCache(
     const gitStatus = await getGitStatus(packageDir);
     const cacheData = {
       timestamp: Date.now(),
-      version: "2.1",
+      version: "2.2",
       gitStatus,
+      pipelineHash: await calculatePipelineFingerprint(),
       hashes,
       metrics,
     };
