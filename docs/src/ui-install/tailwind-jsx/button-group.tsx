@@ -18,22 +18,25 @@ interface ButtonGroupSeparatorProps extends HTMLAttributes<"div"> {
 import { cn } from "./cn.js";
 
 const orientation = {
-  horizontal: "[&>*:not(:first-child)]:rounded-l-none [&>*:not(:first-child)]:border-l-0 [&>*:not(:last-child)]:rounded-r-none",
-  vertical: "flex-col [&>*:not(:first-child)]:rounded-t-none [&>*:not(:first-child)]:border-t-0 [&>*:not(:last-child)]:rounded-b-none",
+  horizontal:
+    "[&>*:not(:first-child)]:rounded-l-none [&>*:not(:first-child)]:border-l-0 [&>*:not(:last-child)]:rounded-r-none",
+  vertical:
+    "flex-col [&>*:not(:first-child)]:rounded-t-none [&>*:not(:first-child)]:border-t-0 [&>*:not(:last-child)]:rounded-b-none",
 };
 
-export function ButtonGroup({ orientation: orient, children, class: cls, ...attrs }: ButtonGroupProps): JSX.Element {
+export function ButtonGroup({
+  orientation: orient,
+  children,
+  class: cls,
+  ...attrs
+}: ButtonGroupProps): JSX.Element {
   return (
     <div
       role="group"
       data-slot="button-group"
       data-orientation={orient ?? "horizontal"}
       class={
-        cn(
-          "flex w-fit items-stretch has-[>[data-slot=button-group]]:gap-2 [&>*]:focus-visible:relative [&>*]:focus-visible:z-10 has-[select[aria-hidden=true]:last-child]:[&>[data-slot=select-trigger]:last-of-type]:rounded-r-md [&>[data-slot=select-trigger]:not([class*='w-'])]:w-fit [&>input]:flex-1",
-          orientation[orient ?? "horizontal"],
-          cls,
-        )
+        cn("flex w-fit items-stretch has-[>[data-slot=button-group]]:gap-2 [&>*]:focus-visible:relative [&>*]:focus-visible:z-10 has-[select[aria-hidden=true]:last-child]:[&>[data-slot=select-trigger]:last-of-type]:rounded-r-md [&>[data-slot=select-trigger]:not([class*='w-'])]:w-fit [&>input]:flex-1", orientation[orient ?? "horizontal"], cls)
       }
       {...attrs}
     >
@@ -42,7 +45,11 @@ export function ButtonGroup({ orientation: orient, children, class: cls, ...attr
   );
 }
 
-export function ButtonGroupText({ children, class: cls, ...attrs }: ButtonGroupTextProps): JSX.Element {
+export function ButtonGroupText({
+  children,
+  class: cls,
+  ...attrs
+}: ButtonGroupTextProps): JSX.Element {
   return (
     <div
       data-slot="button-group-text"
@@ -56,7 +63,11 @@ export function ButtonGroupText({ children, class: cls, ...attrs }: ButtonGroupT
   );
 }
 
-export function ButtonGroupSeparator({ orientation: orient, class: cls, ...attrs }: ButtonGroupSeparatorProps): JSX.Element {
+export function ButtonGroupSeparator({
+  orientation: orient,
+  class: cls,
+  ...attrs
+}: ButtonGroupSeparatorProps): JSX.Element {
   return (
     <div
       role="separator"
@@ -64,11 +75,7 @@ export function ButtonGroupSeparator({ orientation: orient, class: cls, ...attrs
       data-orientation={orient ?? "vertical"}
       aria-orientation={orient ?? "vertical"}
       class={
-        cn(
-          "shrink-0 bg-border data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-px",
-          "relative m-0! self-stretch bg-input data-[orientation=vertical]:h-auto",
-          cls,
-        )
+        cn("shrink-0 bg-border data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-px", "relative m-0! self-stretch bg-input data-[orientation=vertical]:h-auto", cls)
       }
       {...attrs}
     />

@@ -190,7 +190,13 @@ css({
 const TAB_ID = "hella-tabs-tab-";
 const PANEL_ID = "hella-tabs-panel-";
 
-export function TabsList({ variant = "default", orientation = "horizontal", children, class: cls, ...attrs }: TabsListProps): JSX.Element {
+export function TabsList({
+  variant = "default",
+  orientation = "horizontal",
+  children,
+  class: cls,
+  ...attrs
+}: TabsListProps): JSX.Element {
   return (
     <div
       role="tablist"
@@ -208,7 +214,17 @@ export function TabsList({ variant = "default", orientation = "horizontal", chil
   );
 }
 
-export function TabsTrigger({ id, active, onActivate, orientation = "horizontal", listVariant = "default", "on:click": userClick, children, class: cls, ...attrs }: TabsTriggerProps): JSX.Element {
+export function TabsTrigger({
+  id,
+  active,
+  onActivate,
+  orientation = "horizontal",
+  listVariant = "default",
+  "on:click": userClick,
+  children,
+  class: cls,
+  ...attrs
+}: TabsTriggerProps): JSX.Element {
   return (
     <button
       type="button"
@@ -223,7 +239,10 @@ export function TabsTrigger({ id, active, onActivate, orientation = "horizontal"
       class={
         [trigger, cls]
       }
-      on:click={function (e) { userClick?.call(this, e); onActivate?.(); }}
+      on:click={function (e) {
+        userClick?.call(this, e);
+        onActivate?.();
+      }}
       {...attrs}
     >
       {children}
@@ -231,7 +250,13 @@ export function TabsTrigger({ id, active, onActivate, orientation = "horizontal"
   );
 }
 
-export function TabsContent({ id, active, children, class: cls, ...attrs }: TabsContentProps): JSX.Element {
+export function TabsContent({
+  id,
+  active,
+  children,
+  class: cls,
+  ...attrs
+}: TabsContentProps): JSX.Element {
   return (
     <div
       role="tabpanel"
@@ -250,7 +275,14 @@ export function TabsContent({ id, active, children, class: cls, ...attrs }: Tabs
   );
 }
 
-export function Tabs({ items, initialId, orientation = "horizontal", variant = "default", class: cls, ...attrs }: TabsProps): JSX.Element {
+export function Tabs({
+  items,
+  initialId,
+  orientation = "horizontal",
+  variant = "default",
+  class: cls,
+  ...attrs
+}: TabsProps): JSX.Element {
   const selected = signal(initialId ?? (typeof items === "function" ? items()[0] : items[0])!.id);
   const wirings: (() => void)[] = [];
   let tablist: HTMLElement | null = null;

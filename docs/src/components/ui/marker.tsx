@@ -99,11 +99,7 @@ export function Marker({ variant, children, class: cls, ...attrs }: MarkerProps)
       data-slot="marker"
       data-variant={variant ?? "default"}
       class={
-        [
-          base,
-          variants[variant ?? "default"],
-          cls,
-        ]
+        [base, variants[variant ?? "default"], cls]
       }
       {...attrs}
     >

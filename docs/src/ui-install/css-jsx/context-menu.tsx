@@ -133,7 +133,9 @@ import { keyframes, style } from "@hellajs/css";
 import { tokens } from "./tokens.js";
 
 const inTop = keyframes({ from: { opacity: "0", transform: "translateY(0.5rem) scale(0.95)" } });
-const inBottom = keyframes({ from: { opacity: "0", transform: "translateY(-0.5rem) scale(0.95)" } });
+const inBottom = keyframes({
+  from: { opacity: "0", transform: "translateY(-0.5rem) scale(0.95)" },
+});
 const inLeft = keyframes({ from: { opacity: "0", transform: "translateX(0.5rem) scale(0.95)" } });
 const inRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem) scale(0.95)" } });
 const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
@@ -454,7 +456,13 @@ function menuOpenState(props: { open?: () => boolean; onOpenChange?: (open: bool
       fallback = setTimeout(finishExit, 250);
     }
   });
-  return { isOpen, setOpen, state: (): "open" | "closed" => (isOpen() ? "open" : "closed"), visible, finishExit };
+  return {
+    isOpen,
+    setOpen,
+    state: (): "open" | "closed" => (isOpen() ? "open" : "closed"),
+    visible,
+    finishExit,
+  };
 }
 
 /** The menu's activatable items in DOM order, disabled entries excluded (roving, typeahead, and focus-first share this). */
@@ -483,48 +491,51 @@ const menuEntries = (node: ParentNode): { node: HTMLElement; text: string }[] =>
 };
 
 /** The content-owned keyboard model shared by content and sub-content: roving arrows with wrap, Home/End, Enter/Space activation, Tab close-all, and directional submenu entry that flips with the resolved writing direction. */
-const menuKeyDown = (onArrowLeft?: () => void) => (node: HTMLElement) => (event: Event): void => {
-  const e = event as KeyboardEvent;
-  const items = menuItems(node);
-  const current = items.indexOf(document.activeElement as HTMLElement);
-  if (e.key === "Tab") {
-    closeAllMenus();
-    return;
-  }
-  if (e.key === "Enter" || e.key === " ") {
-    if (current === -1) return;
+const menuKeyDown =
+  (onArrowLeft?: () => void) =>
+  (node: HTMLElement) =>
+  (event: Event): void => {
+    const e = event as KeyboardEvent;
+    const items = menuItems(node);
+    const current = items.indexOf(document.activeElement as HTMLElement);
+    if (e.key === "Tab") {
+      closeAllMenus();
+      return;
+    }
+    if (e.key === "Enter" || e.key === " ") {
+      if (current === -1) return;
+      e.preventDefault();
+      items[current]!.dispatchEvent(new Event("click", { bubbles: true }));
+      return;
+    }
+    const rtl = getComputedStyle(node).direction === "rtl";
+    const enterKey = rtl ? "ArrowLeft" : "ArrowRight";
+    const exitKey = rtl ? "ArrowRight" : "ArrowLeft";
+    if (e.key === enterKey && current !== -1) {
+      const el = items[current]!;
+      if (el.getAttribute("aria-haspopup") === "menu") {
+        e.preventDefault();
+        el.dispatchEvent(new Event("click", { bubbles: true }));
+      }
+      return;
+    }
+    if (e.key === exitKey) {
+      if (onArrowLeft) {
+        e.preventDefault();
+        onArrowLeft();
+      }
+      return;
+    }
+    if (e.key !== "ArrowDown" && e.key !== "ArrowUp" && e.key !== "Home" && e.key !== "End") return;
+    if (items.length === 0) return;
     e.preventDefault();
-    items[current]!.dispatchEvent(new Event("click", { bubbles: true }));
-    return;
-  }
-  const rtl = getComputedStyle(node).direction === "rtl";
-  const enterKey = rtl ? "ArrowLeft" : "ArrowRight";
-  const exitKey = rtl ? "ArrowRight" : "ArrowLeft";
-  if (e.key === enterKey && current !== -1) {
-    const el = items[current]!;
-    if (el.getAttribute("aria-haspopup") === "menu") {
-      e.preventDefault();
-      el.dispatchEvent(new Event("click", { bubbles: true }));
-    }
-    return;
-  }
-  if (e.key === exitKey) {
-    if (onArrowLeft) {
-      e.preventDefault();
-      onArrowLeft();
-    }
-    return;
-  }
-  if (e.key !== "ArrowDown" && e.key !== "ArrowUp" && e.key !== "Home" && e.key !== "End") return;
-  if (items.length === 0) return;
-  e.preventDefault();
-  let target: number;
-  if (e.key === "Home") target = 0;
-  else if (e.key === "End") target = items.length - 1;
-  else if (current === -1) target = e.key === "ArrowDown" ? 0 : items.length - 1;
-  else target = (current + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
-  items[target]!.focus();
-};
+    let target: number;
+    if (e.key === "Home") target = 0;
+    else if (e.key === "End") target = items.length - 1;
+    else if (current === -1) target = e.key === "ArrowDown" ? 0 : items.length - 1;
+    else target = (current + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
+    items[target]!.focus();
+  };
 
 /** The check icon (refs/icons/check.svg), created per call so reactive swaps never share nodes between clones. */
 const checkIcon = (): JSX.Element => (
@@ -590,7 +601,11 @@ const chevronIcon = (): JSX.Element => (
 );
 
 /** The manual trigger zone; the composed ContextMenu renders the same shape wired to the `contextmenu` listener. */
-export function ContextMenuTrigger({ children, class: cls, ...attrs }: ContextMenuTriggerProps): JSX.Element {
+export function ContextMenuTrigger({
+  children,
+  class: cls,
+  ...attrs
+}: ContextMenuTriggerProps): JSX.Element {
   return (
     <span
       data-slot="context-menu-trigger"
@@ -604,7 +619,19 @@ export function ContextMenuTrigger({ children, class: cls, ...attrs }: ContextMe
   );
 }
 
-export function ContextMenuContent({ state, id, side: sideProp, align: alignProp, anchor, onDismiss, onExited, onArrowLeft, children, class: cls, ...attrs }: ContextMenuContentProps): JSX.Element {
+export function ContextMenuContent({
+  state,
+  id,
+  side: sideProp,
+  align: alignProp,
+  anchor,
+  onDismiss,
+  onExited,
+  onArrowLeft,
+  children,
+  class: cls,
+  ...attrs
+}: ContextMenuContentProps): JSX.Element {
   const side = sideProp ?? "bottom";
   const align = alignProp ?? "start";
   const stateOf = (): "open" | "closed" => state?.() ?? "open";
@@ -636,14 +663,21 @@ export function ContextMenuContent({ state, id, side: sideProp, align: alignProp
       hook:afterMount={(node) => {
         if (!(node instanceof HTMLElement)) return;
         const anchorEl = anchor?.();
-        if (anchorEl != null) wirings.push(anchorPosition(anchorEl, node, { placement: placementOf(side, align) }));
+        if (anchorEl != null)
+          wirings.push(anchorPosition(anchorEl, node, { placement: placementOf(side, align) }));
         if (onDismiss) {
           wirings.push(layerDismissal(() => [node, anchorEl ?? null], onDismiss));
           const onSelect = (): void => onDismiss?.();
           document.addEventListener(SELECT_EVENT, onSelect);
           wirings.push(() => document.removeEventListener(SELECT_EVENT, onSelect));
         }
-        wirings.push(menuTypeahead(node, () => menuEntries(node), (entry) => entry.node.focus()));
+        wirings.push(
+          menuTypeahead(
+            node,
+            () => menuEntries(node),
+            (entry) => entry.node.focus(),
+          ),
+        );
         const onKey = menuKeyDown(onArrowLeft)(node);
         node.addEventListener("keydown", onKey);
         wirings.push(() => node.removeEventListener("keydown", onKey));
@@ -670,7 +704,11 @@ export function ContextMenuContent({ state, id, side: sideProp, align: alignProp
   );
 }
 
-export function ContextMenuGroup({ children, class: cls, ...attrs }: ContextMenuPartProps): JSX.Element {
+export function ContextMenuGroup({
+  children,
+  class: cls,
+  ...attrs
+}: ContextMenuPartProps): JSX.Element {
   return (
     <div
       data-slot="context-menu-group"
@@ -684,7 +722,16 @@ export function ContextMenuGroup({ children, class: cls, ...attrs }: ContextMenu
   );
 }
 
-export function ContextMenuItem({ destructive, inset, disabled, "on:click": userClick, shortcut: shortcutSlot, children, class: cls, ...attrs }: ContextMenuItemProps): JSX.Element {
+export function ContextMenuItem({
+  destructive,
+  inset,
+  disabled,
+  "on:click": userClick,
+  shortcut: shortcutSlot,
+  children,
+  class: cls,
+  ...attrs
+}: ContextMenuItemProps): JSX.Element {
   return (
     <div
       role="menuitem"
@@ -705,12 +752,23 @@ export function ContextMenuItem({ destructive, inset, disabled, "on:click": user
       {...attrs}
     >
       {children}
-      {() => (shortcutSlot !== undefined ? <ContextMenuShortcut>{shortcutSlot}</ContextMenuShortcut> : null)}
+      {() =>
+        shortcutSlot !== undefined ? (
+          <ContextMenuShortcut>{shortcutSlot}</ContextMenuShortcut>
+        ) : null
+      }
     </div>
   );
 }
 
-export function ContextMenuCheckboxItem({ checked: checkedProp, onCheckedChange, disabled, children, class: cls, ...attrs }: ContextMenuCheckboxItemProps): JSX.Element {
+export function ContextMenuCheckboxItem({
+  checked: checkedProp,
+  onCheckedChange,
+  disabled,
+  children,
+  class: cls,
+  ...attrs
+}: ContextMenuCheckboxItemProps): JSX.Element {
   const accessor = typeof checkedProp === "function" ? checkedProp : undefined;
   const internal = signal(typeof checkedProp === "boolean" ? checkedProp : false);
   const checked = (): boolean => (accessor ? accessor() : internal());
@@ -749,7 +807,15 @@ export function ContextMenuCheckboxItem({ checked: checkedProp, onCheckedChange,
   );
 }
 
-export function ContextMenuRadioGroup({ items, keyBy, value: valueProp, onValueChange, children, class: cls, ...attrs }: ContextMenuRadioGroupProps): JSX.Element {
+export function ContextMenuRadioGroup({
+  items,
+  keyBy,
+  value: valueProp,
+  onValueChange,
+  children,
+  class: cls,
+  ...attrs
+}: ContextMenuRadioGroupProps): JSX.Element {
   const internal = signal("");
   const current = (): string => (valueProp !== undefined ? valueProp() : internal());
   const select = (value: string): void => {
@@ -783,9 +849,17 @@ export function ContextMenuRadioGroup({ items, keyBy, value: valueProp, onValueC
   );
 }
 
-export function ContextMenuRadioItem({ value, checked: checkedProp, onSelect, disabled, children, class: cls, ...attrs }: ContextMenuRadioItemProps): JSX.Element {
+export function ContextMenuRadioItem({
+  value,
+  checked: checkedProp,
+  onSelect,
+  disabled,
+  children,
+  class: cls,
+  ...attrs
+}: ContextMenuRadioItemProps): JSX.Element {
   const checked = (): boolean =>
-    typeof checkedProp === "function" ? checkedProp() : checkedProp ?? false;
+    typeof checkedProp === "function" ? checkedProp() : (checkedProp ?? false);
   return (
     <div
       role="menuitemradio"
@@ -819,7 +893,12 @@ export function ContextMenuRadioItem({ value, checked: checkedProp, onSelect, di
   );
 }
 
-export function ContextMenuLabel({ inset, children, class: cls, ...attrs }: ContextMenuLabelProps): JSX.Element {
+export function ContextMenuLabel({
+  inset,
+  children,
+  class: cls,
+  ...attrs
+}: ContextMenuLabelProps): JSX.Element {
   return (
     <div
       data-slot="context-menu-label"
@@ -847,7 +926,11 @@ export function ContextMenuSeparator({ class: cls, ...attrs }: ContextMenuPartPr
   );
 }
 
-export function ContextMenuShortcut({ children, class: cls, ...attrs }: ContextMenuShortcutProps): JSX.Element {
+export function ContextMenuShortcut({
+  children,
+  class: cls,
+  ...attrs
+}: ContextMenuShortcutProps): JSX.Element {
   return (
     <span
       data-slot="context-menu-shortcut"
@@ -861,7 +944,14 @@ export function ContextMenuShortcut({ children, class: cls, ...attrs }: ContextM
   );
 }
 
-export function ContextMenuSubTrigger({ inset, state, onOpen, children, class: cls, ...attrs }: ContextMenuSubTriggerProps): JSX.Element {
+export function ContextMenuSubTrigger({
+  inset,
+  state,
+  onOpen,
+  children,
+  class: cls,
+  ...attrs
+}: ContextMenuSubTriggerProps): JSX.Element {
   const stateOf = (): "open" | "closed" => state?.() ?? "closed";
   const teardown: (() => void)[] = [];
   return (
@@ -912,7 +1002,19 @@ export function ContextMenuSubTrigger({ inset, state, onOpen, children, class: c
   );
 }
 
-export function ContextMenuSubContent({ state, side: sideProp, align: alignProp, anchor, onDismiss, onExited, onArrowLeft, onPointerEnter, children, class: cls, ...attrs }: ContextMenuSubContentProps): JSX.Element {
+export function ContextMenuSubContent({
+  state,
+  side: sideProp,
+  align: alignProp,
+  anchor,
+  onDismiss,
+  onExited,
+  onArrowLeft,
+  onPointerEnter,
+  children,
+  class: cls,
+  ...attrs
+}: ContextMenuSubContentProps): JSX.Element {
   const side = sideProp ?? "right";
   const align = alignProp ?? "start";
   const stateOf = (): "open" | "closed" => state?.() ?? "open";
@@ -943,7 +1045,8 @@ export function ContextMenuSubContent({ state, side: sideProp, align: alignProp,
       hook:afterMount={(node) => {
         if (!(node instanceof HTMLElement)) return;
         const anchorEl = anchor?.();
-        if (anchorEl != null) wirings.push(anchorPosition(anchorEl, node, { placement: placementOf(side, align) }));
+        if (anchorEl != null)
+          wirings.push(anchorPosition(anchorEl, node, { placement: placementOf(side, align) }));
         if (onDismiss) {
           // Submenu layers register their own dismissal: Escape pops one
           // level, an outside pointerdown closes the sub before the parent.
@@ -952,7 +1055,13 @@ export function ContextMenuSubContent({ state, side: sideProp, align: alignProp,
           document.addEventListener(SELECT_EVENT, onSelect);
           wirings.push(() => document.removeEventListener(SELECT_EVENT, onSelect));
         }
-        wirings.push(menuTypeahead(node, () => menuEntries(node), (entry) => entry.node.focus()));
+        wirings.push(
+          menuTypeahead(
+            node,
+            () => menuEntries(node),
+            (entry) => entry.node.focus(),
+          ),
+        );
         const onKey = menuKeyDown(onArrowLeft)(node);
         node.addEventListener("keydown", onKey);
         wirings.push(() => node.removeEventListener("keydown", onKey));
@@ -980,7 +1089,12 @@ export function ContextMenuSubContent({ state, side: sideProp, align: alignProp,
   );
 }
 
-export function ContextMenuSub({ content: contentSlot, children, class: cls, ...attrs }: ContextMenuSubProps): JSX.Element {
+export function ContextMenuSub({
+  content: contentSlot,
+  children,
+  class: cls,
+  ...attrs
+}: ContextMenuSubProps): JSX.Element {
   const s = menuOpenState({});
   let triggerNode: HTMLElement | undefined;
   let openTimer: ReturnType<typeof setTimeout> | null = null;
@@ -1047,31 +1161,40 @@ export function ContextMenuSub({ content: contentSlot, children, class: cls, ...
     >
       {children}
       {chevronIcon()}
-      {() => s.visible() && (
-        <Portal to="body">
-          <ContextMenuSubContent
-            state={s.state}
-            anchor={() => triggerNode}
-            onDismiss={() => s.setOpen(false)}
-            onExited={s.finishExit}
-            onArrowLeft={() => s.setOpen(false)}
-            onPointerEnter={() => {
-              if (closeTimer !== null) {
-                clearTimeout(closeTimer);
-                closeTimer = null;
-              }
-            }}
-            children={contentSlot}
-          />
-        </Portal>
-      )}
+      {() =>
+        s.visible() && (
+          <Portal to="body">
+            <ContextMenuSubContent
+              state={s.state}
+              anchor={() => triggerNode}
+              onDismiss={() => s.setOpen(false)}
+              onExited={s.finishExit}
+              onArrowLeft={() => s.setOpen(false)}
+              onPointerEnter={() => {
+                if (closeTimer !== null) {
+                  clearTimeout(closeTimer);
+                  closeTimer = null;
+                }
+              }}
+              children={contentSlot}
+            />
+          </Portal>
+        )
+      }
     </div>
   );
 }
 
 let contextMenuCount = 0;
 
-export function ContextMenu({ open, onOpenChange, content: contentSlot, children, class: cls, ...attrs }: ContextMenuProps): JSX.Element {
+export function ContextMenu({
+  open,
+  onOpenChange,
+  content: contentSlot,
+  children,
+  class: cls,
+  ...attrs
+}: ContextMenuProps): JSX.Element {
   const s = menuOpenState({ open, onOpenChange });
   const contentId = `hella-context-menu-content-${++contextMenuCount}`;
   let triggerNode: HTMLElement | undefined;
@@ -1132,18 +1255,20 @@ export function ContextMenu({ open, onOpenChange, content: contentSlot, children
       {...attrs}
     >
       {children}
-      {() => s.visible() && (
-        <Portal to="body">
-          <ContextMenuContent
-            state={s.state}
-            id={contentId}
-            anchor={() => anchorNode}
-            onDismiss={() => s.setOpen(false)}
-            onExited={s.finishExit}
-            children={contentSlot}
-          />
-        </Portal>
-      )}
+      {() =>
+        s.visible() && (
+          <Portal to="body">
+            <ContextMenuContent
+              state={s.state}
+              id={contentId}
+              anchor={() => anchorNode}
+              onDismiss={() => s.setOpen(false)}
+              onExited={s.finishExit}
+              children={contentSlot}
+            />
+          </Portal>
+        )
+      }
     </span>
   );
 }

@@ -87,7 +87,11 @@ const chevronIcon = (): JSX.Element => (
   </svg>
 );
 
-export function NavigationMenuList({ children, class: cls, ...attrs }: NavigationMenuListProps): JSX.Element {
+export function NavigationMenuList({
+  children,
+  class: cls,
+  ...attrs
+}: NavigationMenuListProps): JSX.Element {
   return (
     <ul
       data-slot="navigation-menu-list"
@@ -101,7 +105,11 @@ export function NavigationMenuList({ children, class: cls, ...attrs }: Navigatio
   );
 }
 
-export function NavigationMenuItem({ children, class: cls, ...attrs }: NavigationMenuItemProps): JSX.Element {
+export function NavigationMenuItem({
+  children,
+  class: cls,
+  ...attrs
+}: NavigationMenuItemProps): JSX.Element {
   return (
     <li
       data-slot="navigation-menu-item"
@@ -115,7 +123,14 @@ export function NavigationMenuItem({ children, class: cls, ...attrs }: Navigatio
   );
 }
 
-export function NavigationMenuTrigger({ value, active: activeProp, onActivate, children, class: cls, ...attrs }: NavigationMenuTriggerProps): JSX.Element {
+export function NavigationMenuTrigger({
+  value,
+  active: activeProp,
+  onActivate,
+  children,
+  class: cls,
+  ...attrs
+}: NavigationMenuTriggerProps): JSX.Element {
   const active = (): boolean => activeProp?.() ?? false;
   return (
     <button
@@ -132,7 +147,8 @@ export function NavigationMenuTrigger({ value, active: activeProp, onActivate, c
         // toggle runs), so the root's store mirrors instead of re-toggling.
         const open = !active();
         onActivate?.();
-        if (value !== undefined) document.dispatchEvent(new CustomEvent("hella:navigation-menu-activate", { detail: { id: value, open } }));
+        if (value !== undefined)
+          document.dispatchEvent(new CustomEvent("hella:navigation-menu-activate", { detail: { id: value, open } }));
       }}
       {...attrs}
     >
@@ -142,7 +158,14 @@ export function NavigationMenuTrigger({ value, active: activeProp, onActivate, c
   );
 }
 
-export function NavigationMenuContent({ active: activeProp, viewport: viewportSlot, onExited, children, class: cls, ...attrs }: NavigationMenuContentProps): JSX.Element {
+export function NavigationMenuContent({
+  active: activeProp,
+  viewport: viewportSlot,
+  onExited,
+  children,
+  class: cls,
+  ...attrs
+}: NavigationMenuContentProps): JSX.Element {
   const active = (): boolean => activeProp?.() ?? false;
   const portalTarget = viewportSlot ?? "[data-slot='navigation-menu-viewport']";
   // `visible` alone gates the render so an open→closed flip never unmounts
@@ -181,41 +204,48 @@ export function NavigationMenuContent({ active: activeProp, viewport: viewportSl
         cn("[display:contents]")
       }
     >
-      {() => visible() && (
-        <Portal to={portalTarget}>
-          <div
-            data-slot="navigation-menu-content"
-            data-state={state()}
-            class={
-              cn("top-0 left-0 w-full p-2 pr-2.5 data-[motion=from-end]:slide-in-from-right-52 data-[motion=from-start]:slide-in-from-left-52 data-[motion=to-end]:slide-out-to-right-52 data-[motion=to-start]:slide-out-to-left-52 data-[motion^=from-]:animate-in data-[motion^=from-]:fade-in data-[motion^=to-]:animate-out data-[motion^=to-]:fade-out md:absolute md:w-auto group-data-[viewport=false]/navigation-menu:top-full group-data-[viewport=false]/navigation-menu:mt-1.5 group-data-[viewport=false]/navigation-menu:overflow-hidden group-data-[viewport=false]/navigation-menu:rounded-md group-data-[viewport=false]/navigation-menu:border group-data-[viewport=false]/navigation-menu:bg-popover group-data-[viewport=false]/navigation-menu:text-popover-foreground group-data-[viewport=false]/navigation-menu:shadow group-data-[viewport=false]/navigation-menu:duration-200 **:data-[slot=navigation-menu-link]:focus:ring-0 **:data-[slot=navigation-menu-link]:focus:outline-none group-data-[viewport=false]/navigation-menu:data-[state=closed]:animate-out group-data-[viewport=false]/navigation-menu:data-[state=closed]:fade-out-0 group-data-[viewport=false]/navigation-menu:data-[state=closed]:zoom-out-95 group-data-[viewport=false]/navigation-menu:data-[state=open]:animate-in group-data-[viewport=false]/navigation-menu:data-[state=open]:fade-in-0 group-data-[viewport=false]/navigation-menu:data-[state=open]:zoom-in-95", cls)
-            }
-            hook:afterMount={(node) => {
-              // The exit's animationend (state already "closed") unmounts the
-              // panel and reports onExited; the entry's animationend is ignored.
-              if (!(node instanceof HTMLElement)) return;
-              const onAnimationEnd = (): void => {
-                if (!active()) {
-                  visible(false);
-                  onExited?.();
-                }
-              };
-              node.addEventListener("animationend", onAnimationEnd);
-              teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
-            }}
-            hook:beforeDestroy={() => {
-              while (teardown.length) teardown.pop()!();
-            }}
-            {...attrs}
-          >
-            {children}
-          </div>
-        </Portal>
-      )}
+      {() =>
+        visible() && (
+          <Portal to={portalTarget}>
+            <div
+              data-slot="navigation-menu-content"
+              data-state={state()}
+              class={
+                cn("top-0 left-0 w-full p-2 pr-2.5 data-[motion=from-end]:slide-in-from-right-52 data-[motion=from-start]:slide-in-from-left-52 data-[motion=to-end]:slide-out-to-right-52 data-[motion=to-start]:slide-out-to-left-52 data-[motion^=from-]:animate-in data-[motion^=from-]:fade-in data-[motion^=to-]:animate-out data-[motion^=to-]:fade-out md:absolute md:w-auto group-data-[viewport=false]/navigation-menu:top-full group-data-[viewport=false]/navigation-menu:mt-1.5 group-data-[viewport=false]/navigation-menu:overflow-hidden group-data-[viewport=false]/navigation-menu:rounded-md group-data-[viewport=false]/navigation-menu:border group-data-[viewport=false]/navigation-menu:bg-popover group-data-[viewport=false]/navigation-menu:text-popover-foreground group-data-[viewport=false]/navigation-menu:shadow group-data-[viewport=false]/navigation-menu:duration-200 **:data-[slot=navigation-menu-link]:focus:ring-0 **:data-[slot=navigation-menu-link]:focus:outline-none group-data-[viewport=false]/navigation-menu:data-[state=closed]:animate-out group-data-[viewport=false]/navigation-menu:data-[state=closed]:fade-out-0 group-data-[viewport=false]/navigation-menu:data-[state=closed]:zoom-out-95 group-data-[viewport=false]/navigation-menu:data-[state=open]:animate-in group-data-[viewport=false]/navigation-menu:data-[state=open]:fade-in-0 group-data-[viewport=false]/navigation-menu:data-[state=open]:zoom-in-95", cls)
+              }
+              hook:afterMount={(node) => {
+                // The exit's animationend (state already "closed") unmounts the
+                // panel and reports onExited; the entry's animationend is ignored.
+                if (!(node instanceof HTMLElement)) return;
+                const onAnimationEnd = (): void => {
+                  if (!active()) {
+                    visible(false);
+                    onExited?.();
+                  }
+                };
+                node.addEventListener("animationend", onAnimationEnd);
+                teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
+              }}
+              hook:beforeDestroy={() => {
+                while (teardown.length) teardown.pop()!();
+              }}
+              {...attrs}
+            >
+              {children}
+            </div>
+          </Portal>
+        )
+      }
     </div>
   );
 }
 
-export function NavigationMenuLink({ active, children, class: cls, ...attrs }: NavigationMenuLinkProps): JSX.Element {
+export function NavigationMenuLink({
+  active,
+  children,
+  class: cls,
+  ...attrs
+}: NavigationMenuLinkProps): JSX.Element {
   return (
     <a
       data-slot="navigation-menu-link"
@@ -230,7 +260,12 @@ export function NavigationMenuLink({ active, children, class: cls, ...attrs }: N
   );
 }
 
-export function NavigationMenuViewport({ active: activeProp, id, class: cls, ...attrs }: NavigationMenuViewportProps): JSX.Element {
+export function NavigationMenuViewport({
+  active: activeProp,
+  id,
+  class: cls,
+  ...attrs
+}: NavigationMenuViewportProps): JSX.Element {
   const active = (): boolean => activeProp?.() ?? false;
   return (
     <div
@@ -251,7 +286,12 @@ export function NavigationMenuViewport({ active: activeProp, id, class: cls, ...
   );
 }
 
-export function NavigationMenuIndicator({ active: activeProp, anchor, class: cls, ...attrs }: NavigationMenuIndicatorProps): JSX.Element {
+export function NavigationMenuIndicator({
+  active: activeProp,
+  anchor,
+  class: cls,
+  ...attrs
+}: NavigationMenuIndicatorProps): JSX.Element {
   const activeId = signal("");
   const visible = (): boolean => activeProp?.() ?? activeId() !== "";
   const wirings: (() => void)[] = [];
@@ -262,7 +302,10 @@ export function NavigationMenuIndicator({ active: activeProp, anchor, class: cls
   const resolveTrigger = (): Element | undefined => {
     if (anchor) return anchor();
     const id = activeId();
-    return id === "" ? undefined : document.querySelector(`[data-slot='navigation-menu-trigger'][data-value='${id}']`) ?? undefined;
+    return id === ""
+      ? undefined
+      : (document.querySelector(`[data-slot='navigation-menu-trigger'][data-value='${id}']`) ??
+          undefined);
   };
 
   // The underline/box position: measured against the root bar, moved with a
@@ -322,7 +365,14 @@ export function NavigationMenuIndicator({ active: activeProp, anchor, class: cls
   );
 }
 
-export function NavigationMenu({ value: valueProp, onValueChange, viewport: viewportProp, children, class: cls, ...attrs }: NavigationMenuProps): JSX.Element {
+export function NavigationMenu({
+  value: valueProp,
+  onValueChange,
+  viewport: viewportProp,
+  children,
+  class: cls,
+  ...attrs
+}: NavigationMenuProps): JSX.Element {
   const internal = signal("");
   const active = (): string => (valueProp !== undefined ? valueProp() : internal());
   const setActive = (value: string): void => {
@@ -356,7 +406,9 @@ export function NavigationMenu({ value: valueProp, onValueChange, viewport: view
       {...attrs}
     >
       {children}
-      {() => (viewportProp === false ? null : <NavigationMenuViewport active={() => active() !== ""} />)}
+      {() =>
+        viewportProp === false ? null : <NavigationMenuViewport active={() => active() !== ""} />
+      }
     </div>
   );
 }

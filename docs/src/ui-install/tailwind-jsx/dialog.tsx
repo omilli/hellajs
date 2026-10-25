@@ -69,7 +69,13 @@ export function DialogOverlay({ state, class: cls, ...attrs }: DialogOverlayProp
   );
 }
 
-export function DialogClose({ state, onClose, "on:click": userClick, class: cls, ...attrs }: DialogCloseProps): JSX.Element {
+export function DialogClose({
+  state,
+  onClose,
+  "on:click": userClick,
+  class: cls,
+  ...attrs
+}: DialogCloseProps): JSX.Element {
   return (
     <button
       type="button"
@@ -78,7 +84,10 @@ export function DialogClose({ state, onClose, "on:click": userClick, class: cls,
       class={
         cn("absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", cls)
       }
-      on:click={function (e) { userClick?.call(this, e); onClose?.(); }}
+      on:click={function (e) {
+        userClick?.call(this, e);
+        onClose?.();
+      }}
       {...attrs}
     >
       <svg
@@ -105,7 +114,17 @@ export function DialogClose({ state, onClose, "on:click": userClick, class: cls,
  * sibling - hella has no Radix context, so the portal/overlay pairing is the
  * composer's (the Dialog export below shows the wired composition).
  */
-export function DialogContent({ state, showCloseButton, closeOnEscape, closeOnOutside, onClose, onExited, children, class: cls, ...attrs }: DialogContentProps): JSX.Element {
+export function DialogContent({
+  state,
+  showCloseButton,
+  closeOnEscape,
+  closeOnOutside,
+  onClose,
+  onExited,
+  children,
+  class: cls,
+  ...attrs
+}: DialogContentProps): JSX.Element {
   const wirings: (() => void)[] = [];
   const teardown: (() => void)[] = [];
   let panel: HTMLElement | undefined;
@@ -157,9 +176,7 @@ export function DialogContent({ state, showCloseButton, closeOnEscape, closeOnOu
       {...attrs}
     >
       {children}
-      {showCloseButton !== false && (
-        <DialogClose state={state} onClose={onClose} />
-      )}
+      {showCloseButton !== false && <DialogClose state={state} onClose={onClose} />}
     </div>
   );
 }
@@ -207,7 +224,12 @@ export function DialogTitle({ id, children, class: cls, ...attrs }: DialogTitleP
   );
 }
 
-export function DialogDescription({ id, children, class: cls, ...attrs }: DialogDescriptionProps): JSX.Element {
+export function DialogDescription({
+  id,
+  children,
+  class: cls,
+  ...attrs
+}: DialogDescriptionProps): JSX.Element {
   return (
     <p
       id={id}
@@ -224,7 +246,18 @@ export function DialogDescription({ id, children, class: cls, ...attrs }: Dialog
 
 let dialogCount = 0;
 
-export function Dialog({ open, onClose, title: titleText, description: descriptionText, showCloseButton, closeOnEscape, closeOnOutside, children, class: cls, ...attrs }: DialogProps): JSX.Element {
+export function Dialog({
+  open,
+  onClose,
+  title: titleText,
+  description: descriptionText,
+  showCloseButton,
+  closeOnEscape,
+  closeOnOutside,
+  children,
+  class: cls,
+  ...attrs
+}: DialogProps): JSX.Element {
   const titleId = `hella-dialog-title-${++dialogCount}`;
   const descriptionId = `hella-dialog-description-${dialogCount}`;
   // `visible` alone gates the render so an open→closed flip never unmounts
@@ -261,28 +294,36 @@ export function Dialog({ open, onClose, title: titleText, description: descripti
 
   return (
     <>
-      {() => visible() && (
-        <Portal to="body">
-          <DialogOverlay state={state} />
-          <DialogContent
-            state={state}
-            aria-labelledby={titleId}
-            aria-describedby={descriptionText === undefined ? undefined : descriptionId}
-            showCloseButton={showCloseButton}
-            closeOnEscape={closeOnEscape}
-            closeOnOutside={closeOnOutside}
-            onClose={onClose}
-            onExited={finishExit}
-            class={cls}
-            {...attrs}
-            children={[
-              ...(titleText !== undefined ? [<DialogTitle id={titleId}>{titleText}</DialogTitle>] : []),
-              ...(descriptionText !== undefined ? [<DialogDescription id={descriptionId}>{descriptionText}</DialogDescription>] : []),
-              ...flattenChildren(children),
-            ] as HellaChild[]}
-          />
-        </Portal>
-      )}
+      {() =>
+        visible() && (
+          <Portal to="body">
+            <DialogOverlay state={state} />
+            <DialogContent
+              state={state}
+              aria-labelledby={titleId}
+              aria-describedby={descriptionText === undefined ? undefined : descriptionId}
+              showCloseButton={showCloseButton}
+              closeOnEscape={closeOnEscape}
+              closeOnOutside={closeOnOutside}
+              onClose={onClose}
+              onExited={finishExit}
+              class={cls}
+              {...attrs}
+              children={
+                [
+                  ...(titleText !== undefined
+                    ? [<DialogTitle id={titleId}>{titleText}</DialogTitle>]
+                    : []),
+                  ...(descriptionText !== undefined
+                    ? [<DialogDescription id={descriptionId}>{descriptionText}</DialogDescription>]
+                    : []),
+                  ...flattenChildren(children),
+                ] as HellaChild[]
+              }
+            />
+          </Portal>
+        )
+      }
     </>
   );
 }

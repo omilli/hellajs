@@ -116,11 +116,24 @@ const item = style("toggle-group-item", {
 const toggleVariants = (options?: {
   variant?: "default" | "outline";
   size?: "default" | "sm" | "lg";
-}): string => [base, variants[options?.variant ?? "default"], sizes[options?.size ?? "default"]].filter(Boolean).join(" ");
+}): string =>
+  [base, variants[options?.variant ?? "default"], sizes[options?.size ?? "default"]]
+    .filter(Boolean)
+    .join(" ");
 
-export function ToggleGroupItem({ value, pressed, onSelect, variant = "default", size = "default", disabled, "on:click": userClick, children, class: cls, ...attrs }: ToggleGroupItemProps): JSX.Element {
-  const isPressed = (): boolean =>
-    typeof pressed === "function" ? pressed() : pressed ?? false;
+export function ToggleGroupItem({
+  value,
+  pressed,
+  onSelect,
+  variant = "default",
+  size = "default",
+  disabled,
+  "on:click": userClick,
+  children,
+  class: cls,
+  ...attrs
+}: ToggleGroupItemProps): JSX.Element {
+  const isPressed = (): boolean => (typeof pressed === "function" ? pressed() : (pressed ?? false));
 
   return (
     <button
@@ -136,7 +149,10 @@ export function ToggleGroupItem({ value, pressed, onSelect, variant = "default",
       class={
         [toggleVariants({ variant, size }), item, cls]
       }
-      on:click={function (e) { userClick?.call(this, e); onSelect?.(); }}
+      on:click={function (e) {
+        userClick?.call(this, e);
+        onSelect?.();
+      }}
       {...attrs}
     >
       {children}
@@ -144,9 +160,22 @@ export function ToggleGroupItem({ value, pressed, onSelect, variant = "default",
   );
 }
 
-export function ToggleGroup({ items, keyBy, type, value, values, onValueChange, variant = "default", size = "default", class: cls, ...attrs }: ToggleGroupProps): JSX.Element {
+export function ToggleGroup({
+  items,
+  keyBy,
+  type,
+  value,
+  values,
+  onValueChange,
+  variant = "default",
+  size = "default",
+  class: cls,
+  ...attrs
+}: ToggleGroupProps): JSX.Element {
   // One-shot seed read: a getter items is called once here, an array reads directly.
-  const pressedValues = (typeof items === "function" ? items() : items).filter((entry) => entry.pressed).map((entry) => entry.value);
+  const pressedValues = (typeof items === "function" ? items() : items)
+    .filter((entry) => entry.pressed)
+    .map((entry) => entry.value);
   const internalSingle = signal(pressedValues[0] ?? "");
   const internalMulti = signal<Set<string>>(new Set(pressedValues));
   const wirings: (() => void)[] = [];
@@ -159,7 +188,9 @@ export function ToggleGroup({ items, keyBy, type, value, values, onValueChange, 
   const toggleItem = (itemValue: string): void => {
     if (type === "multiple") {
       const current = values !== undefined ? values() : [...internalMulti()];
-      const next = current.includes(itemValue) ? current.filter((v) => v !== itemValue) : [...current, itemValue];
+      const next = current.includes(itemValue)
+        ? current.filter((v) => v !== itemValue)
+        : [...current, itemValue];
       if (values === undefined) internalMulti(new Set(next));
       onValueChange?.(next);
       return;
@@ -183,9 +214,11 @@ export function ToggleGroup({ items, keyBy, type, value, values, onValueChange, 
       }
       hook:afterMount={(node) => {
         if (!(node instanceof HTMLElement)) return;
-        wirings.push(rovingTabIndex(node, {
-          selector: "[data-slot='toggle-group-item']:not(:disabled)",
-        }));
+        wirings.push(
+          rovingTabIndex(node, {
+            selector: "[data-slot='toggle-group-item']:not(:disabled)",
+          }),
+        );
       }}
       hook:beforeDestroy={() => {
         while (wirings.length) wirings.pop()!();

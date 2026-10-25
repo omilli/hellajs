@@ -65,7 +65,14 @@ const thumb = style("switch-thumb", {
   },
 });
 
-export function Switch({ checked: checkedProp, onCheckedChange, disabled, "on:click": userClick, class: cls, ...attrs }: SwitchProps): JSX.Element {
+export function Switch({
+  checked: checkedProp,
+  onCheckedChange,
+  disabled,
+  "on:click": userClick,
+  class: cls,
+  ...attrs
+}: SwitchProps): JSX.Element {
   const checkedAccessor = typeof checkedProp === "function" ? checkedProp : undefined;
   const internal = signal(typeof checkedProp === "boolean" ? checkedProp : false);
   const checked = (): boolean => (checkedAccessor ? checkedAccessor() : internal());
@@ -89,7 +96,10 @@ export function Switch({ checked: checkedProp, onCheckedChange, disabled, "on:cl
       class={
         [base, cls]
       }
-      on:click={function (e) { userClick?.call(this, e); toggle(); }}
+      on:click={function (e) {
+        userClick?.call(this, e);
+        toggle();
+      }}
       {...attrs}
     >
       <span

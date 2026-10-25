@@ -42,7 +42,8 @@ const icon = style("collapsible-icon", {
   height: "1rem",
   pointerEvents: "none",
   translate: "0 0.125rem",
-  transition: "rotate 200ms cubic-bezier(0.4, 0, 0.2, 1), translate 200ms cubic-bezier(0.4, 0, 0.2, 1)",
+  transition:
+    "rotate 200ms cubic-bezier(0.4, 0, 0.2, 1), translate 200ms cubic-bezier(0.4, 0, 0.2, 1)",
   width: "1rem",
 });
 
@@ -50,7 +51,8 @@ const content = style("collapsible-content", {
   display: "grid",
   gridTemplateRows: "0fr",
   opacity: "0",
-  transition: "grid-template-rows 200ms cubic-bezier(0.4, 0, 0.2, 1), opacity 200ms cubic-bezier(0.4, 0, 0.2, 1)",
+  transition:
+    "grid-template-rows 200ms cubic-bezier(0.4, 0, 0.2, 1), opacity 200ms cubic-bezier(0.4, 0, 0.2, 1)",
   "&[data-state='open']": {
     gridTemplateRows: "1fr",
     opacity: "1",
@@ -64,7 +66,14 @@ const contentInner = style("collapsible-content-inner", {
 
 let collapsibleCount = 0;
 
-export function CollapsibleTrigger({ active, onToggle, "on:click": userClick, children, class: cls, ...attrs }: CollapsibleTriggerProps): JSX.Element {
+export function CollapsibleTrigger({
+  active,
+  onToggle,
+  "on:click": userClick,
+  children,
+  class: cls,
+  ...attrs
+}: CollapsibleTriggerProps): JSX.Element {
   return (
     <button
       type="button"
@@ -74,7 +83,10 @@ export function CollapsibleTrigger({ active, onToggle, "on:click": userClick, ch
       class={
         [trigger, cls]
       }
-      on:click={function (e) { userClick?.call(this, e); onToggle?.(); }}
+      on:click={function (e) {
+        userClick?.call(this, e);
+        onToggle?.();
+      }}
       {...attrs}
     >
       {children}
@@ -100,7 +112,13 @@ export function CollapsibleTrigger({ active, onToggle, "on:click": userClick, ch
   );
 }
 
-export function CollapsibleContent({ active, id, children, class: cls, ...attrs }: CollapsibleContentProps): JSX.Element {
+export function CollapsibleContent({
+  active,
+  id,
+  children,
+  class: cls,
+  ...attrs
+}: CollapsibleContentProps): JSX.Element {
   return (
     <div
       role="region"
@@ -116,12 +134,22 @@ export function CollapsibleContent({ active, id, children, class: cls, ...attrs 
         class={
           [contentInner]
         }
-      >{children}</div>
+      >
+        {children}
+      </div>
     </div>
   );
 }
 
-export function Collapsible({ open, defaultOpen, onOpenChange, trigger: triggerSlot, content: contentSlot, class: cls, ...attrs }: CollapsibleProps): JSX.Element {
+export function Collapsible({
+  open,
+  defaultOpen,
+  onOpenChange,
+  trigger: triggerSlot,
+  content: contentSlot,
+  class: cls,
+  ...attrs
+}: CollapsibleProps): JSX.Element {
   const internal = signal(defaultOpen ?? false);
   const active = (): boolean => (open !== undefined ? open() : internal());
   const contentId = `hella-collapsible-content-${++collapsibleCount}`;
@@ -147,11 +175,7 @@ export function Collapsible({ open, defaultOpen, onOpenChange, trigger: triggerS
         aria-controls={contentId}
         children={triggerSlot}
       />
-      <CollapsibleContent
-        id={contentId}
-        active={active}
-        children={contentSlot}
-      />
+      <CollapsibleContent id={contentId} active={active} children={contentSlot} />
     </div>
   );
 }

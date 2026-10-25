@@ -25,7 +25,8 @@ const base = style("toggle", {
   justifyContent: "center",
   lineHeight: "1.25rem",
   outlineStyle: "none",
-  transition: "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
+  transition:
+    "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   whiteSpace: "nowrap",
   "& svg": {
     flexShrink: "0",
@@ -106,10 +107,22 @@ export function toggleVariants(options?: {
     variants[options?.variant ?? "default"],
     sizes[options?.size ?? "default"],
     options?.class,
-  ].filter(Boolean).join(" ");
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
-export function Toggle({ pressed: pressedProp, onPressedChange, variant, size, disabled, "on:click": userClick, children, class: cls, ...attrs }: ToggleProps): JSX.Element {
+export function Toggle({
+  pressed: pressedProp,
+  onPressedChange,
+  variant,
+  size,
+  disabled,
+  "on:click": userClick,
+  children,
+  class: cls,
+  ...attrs
+}: ToggleProps): JSX.Element {
   const pressedAccessor = typeof pressedProp === "function" ? pressedProp : undefined;
   const internal = signal(typeof pressedProp === "boolean" ? pressedProp : false);
   const pressed = (): boolean => (pressedAccessor ? pressedAccessor() : internal());
@@ -131,7 +144,10 @@ export function Toggle({ pressed: pressedProp, onPressedChange, variant, size, d
       class={
         [toggleVariants({ variant, size }), cls]
       }
-      on:click={function (e) { userClick?.call(this, e); toggle(); }}
+      on:click={function (e) {
+        userClick?.call(this, e);
+        toggle();
+      }}
       {...attrs}
     >
       {children}

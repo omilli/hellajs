@@ -107,11 +107,7 @@ export function Badge({ variant, children, class: cls, ...attrs }: BadgeProps): 
       data-slot="badge"
       data-variant={variant ?? "default"}
       class={
-        [
-          base,
-          variants[variant ?? "default"],
-          cls,
-        ]
+        [base, variants[variant ?? "default"], cls]
       }
       {...attrs}
     >

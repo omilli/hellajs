@@ -255,7 +255,13 @@ export function SheetOverlay({ state, class: cls, ...attrs }: SheetOverlayProps)
   );
 }
 
-export function SheetClose({ state, onClose, "on:click": userClick, class: cls, ...attrs }: SheetCloseProps): JSX.Element {
+export function SheetClose({
+  state,
+  onClose,
+  "on:click": userClick,
+  class: cls,
+  ...attrs
+}: SheetCloseProps): JSX.Element {
   return (
     <button
       type="button"
@@ -264,7 +270,10 @@ export function SheetClose({ state, onClose, "on:click": userClick, class: cls, 
       class={
         [close, cls]
       }
-      on:click={function (e) { userClick?.call(this, e); onClose?.(); }}
+      on:click={function (e) {
+        userClick?.call(this, e);
+        onClose?.();
+      }}
       {...attrs}
     >
       <svg
@@ -288,11 +297,7 @@ export function SheetClose({ state, onClose, "on:click": userClick, class: cls, 
 
 /** Portals the manual composition's parts into document.body. */
 export function SheetPortal(props: SheetPortalProps): JSX.Element {
-  return (
-    <Portal to="body">
-      {props.children}
-    </Portal>
-  );
+  return <Portal to="body">{props.children}</Portal>;
 }
 
 /** The manual trigger button; wire its click to the caller's open signal - hella has no Radix context to do it for you. */
@@ -319,7 +324,18 @@ export function SheetTrigger({ children, class: cls, ...attrs }: SheetTriggerPro
  * generated ids as the panel's `aria-labelledby`/`aria-describedby` attrs
  * even in manual compositions, screen readers announce nothing without them.
  */
-export function SheetContent({ state, side, showCloseButton, closeOnEscape, closeOnOutside, onClose, onExited, children, class: cls, ...attrs }: SheetContentProps): JSX.Element {
+export function SheetContent({
+  state,
+  side,
+  showCloseButton,
+  closeOnEscape,
+  closeOnOutside,
+  onClose,
+  onExited,
+  children,
+  class: cls,
+  ...attrs
+}: SheetContentProps): JSX.Element {
   const wirings: (() => void)[] = [];
   const teardown: (() => void)[] = [];
   let panel: HTMLElement | undefined;
@@ -374,9 +390,7 @@ export function SheetContent({ state, side, showCloseButton, closeOnEscape, clos
       {...attrs}
     >
       {children}
-      {showCloseButton !== false && (
-        <SheetClose state={state} onClose={onClose} />
-      )}
+      {showCloseButton !== false && <SheetClose state={state} onClose={onClose} />}
     </div>
   );
 }
@@ -424,7 +438,12 @@ export function SheetTitle({ id, children, class: cls, ...attrs }: SheetTitlePro
   );
 }
 
-export function SheetDescription({ id, children, class: cls, ...attrs }: SheetDescriptionProps): JSX.Element {
+export function SheetDescription({
+  id,
+  children,
+  class: cls,
+  ...attrs
+}: SheetDescriptionProps): JSX.Element {
   return (
     <p
       id={id}
@@ -441,7 +460,19 @@ export function SheetDescription({ id, children, class: cls, ...attrs }: SheetDe
 
 let sheetCount = 0;
 
-export function Sheet({ open, onClose, side, title: titleText, description: descriptionText, showCloseButton, closeOnEscape, closeOnOutside, children, class: cls, ...attrs }: SheetProps): JSX.Element {
+export function Sheet({
+  open,
+  onClose,
+  side,
+  title: titleText,
+  description: descriptionText,
+  showCloseButton,
+  closeOnEscape,
+  closeOnOutside,
+  children,
+  class: cls,
+  ...attrs
+}: SheetProps): JSX.Element {
   const titleId = `hella-sheet-title-${++sheetCount}`;
   const descriptionId = `hella-sheet-description-${sheetCount}`;
   // `visible` alone gates the render so an open→closed flip never unmounts
@@ -478,29 +509,37 @@ export function Sheet({ open, onClose, side, title: titleText, description: desc
 
   return (
     <>
-      {() => visible() && (
-        <Portal to="body">
-          <SheetOverlay state={state} />
-          <SheetContent
-            state={state}
-            side={side}
-            aria-labelledby={titleId}
-            aria-describedby={descriptionText === undefined ? undefined : descriptionId}
-            showCloseButton={showCloseButton}
-            closeOnEscape={closeOnEscape}
-            closeOnOutside={closeOnOutside}
-            onClose={onClose}
-            onExited={finishExit}
-            class={cls}
-            {...attrs}
-            children={[
-              ...(titleText !== undefined ? [<SheetTitle id={titleId}>{titleText}</SheetTitle>] : []),
-              ...(descriptionText !== undefined ? [<SheetDescription id={descriptionId}>{descriptionText}</SheetDescription>] : []),
-              ...flattenChildren(children),
-            ] as HellaChild[]}
-          />
-        </Portal>
-      )}
+      {() =>
+        visible() && (
+          <Portal to="body">
+            <SheetOverlay state={state} />
+            <SheetContent
+              state={state}
+              side={side}
+              aria-labelledby={titleId}
+              aria-describedby={descriptionText === undefined ? undefined : descriptionId}
+              showCloseButton={showCloseButton}
+              closeOnEscape={closeOnEscape}
+              closeOnOutside={closeOnOutside}
+              onClose={onClose}
+              onExited={finishExit}
+              class={cls}
+              {...attrs}
+              children={
+                [
+                  ...(titleText !== undefined
+                    ? [<SheetTitle id={titleId}>{titleText}</SheetTitle>]
+                    : []),
+                  ...(descriptionText !== undefined
+                    ? [<SheetDescription id={descriptionId}>{descriptionText}</SheetDescription>]
+                    : []),
+                  ...flattenChildren(children),
+                ] as HellaChild[]
+              }
+            />
+          </Portal>
+        )
+      }
     </>
   );
 }

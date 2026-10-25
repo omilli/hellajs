@@ -36,7 +36,8 @@ import { cn } from "./cn.js";
 
 const linkVariants = {
   ghost: "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
-  outline: "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+  outline:
+    "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
 };
 
 const linkSizes = {
@@ -66,7 +67,11 @@ export function Pagination({ children, class: cls, ...attrs }: PaginationProps):
   );
 }
 
-export function PaginationContent({ children, class: cls, ...attrs }: PaginationContentProps): JSX.Element {
+export function PaginationContent({
+  children,
+  class: cls,
+  ...attrs
+}: PaginationContentProps): JSX.Element {
   return (
     <ul
       data-slot="pagination-content"
@@ -80,7 +85,11 @@ export function PaginationContent({ children, class: cls, ...attrs }: Pagination
   );
 }
 
-export function PaginationItem({ children, class: cls, ...attrs }: PaginationItemProps): JSX.Element {
+export function PaginationItem({
+  children,
+  class: cls,
+  ...attrs
+}: PaginationItemProps): JSX.Element {
   return (
     <li
       data-slot="pagination-item"
@@ -94,7 +103,13 @@ export function PaginationItem({ children, class: cls, ...attrs }: PaginationIte
   );
 }
 
-export function PaginationLink({ isActive, size, children, class: cls, ...attrs }: PaginationLinkProps): JSX.Element {
+export function PaginationLink({
+  isActive,
+  size,
+  children,
+  class: cls,
+  ...attrs
+}: PaginationLinkProps): JSX.Element {
   return (
     <a
       aria-current={isActive ? "page" : undefined}
@@ -115,7 +130,11 @@ export function PaginationLink({ isActive, size, children, class: cls, ...attrs 
   );
 }
 
-export function PaginationPrevious({ isActive, class: cls, ...attrs }: PaginationNavProps): JSX.Element {
+export function PaginationPrevious({
+  isActive,
+  class: cls,
+  ...attrs
+}: PaginationNavProps): JSX.Element {
   return (
     <a
       aria-label="Go to previous page"
@@ -151,7 +170,11 @@ export function PaginationPrevious({ isActive, class: cls, ...attrs }: Paginatio
   );
 }
 
-export function PaginationNext({ isActive, class: cls, ...attrs }: PaginationNavProps): JSX.Element {
+export function PaginationNext({
+  isActive,
+  class: cls,
+  ...attrs
+}: PaginationNavProps): JSX.Element {
   return (
     <a
       aria-label="Go to next page"

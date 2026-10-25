@@ -111,18 +111,19 @@ const separator = style("button-group-separator-override", {
   },
 });
 
-export function ButtonGroup({ orientation: orient, children, class: cls, ...attrs }: ButtonGroupProps): JSX.Element {
+export function ButtonGroup({
+  orientation: orient,
+  children,
+  class: cls,
+  ...attrs
+}: ButtonGroupProps): JSX.Element {
   return (
     <div
       role="group"
       data-slot="button-group"
       data-orientation={orient ?? "horizontal"}
       class={
-        [
-          base,
-          orientation[orient ?? "horizontal"],
-          cls,
-        ]
+        [base, orientation[orient ?? "horizontal"], cls]
       }
       {...attrs}
     >
@@ -131,7 +132,11 @@ export function ButtonGroup({ orientation: orient, children, class: cls, ...attr
   );
 }
 
-export function ButtonGroupText({ children, class: cls, ...attrs }: ButtonGroupTextProps): JSX.Element {
+export function ButtonGroupText({
+  children,
+  class: cls,
+  ...attrs
+}: ButtonGroupTextProps): JSX.Element {
   return (
     <div
       data-slot="button-group-text"
@@ -145,7 +150,11 @@ export function ButtonGroupText({ children, class: cls, ...attrs }: ButtonGroupT
   );
 }
 
-export function ButtonGroupSeparator({ orientation: orient, class: cls, ...attrs }: ButtonGroupSeparatorProps): JSX.Element {
+export function ButtonGroupSeparator({
+  orientation: orient,
+  class: cls,
+  ...attrs
+}: ButtonGroupSeparatorProps): JSX.Element {
   return (
     <div
       role="separator"
@@ -153,11 +162,7 @@ export function ButtonGroupSeparator({ orientation: orient, class: cls, ...attrs
       data-orientation={orient ?? "vertical"}
       aria-orientation={orient ?? "vertical"}
       class={
-        [
-          separatorBase,
-          separator,
-          cls,
-        ]
+        [separatorBase, separator, cls]
       }
       {...attrs}
     />

@@ -70,7 +70,8 @@ const base = style("attachment", {
   border: `1px solid ${tokens.border}`,
   backgroundColor: tokens.card,
   color: tokens.cardForeground,
-  transitionProperty: "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke",
+  transitionProperty:
+    "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke",
   transitionDuration: "150ms",
   transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
   "&:focus-within": {
@@ -408,14 +409,16 @@ css({
   "[data-slot='attachment'][data-orientation='vertical'] [data-slot='attachment-media']": {
     width: "100%",
   },
-  "[data-slot='attachment'][data-orientation='vertical'] [data-slot='attachment-media'] > [data-slot='spinner']": {
-    height: "1.5rem !important",
-    width: "1.5rem !important",
-  },
-  "[data-slot='attachment'][data-orientation='vertical'] [data-slot='attachment-media'] svg:not([class*='size-'])": {
-    height: "1.5rem",
-    width: "1.5rem",
-  },
+  "[data-slot='attachment'][data-orientation='vertical'] [data-slot='attachment-media'] > [data-slot='spinner']":
+    {
+      height: "1.5rem !important",
+      width: "1.5rem !important",
+    },
+  "[data-slot='attachment'][data-orientation='vertical'] [data-slot='attachment-media'] svg:not([class*='size-'])":
+    {
+      height: "1.5rem",
+      width: "1.5rem",
+    },
   "[data-slot='attachment'][data-size='sm'] [data-slot='attachment-media']": {
     width: "2rem",
   },
@@ -423,10 +426,11 @@ css({
     width: "1.75rem",
     borderRadius: `calc(${tokens.radius} * 0.8)`,
   },
-  "[data-slot='attachment'][data-size='xs'] [data-slot='attachment-media'] svg:not([class*='size-'])": {
-    height: "0.875rem",
-    width: "0.875rem",
-  },
+  "[data-slot='attachment'][data-size='xs'] [data-slot='attachment-media'] svg:not([class*='size-'])":
+    {
+      height: "0.875rem",
+      width: "0.875rem",
+    },
   "[data-slot='attachment'][data-state='error'] [data-slot='attachment-media']": {
     backgroundColor: `color-mix(in oklab, ${tokens.destructive} 10%, transparent)`,
     color: tokens.destructive,
@@ -434,12 +438,14 @@ css({
   "[data-slot='attachment'][data-orientation='vertical'] [data-slot='attachment-content']": {
     paddingInline: "0.25rem",
   },
-  "[data-slot='attachment'][data-state='done'] [data-slot='attachment-media'][data-variant='image']": {
-    opacity: "1",
-  },
-  "[data-slot='attachment'][data-state='idle'] [data-slot='attachment-media'][data-variant='image']": {
-    opacity: "1",
-  },
+  "[data-slot='attachment'][data-state='done'] [data-slot='attachment-media'][data-variant='image']":
+    {
+      opacity: "1",
+    },
+  "[data-slot='attachment'][data-state='idle'] [data-slot='attachment-media'][data-variant='image']":
+    {
+      opacity: "1",
+    },
   "[data-slot='attachment'][data-state='error'] [data-slot='attachment-description']": {
     color: `color-mix(in oklab, ${tokens.destructive} 80%, transparent)`,
   },
@@ -451,7 +457,14 @@ css({
   },
 });
 
-export function Attachment({ state, size, orientation, children, class: cls, ...attrs }: AttachmentProps): JSX.Element {
+export function Attachment({
+  state,
+  size,
+  orientation,
+  children,
+  class: cls,
+  ...attrs
+}: AttachmentProps): JSX.Element {
   return (
     <div
       data-slot="attachment"
@@ -468,7 +481,13 @@ export function Attachment({ state, size, orientation, children, class: cls, ...
   );
 }
 
-export function AttachmentMedia({ variant, state, children, class: cls, ...attrs }: AttachmentMediaProps): JSX.Element {
+export function AttachmentMedia({
+  variant,
+  state,
+  children,
+  class: cls,
+  ...attrs
+}: AttachmentMediaProps): JSX.Element {
   const icon = (): HellaChildren | undefined => {
     if (children !== undefined) return undefined;
     if (state === "uploading") {
@@ -524,7 +543,11 @@ export function AttachmentMedia({ variant, state, children, class: cls, ...attrs
   );
 }
 
-export function AttachmentContent({ children, class: cls, ...attrs }: AttachmentContentProps): JSX.Element {
+export function AttachmentContent({
+  children,
+  class: cls,
+  ...attrs
+}: AttachmentContentProps): JSX.Element {
   return (
     <div
       data-slot="attachment-content"
@@ -538,7 +561,11 @@ export function AttachmentContent({ children, class: cls, ...attrs }: Attachment
   );
 }
 
-export function AttachmentTitle({ children, class: cls, ...attrs }: AttachmentTitleProps): JSX.Element {
+export function AttachmentTitle({
+  children,
+  class: cls,
+  ...attrs
+}: AttachmentTitleProps): JSX.Element {
   return (
     <span
       data-slot="attachment-title"
@@ -552,7 +579,11 @@ export function AttachmentTitle({ children, class: cls, ...attrs }: AttachmentTi
   );
 }
 
-export function AttachmentDescription({ children, class: cls, ...attrs }: AttachmentDescriptionProps): JSX.Element {
+export function AttachmentDescription({
+  children,
+  class: cls,
+  ...attrs
+}: AttachmentDescriptionProps): JSX.Element {
   return (
     <span
       data-slot="attachment-description"
@@ -566,7 +597,11 @@ export function AttachmentDescription({ children, class: cls, ...attrs }: Attach
   );
 }
 
-export function AttachmentActions({ children, class: cls, ...attrs }: AttachmentActionsProps): JSX.Element {
+export function AttachmentActions({
+  children,
+  class: cls,
+  ...attrs
+}: AttachmentActionsProps): JSX.Element {
   return (
     <div
       data-slot="attachment-actions"
@@ -580,7 +615,13 @@ export function AttachmentActions({ children, class: cls, ...attrs }: Attachment
   );
 }
 
-export function AttachmentAction({ variant, size, children, class: cls, ...attrs }: AttachmentActionProps): JSX.Element {
+export function AttachmentAction({
+  variant,
+  size,
+  children,
+  class: cls,
+  ...attrs
+}: AttachmentActionProps): JSX.Element {
   return (
     <button
       type="button"
@@ -597,7 +638,11 @@ export function AttachmentAction({ variant, size, children, class: cls, ...attrs
   );
 }
 
-export function AttachmentTrigger({ children, class: cls, ...attrs }: AttachmentTriggerProps): JSX.Element {
+export function AttachmentTrigger({
+  children,
+  class: cls,
+  ...attrs
+}: AttachmentTriggerProps): JSX.Element {
   return (
     <button
       type="button"
@@ -612,7 +657,11 @@ export function AttachmentTrigger({ children, class: cls, ...attrs }: Attachment
   );
 }
 
-export function AttachmentGroup({ children, class: cls, ...attrs }: AttachmentGroupProps): JSX.Element {
+export function AttachmentGroup({
+  children,
+  class: cls,
+  ...attrs
+}: AttachmentGroupProps): JSX.Element {
   return (
     <div
       data-slot="attachment-group"

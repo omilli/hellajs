@@ -111,7 +111,10 @@ const message = style("form-message", {
 /** Signals controller createForm returns; the form parts read it through explicit props (no context). */
 
 /** Signals-native form controller replacing react-hook-form's provider: values, errors, touched, and dirty are plain signals, validators run on blur, on setField after touch, and on submit. */
-export function createForm<T extends object>(initial: T, options?: FormOptions<T>): FormController<T> {
+export function createForm<T extends object>(
+  initial: T,
+  options?: FormOptions<T>,
+): FormController<T> {
   const keys = Object.keys(initial) as (keyof T)[];
   const values = {} as { [K in keyof T]: Signal<T[K]> };
   for (const key of keys) values[key] = signal(initial[key]);
@@ -168,14 +171,16 @@ export function createForm<T extends object>(initial: T, options?: FormOptions<T
     dirty(false);
   };
 
-  const handleSubmit = (onValid: (values: T) => void) => (e?: Event): void => {
-    e?.preventDefault();
-    const clean = validate();
-    const nextTouched = { ...touched() };
-    for (const key of keys) nextTouched[key] = true;
-    touched(nextTouched);
-    if (clean) onValid(snapshot());
-  };
+  const handleSubmit =
+    (onValid: (values: T) => void) =>
+    (e?: Event): void => {
+      e?.preventDefault();
+      const clean = validate();
+      const nextTouched = { ...touched() };
+      for (const key of keys) nextTouched[key] = true;
+      touched(nextTouched);
+      if (clean) onValid(snapshot());
+    };
 
   return { values, errors, touched, dirty, setField, blur, validate, reset, handleSubmit };
 }
@@ -196,7 +201,14 @@ export function FormItem({ error, children, class: cls, ...attrs }: FormItemProp
   );
 }
 
-export function FormLabel({ required, for: htmlFor, error, children, class: cls, ...attrs }: FormLabelProps): JSX.Element {
+export function FormLabel({
+  required,
+  for: htmlFor,
+  error,
+  children,
+  class: cls,
+  ...attrs
+}: FormLabelProps): JSX.Element {
   const hasError = (): boolean => (typeof error === "function" ? error() : error) === true;
   const invalid = (): "true" | undefined => (hasError() ? "true" : undefined);
   return (
@@ -216,7 +228,13 @@ export function FormLabel({ required, for: htmlFor, error, children, class: cls,
   );
 }
 
-export function FormControl({ invalid, describedBy, children, class: cls, ...attrs }: FormControlProps): JSX.Element {
+export function FormControl({
+  invalid,
+  describedBy,
+  children,
+  class: cls,
+  ...attrs
+}: FormControlProps): JSX.Element {
   const isInvalid = (): boolean => (typeof invalid === "function" ? invalid() : invalid) === true;
   return (
     <div
@@ -233,7 +251,12 @@ export function FormControl({ invalid, describedBy, children, class: cls, ...att
   );
 }
 
-export function FormDescription({ id, children, class: cls, ...attrs }: FormDescriptionProps): JSX.Element {
+export function FormDescription({
+  id,
+  children,
+  class: cls,
+  ...attrs
+}: FormDescriptionProps): JSX.Element {
   return (
     <p
       data-slot="form-description"
@@ -248,7 +271,12 @@ export function FormDescription({ id, children, class: cls, ...attrs }: FormDesc
   );
 }
 
-export function FormMessage({ errors, children, class: cls, ...attrs }: FormMessageProps): JSX.Element {
+export function FormMessage({
+  errors,
+  children,
+  class: cls,
+  ...attrs
+}: FormMessageProps): JSX.Element {
   const messages = (): string[] => (typeof errors === "function" ? errors() : errors) ?? [];
   const hasContent = (): boolean => messages().length > 0 || children != null;
   return (

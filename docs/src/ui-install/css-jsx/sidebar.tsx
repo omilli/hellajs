@@ -137,7 +137,9 @@ const slideInLeft = keyframes({ from: { opacity: "0", transform: "translateX(-10
 const slideOutLeft = keyframes({ to: { opacity: "0", transform: "translateX(-100%)" } });
 const slideInRight = keyframes({ from: { opacity: "0", transform: "translateX(100%)" } });
 const slideOutRight = keyframes({ to: { opacity: "0", transform: "translateX(100%)" } });
-const tooltipInRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem) scale(0.95)" } });
+const tooltipInRight = keyframes({
+  from: { opacity: "0", transform: "translateX(-0.5rem) scale(0.95)" },
+});
 
 const base = style("sidebar-base", {
   display: "flex",
@@ -392,7 +394,8 @@ const inputBase = style("sidebar-input-base", {
   outlineStyle: "none",
   paddingBlock: "0.25rem",
   paddingInline: "0.75rem",
-  transition: "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
+  transition:
+    "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   width: "100%",
   "&::file-selector-button": {
     background: "transparent",
@@ -847,9 +850,10 @@ css({
   "[data-collapsible='icon'][data-variant='sidebar'] [data-slot='sidebar-gap']": {
     width: "var(--sidebar-width-icon)",
   },
-  "[data-collapsible='icon'][data-variant='floating'] [data-slot='sidebar-gap'], [data-collapsible='icon'][data-variant='inset'] [data-slot='sidebar-gap']": {
-    width: "calc(var(--sidebar-width-icon) + 1rem)",
-  },
+  "[data-collapsible='icon'][data-variant='floating'] [data-slot='sidebar-gap'], [data-collapsible='icon'][data-variant='inset'] [data-slot='sidebar-gap']":
+    {
+      width: "calc(var(--sidebar-width-icon) + 1rem)",
+    },
   "[data-collapsible='offcanvas'] [data-slot='sidebar-gap']": {
     width: "0",
   },
@@ -866,18 +870,20 @@ css({
   "[data-collapsible='icon'][data-variant='sidebar'] [data-slot='sidebar-container']": {
     width: "var(--sidebar-width-icon)",
   },
-  "[data-collapsible='icon'][data-variant='floating'] [data-slot='sidebar-container'], [data-collapsible='icon'][data-variant='inset'] [data-slot='sidebar-container']": {
-    width: "calc(var(--sidebar-width-icon) + 1rem + 2px)",
-  },
+  "[data-collapsible='icon'][data-variant='floating'] [data-slot='sidebar-container'], [data-collapsible='icon'][data-variant='inset'] [data-slot='sidebar-container']":
+    {
+      width: "calc(var(--sidebar-width-icon) + 1rem + 2px)",
+    },
   "[data-side='left'][data-variant='sidebar'] [data-slot='sidebar-container']": {
     borderRight: `1px solid ${tokens.border}`,
   },
   "[data-side='right'][data-variant='sidebar'] [data-slot='sidebar-container']": {
     borderLeft: `1px solid ${tokens.border}`,
   },
-  "[data-variant='floating'] [data-slot='sidebar-container'], [data-variant='inset'] [data-slot='sidebar-container']": {
-    padding: "0.5rem",
-  },
+  "[data-variant='floating'] [data-slot='sidebar-container'], [data-variant='inset'] [data-slot='sidebar-container']":
+    {
+      padding: "0.5rem",
+    },
 
   "[data-variant='floating'] [data-slot='sidebar-inner']": {
     border: `1px solid ${sidebarTokens.sidebarBorder}`,
@@ -892,9 +898,10 @@ css({
       margin: "0.5rem",
       marginLeft: "0",
     },
-    "[data-slot='sidebar'][data-variant='inset'][data-state='collapsed'] ~ [data-slot='sidebar-inset']": {
-      marginLeft: "0.5rem",
-    },
+    "[data-slot='sidebar'][data-variant='inset'][data-state='collapsed'] ~ [data-slot='sidebar-inset']":
+      {
+        marginLeft: "0.5rem",
+      },
     "[data-sidebar='menu-action'][data-show-on-hover='true']": {
       opacity: "0",
     },
@@ -950,9 +957,10 @@ css({
   "[data-collapsible='icon'] [data-sidebar='menu-button'][data-size='lg']": {
     padding: "0",
   },
-  "[data-slot='sidebar-menu-item']:has([data-sidebar='menu-action']) [data-sidebar='menu-button']": {
-    paddingRight: "2rem",
-  },
+  "[data-slot='sidebar-menu-item']:has([data-sidebar='menu-action']) [data-sidebar='menu-button']":
+    {
+      paddingRight: "2rem",
+    },
 
   "[data-sidebar='menu-button']:hover ~ [data-sidebar='menu-action']": {
     color: sidebarTokens.sidebarAccentForeground,
@@ -970,12 +978,14 @@ css({
     display: "none",
   },
 
-  "[data-slot='sidebar-menu-item']:focus-within [data-sidebar='menu-action'][data-show-on-hover='true'], [data-slot='sidebar-menu-item']:hover [data-sidebar='menu-action'][data-show-on-hover='true']": {
-    opacity: "1",
-  },
-  "[data-sidebar='menu-button'][data-active='true'] ~ [data-sidebar='menu-action'][data-show-on-hover='true']": {
-    color: sidebarTokens.sidebarAccentForeground,
-  },
+  "[data-slot='sidebar-menu-item']:focus-within [data-sidebar='menu-action'][data-show-on-hover='true'], [data-slot='sidebar-menu-item']:hover [data-sidebar='menu-action'][data-show-on-hover='true']":
+    {
+      opacity: "1",
+    },
+  "[data-sidebar='menu-button'][data-active='true'] ~ [data-sidebar='menu-action'][data-show-on-hover='true']":
+    {
+      color: sidebarTokens.sidebarAccentForeground,
+    },
   "[data-sidebar='menu-action'][data-show-on-hover='true'][data-state='open']": {
     opacity: "1",
   },
@@ -1020,7 +1030,14 @@ css({
   },
 });
 
-export function SidebarProvider({ open: openProp, defaultOpen, onOpenChange, children, class: cls, ...attrs }: SidebarProviderProps): JSX.Element {
+export function SidebarProvider({
+  open: openProp,
+  defaultOpen,
+  onOpenChange,
+  children,
+  class: cls,
+  ...attrs
+}: SidebarProviderProps): JSX.Element {
   const internal = signal(defaultOpen ?? true);
   // Two separate states the ref also splits: the viewport query and the
   // mobile sheet's own open flag - conflating them would flip the branch
@@ -1081,7 +1098,18 @@ export function SidebarProvider({ open: openProp, defaultOpen, onOpenChange, chi
 
 let sidebarCount = 0;
 
-export function Sidebar({ open, mobile: mobileProp, openMobile, onOpenMobileChange, side: sideProp, variant: variantProp, collapsible: collapsibleProp, class: cls, children, ...attrs }: SidebarProps): JSX.Element {
+export function Sidebar({
+  open,
+  mobile: mobileProp,
+  openMobile,
+  onOpenMobileChange,
+  side: sideProp,
+  variant: variantProp,
+  collapsible: collapsibleProp,
+  class: cls,
+  children,
+  ...attrs
+}: SidebarProps): JSX.Element {
   const side = sideProp ?? "left";
   const variant = variantProp ?? "sidebar";
   const collapsible = collapsibleProp ?? "offcanvas";
@@ -1107,50 +1135,57 @@ export function Sidebar({ open, mobile: mobileProp, openMobile, onOpenMobileChan
   // provider's matchMedia flip would never propagate.
   return (
     <>
-      {() => mobileProp?.() === true ? (
-        <SidebarMobileSheet
-          open={() => openMobile?.() ?? false}
-          onClose={() => onOpenMobileChange?.(false)}
-          side={side}
-          children={flattenChildren(children)}
-        />
-      ) : (
-        <div
-          data-slot="sidebar"
-          data-state={collapsed() ? "collapsed" : "expanded"}
-          data-collapsible={collapsed() ? collapsible : undefined}
-          data-variant={variant}
-          data-side={side}
-          class={
-            [sidebar]
-          }
-          {...attrs}
-        >
-          {/* This is what handles the sidebar gap on desktop */}
-          <div
-            data-slot="sidebar-gap"
-            class={
-              [gap, variantIsInset ? gapInset : gapPlain]
-            }
+      {() =>
+        mobileProp?.() === true ? (
+          <SidebarMobileSheet
+            open={() => openMobile?.() ?? false}
+            onClose={() => onOpenMobileChange?.(false)}
+            side={side}
+            children={flattenChildren(children)}
           />
+        ) : (
           <div
-            data-slot="sidebar-container"
+            data-slot="sidebar"
+            data-state={collapsed() ? "collapsed" : "expanded"}
+            data-collapsible={collapsed() ? collapsible : undefined}
+            data-variant={variant}
+            data-side={side}
             class={
-              [container, containerSides[side], variantIsInset ? containerInset : containerPlain, cls]
+              [sidebar]
             }
+            {...attrs}
           >
+            {/* This is what handles the sidebar gap on desktop */}
             <div
-              data-sidebar="sidebar"
-              data-slot="sidebar-inner"
+              data-slot="sidebar-gap"
               class={
-                [inner]
+                [gap, variantIsInset ? gapInset : gapPlain]
+              }
+            />
+            <div
+              data-slot="sidebar-container"
+              class={
+                [
+                  container,
+                  containerSides[side],
+                  variantIsInset ? containerInset : containerPlain,
+                  cls,
+                ]
               }
             >
-              {children}
+              <div
+                data-sidebar="sidebar"
+                data-slot="sidebar-inner"
+                class={
+                  [inner]
+                }
+              >
+                {children}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
     </>
   );
 }
@@ -1220,63 +1255,74 @@ function SidebarMobileSheet(props: SidebarMobileSheetProps): JSX.Element {
 
   return (
     <>
-      {() => visible() && (
-        <Portal to="body">
-          <div
-            data-slot="sidebar-overlay"
-            data-state={state()}
-            class={
-              [overlay]
-            }
-          />
-          <div
-            data-sidebar="sidebar"
-            data-slot="sidebar"
-            data-mobile="true"
-            data-state={state()}
-            data-side={side}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={titleId}
-            aria-describedby={descriptionId}
-            style="--sidebar-width: 18rem"
-            class={
-              [mobile, mobileSides[side]]
-            }
-            hook:afterMount={(node) => {
-              if (!(node instanceof HTMLElement)) return;
-              panel = node;
-              installWirings();
-              // The exit's animationend (state already "closed") is the
-              // primary unmount trigger; the entry's is ignored.
-              const onAnimationEnd = (): void => {
-                if (props.open() === false) finishExit();
-              };
-              node.addEventListener("animationend", onAnimationEnd);
-              teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
-            }}
-            hook:beforeDestroy={() => {
-              disposeWirings();
-              while (teardown.length) teardown.pop()!();
-            }}
-          >
-            <h2 id={titleId} class="sr-only">Sidebar</h2>
-            <p id={descriptionId} class="sr-only">Displays the mobile sidebar.</p>
+      {() =>
+        visible() && (
+          <Portal to="body">
             <div
+              data-slot="sidebar-overlay"
+              data-state={state()}
               class={
-                [mobileInner]
+                [overlay]
               }
+            />
+            <div
+              data-sidebar="sidebar"
+              data-slot="sidebar"
+              data-mobile="true"
+              data-state={state()}
+              data-side={side}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={titleId}
+              aria-describedby={descriptionId}
+              style="--sidebar-width: 18rem"
+              class={
+                [mobile, mobileSides[side]]
+              }
+              hook:afterMount={(node) => {
+                if (!(node instanceof HTMLElement)) return;
+                panel = node;
+                installWirings();
+                // The exit's animationend (state already "closed") is the
+                // primary unmount trigger; the entry's is ignored.
+                const onAnimationEnd = (): void => {
+                  if (props.open() === false) finishExit();
+                };
+                node.addEventListener("animationend", onAnimationEnd);
+                teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
+              }}
+              hook:beforeDestroy={() => {
+                disposeWirings();
+                while (teardown.length) teardown.pop()!();
+              }}
             >
-              {props.children}
+              <h2 id={titleId} class="sr-only">
+                Sidebar
+              </h2>
+              <p id={descriptionId} class="sr-only">
+                Displays the mobile sidebar.
+              </p>
+              <div
+                class={
+                  [mobileInner]
+                }
+              >
+                {props.children}
+              </div>
             </div>
-          </div>
-        </Portal>
-      )}
+          </Portal>
+        )
+      }
     </>
   );
 }
 
-export function SidebarTrigger({ onToggle, "on:click": userClick, class: cls, ...attrs }: SidebarTriggerProps): JSX.Element {
+export function SidebarTrigger({
+  onToggle,
+  "on:click": userClick,
+  class: cls,
+  ...attrs
+}: SidebarTriggerProps): JSX.Element {
   return (
     <button
       type="button"
@@ -1312,7 +1358,13 @@ export function SidebarTrigger({ onToggle, "on:click": userClick, class: cls, ..
 }
 
 /** The drag-handle edge - click toggles; width dragging is out of scope (bounded open). */
-export function SidebarRail({ onToggle, "on:click": userClick, class: cls, children, ...attrs }: SidebarRailProps): JSX.Element {
+export function SidebarRail({
+  onToggle,
+  "on:click": userClick,
+  class: cls,
+  children,
+  ...attrs
+}: SidebarRailProps): JSX.Element {
   return (
     <button
       type="button"
@@ -1392,7 +1444,11 @@ export function SidebarFooter({ children, class: cls, ...attrs }: SidebarPartPro
   );
 }
 
-export function SidebarSeparator({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
+export function SidebarSeparator({
+  children,
+  class: cls,
+  ...attrs
+}: SidebarPartProps): JSX.Element {
   return (
     <div
       data-slot="sidebar-separator"
@@ -1440,7 +1496,11 @@ export function SidebarGroup({ children, class: cls, ...attrs }: SidebarPartProp
   );
 }
 
-export function SidebarGroupLabel({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
+export function SidebarGroupLabel({
+  children,
+  class: cls,
+  ...attrs
+}: SidebarPartProps): JSX.Element {
   return (
     <div
       data-slot="sidebar-group-label"
@@ -1455,7 +1515,11 @@ export function SidebarGroupLabel({ children, class: cls, ...attrs }: SidebarPar
   );
 }
 
-export function SidebarGroupAction({ children, class: cls, ...attrs }: SidebarGroupActionProps): JSX.Element {
+export function SidebarGroupAction({
+  children,
+  class: cls,
+  ...attrs
+}: SidebarGroupActionProps): JSX.Element {
   return (
     <button
       type="button"
@@ -1471,7 +1535,11 @@ export function SidebarGroupAction({ children, class: cls, ...attrs }: SidebarGr
   );
 }
 
-export function SidebarGroupContent({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
+export function SidebarGroupContent({
+  children,
+  class: cls,
+  ...attrs
+}: SidebarPartProps): JSX.Element {
   return (
     <div
       data-slot="sidebar-group-content"
@@ -1516,7 +1584,18 @@ export function SidebarMenuItem({ children, class: cls, ...attrs }: SidebarPartP
   );
 }
 
-export function SidebarMenuButton({ active, tooltip: tooltipProp, variant: variantProp, size: sizeProp, open, mobile: mobileProp, disabled, class: cls, children, ...attrs }: SidebarMenuButtonProps): JSX.Element {
+export function SidebarMenuButton({
+  active,
+  tooltip: tooltipProp,
+  variant: variantProp,
+  size: sizeProp,
+  open,
+  mobile: mobileProp,
+  disabled,
+  class: cls,
+  children,
+  ...attrs
+}: SidebarMenuButtonProps): JSX.Element {
   const variant = variantProp ?? "default";
   const size = sizeProp ?? "default";
 
@@ -1556,45 +1635,54 @@ export function SidebarMenuButton({ active, tooltip: tooltipProp, variant: varia
         triggerNode = node;
         // hoverIntent stays armed for the trigger's lifetime - reopen works
         // without a remount (the skip-delay window is the primitive's global).
-        disposals.push(hoverIntent(node, {
-          onOpen: () => tooltipOpen(true),
-          onClose: () => tooltipOpen(false),
-          openDelay: 0,
-        }));
+        disposals.push(
+          hoverIntent(node, {
+            onOpen: () => tooltipOpen(true),
+            onClose: () => tooltipOpen(false),
+            openDelay: 0,
+          }),
+        );
       }}
       hook:beforeDestroy={() => {
         while (disposals.length) disposals.pop()!();
       }}
     >
       {button}
-      {() => tooltipOpen() && (
-        <Portal to="body">
-          <div
-            role="tooltip"
-            id={tooltipId}
-            data-slot="sidebar-tooltip-content"
-            data-state={tooltipOpen() ? "open" : "closed"}
-            data-side="right"
-            data-align="center"
-            hidden={hidden() ? "" : undefined}
-            class={
-              [tooltipContent]
-            }
-            hook:afterMount={(node) => {
-              if (!(node instanceof HTMLElement) || triggerNode === undefined) return;
-              const anchor = triggerNode;
-              disposals.push(anchorPosition(anchor, node, { placement: "right" }));
-            }}
-          >
-            {tooltipProp}
-          </div>
-        </Portal>
-      )}
+      {() =>
+        tooltipOpen() && (
+          <Portal to="body">
+            <div
+              role="tooltip"
+              id={tooltipId}
+              data-slot="sidebar-tooltip-content"
+              data-state={tooltipOpen() ? "open" : "closed"}
+              data-side="right"
+              data-align="center"
+              hidden={hidden() ? "" : undefined}
+              class={
+                [tooltipContent]
+              }
+              hook:afterMount={(node) => {
+                if (!(node instanceof HTMLElement) || triggerNode === undefined) return;
+                const anchor = triggerNode;
+                disposals.push(anchorPosition(anchor, node, { placement: "right" }));
+              }}
+            >
+              {tooltipProp}
+            </div>
+          </Portal>
+        )
+      }
     </span>
   );
 }
 
-export function SidebarMenuAction({ showOnHover, children, class: cls, ...attrs }: SidebarMenuActionProps): JSX.Element {
+export function SidebarMenuAction({
+  showOnHover,
+  children,
+  class: cls,
+  ...attrs
+}: SidebarMenuActionProps): JSX.Element {
   return (
     <button
       type="button"
@@ -1611,7 +1699,11 @@ export function SidebarMenuAction({ showOnHover, children, class: cls, ...attrs 
   );
 }
 
-export function SidebarMenuBadge({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
+export function SidebarMenuBadge({
+  children,
+  class: cls,
+  ...attrs
+}: SidebarPartProps): JSX.Element {
   return (
     <div
       data-sidebar="menu-badge"
@@ -1626,7 +1718,11 @@ export function SidebarMenuBadge({ children, class: cls, ...attrs }: SidebarPart
   );
 }
 
-export function SidebarMenuSkeleton({ showIcon, class: cls, ...attrs }: SidebarMenuSkeletonProps): JSX.Element {
+export function SidebarMenuSkeleton({
+  showIcon,
+  class: cls,
+  ...attrs
+}: SidebarMenuSkeletonProps): JSX.Element {
   // Random width between 50 to 90%, fixed per call.
   const width = `${Math.floor(Math.random() * 40) + 50}%`;
 
@@ -1673,7 +1769,11 @@ export function SidebarMenuSub({ children, class: cls, ...attrs }: SidebarPartPr
   );
 }
 
-export function SidebarMenuSubItem({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
+export function SidebarMenuSubItem({
+  children,
+  class: cls,
+  ...attrs
+}: SidebarPartProps): JSX.Element {
   return (
     <li
       data-sidebar="menu-sub-item"
@@ -1688,7 +1788,13 @@ export function SidebarMenuSubItem({ children, class: cls, ...attrs }: SidebarPa
   );
 }
 
-export function SidebarMenuSubButton({ size: sizeProp, active, class: cls, children, ...attrs }: SidebarMenuSubButtonProps): JSX.Element {
+export function SidebarMenuSubButton({
+  size: sizeProp,
+  active,
+  class: cls,
+  children,
+  ...attrs
+}: SidebarMenuSubButtonProps): JSX.Element {
   const size = sizeProp ?? "md";
 
   return (

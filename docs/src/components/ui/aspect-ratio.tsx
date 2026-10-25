@@ -12,7 +12,12 @@ const base = style("aspect-ratio", {
   position: "relative",
 });
 
-export function AspectRatio({ ratio, children, class: cls, ...attrs }: AspectRatioProps): JSX.Element {
+export function AspectRatio({
+  ratio,
+  children,
+  class: cls,
+  ...attrs
+}: AspectRatioProps): JSX.Element {
   return (
     <div
       data-slot="aspect-ratio"

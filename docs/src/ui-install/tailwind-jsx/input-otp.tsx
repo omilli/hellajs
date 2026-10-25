@@ -30,14 +30,25 @@ interface InputOTPSeparatorProps extends HTMLAttributes<"div"> {
 }
 import { cn } from "./cn.js";
 
-export function InputOTP({ length: lengthProp, value: valueProp, onChange, onComplete, pattern: patternAttr, autofocus: autofocusAttr, disabled: disabledAttr, class: cls, children, ...attrs }: InputOTPProps): JSX.Element {
+export function InputOTP({
+  length: lengthProp,
+  value: valueProp,
+  onChange,
+  onComplete,
+  pattern: patternAttr,
+  autofocus: autofocusAttr,
+  disabled: disabledAttr,
+  class: cls,
+  children,
+  ...attrs
+}: InputOTPProps): JSX.Element {
   const length = lengthProp ?? 6;
   const pattern = patternAttr as string | undefined;
   const autofocus = autofocusAttr as boolean | undefined;
   const disabled = disabledAttr as boolean | undefined;
   const mask = pattern === undefined ? null : new RegExp(pattern);
 
-  const internal = signal(typeof valueProp === "function" ? "" : valueProp ?? "");
+  const internal = signal(typeof valueProp === "function" ? "" : (valueProp ?? ""));
   const value = (): string => (typeof valueProp === "function" ? valueProp() : internal());
 
   const focused = signal(false);
@@ -140,9 +151,11 @@ export function InputOTP({ length: lengthProp, value: valueProp, onChange, onCom
     const start = input.selectionStart ?? 0;
     const end = input.selectionEnd ?? 0;
     const current = value();
-    const merged = (start !== end
-      ? current.slice(0, start) + data + current.slice(end)
-      : current.slice(0, start) + data + current.slice(start)).slice(0, length);
+    const merged = (
+      start !== end
+        ? current.slice(0, start) + data + current.slice(end)
+        : current.slice(0, start) + data + current.slice(start)
+    ).slice(0, length);
     if (!accept(merged)) return;
     input.value = merged;
     const at = Math.min(merged.length, length - 1);
@@ -155,7 +168,8 @@ export function InputOTP({ length: lengthProp, value: valueProp, onChange, onCom
   const wirings: (() => void)[] = [];
 
   const rootStyle = `position: relative; cursor: ${disabled ? "default" : "text"}; user-select: none`;
-  const inputStyle = "position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; text-align: left; color: transparent; caret-color: transparent; background-color: transparent; border: 0 solid transparent; outline: none; box-shadow: none; pointer-events: all";
+  const inputStyle =
+    "position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; text-align: left; color: transparent; caret-color: transparent; background-color: transparent; border: 0 solid transparent; outline: none; box-shadow: none; pointer-events: all";
 
   return (
     <div
@@ -169,28 +183,34 @@ export function InputOTP({ length: lengthProp, value: valueProp, onChange, onCom
         const input = node.querySelector<HTMLInputElement>("[data-input-otp]");
         if (!input) return;
         const stops: (() => void)[] = [];
-        for (const slotEl of Array.from(node.querySelectorAll<HTMLElement>("[data-slot='input-otp-slot'][data-index]"))) {
+        for (const slotEl of Array.from(
+          node.querySelectorAll<HTMLElement>("[data-slot='input-otp-slot'][data-index]"),
+        )) {
           const index = Number(slotEl.getAttribute("data-index"));
           const caretBox = slotEl.querySelector<HTMLElement>(":scope > div");
           const char = document.createTextNode("");
           slotEl.insertBefore(char, slotEl.firstChild);
-          stops.push(effect(() => {
-            const ch = value()[index] ?? "";
-            if (char.data !== ch) char.data = ch;
-            if (isActive(index)) slotEl.setAttribute("data-active", "true");
-            else slotEl.removeAttribute("data-active");
-            if (caretBox) caretBox.style.display = isActive(index) && ch === "" ? "" : "none";
-          }));
+          stops.push(
+            effect(() => {
+              const ch = value()[index] ?? "";
+              if (char.data !== ch) char.data = ch;
+              if (isActive(index)) slotEl.setAttribute("data-active", "true");
+              else slotEl.removeAttribute("data-active");
+              if (caretBox) caretBox.style.display = isActive(index) && ch === "" ? "" : "none";
+            }),
+          );
         }
         const onSelectionChange = () => syncSelection(input);
         document.addEventListener("selectionchange", onSelectionChange, { capture: true });
-        stops.push(effect(() => {
-          const v = value();
-          if (input.value !== v) {
-            input.value = v;
-            syncSelection(input);
-          }
-        }));
+        stops.push(
+          effect(() => {
+            const v = value();
+            if (input.value !== v) {
+              input.value = v;
+              syncSelection(input);
+            }
+          }),
+        );
         wirings.push(() => {
           document.removeEventListener("selectionchange", onSelectionChange, { capture: true });
           while (stops.length) stops.pop()!();

@@ -88,11 +88,7 @@ export function Alert({ variant, children, class: cls, ...attrs }: AlertProps): 
       data-slot="alert"
       role="alert"
       class={
-        [
-          base,
-          variants[variant ?? "default"],
-          cls,
-        ]
+        [base, variants[variant ?? "default"], cls]
       }
       {...attrs}
     >

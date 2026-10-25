@@ -18,7 +18,12 @@ interface ScrollAreaProps extends HTMLAttributes<"div"> {
 }
 import { cn } from "./cn.js";
 
-export function ScrollBar({ orientation: orientationProp, observe, class: cls, ...attrs }: ScrollBarProps): JSX.Element {
+export function ScrollBar({
+  orientation: orientationProp,
+  observe,
+  class: cls,
+  ...attrs
+}: ScrollBarProps): JSX.Element {
   const orientation = (): "vertical" | "horizontal" => orientationProp ?? "vertical";
   const vertical = (): boolean => orientation() === "vertical";
 
@@ -80,23 +85,28 @@ export function ScrollBar({ orientation: orientationProp, observe, class: cls, .
           let startScroll = 0;
           let span = 0;
           let maxScroll = 0;
-          teardown.push(onDrag(thumbEl, {
-            onStart: () => {
-              const track = vertical() ? node.clientHeight : node.clientWidth;
-              const scrollSize = vertical() ? view.scrollHeight : view.scrollWidth;
-              const clientSize = vertical() ? view.clientHeight : view.clientWidth;
-              maxScroll = Math.max(0, scrollSize - clientSize);
-              span = Math.max(0, track - length());
-              startScroll = vertical() ? view.scrollTop : view.scrollLeft;
-            },
-            onMove: (delta) => {
-              if (maxScroll <= 0 || span <= 0) return;
-              const moved = vertical() ? delta.dy : delta.dx;
-              const next = Math.min(maxScroll, Math.max(0, startScroll + (moved / span) * maxScroll));
-              if (vertical()) view.scrollTop = next;
-              else view.scrollLeft = next;
-            },
-          }));
+          teardown.push(
+            onDrag(thumbEl, {
+              onStart: () => {
+                const track = vertical() ? node.clientHeight : node.clientWidth;
+                const scrollSize = vertical() ? view.scrollHeight : view.scrollWidth;
+                const clientSize = vertical() ? view.clientHeight : view.clientWidth;
+                maxScroll = Math.max(0, scrollSize - clientSize);
+                span = Math.max(0, track - length());
+                startScroll = vertical() ? view.scrollTop : view.scrollLeft;
+              },
+              onMove: (delta) => {
+                if (maxScroll <= 0 || span <= 0) return;
+                const moved = vertical() ? delta.dy : delta.dx;
+                const next = Math.min(
+                  maxScroll,
+                  Math.max(0, startScroll + (moved / span) * maxScroll),
+                );
+                if (vertical()) view.scrollTop = next;
+                else view.scrollLeft = next;
+              },
+            }),
+          );
         }
         measure();
       }}
@@ -123,7 +133,12 @@ export function ScrollBar({ orientation: orientationProp, observe, class: cls, .
  * a real scrolling viewport plus a vertical ScrollBar, and a horizontal bar
  * composes in as a child for both-axes scrolling.
  */
-export function ScrollArea({ observe, children, class: cls, ...attrs }: ScrollAreaProps): JSX.Element {
+export function ScrollArea({
+  observe,
+  children,
+  class: cls,
+  ...attrs
+}: ScrollAreaProps): JSX.Element {
   return (
     <div
       data-slot="scroll-area"

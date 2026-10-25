@@ -15,18 +15,27 @@ interface SliderProps extends HTMLAttributes<"span"> {
 }
 import { cn } from "./cn.js";
 
-export function Slider({ value, onValueChange, onValueCommit, orientation: orientationProp, minStepsBetweenThumbs, min: minAttr, max: maxAttr, step: stepAttr, disabled, class: cls, ...attrs }: SliderProps): JSX.Element {
+export function Slider({
+  value,
+  onValueChange,
+  onValueCommit,
+  orientation: orientationProp,
+  minStepsBetweenThumbs,
+  min: minAttr,
+  max: maxAttr,
+  step: stepAttr,
+  disabled,
+  class: cls,
+  ...attrs
+}: SliderProps): JSX.Element {
   const min = (minAttr as number | undefined) ?? 0;
   const max = (maxAttr as number | undefined) ?? 100;
   const step = (stepAttr as number | undefined) ?? 1;
   const orientation = orientationProp ?? "horizontal";
   const minSteps = minStepsBetweenThumbs ?? 0;
 
-  const internal = signal<number[]>(
-    typeof value === "function" ? [] : value ?? [min, max],
-  );
-  const values = (): number[] =>
-    typeof value === "function" ? value() : internal();
+  const internal = signal<number[]>(typeof value === "function" ? [] : (value ?? [min, max]));
+  const values = (): number[] => (typeof value === "function" ? value() : internal());
 
   // Thumb count is fixed at mount; value updates move the thumbs but never add or remove them.
   const thumbCount = Math.max(values().length, 1);
@@ -77,8 +86,20 @@ export function Slider({ value, onValueChange, onValueCommit, orientation: orien
   const thumbStyle = (index: number): Record<string, string> => {
     const at = `${pct(values()[index] ?? min)}%`;
     return orientation === "vertical"
-      ? { pointerEvents: "auto", position: "absolute", left: "50%", bottom: at, transform: "translate(-50%, 50%)" }
-      : { pointerEvents: "auto", position: "absolute", top: "50%", left: at, transform: "translate(-50%, -50%)" };
+      ? {
+          pointerEvents: "auto",
+          position: "absolute",
+          left: "50%",
+          bottom: at,
+          transform: "translate(-50%, 50%)",
+        }
+      : {
+          pointerEvents: "auto",
+          position: "absolute",
+          top: "50%",
+          left: at,
+          transform: "translate(-50%, -50%)",
+        };
   };
 
   const stepFromKey = (key: string, from: number): number | null => {
@@ -108,50 +129,62 @@ export function Slider({ value, onValueChange, onValueCommit, orientation: orien
       }
       hook:afterMount={(node) => {
         if (!(node instanceof HTMLElement)) return;
-        wirings.push(onDrag(node, {
-          onStart: (event) => {
-            if (disabled) return;
-            const trackEl = node.querySelector<HTMLElement>("[data-slot='slider-track']");
-            if (!trackEl) return;
-            const rect = trackEl.getBoundingClientRect();
-            const pointer = pointerValue(event.clientX, event.clientY, rect);
-            if (Number.isNaN(pointer)) return;
-            trackRect = rect;
-            const current = values();
-            let nearest = 0;
-            let i = 1;
-            while (i < current.length) {
-              if (Math.abs(current[i]! - pointer) < Math.abs(current[nearest]! - pointer)) nearest = i;
-              i++;
-            }
-            activeIndex = nearest;
-            setValue(nearest, applyLimits(nearest, quantize(pointer), current));
-          },
-          onMove: (delta) => {
-            if (activeIndex < 0 || !trackRect) return;
-            const pointer = pointerValue(delta.event.clientX, delta.event.clientY, trackRect);
-            if (Number.isNaN(pointer)) return;
-            setValue(activeIndex, applyLimits(activeIndex, quantize(pointer), values()));
-          },
-          onEnd: () => {
-            if (activeIndex < 0) return;
-            activeIndex = -1;
-            trackRect = null;
-            onValueCommit?.(values());
-          },
-        }));
+        wirings.push(
+          onDrag(node, {
+            onStart: (event) => {
+              if (disabled) return;
+              const trackEl = node.querySelector<HTMLElement>("[data-slot='slider-track']");
+              if (!trackEl) return;
+              const rect = trackEl.getBoundingClientRect();
+              const pointer = pointerValue(event.clientX, event.clientY, rect);
+              if (Number.isNaN(pointer)) return;
+              trackRect = rect;
+              const current = values();
+              let nearest = 0;
+              let i = 1;
+              while (i < current.length) {
+                if (Math.abs(current[i]! - pointer) < Math.abs(current[nearest]! - pointer))
+                  nearest = i;
+                i++;
+              }
+              activeIndex = nearest;
+              setValue(nearest, applyLimits(nearest, quantize(pointer), current));
+            },
+            onMove: (delta) => {
+              if (activeIndex < 0 || !trackRect) return;
+              const pointer = pointerValue(delta.event.clientX, delta.event.clientY, trackRect);
+              if (Number.isNaN(pointer)) return;
+              setValue(activeIndex, applyLimits(activeIndex, quantize(pointer), values()));
+            },
+            onEnd: () => {
+              if (activeIndex < 0) return;
+              activeIndex = -1;
+              trackRect = null;
+              onValueCommit?.(values());
+            },
+          }),
+        );
       }}
       hook:beforeDestroy={() => {
         while (wirings.length) wirings.pop()!();
       }}
       {...attrs}
     >
-      <span data-slot="slider-track" data-orientation={orientation} class={
-        cn("relative grow overflow-hidden rounded-full bg-muted data-[orientation=horizontal]:h-1.5 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-1.5")
-      }>
-        <span data-slot="slider-range" data-orientation={orientation} style={rangeStyle} class={
-          cn("absolute bg-primary data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full")
-        } />
+      <span
+        data-slot="slider-track"
+        data-orientation={orientation}
+        class={
+          cn("relative grow overflow-hidden rounded-full bg-muted data-[orientation=horizontal]:h-1.5 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-1.5")
+        }
+      >
+        <span
+          data-slot="slider-range"
+          data-orientation={orientation}
+          style={rangeStyle}
+          class={
+            cn("absolute bg-primary data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full")
+          }
+        />
       </span>
       {Array.from({ length: thumbCount }, (_, index) => (
         <span

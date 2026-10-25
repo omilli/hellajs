@@ -45,7 +45,13 @@ import { cn } from "./cn.js";
 
 export type { AccordionEntry };
 
-export function AccordionItem({ value, active, children, class: cls, ...attrs }: AccordionItemProps): JSX.Element {
+export function AccordionItem({
+  value,
+  active,
+  children,
+  class: cls,
+  ...attrs
+}: AccordionItemProps): JSX.Element {
   return (
     <div
       data-slot="accordion-item"
@@ -61,7 +67,16 @@ export function AccordionItem({ value, active, children, class: cls, ...attrs }:
   );
 }
 
-export function AccordionTrigger({ active, onToggle, id, disabled, "on:click": userClick, children, class: cls, ...attrs }: AccordionTriggerProps): JSX.Element {
+export function AccordionTrigger({
+  active,
+  onToggle,
+  id,
+  disabled,
+  "on:click": userClick,
+  children,
+  class: cls,
+  ...attrs
+}: AccordionTriggerProps): JSX.Element {
   return (
     <h3
       data-slot="accordion-header"
@@ -80,7 +95,10 @@ export function AccordionTrigger({ active, onToggle, id, disabled, "on:click": u
         class={
           cn("flex flex-1 items-start justify-between gap-4 rounded-md py-4 text-left text-sm font-medium transition-all outline-none hover:underline focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 [&[data-state=open]>svg]:rotate-180", cls)
         }
-        on:click={function (e) { userClick?.call(this, e); onToggle?.(); }}
+        on:click={function (e) {
+          userClick?.call(this, e);
+          onToggle?.();
+        }}
         {...attrs}
       >
         {children}
@@ -107,7 +125,13 @@ export function AccordionTrigger({ active, onToggle, id, disabled, "on:click": u
   );
 }
 
-export function AccordionContent({ active, id, children, class: cls, ...attrs }: AccordionContentProps): JSX.Element {
+export function AccordionContent({
+  active,
+  id,
+  children,
+  class: cls,
+  ...attrs
+}: AccordionContentProps): JSX.Element {
   return (
     <div
       role="region"
@@ -131,10 +155,18 @@ export function AccordionContent({ active, id, children, class: cls, ...attrs }:
   );
 }
 
-export function Accordion({ items, keyBy, type, collapsible, open, class: cls, ...attrs }: AccordionProps): JSX.Element {
+export function Accordion({
+  items,
+  keyBy,
+  type,
+  collapsible,
+  open,
+  class: cls,
+  ...attrs
+}: AccordionProps): JSX.Element {
   const mode = type ?? "single";
   // A single open string wraps to a one-value list, a list passes through, absent starts closed.
-  const seed = typeof open === "string" ? [open] : open ?? [];
+  const seed = typeof open === "string" ? [open] : (open ?? []);
   // Single mode keeps at most one value open: a multi-value seed clamps to the first.
   // signalSet gives each item's isOpen reader its own membership signal, so a toggle
   // wakes only the affected items' state effects.
@@ -170,22 +202,24 @@ export function Accordion({ items, keyBy, type, collapsible, open, class: cls, .
             key={keyBy ? entry.value : undefined}
             value={entry.value}
             active={() => isOpen(entry.value)}
-            children={[
-              <AccordionTrigger
-                id={`${"hella-accordion-trigger-"}${entry.value}`}
-                active={() => isOpen(entry.value)}
-                onToggle={() => toggle(entry.value, entry.disabled)}
-                disabled={entry.disabled}
-                aria-controls={`${"hella-accordion-content-"}${entry.value}`}
-                children={entry.trigger}
-              />,
-              <AccordionContent
-                id={`${"hella-accordion-content-"}${entry.value}`}
-                active={() => isOpen(entry.value)}
-                aria-labelledby={`${"hella-accordion-trigger-"}${entry.value}`}
-                children={entry.content}
-              />,
-            ] as HellaChildren}
+            children={
+              [
+                <AccordionTrigger
+                  id={`${"hella-accordion-trigger-"}${entry.value}`}
+                  active={() => isOpen(entry.value)}
+                  onToggle={() => toggle(entry.value, entry.disabled)}
+                  disabled={entry.disabled}
+                  aria-controls={`${"hella-accordion-content-"}${entry.value}`}
+                  children={entry.trigger}
+                />,
+                <AccordionContent
+                  id={`${"hella-accordion-content-"}${entry.value}`}
+                  active={() => isOpen(entry.value)}
+                  aria-labelledby={`${"hella-accordion-trigger-"}${entry.value}`}
+                  children={entry.content}
+                />,
+              ] as HellaChildren
+            }
           />
         )}
       />

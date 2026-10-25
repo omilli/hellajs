@@ -125,12 +125,14 @@ const containerSides = {
 
 const mobileSides = {
   left: "inset-y-0 left-0 h-full w-(--sidebar-width) border-r sm:max-w-sm data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left",
-  right: "inset-y-0 right-0 h-full w-(--sidebar-width) border-l sm:max-w-sm data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right",
+  right:
+    "inset-y-0 right-0 h-full w-(--sidebar-width) border-l sm:max-w-sm data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right",
 };
 
 const menuButtonVariants = {
   default: "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-  outline: "bg-background shadow-[0_0_0_1px_var(--sidebar-border)] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[0_0_0_1px_var(--sidebar-accent)]",
+  outline:
+    "bg-background shadow-[0_0_0_1px_var(--sidebar-border)] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[0_0_0_1px_var(--sidebar-accent)]",
 };
 
 const menuButtonSizes = {
@@ -144,7 +146,14 @@ const menuSubSizes = {
   md: "text-sm",
 };
 
-export function SidebarProvider({ open: openProp, defaultOpen, onOpenChange, children, class: cls, ...attrs }: SidebarProviderProps): JSX.Element {
+export function SidebarProvider({
+  open: openProp,
+  defaultOpen,
+  onOpenChange,
+  children,
+  class: cls,
+  ...attrs
+}: SidebarProviderProps): JSX.Element {
   const internal = signal(defaultOpen ?? true);
   // Two separate states the ref also splits: the viewport query and the
   // mobile sheet's own open flag - conflating them would flip the branch
@@ -205,7 +214,18 @@ export function SidebarProvider({ open: openProp, defaultOpen, onOpenChange, chi
 
 let sidebarCount = 0;
 
-export function Sidebar({ open, mobile: mobileProp, openMobile, onOpenMobileChange, side: sideProp, variant: variantProp, collapsible: collapsibleProp, class: cls, children, ...attrs }: SidebarProps): JSX.Element {
+export function Sidebar({
+  open,
+  mobile: mobileProp,
+  openMobile,
+  onOpenMobileChange,
+  side: sideProp,
+  variant: variantProp,
+  collapsible: collapsibleProp,
+  class: cls,
+  children,
+  ...attrs
+}: SidebarProps): JSX.Element {
   const side = sideProp ?? "left";
   const variant = variantProp ?? "sidebar";
   const collapsible = collapsibleProp ?? "offcanvas";
@@ -231,50 +251,57 @@ export function Sidebar({ open, mobile: mobileProp, openMobile, onOpenMobileChan
   // provider's matchMedia flip would never propagate.
   return (
     <>
-      {() => mobileProp?.() === true ? (
-        <SidebarMobileSheet
-          open={() => openMobile?.() ?? false}
-          onClose={() => onOpenMobileChange?.(false)}
-          side={side}
-          children={flattenChildren(children)}
-        />
-      ) : (
-        <div
-          data-slot="sidebar"
-          data-state={collapsed() ? "collapsed" : "expanded"}
-          data-collapsible={collapsed() ? collapsible : undefined}
-          data-variant={variant}
-          data-side={side}
-          class={
-            cn("group peer hidden text-sidebar-foreground md:block")
-          }
-          {...attrs}
-        >
-          {/* This is what handles the sidebar gap on desktop */}
-          <div
-            data-slot="sidebar-gap"
-            class={
-              cn("relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear group-data-[collapsible=offcanvas]:w-0 group-data-[side=right]:rotate-180", variantIsInset ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]" : "group-data-[collapsible=icon]:w-(--sidebar-width-icon)")
-            }
+      {() =>
+        mobileProp?.() === true ? (
+          <SidebarMobileSheet
+            open={() => openMobile?.() ?? false}
+            onClose={() => onOpenMobileChange?.(false)}
+            side={side}
+            children={flattenChildren(children)}
           />
+        ) : (
           <div
-            data-slot="sidebar-container"
+            data-slot="sidebar"
+            data-state={collapsed() ? "collapsed" : "expanded"}
+            data-collapsible={collapsed() ? collapsible : undefined}
+            data-variant={variant}
+            data-side={side}
             class={
-              cn("fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex", containerSides[side], variantIsInset ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]" : "group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l", cls)
+              cn("group peer hidden text-sidebar-foreground md:block")
             }
+            {...attrs}
           >
+            {/* This is what handles the sidebar gap on desktop */}
             <div
-              data-sidebar="sidebar"
-              data-slot="sidebar-inner"
+              data-slot="sidebar-gap"
               class={
-                cn("flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow-sm")
+                cn("relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear group-data-[collapsible=offcanvas]:w-0 group-data-[side=right]:rotate-180", variantIsInset ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]" : "group-data-[collapsible=icon]:w-(--sidebar-width-icon)")
+              }
+            />
+            <div
+              data-slot="sidebar-container"
+              class={
+                cn(
+                  "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex",
+                  containerSides[side],
+                  variantIsInset ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]" : "group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l",
+                  cls,
+                )
               }
             >
-              {children}
+              <div
+                data-sidebar="sidebar"
+                data-slot="sidebar-inner"
+                class={
+                  cn("flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow-sm")
+                }
+              >
+                {children}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
     </>
   );
 }
@@ -344,63 +371,74 @@ function SidebarMobileSheet(props: SidebarMobileSheetProps): JSX.Element {
 
   return (
     <>
-      {() => visible() && (
-        <Portal to="body">
-          <div
-            data-slot="sidebar-overlay"
-            data-state={state()}
-            class={
-              cn("fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0")
-            }
-          />
-          <div
-            data-sidebar="sidebar"
-            data-slot="sidebar"
-            data-mobile="true"
-            data-state={state()}
-            data-side={side}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={titleId}
-            aria-describedby={descriptionId}
-            style="--sidebar-width: 18rem"
-            class={
-              cn("fixed z-50 flex flex-col gap-4 bg-sidebar p-0 text-sidebar-foreground shadow-lg transition ease-in-out [&>button]:hidden data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:animate-in data-[state=open]:duration-500", mobileSides[side])
-            }
-            hook:afterMount={(node) => {
-              if (!(node instanceof HTMLElement)) return;
-              panel = node;
-              installWirings();
-              // The exit's animationend (state already "closed") is the
-              // primary unmount trigger; the entry's is ignored.
-              const onAnimationEnd = (): void => {
-                if (props.open() === false) finishExit();
-              };
-              node.addEventListener("animationend", onAnimationEnd);
-              teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
-            }}
-            hook:beforeDestroy={() => {
-              disposeWirings();
-              while (teardown.length) teardown.pop()!();
-            }}
-          >
-            <h2 id={titleId} class="sr-only">Sidebar</h2>
-            <p id={descriptionId} class="sr-only">Displays the mobile sidebar.</p>
+      {() =>
+        visible() && (
+          <Portal to="body">
             <div
+              data-slot="sidebar-overlay"
+              data-state={state()}
               class={
-                cn("flex h-full w-full flex-col")
+                cn("fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0")
               }
+            />
+            <div
+              data-sidebar="sidebar"
+              data-slot="sidebar"
+              data-mobile="true"
+              data-state={state()}
+              data-side={side}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={titleId}
+              aria-describedby={descriptionId}
+              style="--sidebar-width: 18rem"
+              class={
+                cn("fixed z-50 flex flex-col gap-4 bg-sidebar p-0 text-sidebar-foreground shadow-lg transition ease-in-out [&>button]:hidden data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:animate-in data-[state=open]:duration-500", mobileSides[side])
+              }
+              hook:afterMount={(node) => {
+                if (!(node instanceof HTMLElement)) return;
+                panel = node;
+                installWirings();
+                // The exit's animationend (state already "closed") is the
+                // primary unmount trigger; the entry's is ignored.
+                const onAnimationEnd = (): void => {
+                  if (props.open() === false) finishExit();
+                };
+                node.addEventListener("animationend", onAnimationEnd);
+                teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
+              }}
+              hook:beforeDestroy={() => {
+                disposeWirings();
+                while (teardown.length) teardown.pop()!();
+              }}
             >
-              {props.children}
+              <h2 id={titleId} class="sr-only">
+                Sidebar
+              </h2>
+              <p id={descriptionId} class="sr-only">
+                Displays the mobile sidebar.
+              </p>
+              <div
+                class={
+                  cn("flex h-full w-full flex-col")
+                }
+              >
+                {props.children}
+              </div>
             </div>
-          </div>
-        </Portal>
-      )}
+          </Portal>
+        )
+      }
     </>
   );
 }
 
-export function SidebarTrigger({ onToggle, "on:click": userClick, class: cls, ...attrs }: SidebarTriggerProps): JSX.Element {
+export function SidebarTrigger({
+  onToggle,
+  "on:click": userClick,
+  class: cls,
+  ...attrs
+}: SidebarTriggerProps): JSX.Element {
   return (
     <button
       type="button"
@@ -436,7 +474,13 @@ export function SidebarTrigger({ onToggle, "on:click": userClick, class: cls, ..
 }
 
 /** The drag-handle edge - click toggles; width dragging is out of scope (bounded open). */
-export function SidebarRail({ onToggle, "on:click": userClick, class: cls, children, ...attrs }: SidebarRailProps): JSX.Element {
+export function SidebarRail({
+  onToggle,
+  "on:click": userClick,
+  class: cls,
+  children,
+  ...attrs
+}: SidebarRailProps): JSX.Element {
   return (
     <button
       type="button"
@@ -516,7 +560,11 @@ export function SidebarFooter({ children, class: cls, ...attrs }: SidebarPartPro
   );
 }
 
-export function SidebarSeparator({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
+export function SidebarSeparator({
+  children,
+  class: cls,
+  ...attrs
+}: SidebarPartProps): JSX.Element {
   return (
     <div
       data-slot="sidebar-separator"
@@ -564,7 +612,11 @@ export function SidebarGroup({ children, class: cls, ...attrs }: SidebarPartProp
   );
 }
 
-export function SidebarGroupLabel({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
+export function SidebarGroupLabel({
+  children,
+  class: cls,
+  ...attrs
+}: SidebarPartProps): JSX.Element {
   return (
     <div
       data-slot="sidebar-group-label"
@@ -579,7 +631,11 @@ export function SidebarGroupLabel({ children, class: cls, ...attrs }: SidebarPar
   );
 }
 
-export function SidebarGroupAction({ children, class: cls, ...attrs }: SidebarGroupActionProps): JSX.Element {
+export function SidebarGroupAction({
+  children,
+  class: cls,
+  ...attrs
+}: SidebarGroupActionProps): JSX.Element {
   return (
     <button
       type="button"
@@ -595,7 +651,11 @@ export function SidebarGroupAction({ children, class: cls, ...attrs }: SidebarGr
   );
 }
 
-export function SidebarGroupContent({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
+export function SidebarGroupContent({
+  children,
+  class: cls,
+  ...attrs
+}: SidebarPartProps): JSX.Element {
   return (
     <div
       data-slot="sidebar-group-content"
@@ -640,7 +700,18 @@ export function SidebarMenuItem({ children, class: cls, ...attrs }: SidebarPartP
   );
 }
 
-export function SidebarMenuButton({ active, tooltip: tooltipProp, variant: variantProp, size: sizeProp, open, mobile: mobileProp, disabled, class: cls, children, ...attrs }: SidebarMenuButtonProps): JSX.Element {
+export function SidebarMenuButton({
+  active,
+  tooltip: tooltipProp,
+  variant: variantProp,
+  size: sizeProp,
+  open,
+  mobile: mobileProp,
+  disabled,
+  class: cls,
+  children,
+  ...attrs
+}: SidebarMenuButtonProps): JSX.Element {
   const variant = variantProp ?? "default";
   const size = sizeProp ?? "default";
 
@@ -680,45 +751,54 @@ export function SidebarMenuButton({ active, tooltip: tooltipProp, variant: varia
         triggerNode = node;
         // hoverIntent stays armed for the trigger's lifetime - reopen works
         // without a remount (the skip-delay window is the primitive's global).
-        disposals.push(hoverIntent(node, {
-          onOpen: () => tooltipOpen(true),
-          onClose: () => tooltipOpen(false),
-          openDelay: 0,
-        }));
+        disposals.push(
+          hoverIntent(node, {
+            onOpen: () => tooltipOpen(true),
+            onClose: () => tooltipOpen(false),
+            openDelay: 0,
+          }),
+        );
       }}
       hook:beforeDestroy={() => {
         while (disposals.length) disposals.pop()!();
       }}
     >
       {button}
-      {() => tooltipOpen() && (
-        <Portal to="body">
-          <div
-            role="tooltip"
-            id={tooltipId}
-            data-slot="sidebar-tooltip-content"
-            data-state={tooltipOpen() ? "open" : "closed"}
-            data-side="right"
-            data-align="center"
-            hidden={hidden() ? "" : undefined}
-            class={
-              cn("z-50 w-fit origin-(--radix-tooltip-content-transform-origin) animate-in rounded-md bg-foreground px-3 py-1.5 text-xs text-balance text-background fade-in-0 zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95")
-            }
-            hook:afterMount={(node) => {
-              if (!(node instanceof HTMLElement) || triggerNode === undefined) return;
-              const anchor = triggerNode;
-              disposals.push(anchorPosition(anchor, node, { placement: "right" }));
-            }}
-          >
-            {tooltipProp}
-          </div>
-        </Portal>
-      )}
+      {() =>
+        tooltipOpen() && (
+          <Portal to="body">
+            <div
+              role="tooltip"
+              id={tooltipId}
+              data-slot="sidebar-tooltip-content"
+              data-state={tooltipOpen() ? "open" : "closed"}
+              data-side="right"
+              data-align="center"
+              hidden={hidden() ? "" : undefined}
+              class={
+                cn("z-50 w-fit origin-(--radix-tooltip-content-transform-origin) animate-in rounded-md bg-foreground px-3 py-1.5 text-xs text-balance text-background fade-in-0 zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95")
+              }
+              hook:afterMount={(node) => {
+                if (!(node instanceof HTMLElement) || triggerNode === undefined) return;
+                const anchor = triggerNode;
+                disposals.push(anchorPosition(anchor, node, { placement: "right" }));
+              }}
+            >
+              {tooltipProp}
+            </div>
+          </Portal>
+        )
+      }
     </span>
   );
 }
 
-export function SidebarMenuAction({ showOnHover, children, class: cls, ...attrs }: SidebarMenuActionProps): JSX.Element {
+export function SidebarMenuAction({
+  showOnHover,
+  children,
+  class: cls,
+  ...attrs
+}: SidebarMenuActionProps): JSX.Element {
   return (
     <button
       type="button"
@@ -735,7 +815,11 @@ export function SidebarMenuAction({ showOnHover, children, class: cls, ...attrs 
   );
 }
 
-export function SidebarMenuBadge({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
+export function SidebarMenuBadge({
+  children,
+  class: cls,
+  ...attrs
+}: SidebarPartProps): JSX.Element {
   return (
     <div
       data-sidebar="menu-badge"
@@ -750,7 +834,11 @@ export function SidebarMenuBadge({ children, class: cls, ...attrs }: SidebarPart
   );
 }
 
-export function SidebarMenuSkeleton({ showIcon, class: cls, ...attrs }: SidebarMenuSkeletonProps): JSX.Element {
+export function SidebarMenuSkeleton({
+  showIcon,
+  class: cls,
+  ...attrs
+}: SidebarMenuSkeletonProps): JSX.Element {
   // Random width between 50 to 90%, fixed per call.
   const width = `${Math.floor(Math.random() * 40) + 50}%`;
 
@@ -797,7 +885,11 @@ export function SidebarMenuSub({ children, class: cls, ...attrs }: SidebarPartPr
   );
 }
 
-export function SidebarMenuSubItem({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
+export function SidebarMenuSubItem({
+  children,
+  class: cls,
+  ...attrs
+}: SidebarPartProps): JSX.Element {
   return (
     <li
       data-sidebar="menu-sub-item"
@@ -812,7 +904,13 @@ export function SidebarMenuSubItem({ children, class: cls, ...attrs }: SidebarPa
   );
 }
 
-export function SidebarMenuSubButton({ size: sizeProp, active, class: cls, children, ...attrs }: SidebarMenuSubButtonProps): JSX.Element {
+export function SidebarMenuSubButton({
+  size: sizeProp,
+  active,
+  class: cls,
+  children,
+  ...attrs
+}: SidebarMenuSubButtonProps): JSX.Element {
   const size = sizeProp ?? "md";
 
   return (

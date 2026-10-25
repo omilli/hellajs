@@ -46,7 +46,8 @@ const item = style("radio-group-item", {
   flexShrink: "0",
   height: "1rem",
   outlineStyle: "none",
-  transition: "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
+  transition:
+    "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   width: "1rem",
   "&:focus-visible": {
     borderColor: tokens.ring,
@@ -114,9 +115,17 @@ const circleIcon = (): JSX.Element => (
   </svg>
 );
 
-export function RadioGroupItem({ value, checked, onSelect, disabled, name, "on:click": userClick, class: cls, ...attrs }: RadioGroupItemProps): JSX.Element {
-  const isChecked = (): boolean =>
-    typeof checked === "function" ? checked() : checked ?? false;
+export function RadioGroupItem({
+  value,
+  checked,
+  onSelect,
+  disabled,
+  name,
+  "on:click": userClick,
+  class: cls,
+  ...attrs
+}: RadioGroupItemProps): JSX.Element {
+  const isChecked = (): boolean => (typeof checked === "function" ? checked() : (checked ?? false));
 
   return (
     <button
@@ -131,7 +140,10 @@ export function RadioGroupItem({ value, checked, onSelect, disabled, name, "on:c
       class={
         [item, cls]
       }
-      on:click={function (e) { userClick?.call(this, e); onSelect?.(); }}
+      on:click={function (e) {
+        userClick?.call(this, e);
+        onSelect?.();
+      }}
       {...attrs}
     >
       <span
@@ -146,7 +158,16 @@ export function RadioGroupItem({ value, checked, onSelect, disabled, name, "on:c
   );
 }
 
-export function RadioGroup({ items, keyBy, value, onValueChange, orientation, name, class: cls, ...attrs }: RadioGroupProps): JSX.Element {
+export function RadioGroup({
+  items,
+  keyBy,
+  value,
+  onValueChange,
+  orientation,
+  name,
+  class: cls,
+  ...attrs
+}: RadioGroupProps): JSX.Element {
   const internal = signal("");
   const current = (): string => (value !== undefined ? value() : internal());
   const wirings: (() => void)[] = [];
@@ -191,10 +212,12 @@ export function RadioGroup({ items, keyBy, value, onValueChange, orientation, na
       hook:afterMount={(node) => {
         if (!(node instanceof HTMLElement)) return;
         group = node;
-        wirings.push(rovingTabIndex(node, {
-          orientation,
-          selector: "[role='radio']:not(:disabled)",
-        }));
+        wirings.push(
+          rovingTabIndex(node, {
+            orientation,
+            selector: "[role='radio']:not(:disabled)",
+          }),
+        );
         const onFocusIn = (event: Event) => {
           const radioEl = event.target as HTMLElement;
           if (radioEl.getAttribute("role") !== "radio") return;

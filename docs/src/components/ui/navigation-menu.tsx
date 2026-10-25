@@ -110,7 +110,8 @@ const trigger = style("navigation-menu-trigger", {
   outlineOffset: "2px",
   paddingBlock: "0.5rem",
   paddingInline: "1rem",
-  transition: "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
+  transition:
+    "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   width: "max-content",
   "&:hover": {
     backgroundColor: tokens.accent,
@@ -263,7 +264,8 @@ const indicator = style("navigation-menu-indicator", {
   justifyContent: "center",
   overflow: "hidden",
   top: "100%",
-  transition: "transform 200ms cubic-bezier(0.4, 0, 0.2, 1), width 200ms cubic-bezier(0.4, 0, 0.2, 1)",
+  transition:
+    "transform 200ms cubic-bezier(0.4, 0, 0.2, 1), width 200ms cubic-bezier(0.4, 0, 0.2, 1)",
   zIndex: "1",
   "&[data-state='visible']": {
     animation: `${fadeIn} 150ms ease-out both`,
@@ -311,7 +313,11 @@ const chevronIcon = (): JSX.Element => (
   </svg>
 );
 
-export function NavigationMenuList({ children, class: cls, ...attrs }: NavigationMenuListProps): JSX.Element {
+export function NavigationMenuList({
+  children,
+  class: cls,
+  ...attrs
+}: NavigationMenuListProps): JSX.Element {
   return (
     <ul
       data-slot="navigation-menu-list"
@@ -325,7 +331,11 @@ export function NavigationMenuList({ children, class: cls, ...attrs }: Navigatio
   );
 }
 
-export function NavigationMenuItem({ children, class: cls, ...attrs }: NavigationMenuItemProps): JSX.Element {
+export function NavigationMenuItem({
+  children,
+  class: cls,
+  ...attrs
+}: NavigationMenuItemProps): JSX.Element {
   return (
     <li
       data-slot="navigation-menu-item"
@@ -339,7 +349,14 @@ export function NavigationMenuItem({ children, class: cls, ...attrs }: Navigatio
   );
 }
 
-export function NavigationMenuTrigger({ value, active: activeProp, onActivate, children, class: cls, ...attrs }: NavigationMenuTriggerProps): JSX.Element {
+export function NavigationMenuTrigger({
+  value,
+  active: activeProp,
+  onActivate,
+  children,
+  class: cls,
+  ...attrs
+}: NavigationMenuTriggerProps): JSX.Element {
   const active = (): boolean => activeProp?.() ?? false;
   return (
     <button
@@ -356,7 +373,8 @@ export function NavigationMenuTrigger({ value, active: activeProp, onActivate, c
         // toggle runs), so the root's store mirrors instead of re-toggling.
         const open = !active();
         onActivate?.();
-        if (value !== undefined) document.dispatchEvent(new CustomEvent(ACTIVATE_EVENT, { detail: { id: value, open } }));
+        if (value !== undefined)
+          document.dispatchEvent(new CustomEvent(ACTIVATE_EVENT, { detail: { id: value, open } }));
       }}
       {...attrs}
     >
@@ -366,7 +384,14 @@ export function NavigationMenuTrigger({ value, active: activeProp, onActivate, c
   );
 }
 
-export function NavigationMenuContent({ active: activeProp, viewport: viewportSlot, onExited, children, class: cls, ...attrs }: NavigationMenuContentProps): JSX.Element {
+export function NavigationMenuContent({
+  active: activeProp,
+  viewport: viewportSlot,
+  onExited,
+  children,
+  class: cls,
+  ...attrs
+}: NavigationMenuContentProps): JSX.Element {
   const active = (): boolean => activeProp?.() ?? false;
   const portalTarget = viewportSlot ?? VIEWPORT_SELECTOR;
   // `visible` alone gates the render so an open→closed flip never unmounts
@@ -405,41 +430,48 @@ export function NavigationMenuContent({ active: activeProp, viewport: viewportSl
         [contentAnchor]
       }
     >
-      {() => visible() && (
-        <Portal to={portalTarget}>
-          <div
-            data-slot="navigation-menu-content"
-            data-state={state()}
-            class={
-              [content, cls]
-            }
-            hook:afterMount={(node) => {
-              // The exit's animationend (state already "closed") unmounts the
-              // panel and reports onExited; the entry's animationend is ignored.
-              if (!(node instanceof HTMLElement)) return;
-              const onAnimationEnd = (): void => {
-                if (!active()) {
-                  visible(false);
-                  onExited?.();
-                }
-              };
-              node.addEventListener("animationend", onAnimationEnd);
-              teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
-            }}
-            hook:beforeDestroy={() => {
-              while (teardown.length) teardown.pop()!();
-            }}
-            {...attrs}
-          >
-            {children}
-          </div>
-        </Portal>
-      )}
+      {() =>
+        visible() && (
+          <Portal to={portalTarget}>
+            <div
+              data-slot="navigation-menu-content"
+              data-state={state()}
+              class={
+                [content, cls]
+              }
+              hook:afterMount={(node) => {
+                // The exit's animationend (state already "closed") unmounts the
+                // panel and reports onExited; the entry's animationend is ignored.
+                if (!(node instanceof HTMLElement)) return;
+                const onAnimationEnd = (): void => {
+                  if (!active()) {
+                    visible(false);
+                    onExited?.();
+                  }
+                };
+                node.addEventListener("animationend", onAnimationEnd);
+                teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
+              }}
+              hook:beforeDestroy={() => {
+                while (teardown.length) teardown.pop()!();
+              }}
+              {...attrs}
+            >
+              {children}
+            </div>
+          </Portal>
+        )
+      }
     </div>
   );
 }
 
-export function NavigationMenuLink({ active, children, class: cls, ...attrs }: NavigationMenuLinkProps): JSX.Element {
+export function NavigationMenuLink({
+  active,
+  children,
+  class: cls,
+  ...attrs
+}: NavigationMenuLinkProps): JSX.Element {
   return (
     <a
       data-slot="navigation-menu-link"
@@ -454,7 +486,12 @@ export function NavigationMenuLink({ active, children, class: cls, ...attrs }: N
   );
 }
 
-export function NavigationMenuViewport({ active: activeProp, id, class: cls, ...attrs }: NavigationMenuViewportProps): JSX.Element {
+export function NavigationMenuViewport({
+  active: activeProp,
+  id,
+  class: cls,
+  ...attrs
+}: NavigationMenuViewportProps): JSX.Element {
   const active = (): boolean => activeProp?.() ?? false;
   return (
     <div
@@ -475,7 +512,12 @@ export function NavigationMenuViewport({ active: activeProp, id, class: cls, ...
   );
 }
 
-export function NavigationMenuIndicator({ active: activeProp, anchor, class: cls, ...attrs }: NavigationMenuIndicatorProps): JSX.Element {
+export function NavigationMenuIndicator({
+  active: activeProp,
+  anchor,
+  class: cls,
+  ...attrs
+}: NavigationMenuIndicatorProps): JSX.Element {
   const activeId = signal("");
   const visible = (): boolean => activeProp?.() ?? activeId() !== "";
   const wirings: (() => void)[] = [];
@@ -486,7 +528,10 @@ export function NavigationMenuIndicator({ active: activeProp, anchor, class: cls
   const resolveTrigger = (): Element | undefined => {
     if (anchor) return anchor();
     const id = activeId();
-    return id === "" ? undefined : document.querySelector(`[data-slot='navigation-menu-trigger'][data-value='${id}']`) ?? undefined;
+    return id === ""
+      ? undefined
+      : (document.querySelector(`[data-slot='navigation-menu-trigger'][data-value='${id}']`) ??
+          undefined);
   };
 
   // The underline/box position: measured against the root bar, moved with a
@@ -546,7 +591,14 @@ export function NavigationMenuIndicator({ active: activeProp, anchor, class: cls
   );
 }
 
-export function NavigationMenu({ value: valueProp, onValueChange, viewport: viewportProp, children, class: cls, ...attrs }: NavigationMenuProps): JSX.Element {
+export function NavigationMenu({
+  value: valueProp,
+  onValueChange,
+  viewport: viewportProp,
+  children,
+  class: cls,
+  ...attrs
+}: NavigationMenuProps): JSX.Element {
   const internal = signal("");
   const active = (): string => (valueProp !== undefined ? valueProp() : internal());
   const setActive = (value: string): void => {
@@ -580,7 +632,9 @@ export function NavigationMenu({ value: valueProp, onValueChange, viewport: view
       {...attrs}
     >
       {children}
-      {() => (viewportProp === false ? null : <NavigationMenuViewport active={() => active() !== ""} />)}
+      {() =>
+        viewportProp === false ? null : <NavigationMenuViewport active={() => active() !== ""} />
+      }
     </div>
   );
 }

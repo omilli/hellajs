@@ -74,7 +74,11 @@ export function PopoverAnchor({ children, class: cls, ...attrs }: PopoverAnchorP
 }
 
 /** The manual trigger button; the composed Popover renders the same shape wired to toggle + aria state. */
-export function PopoverTrigger({ children, class: cls, ...attrs }: PopoverTriggerProps): JSX.Element {
+export function PopoverTrigger({
+  children,
+  class: cls,
+  ...attrs
+}: PopoverTriggerProps): JSX.Element {
   return (
     <button
       type="button"
@@ -89,7 +93,20 @@ export function PopoverTrigger({ children, class: cls, ...attrs }: PopoverTrigge
   );
 }
 
-export function PopoverContent({ state, id, side: sideProp, align: alignProp, sideOffset, alignOffset: alignOffsetProp, anchor, onDismiss, onExited, children, class: cls, ...attrs }: PopoverContentProps): JSX.Element {
+export function PopoverContent({
+  state,
+  id,
+  side: sideProp,
+  align: alignProp,
+  sideOffset,
+  alignOffset: alignOffsetProp,
+  anchor,
+  onDismiss,
+  onExited,
+  children,
+  class: cls,
+  ...attrs
+}: PopoverContentProps): JSX.Element {
   const side = sideProp ?? "bottom";
   const align = alignProp ?? "center";
   const alignOffset = alignOffsetProp ?? 0;
@@ -122,11 +139,18 @@ export function PopoverContent({ state, id, side: sideProp, align: alignProp, si
       hook:afterMount={(node) => {
         if (!(node instanceof HTMLElement)) return;
         const anchorEl = anchor?.();
-        if (anchorEl != null) wirings.push(anchorPosition(anchorEl, node, { placement: placementOf(side, align), offset: sideOffset ?? 4 }));
+        if (anchorEl != null)
+          wirings.push(
+            anchorPosition(anchorEl, node, {
+              placement: placementOf(side, align),
+              offset: sideOffset ?? 4,
+            }),
+          );
         if (alignOffset !== 0) {
           // Cross-axis shift over the placed coordinates; the placement axis
           // stays owned by anchorPosition's left/top writes.
-          node.style.translate = side === "top" || side === "bottom" ? `${alignOffset}px 0` : `0 ${alignOffset}px`;
+          node.style.translate =
+            side === "top" || side === "bottom" ? `${alignOffset}px 0` : `0 ${alignOffset}px`;
         }
         if (onDismiss) wirings.push(layerDismissal(() => [node, anchorEl ?? null], onDismiss));
         // Non-modal: no trap - focus moves to the content on open, upstream parity.
@@ -178,7 +202,11 @@ export function PopoverTitle({ children, class: cls, ...attrs }: PopoverPartProp
   );
 }
 
-export function PopoverDescription({ children, class: cls, ...attrs }: PopoverDescriptionProps): JSX.Element {
+export function PopoverDescription({
+  children,
+  class: cls,
+  ...attrs
+}: PopoverDescriptionProps): JSX.Element {
   return (
     <p
       data-slot="popover-description"
@@ -194,7 +222,16 @@ export function PopoverDescription({ children, class: cls, ...attrs }: PopoverDe
 
 let popoverCount = 0;
 
-export function Popover({ open, onOpenChange, anchor: anchorProp, "on:click": userClick, children, content: contentSlot, class: cls, ...attrs }: PopoverProps): JSX.Element {
+export function Popover({
+  open,
+  onOpenChange,
+  anchor: anchorProp,
+  "on:click": userClick,
+  children,
+  content: contentSlot,
+  class: cls,
+  ...attrs
+}: PopoverProps): JSX.Element {
   const internal = signal(false);
   const isOpen = (): boolean => (open !== undefined ? open() : internal());
   const setOpen = (next: boolean): void => {
@@ -249,7 +286,10 @@ export function Popover({ open, onOpenChange, anchor: anchorProp, "on:click": us
       class={
         cn(cls)
       }
-      on:click={function (e) { userClick?.call(this, e); toggle(); }}
+      on:click={function (e) {
+        userClick?.call(this, e);
+        toggle();
+      }}
       hook:afterMount={(node) => {
         if (!(node instanceof HTMLElement)) return;
         triggerNode = node;
@@ -257,18 +297,20 @@ export function Popover({ open, onOpenChange, anchor: anchorProp, "on:click": us
       {...attrs}
     >
       {triggerChildren}
-      {() => visible() && (
-        <Portal to="body">
-          <PopoverContent
-            state={state}
-            id={contentId}
-            anchor={anchor}
-            onDismiss={() => setOpen(false)}
-            onExited={finishExit}
-            children={contentSlot}
-          />
-        </Portal>
-      )}
+      {() =>
+        visible() && (
+          <Portal to="body">
+            <PopoverContent
+              state={state}
+              id={contentId}
+              anchor={anchor}
+              onDismiss={() => setOpen(false)}
+              onExited={finishExit}
+              children={contentSlot}
+            />
+          </Portal>
+        )
+      }
     </button>
   );
 }

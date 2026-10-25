@@ -72,8 +72,10 @@ import { cn } from "./cn.js";
 
 const contentDirections = {
   top: "data-[vaul-drawer-direction=top]:inset-x-0 data-[vaul-drawer-direction=top]:top-0 data-[vaul-drawer-direction=top]:mb-24 data-[vaul-drawer-direction=top]:max-h-[80vh] data-[vaul-drawer-direction=top]:rounded-b-lg data-[vaul-drawer-direction=top]:border-b",
-  bottom: "data-[vaul-drawer-direction=bottom]:inset-x-0 data-[vaul-drawer-direction=bottom]:bottom-0 data-[vaul-drawer-direction=bottom]:mt-24 data-[vaul-drawer-direction=bottom]:max-h-[80vh] data-[vaul-drawer-direction=bottom]:rounded-t-lg data-[vaul-drawer-direction=bottom]:border-t",
-  right: "data-[vaul-drawer-direction=right]:inset-y-0 data-[vaul-drawer-direction=right]:right-0 data-[vaul-drawer-direction=right]:w-3/4 data-[vaul-drawer-direction=right]:border-l data-[vaul-drawer-direction=right]:sm:max-w-sm",
+  bottom:
+    "data-[vaul-drawer-direction=bottom]:inset-x-0 data-[vaul-drawer-direction=bottom]:bottom-0 data-[vaul-drawer-direction=bottom]:mt-24 data-[vaul-drawer-direction=bottom]:max-h-[80vh] data-[vaul-drawer-direction=bottom]:rounded-t-lg data-[vaul-drawer-direction=bottom]:border-t",
+  right:
+    "data-[vaul-drawer-direction=right]:inset-y-0 data-[vaul-drawer-direction=right]:right-0 data-[vaul-drawer-direction=right]:w-3/4 data-[vaul-drawer-direction=right]:border-l data-[vaul-drawer-direction=right]:sm:max-w-sm",
   left: "data-[vaul-drawer-direction=left]:inset-y-0 data-[vaul-drawer-direction=left]:left-0 data-[vaul-drawer-direction=left]:w-3/4 data-[vaul-drawer-direction=left]:border-r data-[vaul-drawer-direction=left]:sm:max-w-sm",
 };
 
@@ -106,7 +108,12 @@ function followTransform(direction: DrawerDirection, d: number): string {
   return `translate${axis}(${clamped}px)`;
 }
 
-export function DrawerOverlay({ state, fraction, class: cls, ...attrs }: DrawerOverlayProps): JSX.Element {
+export function DrawerOverlay({
+  state,
+  fraction,
+  class: cls,
+  ...attrs
+}: DrawerOverlayProps): JSX.Element {
   const overlayStyle = (): Record<string, string> | undefined => {
     const f = fraction?.() ?? 0;
     return f > 0 ? { opacity: String(Math.max(0, 1 - f)) } : undefined;
@@ -124,7 +131,13 @@ export function DrawerOverlay({ state, fraction, class: cls, ...attrs }: DrawerO
   );
 }
 
-export function DrawerClose({ state, onClose, "on:click": userClick, class: cls, ...attrs }: DrawerCloseProps): JSX.Element {
+export function DrawerClose({
+  state,
+  onClose,
+  "on:click": userClick,
+  class: cls,
+  ...attrs
+}: DrawerCloseProps): JSX.Element {
   return (
     <button
       type="button"
@@ -133,7 +146,10 @@ export function DrawerClose({ state, onClose, "on:click": userClick, class: cls,
       class={
         cn("absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-secondary", cls)
       }
-      on:click={function (e) { userClick?.call(this, e); onClose?.(); }}
+      on:click={function (e) {
+        userClick?.call(this, e);
+        onClose?.();
+      }}
       {...attrs}
     >
       <svg
@@ -157,11 +173,7 @@ export function DrawerClose({ state, onClose, "on:click": userClick, class: cls,
 
 /** Portals the manual composition's parts into document.body. */
 export function DrawerPortal(props: DrawerPortalProps): JSX.Element {
-  return (
-    <Portal to="body">
-      {props.children}
-    </Portal>
-  );
+  return <Portal to="body">{props.children}</Portal>;
 }
 
 /** The manual trigger button; wire its click to the caller's open signal - hella has no Radix context to do it for you. */
@@ -189,7 +201,18 @@ export function DrawerTrigger({ children, class: cls, ...attrs }: DrawerTriggerP
  * dismisses - past 25% of the panel size, or moving faster than 500px/s -
  * or springs back through the restored transition.
  */
-export function DrawerContent({ state, direction: drawerDirection, fraction, closeOnEscape, closeOnOutside, onClose, onExited, children, class: cls, ...attrs }: DrawerContentProps): JSX.Element {
+export function DrawerContent({
+  state,
+  direction: drawerDirection,
+  fraction,
+  closeOnEscape,
+  closeOnOutside,
+  onClose,
+  onExited,
+  children,
+  class: cls,
+  ...attrs
+}: DrawerContentProps): JSX.Element {
   const wirings: (() => void)[] = [];
   const teardown: (() => void)[] = [];
   let panel: HTMLElement | undefined;
@@ -258,50 +281,56 @@ export function DrawerContent({ state, direction: drawerDirection, fraction, clo
         // The exit's transitionend (state already "closed") is the primary
         // unmount trigger; the copied fallback budget in the root is the net.
         const onTransitionEnd = (event: TransitionEvent): void => {
-          if (event.target === node && event.propertyName === "transform" && state?.() === "closed") onExited?.();
+          if (event.target === node && event.propertyName === "transform" && state?.() === "closed")
+            onExited?.();
         };
         node.addEventListener("transitionend", onTransitionEnd);
         teardown.push(() => node.removeEventListener("transitionend", onTransitionEnd));
         // Whole-panel drag along the dismissal axis. Interactive elements opt
         // out so buttons inside the panel stay clickable.
-        teardown.push(onDrag(node, {
-          onStart: (event) => {
-            if (state?.() !== "open") return;
-            const hit = event.target as HTMLElement | null;
-            if (hit?.closest?.("button, a, input, textarea, select, [data-no-drag]")) return;
-            dragging = true;
-            const rect = node.getBoundingClientRect();
-            panelSize = AXIS[direction] === "y" ? rect.height : rect.width;
-            samples = [{ d: 0, t: event.timeStamp }];
-            node.setAttribute("data-dragging", "true");
-          },
-          onMove: (delta) => {
-            if (!dragging) return;
-            const d = AXIS[direction] === "y" ? delta.dy : delta.dx;
-            node.style.transform = followTransform(direction, d);
-            fraction?.(panelSize > 0 ? Math.min(1, Math.max(0, d * SIGN[direction]) / panelSize) : 0);
-            samples.push({ d: d * SIGN[direction], t: delta.event.timeStamp });
-            if (samples.length > 2) samples.shift();
-          },
-          onEnd: () => {
-            if (!dragging) return;
-            dragging = false;
-            node.removeAttribute("data-dragging");
-            const displaced = samples[samples.length - 1]?.d ?? 0;
-            const dismiss = (panelSize > 0 && displaced >= panelSize * DISMISS_DISTANCE)
-              || releaseVelocity() >= DISMISS_VELOCITY;
-            samples = [];
-            fraction?.(0);
-            if (dismiss) {
-              node.style.transform = EXIT_TRANSFORM[direction];
-              onClose?.();
-            } else {
-              // Spring back: data-dragging is gone, so the restored
-              // transition animates the cleared transform to identity.
-              node.style.transform = "";
-            }
-          },
-        }));
+        teardown.push(
+          onDrag(node, {
+            onStart: (event) => {
+              if (state?.() !== "open") return;
+              const hit = event.target as HTMLElement | null;
+              if (hit?.closest?.("button, a, input, textarea, select, [data-no-drag]")) return;
+              dragging = true;
+              const rect = node.getBoundingClientRect();
+              panelSize = AXIS[direction] === "y" ? rect.height : rect.width;
+              samples = [{ d: 0, t: event.timeStamp }];
+              node.setAttribute("data-dragging", "true");
+            },
+            onMove: (delta) => {
+              if (!dragging) return;
+              const d = AXIS[direction] === "y" ? delta.dy : delta.dx;
+              node.style.transform = followTransform(direction, d);
+              fraction?.(
+                panelSize > 0 ? Math.min(1, Math.max(0, d * SIGN[direction]) / panelSize) : 0,
+              );
+              samples.push({ d: d * SIGN[direction], t: delta.event.timeStamp });
+              if (samples.length > 2) samples.shift();
+            },
+            onEnd: () => {
+              if (!dragging) return;
+              dragging = false;
+              node.removeAttribute("data-dragging");
+              const displaced = samples[samples.length - 1]?.d ?? 0;
+              const dismiss =
+                (panelSize > 0 && displaced >= panelSize * DISMISS_DISTANCE) ||
+                releaseVelocity() >= DISMISS_VELOCITY;
+              samples = [];
+              fraction?.(0);
+              if (dismiss) {
+                node.style.transform = EXIT_TRANSFORM[direction];
+                onClose?.();
+              } else {
+                // Spring back: data-dragging is gone, so the restored
+                // transition animates the cleared transform to identity.
+                node.style.transform = "";
+              }
+            },
+          }),
+        );
       }}
       hook:beforeDestroy={() => {
         disposeWirings();
@@ -309,7 +338,10 @@ export function DrawerContent({ state, direction: drawerDirection, fraction, clo
       }}
       {...attrs}
     >
-      <div data-slot="drawer-handle" class="mx-auto mt-4 hidden h-2 w-[100px] shrink-0 rounded-full bg-muted group-data-[vaul-drawer-direction=bottom]/drawer-content:block" />
+      <div
+        data-slot="drawer-handle"
+        class="mx-auto mt-4 hidden h-2 w-[100px] shrink-0 rounded-full bg-muted group-data-[vaul-drawer-direction=bottom]/drawer-content:block"
+      />
       {children}
     </div>
   );
@@ -358,7 +390,12 @@ export function DrawerTitle({ id, children, class: cls, ...attrs }: DrawerTitleP
   );
 }
 
-export function DrawerDescription({ id, children, class: cls, ...attrs }: DrawerDescriptionProps): JSX.Element {
+export function DrawerDescription({
+  id,
+  children,
+  class: cls,
+  ...attrs
+}: DrawerDescriptionProps): JSX.Element {
   return (
     <p
       id={id}
@@ -375,7 +412,18 @@ export function DrawerDescription({ id, children, class: cls, ...attrs }: Drawer
 
 let drawerCount = 0;
 
-export function Drawer({ open, onClose, direction, title: titleText, description: descriptionText, closeOnEscape, closeOnOutside, children, class: cls, ...attrs }: DrawerProps): JSX.Element {
+export function Drawer({
+  open,
+  onClose,
+  direction,
+  title: titleText,
+  description: descriptionText,
+  closeOnEscape,
+  closeOnOutside,
+  children,
+  class: cls,
+  ...attrs
+}: DrawerProps): JSX.Element {
   const titleId = `hella-drawer-title-${++drawerCount}`;
   const descriptionId = `hella-drawer-description-${drawerCount}`;
   // `visible` alone gates the render so an open→closed flip never unmounts
@@ -413,29 +461,37 @@ export function Drawer({ open, onClose, direction, title: titleText, description
 
   return (
     <>
-      {() => visible() && (
-        <Portal to="body">
-          <DrawerOverlay state={state} fraction={dragFraction} />
-          <DrawerContent
-            state={state}
-            direction={direction}
-            fraction={dragFraction}
-            aria-labelledby={titleId}
-            aria-describedby={descriptionText === undefined ? undefined : descriptionId}
-            closeOnEscape={closeOnEscape}
-            closeOnOutside={closeOnOutside}
-            onClose={onClose}
-            onExited={finishExit}
-            class={cls}
-            {...attrs}
-            children={[
-              ...(titleText !== undefined ? [<DrawerTitle id={titleId}>{titleText}</DrawerTitle>] : []),
-              ...(descriptionText !== undefined ? [<DrawerDescription id={descriptionId}>{descriptionText}</DrawerDescription>] : []),
-              ...flattenChildren(children),
-            ] as HellaChild[]}
-          />
-        </Portal>
-      )}
+      {() =>
+        visible() && (
+          <Portal to="body">
+            <DrawerOverlay state={state} fraction={dragFraction} />
+            <DrawerContent
+              state={state}
+              direction={direction}
+              fraction={dragFraction}
+              aria-labelledby={titleId}
+              aria-describedby={descriptionText === undefined ? undefined : descriptionId}
+              closeOnEscape={closeOnEscape}
+              closeOnOutside={closeOnOutside}
+              onClose={onClose}
+              onExited={finishExit}
+              class={cls}
+              {...attrs}
+              children={
+                [
+                  ...(titleText !== undefined
+                    ? [<DrawerTitle id={titleId}>{titleText}</DrawerTitle>]
+                    : []),
+                  ...(descriptionText !== undefined
+                    ? [<DrawerDescription id={descriptionId}>{descriptionText}</DrawerDescription>]
+                    : []),
+                  ...flattenChildren(children),
+                ] as HellaChild[]
+              }
+            />
+          </Portal>
+        )
+      }
     </>
   );
 }

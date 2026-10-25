@@ -86,14 +86,27 @@ const checkIcon = (): JSX.Element => (
   </svg>
 );
 
-export function Checkbox({ checked: checkedProp, indeterminate: indeterminateProp, onCheckedChange, id, disabled, "on:click": userClick, class: cls, ...attrs }: CheckboxProps): JSX.Element {
+export function Checkbox({
+  checked: checkedProp,
+  indeterminate: indeterminateProp,
+  onCheckedChange,
+  id,
+  disabled,
+  "on:click": userClick,
+  class: cls,
+  ...attrs
+}: CheckboxProps): JSX.Element {
   const checkedAccessor = typeof checkedProp === "function" ? checkedProp : undefined;
-  const indeterminateAccessor = typeof indeterminateProp === "function" ? indeterminateProp : undefined;
+  const indeterminateAccessor =
+    typeof indeterminateProp === "function" ? indeterminateProp : undefined;
   const internalChecked = signal(typeof checkedProp === "boolean" ? checkedProp : false);
-  const internalIndeterminate = signal(typeof indeterminateProp === "boolean" ? indeterminateProp : false);
+  const internalIndeterminate = signal(
+    typeof indeterminateProp === "boolean" ? indeterminateProp : false,
+  );
 
   const checked = (): boolean => (checkedAccessor ? checkedAccessor() : internalChecked());
-  const indeterminate = (): boolean => (indeterminateAccessor ? indeterminateAccessor() : internalIndeterminate());
+  const indeterminate = (): boolean =>
+    indeterminateAccessor ? indeterminateAccessor() : internalIndeterminate();
   const state = (): "checked" | "unchecked" | "indeterminate" =>
     indeterminate() ? "indeterminate" : checked() ? "checked" : "unchecked";
   const ariaChecked = (): "true" | "false" | "mixed" =>
@@ -119,7 +132,10 @@ export function Checkbox({ checked: checkedProp, indeterminate: indeterminatePro
       class={
         [base, cls]
       }
-      on:click={function (e) { userClick?.call(this, e); toggle(); }}
+      on:click={function (e) {
+        userClick?.call(this, e);
+        toggle();
+      }}
       {...attrs}
     >
       <span

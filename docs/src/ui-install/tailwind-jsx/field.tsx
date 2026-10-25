@@ -63,8 +63,10 @@ const legendVariants = {
 
 const orientation = {
   vertical: "flex-col [&>*]:w-full [&>.sr-only]:w-auto",
-  horizontal: "flex-row items-center [&>[data-slot=field-label]]:flex-auto has-[>[data-slot=field-content]]:items-start has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px",
-  responsive: "flex-col @md/field-group:flex-row @md/field-group:items-center [&>*]:w-full @md/field-group:[&>*]:w-auto [&>.sr-only]:w-auto @md/field-group:[&>[data-slot=field-label]]:flex-auto @md/field-group:has-[>[data-slot=field-content]]:items-start @md/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px",
+  horizontal:
+    "flex-row items-center [&>[data-slot=field-label]]:flex-auto has-[>[data-slot=field-content]]:items-start has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px",
+  responsive:
+    "flex-col @md/field-group:flex-row @md/field-group:items-center [&>*]:w-full @md/field-group:[&>*]:w-auto [&>.sr-only]:w-auto @md/field-group:[&>[data-slot=field-label]]:flex-auto @md/field-group:has-[>[data-slot=field-content]]:items-start @md/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px",
 };
 
 export function FieldSet({ children, class: cls, ...attrs }: FieldSetProps): JSX.Element {
@@ -81,17 +83,18 @@ export function FieldSet({ children, class: cls, ...attrs }: FieldSetProps): JSX
   );
 }
 
-export function FieldLegend({ variant, children, class: cls, ...attrs }: FieldLegendProps): JSX.Element {
+export function FieldLegend({
+  variant,
+  children,
+  class: cls,
+  ...attrs
+}: FieldLegendProps): JSX.Element {
   return (
     <legend
       data-slot="field-legend"
       data-variant={variant ?? "legend"}
       class={
-        cn(
-          "mb-3 font-medium",
-          legendVariants[variant ?? "legend"],
-          cls,
-        )
+        cn("mb-3 font-medium", legendVariants[variant ?? "legend"], cls)
       }
       {...attrs}
     >
@@ -114,7 +117,14 @@ export function FieldGroup({ children, class: cls, ...attrs }: FieldGroupProps):
   );
 }
 
-export function Field({ orientation: orient, disabled, invalid, children, class: cls, ...attrs }: FieldProps): JSX.Element {
+export function Field({
+  orientation: orient,
+  disabled,
+  invalid,
+  children,
+  class: cls,
+  ...attrs
+}: FieldProps): JSX.Element {
   return (
     <div
       role="group"
@@ -123,11 +133,7 @@ export function Field({ orientation: orient, disabled, invalid, children, class:
       data-disabled={disabled ? "true" : undefined}
       data-invalid={invalid ? "true" : undefined}
       class={
-        cn(
-          "group/field flex w-full gap-3 data-[invalid=true]:text-destructive",
-          orientation[orient ?? "vertical"],
-          cls,
-        )
+        cn("group/field flex w-full gap-3 data-[invalid=true]:text-destructive", orientation[orient ?? "vertical"], cls)
       }
       {...attrs}
     >
@@ -178,7 +184,11 @@ export function FieldTitle({ children, class: cls, ...attrs }: FieldTitleProps):
   );
 }
 
-export function FieldDescription({ children, class: cls, ...attrs }: FieldDescriptionProps): JSX.Element {
+export function FieldDescription({
+  children,
+  class: cls,
+  ...attrs
+}: FieldDescriptionProps): JSX.Element {
   return (
     <p
       data-slot="field-description"
@@ -192,7 +202,11 @@ export function FieldDescription({ children, class: cls, ...attrs }: FieldDescri
   );
 }
 
-export function FieldSeparator({ children, class: cls, ...attrs }: FieldSeparatorProps): JSX.Element {
+export function FieldSeparator({
+  children,
+  class: cls,
+  ...attrs
+}: FieldSeparatorProps): JSX.Element {
   return (
     <div
       data-slot="field-separator"
@@ -209,21 +223,21 @@ export function FieldSeparator({ children, class: cls, ...attrs }: FieldSeparato
         aria-orientation="horizontal"
         class={["shrink-0 bg-border data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-px", "absolute inset-0 top-1/2"]}
       />
-      {children
-        ? (
-          <span
-            data-slot="field-separator-content"
-            class={["relative mx-auto block w-fit bg-background px-2 text-muted-foreground"]}
-          >
-            {children}
-          </span>
-        )
-        : null}
+      {children ? (
+        <span data-slot="field-separator-content" class={["relative mx-auto block w-fit bg-background px-2 text-muted-foreground"]}>
+          {children}
+        </span>
+      ) : null}
     </div>
   );
 }
 
-export function FieldError({ errors, children, class: cls, ...attrs }: FieldErrorProps): JSX.Element {
+export function FieldError({
+  errors,
+  children,
+  class: cls,
+  ...attrs
+}: FieldErrorProps): JSX.Element {
   const unique = (): { message?: string }[] => {
     const seen = new Map<string | undefined, { message?: string } | undefined>();
     for (const issue of errors ?? []) seen.set(issue?.message, issue);
@@ -254,7 +268,7 @@ export function FieldError({ errors, children, class: cls, ...attrs }: FieldErro
         if (issues.length === 0) return null;
         return (
           <ul class="ml-4 flex list-disc flex-col gap-1">
-            {issues.map((item) => item.message ? <li>{item.message}</li> : null)}
+            {issues.map((item) => (item.message ? <li>{item.message}</li> : null))}
           </ul>
         );
       }}

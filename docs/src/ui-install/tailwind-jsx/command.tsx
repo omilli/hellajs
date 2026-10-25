@@ -172,7 +172,12 @@ export function CommandInput({ class: cls, ...attrs }: CommandInputProps): JSX.E
   );
 }
 
-export function CommandList({ body, children, class: cls, ...attrs }: CommandListProps): JSX.Element {
+export function CommandList({
+  body,
+  children,
+  class: cls,
+  ...attrs
+}: CommandListProps): JSX.Element {
   return (
     <div
       role="listbox"
@@ -203,9 +208,14 @@ export function CommandEmpty({ children, class: cls, ...attrs }: CommandEmptyPro
   );
 }
 
-export function CommandGroup({ heading, hidden, children, class: cls, ...attrs }: CommandGroupProps): JSX.Element {
-  const isHidden = (): boolean =>
-    typeof hidden === "function" ? hidden() : hidden ?? false;
+export function CommandGroup({
+  heading,
+  hidden,
+  children,
+  class: cls,
+  ...attrs
+}: CommandGroupProps): JSX.Element {
+  const isHidden = (): boolean => (typeof hidden === "function" ? hidden() : (hidden ?? false));
   return (
     <div
       data-slot="command-group"
@@ -243,7 +253,16 @@ export function CommandSeparator({ class: cls, ...attrs }: CommandSeparatorProps
   );
 }
 
-export function CommandItem({ value, disabled, active, onSelect, "on:click": userClick, children, class: cls, ...attrs }: CommandItemProps): JSX.Element {
+export function CommandItem({
+  value,
+  disabled,
+  active,
+  onSelect,
+  "on:click": userClick,
+  children,
+  class: cls,
+  ...attrs
+}: CommandItemProps): JSX.Element {
   return (
     <div
       role="option"
@@ -268,7 +287,11 @@ export function CommandItem({ value, disabled, active, onSelect, "on:click": use
   );
 }
 
-export function CommandShortcut({ children, class: cls, ...attrs }: CommandShortcutProps): JSX.Element {
+export function CommandShortcut({
+  children,
+  class: cls,
+  ...attrs
+}: CommandShortcutProps): JSX.Element {
   return (
     <span
       data-slot="command-shortcut"
@@ -290,7 +313,15 @@ let commandDialogCount = 0;
  * entries never cross-import - with the command palette scoping on its root.
  * Manual parts compose inside through children.
  */
-export function CommandDialog({ open, onClose, title: titleText, description: descriptionText, children, class: cls, ...attrs }: CommandDialogProps): JSX.Element {
+export function CommandDialog({
+  open,
+  onClose,
+  title: titleText,
+  description: descriptionText,
+  children,
+  class: cls,
+  ...attrs
+}: CommandDialogProps): JSX.Element {
   const titleId = `hella-command-dialog-title-${++commandDialogCount}`;
   const descriptionId = `hella-command-dialog-description-${commandDialogCount}`;
   // `visible` alone gates the render so an open→closed flip never unmounts
@@ -346,123 +377,133 @@ export function CommandDialog({ open, onClose, title: titleText, description: de
 
   return (
     <>
-      {() => visible() && (
-        <Portal to="body">
-          <div
-            data-slot="dialog-overlay"
-            data-state={state()}
-            class={
-              cn("fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0")
-            }
-          />
-          <div
-            data-slot="dialog-content"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={titleId}
-            aria-describedby={descriptionText === undefined ? undefined : descriptionId}
-            data-state={state()}
-            class={
-              cn("fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-0 shadow-lg duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg overflow-hidden", cls)
-            }
-            hook:afterMount={(node) => {
-              if (!(node instanceof HTMLElement)) return;
-              panel = node;
-              installWirings();
-              const onAnimationEnd = (): void => {
-                if (open() === false) finishExit();
-              };
-              node.addEventListener("animationend", onAnimationEnd);
-              teardown.push(() => {
-                node.removeEventListener("animationend", onAnimationEnd);
-                panel = undefined;
-              });
-            }}
-            hook:beforeDestroy={() => {
-              disposeWirings();
-              while (teardown.length) teardown.pop()!();
-            }}
-            {...attrs}
-          >
+      {() =>
+        visible() && (
+          <Portal to="body">
             <div
-              data-slot="dialog-header"
-              class={
-                cn("sr-only")
-              }
-            >
-              {titleText !== undefined && (
-                <h2
-                  id={titleId}
-                  data-slot="dialog-title"
-                  class={
-                    cn("text-lg leading-none font-semibold")
-                  }
-                >
-                  {titleText}
-                </h2>
-              )}
-              {descriptionText !== undefined && (
-                <p
-                  id={descriptionId}
-                  data-slot="dialog-description"
-                  class={
-                    cn("text-sm text-muted-foreground")
-                  }
-                >
-                  {descriptionText}
-                </p>
-              )}
-            </div>
-            <button
-              type="button"
-              data-slot="dialog-close"
+              data-slot="dialog-overlay"
               data-state={state()}
               class={
-                cn("absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4")
+                cn("fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0")
               }
-              on:click={() => onClose()}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M18 6 6 18" />
-                <path d="m6 6 12 12" />
-              </svg>
-              <span class="sr-only">Close</span>
-            </button>
+            />
             <div
-              data-slot="command"
+              data-slot="dialog-content"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={titleId}
+              aria-describedby={descriptionText === undefined ? undefined : descriptionId}
+              data-state={state()}
               class={
-                cn("flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground", "[&_[data-slot='command-input-wrapper']]:h-12 [&_[data-slot='command-group-heading']]:px-2 [&_[data-slot='command-group-heading']]:font-medium [&_[data-slot='command-group-heading']]:text-muted-foreground [&_[data-slot='command-group']]:px-2 [&_[data-slot='command-group']:not([hidden])~[data-slot='command-group']]:pt-0 [&_[data-slot='command-input-wrapper']_svg]:h-5 [&_[data-slot='command-input-wrapper']_svg]:w-5 [&_[data-slot='command-input']]:h-12 [&_[data-slot='command-item']]:px-2 [&_[data-slot='command-item']]:py-3 [&_[data-slot='command-item']_svg]:h-5 [&_[data-slot='command-item']_svg]:w-5")
+                cn("fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-0 shadow-lg duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg overflow-hidden", cls)
               }
+              hook:afterMount={(node) => {
+                if (!(node instanceof HTMLElement)) return;
+                panel = node;
+                installWirings();
+                const onAnimationEnd = (): void => {
+                  if (open() === false) finishExit();
+                };
+                node.addEventListener("animationend", onAnimationEnd);
+                teardown.push(() => {
+                  node.removeEventListener("animationend", onAnimationEnd);
+                  panel = undefined;
+                });
+              }}
+              hook:beforeDestroy={() => {
+                disposeWirings();
+                while (teardown.length) teardown.pop()!();
+              }}
+              {...attrs}
             >
-              {children}
+              <div
+                data-slot="dialog-header"
+                class={
+                  cn("sr-only")
+                }
+              >
+                {titleText !== undefined && (
+                  <h2
+                    id={titleId}
+                    data-slot="dialog-title"
+                    class={
+                      cn("text-lg leading-none font-semibold")
+                    }
+                  >
+                    {titleText}
+                  </h2>
+                )}
+                {descriptionText !== undefined && (
+                  <p
+                    id={descriptionId}
+                    data-slot="dialog-description"
+                    class={
+                      cn("text-sm text-muted-foreground")
+                    }
+                  >
+                    {descriptionText}
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                data-slot="dialog-close"
+                data-state={state()}
+                class={
+                  cn("absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4")
+                }
+                on:click={() => onClose()}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M18 6 6 18" />
+                  <path d="m6 6 12 12" />
+                </svg>
+                <span class="sr-only">Close</span>
+              </button>
+              <div
+                data-slot="command"
+                class={
+                  cn("flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground", "[&_[data-slot='command-input-wrapper']]:h-12 [&_[data-slot='command-group-heading']]:px-2 [&_[data-slot='command-group-heading']]:font-medium [&_[data-slot='command-group-heading']]:text-muted-foreground [&_[data-slot='command-group']]:px-2 [&_[data-slot='command-group']:not([hidden])~[data-slot='command-group']]:pt-0 [&_[data-slot='command-input-wrapper']_svg]:h-5 [&_[data-slot='command-input-wrapper']_svg]:w-5 [&_[data-slot='command-input']]:h-12 [&_[data-slot='command-item']]:px-2 [&_[data-slot='command-item']]:py-3 [&_[data-slot='command-item']_svg]:h-5 [&_[data-slot='command-item']_svg]:w-5")
+                }
+              >
+                {children}
+              </div>
             </div>
-          </div>
-        </Portal>
-      )}
+          </Portal>
+        )
+      }
     </>
   );
 }
 
-export function Command({ items, filter, loop, value, onValueChange, children, class: cls, ...attrs }: CommandProps): JSX.Element {
+export function Command({
+  items,
+  filter,
+  loop,
+  value,
+  onValueChange,
+  children,
+  class: cls,
+  ...attrs
+}: CommandProps): JSX.Element {
   const resolveItems = (): CommandItemData[] =>
-    typeof items === "function" ? (items as () => CommandItemData[])() : items ?? [];
+    typeof items === "function" ? (items as () => CommandItemData[])() : (items ?? []);
   const query = signal("");
   const activeIndex = signal(0);
   let rootNode: HTMLElement | undefined;
   let previous: string | undefined;
 
-  const ranked = (): CommandItemData[] =>
-    (filter ?? defaultFilter)(resolveItems(), query());
+  const ranked = (): CommandItemData[] => (filter ?? defaultFilter)(resolveItems(), query());
 
   // The active value: the controlled accessor when given, the internal
   // cursor resolved against the ranked list otherwise.
@@ -658,4 +699,3 @@ function orderedGroups(items: CommandItemData[]): string[] {
   }
   return keys;
 }
-

@@ -38,7 +38,9 @@ import { keyframes, style } from "@hellajs/css";
 import { tokens } from "./tokens.js";
 
 const inTop = keyframes({ from: { opacity: "0", transform: "translateY(0.5rem) scale(0.95)" } });
-const inBottom = keyframes({ from: { opacity: "0", transform: "translateY(-0.5rem) scale(0.95)" } });
+const inBottom = keyframes({
+  from: { opacity: "0", transform: "translateY(-0.5rem) scale(0.95)" },
+});
 const inLeft = keyframes({ from: { opacity: "0", transform: "translateX(0.5rem) scale(0.95)" } });
 const inRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem) scale(0.95)" } });
 const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
@@ -76,7 +78,11 @@ const placementOf = (side: AnchorSide, align: AnchorAlign): Placement =>
   align === "center" ? side : `${side}-${align}`;
 
 /** The manual trigger span; the composed HoverCard renders the same shape wired to hoverIntent. */
-export function HoverCardTrigger({ children, class: cls, ...attrs }: HoverCardTriggerProps): JSX.Element {
+export function HoverCardTrigger({
+  children,
+  class: cls,
+  ...attrs
+}: HoverCardTriggerProps): JSX.Element {
   return (
     <span
       data-slot="hover-card-trigger"
@@ -90,7 +96,18 @@ export function HoverCardTrigger({ children, class: cls, ...attrs }: HoverCardTr
   );
 }
 
-export function HoverCardContent({ state, side: sideProp, align: alignProp, anchor, onOpen, onClose, onExited, children, class: cls, ...attrs }: HoverCardContentProps): JSX.Element {
+export function HoverCardContent({
+  state,
+  side: sideProp,
+  align: alignProp,
+  anchor,
+  onOpen,
+  onClose,
+  onExited,
+  children,
+  class: cls,
+  ...attrs
+}: HoverCardContentProps): JSX.Element {
   const side = sideProp ?? "bottom";
   const align = alignProp ?? "center";
   const stateOf = (): "open" | "closed" => state?.() ?? "open";
@@ -108,7 +125,10 @@ export function HoverCardContent({ state, side: sideProp, align: alignProp, anch
       hook:afterMount={(node) => {
         if (!(node instanceof HTMLElement)) return;
         const anchorEl = anchor?.();
-        if (anchorEl != null) wirings.push(anchorPosition(anchorEl, node, { placement: placementOf(side, align), offset: 4 }));
+        if (anchorEl != null)
+          wirings.push(
+            anchorPosition(anchorEl, node, { placement: placementOf(side, align), offset: 4 }),
+          );
         if (onOpen && onClose) {
           // Zero delays: entering the content re-opens instantly and leaving
           // it closes immediately - the keep-open contract of the composed
@@ -134,7 +154,14 @@ export function HoverCardContent({ state, side: sideProp, align: alignProp, anch
   );
 }
 
-export function HoverCard({ open, onOpenChange, children, content: contentSlot, class: cls, ...attrs }: HoverCardProps): JSX.Element {
+export function HoverCard({
+  open,
+  onOpenChange,
+  children,
+  content: contentSlot,
+  class: cls,
+  ...attrs
+}: HoverCardProps): JSX.Element {
   const internal = signal(false);
   const isOpen = (): boolean => (open !== undefined ? open() : internal());
   const setOpen = (next: boolean): void => {
@@ -215,12 +242,14 @@ export function HoverCard({ open, onOpenChange, children, content: contentSlot, 
         triggerNode = node;
         // Upstream delays: 200ms open, 300ms close. hoverIntent stays armed
         // for the trigger's lifetime - reopen works without a remount.
-        disposals.push(hoverIntent(node, {
-          onOpen: openFromTrigger,
-          onClose: closeFromTrigger,
-          openDelay: 200,
-          closeDelay: 300,
-        }));
+        disposals.push(
+          hoverIntent(node, {
+            onOpen: openFromTrigger,
+            onClose: closeFromTrigger,
+            openDelay: 200,
+            closeDelay: 300,
+          }),
+        );
         // A re-enter on an already-open trigger short-circuits inside
         // hoverIntent's enter (before onOpen), so the pointer-ownership flags
         // are maintained by dedicated listeners.
@@ -244,18 +273,20 @@ export function HoverCard({ open, onOpenChange, children, content: contentSlot, 
       {...attrs}
     >
       {triggerChildren}
-      {() => visible() && (
-        <Portal to="body">
-          <HoverCardContent
-            state={state}
-            anchor={() => triggerNode}
-            onOpen={openFromContent}
-            onClose={closeFromContent}
-            onExited={finishExit}
-            children={contentSlot}
-          />
-        </Portal>
-      )}
+      {() =>
+        visible() && (
+          <Portal to="body">
+            <HoverCardContent
+              state={state}
+              anchor={() => triggerNode}
+              onOpen={openFromContent}
+              onClose={closeFromContent}
+              onExited={finishExit}
+              children={contentSlot}
+            />
+          </Portal>
+        )
+      }
     </span>
   );
 }

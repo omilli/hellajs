@@ -153,7 +153,8 @@ const content = style("bubble-content", {
     textAlign: "left",
   },
   "&:is(button, a)": {
-    transitionProperty: "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke",
+    transitionProperty:
+      "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke",
     transitionDuration: "150ms",
     transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
     outlineStyle: "none",
@@ -227,7 +228,13 @@ export function BubbleGroup({ children, class: cls, ...attrs }: BubbleGroupProps
   );
 }
 
-export function Bubble({ variant, align, children, class: cls, ...attrs }: BubbleProps): JSX.Element {
+export function Bubble({
+  variant,
+  align,
+  children,
+  class: cls,
+  ...attrs
+}: BubbleProps): JSX.Element {
   return (
     <div
       data-slot="bubble"
@@ -257,7 +264,13 @@ export function BubbleContent({ children, class: cls, ...attrs }: BubbleContentP
   );
 }
 
-export function BubbleReactions({ side, align, children, class: cls, ...attrs }: BubbleReactionsProps): JSX.Element {
+export function BubbleReactions({
+  side,
+  align,
+  children,
+  class: cls,
+  ...attrs
+}: BubbleReactionsProps): JSX.Element {
   return (
     <div
       data-slot="bubble-reactions"

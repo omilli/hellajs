@@ -454,7 +454,12 @@ export function CommandInput({ class: cls, ...attrs }: CommandInputProps): JSX.E
   );
 }
 
-export function CommandList({ body, children, class: cls, ...attrs }: CommandListProps): JSX.Element {
+export function CommandList({
+  body,
+  children,
+  class: cls,
+  ...attrs
+}: CommandListProps): JSX.Element {
   return (
     <div
       role="listbox"
@@ -485,9 +490,14 @@ export function CommandEmpty({ children, class: cls, ...attrs }: CommandEmptyPro
   );
 }
 
-export function CommandGroup({ heading, hidden, children, class: cls, ...attrs }: CommandGroupProps): JSX.Element {
-  const isHidden = (): boolean =>
-    typeof hidden === "function" ? hidden() : hidden ?? false;
+export function CommandGroup({
+  heading,
+  hidden,
+  children,
+  class: cls,
+  ...attrs
+}: CommandGroupProps): JSX.Element {
+  const isHidden = (): boolean => (typeof hidden === "function" ? hidden() : (hidden ?? false));
   return (
     <div
       data-slot="command-group"
@@ -525,7 +535,16 @@ export function CommandSeparator({ class: cls, ...attrs }: CommandSeparatorProps
   );
 }
 
-export function CommandItem({ value, disabled, active, onSelect, "on:click": userClick, children, class: cls, ...attrs }: CommandItemProps): JSX.Element {
+export function CommandItem({
+  value,
+  disabled,
+  active,
+  onSelect,
+  "on:click": userClick,
+  children,
+  class: cls,
+  ...attrs
+}: CommandItemProps): JSX.Element {
   return (
     <div
       role="option"
@@ -550,7 +569,11 @@ export function CommandItem({ value, disabled, active, onSelect, "on:click": use
   );
 }
 
-export function CommandShortcut({ children, class: cls, ...attrs }: CommandShortcutProps): JSX.Element {
+export function CommandShortcut({
+  children,
+  class: cls,
+  ...attrs
+}: CommandShortcutProps): JSX.Element {
   return (
     <span
       data-slot="command-shortcut"
@@ -572,7 +595,15 @@ let commandDialogCount = 0;
  * entries never cross-import - with the command palette scoping on its root.
  * Manual parts compose inside through children.
  */
-export function CommandDialog({ open, onClose, title: titleText, description: descriptionText, children, class: cls, ...attrs }: CommandDialogProps): JSX.Element {
+export function CommandDialog({
+  open,
+  onClose,
+  title: titleText,
+  description: descriptionText,
+  children,
+  class: cls,
+  ...attrs
+}: CommandDialogProps): JSX.Element {
   const titleId = `hella-command-dialog-title-${++commandDialogCount}`;
   const descriptionId = `hella-command-dialog-description-${commandDialogCount}`;
   // `visible` alone gates the render so an open→closed flip never unmounts
@@ -628,123 +659,133 @@ export function CommandDialog({ open, onClose, title: titleText, description: de
 
   return (
     <>
-      {() => visible() && (
-        <Portal to="body">
-          <div
-            data-slot="dialog-overlay"
-            data-state={state()}
-            class={
-              [dialogOverlay]
-            }
-          />
-          <div
-            data-slot="dialog-content"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={titleId}
-            aria-describedby={descriptionText === undefined ? undefined : descriptionId}
-            data-state={state()}
-            class={
-              [dialogPanel, cls]
-            }
-            hook:afterMount={(node) => {
-              if (!(node instanceof HTMLElement)) return;
-              panel = node;
-              installWirings();
-              const onAnimationEnd = (): void => {
-                if (open() === false) finishExit();
-              };
-              node.addEventListener("animationend", onAnimationEnd);
-              teardown.push(() => {
-                node.removeEventListener("animationend", onAnimationEnd);
-                panel = undefined;
-              });
-            }}
-            hook:beforeDestroy={() => {
-              disposeWirings();
-              while (teardown.length) teardown.pop()!();
-            }}
-            {...attrs}
-          >
+      {() =>
+        visible() && (
+          <Portal to="body">
             <div
-              data-slot="dialog-header"
-              class={
-                [dialogHeader]
-              }
-            >
-              {titleText !== undefined && (
-                <h2
-                  id={titleId}
-                  data-slot="dialog-title"
-                  class={
-                    [dialogTitle]
-                  }
-                >
-                  {titleText}
-                </h2>
-              )}
-              {descriptionText !== undefined && (
-                <p
-                  id={descriptionId}
-                  data-slot="dialog-description"
-                  class={
-                    [dialogDescription]
-                  }
-                >
-                  {descriptionText}
-                </p>
-              )}
-            </div>
-            <button
-              type="button"
-              data-slot="dialog-close"
+              data-slot="dialog-overlay"
               data-state={state()}
               class={
-                [dialogClose]
+                [dialogOverlay]
               }
-              on:click={() => onClose()}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M18 6 6 18" />
-                <path d="m6 6 12 12" />
-              </svg>
-              <span class="sr-only">Close</span>
-            </button>
+            />
             <div
-              data-slot="command"
+              data-slot="dialog-content"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={titleId}
+              aria-describedby={descriptionText === undefined ? undefined : descriptionId}
+              data-state={state()}
               class={
-                [base, palette]
+                [dialogPanel, cls]
               }
+              hook:afterMount={(node) => {
+                if (!(node instanceof HTMLElement)) return;
+                panel = node;
+                installWirings();
+                const onAnimationEnd = (): void => {
+                  if (open() === false) finishExit();
+                };
+                node.addEventListener("animationend", onAnimationEnd);
+                teardown.push(() => {
+                  node.removeEventListener("animationend", onAnimationEnd);
+                  panel = undefined;
+                });
+              }}
+              hook:beforeDestroy={() => {
+                disposeWirings();
+                while (teardown.length) teardown.pop()!();
+              }}
+              {...attrs}
             >
-              {children}
+              <div
+                data-slot="dialog-header"
+                class={
+                  [dialogHeader]
+                }
+              >
+                {titleText !== undefined && (
+                  <h2
+                    id={titleId}
+                    data-slot="dialog-title"
+                    class={
+                      [dialogTitle]
+                    }
+                  >
+                    {titleText}
+                  </h2>
+                )}
+                {descriptionText !== undefined && (
+                  <p
+                    id={descriptionId}
+                    data-slot="dialog-description"
+                    class={
+                      [dialogDescription]
+                    }
+                  >
+                    {descriptionText}
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                data-slot="dialog-close"
+                data-state={state()}
+                class={
+                  [dialogClose]
+                }
+                on:click={() => onClose()}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M18 6 6 18" />
+                  <path d="m6 6 12 12" />
+                </svg>
+                <span class="sr-only">Close</span>
+              </button>
+              <div
+                data-slot="command"
+                class={
+                  [base, palette]
+                }
+              >
+                {children}
+              </div>
             </div>
-          </div>
-        </Portal>
-      )}
+          </Portal>
+        )
+      }
     </>
   );
 }
 
-export function Command({ items, filter, loop, value, onValueChange, children, class: cls, ...attrs }: CommandProps): JSX.Element {
+export function Command({
+  items,
+  filter,
+  loop,
+  value,
+  onValueChange,
+  children,
+  class: cls,
+  ...attrs
+}: CommandProps): JSX.Element {
   const resolveItems = (): CommandItemData[] =>
-    typeof items === "function" ? (items as () => CommandItemData[])() : items ?? [];
+    typeof items === "function" ? (items as () => CommandItemData[])() : (items ?? []);
   const query = signal("");
   const activeIndex = signal(0);
   let rootNode: HTMLElement | undefined;
   let previous: string | undefined;
 
-  const ranked = (): CommandItemData[] =>
-    (filter ?? defaultFilter)(resolveItems(), query());
+  const ranked = (): CommandItemData[] => (filter ?? defaultFilter)(resolveItems(), query());
 
   // The active value: the controlled accessor when given, the internal
   // cursor resolved against the ranked list otherwise.
@@ -940,4 +981,3 @@ function orderedGroups(items: CommandItemData[]): string[] {
   }
   return keys;
 }
-

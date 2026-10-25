@@ -88,9 +88,11 @@ const base = style("item", {
   fontSize: "0.875rem",
   lineHeight: "1.25rem",
   outlineStyle: "none",
-  transition: "color 100ms cubic-bezier(0.4, 0, 0.2, 1), background-color 100ms cubic-bezier(0.4, 0, 0.2, 1), border-color 100ms cubic-bezier(0.4, 0, 0.2, 1), outline-color 100ms cubic-bezier(0.4, 0, 0.2, 1), text-decoration-color 100ms cubic-bezier(0.4, 0, 0.2, 1), fill 100ms cubic-bezier(0.4, 0, 0.2, 1), stroke 100ms cubic-bezier(0.4, 0, 0.2, 1)",
+  transition:
+    "color 100ms cubic-bezier(0.4, 0, 0.2, 1), background-color 100ms cubic-bezier(0.4, 0, 0.2, 1), border-color 100ms cubic-bezier(0.4, 0, 0.2, 1), outline-color 100ms cubic-bezier(0.4, 0, 0.2, 1), text-decoration-color 100ms cubic-bezier(0.4, 0, 0.2, 1), fill 100ms cubic-bezier(0.4, 0, 0.2, 1), stroke 100ms cubic-bezier(0.4, 0, 0.2, 1)",
   "& a": {
-    transition: "color 100ms cubic-bezier(0.4, 0, 0.2, 1), background-color 100ms cubic-bezier(0.4, 0, 0.2, 1), border-color 100ms cubic-bezier(0.4, 0, 0.2, 1), outline-color 100ms cubic-bezier(0.4, 0, 0.2, 1), text-decoration-color 100ms cubic-bezier(0.4, 0, 0.2, 1), fill 100ms cubic-bezier(0.4, 0, 0.2, 1), stroke 100ms cubic-bezier(0.4, 0, 0.2, 1)",
+    transition:
+      "color 100ms cubic-bezier(0.4, 0, 0.2, 1), background-color 100ms cubic-bezier(0.4, 0, 0.2, 1), border-color 100ms cubic-bezier(0.4, 0, 0.2, 1), outline-color 100ms cubic-bezier(0.4, 0, 0.2, 1), text-decoration-color 100ms cubic-bezier(0.4, 0, 0.2, 1), fill 100ms cubic-bezier(0.4, 0, 0.2, 1), stroke 100ms cubic-bezier(0.4, 0, 0.2, 1)",
   },
   "& a:hover": {
     backgroundColor: `color-mix(in oklab, ${tokens.accent} 50%, transparent)`,
@@ -255,18 +257,21 @@ export function ItemSeparator({ class: cls, ...attrs }: ItemSeparatorProps): JSX
       data-orientation="horizontal"
       aria-orientation="horizontal"
       class={
-        [
-          separatorBase,
-          separator,
-          cls,
-        ]
+        [separatorBase, separator, cls]
       }
       {...attrs}
     />
   );
 }
 
-export function Item({ variant, size, selected, children, class: cls, ...attrs }: ItemProps): JSX.Element {
+export function Item({
+  variant,
+  size,
+  selected,
+  children,
+  class: cls,
+  ...attrs
+}: ItemProps): JSX.Element {
   const selectedAttr = (): "true" | "false" =>
     (typeof selected === "function" ? selected() : selected) ? "true" : "false";
   return (
@@ -277,12 +282,7 @@ export function Item({ variant, size, selected, children, class: cls, ...attrs }
       data-selected={selectedAttr}
       aria-selected={selectedAttr}
       class={
-        [
-          base,
-          variants[variant ?? "default"],
-          sizes[size ?? "default"],
-          cls,
-        ]
+        [base, variants[variant ?? "default"], sizes[size ?? "default"], cls]
       }
       {...attrs}
     >
@@ -291,17 +291,18 @@ export function Item({ variant, size, selected, children, class: cls, ...attrs }
   );
 }
 
-export function ItemMedia({ variant, children, class: cls, ...attrs }: ItemMediaProps): JSX.Element {
+export function ItemMedia({
+  variant,
+  children,
+  class: cls,
+  ...attrs
+}: ItemMediaProps): JSX.Element {
   return (
     <div
       data-slot="item-media"
       data-variant={variant ?? "default"}
       class={
-        [
-          media,
-          mediaVariants[variant ?? "default"],
-          cls,
-        ]
+        [media, mediaVariants[variant ?? "default"], cls]
       }
       {...attrs}
     >
@@ -338,7 +339,11 @@ export function ItemTitle({ children, class: cls, ...attrs }: ItemTitleProps): J
   );
 }
 
-export function ItemDescription({ children, class: cls, ...attrs }: ItemDescriptionProps): JSX.Element {
+export function ItemDescription({
+  children,
+  class: cls,
+  ...attrs
+}: ItemDescriptionProps): JSX.Element {
   return (
     <p
       data-slot="item-description"

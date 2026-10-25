@@ -51,7 +51,14 @@ const gripIcon = (): JSX.Element => (
   </svg>
 );
 
-export function ResizablePanel({ defaultSize, minSize, maxSize, children, class: cls, ...attrs }: ResizablePanelProps): JSX.Element {
+export function ResizablePanel({
+  defaultSize,
+  minSize,
+  maxSize,
+  children,
+  class: cls,
+  ...attrs
+}: ResizablePanelProps): JSX.Element {
   const minSizeValue = minSize ?? 0;
   const maxSizeValue = maxSize ?? 100;
   return (
@@ -69,7 +76,12 @@ export function ResizablePanel({ defaultSize, minSize, maxSize, children, class:
   );
 }
 
-export function ResizableHandle({ withHandle, disabled, class: cls, ...attrs }: ResizableHandleProps): JSX.Element {
+export function ResizableHandle({
+  withHandle,
+  disabled,
+  class: cls,
+  ...attrs
+}: ResizableHandleProps): JSX.Element {
   return (
     <div
       data-slot="resizable-handle"
@@ -84,9 +96,11 @@ export function ResizableHandle({ withHandle, disabled, class: cls, ...attrs }: 
       {...attrs}
     >
       {withHandle && (
-        <div class={
-          cn("z-10 flex h-4 w-3 items-center justify-center rounded-xs border bg-border")
-        }>
+        <div
+          class={
+            cn("z-10 flex h-4 w-3 items-center justify-center rounded-xs border bg-border")
+          }
+        >
           {gripIcon()}
         </div>
       )}
@@ -94,7 +108,13 @@ export function ResizableHandle({ withHandle, disabled, class: cls, ...attrs }: 
   );
 }
 
-export function ResizablePanelGroup({ direction: directionProp, onLayout, children, class: cls, ...attrs }: ResizablePanelGroupProps): JSX.Element {
+export function ResizablePanelGroup({
+  direction: directionProp,
+  onLayout,
+  children,
+  class: cls,
+  ...attrs
+}: ResizablePanelGroupProps): JSX.Element {
   const direction = directionProp ?? "horizontal";
   const sizes = signal<number[]>([]);
   const panels: HTMLElement[] = [];
@@ -144,27 +164,30 @@ export function ResizablePanelGroup({ direction: directionProp, onLayout, childr
     if (handleEl.getAttribute("aria-disabled") === "true") return;
     let groupSize = 0;
     let startSizes: number[] | null = null;
-    wirings.push(onDrag(handleEl, {
-      onStart: () => {
-        const rect = group.getBoundingClientRect();
-        const size = direction === "horizontal" ? rect.width : rect.height;
-        if (size <= 0) return;
-        groupSize = size;
-        startSizes = sizes().slice();
-      },
-      onMove: (delta) => {
-        if (groupSize <= 0 || !startSizes) return;
-        const px = direction === "horizontal" ? delta.dx : delta.dy;
-        resizePair(startSizes, prevIndex, (px / groupSize) * 100);
-      },
-      onEnd: () => {
-        groupSize = 0;
-        startSizes = null;
-      },
-    }));
+    wirings.push(
+      onDrag(handleEl, {
+        onStart: () => {
+          const rect = group.getBoundingClientRect();
+          const size = direction === "horizontal" ? rect.width : rect.height;
+          if (size <= 0) return;
+          groupSize = size;
+          startSizes = sizes().slice();
+        },
+        onMove: (delta) => {
+          if (groupSize <= 0 || !startSizes) return;
+          const px = direction === "horizontal" ? delta.dx : delta.dy;
+          resizePair(startSizes, prevIndex, (px / groupSize) * 100);
+        },
+        onEnd: () => {
+          groupSize = 0;
+          startSizes = null;
+        },
+      }),
+    );
     const onKeydown = (event: Event): void => {
       const key = (event as KeyboardEvent).key;
-      if (key !== "ArrowLeft" && key !== "ArrowRight" && key !== "ArrowUp" && key !== "ArrowDown") return;
+      if (key !== "ArrowLeft" && key !== "ArrowRight" && key !== "ArrowUp" && key !== "ArrowDown")
+        return;
       event.preventDefault();
       resizePair(sizes(), prevIndex, key === "ArrowRight" || key === "ArrowDown" ? 5 : -5);
     };

@@ -7,7 +7,12 @@ interface SeparatorProps extends HTMLAttributes<"div"> {
 }
 import { cn } from "./cn.js";
 
-export function Separator({ orientation, children, class: cls, ...attrs }: SeparatorProps): JSX.Element {
+export function Separator({
+  orientation,
+  children,
+  class: cls,
+  ...attrs
+}: SeparatorProps): JSX.Element {
   return (
     <div
       data-slot="separator"

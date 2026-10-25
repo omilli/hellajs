@@ -50,9 +50,17 @@ const circleIcon = (): JSX.Element => (
   </svg>
 );
 
-export function RadioGroupItem({ value, checked, onSelect, disabled, name, "on:click": userClick, class: cls, ...attrs }: RadioGroupItemProps): JSX.Element {
-  const isChecked = (): boolean =>
-    typeof checked === "function" ? checked() : checked ?? false;
+export function RadioGroupItem({
+  value,
+  checked,
+  onSelect,
+  disabled,
+  name,
+  "on:click": userClick,
+  class: cls,
+  ...attrs
+}: RadioGroupItemProps): JSX.Element {
+  const isChecked = (): boolean => (typeof checked === "function" ? checked() : (checked ?? false));
 
   return (
     <button
@@ -67,7 +75,10 @@ export function RadioGroupItem({ value, checked, onSelect, disabled, name, "on:c
       class={
         cn("aspect-square size-4 shrink-0 rounded-full border border-input text-primary shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40", cls)
       }
-      on:click={function (e) { userClick?.call(this, e); onSelect?.(); }}
+      on:click={function (e) {
+        userClick?.call(this, e);
+        onSelect?.();
+      }}
       {...attrs}
     >
       <span
@@ -82,7 +93,16 @@ export function RadioGroupItem({ value, checked, onSelect, disabled, name, "on:c
   );
 }
 
-export function RadioGroup({ items, keyBy, value, onValueChange, orientation, name, class: cls, ...attrs }: RadioGroupProps): JSX.Element {
+export function RadioGroup({
+  items,
+  keyBy,
+  value,
+  onValueChange,
+  orientation,
+  name,
+  class: cls,
+  ...attrs
+}: RadioGroupProps): JSX.Element {
   const internal = signal("");
   const current = (): string => (value !== undefined ? value() : internal());
   const wirings: (() => void)[] = [];
@@ -127,10 +147,12 @@ export function RadioGroup({ items, keyBy, value, onValueChange, orientation, na
       hook:afterMount={(node) => {
         if (!(node instanceof HTMLElement)) return;
         group = node;
-        wirings.push(rovingTabIndex(node, {
-          orientation,
-          selector: "[role='radio']:not(:disabled)",
-        }));
+        wirings.push(
+          rovingTabIndex(node, {
+            orientation,
+            selector: "[role='radio']:not(:disabled)",
+          }),
+        );
         const onFocusIn = (event: Event) => {
           const radioEl = event.target as HTMLElement;
           if (radioEl.getAttribute("role") !== "radio") return;

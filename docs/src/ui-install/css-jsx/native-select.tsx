@@ -41,7 +41,8 @@ const base = style("native-select", {
   paddingBlock: "0.5rem",
   paddingLeft: "0.75rem",
   paddingRight: "2.25rem",
-  transition: "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
+  transition:
+    "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   width: "100%",
   "&::placeholder": {
     color: tokens.mutedForeground,
@@ -108,7 +109,13 @@ const optgroup = style("native-select-optgroup", {
   color: "CanvasText",
 });
 
-export function NativeSelect({ value, size, children, class: cls, ...attrs }: NativeSelectProps): JSX.Element {
+export function NativeSelect({
+  value,
+  size,
+  children,
+  class: cls,
+  ...attrs
+}: NativeSelectProps): JSX.Element {
   return (
     <div
       data-slot="native-select-wrapper"
@@ -127,17 +134,13 @@ export function NativeSelect({ value, size, children, class: cls, ...attrs }: Na
           select.value = (typeof value === "function" ? value() : value) ?? "";
         }}
         class={
-          [
-            base,
-            focus,
-            invalid,
-            cls,
-          ]
+          [base, focus, invalid, cls]
         }
         {...attrs}
       >
         {children}
-      </select>      <svg
+      </select>{" "}
+      <svg
         xmlns="http://www.w3.org/2000/svg"
         width="24"
         height="24"
@@ -159,7 +162,11 @@ export function NativeSelect({ value, size, children, class: cls, ...attrs }: Na
   );
 }
 
-export function NativeSelectOption({ children, class: cls, ...attrs }: NativeSelectOptionProps): JSX.Element {
+export function NativeSelectOption({
+  children,
+  class: cls,
+  ...attrs
+}: NativeSelectOptionProps): JSX.Element {
   return (
     <option
       data-slot="native-select-option"
@@ -173,7 +180,11 @@ export function NativeSelectOption({ children, class: cls, ...attrs }: NativeSel
   );
 }
 
-export function NativeSelectOptGroup({ children, class: cls, ...attrs }: NativeSelectOptGroupProps): JSX.Element {
+export function NativeSelectOptGroup({
+  children,
+  class: cls,
+  ...attrs
+}: NativeSelectOptGroupProps): JSX.Element {
   return (
     <optgroup
       data-slot="native-select-optgroup"

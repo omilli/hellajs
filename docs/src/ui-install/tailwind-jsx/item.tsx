@@ -95,18 +95,21 @@ export function ItemSeparator({ class: cls, ...attrs }: ItemSeparatorProps): JSX
       data-orientation="horizontal"
       aria-orientation="horizontal"
       class={
-        cn(
-          "shrink-0 bg-border data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-px",
-          "my-0",
-          cls,
-        )
+        cn("shrink-0 bg-border data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-px", "my-0", cls)
       }
       {...attrs}
     />
   );
 }
 
-export function Item({ variant, size, selected, children, class: cls, ...attrs }: ItemProps): JSX.Element {
+export function Item({
+  variant,
+  size,
+  selected,
+  children,
+  class: cls,
+  ...attrs
+}: ItemProps): JSX.Element {
   const selectedAttr = (): "true" | "false" =>
     (typeof selected === "function" ? selected() : selected) ? "true" : "false";
   return (
@@ -117,12 +120,7 @@ export function Item({ variant, size, selected, children, class: cls, ...attrs }
       data-selected={selectedAttr}
       aria-selected={selectedAttr}
       class={
-        cn(
-          "group/item flex flex-wrap items-center rounded-md border border-transparent text-sm transition-colors duration-100 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 [a]:transition-colors [a]:hover:bg-accent/50",
-          variants[variant ?? "default"],
-          sizes[size ?? "default"],
-          cls,
-        )
+        cn("group/item flex flex-wrap items-center rounded-md border border-transparent text-sm transition-colors duration-100 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 [a]:transition-colors [a]:hover:bg-accent/50", variants[variant ?? "default"], sizes[size ?? "default"], cls)
       }
       {...attrs}
     >
@@ -131,17 +129,18 @@ export function Item({ variant, size, selected, children, class: cls, ...attrs }
   );
 }
 
-export function ItemMedia({ variant, children, class: cls, ...attrs }: ItemMediaProps): JSX.Element {
+export function ItemMedia({
+  variant,
+  children,
+  class: cls,
+  ...attrs
+}: ItemMediaProps): JSX.Element {
   return (
     <div
       data-slot="item-media"
       data-variant={variant ?? "default"}
       class={
-        cn(
-          "flex shrink-0 items-center justify-center gap-2 group-has-[[data-slot=item-description]]/item:translate-y-0.5 group-has-[[data-slot=item-description]]/item:self-start [&_svg]:pointer-events-none",
-          mediaVariants[variant ?? "default"],
-          cls,
-        )
+        cn("flex shrink-0 items-center justify-center gap-2 group-has-[[data-slot=item-description]]/item:translate-y-0.5 group-has-[[data-slot=item-description]]/item:self-start [&_svg]:pointer-events-none", mediaVariants[variant ?? "default"], cls)
       }
       {...attrs}
     >
@@ -178,7 +177,11 @@ export function ItemTitle({ children, class: cls, ...attrs }: ItemTitleProps): J
   );
 }
 
-export function ItemDescription({ children, class: cls, ...attrs }: ItemDescriptionProps): JSX.Element {
+export function ItemDescription({
+  children,
+  class: cls,
+  ...attrs
+}: ItemDescriptionProps): JSX.Element {
   return (
     <p
       data-slot="item-description"

@@ -7,7 +7,12 @@ interface AspectRatioProps extends HTMLAttributes<"div"> {
 }
 import { cn } from "./cn.js";
 
-export function AspectRatio({ ratio, children, class: cls, ...attrs }: AspectRatioProps): JSX.Element {
+export function AspectRatio({
+  ratio,
+  children,
+  class: cls,
+  ...attrs
+}: AspectRatioProps): JSX.Element {
   return (
     <div
       data-slot="aspect-ratio"

@@ -180,19 +180,20 @@ const sizes = {
   }),
 };
 
-export function Button({ variant, size, children, class: cls, ...attrs }: ButtonProps): JSX.Element {
+export function Button({
+  variant,
+  size,
+  children,
+  class: cls,
+  ...attrs
+}: ButtonProps): JSX.Element {
   return (
     <button
       data-slot="button"
       data-variant={variant ?? "default"}
       data-size={size ?? "default"}
       class={
-        [
-          base,
-          variants[variant ?? "default"],
-          sizes[size ?? "default"],
-          cls,
-        ]
+        [base, variants[variant ?? "default"], sizes[size ?? "default"], cls]
       }
       {...attrs}
     >

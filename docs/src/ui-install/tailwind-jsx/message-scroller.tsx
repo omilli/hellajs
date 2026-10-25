@@ -50,25 +50,16 @@ interface MessageScrollerProps extends HTMLAttributes<"div"> {
   showScrollButton?: boolean;
 }
 import { cn } from "./cn.js";
-const base =
-  "group/message-scroller relative flex size-full min-h-0 flex-col overflow-hidden";
 
 const viewport =
   "size-full min-h-0 min-w-0 scroll-fade-b scrollbar-thin scrollbar-gutter-stable overflow-y-auto overscroll-contain contain-content data-autoscrolling:scrollbar-none data-pending-scroll:invisible";
 
-const item =
-  "min-w-0 shrink-0 [contain-intrinsic-size:auto_10rem] [content-visibility:auto]";
-
-const overlay =
-  "absolute inset-s-1/2 -translate-x-1/2 border-border bg-background text-foreground transition-[translate,scale,opacity] duration-200 hover:bg-muted hover:text-foreground data-[active=false]:pointer-events-none data-[active=false]:scale-95 data-[active=false]:opacity-0 data-[active=false]:duration-400 data-[active=false]:ease-[cubic-bezier(0.7,0,0.84,0)] data-[active=true]:translate-y-0 data-[active=true]:scale-100 data-[active=true]:opacity-100 data-[active=true]:ease-[cubic-bezier(0.23,1,0.32,1)] data-[direction=end]:bottom-4 data-[direction=end]:data-[active=false]:translate-y-full data-[direction=start]:top-4 data-[direction=start]:data-[active=false]:-translate-y-full rtl:translate-x-1/2 data-[direction=start]:[&_svg]:rotate-180";
-
-const buttonBase =
-  "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4";
-
 const buttonVariants = {
   default: "bg-primary text-primary-foreground hover:bg-primary/90",
-  destructive: "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40",
-  outline: "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+  destructive:
+    "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40",
+  outline:
+    "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
   secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
   ghost: "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
   link: "text-primary underline-offset-4 hover:underline",
@@ -94,7 +85,15 @@ export function MessageScrollerProvider(props: MessageScrollerProviderProps): JS
   return <>{props.children}</>;
 }
 
-export function MessageScrollerViewport({ atBottom, scrollToBottom, threshold, observe, children, class: cls, ...attrs }: MessageScrollerViewportProps): JSX.Element {
+export function MessageScrollerViewport({
+  atBottom,
+  scrollToBottom,
+  threshold,
+  observe,
+  children,
+  class: cls,
+  ...attrs
+}: MessageScrollerViewportProps): JSX.Element {
   const fallback = signal(true);
   const teardown: (() => void)[] = [];
   let el: HTMLElement | undefined;
@@ -154,7 +153,11 @@ export function MessageScrollerViewport({ atBottom, scrollToBottom, threshold, o
   );
 }
 
-export function MessageScrollerContent({ children, class: cls, ...attrs }: MessageScrollerContentProps): JSX.Element {
+export function MessageScrollerContent({
+  children,
+  class: cls,
+  ...attrs
+}: MessageScrollerContentProps): JSX.Element {
   return (
     <div
       data-slot="message-scroller-content"
@@ -168,12 +171,16 @@ export function MessageScrollerContent({ children, class: cls, ...attrs }: Messa
   );
 }
 
-export function MessageScrollerItem({ children, class: cls, ...attrs }: MessageScrollerItemProps): JSX.Element {
+export function MessageScrollerItem({
+  children,
+  class: cls,
+  ...attrs
+}: MessageScrollerItemProps): JSX.Element {
   return (
     <div
       data-slot="message-scroller-item"
       class={
-        cn(item, cls)
+        cn("min-w-0 shrink-0 [contain-intrinsic-size:auto_10rem] [content-visibility:auto]", cls)
       }
       {...attrs}
     >
@@ -182,7 +189,17 @@ export function MessageScrollerItem({ children, class: cls, ...attrs }: MessageS
   );
 }
 
-export function MessageScrollerButton({ atBottom, scrollToBottom, direction: dir, variant, size, "on:click": userClick, children, class: cls, ...attrs }: MessageScrollerButtonProps): JSX.Element {
+export function MessageScrollerButton({
+  atBottom,
+  scrollToBottom,
+  direction: dir,
+  variant,
+  size,
+  "on:click": userClick,
+  children,
+  class: cls,
+  ...attrs
+}: MessageScrollerButtonProps): JSX.Element {
   const direction = (): "start" | "end" => dir ?? "end";
 
   const active = (): "true" | "false" => {
@@ -198,7 +215,9 @@ export function MessageScrollerButton({ atBottom, scrollToBottom, direction: dir
       return;
     }
     if (!(event.target instanceof Element)) return;
-    const viewport = event.target.closest('[data-slot="message-scroller"]')?.querySelector('[data-slot="message-scroller-viewport"]');
+    const viewport = event.target
+      .closest('[data-slot="message-scroller"]')
+      ?.querySelector('[data-slot="message-scroller-viewport"]');
     if (viewport instanceof HTMLElement) {
       viewport.scrollTop = viewport.scrollHeight;
       atBottom?.(true);
@@ -215,14 +234,17 @@ export function MessageScrollerButton({ atBottom, scrollToBottom, direction: dir
       data-active={active}
       class={
         cn(
-          buttonBase,
+          "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
           buttonVariants[variant ?? "secondary"],
           buttonSizes[size ?? "icon-sm"],
-          overlay,
+          "absolute inset-s-1/2 -translate-x-1/2 border-border bg-background text-foreground transition-[translate,scale,opacity] duration-200 hover:bg-muted hover:text-foreground data-[active=false]:pointer-events-none data-[active=false]:scale-95 data-[active=false]:opacity-0 data-[active=false]:duration-400 data-[active=false]:ease-[cubic-bezier(0.7,0,0.84,0)] data-[active=true]:translate-y-0 data-[active=true]:scale-100 data-[active=true]:opacity-100 data-[active=true]:ease-[cubic-bezier(0.23,1,0.32,1)] data-[direction=end]:bottom-4 data-[direction=end]:data-[active=false]:translate-y-full data-[direction=start]:top-4 data-[direction=start]:data-[active=false]:-translate-y-full rtl:translate-x-1/2 data-[direction=start]:[&_svg]:rotate-180",
           cls,
         )
       }
-      on:click={function (e) { userClick?.call(this, e); click(e); }}
+      on:click={function (e) {
+        userClick?.call(this, e);
+        click(e);
+      }}
       {...attrs}
     >
       {children ?? (
@@ -253,13 +275,22 @@ export function MessageScrollerButton({ atBottom, scrollToBottom, direction: dir
  * children in a viewport + content stack, and renders the jump-to-end button
  * whose visibility the at-bottom state drives.
  */
-export function MessageScroller({ atBottom, scrollToBottom, threshold, observe, showScrollButton, children, class: cls, ...attrs }: MessageScrollerProps): JSX.Element {
+export function MessageScroller({
+  atBottom,
+  scrollToBottom,
+  threshold,
+  observe,
+  showScrollButton,
+  children,
+  class: cls,
+  ...attrs
+}: MessageScrollerProps): JSX.Element {
   const bottom = atBottom ?? signal(true);
   return (
     <div
       data-slot="message-scroller"
       class={
-        cn(base, cls)
+        cn("group/message-scroller relative flex size-full min-h-0 flex-col overflow-hidden", cls)
       }
       {...attrs}
     >

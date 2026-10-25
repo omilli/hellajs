@@ -159,7 +159,11 @@ export function MessageAvatar({ children, class: cls, ...attrs }: MessageAvatarP
   );
 }
 
-export function MessageContent({ children, class: cls, ...attrs }: MessageContentProps): JSX.Element {
+export function MessageContent({
+  children,
+  class: cls,
+  ...attrs
+}: MessageContentProps): JSX.Element {
   return (
     <div
       data-slot="message-content"

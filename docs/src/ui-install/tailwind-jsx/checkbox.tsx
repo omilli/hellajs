@@ -32,14 +32,27 @@ const checkIcon = (): JSX.Element => (
   </svg>
 );
 
-export function Checkbox({ checked: checkedProp, indeterminate: indeterminateProp, onCheckedChange, id, disabled, "on:click": userClick, class: cls, ...attrs }: CheckboxProps): JSX.Element {
+export function Checkbox({
+  checked: checkedProp,
+  indeterminate: indeterminateProp,
+  onCheckedChange,
+  id,
+  disabled,
+  "on:click": userClick,
+  class: cls,
+  ...attrs
+}: CheckboxProps): JSX.Element {
   const checkedAccessor = typeof checkedProp === "function" ? checkedProp : undefined;
-  const indeterminateAccessor = typeof indeterminateProp === "function" ? indeterminateProp : undefined;
+  const indeterminateAccessor =
+    typeof indeterminateProp === "function" ? indeterminateProp : undefined;
   const internalChecked = signal(typeof checkedProp === "boolean" ? checkedProp : false);
-  const internalIndeterminate = signal(typeof indeterminateProp === "boolean" ? indeterminateProp : false);
+  const internalIndeterminate = signal(
+    typeof indeterminateProp === "boolean" ? indeterminateProp : false,
+  );
 
   const checked = (): boolean => (checkedAccessor ? checkedAccessor() : internalChecked());
-  const indeterminate = (): boolean => (indeterminateAccessor ? indeterminateAccessor() : internalIndeterminate());
+  const indeterminate = (): boolean =>
+    indeterminateAccessor ? indeterminateAccessor() : internalIndeterminate();
   const state = (): "checked" | "unchecked" | "indeterminate" =>
     indeterminate() ? "indeterminate" : checked() ? "checked" : "unchecked";
   const ariaChecked = (): "true" | "false" | "mixed" =>
@@ -65,7 +78,10 @@ export function Checkbox({ checked: checkedProp, indeterminate: indeterminatePro
       class={
         cn("peer size-4 shrink-0 rounded-[4px] border border-input shadow-xs transition-shadow outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground dark:bg-input/30 dark:aria-invalid:ring-destructive/40 dark:data-[state=checked]:bg-primary", cls)
       }
-      on:click={function (e) { userClick?.call(this, e); toggle(); }}
+      on:click={function (e) {
+        userClick?.call(this, e);
+        toggle();
+      }}
       {...attrs}
     >
       <span

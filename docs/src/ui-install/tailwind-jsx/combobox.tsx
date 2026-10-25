@@ -216,7 +216,13 @@ function comboboxOpenState() {
       fallback = setTimeout(finishExit, 250);
     }
   });
-  return { isOpen, setOpen, state: (): "open" | "closed" => (isOpen() ? "open" : "closed"), visible, finishExit };
+  return {
+    isOpen,
+    setOpen,
+    state: (): "open" | "closed" => (isOpen() ? "open" : "closed"),
+    visible,
+    finishExit,
+  };
 }
 
 /** The check icon (refs/icons/check.svg), created per call so reactive swaps never share nodes between clones. */
@@ -305,7 +311,11 @@ export function ComboboxValue({ value, class: cls, ...attrs }: ComboboxValueProp
 }
 
 /** The manual trigger button; the composed Combobox renders its chevron twin inside the input-group addon. */
-export function ComboboxTrigger({ children, class: cls, ...attrs }: ComboboxTriggerProps): JSX.Element {
+export function ComboboxTrigger({
+  children,
+  class: cls,
+  ...attrs
+}: ComboboxTriggerProps): JSX.Element {
   return (
     <button
       type="button"
@@ -322,7 +332,12 @@ export function ComboboxTrigger({ children, class: cls, ...attrs }: ComboboxTrig
 }
 
 /** The clear affordance, styled as the input-group's ghost icon-xs button. */
-export function ComboboxClear({ onClear, "on:click": userClick, class: cls, ...attrs }: ComboboxClearProps): JSX.Element {
+export function ComboboxClear({
+  onClear,
+  "on:click": userClick,
+  class: cls,
+  ...attrs
+}: ComboboxClearProps): JSX.Element {
   return (
     <button
       type="button"
@@ -371,13 +386,13 @@ export function ComboboxLabel({ children, class: cls, ...attrs }: ComboboxLabelP
 }
 
 /** Passthrough wrapper grouping items rendered from external data. */
-export function ComboboxCollection({ children, class: cls, ...attrs }: ComboboxCollectionProps): JSX.Element {
+export function ComboboxCollection({
+  children,
+  class: cls,
+  ...attrs
+}: ComboboxCollectionProps): JSX.Element {
   return (
-    <div
-      data-slot="combobox-collection"
-      class={cls}
-      {...attrs}
-    >
+    <div data-slot="combobox-collection" class={cls} {...attrs}>
       {children}
     </div>
   );
@@ -411,15 +426,27 @@ export function ComboboxSeparator({ class: cls, ...attrs }: ComboboxSeparatorPro
   );
 }
 
-export function ComboboxItem({ value, label: labelProp, disabled, selected: selectedProp, highlighted: highlightedProp, hidden, onselect, "on:click": userClick, children, class: cls, ...attrs }: ComboboxItemProps): JSX.Element {
+export function ComboboxItem({
+  value,
+  label: labelProp,
+  disabled,
+  selected: selectedProp,
+  highlighted: highlightedProp,
+  hidden,
+  onselect,
+  "on:click": userClick,
+  children,
+  class: cls,
+  ...attrs
+}: ComboboxItemProps): JSX.Element {
   const selected = (): boolean =>
-    typeof selectedProp === "function" ? selectedProp() : selectedProp ?? false;
+    typeof selectedProp === "function" ? selectedProp() : (selectedProp ?? false);
   const highlighted = (): boolean =>
-    typeof highlightedProp === "function" ? highlightedProp() : highlightedProp ?? false;
+    typeof highlightedProp === "function" ? highlightedProp() : (highlightedProp ?? false);
   // Precomputed so the style prop stays a bare reactive accessor (a compound
   // attribute expression would stringify through the transform).
   const hiddenStyle = hidden
-    ? (): string => (hidden as () => boolean)() ? "display: none" : ""
+    ? (): string => ((hidden as () => boolean)() ? "display: none" : "")
     : undefined;
   return (
     <div
@@ -455,9 +482,22 @@ export function ComboboxItem({ value, label: labelProp, disabled, selected: sele
   );
 }
 
-export function ComboboxList({ id, items: itemsProp, keyBy, query, filter, selected, active, onselect, empty: emptyProp, children, class: cls, ...attrs }: ComboboxListProps): JSX.Element {
+export function ComboboxList({
+  id,
+  items: itemsProp,
+  keyBy,
+  query,
+  filter,
+  selected,
+  active,
+  onselect,
+  empty: emptyProp,
+  children,
+  class: cls,
+  ...attrs
+}: ComboboxListProps): JSX.Element {
   const items = (): ComboboxEntry[] =>
-    typeof itemsProp === "function" ? (itemsProp as () => ComboboxEntry[])() : itemsProp ?? [];
+    typeof itemsProp === "function" ? (itemsProp as () => ComboboxEntry[])() : (itemsProp ?? []);
   const matches = (): ComboboxEntry[] => {
     if (filter) return filter(items(), query?.() ?? "");
     const q = (query?.() ?? "").trim().toLowerCase();
@@ -496,7 +536,21 @@ export function ComboboxList({ id, items: itemsProp, keyBy, query, filter, selec
   );
 }
 
-export function ComboboxInput({ value, disabled, state: stateProp, activeDescendant, showTrigger, showClear, onToggle, onClear, wire, portal, children, class: cls, ...attrs }: ComboboxInputProps): JSX.Element {
+export function ComboboxInput({
+  value,
+  disabled,
+  state: stateProp,
+  activeDescendant,
+  showTrigger,
+  showClear,
+  onToggle,
+  onClear,
+  wire,
+  portal,
+  children,
+  class: cls,
+  ...attrs
+}: ComboboxInputProps): JSX.Element {
   const state = (): "open" | "closed" => stateProp?.() ?? "closed";
   let disposeWire: (() => void) | undefined;
   return (
@@ -542,34 +596,38 @@ export function ComboboxInput({ value, disabled, state: stateProp, activeDescend
           target.closest('[data-slot="input-group"]')?.querySelector("input")?.focus();
         }}
       >
-        {() => (showTrigger ? (
-          <button
-            type="button"
-            data-slot="combobox-trigger"
-            aria-label="Toggle"
-            disabled={disabled}
-            class={
-              cn("inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50", "size-6 rounded-md [&_svg:not([class*='size-'])]:size-3", "flex items-center gap-2 text-sm shadow-none size-6 rounded-[calc(var(--radius)-5px)] p-0 has-[>svg]:p-0", "group-has-data-[slot=combobox-clear]/input-group:hidden data-pressed:bg-transparent")
-            }
-            on:click={() => onToggle?.()}
-          >
-            {chevronDownIcon()}
-          </button>
-        ) : null)}
-        {() => (showClear ? (
-          <button
-            type="button"
-            data-slot="combobox-clear"
-            aria-label="Clear"
-            disabled={disabled}
-            class={
-              cn("inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50", "size-6 rounded-md [&_svg:not([class*='size-'])]:size-3", "flex items-center gap-2 text-sm shadow-none size-6 rounded-[calc(var(--radius)-5px)] p-0 has-[>svg]:p-0")
-            }
-            on:click={() => onClear?.()}
-          >
-            {clearIcon()}
-          </button>
-        ) : null)}
+        {() =>
+          showTrigger ? (
+            <button
+              type="button"
+              data-slot="combobox-trigger"
+              aria-label="Toggle"
+              disabled={disabled}
+              class={
+                cn("inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50", "size-6 rounded-md [&_svg:not([class*='size-'])]:size-3", "flex items-center gap-2 text-sm shadow-none size-6 rounded-[calc(var(--radius)-5px)] p-0 has-[>svg]:p-0", "group-has-data-[slot=combobox-clear]/input-group:hidden data-pressed:bg-transparent")
+              }
+              on:click={() => onToggle?.()}
+            >
+              {chevronDownIcon()}
+            </button>
+          ) : null
+        }
+        {() =>
+          showClear ? (
+            <button
+              type="button"
+              data-slot="combobox-clear"
+              aria-label="Clear"
+              disabled={disabled}
+              class={
+                cn("inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50", "size-6 rounded-md [&_svg:not([class*='size-'])]:size-3", "flex items-center gap-2 text-sm shadow-none size-6 rounded-[calc(var(--radius)-5px)] p-0 has-[>svg]:p-0")
+              }
+              on:click={() => onClear?.()}
+            >
+              {clearIcon()}
+            </button>
+          ) : null
+        }
       </div>
       {() => portal?.()}
       {children}
@@ -577,7 +635,15 @@ export function ComboboxInput({ value, disabled, state: stateProp, activeDescend
   );
 }
 
-export function ComboboxChips({ children, chips: chipsSlot, disabled, wire, portal, class: cls, ...attrs }: ComboboxChipsProps): JSX.Element {
+export function ComboboxChips({
+  children,
+  chips: chipsSlot,
+  disabled,
+  wire,
+  portal,
+  class: cls,
+  ...attrs
+}: ComboboxChipsProps): JSX.Element {
   let disposeWire: (() => void) | undefined;
   return (
     <div
@@ -602,7 +668,15 @@ export function ComboboxChips({ children, chips: chipsSlot, disabled, wire, port
   );
 }
 
-export function ComboboxChip({ value, disabled, showRemove, onRemove, children, class: cls, ...attrs }: ComboboxChipProps): JSX.Element {
+export function ComboboxChip({
+  value,
+  disabled,
+  showRemove,
+  onRemove,
+  children,
+  class: cls,
+  ...attrs
+}: ComboboxChipProps): JSX.Element {
   return (
     <div
       data-slot="combobox-chip"
@@ -614,25 +688,34 @@ export function ComboboxChip({ value, disabled, showRemove, onRemove, children, 
       {...attrs}
     >
       {children}
-      {() => (showRemove !== false ? (
-        <button
-          type="button"
-          data-slot="combobox-chip-remove"
-          aria-label="Remove"
-          disabled={disabled}
-          class={
-            cn("inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50", "size-6 rounded-md [&_svg:not([class*='size-'])]:size-3", "flex items-center gap-2 text-sm shadow-none size-6 rounded-[calc(var(--radius)-5px)] p-0 has-[>svg]:p-0", "-ml-1 opacity-50 hover:opacity-100")
-          }
-          on:click={() => onRemove?.()}
-        >
-          {clearIcon()}
-        </button>
-      ) : null)}
+      {() =>
+        showRemove !== false ? (
+          <button
+            type="button"
+            data-slot="combobox-chip-remove"
+            aria-label="Remove"
+            disabled={disabled}
+            class={
+              cn("inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50", "size-6 rounded-md [&_svg:not([class*='size-'])]:size-3", "flex items-center gap-2 text-sm shadow-none size-6 rounded-[calc(var(--radius)-5px)] p-0 has-[>svg]:p-0", "-ml-1 opacity-50 hover:opacity-100")
+            }
+            on:click={() => onRemove?.()}
+          >
+            {clearIcon()}
+          </button>
+        ) : null
+      }
     </div>
   );
 }
 
-export function ComboboxChipsInput({ value, disabled, state: stateProp, activeDescendant, class: cls, ...attrs }: ComboboxChipsInputProps): JSX.Element {
+export function ComboboxChipsInput({
+  value,
+  disabled,
+  state: stateProp,
+  activeDescendant,
+  class: cls,
+  ...attrs
+}: ComboboxChipsInputProps): JSX.Element {
   const state = (): "open" | "closed" => stateProp?.() ?? "closed";
   return (
     <input
@@ -652,7 +735,20 @@ export function ComboboxChipsInput({ value, disabled, state: stateProp, activeDe
   );
 }
 
-export function ComboboxContent({ state: stateProp, side: sideProp, align: alignProp, sideOffset, anchor, chips: chipsProp, empty: emptyProp, onDismiss, onExited, children, class: cls, ...attrs }: ComboboxContentProps): JSX.Element {
+export function ComboboxContent({
+  state: stateProp,
+  side: sideProp,
+  align: alignProp,
+  sideOffset,
+  anchor,
+  chips: chipsProp,
+  empty: emptyProp,
+  onDismiss,
+  onExited,
+  children,
+  class: cls,
+  ...attrs
+}: ComboboxContentProps): JSX.Element {
   const side = sideProp ?? "bottom";
   const align = alignProp ?? "start";
   const state = (): "open" | "closed" => stateProp?.() ?? "open";
@@ -683,7 +779,14 @@ export function ComboboxContent({ state: stateProp, side: sideProp, align: align
       hook:afterMount={(node) => {
         if (!(node instanceof HTMLElement)) return;
         const anchorEl = anchor?.();
-        if (anchorEl != null) wirings.push(anchorPosition(anchorEl, node, { placement: placementOf(side, align), offset: sideOffset ?? 6, matchAnchorWidth: true }));
+        if (anchorEl != null)
+          wirings.push(
+            anchorPosition(anchorEl, node, {
+              placement: placementOf(side, align),
+              offset: sideOffset ?? 6,
+              matchAnchorWidth: true,
+            }),
+          );
         if (onDismiss) {
           wirings.push(layerDismissal(() => [node, anchorEl ?? null], onDismiss));
         }
@@ -706,9 +809,19 @@ export function ComboboxContent({ state: stateProp, side: sideProp, align: align
 
 let comboboxCount = 0;
 
-export function Combobox({ items: itemsProp, keyBy, value, onValueChange, multiple, filter, showClear, class: cls, ...attrs }: ComboboxProps): JSX.Element {
+export function Combobox({
+  items: itemsProp,
+  keyBy,
+  value,
+  onValueChange,
+  multiple,
+  filter,
+  showClear,
+  class: cls,
+  ...attrs
+}: ComboboxProps): JSX.Element {
   const items = (): ComboboxEntry[] =>
-    typeof itemsProp === "function" ? (itemsProp as () => ComboboxEntry[])() : itemsProp ?? [];
+    typeof itemsProp === "function" ? (itemsProp as () => ComboboxEntry[])() : (itemsProp ?? []);
   const s = comboboxOpenState();
   const listId = `hella-combobox-list-${++comboboxCount}`;
   const query = signal("");
@@ -722,7 +835,9 @@ export function Combobox({ items: itemsProp, keyBy, value, onValueChange, multip
   const select = (next: string): void => {
     if (multiple) {
       const currentList = selectedList();
-      const nextList = currentList.includes(next) ? currentList.filter((v) => v !== next) : [...currentList, next];
+      const nextList = currentList.includes(next)
+        ? currentList.filter((v) => v !== next)
+        : [...currentList, next];
       if (value === undefined) internal(nextList);
       onValueChange?.(nextList);
       return;
@@ -746,7 +861,12 @@ export function Combobox({ items: itemsProp, keyBy, value, onValueChange, multip
     const enabled = matches().filter((entry) => !entry.disabled);
     if (enabled.length === 0) return;
     const at = enabled.findIndex((entry) => entry.value === activeValue());
-    const next = at === -1 ? (delta === 1 ? 0 : enabled.length - 1) : (at + delta + enabled.length) % enabled.length;
+    const next =
+      at === -1
+        ? delta === 1
+          ? 0
+          : enabled.length - 1
+        : (at + delta + enabled.length) % enabled.length;
     activeValue(enabled[next]!.value);
   };
   const openSelection = (): void => {
@@ -800,58 +920,65 @@ export function Combobox({ items: itemsProp, keyBy, value, onValueChange, multip
   const wire = (node: HTMLElement): (() => void) => {
     // Typeahead rides the wrapper (printable keystrokes bubble from the
     // input) and walks the visible options' stable ids.
-    return menuTypeahead(node, () => {
-      const entries: { node: HTMLElement; text: string }[] = [];
-      const matched = matches();
-      let i = 0;
-      while (i < matched.length) {
-        const el = document.getElementById(optionIdOf(matched[i]!.value));
-        if (el) entries.push({ node: el, text: matched[i]!.label ?? matched[i]!.value });
-        i++;
-      }
-      return entries;
-    }, (record) => {
-      const entry = items().find((e) => optionIdOf(e.value) === record.node.id);
-      if (entry) activeValue(entry.value);
-    });
+    return menuTypeahead(
+      node,
+      () => {
+        const entries: { node: HTMLElement; text: string }[] = [];
+        const matched = matches();
+        let i = 0;
+        while (i < matched.length) {
+          const el = document.getElementById(optionIdOf(matched[i]!.value));
+          if (el) entries.push({ node: el, text: matched[i]!.label ?? matched[i]!.value });
+          i++;
+        }
+        return entries;
+      },
+      (record) => {
+        const entry = items().find((e) => optionIdOf(e.value) === record.node.id);
+        if (entry) activeValue(entry.value);
+      },
+    );
   };
   let wrapperNode: HTMLElement | undefined;
-  const portal = (): JSX.Element | null => s.visible() ? (
-    <Portal to="body">
-      <ComboboxContent
-        state={s.state}
-        chips={multiple}
-        anchor={() => wrapperNode}
-        empty={() => matches().length === 0}
-        onDismiss={() => setOpen(false)}
-        onExited={s.finishExit}
-      >
-        <ComboboxList
-          id={listId}
-          items={items}
-          keyBy={keyBy}
-          query={query}
-          filter={filter}
-          selected={(v) => selectedList().includes(v)}
-          active={activeValue}
+  const portal = (): JSX.Element | null =>
+    s.visible() ? (
+      <Portal to="body">
+        <ComboboxContent
+          state={s.state}
+          chips={multiple}
+          anchor={() => wrapperNode}
           empty={() => matches().length === 0}
-          onselect={(v) => commit(v)}
+          onDismiss={() => setOpen(false)}
+          onExited={s.finishExit}
         >
-          <ComboboxEmpty>No items found.</ComboboxEmpty>
-        </ComboboxList>
-      </ComboboxContent>
-    </Portal>
-  ) : null;
+          <ComboboxList
+            id={listId}
+            items={items}
+            keyBy={keyBy}
+            query={query}
+            filter={filter}
+            selected={(v) => selectedList().includes(v)}
+            active={activeValue}
+            empty={() => matches().length === 0}
+            onselect={(v) => commit(v)}
+          >
+            <ComboboxEmpty>No items found.</ComboboxEmpty>
+          </ComboboxList>
+        </ComboboxContent>
+      </Portal>
+    ) : null;
   if (multiple) {
     return (
       <ComboboxChips
         class={cls}
         {...attrs}
-        chips={() => selectedList().map((v) => (
-          <ComboboxChip value={v} onRemove={() => select(v)}>
-            {items().find((entry) => entry.value === v)?.label ?? v}
-          </ComboboxChip>
-        ))}
+        chips={() =>
+          selectedList().map((v) => (
+            <ComboboxChip value={v} onRemove={() => select(v)}>
+              {items().find((entry) => entry.value === v)?.label ?? v}
+            </ComboboxChip>
+          ))
+        }
         wire={(node) => {
           wrapperNode = node;
           return wire(node);
@@ -883,4 +1010,3 @@ export function Combobox({ items: itemsProp, keyBy, value, onValueChange, multip
     />
   );
 }
-

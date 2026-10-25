@@ -96,7 +96,9 @@ import { keyframes, style } from "@hellajs/css";
 import { tokens } from "./tokens.js";
 
 const inTop = keyframes({ from: { opacity: "0", transform: "translateY(0.5rem) scale(0.95)" } });
-const inBottom = keyframes({ from: { opacity: "0", transform: "translateY(-0.5rem) scale(0.95)" } });
+const inBottom = keyframes({
+  from: { opacity: "0", transform: "translateY(-0.5rem) scale(0.95)" },
+});
 const inLeft = keyframes({ from: { opacity: "0", transform: "translateX(0.5rem) scale(0.95)" } });
 const inRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem) scale(0.95)" } });
 const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
@@ -115,7 +117,8 @@ const base = style("select-trigger", {
   outlineStyle: "none",
   paddingBlock: "0.5rem",
   paddingInline: "0.75rem",
-  transition: "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
+  transition:
+    "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   whiteSpace: "nowrap",
   width: "fit-content",
   "&[data-placeholder]": {
@@ -342,7 +345,13 @@ function selectOpenState() {
       fallback = setTimeout(finishExit, 250);
     }
   });
-  return { isOpen, setOpen, state: (): "open" | "closed" => (isOpen() ? "open" : "closed"), visible, finishExit };
+  return {
+    isOpen,
+    setOpen,
+    state: (): "open" | "closed" => (isOpen() ? "open" : "closed"),
+    visible,
+    finishExit,
+  };
 }
 
 /** The listbox's selectable options in DOM order, disabled entries excluded (roving, typeahead, and focus-first share this). */
@@ -383,30 +392,32 @@ const highlightOption = (node: ParentNode, target: HTMLElement): void => {
 };
 
 /** The listbox keyboard model: roving arrows with wrap, Home/End, Enter/Space activation, Tab close. */
-const listKeyDown = (node: HTMLElement, onClose?: () => void) => (event: Event): void => {
-  const e = event as KeyboardEvent;
-  const items = optionItems(node);
-  const current = items.indexOf(document.activeElement as HTMLElement);
-  if (e.key === "Tab") {
-    onClose?.();
-    return;
-  }
-  if (e.key === "Enter" || e.key === " ") {
-    if (current === -1) return;
+const listKeyDown =
+  (node: HTMLElement, onClose?: () => void) =>
+  (event: Event): void => {
+    const e = event as KeyboardEvent;
+    const items = optionItems(node);
+    const current = items.indexOf(document.activeElement as HTMLElement);
+    if (e.key === "Tab") {
+      onClose?.();
+      return;
+    }
+    if (e.key === "Enter" || e.key === " ") {
+      if (current === -1) return;
+      e.preventDefault();
+      items[current]!.dispatchEvent(new Event("click", { bubbles: true }));
+      return;
+    }
+    if (e.key !== "ArrowDown" && e.key !== "ArrowUp" && e.key !== "Home" && e.key !== "End") return;
+    if (items.length === 0) return;
     e.preventDefault();
-    items[current]!.dispatchEvent(new Event("click", { bubbles: true }));
-    return;
-  }
-  if (e.key !== "ArrowDown" && e.key !== "ArrowUp" && e.key !== "Home" && e.key !== "End") return;
-  if (items.length === 0) return;
-  e.preventDefault();
-  let target: number;
-  if (e.key === "Home") target = 0;
-  else if (e.key === "End") target = items.length - 1;
-  else if (current === -1) target = e.key === "ArrowDown" ? 0 : items.length - 1;
-  else target = (current + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
-  highlightOption(node, items[target]!);
-};
+    let target: number;
+    if (e.key === "Home") target = 0;
+    else if (e.key === "End") target = items.length - 1;
+    else if (current === -1) target = e.key === "ArrowDown" ? 0 : items.length - 1;
+    else target = (current + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
+    highlightOption(node, items[target]!);
+  };
 
 /** The check icon (refs/icons/check.svg), created per call so reactive swaps never share nodes between clones. */
 const checkIcon = (): JSX.Element => (
@@ -494,7 +505,19 @@ const clearIcon = (): JSX.Element => (
 );
 
 /** The manual trigger button; the composed Select renders the same shape wired to state and aria. */
-export function SelectTrigger({ id, size, state, onOpen, clearable, onClear, hasValue, disabled, children, class: cls, ...attrs }: SelectTriggerProps): JSX.Element {
+export function SelectTrigger({
+  id,
+  size,
+  state,
+  onOpen,
+  clearable,
+  onClear,
+  hasValue,
+  disabled,
+  children,
+  class: cls,
+  ...attrs
+}: SelectTriggerProps): JSX.Element {
   const stateOf = (): "open" | "closed" => state?.() ?? "closed";
   return (
     <button
@@ -522,26 +545,33 @@ export function SelectTrigger({ id, size, state, onOpen, clearable, onClear, has
       {...attrs}
     >
       {children}
-      {() => (clearable && hasValue?.() ? (
-        <span
-          data-slot="select-clear"
-          role="button"
-          aria-label="Clear"
-          on:click={(e) => {
-            e.stopPropagation();
-            onClear?.();
-          }}
-        >
-          {clearIcon()}
-        </span>
-      ) : null)}
+      {() =>
+        clearable && hasValue?.() ? (
+          <span
+            data-slot="select-clear"
+            role="button"
+            aria-label="Clear"
+            on:click={(e) => {
+              e.stopPropagation();
+              onClear?.();
+            }}
+          >
+            {clearIcon()}
+          </span>
+        ) : null
+      }
       {chevronDownIcon()}
     </button>
   );
 }
 
 /** Renders the chosen label; shows the placeholder (with `data-placeholder`) while empty. */
-export function SelectValue({ placeholder, value, class: cls, ...attrs }: SelectValueProps): JSX.Element {
+export function SelectValue({
+  placeholder,
+  value,
+  class: cls,
+  ...attrs
+}: SelectValueProps): JSX.Element {
   const current = (): HellaChildren | undefined =>
     typeof value === "function" ? (value as () => HellaChildren | undefined)() : value;
   return (
@@ -564,7 +594,20 @@ export function SelectValue({ placeholder, value, class: cls, ...attrs }: Select
   );
 }
 
-export function SelectContent({ state, id, side: sideProp, align: alignProp, sideOffset, anchor, onDismiss, onExited, onClose, children, class: cls, ...attrs }: SelectContentProps): JSX.Element {
+export function SelectContent({
+  state,
+  id,
+  side: sideProp,
+  align: alignProp,
+  sideOffset,
+  anchor,
+  onDismiss,
+  onExited,
+  onClose,
+  children,
+  class: cls,
+  ...attrs
+}: SelectContentProps): JSX.Element {
   const side = sideProp ?? "bottom";
   const align = alignProp ?? "start";
   const stateOf = (): "open" | "closed" => state?.() ?? "open";
@@ -596,11 +639,24 @@ export function SelectContent({ state, id, side: sideProp, align: alignProp, sid
       hook:afterMount={(node) => {
         if (!(node instanceof HTMLElement)) return;
         const anchorEl = anchor?.();
-        if (anchorEl != null) wirings.push(anchorPosition(anchorEl, node, { placement: placementOf(side, align), offset: sideOffset ?? 6, matchAnchorWidth: true }));
+        if (anchorEl != null)
+          wirings.push(
+            anchorPosition(anchorEl, node, {
+              placement: placementOf(side, align),
+              offset: sideOffset ?? 6,
+              matchAnchorWidth: true,
+            }),
+          );
         if (onDismiss) {
           wirings.push(layerDismissal(() => [node, anchorEl ?? null], onDismiss));
         }
-        wirings.push(menuTypeahead(node, () => optionEntries(node), (entry) => highlightOption(node, entry.node)));
+        wirings.push(
+          menuTypeahead(
+            node,
+            () => optionEntries(node),
+            (entry) => highlightOption(node, entry.node),
+          ),
+        );
         const onKey = listKeyDown(node, onClose);
         node.addEventListener("keydown", onKey);
         wirings.push(() => node.removeEventListener("keydown", onKey));
@@ -608,7 +664,10 @@ export function SelectContent({ state, id, side: sideProp, align: alignProp, sid
         // selected option scrolls to the visible edge of the listbox.
         const items = optionItems(node);
         const selected = node.querySelector("[aria-selected='true']");
-        const target = (selected instanceof HTMLElement && !selected.hasAttribute("data-disabled") ? selected : items[0]) ?? node;
+        const target =
+          (selected instanceof HTMLElement && !selected.hasAttribute("data-disabled")
+            ? selected
+            : items[0]) ?? node;
         highlightOption(node, target);
         if (target !== node) target.scrollIntoView?.({ block: "nearest" });
         // Scroll buttons repeat-scroll the listbox while hovered and hide at
@@ -616,8 +675,11 @@ export function SelectContent({ state, id, side: sideProp, align: alignProp, sid
         const up = node.querySelector("[data-slot='select-scroll-up-button']");
         const down = node.querySelector("[data-slot='select-scroll-down-button']");
         const syncEdges = (): void => {
-          if (up instanceof HTMLElement) up.style.visibility = node.scrollTop <= 0 ? "hidden" : "visible";
-          if (down instanceof HTMLElement) down.style.visibility = node.scrollTop + node.clientHeight >= node.scrollHeight ? "hidden" : "visible";
+          if (up instanceof HTMLElement)
+            up.style.visibility = node.scrollTop <= 0 ? "hidden" : "visible";
+          if (down instanceof HTMLElement)
+            down.style.visibility =
+              node.scrollTop + node.clientHeight >= node.scrollHeight ? "hidden" : "visible";
         };
         const wireStep = (el: Element | null, delta: number): void => {
           if (!(el instanceof HTMLElement)) return;
@@ -703,9 +765,17 @@ export function SelectGroup({ children, class: cls, ...attrs }: SelectPartProps)
   );
 }
 
-export function SelectItem({ value, label: labelSlot, selected: selectedProp, onselect, disabled, class: cls, ...attrs }: SelectItemProps): JSX.Element {
+export function SelectItem({
+  value,
+  label: labelSlot,
+  selected: selectedProp,
+  onselect,
+  disabled,
+  class: cls,
+  ...attrs
+}: SelectItemProps): JSX.Element {
   const selected = (): boolean =>
-    typeof selectedProp === "function" ? selectedProp() : selectedProp ?? false;
+    typeof selectedProp === "function" ? selectedProp() : (selectedProp ?? false);
   return (
     <div
       role="option"
@@ -765,7 +835,11 @@ export function SelectSeparator({ class: cls, ...attrs }: SelectPartProps): JSX.
   );
 }
 
-export function SelectScrollUpButton({ children, class: cls, ...attrs }: SelectScrollButtonProps): JSX.Element {
+export function SelectScrollUpButton({
+  children,
+  class: cls,
+  ...attrs
+}: SelectScrollButtonProps): JSX.Element {
   return (
     <div
       data-slot="select-scroll-up-button"
@@ -779,7 +853,11 @@ export function SelectScrollUpButton({ children, class: cls, ...attrs }: SelectS
   );
 }
 
-export function SelectScrollDownButton({ children, class: cls, ...attrs }: SelectScrollButtonProps): JSX.Element {
+export function SelectScrollDownButton({
+  children,
+  class: cls,
+  ...attrs
+}: SelectScrollButtonProps): JSX.Element {
   return (
     <div
       data-slot="select-scroll-down-button"
@@ -795,7 +873,17 @@ export function SelectScrollDownButton({ children, class: cls, ...attrs }: Selec
 
 let selectCount = 0;
 
-export function Select({ items, keyBy, value, onValueChange, placeholder, size, clearable, class: cls, ...attrs }: SelectProps): JSX.Element {
+export function Select({
+  items,
+  keyBy,
+  value,
+  onValueChange,
+  placeholder,
+  size,
+  clearable,
+  class: cls,
+  ...attrs
+}: SelectProps): JSX.Element {
   const s = selectOpenState();
   const contentId = `hella-select-content-${++selectCount}`;
   const internal = signal("");
@@ -805,7 +893,7 @@ export function Select({ items, keyBy, value, onValueChange, placeholder, size, 
     onValueChange?.(next);
   };
   const resolveItems = (): SelectEntry[] =>
-    typeof items === "function" ? (items as () => SelectEntry[])() : items ?? [];
+    typeof items === "function" ? (items as () => SelectEntry[])() : (items ?? []);
   const currentLabel = (): HellaChildren | undefined =>
     resolveItems().find((entry) => entry.value === current())?.label;
   let triggerNode: HTMLElement | undefined;
@@ -846,49 +934,53 @@ export function Select({ items, keyBy, value, onValueChange, placeholder, size, 
       {...attrs}
     >
       <SelectValue placeholder={placeholder} value={currentLabel} />
-      {() => (clearable && current() !== "" ? (
-        <span
-          data-slot="select-clear"
-          role="button"
-          aria-label="Clear"
-          on:click={(e) => {
-            e.stopPropagation();
-            select("");
-          }}
-        >
-          {clearIcon()}
-        </span>
-      ) : null)}
-      {chevronDownIcon()}
-      {() => s.visible() && (
-        <Portal to="body">
-          <SelectContent
-            state={s.state}
-            id={contentId}
-            anchor={() => triggerNode}
-            onDismiss={() => s.setOpen(false)}
-            onExited={s.finishExit}
-            onClose={() => s.setOpen(false)}
+      {() =>
+        clearable && current() !== "" ? (
+          <span
+            data-slot="select-clear"
+            role="button"
+            aria-label="Clear"
+            on:click={(e) => {
+              e.stopPropagation();
+              select("");
+            }}
           >
-            <ForEach
-              each={resolveItems}
-              use={(entry) => (
-                <SelectItem
-                  key={keyBy ? entry.value : undefined}
-                  value={entry.value}
-                  label={entry.label}
-                  disabled={entry.disabled}
-                  selected={() => current() === entry.value}
-                  onselect={() => {
-                    select(entry.value);
-                    s.setOpen(false);
-                  }}
-                />
-              )}
-            />
-          </SelectContent>
-        </Portal>
-      )}
+            {clearIcon()}
+          </span>
+        ) : null
+      }
+      {chevronDownIcon()}
+      {() =>
+        s.visible() && (
+          <Portal to="body">
+            <SelectContent
+              state={s.state}
+              id={contentId}
+              anchor={() => triggerNode}
+              onDismiss={() => s.setOpen(false)}
+              onExited={s.finishExit}
+              onClose={() => s.setOpen(false)}
+            >
+              <ForEach
+                each={resolveItems}
+                use={(entry) => (
+                  <SelectItem
+                    key={keyBy ? entry.value : undefined}
+                    value={entry.value}
+                    label={entry.label}
+                    disabled={entry.disabled}
+                    selected={() => current() === entry.value}
+                    onselect={() => {
+                      select(entry.value);
+                      s.setOpen(false);
+                    }}
+                  />
+                )}
+              />
+            </SelectContent>
+          </Portal>
+        )
+      }
     </button>
   );
 }

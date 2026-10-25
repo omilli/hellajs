@@ -7,7 +7,13 @@ type ToastType = "success" | "error" | "warning" | "info";
 
 type ToastVariant = ToastType | "loading" | "default";
 
-type ToasterPosition = "top-left" | "top-center" | "top-right" | "bottom-left" | "bottom-center" | "bottom-right";
+type ToasterPosition =
+  | "top-left"
+  | "top-center"
+  | "top-right"
+  | "bottom-left"
+  | "bottom-center"
+  | "bottom-right";
 
 interface ToastOptions {
   description?: string;
@@ -74,12 +80,18 @@ import { cn } from "./cn.js";
 export type { ToastApi };
 
 const toasterPositions = {
-  "top-left": "flex-col justify-start items-start [--enter-offset:-100%] [--stack-offset:1.5rem] [--stack-origin:top]",
-  "top-center": "flex-col justify-start items-center [--enter-offset:-100%] [--stack-offset:1.5rem] [--stack-origin:top]",
-  "top-right": "flex-col justify-start items-end [--enter-offset:-100%] [--stack-offset:1.5rem] [--stack-origin:top]",
-  "bottom-left": "flex-col-reverse justify-start items-start [--enter-offset:100%] [--stack-offset:-1.5rem] [--stack-origin:bottom]",
-  "bottom-center": "flex-col-reverse justify-start items-center [--enter-offset:100%] [--stack-offset:-1.5rem] [--stack-origin:bottom]",
-  "bottom-right": "flex-col-reverse justify-start items-end [--enter-offset:100%] [--stack-offset:-1.5rem] [--stack-origin:bottom]",
+  "top-left":
+    "flex-col justify-start items-start [--enter-offset:-100%] [--stack-offset:1.5rem] [--stack-origin:top]",
+  "top-center":
+    "flex-col justify-start items-center [--enter-offset:-100%] [--stack-offset:1.5rem] [--stack-origin:top]",
+  "top-right":
+    "flex-col justify-start items-end [--enter-offset:-100%] [--stack-offset:1.5rem] [--stack-origin:top]",
+  "bottom-left":
+    "flex-col-reverse justify-start items-start [--enter-offset:100%] [--stack-offset:-1.5rem] [--stack-origin:bottom]",
+  "bottom-center":
+    "flex-col-reverse justify-start items-center [--enter-offset:100%] [--stack-offset:-1.5rem] [--stack-origin:bottom]",
+  "bottom-right":
+    "flex-col-reverse justify-start items-end [--enter-offset:100%] [--stack-offset:-1.5rem] [--stack-origin:bottom]",
 };
 
 /** Semantic toast flavor; a toast without one renders `data-type="default"` with no icon. */
@@ -136,7 +148,14 @@ function armToastTimer(record: ToastRecord): void {
   clearToastTimer(record.id);
   const duration = record.data().duration;
   if (duration === Infinity || record.data().removed) return;
-  timers.set(record.id, { timeout: setTimeout(() => { clearToastTimer(record.id); markRemoved(record.id); }, duration), remaining: duration, startedAt: Date.now() });
+  timers.set(record.id, {
+    timeout: setTimeout(() => {
+      clearToastTimer(record.id);
+      markRemoved(record.id);
+    }, duration),
+    remaining: duration,
+    startedAt: Date.now(),
+  });
 }
 
 /** Freezes the live countdown, folding elapsed time into the remaining budget. */
@@ -153,7 +172,13 @@ function resumeToastTimer(id: number): void {
   const timer = timers.get(id);
   if (timer === undefined || timer.timeout !== undefined) return;
   timer.startedAt = Date.now();
-  timer.timeout = setTimeout(() => { clearToastTimer(id); markRemoved(id); }, Math.max(0, timer.remaining));
+  timer.timeout = setTimeout(
+    () => {
+      clearToastTimer(id);
+      markRemoved(id);
+    },
+    Math.max(0, timer.remaining),
+  );
 }
 
 /** Retires every toast beyond the visible cap, oldest first. */
@@ -162,7 +187,13 @@ function enforceCap(): void {
   for (let i = VISIBLE_CAP; i < visible.length; i++) markRemoved(visible[i]!.id);
 }
 
-function pushToast(init: { message: string; description?: string; type: ToastVariant; action?: ToastOptions["action"]; duration: number }): ToastHandle {
+function pushToast(init: {
+  message: string;
+  description?: string;
+  type: ToastVariant;
+  action?: ToastOptions["action"];
+  duration: number;
+}): ToastHandle {
   const id = ++nextId;
   const record: ToastRecord = { id, data: signal<ToastData>({ id, removed: false, ...init }) };
   wireToast(record);
@@ -190,12 +221,25 @@ toast.promise = <T,>(promise: Promise<T>, messages: PromiseMessages<T>): ToastHa
   const settle = (message: string, type: ToastType): void => {
     const record = toasts().find((entry) => entry.id === handle.id);
     if (record === undefined || record.data().removed) return;
-    record.data({ ...record.data(), message, type, duration: messages.duration ?? DEFAULT_DURATION });
+    record.data({
+      ...record.data(),
+      message,
+      type,
+      duration: messages.duration ?? DEFAULT_DURATION,
+    });
     armToastTimer(record);
   };
   promise.then(
-    (data) => settle(typeof messages.success === "function" ? messages.success(data) : messages.success, "success"),
-    (error: unknown) => settle(typeof messages.error === "function" ? messages.error(error) : messages.error, "error"),
+    (data) =>
+      settle(
+        typeof messages.success === "function" ? messages.success(data) : messages.success,
+        "success",
+      ),
+    (error: unknown) =>
+      settle(
+        typeof messages.error === "function" ? messages.error(error) : messages.error,
+        "error",
+      ),
   );
   return handle;
 };
@@ -211,8 +255,16 @@ toast.dismiss = (id?: number): void => {
 /** Lucide path data from refs/icons, keyed by flavor; the loader spins through its `data-type` rule. */
 const ICON_PATHS: Partial<Record<ToastVariant, HellaChild[]>> = {
   success: [<circle cx="12" cy="12" r="10" />, <path d="m9 12 2 2 4-4" />],
-  error: [<path d="m15 9-6 6" />, <path d="M2.586 16.726A2 2 0 0 1 2 15.312V8.688a2 2 0 0 1 .586-1.414l4.688-4.688A2 2 0 0 1 8.688 2h6.624a2 2 0 0 1 1.414.586l4.688 4.688A2 2 0 0 1 22 8.688v6.624a2 2 0 0 1-.586 1.414l-4.688 4.688a2 2 0 0 1-1.414.586H8.688a2 2 0 0 1-1.414-.586z" />, <path d="m9 9 6 6" />],
-  warning: [<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />, <path d="M12 9v4" />, <path d="M12 17h.01" />],
+  error: [
+    <path d="m15 9-6 6" />,
+    <path d="M2.586 16.726A2 2 0 0 1 2 15.312V8.688a2 2 0 0 1 .586-1.414l4.688-4.688A2 2 0 0 1 8.688 2h6.624a2 2 0 0 1 1.414.586l4.688 4.688A2 2 0 0 1 22 8.688v6.624a2 2 0 0 1-.586 1.414l-4.688 4.688a2 2 0 0 1-1.414.586H8.688a2 2 0 0 1-1.414-.586z" />,
+    <path d="m9 9 6 6" />,
+  ],
+  warning: [
+    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />,
+    <path d="M12 9v4" />,
+    <path d="M12 17h.01" />,
+  ],
   info: [<circle cx="12" cy="12" r="10" />, <path d="M12 16v-4" />, <path d="M12 8h.01" />],
   loading: [<path d="M21 12a9 9 0 1 1-6.219-8.56" />],
 };
@@ -238,36 +290,38 @@ function wireToast(record: ToastRecord): void {
       armToastTimer(record);
       node.addEventListener("pointerenter", () => pauseToastTimer(record.id));
       node.addEventListener("pointerleave", () => resumeToastTimer(record.id));
-      teardown.push(onDrag(node, {
-        onStart: (event) => {
-          if (record.data().removed) return;
-          const hit = event.target as HTMLElement | null;
-          if (hit?.closest?.("button, a, input, textarea, select, [data-no-drag]")) return;
-          dragging = true;
-          pauseToastTimer(record.id);
-          toastWidth = node.getBoundingClientRect().width;
-          node.setAttribute("data-dragging", "true");
-        },
-        onMove: (delta) => {
-          if (!dragging) return;
-          dragOffset = delta.dx;
-          node.style.transform = `translateX(${dragOffset}px)`;
-        },
-        onEnd: () => {
-          if (!dragging) return;
-          dragging = false;
-          node.removeAttribute("data-dragging");
-          resumeToastTimer(record.id);
-          if (toastWidth > 0 && Math.abs(dragOffset) >= toastWidth * SWIPE_DISMISS_RATIO) {
-            markRemoved(record.id);
-          } else {
-            // Spring back: data-dragging is gone, so the restored transition
-            // animates the cleared transform back to the depth rule's look.
-            node.style.transform = "";
-          }
-          dragOffset = 0;
-        },
-      }));
+      teardown.push(
+        onDrag(node, {
+          onStart: (event) => {
+            if (record.data().removed) return;
+            const hit = event.target as HTMLElement | null;
+            if (hit?.closest?.("button, a, input, textarea, select, [data-no-drag]")) return;
+            dragging = true;
+            pauseToastTimer(record.id);
+            toastWidth = node.getBoundingClientRect().width;
+            node.setAttribute("data-dragging", "true");
+          },
+          onMove: (delta) => {
+            if (!dragging) return;
+            dragOffset = delta.dx;
+            node.style.transform = `translateX(${dragOffset}px)`;
+          },
+          onEnd: () => {
+            if (!dragging) return;
+            dragging = false;
+            node.removeAttribute("data-dragging");
+            resumeToastTimer(record.id);
+            if (toastWidth > 0 && Math.abs(dragOffset) >= toastWidth * SWIPE_DISMISS_RATIO) {
+              markRemoved(record.id);
+            } else {
+              // Spring back: data-dragging is gone, so the restored transition
+              // animates the cleared transform back to the depth rule's look.
+              node.style.transform = "";
+            }
+            dragOffset = 0;
+          },
+        }),
+      );
     },
     beforeDestroy: () => {
       clearToastTimer(record.id);
@@ -284,7 +338,10 @@ function wireToast(record: ToastRecord): void {
  */
 function ToastItem(props: ToastItemProps): JSX.Element {
   const data = props.record.data;
-  const depth = (): number => toasts().filter((entry) => !entry.data().removed).findIndex((entry) => entry.id === props.record.id);
+  const depth = (): number =>
+    toasts()
+      .filter((entry) => !entry.data().removed)
+      .findIndex((entry) => entry.id === props.record.id);
   return (
     <li
       data-slot="sonner-toast"
@@ -340,14 +397,20 @@ function ToastItem(props: ToastItemProps): JSX.Element {
         >
           {() => data().message}
         </div>
-        {() => data().description === undefined ? [] : [
-          <div
-            data-slot="sonner-description"
-            class={
-              cn("opacity-90")
-            }
-          >{data().description}</div>,
-        ]}
+        {() =>
+          data().description === undefined
+            ? []
+            : [
+                <div
+                  data-slot="sonner-description"
+                  class={
+                    cn("opacity-90")
+                  }
+                >
+                  {data().description}
+                </div>,
+              ]
+        }
       </div>
       {() => {
         const action = data().action;
@@ -363,7 +426,9 @@ function ToastItem(props: ToastItemProps): JSX.Element {
               action.onclick();
               markRemoved(data().id);
             }}
-          >{action.label}</button>,
+          >
+            {action.label}
+          </button>,
         ];
       }}
       <button
@@ -400,7 +465,12 @@ function ToastItem(props: ToastItemProps): JSX.Element {
  * The queue is the singleton in this file: mount one Toaster per app and call
  * `toast()` from anywhere that imports the same copied module.
  */
-export function Toaster({ position = "bottom-right", richColors, class: cls, ...attrs }: ToasterProps): JSX.Element {
+export function Toaster({
+  position = "bottom-right",
+  richColors,
+  class: cls,
+  ...attrs
+}: ToasterProps): JSX.Element {
   return (
     <Portal to="body">
       <ol
@@ -413,7 +483,12 @@ export function Toaster({ position = "bottom-right", richColors, class: cls, ...
         }
         {...attrs}
       >
-        <ForEach each={toasts} use={(record: ToastRecord) => <ToastItem record={record} richColors={richColors === true} />} />
+        <ForEach
+          each={toasts}
+          use={(record: ToastRecord) => (
+            <ToastItem record={record} richColors={richColors === true} />
+          )}
+        />
       </ol>
     </Portal>
   );

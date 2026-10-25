@@ -46,7 +46,8 @@ const base = style("input-group", {
   minWidth: "0",
   outlineStyle: "none",
   position: "relative",
-  transition: "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
+  transition:
+    "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   width: "100%",
   "&:is(.dark *)": {
     background: `color-mix(in oklab, ${tokens.input} 30%, transparent)`,
@@ -84,9 +85,10 @@ const base = style("input-group", {
   "&:has([data-slot][aria-invalid='true']):has([data-slot='input-group-control']:focus-visible)": {
     boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 20%, transparent)`,
   },
-  "&:is(.dark *):has([data-slot][aria-invalid='true']):has([data-slot='input-group-control']:focus-visible)": {
-    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
-  },
+  "&:is(.dark *):has([data-slot][aria-invalid='true']):has([data-slot='input-group-control']:focus-visible)":
+    {
+      boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
+    },
 });
 
 const addon = style("input-group-addon", {
@@ -374,7 +376,8 @@ const inputBase = style("input-group-input", {
   outlineStyle: "none",
   paddingBlock: "0.25rem",
   paddingInline: "0.75rem",
-  transition: "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
+  transition:
+    "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   width: "100%",
   "&::file-selector-button": {
     background: "transparent",
@@ -451,7 +454,8 @@ const textareaBase = style("input-group-textarea", {
   outlineStyle: "none",
   paddingBlock: "0.5rem",
   paddingInline: "0.75rem",
-  transition: "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
+  transition:
+    "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   width: "100%",
   "&::placeholder": {
     color: tokens.mutedForeground,
@@ -510,21 +514,29 @@ css({
   "[data-slot='input-group'][data-disabled='true'] [data-slot='input-group-addon']": {
     opacity: "0.5",
   },
-  "[data-slot='input-group']:has(input) [data-slot='input-group-addon'][data-align='block-start']": {
-    paddingTop: "0.625rem",
-  },
+  "[data-slot='input-group']:has(input) [data-slot='input-group-addon'][data-align='block-start']":
+    {
+      paddingTop: "0.625rem",
+    },
   "[data-slot='input-group']:has(input) [data-slot='input-group-addon'][data-align='block-end']": {
     paddingBottom: "0.625rem",
   },
-  ".border-b [data-slot='input-group-addon'][data-align='block-start'], .border-b ~ [data-slot='input-group-addon'][data-align='block-start']": {
-    paddingBottom: "0.75rem",
-  },
-  ".border-t [data-slot='input-group-addon'][data-align='block-end'], .border-t ~ [data-slot='input-group-addon'][data-align='block-end']": {
-    paddingTop: "0.75rem",
-  },
+  ".border-b [data-slot='input-group-addon'][data-align='block-start'], .border-b ~ [data-slot='input-group-addon'][data-align='block-start']":
+    {
+      paddingBottom: "0.75rem",
+    },
+  ".border-t [data-slot='input-group-addon'][data-align='block-end'], .border-t ~ [data-slot='input-group-addon'][data-align='block-end']":
+    {
+      paddingTop: "0.75rem",
+    },
 });
 
-export function InputGroup({ disabled, children, class: cls, ...attrs }: InputGroupProps): JSX.Element {
+export function InputGroup({
+  disabled,
+  children,
+  class: cls,
+  ...attrs
+}: InputGroupProps): JSX.Element {
   return (
     <div
       data-slot="input-group"
@@ -540,18 +552,19 @@ export function InputGroup({ disabled, children, class: cls, ...attrs }: InputGr
   );
 }
 
-export function InputGroupAddon({ align, children, class: cls, ...attrs }: InputGroupAddonProps): JSX.Element {
+export function InputGroupAddon({
+  align,
+  children,
+  class: cls,
+  ...attrs
+}: InputGroupAddonProps): JSX.Element {
   return (
     <div
       role="group"
       data-slot="input-group-addon"
       data-align={align ?? "inline-start"}
       class={
-        [
-          addon,
-          addonAlign[align ?? "inline-start"],
-          cls,
-        ]
+        [addon, addonAlign[align ?? "inline-start"], cls]
       }
       e:click={(e: Event) => {
         const target = e.target as HTMLElement;
@@ -565,7 +578,13 @@ export function InputGroupAddon({ align, children, class: cls, ...attrs }: Input
   );
 }
 
-export function InputGroupButton({ variant, size, children, class: cls, ...attrs }: InputGroupButtonProps): JSX.Element {
+export function InputGroupButton({
+  variant,
+  size,
+  children,
+  class: cls,
+  ...attrs
+}: InputGroupButtonProps): JSX.Element {
   return (
     <button
       type="button"
@@ -588,7 +607,11 @@ export function InputGroupButton({ variant, size, children, class: cls, ...attrs
   );
 }
 
-export function InputGroupText({ children, class: cls, ...attrs }: InputGroupTextProps): JSX.Element {
+export function InputGroupText({
+  children,
+  class: cls,
+  ...attrs
+}: InputGroupTextProps): JSX.Element {
   return (
     <span
       data-slot="input-group-text"
@@ -607,13 +630,7 @@ export function InputGroupInput({ class: cls, ...attrs }: InputGroupInputProps):
     <input
       data-slot="input-group-control"
       class={
-        [
-          inputBase,
-          inputFocus,
-          inputInvalid,
-          inputControl,
-          cls,
-        ]
+        [inputBase, inputFocus, inputInvalid, inputControl, cls]
       }
       {...attrs}
     />
@@ -625,13 +642,7 @@ export function InputGroupTextarea({ class: cls, ...attrs }: InputGroupTextareaP
     <textarea
       data-slot="input-group-control"
       class={
-        [
-          textareaBase,
-          textareaFocus,
-          textareaInvalid,
-          textareaControl,
-          cls,
-        ]
+        [textareaBase, textareaFocus, textareaInvalid, textareaControl, cls]
       }
       {...attrs}
     />

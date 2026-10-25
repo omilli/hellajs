@@ -32,21 +32,6 @@ interface MessageFooterProps extends HTMLAttributes<"div"> {
 }
 import { cn } from "./cn.js";
 
-const base =
-  "group/message relative flex w-full min-w-0 gap-2 text-sm data-[align=end]:flex-row-reverse";
-
-const avatar =
-  "flex w-fit min-w-8 shrink-0 items-center justify-center self-end overflow-hidden rounded-full bg-muted group-has-data-[slot=message-footer]/message:-translate-y-8";
-
-const content =
-  "flex w-full min-w-0 flex-col gap-2.5 wrap-break-word group-data-[align=end]/message:*:data-slot:self-end";
-
-const header =
-  "flex max-w-full min-w-0 items-center px-3 text-xs font-medium text-muted-foreground group-has-data-[variant=ghost]/message:px-0";
-
-const footer =
-  "flex max-w-full min-w-0 items-center px-3 text-xs font-medium text-muted-foreground group-has-data-[variant=ghost]/message:px-0 group-data-[align=end]/message:justify-end";
-
 export function MessageGroup({ children, class: cls, ...attrs }: MessageGroupProps): JSX.Element {
   return (
     <div
@@ -67,7 +52,7 @@ export function Message({ align, children, class: cls, ...attrs }: MessageProps)
       data-slot="message"
       data-align={align ?? "start"}
       class={
-        cn(base, cls)
+        cn("group/message relative flex w-full min-w-0 gap-2 text-sm data-[align=end]:flex-row-reverse", cls)
       }
       {...attrs}
     >
@@ -81,7 +66,7 @@ export function MessageAvatar({ children, class: cls, ...attrs }: MessageAvatarP
     <div
       data-slot="message-avatar"
       class={
-        cn(avatar, cls)
+        cn("flex w-fit min-w-8 shrink-0 items-center justify-center self-end overflow-hidden rounded-full bg-muted group-has-data-[slot=message-footer]/message:-translate-y-8", cls)
       }
       {...attrs}
     >
@@ -90,12 +75,16 @@ export function MessageAvatar({ children, class: cls, ...attrs }: MessageAvatarP
   );
 }
 
-export function MessageContent({ children, class: cls, ...attrs }: MessageContentProps): JSX.Element {
+export function MessageContent({
+  children,
+  class: cls,
+  ...attrs
+}: MessageContentProps): JSX.Element {
   return (
     <div
       data-slot="message-content"
       class={
-        cn(content, cls)
+        cn("flex w-full min-w-0 flex-col gap-2.5 wrap-break-word group-data-[align=end]/message:*:data-slot:self-end", cls)
       }
       {...attrs}
     >
@@ -109,7 +98,7 @@ export function MessageHeader({ children, class: cls, ...attrs }: MessageHeaderP
     <div
       data-slot="message-header"
       class={
-        cn(header, cls)
+        cn("flex max-w-full min-w-0 items-center px-3 text-xs font-medium text-muted-foreground group-has-data-[variant=ghost]/message:px-0", cls)
       }
       {...attrs}
     >
@@ -123,7 +112,7 @@ export function MessageFooter({ children, class: cls, ...attrs }: MessageFooterP
     <div
       data-slot="message-footer"
       class={
-        cn(footer, cls)
+        cn("flex max-w-full min-w-0 items-center px-3 text-xs font-medium text-muted-foreground group-has-data-[variant=ghost]/message:px-0 group-data-[align=end]/message:justify-end", cls)
       }
       {...attrs}
     >

@@ -17,7 +17,8 @@ const base = style("textarea", {
   outlineStyle: "none",
   paddingBlock: "0.5rem",
   paddingInline: "0.75rem",
-  transition: "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
+  transition:
+    "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   width: "100%",
   "&::placeholder": {
     color: tokens.mutedForeground,
@@ -61,12 +62,7 @@ export function Textarea({ class: cls, ...attrs }: TextareaProps): JSX.Element {
     <textarea
       data-slot="textarea"
       class={
-        [
-          base,
-          focus,
-          invalid,
-          cls,
-        ]
+        [base, focus, invalid, cls]
       }
       {...attrs}
     />

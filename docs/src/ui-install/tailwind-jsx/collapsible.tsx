@@ -27,7 +27,14 @@ import { cn } from "./cn.js";
 
 let collapsibleCount = 0;
 
-export function CollapsibleTrigger({ active, onToggle, "on:click": userClick, children, class: cls, ...attrs }: CollapsibleTriggerProps): JSX.Element {
+export function CollapsibleTrigger({
+  active,
+  onToggle,
+  "on:click": userClick,
+  children,
+  class: cls,
+  ...attrs
+}: CollapsibleTriggerProps): JSX.Element {
   return (
     <button
       type="button"
@@ -37,7 +44,10 @@ export function CollapsibleTrigger({ active, onToggle, "on:click": userClick, ch
       class={
         cn("inline-flex items-center gap-2 [&[data-state=open]>svg]:rotate-180", cls)
       }
-      on:click={function (e) { userClick?.call(this, e); onToggle?.(); }}
+      on:click={function (e) {
+        userClick?.call(this, e);
+        onToggle?.();
+      }}
       {...attrs}
     >
       {children}
@@ -63,7 +73,13 @@ export function CollapsibleTrigger({ active, onToggle, "on:click": userClick, ch
   );
 }
 
-export function CollapsibleContent({ active, id, children, class: cls, ...attrs }: CollapsibleContentProps): JSX.Element {
+export function CollapsibleContent({
+  active,
+  id,
+  children,
+  class: cls,
+  ...attrs
+}: CollapsibleContentProps): JSX.Element {
   return (
     <div
       role="region"
@@ -79,12 +95,22 @@ export function CollapsibleContent({ active, id, children, class: cls, ...attrs 
         class={
           cn("min-h-0 overflow-hidden")
         }
-      >{children}</div>
+      >
+        {children}
+      </div>
     </div>
   );
 }
 
-export function Collapsible({ open, defaultOpen, onOpenChange, trigger: triggerSlot, content: contentSlot, class: cls, ...attrs }: CollapsibleProps): JSX.Element {
+export function Collapsible({
+  open,
+  defaultOpen,
+  onOpenChange,
+  trigger: triggerSlot,
+  content: contentSlot,
+  class: cls,
+  ...attrs
+}: CollapsibleProps): JSX.Element {
   const internal = signal(defaultOpen ?? false);
   const active = (): boolean => (open !== undefined ? open() : internal());
   const contentId = `hella-collapsible-content-${++collapsibleCount}`;
@@ -110,11 +136,7 @@ export function Collapsible({ open, defaultOpen, onOpenChange, trigger: triggerS
         aria-controls={contentId}
         children={triggerSlot}
       />
-      <CollapsibleContent
-        id={contentId}
-        active={active}
-        children={contentSlot}
-      />
+      <CollapsibleContent id={contentId} active={active} children={contentSlot} />
     </div>
   );
 }

@@ -118,7 +118,11 @@ function startOfMonth(date: Date): Date {
 
 function addMonths(date: Date, amount: number): Date {
   const target = new Date(date.getFullYear(), date.getMonth() + amount, 1);
-  return new Date(target.getFullYear(), target.getMonth(), Math.min(date.getDate(), daysInMonth(target.getFullYear(), target.getMonth())));
+  return new Date(
+    target.getFullYear(),
+    target.getMonth(),
+    Math.min(date.getDate(), daysInMonth(target.getFullYear(), target.getMonth())),
+  );
 }
 
 function addDays(date: Date, amount: number): Date {
@@ -126,7 +130,11 @@ function addDays(date: Date, amount: number): Date {
 }
 
 function isSameDay(a: Date, b: Date): boolean {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
 }
 
 function isSameMonth(a: Date, b: Date): boolean {
@@ -152,7 +160,11 @@ function weekdayLabels(weekStartsOn: number): string[] {
   const labels: string[] = [];
   let i = 0;
   while (i < WEEKDAY_COUNT) {
-    labels.push(new Date(2024, 0, 7 + ((weekStartsOn + i) % WEEKDAY_COUNT)).toLocaleDateString("en-US", { weekday: "short" }));
+    labels.push(
+      new Date(2024, 0, 7 + ((weekStartsOn + i) % WEEKDAY_COUNT)).toLocaleDateString("en-US", {
+        weekday: "short",
+      }),
+    );
     i++;
   }
   return labels;
@@ -160,7 +172,12 @@ function weekdayLabels(weekStartsOn: number): string[] {
 
 /** One grid day: `key` is the stable ISO identity used for focus, selection, and range math. */
 
-function buildMonth(anchor: Date, weekStartsOn: number, fixedWeeks: boolean, disabled: ((date: Date) => boolean) | undefined): CalendarCell[][] {
+function buildMonth(
+  anchor: Date,
+  weekStartsOn: number,
+  fixedWeeks: boolean,
+  disabled: ((date: Date) => boolean) | undefined,
+): CalendarCell[][] {
   const monthStart = startOfMonth(anchor);
   const gridStart = startOfWeek(monthStart, weekStartsOn);
   const days = daysInMonth(anchor.getFullYear(), anchor.getMonth());
@@ -209,7 +226,8 @@ function defaultFocusKey(rows: CalendarCell[][]): string | undefined {
   return fallback;
 }
 
-const resolveFlag = (value: boolean | (() => boolean) | undefined): boolean => (typeof value === "function" ? value() : value === true);
+const resolveFlag = (value: boolean | (() => boolean) | undefined): boolean =>
+  typeof value === "function" ? value() : value === true;
 
 const chevronLeftIcon = (): JSX.Element => (
   <svg
@@ -257,7 +275,18 @@ const chevronRightIcon = (): JSX.Element => (
  * accessors, so a composed calendar drives them live while a standalone call
  * passes static values.
  */
-export function CalendarDayButton({ day: dayProp, selectedSingle, rangeStart, rangeEnd, rangeMiddle, disabled, focused, today, class: cls, ...attrs }: CalendarDayButtonProps): JSX.Element {
+export function CalendarDayButton({
+  day: dayProp,
+  selectedSingle,
+  rangeStart,
+  rangeEnd,
+  rangeMiddle,
+  disabled,
+  focused,
+  today,
+  class: cls,
+  ...attrs
+}: CalendarDayButtonProps): JSX.Element {
   const selected = (): boolean => resolveFlag(selectedSingle);
   return (
     <button
@@ -268,21 +297,30 @@ export function CalendarDayButton({ day: dayProp, selectedSingle, rangeStart, ra
       data-range-start={resolveFlag(rangeStart) ? "true" : undefined}
       data-range-end={resolveFlag(rangeEnd) ? "true" : undefined}
       data-range-middle={resolveFlag(rangeMiddle) ? "true" : undefined}
-      aria-selected={selected() || resolveFlag(rangeStart) || resolveFlag(rangeEnd) || resolveFlag(rangeMiddle) ? "true" : "false"}
-      aria-disabled={resolveFlag(disabled as boolean | (() => boolean) | undefined) ? "true" : undefined}
+      aria-selected={
+        selected() || resolveFlag(rangeStart) || resolveFlag(rangeEnd) || resolveFlag(rangeMiddle)
+          ? "true"
+          : "false"
+      }
+      aria-disabled={
+        resolveFlag(disabled as boolean | (() => boolean) | undefined) ? "true" : undefined
+      }
       aria-current={today === true ? "date" : undefined}
       tabindex={resolveFlag(focused) ? 0 : -1}
       class={
         cn("flex shrink-0 aspect-square size-auto w-full min-w-(--cell-size) flex-col items-center justify-center gap-1 rounded-md text-sm font-normal leading-none whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&>span]:text-xs [&>span]:opacity-70 hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 dark:hover:text-accent-foreground group-data-[focused=true]/day:relative group-data-[focused=true]/day:z-10 group-data-[focused=true]/day:border-ring group-data-[focused=true]/day:ring-[3px] group-data-[focused=true]/day:ring-ring/50 data-[range-end=true]:rounded-md data-[range-end=true]:rounded-r-md data-[range-end=true]:bg-primary data-[range-end=true]:text-primary-foreground data-[range-middle=true]:rounded-none data-[range-middle=true]:bg-accent data-[range-middle=true]:text-accent-foreground data-[range-start=true]:rounded-md data-[range-start=true]:rounded-l-md data-[range-start=true]:bg-primary data-[range-start=true]:text-primary-foreground data-[selected-single=true]:bg-primary data-[selected-single=true]:text-primary-foreground", cls)
       }
       {...attrs}
-    >{dayProp.getDate()}</button>
+    >
+      {dayProp.getDate()}
+    </button>
   );
 }
 
 /** One grid cell: the td carries the today/outside/disabled/range data attributes, the day button the aria semantics. */
 function DayCell(props: DayCellProps): JSX.Element {
-  const selectedSingle = (): boolean => props.selected() && !props.rangeStart() && !props.rangeEnd() && !props.rangeMiddle();
+  const selectedSingle = (): boolean =>
+    props.selected() && !props.rangeStart() && !props.rangeEnd() && !props.rangeMiddle();
   return (
     <td
       role="gridcell"
@@ -326,13 +364,30 @@ function DayCell(props: DayCellProps): JSX.Element {
  * previous/next month navigation. `numberOfMonths > 1`, `fromDate`/`toDate`
  * bounds, custom `formatters`, and week numbers are out of scope.
  */
-export function Calendar({ mode: modeProp, selected, onSelect, month: monthProp, onMonthChange, defaultMonth, disabled, showOutsideDays, fixedWeeks, weekStartsOn: weekStartProp, hideNavigation, classNames, class: cls, ...attrs }: CalendarProps): JSX.Element {
+export function Calendar({
+  mode: modeProp,
+  selected,
+  onSelect,
+  month: monthProp,
+  onMonthChange,
+  defaultMonth,
+  disabled,
+  showOutsideDays,
+  fixedWeeks,
+  weekStartsOn: weekStartProp,
+  hideNavigation,
+  classNames,
+  class: cls,
+  ...attrs
+}: CalendarProps): JSX.Element {
   const mode = modeProp ?? "single";
   const weekStartsOn = weekStartProp ?? 0;
 
   const view = signal(startOfMonth(defaultMonth ?? monthProp?.() ?? new Date()));
   const selection = signal<CalendarSelection>(
-    mode === "multiple" ? (selected as Date[] | undefined ?? []) : (selected as CalendarSelection),
+    mode === "multiple"
+      ? ((selected as Date[] | undefined) ?? [])
+      : (selected as CalendarSelection),
   );
   const hoverKey = signal<string | undefined>(undefined);
   const focusedKey = signal<string | undefined>(undefined);
@@ -387,7 +442,8 @@ export function Calendar({ mode: modeProp, selected, onSelect, month: monthProp,
   const isSelected = (date: Date): boolean => {
     const value = selection();
     if (mode === "single") return value !== undefined && isSameDay(value as Date, date);
-    if (mode === "multiple") return (value as Date[]).some((dateValue) => isSameDay(dateValue, date));
+    if (mode === "multiple")
+      return (value as Date[]).some((dateValue) => isSameDay(dateValue, date));
     const range = (value as CalendarRange) ?? {};
     if (range.from === undefined) return false;
     if (range.to === undefined) return isSameDay(range.from, date);
@@ -496,7 +552,8 @@ export function Calendar({ mode: modeProp, selected, onSelect, month: monthProp,
     else if (event.key === "PageDown") nextDate = addMonths(cell.date, 1);
     else if (event.key === "PageUp") nextDate = addMonths(cell.date, -1);
     else if (event.key === "Home") nextDate = startOfWeek(cell.date, weekStartsOn);
-    else if (event.key === "End") nextDate = addDays(startOfWeek(cell.date, weekStartsOn), WEEKDAY_COUNT - 1);
+    else if (event.key === "End")
+      nextDate = addDays(startOfWeek(cell.date, weekStartsOn), WEEKDAY_COUNT - 1);
     if (nextDate === undefined) return;
     event.preventDefault();
     focusDay(nextDate);
@@ -534,7 +591,9 @@ export function Calendar({ mode: modeProp, selected, onSelect, month: monthProp,
               class={
                 cn("font-medium select-none text-sm", classNames?.caption_label)
               }
-            >{monthLabel(view())}</div>
+            >
+              {monthLabel(view())}
+            </div>
           </div>
           {hideNavigation === true ? undefined : (
             <nav
@@ -587,42 +646,54 @@ export function Calendar({ mode: modeProp, selected, onSelect, month: monthProp,
                 {weekdayLabels(weekStartsOn).map((label, index) => (
                   <th
                     scope="col"
-                    abbr={new Date(2024, 0, 7 + ((weekStartsOn + index) % WEEKDAY_COUNT)).toLocaleDateString("en-US", { weekday: "long" })}
+                    abbr={new Date(
+                      2024,
+                      0,
+                      7 + ((weekStartsOn + index) % WEEKDAY_COUNT),
+                    ).toLocaleDateString("en-US", { weekday: "long" })}
                     data-slot="calendar-weekday"
                     class={
                       cn("flex-1 rounded-md text-[0.8rem] font-normal text-muted-foreground select-none", classNames?.weekday)
                     }
-                  >{label}</th>
+                  >
+                    {label}
+                  </th>
                 ))}
               </tr>
             </thead>
             <tbody data-slot="calendar-body">
-              <ForEach each={weeks} use={(row: CalendarCell[]) => (
-                <tr
-                  role="row"
-                  data-slot="calendar-week"
-                  class={
-                    cn("mt-2 flex w-full", classNames?.week)
-                  }
-                >
-                  <ForEach each={row} use={(cell: CalendarCell) => (
-                    <DayCell
-                      cell={cell}
-                      selected={() => isSelected(cell.date)}
-                      rangeStart={() => rangeEdge(cell, "start")}
-                      rangeMiddle={() => rangeEdge(cell, "middle")}
-                      rangeEnd={() => rangeEdge(cell, "end")}
-                      focused={() => focusedKey() === cell.key}
-                      hidden={showOutsideDays === false && cell.outside}
-                      dayClass={classNames?.day}
-                      buttonClass={classNames?.day_button}
-                      onSelect={selectDay}
-                      onHover={onDayHover}
-                      onLeave={() => hoverKey(undefined)}
+              <ForEach
+                each={weeks}
+                use={(row: CalendarCell[]) => (
+                  <tr
+                    role="row"
+                    data-slot="calendar-week"
+                    class={
+                      cn("mt-2 flex w-full", classNames?.week)
+                    }
+                  >
+                    <ForEach
+                      each={row}
+                      use={(cell: CalendarCell) => (
+                        <DayCell
+                          cell={cell}
+                          selected={() => isSelected(cell.date)}
+                          rangeStart={() => rangeEdge(cell, "start")}
+                          rangeMiddle={() => rangeEdge(cell, "middle")}
+                          rangeEnd={() => rangeEdge(cell, "end")}
+                          focused={() => focusedKey() === cell.key}
+                          hidden={showOutsideDays === false && cell.outside}
+                          dayClass={classNames?.day}
+                          buttonClass={classNames?.day_button}
+                          onSelect={selectDay}
+                          onHover={onDayHover}
+                          onLeave={() => hoverKey(undefined)}
+                        />
+                      )}
                     />
-                  )} />
-                </tr>
-              )} />
+                  </tr>
+                )}
+              />
             </tbody>
           </table>
         </div>
