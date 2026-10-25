@@ -1,0 +1,130 @@
+import Callout from "@components/Callout.astro";
+
+# runtime
+
+Compiled DOM construction functions: the stable wiring surface the babel plugin's imperative target emits against.
+
+<Callout variant="info">This is a compiler contract: emitted by the babel plugin's imperative target; stable across semver; not a hand-authoring API. Generated code imports it from `@hellajs/dom/runtime`; hand-written code uses JSX templates.</Callout>
+
+## API
+
+```typescript
+function template(html: string, ns?: string): () => Element;
+function fragment(html: string, ns?: string): () => DocumentFragment;
+function mark(fn: () => Element, props?: Record<string, unknown>): TemplateBuildFn;
+
+function text(parent: Element, value: unknown): void;
+function prop(el: Element, key: string, value: unknown): void;
+function on(el: Element, type: string, handler: EventListener): void;
+function direct(el: Element, type: string, handler: EventListener | DirectListenerSpec): void;
+function hook(el: Element, type: HookType, fn: HookFn): void;
+function errorConfig(el: Element, config: ErrorConfig, build: TemplateBuildFn): void;
+function child(parent: Element, value: unknown): void;
+
+type TemplateBuildFn = (() => Element) & {
+  isTemplate: true;
+  props?: Record<string, unknown>;
+  componentScope?: () => void;
+};
+```
+
+- `html`: The html string to parse. Parsed once per distinct string; the create function is cached and reused.
+- `ns`: The parse namespace for foreign-interior content (`"http://www.w3.org/2000/svg"` or `"http://www.w3.org/1998/Math/MathML"`). The compiler emits it from static JSX ancestry for hoisted svg/math-interior templates; hand-authored templates rooted at svg/MathML-only tags (`<g>`, `<circle>`, `<mrow>`, ...) pass it so the parse creates foreign-namespace elements. Cached per `html` + `ns` pair.
+- **Returns** (`template`, `fragment`): A create function producing a fresh clone per call, state-initialized before returning.
+- `fn`: The build function to flag. Mutated in place and returned.
+- `props`: Reconciliation metadata carried on the flagged fn; `key` is read by [`ForEach`](/reference/dom/foreach).
+- `value`: The child or text value. A primitive renders statically; a function registers a reactive effect.
+- **Returns** (`mark`): The same fn, flagged as a `TemplateBuildFn`.
+
+### `template`
+
+Parses a single-root html string and returns its cached create function. Each call clones the parsed root element and initializes its element state before returning, so the wiring calls that follow can run in any order: cleanup overlays register through the live parent chain regardless of call sequence.
+
+### `fragment`
+
+The multi-root counterpart: returns the whole parsed content as a `DocumentFragment`. Appending the fragment splays its children into the parent, matching fragment mount semantics. The first child is state-initialized as the scope carrier.
+
+Both accept `ns`: a template whose content belongs inside an `<svg>` or `<math>` subtree parses through the given namespace, so `<circle>` and friends carry the SVG `namespaceURI` without any runtime tag tables. A template parsed without `ns` creates HTML-namespace elements, and inserting an HTML-namespace `<circle>` into a live `<svg>` never upgrades it, so pass `ns` whenever the template's authored namespace is svg or MathML:
+
+```typescript
+import { template } from "@hellajs/dom/runtime";
+
+const circle = template("<circle/>", "http://www.w3.org/2000/svg");
+document.querySelector("svg")!.append(circle()); // namespaceURI === svg ns
+```
+
+Clones also upgrade defined custom elements: a template whose html contains a hyphenated tag re-creates each defined element as an upgraded instance in the fresh clone, so the wiring calls that follow see the real accessors before insertion. The upgrade pass is feature-gated: the compiler emits `import "@hellajs/dom/features/custom-elements"` once per program containing hyphenated tags; a hand-runtime program that builds such templates imports the same module. Without the feature the create path returns plain clones (no scan, no upgrade):
+
+### `mark`
+
+Flags a build function (sets `isTemplate`) and attaches reconciliation metadata. Every HellaNode-children consumer (mount wiring, [`ForEach`](/reference/dom/foreach), [`component`](/reference/dom/component), error boundaries) recognizes flagged functions: it invokes them and mounts the returned root instead of building a reactive region.
+
+### `text`
+
+Appends a text child. Static values render once (numbers normalized, so `0` renders `"0"`); function values append a persistent empty-text anchor once and keep it in sync through a reactive effect. The anchor keeps its DOM node identity for the region's lifetime.
+
+### `prop`
+
+Sets one property or attribute through the full `renderProp` branch order (class handling, style objects, custom-element properties, array joins). Function values register an effect with a last-value memo: the first run always applies, and a recompute equal to the last applied value skips the write. Effect errors dispatch through the error boundary system.
+
+Keys starting exactly with `on:`, `e:`, `hook:`, or `error:` route to the same seams the explicit `on` / `direct` / `hook` / `errorConfig` calls use, so rest-forwarded prefixed attrs from a component's `{...attrs}` spread land live. A function value under a prefixed key is a handler/hook, never a reactive value source. For `on:`, `e:`, and `error:` keys a later routed write wins per key; `hook:` registration stays accumulative. Colon-bearing keys outside the four families (`xlink:href`, `xml:lang`) keep the attribute branches.
+
+### `on`
+
+Registers a delegated event handler (the `on:` prefix machinery): one shared capture-phase listener per event type on the document body.
+
+### `direct`
+
+Registers a direct, non-delegated event handler (the `e:` prefix machinery): a per-instance listener with error-boundary wrapping and native listener options forwarding. The direct-events feature loads alongside generated code that uses it.
+
+### `hook`
+
+Registers a lifecycle hook (the `hook:` prefix machinery). Accumulative: hooks of the same type stack and all execute.
+
+### `errorConfig`
+
+Attaches an error config to an element (the `error:` prefix machinery) and snapshots the element's build function as the reset target: `context.reset()` in an error handler re-invokes the stored build for fresh nodes.
+
+### `child`
+
+Wires one child value in any compiled form: strings and numbers append text nodes, functions build reactive regions (persistent anchor plus effect, with node swaps ahead of the anchor), arrays recurse in order, `raw()` html parses and inserts, flagged build functions invoke inside a build frame and append the constructed root, and raw DOM nodes append directly (an eagerly-evaluated child expression). A HellaNode value throws: hand-built AST input is not a dom-target child. Booleans, `null`, and `undefined` render nothing.
+
+## Basic Usage
+
+```typescript
+import { signal } from "@hellajs/core";
+import { mark, on, prop, template, text } from "@hellajs/dom/runtime";
+
+const selected = signal(0);
+
+const rowTemplate = template(
+  `<tr><td class="col-md-1"></td><td class="col-md-4"><a class="lbl"></a></td></tr>`,
+);
+
+function Row(row: { id: number; label: string }) {
+  return mark(() => {
+    const root = rowTemplate();
+    text(root.children[0], row.id);
+    text(root.children[1].firstElementChild, row.label);
+    prop(root, "class", () => (selected() === row.id ? "danger" : ""));
+    on(root.children[1].firstElementChild, "click", () => selected(row.id));
+    return root;
+  }, { key: row.id });
+}
+```
+
+Generated components return flagged build functions this way; [`component`](/reference/dom/component) wraps them (chaining the disposal scope onto `componentScope`), and [`ForEach`](/reference/dom/foreach) reads `props.key` off the flagged fn for keyed reconciliation.
+
+## Important Considerations
+
+### Single-Root Templates
+
+`template` requires exactly one root element and throws otherwise. Multi-root markup uses `fragment`, whose create function returns the cloned content as a `DocumentFragment`.
+
+### Build Functions Never Order Their Calls
+
+The create function state-initializes the clone before returning it, so `text`, `prop`, `on`, and the other wiring calls register into the root's cleanup overlay no matter what order they run in. Generated code relies on this and emits wiring in dependency order only.
+
+### Equal Reactive Values Skip Writes
+
+`prop` memoizes the last applied value. A reactive getter that recomputes to the same value does not touch the DOM.

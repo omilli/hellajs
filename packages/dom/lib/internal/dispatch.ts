@@ -1,10 +1,5 @@
-import type { HellaNode, ErrorConfig, ErrorContext } from "../types/nodes";
-
-/**
- * @internal
- * Registered mountNode function from mount.ts, used for reset and fallback rendering.
- */
-let mountNodeFn: ((node: HellaNode) => Node) | null = null;
+import type { ErrorConfig, ErrorContext } from "../types/nodes";
+import type { TemplateBuildFn } from "../runtime";
 
 /**
  * @internal
@@ -24,13 +19,15 @@ export let resetErrorState: () => void = () => {};
  * handler iteration, and fallback rendering.
  *
  * Exported `let` is deliberate: the feature swaps the implementation at module init
- * through {@link setErrorDispatch} (the `setMountNode` injection pattern) while every
+ * through {@link setErrorDispatch} (the injection pattern) while every
  * importer keeps the live binding.
  * @param error The error that occurred
  * @param context The error context with phase, element, and event info
- * @returns Fallback HellaNode to render, or null for no UI change
+ * @returns Fallback flagged build fn to render, or null for no UI change
  */
-export let dispatchError: (error: Error, context: ErrorContext) => HellaNode | null = (error) => {
+export let dispatchError: (error: Error, context: ErrorContext) => TemplateBuildFn | null = (
+  error,
+) => {
   console.error("[dom]", error);
   return null;
 };
@@ -58,7 +55,7 @@ export let resolveErrorConfig: (origin: Element) => ErrorConfig | undefined = ()
  * The errors feature's dispatch implementations, registered at its module init.
  */
 interface ErrorDispatch {
-  dispatchError: (error: Error, context: ErrorContext) => HellaNode | null;
+  dispatchError: (error: Error, context: ErrorContext) => TemplateBuildFn | null;
   findBoundary: (origin: Element | undefined) => Element | null;
   resolveErrorConfig: (origin: Element) => ErrorConfig | undefined;
   resetErrorState: () => void;
@@ -66,7 +63,7 @@ interface ErrorDispatch {
 
 /**
  * @internal
- * Registers the errors feature's dispatch machinery (the `setMountNode` injection
+ * Registers the errors feature's dispatch machinery (the injection
  * pattern — the implementations live in `lib/features/errors.ts` so unused error
  * wiring tree-shakes out of bundles that never load the feature).
  * @param impl The error dispatch implementations
@@ -76,25 +73,6 @@ export function setErrorDispatch(impl: ErrorDispatch): void {
   findBoundary = impl.findBoundary;
   resolveErrorConfig = impl.resolveErrorConfig;
   resetErrorState = impl.resetErrorState;
-}
-
-/**
- * @internal
- * Registers the mountNode function from mount.ts.
- * Called once during module initialization to enable reset functionality.
- * @param fn The mountNode function
- */
-export function setMountNode(fn: (node: HellaNode) => Node): void {
-  mountNodeFn = fn;
-}
-
-/**
- * @internal
- * Returns the registered mountNode function.
- * Used by events.ts to render fallback UI.
- */
-export function getMountNode(): ((node: HellaNode) => Node) | null {
-  return mountNodeFn;
 }
 
 /**

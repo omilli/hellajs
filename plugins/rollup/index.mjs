@@ -3,7 +3,21 @@ import { transformSync } from "@babel/core";
 import presetTypeScript from "@babel/preset-typescript";
 import { readFileSync } from "fs";
 
-export default function rollupHellaJS() {
+/**
+ * Rollup wrapper around babel-plugin-hellajs. `{ target }` is forwarded to the
+ * babel plugin ("dom" default — imperative `@hellajs/dom/runtime` construction;
+ * rollup is a client-bundle tool; pass `"ast"` explicitly for a server target);
+ * unknown options throw at plugin construction via the babel plugin's validation.
+ * @param {import("./index.d.ts").RollupHellaJSOptions} [options] `{ target }` — forwarded to `babelHellaJS`
+ * @returns {import("./index.d.ts").RollupPlugin} Rollup plugin object
+ */
+export default function rollupHellaJS(options) {
+  const pluginOptions = options || {};
+  const target = pluginOptions.target ?? "dom";
+  // Eager construction validates { target } at wrapper construction — babel would
+  // otherwise first reach the validation at the initial transform. The plugin API's
+  // first positional argument (babel's core module) is unused by the validation.
+  babelHellaJS(undefined, pluginOptions);
   return {
     name: "rollup-plugin-hellajs",
     enforce: "pre",
@@ -17,7 +31,7 @@ export default function rollupHellaJS() {
       if (id.endsWith(".jsx") || id.endsWith(".tsx")) {
         const code = readFileSync(id, "utf8");
         const result = transformSync(code, {
-          plugins: [babelHellaJS],
+          plugins: [[babelHellaJS, { ...pluginOptions, target }]],
           presets: [presetTypeScript],
           filename: id,
           ast: false,
@@ -44,7 +58,7 @@ export default function rollupHellaJS() {
       if (id.includes("node_modules")) return null;
 
       const result = transformSync(code, {
-        plugins: [babelHellaJS],
+        plugins: [[babelHellaJS, { ...pluginOptions, target }]],
         presets: id.endsWith(".tsx") || id.endsWith(".ts") ? [presetTypeScript] : [],
         filename: id,
         ast: false,

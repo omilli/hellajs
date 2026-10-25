@@ -45,18 +45,19 @@ describe("compile", () => {
     expect(leaked).toEqual([]);
   });
 
-  test("emits plain javascript with verbatim external imports and no injected runtime", () => {
+  test("emits plain javascript with verbatim external imports and the dom runtime import", () => {
     const cssJsx = readArtifact("button", "css", "button.js");
     const tailwindJsx = readArtifact("button", "tailwind", "button.js");
     for (const compiled of [cssJsx, tailwindJsx]) {
-      expect(compiled).not.toMatch(/\binterface\b|\bimport type\b|: ButtonProps|as HellaNode/);
+      expect(compiled).not.toMatch(/\binterface\b|\bimport type\b|: ButtonProps|as JSX.Element/);
       expect(compiled).not.toMatch(/\bReact\b|createElement/);
     }
+    const domRuntimeImport = `import { template as _hellaTemplate, mark as _hellaMark, prop as _hellaProp, child as _hellaChild } from "@hellajs/dom/runtime";`;
     expect(cssJsx).toContain(`import { style } from "@hellajs/css";`);
     expect(cssJsx).toContain(`import { tokens } from "../../theme/tokens.js";`);
-    expect(cssJsx).not.toContain("@hellajs/dom");
+    expect(cssJsx).toContain(domRuntimeImport);
     expect(tailwindJsx).toContain(`import { cn } from "./cn.js";`);
-    expect(tailwindJsx).not.toContain("@hellajs/");
+    expect(tailwindJsx).toContain(domRuntimeImport);
     expect(readArtifact("cn", "cn.js")).toContain(`import { clsx } from "clsx";`);
   });
 
@@ -64,11 +65,11 @@ describe("compile", () => {
     const tailwindJsx = readArtifact("button", "tailwind", "button.js");
     const cssJsx = readArtifact("button", "css", "button.js");
     expect(tailwindJsx).toContain(
-      `class: () => cn("inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", variants[variant ?? "default"], sizes[size ?? "default"], cls)`,
+      `_hellaProp(_hellaRoot, "class", () => cn("inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", variants[variant ?? "default"], sizes[size ?? "default"], cls))`,
     );
     expect(tailwindJsx).not.toContain("@hellajs/css");
     expect(cssJsx).toContain(
-      `class: [base, variants[variant ?? "default"], sizes[size ?? "default"], cls]`,
+      `_hellaProp(_hellaRoot, "class", [base, variants[variant ?? "default"], sizes[size ?? "default"], cls])`,
     );
     expect(cssJsx.includes('layer: "hella"')).toBe(false);
     expect(cssJsx).toContain("style(");

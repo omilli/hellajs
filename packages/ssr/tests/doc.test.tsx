@@ -3,7 +3,6 @@ import { delay } from "@utils/test-helpers.js";
 import { Suspense } from "@hellajs/dom";
 import { ssr, doc } from "@hellajs/ssr";
 import type { DocOptions } from "@hellajs/ssr";
-import type { HellaNode } from "@hellajs/dom";
 import { collect } from "./helpers";
 
 /** A ReadableStream<string> that emits the given chunks then closes — a deterministic body. */
@@ -299,16 +298,14 @@ describe("doc", () => {
   test("propagates backpressure — the body producer stays parked while the document consumer idles", async () => {
     const step = vi.fn(() => Promise.resolve("b")); // each call = the body walk reached that child
     const body = ssr.stream(
-      (
-        <div>
-          {step}
-          {step}
-          {step}
-          {step}
-          {step}
-          {step}
-        </div>
-      ) as HellaNode,
+      <div>
+        {step}
+        {step}
+        {step}
+        {step}
+        {step}
+        {step}
+      </div>,
     );
     const reader = doc({ body }).getReader();
     const first = await reader.read(); // the document shell — pulls the prefix only, not the body walk
@@ -366,14 +363,12 @@ describe("doc", () => {
   test("emits a bag collected by ssr into <head> end-to-end (string mode)", () => {
     const head = ssr.head();
     const body = ssr(
-      (
-        <div>
-          <title>Collected</title>
-          <meta name="description" content="d" />
-          <style>{"a{color:red}"}</style>
-          <p>x</p>
-        </div>
-      ) as HellaNode,
+      <div>
+        <title>Collected</title>
+        <meta name="description" content="d" />
+        <style>{"a{color:red}"}</style>
+        <p>x</p>
+      </div>,
       { head },
     );
     expect(doc({ body, head, mount: "#app" })).toBe(

@@ -13,7 +13,7 @@ import presetTypeScript from "@babel/preset-typescript";
 import { readFile } from "node:fs/promises";
 import { spawn } from "node:child_process";
 
-const hellajsJsx = {
+const hellajsJsx = (target) => ({
   name: "hellajs-jsx",
   setup(build) {
     build.onLoad({ filter: /\.tsx$/ }, async (args) => {
@@ -21,7 +21,7 @@ const hellajsJsx = {
       const source = await readFile(args.path, "utf8");
       const result = await transformAsync(source, {
         filename: args.path,
-        plugins: [babelPluginHellajs],
+        plugins: [[babelPluginHellajs, target ? { target } : {}]],
         presets: [presetTypeScript],
         sourceType: "module",
         babelrc: false,
@@ -30,7 +30,7 @@ const hellajsJsx = {
       return { contents: result.code, loader: "js" };
     });
   },
-};
+});
 
 const client = {
   entryPoints: ["src/client.tsx"],
@@ -38,7 +38,7 @@ const client = {
   format: "esm",
   platform: "browser",
   outfile: "dist/client.js",
-  plugins: [hellajsJsx],
+  plugins: [hellajsJsx("dom")], // client: imperative runtime construction (the wrapper default, explicit here — esbuild bridges bypass the wrappers)
 };
 
 const server = {
@@ -48,7 +48,7 @@ const server = {
   platform: "node",
   outfile: "dist/server.mjs",
   external: ["@hellajs/*", "hono", "@hono/node-server"],
-  plugins: [hellajsJsx],
+  plugins: [hellajsJsx()], // server: default-"ast" HellaNode emission for @hellajs/ssr
 };
 
 const watch = process.argv.includes("--watch");

@@ -1,6 +1,15 @@
-import { setupContainer } from "@utils/test-helpers.js";
+import { setupContainer, compileJsx, runCompiledModule } from "@utils/test-helpers.js";
 import { ForEach, onError } from "@hellajs/dom";
 import { ssr } from "@hellajs/ssr";
+import * as domRuntimeNs from "@hellajs/dom/runtime";
+import * as domNs from "@hellajs/dom";
+import * as coreNs from "@hellajs/core";
+import * as domFeatureErrorsNs from "@hellajs/dom/features/errors";
+import * as domFeatureHooksNs from "@hellajs/dom/features/hooks";
+import * as domFeatureDirectNs from "@hellajs/dom/features/direct-events";
+import * as domFeatureRawNs from "@hellajs/dom/features/raw";
+import * as domFeatureNamespacesNs from "@hellajs/dom/features/namespaces";
+import * as domFeatureCustomElementsNs from "@hellajs/dom/features/custom-elements";
 import type { HellaChild, HellaNode } from "@hellajs/dom";
 
 /**
@@ -10,7 +19,7 @@ import type { HellaChild, HellaNode } from "@hellajs/dom";
 export const createList = <T,>(
   items: T[] | (() => T[]),
   itemRenderer?: (item: T) => HellaChild,
-): HellaNode => (
+): JSX.Element => (
   <ul>
     <ForEach
       each={items}
@@ -28,7 +37,7 @@ export const createKeyedList = <T,>(
   items: T[] | (() => T[]),
   getKey: (item: T, index: number) => unknown,
   itemRenderer?: (item: T) => HellaChild,
-): HellaNode => (
+): JSX.Element => (
   <ul>
     <ForEach
       each={items}
@@ -42,9 +51,9 @@ export const createKeyedList = <T,>(
 export const getListTexts = () =>
   Array.from(document.querySelectorAll("li")).map((li) => li.textContent);
 
-export const fallbackHandler = (def: HellaNode | (() => HellaNode) | null = null) =>
+export const fallbackHandler = (def: JSX.Element | (() => JSX.Element) | null = null) =>
   onError(
-    (error: Error, context) => context.config?.fallback?.(error) ?? (def as HellaNode | null),
+    (error: Error, context) => context.config?.fallback?.(error) ?? (def as JSX.Element | null),
   );
 
 /**
@@ -168,4 +177,102 @@ export const streamContainer = async (node: HellaNode | (() => HellaNode)): Prom
   }
   container.innerHTML = html;
   return container;
+};
+
+/** Module bindings for `runCompiledModule` over two-target sources: the runtime namespaces plus the REAL feature modules (importing them loads the registrations the stripped bare imports would have). */
+export const TWO_TARGET_MODULES: Record<string, unknown> = {
+  "@hellajs/dom/runtime": domRuntimeNs,
+  "@hellajs/dom": domNs,
+  "@hellajs/core": coreNs,
+  "@hellajs/dom/features/errors": domFeatureErrorsNs,
+  "@hellajs/dom/features/hooks": domFeatureHooksNs,
+  "@hellajs/dom/features/direct-events": domFeatureDirectNs,
+  "@hellajs/dom/features/raw": domFeatureRawNs,
+  "@hellajs/dom/features/namespaces": domFeatureNamespacesNs,
+  "@hellajs/dom/features/custom-elements": domFeatureCustomElementsNs,
+};
+
+/**
+ * Compiles one app source at both plugin targets — the wrapper's per-environment split, in-test:
+ * the server arm (default ast) feeds `ssrContainer` (marker-bearing server HTML); the client arm
+ * (target "dom") yields the flagged build `hydrate` consumes. The source's last statement binds
+ * an exports object (`const __out = { App, count }` — name overridable); the CLIENT arm's entries
+ * are the live ones the test drives. Signals live at module scope so both arms initialize to the
+ * same values the server rendered.
+ * @param source The app module source (imports from `@hellajs/core` / `@hellajs/dom` only)
+ * @param outName The exports-object binding name (default `__out`)
+ * @returns The ssr-filled container + the client module's exports
+ */
+export const twoTargetContainer = async (
+  source: string,
+  outName = "__out",
+): Promise<{
+  container: Element;
+  client: Record<string, unknown>;
+  server: Record<string, unknown>;
+}> => {
+  const serverOut = runCompiledModule(
+    await compileJsx(source),
+    { ...TWO_TARGET_MODULES, __HELLA_ARM: "server" },
+    outName,
+  ) as Record<string, unknown>;
+  const serverApp = serverOut.App;
+  // An async component arm resolves to its AST only after awaiting — ssr needs the node.
+  const serverNode =
+    typeof serverApp === "function" ? await (serverApp as () => unknown)() : serverApp;
+  const client = runCompiledModule(
+    await compileJsx(source, { target: "dom" }),
+    { ...TWO_TARGET_MODULES, __HELLA_ARM: "client" },
+    outName,
+  ) as Record<string, unknown>;
+  return { container: ssrContainer(serverNode as HellaNode), client, server: serverOut };
+};
+
+/** {@link twoTargetContainer} with the `ssr.async()` fill — awaited regions (Lazy loaders, Promise getters) resolved in the server HTML. */
+export const twoTargetAsyncContainer = async (
+  source: string,
+  outName = "__out",
+): Promise<{
+  container: Element;
+  client: Record<string, unknown>;
+  server: Record<string, unknown>;
+}> => {
+  const serverOut = runCompiledModule(
+    await compileJsx(source),
+    { ...TWO_TARGET_MODULES, __HELLA_ARM: "server" },
+    outName,
+  ) as Record<string, unknown>;
+  const serverApp = serverOut.App;
+  const serverNode =
+    typeof serverApp === "function" ? await (serverApp as () => unknown)() : serverApp;
+  const client = runCompiledModule(
+    await compileJsx(source, { target: "dom" }),
+    { ...TWO_TARGET_MODULES, __HELLA_ARM: "client" },
+    outName,
+  ) as Record<string, unknown>;
+  const container = setupContainer();
+  container.innerHTML = await ssr.async(serverNode as HellaNode);
+  return { container, client, server: serverOut };
+};
+
+/** {@link twoTargetContainer} with the `ssr.stream()` fill — streaming HTML (Suspense fallbacks, sentinels, staged templates). */
+export const twoTargetStreamed = async (
+  source: string,
+  outName = "__out",
+): Promise<{
+  container: Element;
+  client: Record<string, unknown>;
+  server: Record<string, unknown>;
+}> => {
+  const server = runCompiledModule(
+    await compileJsx(source),
+    { ...TWO_TARGET_MODULES, __HELLA_ARM: "server" },
+    outName,
+  ) as Record<string, unknown>;
+  const client = runCompiledModule(
+    await compileJsx(source, { target: "dom" }),
+    { ...TWO_TARGET_MODULES, __HELLA_ARM: "client" },
+    outName,
+  ) as Record<string, unknown>;
+  return { container: await streamContainer(server.App as HellaNode), client, server };
 };

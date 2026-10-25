@@ -1,4 +1,5 @@
 import { describe, test, expect } from "vite-plus/test";
+import babelHellaJS from "../index.mjs";
 import { transformJSX, normalize, getNamedImports } from "./helpers";
 
 describe("babel", () => {
@@ -108,7 +109,7 @@ describe("babel", () => {
     test("component keeps prefixed attrs verbatim in props", () => {
       const output = transformJSX("<Button on:click={h}>x</Button>");
       expect(normalize(output)).toBe(
-        'import "@hellajs/dom/features/routed-props"; import { component } from "@hellajs/dom"; component(Button, { "on:click": h, children: ["x"] });',
+        'import { component } from "@hellajs/dom"; component(Button, { "on:click": h, children: ["x"] });',
       );
     });
   });
@@ -256,11 +257,13 @@ describe("babel", () => {
       expect(output).not.toContain("@hellajs/dom/features");
     });
 
-    test("prefixed attrs in component position emit routed-props plus the routed feature", () => {
+    test("prefixed attrs in component position keep verbatim props and load the features they name", () => {
       const output = transformJSX(
         "<Comp on:click={a} hook:afterMount={b} error:fallback={c} e:click={d} />",
       );
-      expect(output).toContain('import "@hellajs/dom/features/routed-props";');
+      // Old behavior emitted a routed-props feature import too — the walker-era runtime
+      // router that deletion removed; prefixed keys now reach the component verbatim.
+      expect(output).not.toContain("@hellajs/dom/features/routed-props");
       expect(output).toContain('import "@hellajs/dom/features/hooks";');
       expect(output).toContain('import "@hellajs/dom/features/errors";');
       expect(output).toContain('import "@hellajs/dom/features/direct-events";');
@@ -269,6 +272,14 @@ describe("babel", () => {
     test("svg and math tags emit the namespaces feature import", () => {
       const output = transformJSX("<div><svg><circle /></svg><math /></div>");
       const matches = output.match(/import\s+"@hellajs\/dom\/features\/namespaces";/g);
+      expect(matches?.length).toBe(1);
+    });
+
+    test("hyphenated tags emit the custom-elements feature import", () => {
+      // The static hyphenated element hoists (scan collection); the dynamic-attr one
+      // falls through to the visitor (dynamic element emission collection).
+      const output = transformJSX('<div><my-icon name="bolt" /><my-badge class={cls} /></div>');
+      const matches = output.match(/import\s+"@hellajs\/dom\/features\/custom-elements";/g);
       expect(matches?.length).toBe(1);
     });
 
@@ -536,6 +547,58 @@ describe("babel", () => {
       const output = transformJSX("<Comp>{foo()}</Comp>");
       expect(normalize(output)).toBe(
         'import { component } from "@hellajs/dom"; component(Comp, { children: [foo()] });',
+      );
+    });
+  });
+
+  describe("target option", () => {
+    test("defaults to the ast target without options", () => {
+      const output = transformJSX("<div />");
+      expect(normalize(output)).toBe(
+        'const _hellaStatic = { tag: "div", static: true }; _hellaStatic;',
+      );
+      expect(output).not.toContain("@hellajs/dom/runtime");
+    });
+
+    test("accepts target dom and emits runtime construction", () => {
+      const output = transformJSX("<div />", { target: "dom" });
+      expect(output).toContain("@hellajs/dom/runtime");
+      expect(output).toContain("_hellaMark(");
+    });
+
+    test("throws on an invalid target at construction", () => {
+      expect(() => babelHellaJS(undefined, { target: "bogus" })).toThrow(
+        '[babel-plugin-hellajs] invalid target "bogus" — expected "ast" or "dom"',
+      );
+    });
+
+    test("throws on unknown option keys at construction", () => {
+      expect(() => babelHellaJS(undefined, { targets: "dom" })).toThrow(
+        '[babel-plugin-hellajs] unknown option "targets" — only "target" is supported',
+      );
+    });
+
+    test("no-options compilation of a representative file is byte-identical to the ast golden", () => {
+      const output = transformJSX(`
+        import { signal } from '@hellajs/core';
+        import { Button } from './Button';
+        const [count, setCount] = signal(0);
+        const view = (
+          <section class="shell">
+            <h1>Count {count}</h1>
+            <Button on:click={() => setCount(count() + 1)}>Go</Button>
+            <div hook:afterMount={console.log} />
+          </section>
+        );
+      `);
+      expect(normalize(output)).toBe(
+        'import "@hellajs/dom/features/hooks"; ' +
+          'import { component } from "@hellajs/dom"; ' +
+          "import { signal } from '@hellajs/core'; import { Button } from './Button'; " +
+          'const [count, setCount] = signal(0); const view = { tag: "section", props: { class: "shell" }, ' +
+          'children: [{ tag: "h1", children: ["Count ", count] }, ' +
+          'component(Button, { "on:click": () => setCount(count() + 1), children: ["Go"] }), ' +
+          '{ tag: "div", hooks: { afterMount: console.log } }] };',
       );
     });
   });

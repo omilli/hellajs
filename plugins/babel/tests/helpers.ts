@@ -1,9 +1,16 @@
 import babel from "@babel/core";
 import babelHellaJS from "../index.mjs";
 
-export function transformJSX(code: string): string {
+/**
+ * Transform JSX source through the plugin with optional plugin options
+ * (`{ target: "dom" }` for the imperative builder).
+ * @param code JSX source
+ * @param options Plugin options forwarded to `babelHellaJS`
+ * @returns Transformed code
+ */
+export function transformJSX(code: string, options?: Record<string, unknown>): string {
   const result = babel.transformSync(code, {
-    plugins: [[babelHellaJS]],
+    plugins: options ? [[babelHellaJS, options]] : [[babelHellaJS]],
     configFile: false,
   });
   return result?.code || "";

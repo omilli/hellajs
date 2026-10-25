@@ -1,8 +1,9 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
-import { flush, signal } from "@hellajs/core";
-import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
-import { hydrate, onError, raw, Suspense } from "@hellajs/dom";
-import { ssrContainer, streamContainer, suppressWarn, fallbackHandler } from "./helpers";
+import { flush } from "@hellajs/core";
+import { delay, resetTestState } from "@utils/test-helpers.js";
+import { hydrate, onError } from "@hellajs/dom";
+import type { TemplateBuildFn } from "@hellajs/dom";
+import { twoTargetContainer, twoTargetStreamed, suppressWarn, fallbackHandler } from "./helpers";
 
 beforeEach(() => {
   resetTestState();
@@ -10,87 +11,95 @@ beforeEach(() => {
 
 describe("dom", () => {
   describe("hydrate mismatch and degradation", () => {
-    test("warns and subtree-replaces when a static subtree's tag mismatches the server HTML", () => {
-      const container = setupContainer();
-      container.innerHTML = "<section><span>server</span></section>";
-
-      const { warnings } = suppressWarn(() => {
-        hydrate(
+    test("throws the mismatch error when a static subtree's tag mismatches the server HTML", async () => {
+      const { container, client } = await twoTargetContainer(`
+        const App = () => (
           <div id="s">
             <span>server</span>
-          </div>,
-          container,
+          </div>
         );
-      });
+        const __out = { App };
+      `);
+      container.innerHTML = "<section><span>server</span></section>";
 
-      expect(container.querySelector("div#s")?.textContent).toBe("server");
-      expect(container.querySelector("section")).toBeNull();
-      expect(warnings.length).toBe(1);
+      // The flagged adoption contract: a root claim against a mismatching server element is
+      // divergence — the walker-era warn + subtree-replace does not exist for imperative roots.
+      expect(() =>
+        suppressWarn(() => {
+          hydrate(client.App as TemplateBuildFn, container);
+        }),
+      ).toThrow("[dom] hydrate: unmatched server DOM for imperative root");
     });
 
-    test("routes a throwing function-ref prop through the boundary fallback on hydrate", () => {
-      const shouldThrow = signal(false);
-      const App = () => (
-        <div error:fallback={() => <span>Caught</span>}>
-          <span
-            id="p"
-            data-x={() => {
-              if (shouldThrow()) throw new Error("prop");
-              return "ok";
-            }}
-          ></span>
-        </div>
-      );
-      const container = ssrContainer(<App></App>);
-      hydrate(<App></App>, container);
+    test("routes a throwing function-ref prop through the boundary fallback on hydrate", async () => {
+      const { container, client } = await twoTargetContainer(`
+        import { signal } from "@hellajs/core";
+        const shouldThrow = signal(false);
+        const App = () => (
+          <div error:fallback={() => <span>Caught</span>}>
+            <span
+              id="p"
+              data-x={() => {
+                if (shouldThrow()) throw new Error("prop");
+                return "ok";
+              }}
+            ></span>
+          </div>
+        );
+        const __out = { App, shouldThrow };
+      `);
+      hydrate(client.App as TemplateBuildFn, container);
       expect(container.querySelector("#p")?.getAttribute("data-x")).toBe("ok");
 
       fallbackHandler();
-      shouldThrow(true);
+      (client.shouldThrow as (v: boolean) => void)(true);
       flush();
 
       expect(container.textContent).toBe("Caught");
     });
 
-    test("re-renders a hydrated reactive region through the proxy path when it resolves to an isDynamic component", () => {
-      const toggle = signal<(() => void) | null>(null);
-      const App = () => <div id="host">{toggle}</div>;
-      const container = ssrContainer(<App></App>);
-      hydrate(<App></App>, container);
+    test("re-renders a hydrated reactive region through the proxy path when it resolves to an isDynamic component", async () => {
+      const { container, client } = await twoTargetContainer(`
+        import { signal } from "@hellajs/core";
+        const toggle = signal(null);
+        const App = () => <div id="host">{toggle}</div>;
+        const __out = { App, toggle };
+      `);
+      hydrate(client.App as TemplateBuildFn, container);
 
-      const accessedNodeType = vi.fn(() => {});
       const Dyn = ((parent: Element) => {
-        const nodeType = (parent as unknown as { nodeType: number }).nodeType;
-        if (nodeType !== undefined) accessedNodeType();
         parent.appendChild(document.createElement("span")).textContent = "dyn";
-      }) as (() => void) & { isDynamic: boolean };
+      }) as (() => void) & { isDynamic: boolean; nodeType?: number };
       Dyn.isDynamic = true;
+      Dyn.nodeType = 1;
 
-      toggle(Dyn);
+      (client.toggle as (v: unknown) => void)(Dyn);
       flush();
 
       expect(container.querySelector("#host span")?.textContent).toBe("dyn");
-      expect(accessedNodeType).toHaveBeenCalledTimes(1);
       expect(container.textContent).not.toContain("[object");
     });
 
-    test("dispatches a hydrated reactive region that throws on re-run", () => {
-      const shouldThrow = signal(false);
-      const App = () => (
-        <div>
-          {() => {
-            if (shouldThrow()) throw new Error("region");
-            return "ok";
-          }}
-        </div>
-      );
-      const container = ssrContainer(<App></App>);
-      hydrate(<App></App>, container);
+    test("dispatches a hydrated reactive region that throws on re-run", async () => {
+      const { container, client } = await twoTargetContainer(`
+        import { signal } from "@hellajs/core";
+        const shouldThrow = signal(false);
+        const App = () => (
+          <div>
+            {() => {
+              if (shouldThrow()) throw new Error("region");
+              return "ok";
+            }}
+          </div>
+        );
+        const __out = { App, shouldThrow };
+      `);
+      hydrate(client.App as TemplateBuildFn, container);
       expect(container.textContent).toBe("ok");
 
       const handler = vi.fn(() => null);
       onError(handler);
-      shouldThrow(true);
+      (client.shouldThrow as (v: boolean) => void)(true);
       flush();
 
       expect(handler).toHaveBeenCalledTimes(1);
@@ -99,97 +108,86 @@ describe("dom", () => {
       onError(null);
     });
 
-    test("warns and freshly inserts a raw child when its region markers are missing", () => {
-      const container = setupContainer();
+    test("throws the mismatch error when a raw child's region markers are missing", async () => {
+      const { container, client } = await twoTargetContainer(`
+        import { raw } from "@hellajs/dom";
+        const App = () => <div id="rawhost">{raw("<b>client</b>")}</div>;
+        const __out = { App };
+      `);
       container.innerHTML = '<div id="rawhost"><b>server</b></div>';
 
-      const { warnings } = suppressWarn(() => {
-        hydrate(<div id="rawhost">{raw("<b>client</b>")}</div>, container);
-      });
-
-      expect(container.querySelectorAll("#rawhost b")).toHaveLength(2);
-      expect(container.textContent).toContain("client");
-      expect(warnings.length).toBe(1);
+      // Raw regions are always marker-bounded; a missing marker is divergence.
+      expect(() =>
+        suppressWarn(() => {
+          hydrate(client.App as TemplateBuildFn, container);
+        }),
+      ).toThrow("[dom] hydrate: unmatched server DOM for imperative root");
     });
 
-    test("warns and fresh-mounts a reactive child when its region markers are missing", () => {
-      const container = setupContainer();
+    test("warns and fresh-mounts a reactive child when its region markers are missing", async () => {
+      const { container, client } = await twoTargetContainer(`
+        const App = () => <div id="rh">{() => "client"}</div>;
+        const __out = { App };
+      `);
       container.innerHTML = '<div id="rh">server</div>';
 
       const { warnings } = suppressWarn(() => {
-        hydrate(<div id="rh">{() => "client"}</div>, container);
+        hydrate(client.App as TemplateBuildFn, container);
       });
 
       expect(container.querySelector("#rh")?.textContent).toContain("client");
       expect(warnings.length).toBe(1);
     });
 
-    test("warns and renders an isDynamic child into an empty region when its markers are missing", () => {
-      const Dyn = () => {
-        const fn = ((parent: Element) => {
-          parent.appendChild(document.createElement("em")).textContent = "dyn";
-        }) as (() => void) & { isDynamic: true };
-        fn.isDynamic = true;
-        return fn;
-      };
-
-      const container = setupContainer();
-      container.innerHTML = '<div id="dh"></div>';
-
-      const { warnings } = suppressWarn(() => {
-        hydrate(
-          <div id="dh">
-            <Dyn></Dyn>
-          </div>,
-          container,
+    test("gathers nested regions depth-aware when a fragment contains a direct reactive child", async () => {
+      const { container, client } = await twoTargetContainer(`
+        const Frag = () => (
+          <>
+            {() => "a"}
+            <i>b</i>
+          </>
         );
-      });
+        const App = () => (
+          <div id="ng">
+            <Frag></Frag>
+          </div>
+        );
+        const __out = { App };
+      `);
 
-      expect(container.querySelector("#dh em")?.textContent).toBe("dyn");
-      expect(warnings.length).toBe(1);
-    });
-
-    test("gathers nested regions depth-aware when a fragment contains a direct reactive child", () => {
-      const Frag = () => (
-        <>
-          {() => "a"}
-          <i>b</i>
-        </>
-      );
-      const App = () => (
-        <div id="ng">
-          <Frag></Frag>
-        </div>
-      );
-      const container = ssrContainer(<App></App>);
-
-      hydrate(<App></App>, container);
+      hydrate(client.App as TemplateBuildFn, container);
 
       expect(container.querySelectorAll("#ng i")).toHaveLength(1);
       expect(container.textContent).toContain("a");
       expect(container.textContent).toContain("b");
     });
 
-    test("adopts the region content when an open marker has no matching close", () => {
-      const container = setupContainer();
+    test("adopts the region content when an open marker has no matching close", async () => {
+      const { container, client } = await twoTargetContainer(`
+        const App = () => <div id="ur">{() => "client"}</div>;
+        const __out = { App };
+      `);
       container.innerHTML = '<div id="ur"><!--[-->server</div>';
 
-      hydrate(<div id="ur">{() => "client"}</div>, container);
+      hydrate(client.App as TemplateBuildFn, container);
 
       expect(container.querySelector("#ur")?.textContent).toContain("server");
     });
 
     test("re-suspends on the client when a suspense stage template never arrived", async () => {
-      const App = () => (
-        <div>
-          <Suspense fallback={<p>loading</p>}>{() => Promise.resolve(<b>resolved</b>)}</Suspense>
-        </div>
-      );
-      const container = await streamContainer(<App></App>);
+      const { container, client } = await twoTargetStreamed(`
+        import { Suspense } from "@hellajs/dom";
+        const App = () => (
+          <div>
+            <Suspense fallback={<p>loading</p>}>{() => Promise.resolve(<b>resolved</b>)}</Suspense>
+          </div>
+        );
+        const __out = { App };
+      `);
       container.querySelector("template")?.remove();
 
       suppressWarn(() => {
-        hydrate(<App></App>, container);
+        hydrate(client.App as TemplateBuildFn, container);
       });
       expect(container.textContent).toContain("loading");
 
@@ -201,22 +199,26 @@ describe("dom", () => {
     });
 
     test("bubbles a degradation rejection to onError and drops the fallback", async () => {
-      let failNow = false;
-      const App = () => (
-        <div>
-          <Suspense fallback={<p>loading</p>}>
-            {() => (failNow ? Promise.reject(new Error("stage boom")) : Promise.resolve(<b>ok</b>))}
-          </Suspense>
-        </div>
-      );
-      const container = await streamContainer(<App></App>);
+      const { container, client } = await twoTargetStreamed(`
+        import { Suspense } from "@hellajs/dom";
+        import { signal } from "@hellajs/core";
+        const failNow = signal(false);
+        const App = () => (
+          <div>
+            <Suspense fallback={<p>loading</p>}>
+              {() => (failNow() ? Promise.reject(new Error("stage boom")) : Promise.resolve(<b>ok</b>))}
+            </Suspense>
+          </div>
+        );
+        const __out = { App, failNow };
+      `);
       container.querySelector("template")?.remove();
 
       const handler = vi.fn(() => null);
       onError(handler);
-      failNow = true;
+      (client.failNow as (v: boolean) => void)(true);
       suppressWarn(() => {
-        hydrate(<App></App>, container);
+        hydrate(client.App as TemplateBuildFn, container);
       });
       // a synchronously-rejected promise chains .then(f).catch(g) over two microtask hops —
       // delay(0) crosses a macrotask boundary, draining the pending microtask queue before firing
@@ -228,16 +230,19 @@ describe("dom", () => {
       onError(null);
     });
 
-    test("adopts inline children without re-suspending under non-streamed ssr", () => {
-      const App = () => (
-        <div>
-          <Suspense fallback={<p>loading</p>}>{<b id="nb">inline</b>}</Suspense>
-        </div>
-      );
-      const container = ssrContainer(<App></App>);
+    test("adopts inline children without re-suspending under non-streamed ssr", async () => {
+      const { container, client } = await twoTargetContainer(`
+        import { Suspense } from "@hellajs/dom";
+        const App = () => (
+          <div>
+            <Suspense fallback={<p>loading</p>}>{<b id="nb">inline</b>}</Suspense>
+          </div>
+        );
+        const __out = { App };
+      `);
 
       const { warnings } = suppressWarn(() => {
-        hydrate(<App></App>, container);
+        hydrate(client.App as TemplateBuildFn, container);
       });
 
       expect(container.querySelectorAll("#nb")).toHaveLength(1);
@@ -245,77 +250,82 @@ describe("dom", () => {
       expect(warnings.length).toBe(0);
     });
 
-    test("warns and subtree-replaces when a non-static element's tag mismatches the server HTML", () => {
-      const container = setupContainer();
-      container.innerHTML = "<section><span>server</span></section>";
-
-      const { warnings } = suppressWarn(() => {
-        hydrate(
+    test("throws the mismatch error when a non-static element's tag mismatches the server HTML", async () => {
+      const { container, client } = await twoTargetContainer(`
+        const App = () => (
           <div id="ns">
             <span>{() => "client"}</span>
-          </div>,
-          container,
+          </div>
         );
-      });
+        const __out = { App };
+      `);
+      container.innerHTML = "<section><span>server</span></section>";
 
-      expect(container.querySelector("div#ns")).not.toBeNull();
-      expect(container.querySelector("section")).toBeNull();
-      expect(warnings.length).toBe(1);
+      expect(() =>
+        suppressWarn(() => {
+          hydrate(client.App as TemplateBuildFn, container);
+        }),
+      ).toThrow("[dom] hydrate: unmatched server DOM for imperative root");
     });
 
-    test("dispatches a throwing beforeMount hook during hydrate and continues mounting", () => {
+    test("dispatches a throwing beforeMount hook during hydrate and continues mounting", async () => {
       const handler = vi.fn(() => null);
       onError(handler);
-      const App = () => (
-        <div
-          id="bm"
-          hook:beforeMount={() => {
-            throw new Error("beforeMount hydrate");
-          }}
-        >
-          x
-        </div>
-      );
-      const container = ssrContainer(<App></App>);
+      const { container, client } = await twoTargetContainer(`
+        const App = () => (
+          <div
+            id="bm"
+            hook:beforeMount={() => {
+              throw new Error("beforeMount hydrate");
+            }}
+          >
+            x
+          </div>
+        );
+        const __out = { App };
+      `);
 
-      hydrate(<App></App>, container);
+      hydrate(client.App as TemplateBuildFn, container);
 
       expect(handler).toHaveBeenCalledTimes(1);
       expect(container.querySelector("#bm")?.textContent).toBe("x");
       onError(null);
     });
 
-    test("warns and adopts children in place when a fragment's markers are missing", () => {
-      const Frag = () => (
-        <>
-          <i>a</i>
-          <i>b</i>
-        </>
-      );
-      const App = () => (
-        <div id="fg">
-          <Frag></Frag>
-        </div>
-      );
-      const container = setupContainer();
+    test("adopts children in place when a fragment's markers are missing", async () => {
+      const { container, client } = await twoTargetContainer(`
+        const Frag = () => (
+          <>
+            <i>a</i>
+            <i>b</i>
+          </>
+        );
+        const App = () => (
+          <div id="fg">
+            <Frag></Frag>
+          </div>
+        );
+        const __out = { App };
+      `);
       container.innerHTML = '<div id="fg"><i>a</i><i>b</i></div>';
 
-      const { warnings } = suppressWarn(() => {
-        hydrate(<App></App>, container);
-      });
+      // Fragment builds claim their static roots positionally — markers are not required.
+      hydrate(client.App as TemplateBuildFn, container);
 
       expect(container.querySelectorAll("#fg i")).toHaveLength(2);
-      expect(warnings.length).toBe(1);
     });
 
     test("unmount before an async hydrate attaches cancels the late resolution", async () => {
+      const { container, client } = await twoTargetContainer(`
+        const App = () => <div id="hlate">late</div>;
+        const __out = { App };
+      `);
+      container.innerHTML = "<div>server</div>";
       let resolveHydrate: () => void = () => {};
       const slow = () =>
         new Promise<void>((resolve) => {
           resolveHydrate = resolve;
-        }).then(() => <div id="hlate">late</div>);
-      const container = setupContainer();
-      container.innerHTML = "<div>server</div>";
+        }).then(() => client.App as TemplateBuildFn);
 
       const handle = hydrate(slow, container);
       handle.unmount();

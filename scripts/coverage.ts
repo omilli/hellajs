@@ -16,7 +16,8 @@ import {
  * The measurement target is the entry-graph per-module dist artifacts
  * (top-level `dist` .js files plus `dist/internal`), the ui registry minus
  * the `cn`/`tokens` data artifacts, and every plugin .mjs source (vite/rollup
- * read 0% by design: thin wrappers, no suites). `bundle.js` is verified by
+ * read 0% by design: thin wrappers whose `index.mjs` is excluded — their
+ * suites cover option forwarding, not source). `bundle.js` is verified by
  * each package's `tests/bundle.test.ts` smoke test (export parity), not
  * measured.
  *

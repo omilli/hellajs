@@ -37,7 +37,10 @@ interface RegistryManifest {
  */
 function transformRegistrySource(code: string, filename: string): string {
   const result = transformSync(code, {
-    plugins: [babelHellaJS],
+    // Parity with plugins/vite/index.mjs's client default: registry variants compile to
+    // imperative @hellajs/dom/runtime construction — the registry's consumers (package
+    // tests, docs-ui demos) mount the output client-side, which rejects ast input.
+    plugins: [[babelHellaJS, { target: "dom" }]],
     presets: [presetTypeScript],
     filename,
     ast: false,

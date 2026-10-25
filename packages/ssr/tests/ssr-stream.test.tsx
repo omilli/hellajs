@@ -14,7 +14,7 @@ const streamAsyncParityCases: { name: string; node: HellaNode }[] = [
       <div>
         <span>hi</span>there
       </div>
-    ) as HellaNode,
+    ),
   },
   {
     name: "ForEach",
@@ -22,7 +22,7 @@ const streamAsyncParityCases: { name: string; node: HellaNode }[] = [
       <ul>
         <ForEach each={[1, 2, 3]} use={(n: number) => <li>{n}</li>}></ForEach>
       </ul>
-    ) as HellaNode,
+    ),
   },
   {
     name: "Transition",
@@ -30,7 +30,7 @@ const streamAsyncParityCases: { name: string; node: HellaNode }[] = [
       <div>
         <Transition show={true}>{<p>on</p>}</Transition>
       </div>
-    ) as HellaNode,
+    ),
   },
   {
     name: "Portal",
@@ -38,28 +38,25 @@ const streamAsyncParityCases: { name: string; node: HellaNode }[] = [
       <div>
         <Portal to="#x">{<p>p</p>}</Portal>
       </div>
-    ) as HellaNode,
+    ),
   },
   {
     name: "Lazy loaded component (loader awaited)",
     node: (
       <div>
-        <Lazy
-          loader={() => Promise.resolve((<b>L</b>) as HellaNode)}
-          loading={<span>…</span>}
-        ></Lazy>
+        <Lazy loader={() => Promise.resolve(<b>L</b>)} loading={<span>…</span>}></Lazy>
       </div>
-    ) as HellaNode,
+    ),
   },
 ];
 
 describe("ssr.stream", () => {
   test("returns a ReadableStream", () => {
-    expect(ssr.stream((<div>hi</div>) as HellaNode) instanceof ReadableStream).toBe(true);
+    expect(ssr.stream(<div>hi</div>) instanceof ReadableStream).toBe(true);
   });
 
   test("resolves a static node to the same HTML as ssr", async () => {
-    expect(await collect(ssr.stream((<div>hi</div>) as HellaNode))).toBe("<div>hi</div>");
+    expect(await collect(ssr.stream(<div>hi</div>))).toBe("<div>hi</div>");
   });
 
   test.each(streamAsyncParityCases)(
@@ -76,15 +73,17 @@ describe("ssr.stream", () => {
   });
 
   test("awaits a Promise-returning child in a marker-bounded region", async () => {
-    expect(await collect(ssr.stream((<p>{() => Promise.resolve(5)}</p>) as HellaNode))).toBe(
+    expect(await collect(ssr.stream(<p>{() => Promise.resolve(5)}</p>))).toBe(
       "<p><!--[-->5<!--]--></p>",
     );
   });
 
   test("awaits a Promise function-ref prop value", async () => {
     expect(
-      await collect(ssr.stream((<input value={() => Promise.resolve("x")} />) as HellaNode)),
-    ).toBe('<input value="x">');
+      expect(await collect(ssr.stream(<input value={() => Promise.resolve("x")} />))).toBe(
+        '<input value="x">',
+      ),
+    );
   });
 
   test("awaits a Promise-returning ForEach each", async () => {
@@ -104,7 +103,7 @@ describe("ssr.stream", () => {
     const delayed = new Promise<string>((r) => {
       resolveLate = () => r("late");
     });
-    const stream = ssr.stream((<div>before{() => delayed}after</div>) as HellaNode);
+    const stream = ssr.stream(<div>before{() => delayed}after</div>);
     const reader = stream.getReader();
     const first = await reader.read(); // arrives WITHOUT resolveLate() → progressive flush
     expect(first.done).toBe(false);
@@ -119,7 +118,7 @@ describe("ssr.stream", () => {
       chunk = await reader.read();
     }
     expect(chunks).toBeGreaterThan(1);
-    expect(all).toBe(await ssr.async((<div>before{() => "late"}after</div>) as HellaNode));
+    expect(all).toBe(await ssr.async(<div>before{() => "late"}after</div>));
   });
 
   test("advances the walk only on pulls — the producer stays parked while the consumer idles (backpressure)", async () => {
@@ -151,7 +150,7 @@ describe("ssr.stream", () => {
     const delayed = new Promise<string>((r) => {
       resolveLate = () => r("late");
     });
-    const stream = ssr.stream((<div>{() => delayed}</div>) as HellaNode);
+    const stream = ssr.stream(<div>{() => delayed}</div>);
     const reader = stream.getReader();
     await reader.read(); // consume the first chunk
     await reader.cancel(); // cancel → source cancel() → gen.return()
@@ -179,7 +178,7 @@ describe("ssr.stream", () => {
     expect(pre).toContain("<i>wait</i>"); // fallback flushed before cancel
     await delay(0); // let start() resume past the sentinel → pending.push + enter the flush await
     await reader.cancel(); // cancel → gen.return() + staged swap generators returned
-    resolveLate((<b>late</b>) as HellaNode); // the orphaned swap childGen is already returned → does not resume or throw
+    resolveLate(<b>late</b>); // the orphaned swap childGen is already returned → does not resume or throw
   });
 
   test("concurrent swaps: a slow region above a fast one does not hold the fast region's <template> back (completion order)", async () => {
@@ -268,11 +267,9 @@ describe("ssr.stream", () => {
     // without <Suspense>: no bootstrap, no swap script (output byte-identical to a non-Suspense stream)
     const plain = await collect(
       ssr.stream(
-        (
-          <div>
-            <b>hi</b>
-          </div>
-        ) as HellaNode,
+        <div>
+          <b>hi</b>
+        </div>,
       ),
     );
     expect(plain).not.toContain("$hs");
@@ -348,14 +345,12 @@ describe("ssr.stream", () => {
     const loader = () =>
       new Promise<void>((r) => {
         resolveLate = r;
-      }).then(() => (<b>L</b>) as HellaNode);
+      }).then(() => <b>L</b>);
     const reader = ssr
       .stream(
-        (
-          <div>
-            before<Lazy loader={loader}></Lazy>after
-          </div>
-        ) as HellaNode,
+        <div>
+          before<Lazy loader={loader}></Lazy>after
+        </div>,
       )
       .getReader();
     let pre = "";
@@ -382,10 +377,7 @@ describe("ssr.stream", () => {
     const node = (
       <div>
         <Suspense fallback={<i>wait</i>}>
-          <Lazy
-            loader={() => Promise.resolve((<b>L</b>) as HellaNode)}
-            loading={<span>…</span>}
-          ></Lazy>
+          <Lazy loader={() => Promise.resolve(<b>L</b>)} loading={<span>…</span>}></Lazy>
         </Suspense>
       </div>
     );
@@ -399,7 +391,7 @@ describe("ssr.stream", () => {
 
   test("a rejected Promise errors the stream", async () => {
     await expect(
-      collect(ssr.stream((<p>{() => Promise.reject(new Error("boom"))}</p>) as HellaNode)),
+      collect(ssr.stream(<p>{() => Promise.reject(new Error("boom"))}</p>)),
     ).rejects.toThrow("boom");
   });
 
@@ -407,18 +399,16 @@ describe("ssr.stream", () => {
     expect(
       await collect(
         ssr.stream(
-          (
-            <div>
-              a
-              {
-                <>
-                  <b></b>
-                  <c></c>
-                </>
-              }
-              d
-            </div>
-          ) as HellaNode,
+          <div>
+            a
+            {
+              <>
+                <b></b>
+                <c></c>
+              </>
+            }
+            d
+          </div>,
         ),
       ),
     ).toBe("<div>a<!--[--><b></b><c></c><!--]-->d</div>");
@@ -428,19 +418,17 @@ describe("ssr.stream", () => {
     expect(
       await collect(
         ssr.stream(
-          (
-            <>
-              <a></a>
-              <b></b>
-            </>
-          ) as HellaNode,
+          <>
+            <a></a>
+            <b></b>
+          </>,
         ),
       ),
     ).toBe("<a></a><b></b>");
   });
 
   test("pipeThrough(new TextEncoderStream()) yields a byte stream (Response-shaped)", async () => {
-    const bytes = ssr.stream((<div>x</div>) as HellaNode).pipeThrough(new TextEncoderStream());
+    const bytes = ssr.stream(<div>x</div>).pipeThrough(new TextEncoderStream());
     const reader = bytes.getReader();
     const decoder = new TextDecoder();
     let out = "";

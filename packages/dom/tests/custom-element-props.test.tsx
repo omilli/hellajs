@@ -1,6 +1,10 @@
 import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { resetTestState } from "@utils/test-helpers.js";
 import { mount } from "@hellajs/dom";
+// Template clones upgrade defined custom elements only when the feature is loaded —
+// the compiler emits this import for any program with hyphenated tag names; this suite
+// compiles `<x-chart>` through the plugin, so it carries the same import.
+import "@hellajs/dom/features/custom-elements";
 
 class MockChart extends HTMLElement {
   data: { series: number[] } | null = null;

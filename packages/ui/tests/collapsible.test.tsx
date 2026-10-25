@@ -1,7 +1,6 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState, setupContainer } from "@utils/test-helpers.js";
-import "@hellajs/dom/features/routed-props";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components import the bare
 // specifier, so the harness mount shares one dom instance with the components.
 import { mount } from "@hellajs/dom";
@@ -25,8 +24,7 @@ function mountCollapsible(
 ) {
   const container = setupContainer();
   const rendered = variant.render(props);
-  // A reactive fn root cannot pass through mount's resolve-once unwrap — wrap it like the harness does.
-  mount(typeof rendered === "function" ? <div>{rendered as never}</div> : rendered, container);
+  mount(rendered, container);
   const root = container.firstElementChild as HTMLElement;
   const trigger = root.querySelector('[data-slot="collapsible-trigger"]') as HTMLElement;
   const content = root.querySelector('[data-slot="collapsible-content"]') as HTMLElement;
@@ -197,7 +195,7 @@ describe("collapsible", () => {
         children: "Toggle",
       };
       const rendered = variant.render(props as never);
-      mount(typeof rendered === "function" ? <div>{rendered as never}</div> : rendered, container);
+      mount(rendered, container);
       const trigger = container.firstElementChild!;
       trigger.dispatchEvent(new Event("click"));
       expect(userClick).toHaveBeenCalledTimes(1);
@@ -219,7 +217,7 @@ describe("collapsible", () => {
         props.id = "region-id";
       }
       const rendered = variant.render(props as never);
-      mount(typeof rendered === "function" ? <div>{rendered as never}</div> : rendered, container);
+      mount(rendered, container);
       const el = container.firstElementChild!;
       if (variant.part === "Trigger") {
         expect(el.getAttribute("data-slot")).toBe("collapsible-trigger");

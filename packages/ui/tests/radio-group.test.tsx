@@ -1,7 +1,6 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { signal } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
-import "@hellajs/dom/features/routed-props";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components import the bare
 // specifier, so the harness mount and the component's roving wiring share one dom instance.
 import { mount, peekState } from "@hellajs/dom";
@@ -42,8 +41,7 @@ function mountRadioGroup(
 ): MountedRadioGroup {
   const container = setupContainer();
   const rendered = variant.render(props);
-  // A reactive fn root cannot pass through mount's resolve-once unwrap — wrap it like the harness does.
-  mount(typeof rendered === "function" ? <div>{rendered as never}</div> : rendered, container);
+  mount(rendered, container);
   const root = container.firstElementChild as HTMLElement;
   const renderedItems = Array.from(root.querySelectorAll("[role='radio']")) as HTMLElement[];
   return { container, root, items: renderedItems };
@@ -303,7 +301,7 @@ describe("radio-group", () => {
     for (const variant of radioGroupPartVariants) {
       const container = setupContainer();
       const rendered = variant.render({ value: "solo", checked: () => true, name: "plan" });
-      mount(typeof rendered === "function" ? <div>{rendered as never}</div> : rendered, container);
+      mount(rendered, container);
       const el = container.firstElementChild as HTMLElement;
       expect(el.getAttribute("data-slot")).toBe("radio-group-item");
       expect(el.getAttribute("role")).toBe("radio");
@@ -322,7 +320,7 @@ describe("radio-group", () => {
     for (const variant of radioGroupPartVariants) {
       const container = setupContainer();
       const rendered = variant.render({ value: "solo", onSelect, "on:click": userClick });
-      mount(typeof rendered === "function" ? <div>{rendered as never}</div> : rendered, container);
+      mount(rendered, container);
       const el = container.firstElementChild as HTMLElement;
       userClick.mockClear();
       onSelect.mockClear();

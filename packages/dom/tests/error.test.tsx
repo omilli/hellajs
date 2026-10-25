@@ -2,7 +2,7 @@ import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { signal } from "@hellajs/core";
 import { resetTestState, setupContainer, suppressConsole } from "@utils/test-helpers.js";
 import { mount, onError } from "@hellajs/dom";
-import type { HellaNode, ErrorContext } from "@hellajs/dom";
+import type { ErrorContext, TemplateBuildFn } from "@hellajs/dom";
 import { fallbackHandler } from "./helpers";
 
 beforeEach(() => {
@@ -28,7 +28,7 @@ describe("dom", () => {
     });
 
     test("falls back to handler default when no element config", () => {
-      onError((error: Error) => (<span>Default: {error.message}</span>) as HellaNode);
+      onError((error: Error) => <span>Default: {error.message}</span>);
 
       const container = setupContainer();
       mount(
@@ -212,16 +212,18 @@ describe("dom", () => {
         return null;
       });
 
-      const node = (
+      // The flagged build wires errorConfig at construction — the AST-era `node.error`
+      // bucket no longer exists to inspect; the config's presence shows in the dispatch.
+      const build = (
         <div error:fallback={(e: Error) => <span>{e.message}</span>}>
           {() => {
             throw new Error("tpl");
           }}
         </div>
-      );
+      ) as unknown as TemplateBuildFn;
 
-      expect(node.error?.fallback).toBeDefined();
-      mount(node);
+      expect(build.isTemplate).toBe(true);
+      mount(build);
       expect(capturedError!.message).toBe("tpl");
     });
 
@@ -358,11 +360,11 @@ describe("dom", () => {
     });
 
     test("remove function unregisters handler", () => {
-      const firstCalled = vi.fn(() => (<span>First</span>) as HellaNode);
+      const firstCalled = vi.fn(() => <span>First</span>);
       const remove = onError(firstCalled);
 
       remove();
-      onError(() => (<span>Second</span>) as HellaNode);
+      onError(() => <span>Second</span>);
 
       const container = setupContainer();
       mount(
@@ -381,8 +383,8 @@ describe("dom", () => {
     test("onError(null) clears all handlers", () => {
       const suppressed = suppressConsole();
       try {
-        onError(() => (<span>H1</span>) as HellaNode);
-        onError(() => (<span>H2</span>) as HellaNode);
+        onError(() => <span>H1</span>);
+        onError(() => <span>H2</span>);
         onError(null);
 
         const container = setupContainer();
@@ -403,7 +405,7 @@ describe("dom", () => {
     });
 
     test("without boundary, fallback replaces error element content", () => {
-      onError(() => (<span>Global</span>) as HellaNode);
+      onError(() => <span>Global</span>);
 
       const container = setupContainer();
       mount(
@@ -424,7 +426,7 @@ describe("dom", () => {
     test("bind error replaces element content when no boundary", () => {
       const suppressed = suppressConsole();
       try {
-        onError((error: Error) => (<span>E: {error.message}</span>) as HellaNode);
+        onError((error: Error) => <span>E: {error.message}</span>);
 
         const shouldThrow = signal(false);
         const container = setupContainer();
@@ -461,7 +463,7 @@ describe("dom", () => {
         tracked.push(error);
         return null;
       });
-      onError((error: Error) => (<span>Error: {error.message}</span>) as HellaNode);
+      onError((error: Error) => <span>Error: {error.message}</span>);
 
       const container = setupContainer();
       mount(

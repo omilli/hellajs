@@ -11,9 +11,8 @@
  * already a function.
  *
  * The top-level function check is the mandatory double-wrap guard: without it an
- * explicit `() => foo()` becomes `() => (() => foo())`, and dom's
- * `resolveNode`/`appendToParent` would stringify the inner arrow (render its source
- * text) instead of calling it.
+ * explicit `() => foo()` becomes `() => (() => foo())`, and `resolveNode`'s reactive
+ * arm would stringify the inner arrow (render its source text) instead of calling it.
  * @param {typeof import("@babel/core").types} t
  * @param {import("@babel/core").Expression} expr
  * @returns {import("@babel/core").Expression}

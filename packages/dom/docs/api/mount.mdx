@@ -1,23 +1,24 @@
 # mount
 
-Renders HellaNodes to the DOM with reactive updates and lifecycle management.
+Renders a compiled component tree into a container element with reactive updates and lifecycle management, replacing the container's existing content.
 
 ## API
 
 ```typescript
-// With a sync node or component function
+// With a flagged build fn (the compiled component result)
 function mount(
-  hellaNode: HellaNode | (() => HellaNode),
+  node: TemplateBuildFn | (() => TemplateBuildFn),
   target?: string | Element | ShadowRoot
 ): MountHandle
 
 // With an async component function
 function mount(
-  hellaNode: () => Promise<HellaNode | (() => HellaNode)>,
+  node: () => Promise<TemplateBuildFn | (() => TemplateBuildFn)>,
   target?: string | Element | ShadowRoot
 ): MountHandle
 ```
-- `hellaNode`: A JSX element ([HellaNode](/learn/concepts/templates)) object or a function that returns one.
+
+- `node`: A [flagged build fn](/reference/dom/runtime) (the `component()` result of a compiled client build), a function returning one, or an async function resolving to one.
 - `target`: A CSS selector string, DOM Element, or ShadowRoot for the container. Defaults to `"#app"`.
 - **Returns**: A [`MountHandle`](#mounthandle) with `flush()` and `unmount()` methods.
 
@@ -37,7 +38,7 @@ interface MountHandle {
 
 ## Basic Usage
 
-Pass a component function to `mount`. HellaJS will call this function to get the node tree and render it.
+Pass a component function to `mount`. The compiler lowers the JSX to imperative construction calls; `mount` invokes the build and renders the result.
 
 ```jsx
 import { signal } from "@hellajs/core";
@@ -46,7 +47,7 @@ import { mount } from "@hellajs/dom";
 // A simple component function
 const Counter = () => {
   const count = signal(0);
-  
+
   return (
     <div>
       <span>Count: {count}</span>
@@ -75,12 +76,12 @@ import { signal } from "@hellajs/core";
 import { mount } from "@hellajs/dom";
 
 const count = signal(0);
-mount(<div>Count: {count}</div>, "#app");
+mount(() => <div>Count: {count}</div>, "#app");
 ```
 
 ### Component Functions
 
-Components are plain functions that return HellaNodes, no classes or special syntax required.
+Components are plain functions that return their template, no classes or special syntax required. The `component()` result carries the scope wiring; `mount` invokes it exactly once through the build path.
 
 ```jsx
 import { mount } from "@hellajs/dom";
@@ -109,14 +110,19 @@ app.unmount();
 
 ## Important Considerations
 
+### Hand-Built Input Is Rejected
+
+`mount` accepts compiled build functions only. A hand-built HellaNode (`{ tag: "div", ... }`) throws at mount time with the documented rejection (`[dom] mount: hand-built HellaNode input is not supported`). JSX sources go through the [babel plugin](/plugins/babel), which emits the build functions `mount` consumes. If you were mounting hand-built HellaNode trees, see [the v3 migration guide](/learn/concepts/migration-v3) and the [runtime](/reference/dom/runtime) reference.
+
 ### Single Mount Point
 
-Each `mount()` call creates an independent reactive tree - avoid multiple mounts on the same element.
+Each `mount()` call creates an independent reactive tree. Avoid multiple mounts on the same element.
 
 ```jsx
 import { mount } from "@hellajs/dom";
 
-// ❌ Multiple mounts on same element
+// Avoid: mounts replace the container's content, so the second call
+// unmounts the first tree's DOM
 mount(App1, "#app");
 mount(App2, "#app");
 ```
@@ -141,16 +147,16 @@ mount(async () => {
 
 ### Lifecycle Hooks
 
-Elements support lifecycle hooks via the [`hook:`](/reference/dom/hook) prefix. See [`hook:`](/reference/dom/hook) for all available hooks and usage patterns.
+Elements support lifecycle hooks via the [`hook:`](/reference/dom/hook) prefix. `beforeMount` fires synchronously during the build, before the tree is inserted. See [`hook:`](/reference/dom/hook) for all available hooks and usage patterns.
 
 ### Memory Management
 
 HellaJS automatically manages reactive effects and event handlers. Reactive effects and DOM events are automatically cleaned up when elements are removed from the DOM. No manual cleanup is required for standard reactive bindings.
 
-For component-level effects, use any of these approaches - they all provide automatic cleanup:
+For component-level effects, use any of these approaches. They all provide automatic cleanup:
 
-- **JSX syntax** - Babel plugin handles it
-- **`component()` helper** - Manual wrapping for raw AST
+- **JSX syntax**: the babel plugin wraps the component and chains its scope
+- **`component()` helper**: manual wrapping for non-JSX sources
 
 ```jsx
 import { effect, signal } from "@hellajs/core";

@@ -297,7 +297,7 @@ Enforcement: the `hella/no-raw-typeof-compare` JS-plugin rule (`lint/hellajs.js`
 ### Files
 
 - (Pascal|Camel)case, no hyphens: `signal.ts`, `removeCss.ts`, `ForEach.ts`
-- One public API function per file, filename = export verbatim (`css`/`removeCss`/`resetCss` = three files; `vars`/`removeVars`/`resetVars` = three more). No "related pair" carve-outs — one export per file keeps the public surface scannable and mechanically auditable
+- One public API function per file, filename = export verbatim (`css`/`removeCss`/`resetCss` = three files; `vars`/`removeVars`/`resetVars` = three more). No "related pair" carve-outs — one export per file keeps the public surface scannable and mechanically auditable. Exception: a compiler-contract subpath module (`lib/{name}.ts` mapped to an explicit `package.json` `exports` entry, never re-exported from the barrel) holds its whole emission surface as one unit — the export list is the compiler's pinned contract, not an authoring API (precedent: `packages/dom/lib/runtime.ts` → `@hellajs/dom/runtime`)
 - `lib/internal/` files are organized by cohesive concern — one-export rules apply only to top-level `lib/*.ts`. `lib/features/` files hold registration + moved wiring, not public API: they export only what an API anchor re-exports (`onError`, `raw`) or nothing at all, and their shape is fixed by the injection contract (call-site seams keep live bindings, feature files call the `set*` registrars at module init). Name an internal file after its concern as a single noun/gerund (`core`, `dedupe`, `errors`, `lifecycle`, `polling`, `retry`) — never a camelCase compound of its export (a file exporting `structuralShare` is `structural.ts`). The concern is one word; if it seems to need two, the file is two concerns (split it) or a concept not yet named
 - PascalCase component filenames matching exports (`ForEach.ts`) — required for JSX resolution; `$`-prefixed reference APIs (`$ref.ts`)
 
@@ -360,7 +360,7 @@ Run this when holding a Code file (`.ts`/`.tsx`/`.mjs` under `lib/`, `scripts/`,
 
 **Structure**
 - [ ] File sits at the right path per the File-placement decision tree
-- [ ] One public export per `lib/*.ts`; filename matches the export verbatim
+- [ ] One public export per `lib/*.ts`; filename matches the export verbatim (compiler-contract subpath modules exempt — whole-surface unit, not barrel-re-exported)
 - [ ] Internal-only files under `lib/internal/` (exception: callable-namespace member impls at `lib/{implName}.ts`)
 - [ ] Internal module named by a single noun/gerund concern
 - [ ] Public types in `lib/types/*.d.ts`; internal types co-located with their owning module

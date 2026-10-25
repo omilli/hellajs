@@ -8,46 +8,42 @@ import { headParityCases, unknownKindNode, SlotBox } from "./helpers";
 
 describe("ssr", () => {
   test("renders static node to exact HTML", () => {
-    expect(ssr((<div>hi</div>) as HellaNode)).toBe("<div>hi</div>");
+    expect(ssr(<div>hi</div>)).toBe("<div>hi</div>");
   });
 
   test("returns an HTML string", () => {
-    expect(typeof ssr((<div></div>) as HellaNode)).toBe("string");
+    expect(typeof ssr(<div></div>)).toBe("string");
   });
 
   test("inlines current signal value into a marker-bounded region", () => {
     const count = signal(5);
-    expect(ssr((<p>{count}</p>) as HellaNode)).toBe("<p><!--[-->5<!--]--></p>");
+    expect(ssr(<p>{count}</p>)).toBe("<p><!--[-->5<!--]--></p>");
   });
 
   test("renders a function-ref prop's initial signal value as an attribute", () => {
     const value = signal("x");
-    expect(ssr((<input value={value} />) as HellaNode)).toBe('<input value="x">');
+    expect(ssr(<input value={value} />)).toBe('<input value="x">');
   });
 
   test("concatenates fragment children without fragment markers", () => {
     expect(
       ssr(
-        (
-          <>
-            <a></a>
-            <b></b>
-          </>
-        ) as HellaNode,
+        <>
+          <a></a>
+          <b></b>
+        </>,
       ),
     ).toBe("<a></a><b></b>");
   });
 
   test('escapes interpolated text inside a marker region (<, >, &, ")', () => {
     const risky = signal('<b>&"x');
-    expect(ssr((<p>{risky}</p>) as HellaNode)).toBe("<p><!--[-->&lt;b&gt;&amp;&quot;x<!--]--></p>");
+    expect(ssr(<p>{risky}</p>)).toBe("<p><!--[-->&lt;b&gt;&amp;&quot;x<!--]--></p>");
   });
 
   test("escapes attribute values", () => {
     // Static attribute value (a function-ref prop resolves via resolveValue — mirrors renderProp).
-    expect(ssr((<div title={'a"&<b'}></div>) as HellaNode)).toBe(
-      '<div title="a&quot;&amp;&lt;b"></div>',
-    );
+    expect(ssr(<div title={'a"&<b'}></div>)).toBe('<div title="a&quot;&amp;&lt;b"></div>');
   });
 
   test("renders each ForEach item in array order inside a marker region", () => {
@@ -138,7 +134,7 @@ describe("ssr", () => {
   });
 
   test("renders Lazy loading fallback in a marker region without awaiting the loader", () => {
-    const loader = vi.fn(async () => (<div></div>) as HellaNode);
+    const loader = vi.fn(async () => <div></div>);
     const node = (
       <div>
         <Lazy loader={loader} loading={<span>…</span>}></Lazy>
@@ -156,11 +152,9 @@ describe("ssr", () => {
     );
     expect(
       ssr(
-        (
-          <div>
-            <Card title="Hi"></Card>
-          </div>
-        ) as HellaNode,
+        <div>
+          <Card title="Hi"></Card>
+        </div>,
       ),
     ).toBe("<div><section><h1>Hi</h1></section></div>");
   });
@@ -171,7 +165,7 @@ describe("ssr", () => {
     const bad = () => {
       throw new Error("boom");
     };
-    expect(() => ssr((<p>{bad}</p>) as HellaNode)).toThrow("boom");
+    expect(() => ssr(<p>{bad}</p>)).toThrow("boom");
   });
 
   test("skips prefixed props keys (routed to live buckets at mount)", () => {
@@ -187,7 +181,7 @@ describe("ssr", () => {
     // Runtime cloneWithValues already merged the spread: ssr sees resolved props
     // only, so prefixed keys inside the spread skip exactly like declared ones.
     const attrs = { disabled: true, title: "t", "on:click": () => {} };
-    expect(ssr((<button class="b" {...attrs}></button>) as HellaNode)).toBe(
+    expect(ssr(<button class="b" {...attrs}></button>)).toBe(
       '<button class="b" disabled title="t"></button>',
     );
   });
@@ -195,43 +189,41 @@ describe("ssr", () => {
   test("omits key from serialized output for declared and spread props", () => {
     expect(
       ssr(
-        (
-          <li key={7} class="row">
-            x
-          </li>
-        ) as HellaNode,
+        <li key={7} class="row">
+          x
+        </li>,
       ),
     ).toBe('<li class="row">x</li>');
     const attrs = { key: 7, class: "row" };
-    expect(ssr((<li {...attrs}>x</li>) as HellaNode)).toBe('<li class="row">x</li>');
+    expect(ssr(<li {...attrs}>x</li>)).toBe('<li class="row">x</li>');
   });
 
   test("renders void elements without a closing tag", () => {
-    expect(ssr((<img src={"a.jpg"} />) as HellaNode)).toBe('<img src="a.jpg">');
+    expect(ssr(<img src={"a.jpg"} />)).toBe('<img src="a.jpg">');
   });
 
   test("renders boolean true as a bare attribute", () => {
-    expect(ssr((<input disabled={true} />) as HellaNode)).toBe("<input disabled>");
+    expect(ssr(<input disabled={true} />)).toBe("<input disabled>");
   });
 
   test("joins array attribute values with spaces", () => {
-    expect(ssr((<div class={["a", "b"]}></div>) as HellaNode)).toBe('<div class="a b"></div>');
+    expect(ssr(<div class={["a", "b"]}></div>)).toBe('<div class="a b"></div>');
   });
 
   test("omits falsy attributes", () => {
-    expect(ssr((<div class={false} id={undefined}></div>) as HellaNode)).toBe("<div></div>");
+    expect(ssr(<div class={false} id={undefined}></div>)).toBe("<div></div>");
   });
 
   test("serializes a style object to kebab-case declarations (byte-parity with dom renderProp)", () => {
     // The literal below is the exact string the dom style-props suite asserts on the
     // mounted element's style attribute — client and server must agree byte-for-byte.
-    expect(ssr((<div style={{ color: "red", fontSize: "12px" }}>x</div>) as HellaNode)).toBe(
+    expect(ssr(<div style={{ color: "red", fontSize: "12px" }}>x</div>)).toBe(
       '<div style="color:red; font-size:12px">x</div>',
     );
   });
 
   test("emits an empty marker region when Lazy has no loading fallback", () => {
-    const loader = vi.fn(async () => (<div></div>) as HellaNode);
+    const loader = vi.fn(async () => <div></div>);
     const node = (
       <div>
         <Lazy loader={loader}></Lazy>
@@ -243,7 +235,7 @@ describe("ssr", () => {
   test("emits an empty marker region for an isDynamic function without ssr", () => {
     const fn = (() => {}) as unknown as { isDynamic?: true };
     fn.isDynamic = true;
-    expect(ssr((<div>{fn}</div>) as HellaNode)).toBe("<div><!--[--><!--]--></div>");
+    expect(ssr(<div>{fn}</div>)).toBe("<div><!--[--><!--]--></div>");
   });
 
   test("renders an empty marker region and warns for an unknown ssr kind", () => {
@@ -258,20 +250,20 @@ describe("ssr", () => {
   });
 
   test("renders a HellaNode returned by a reactive child in a marker region", () => {
-    const subtree = signal((<p>on</p>) as HellaNode);
-    expect(ssr((<div>{subtree}</div>) as HellaNode)).toBe("<div><!--[--><p>on</p><!--]--></div>");
+    const subtree = signal(<p>on</p>);
+    expect(ssr(<div>{subtree}</div>)).toBe("<div><!--[--><p>on</p><!--]--></div>");
   });
 
   test("stringifies a reactive child's non-HellaNode value inside a marker region", () => {
     const obj = signal({ notag: true } as unknown as HellaNode);
-    expect(ssr((<div>{obj}</div>) as HellaNode)).toBe("<div><!--[-->[object Object]<!--]--></div>");
+    expect(ssr(<div>{obj}</div>)).toBe("<div><!--[-->[object Object]<!--]--></div>");
   });
 
   test("warns once and still stringifies a Promise child under sync ssr", () => {
     // Sync cannot await — the warn names the fix; the emitted HTML is unchanged from pre-warn behavior.
     const suppressed = suppressConsole();
     try {
-      expect(ssr((<div>{() => Promise.resolve(5)}</div>) as HellaNode)).toBe(
+      expect(ssr(<div>{() => Promise.resolve(5)}</div>)).toBe(
         "<div><!--[-->[object Promise]<!--]--></div>",
       );
       expect(suppressed.warns).toHaveLength(1);
@@ -286,7 +278,7 @@ describe("ssr", () => {
   test("warns once and still stringifies a Promise function-ref prop under sync ssr", () => {
     const suppressed = suppressConsole();
     try {
-      expect(ssr((<input value={() => Promise.resolve("x")} />) as HellaNode)).toBe(
+      expect(ssr(<input value={() => Promise.resolve("x")} />)).toBe(
         '<input value="[object Promise]">',
       );
       expect(suppressed.warns).toHaveLength(1);
@@ -326,17 +318,15 @@ describe("ssr", () => {
   });
 
   test("renders nothing for a static boolean true child", () => {
-    expect(ssr((<div>{true}</div>) as HellaNode)).toBe("<div></div>");
+    expect(ssr(<div>{true}</div>)).toBe("<div></div>");
   });
 
   test("does not mark static elements or static text", () => {
     expect(
       ssr(
-        (
-          <div>
-            <span>hi</span>there
-          </div>
-        ) as HellaNode,
+        <div>
+          <span>hi</span>there
+        </div>,
       ),
     ).toBe("<div><span>hi</span>there</div>");
   });
@@ -346,11 +336,9 @@ describe("ssr", () => {
     const b = signal(2);
     expect(
       ssr(
-        (
-          <div>
-            x{a}y{b}z
-          </div>
-        ) as HellaNode,
+        <div>
+          x{a}y{b}z
+        </div>,
       ),
     ).toBe("<div>x<!--[-->1<!--]-->y<!--[-->2<!--]-->z</div>");
   });
@@ -358,25 +346,23 @@ describe("ssr", () => {
   test("marks a fragment child among siblings", () => {
     expect(
       ssr(
-        (
-          <div>
-            a
-            {
-              <>
-                <b></b>
-                <c></c>
-              </>
-            }
-            d
-          </div>
-        ) as HellaNode,
+        <div>
+          a
+          {
+            <>
+              <b></b>
+              <c></c>
+            </>
+          }
+          d
+        </div>,
       ),
     ).toBe("<div>a<!--[--><b></b><c></c><!--]-->d</div>");
   });
 
   test("marks a reactive child even when it resolves to an element", () => {
-    const el = signal((<b></b>) as HellaNode);
-    expect(ssr((<div>{el}</div>) as HellaNode)).toBe("<div><!--[--><b></b><!--]--></div>");
+    const el = signal(<b></b>);
+    expect(ssr(<div>{el}</div>)).toBe("<div><!--[--><b></b><!--]--></div>");
   });
 
   test("renders a reactive getter that returns an isDynamic component", () => {

@@ -47,6 +47,12 @@ The server renders the component to HTML with `<!--[-->…<!--]-->` markers; the
 
 A complete walkthrough lives in the [Astro Islands tutorial](https://hellajs.com/learn/tutorials/astro-islands).
 
+## Imperative client target
+
+The babel plugin's JSX emission has two targets. The default `ast` target produces the HellaNode trees `@hellajs/ssr` serializes; the `target: "dom"` option produces imperative construction calls against `@hellajs/dom/runtime`. The target is wrapper-owned build config (Vite, Rollup, or the astro integration's internal wiring), never a per-file option.
+
+The client entry this integration ships is output-shape-agnostic: every island hydrates through the same `hydrate(() => component(Component, props), el)` call, whichever form the client build compiled to. An ast build walks and wires the server DOM through its `<!--[-->…<!--]-->` markers; a dom build adopts the server output through the construction calls themselves, so the shipped nodes keep their identity and nothing is re-rendered. Island code never changes between the two. See the dom `hydrate` docs (Compiled Imperative Roots) for the adoption contract and its parity requirement.
+
 ## Frontmatter styles
 
 Statically evaluable `css()`, `style()`, and `keyframes()` calls in `.astro` frontmatter compile at build: the integration folds each call against the real `@hellajs/css` package and replaces it with its class or name literal. The collected CSS splits by channel: rules from the page's own module ride Astro's pipeline as a page-scoped `<style>` in the built head, and rules collected from imported island modules ride a `<style id="hella-css">` in the page, which hydration claims against the islands' re-registrations so those rules never duplicate. The id'd tag needs a document anchor: a page whose template opens with neither `<head>` nor `<body>` merges island rules into the same page-scoped import instead - Astro renders that import exactly once per page, but hydration cannot claim its rules, so a transient duplicate can exist until the islands register their own copies (identical rules, no visual difference). No client-side CSS ships for frontmatter styles.

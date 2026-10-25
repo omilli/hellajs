@@ -4,6 +4,7 @@ import { cleanupSubtree } from "./internal/cleanup";
 import { registry } from "./registry";
 import { getState } from "./internal/state";
 import { peekHydrateContext } from "./internal/hydrate";
+import { constructFresh } from "./internal/adoption";
 import type { PortalProps, HellaChild } from "./types/nodes";
 
 const INSERT_METHODS: Record<string, keyof Element> = {
@@ -52,7 +53,9 @@ export function Portal(props: PortalProps): JSX.Element {
       const len = childNodes.length;
       while (i < len) {
         const child = childNodes[i++] as HellaChild;
-        const node = resolveNode(child, anchor, ns);
+        // Portal content mounts into its target — never claims (the target's children belong to
+        // whatever manages them; adoption ownership ends at the portal's in-place anchor).
+        const node = constructFresh(() => resolveNode(child, anchor, ns));
         portalNodes.push(node);
         fragment.appendChild(node);
       }

@@ -1,8 +1,8 @@
-import type { HellaNode, ErrorConfig, ErrorContext, ErrorFn, HellaElement } from "../types/nodes";
-import { setErrorDispatch, getMountNode } from "../internal/dispatch";
-import { setMountBoundaryResolver } from "../internal/render";
+import type { ErrorConfig, ErrorContext, ErrorFn } from "../types/nodes";
+import type { TemplateBuildFn } from "../runtime";
+import { setErrorDispatch } from "../internal/dispatch";
 import { isNull } from "../internal/core";
-import { getState, peekState } from "../internal/state";
+import { peekState } from "../internal/state";
 
 /**
  * Global error handlers registered via onError. First non-null result wins.
@@ -83,9 +83,9 @@ const handlingBoundaries = new WeakSet<Element>();
  * Handles boundary detection, infinite loop prevention, and reset functionality.
  * @param error The error that occurred
  * @param context The error context with phase, element, and event info
- * @returns Fallback HellaNode to render, or null for no UI change
+ * @returns Fallback flagged build fn to render, or null for no UI change
  */
-function dispatchError(error: Error, context: ErrorContext): HellaNode | null {
+function dispatchError(error: Error, context: ErrorContext): TemplateBuildFn | null {
   const boundary = findBoundary(context.element);
 
   if (boundary && handlingBoundaries.has(boundary)) {
@@ -97,16 +97,17 @@ function dispatchError(error: Error, context: ErrorContext): HellaNode | null {
     handlingBoundaries.add(boundary);
   }
 
-  const originalNode = boundary ? peekState(boundary)?.originalNode : undefined;
-  const reset = originalNode
-    ? () => {
-        const node = peekState(boundary!)?.originalNode;
-        const mountNode = getMountNode();
-        if (node && mountNode) {
-          boundary!.replaceChildren(mountNode(node));
-        }
-      }
-    : undefined;
+  const state = boundary ? peekState(boundary) : undefined;
+  const originalBuild = state?.originalBuild;
+  let reset: (() => void) | undefined;
+  if (originalBuild) {
+    // Flagged template root: the reset target is the element's own build fn — re-invoke it
+    // for fresh nodes (old children drain through the mount-target observer on removal).
+    reset = () => {
+      const build = peekState(boundary!)?.originalBuild;
+      if (build) boundary!.replaceChildren(build());
+    };
+  }
 
   const contextWithReset = boundary ? { ...context, reset } : context;
 
@@ -142,30 +143,4 @@ function resetErrorState(): void {
   handlers.clear();
 }
 
-/**
- * Applies one element's routed error config and resolves the boundary its
- * construction-time wiring dispatches against: the element itself when it carries an
- * error config, else the inherited boundary.
- * @param element The created element
- * @param routed The vnode's routed buckets (only `error` is read)
- * @param node The vnode (snapshotted as the reset target)
- * @param boundaryElement The inherited boundary, or undefined
- * @returns The boundary for this element's wiring
- */
-function resolveMountBoundary(
-  element: HellaElement,
-  routed: { error: ErrorConfig | undefined },
-  node: HellaNode,
-  boundaryElement: Element | undefined,
-): Element | undefined {
-  if (routed.error) {
-    const state = getState(element);
-    state.errorConfig = routed.error;
-    state.originalNode = node;
-    return element;
-  }
-  return boundaryElement;
-}
-
 setErrorDispatch({ dispatchError, findBoundary, resolveErrorConfig, resetErrorState });
-setMountBoundaryResolver(resolveMountBoundary);

@@ -29,6 +29,7 @@ export const navigation: Record<NavSection, NavEntry[]> = {
         "SSR",
         "Hydration",
         "Headless-Behaviors",
+        "Migration-V3",
       ],
     },
     {
@@ -91,6 +92,7 @@ export const navigation: Record<NavSection, NavEntry[]> = {
         "$collection",
         "component",
         "registry",
+        "runtime",
         "trapFocus",
         "onEscape",
         "onOutside",

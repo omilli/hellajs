@@ -2,8 +2,9 @@ import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
 import { mount, hydrate, component, ForEach, Lazy, Suspense } from "@hellajs/dom";
+import type { TemplateBuildFn } from "@hellajs/dom";
 
-import { suppressWarn, ssrContainer } from "./helpers";
+import { suppressWarn, twoTargetContainer } from "./helpers";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const MATHML_NS = "http://www.w3.org/1998/Math/MathML";
@@ -146,23 +147,69 @@ describe("dom", () => {
       expect(circle.namespaceURI).toBe(SVG_NS);
     });
 
-    test("hydrates an ssr'd svg region without mismatch warnings and wires reactivity", () => {
-      const width = signal("24");
-      const App = () => (
-        <svg id="icon" width={width}>
-          <clipPath id="clip">
-            <rect width="10"></rect>
-          </clipPath>
-        </svg>
+    test("compiles a dynamic-boundary svg interior to a namespaced template site", () => {
+      const label = signal("a");
+      mount(
+        <svg>
+          {label()}
+          <g id="boundary-g">
+            <circle id="boundary-c" r="4"></circle>
+          </g>
+        </svg>,
       );
-      const container = ssrContainer(<App></App>);
+
+      // The dynamic child splits the fold: the <g> subtree hoists as its own template site,
+      // which the compiler emits with the svg parse namespace (static ancestry).
+      const g = document.getElementById("boundary-g")!;
+      const circle = document.getElementById("boundary-c")!;
+      expect(g.namespaceURI).toBe(SVG_NS);
+      expect(circle.namespaceURI).toBe(SVG_NS);
+      expect(circle.constructor.name).toBe("SVGCircleElement");
+    });
+
+    test("parses a foreignObject template site with an HTML-namespace interior", () => {
+      const label = signal("a");
+      mount(
+        <svg>
+          {label()}
+          <foreignObject>
+            <div id="fo-site"></div>
+          </foreignObject>
+        </svg>,
+      );
+
+      // The <foreignObject> hoists as an svg-ns template site; its interior resets to HTML
+      // (the integration point — the runtime walk mirrors it where the parser does not).
+      const fo = document.getElementById("fo-site")!.parentNode as Element;
+      const div = document.getElementById("fo-site")!;
+      // happy-dom's HTML-context parse lowercases the tag at an HTML position (the old table
+      // path produced the same); the namespace contract is what the rebuild guarantees.
+      expect(fo.localName).toBe("foreignobject");
+      expect(fo.namespaceURI).toBe(SVG_NS);
+      expect(div.namespaceURI).toBe(HTML_NS);
+      expect(div.constructor.name).toBe("HTMLDivElement");
+    });
+
+    test("hydrates an ssr'd svg region without mismatch warnings and wires reactivity", async () => {
+      const { container, client } = await twoTargetContainer(`
+        import { signal } from "@hellajs/core";
+        const width = signal("24");
+        const App = () => (
+          <svg id="icon" width={width}>
+            <clipPath id="clip">
+              <rect width="10"></rect>
+            </clipPath>
+          </svg>
+        );
+        const __out = { App, width };
+      `);
       const clipBefore = container.querySelector("#clip")!;
 
-      const { warnings } = suppressWarn(() => hydrate(<App></App>, container));
+      const { warnings } = suppressWarn(() => hydrate(client.App as TemplateBuildFn, container));
 
       expect(warnings.length).toBe(0);
       expect(container.querySelector("#clip")).toBe(clipBefore);
-      width("48");
+      (client.width as (v: string) => void)("48");
       flush();
       expect(container.querySelector("#icon")!.getAttribute("width")).toBe("48");
     });

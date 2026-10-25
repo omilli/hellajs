@@ -1,9 +1,8 @@
-import type { HookType, HookFn, ElementHooks, ElementMountFn } from "../types/nodes";
+import type { HookType, HookFn } from "../types/nodes";
 import type { ElementState } from "../internal/state";
 import { isMountInFlight, setMountQueueArm } from "../internal/queue";
 import { runHooks, traverseDescendants } from "../internal/cleanup";
 import { dispatchError, resolveErrorConfig, toError } from "../internal/dispatch";
-import { getBoundaryConfig, setMountHookWiring } from "../internal/render";
 import { getState, peekState } from "../internal/state";
 import { setHooksFeature } from "../registry";
 
@@ -129,37 +128,6 @@ function resetMountState() {
 }
 
 /**
- * Wires one element's routed lifecycle hooks: registers each hook and runs
- * `beforeMount` synchronously (errors caught, `phase: "mount"`, no fallback).
- * The default (hooks feature not loaded) wires nothing — routed hook buckets only
- * exist when the feature does.
- * @param element Target element
- * @param hooks The vnode's routed hooks bucket
- * @param boundary The nearest error boundary element, or undefined
- */
-function wireMountHooks(
-  element: Element,
-  hooks: Partial<ElementHooks> | undefined,
-  boundary: Element | undefined,
-): void {
-  if (!hooks) return;
-  hooks.beforeMount && addHook(element, "beforeMount", hooks.beforeMount);
-  hooks.afterMount && addHook(element, "afterMount", hooks.afterMount as ElementMountFn);
-  hooks.beforeDestroy && addHook(element, "beforeDestroy", hooks.beforeDestroy as ElementMountFn);
-  hooks.afterDestroy && addHook(element, "afterDestroy", hooks.afterDestroy);
-  hooks.beforeUpdate && addHook(element, "beforeUpdate", hooks.beforeUpdate as ElementMountFn);
-  hooks.afterUpdate && addHook(element, "afterUpdate", hooks.afterUpdate);
-
-  if (hooks.beforeMount) {
-    try {
-      hooks.beforeMount();
-    } catch (err) {
-      dispatchError(toError(err), { phase: "mount", element, config: getBoundaryConfig(boundary) });
-    }
-  }
-}
-
-/**
  * Runs one registered effect body with the update-hook bracket.
  * The update hooks gate: hooks rarely exist — two property loads, not two WeakMap gets per run.
  * isMounted resolves lazily from isConnected so hooks added post-mount still fire on updates.
@@ -210,4 +178,3 @@ setMountQueueArm({
   count: () => mountQueue.size,
 });
 setHooksFeature({ addHook, runEffectHooks });
-setMountHookWiring(wireMountHooks);

@@ -11,6 +11,7 @@ type AdoptRegionFn = (
   anchor: Node,
   existing: Node[],
   stageMissing?: boolean,
+  next?: Node | null,
 ) => void;
 
 /**
@@ -177,7 +178,7 @@ function recheckDeferredRegions(): void {
       if (staged && staged.tagName === "TEMPLATE") {
         // arm 1 — stage arrived
         adopted = swapStageFn(region.nodes, region.anchor).nodes;
-        adoptRegionFn(region.parent, region.child, region.anchor, adopted);
+        adoptRegionFn(region.parent, region.child, region.anchor, adopted, false, region.next);
       }
     } else {
       // sentinel detached — external swap, unless the region is simply partial (recorded nodes still live)
@@ -198,7 +199,7 @@ function recheckDeferredRegions(): void {
           adopted.push(node);
           node = node.nextSibling;
         }
-        adoptRegionFn(region.parent, region.child, region.anchor, adopted);
+        adoptRegionFn(region.parent, region.child, region.anchor, adopted, false, region.next);
       }
     }
     if (adopted) {

@@ -2,7 +2,8 @@ import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
 import { mount, hydrate, peekState } from "@hellajs/dom";
-import { ssrContainer } from "./helpers";
+import { twoTargetContainer } from "./helpers";
+import type { TemplateBuildFn } from "@hellajs/dom";
 
 beforeEach(() => {
   resetTestState();
@@ -106,28 +107,38 @@ describe("dom", () => {
     });
 
     test("re-registering e:click on the same element replaces the listener", async () => {
-      const firstHandler = vi.fn(() => {});
-      const secondHandler = vi.fn(() => {});
-      const first = () => (
-        <button id="btn" e:click={firstHandler}>
-          Go
-        </button>
-      );
-      const second = () => (
-        <button id="btn" e:click={secondHandler}>
-          Go
-        </button>
-      );
+      // In-source hit counters: the server arm's counter objects belong to its own module
+      // scope, so assertions read the CLIENT module's `hits` (the live one hydrate drives).
+      const { container, client } = await twoTargetContainer(`
+        const hits = { first: 0, second: 0 };
+        const First = () => (
+          <button id="btn" e:click={() => { hits.first++; }}>
+            Go
+          </button>
+        );
+        const Second = () => (
+          <button id="btn" e:click={() => { hits.second++; }}>
+            Go
+          </button>
+        );
+        const App = First;
+        const __out = { App, First, Second, hits };
+      `);
+      const out = client as unknown as {
+        First: TemplateBuildFn;
+        Second: TemplateBuildFn;
+        hits: { first: number; second: number };
+      };
 
-      const container = ssrContainer(first());
-      hydrate(first(), container);
+      hydrate(out.First, container);
       const btn = document.getElementById("btn")!;
-
-      hydrate(second(), container);
       btn.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      expect(out.hits.first).toBe(1);
 
-      expect(firstHandler).not.toHaveBeenCalled();
-      expect(secondHandler).toHaveBeenCalledTimes(1);
+      hydrate(out.Second, container);
+      btn.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      expect(out.hits.first).toBe(1);
+      expect(out.hits.second).toBe(1);
 
       btn.remove();
       for (let __i = 0; __i < 50; __i++) {
@@ -136,7 +147,7 @@ describe("dom", () => {
       }
       btn.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 
-      expect(secondHandler).toHaveBeenCalledTimes(1);
+      expect(out.hits.second).toBe(1);
     });
 
     test("multiple handlers on single element", () => {

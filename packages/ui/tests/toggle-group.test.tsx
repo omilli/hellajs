@@ -1,7 +1,6 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
-import "@hellajs/dom/features/routed-props";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components import the bare
 // specifier, so the harness mount and the component's roving wiring share one dom instance.
 import { mount, peekState } from "@hellajs/dom";
@@ -42,8 +41,7 @@ function mountToggleGroup(
 ): MountedToggleGroup {
   const container = setupContainer();
   const rendered = variant.render(props);
-  // A reactive fn root cannot pass through mount's resolve-once unwrap — wrap it like the harness does.
-  mount(typeof rendered === "function" ? <div>{rendered as never}</div> : rendered, container);
+  mount(rendered, container);
   const root = container.firstElementChild as HTMLElement;
   const renderedItems = Array.from(
     root.querySelectorAll("[data-slot='toggle-group-item']"),
@@ -398,7 +396,7 @@ describe("toggle-group", () => {
         size: "sm",
         children: "Bold",
       });
-      mount(typeof rendered === "function" ? <div>{rendered as never}</div> : rendered, container);
+      mount(rendered, container);
       const el = container.firstElementChild as HTMLElement;
       expect(el.getAttribute("data-slot")).toBe("toggle-group-item");
       expect(el.getAttribute("aria-pressed")).toBe("true");
@@ -429,7 +427,7 @@ describe("toggle-group", () => {
         "on:click": userClick,
         children: "Bold",
       });
-      mount(typeof rendered === "function" ? <div>{rendered as never}</div> : rendered, container);
+      mount(rendered, container);
       const el = container.firstElementChild as HTMLElement;
       userClick.mockClear();
       onSelect.mockClear();

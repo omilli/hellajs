@@ -3,8 +3,8 @@ import { flush } from "@hellajs/core";
 import { setupContainer, resetTestState } from "@utils/test-helpers.js";
 import { Suspense, component, hydrate } from "@hellajs/dom";
 import { ssr } from "@hellajs/ssr";
-import type { HellaNode } from "@hellajs/dom";
-import { collect } from "./helpers";
+import type { HellaNode, TemplateBuildFn } from "@hellajs/dom";
+import { collect, twoTargetStreamed } from "./helpers";
 
 beforeEach(() => resetTestState());
 
@@ -82,7 +82,7 @@ describe("ssr <Suspense>", () => {
   test("ssr.stream progressive flush: fallback chunk arrives before async children resolve", async () => {
     let resolveLate!: () => void;
     const delayed = new Promise<HellaNode>((r) => {
-      resolveLate = () => r((<b>late</b>) as HellaNode);
+      resolveLate = () => r(<b>late</b>);
     });
     const node = (
       <div>
@@ -188,19 +188,21 @@ describe("ssr <Suspense>", () => {
     // the regression: after $hs swaps (simulating the browser’s inline script) and hydrate runs, the
     // Suspense getter must NOT be re-evaluated into a Promise → text. $hs wraps the inserted content in an
     // extra marker pair so hydrate’s consumeRegion leaves the getter’s reactive-region markers intact.
-    const tree = () => (
-      <div id="root">
-        <Suspense fallback={<p>loading</p>}>{() => Promise.resolve(<b>resolved</b>)}</Suspense>
-      </div>
-    );
-    const out = await collect(ssr.stream(tree()));
-    const id = out.match(/<!--(hs\d+)-->/)![1]!;
-    const boot = out.match(/<script>(function \$hs[\s\S]*?)<\/script>/)![1]!;
-    const container = setupContainer();
-    container.innerHTML = out;
+    const { container, client } = await twoTargetStreamed(`
+      import { Suspense } from "@hellajs/dom";
+      const App = () => (
+        <div id="root">
+          <Suspense fallback={<p>loading</p>}>{() => Promise.resolve(<b>resolved</b>)}</Suspense>
+        </div>
+      );
+      const __out = { App };
+    `);
+    const html = container.innerHTML;
+    const id = html.match(/<!--(hs\d+)-->/)![1]!;
+    const boot = html.match(/<script>(function \$hs[\s\S]*?)<\/script>/)![1]!;
     const $hs = new Function(boot + "; return $hs")() as (id: string) => void;
     $hs(id); // simulate the browser running the inline swap script on arrival
-    hydrate(tree(), container); // then the client entry hydrates
+    hydrate(client.App as TemplateBuildFn, container); // then the client entry hydrates
     flush();
     expect(container.querySelector("#root b")!.textContent).toBe("resolved");
     expect(container.textContent).not.toContain("[object Promise]");

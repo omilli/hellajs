@@ -1,5 +1,8 @@
 import type { RenderFn, HellaNode } from "./types/nodes";
+import type { TemplateBuildFn } from "./runtime";
 import type { HTMLAttributeMap } from "./types/attributes";
+
+export type { TemplateBuildFn } from "./runtime";
 
 export { ForEach } from "./ForEach";
 export { Portal } from "./Portal";
@@ -36,7 +39,11 @@ export type * from "./types/behaviors";
 
 declare global {
   namespace JSX {
-    type Element = HellaNode & RenderFn;
+    // The intersection serves both compile targets from one JSX type: HellaNode is the
+    // ast target's (and @hellajs/ssr's) view, the TemplateBuildFn call shape is what the
+    // dom target's emission actually produces (mount/hydrate accept only that — hand-built
+    // plain HellaNode objects stay non-assignable, the flip's compile-time rejection).
+    type Element = HellaNode & RenderFn & TemplateBuildFn;
     interface IntrinsicElements extends HTMLAttributeMap {}
     interface ElementAttributesProperty {
       props: {};

@@ -21,6 +21,7 @@ Astro 7 framework-renderer integration (`astro-plugin-hellajs`). Wires `vite-plu
 | `index.d.ts` | Hand-written minimal `AstroIntegration` types (no `astro` import — typechecks without `astro` installed). |
 | `tests/renderToStaticMarkup.test.ts` | Server-entry scenarios (the pure `renderToStaticMarkup` adapter). |
 | `tests/frontmatter.test.ts` | Extraction scenarios against the plugin hooks (compiled-shape fixtures, stubbed resolver/load). |
+| `tests/island-hydration.test.ts` | Island end-to-end: one island source compiled at both plugin targets, the ast arm through `renderToStaticMarkup`, the dom arm hydrated over the server HTML in HappyDOM (identity + post-hydrate interaction). |
 
 ## Astro 7 renderer contract (grounded from installed source — verify on major-version bumps)
 
@@ -41,5 +42,4 @@ Astro 7 framework-renderer integration (`astro-plugin-hellajs`). Wires `vite-plu
 ## Testing approach (`tests/`)
 
 - **Plugin carveout** — tests import from source (`../server.mjs`), NOT `dist/`. Run via `vp run coverage astro` + `vp run lint` (the scoped plugin gate — bundles first, then tests `plugins/astro/tests`, mirroring `plugins/babel`).
-- **Server entry is unit-tested directly** — it's a pure `(Component, props, slots) → { html }` over already-transformed source; testable without an Astro build, HappyDOM-only. Asserts verbatim slot passthrough (full marker-wrapped strings), named-slot mapping, `check`, and reactive-state SSR.
-- **Client entry is NOT unit-tested here** — `hydrate()` needs a live DOM + server HTML and is exercised by `examples/astro-islands` / a manual smoke test. Its behavior (marker adoption) is covered by `packages/dom/tests/` (incl. `raw.test.ts` from Unit A).
+- **Both entries are unit-tested in-harness** — the server entry is a pure `(Component, props, slots) → { html }` over already-transformed source (asserts verbatim slot passthrough, named-slot mapping, `check`, reactive-state SSR); the island-hydration suite compiles one island at BOTH plugin targets and hydrates the dom arm over the rendered server HTML, exercising the client entry's `hydrate(() => component(Component, props), el)` shape without a live Astro build (compiled-module execution via `@utils/test-helpers.js`). Marker adoption beyond the compiled targets stays covered by `packages/dom/tests/`.

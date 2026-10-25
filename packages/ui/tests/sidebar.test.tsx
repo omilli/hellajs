@@ -1,7 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach, vi } from "vite-plus/test";
 import { signal } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
-import "@hellajs/dom/features/routed-props";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components import the bare
 // specifier, so the harness mount and the component's Portal/hover wiring share one dom instance.
 import { mount, peekState, resetDom } from "@hellajs/dom";
@@ -22,7 +21,7 @@ import type {
   SidebarThreadedState,
   SidebarVariantProps,
 } from "./helpers/variants";
-import type { HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HellaChild, HellaChildren } from "@hellajs/dom";
 import { pointerEnter } from "./helpers/anchored";
 
 beforeEach(() => {
@@ -104,7 +103,7 @@ async function mountComposed(
       ];
     },
   });
-  mount(typeof rendered === "function" ? <div>{rendered}</div> : rendered, container);
+  mount(rendered, container);
   const wrapper = container.firstElementChild as HTMLElement;
   await awaitWiring(wrapper);
   return { wrapper, state: state! };
@@ -163,7 +162,7 @@ describe("sidebar", () => {
         onOpenChange,
         children,
       });
-      mount(typeof rendered === "function" ? <div>{rendered}</div> : rendered, container);
+      mount(rendered, container);
       const wrapper = container.querySelector("[data-slot=sidebar-wrapper]") as HTMLElement;
       await awaitWiring(wrapper);
       wrapper.querySelector('[data-slot="sidebar-trigger"]')!.dispatchEvent(new Event("click"));
@@ -268,10 +267,7 @@ describe("sidebar", () => {
       }>(variant, "SidebarProvider");
       const container = setupContainer();
       const rendered = Provider({ children: () => [] });
-      const handle = mount(
-        typeof rendered === "function" ? <div>{rendered as never}</div> : (rendered as never),
-        container,
-      );
+      const handle = mount(rendered as never, container);
       const wrapper = container.querySelector("[data-slot=sidebar-wrapper]") as HTMLElement;
       await awaitWiring(wrapper);
       handle.unmount();
@@ -338,7 +334,7 @@ describe("sidebar", () => {
   test.each(sidebarModuleVariants)(
     "$style renders the full menu nesting with data-slots",
     async (variant) => {
-      const part = <P extends object>(name: string): ((props: P) => HellaNode) =>
+      const part = <P extends object>(name: string): ((props: P) => JSX.Element) =>
         sidebarModulePart<P>(variant, name);
       const container = setupContainer();
       const rendered = part<SidebarVariantProps>("Sidebar")({
@@ -388,10 +384,7 @@ describe("sidebar", () => {
           }) as HellaChild,
         ],
       });
-      mount(
-        typeof rendered === "function" ? <div>{rendered as never}</div> : (rendered as never),
-        container,
-      );
+      mount(rendered as never, container);
       const root = container.firstElementChild as HTMLElement;
       const bySlot = (slot: string): Element => root.querySelector(`[data-slot="${slot}"]`)!;
       for (const slot of [
@@ -434,7 +427,7 @@ describe("sidebar", () => {
   test.each(sidebarModuleVariants)(
     "$style menu action fires its on:click through the button path",
     (variant) => {
-      const part = <P extends object>(name: string): ((props: P) => HellaNode) =>
+      const part = <P extends object>(name: string): ((props: P) => JSX.Element) =>
         sidebarModulePart<P>(variant, name);
       const onClick = vi.fn(() => {});
       const container = setupContainer();
@@ -446,7 +439,7 @@ describe("sidebar", () => {
           }),
         ],
       });
-      mount(typeof rendered === "function" ? <div>{rendered}</div> : rendered, container);
+      mount(rendered, container);
       const action = container.querySelector('[data-slot="sidebar-menu-action"]') as HTMLElement;
       expect(action.getAttribute("data-show-on-hover")).toBeNull();
       action.dispatchEvent(new Event("click"));
@@ -457,14 +450,11 @@ describe("sidebar", () => {
   test.each(sidebarModuleVariants)(
     "$style menu action carries the hover marker only when showOnHover",
     (variant) => {
-      const part = <P extends object>(name: string): ((props: P) => HellaNode) =>
+      const part = <P extends object>(name: string): ((props: P) => JSX.Element) =>
         sidebarModulePart<P>(variant, name);
       const container = setupContainer();
       const rendered = part<SidebarPartVariantProps>("SidebarMenuAction")({ showOnHover: true });
-      mount(
-        typeof rendered === "function" ? <div>{rendered as never}</div> : (rendered as never),
-        container,
-      );
+      mount(rendered as never, container);
       const hover = container.querySelector('[data-slot="sidebar-menu-action"]')!;
       expect(hover.getAttribute("data-show-on-hover")).toBe("true");
     },
@@ -501,7 +491,7 @@ describe("sidebar", () => {
   test.each(sidebarModuleVariants)(
     "$style tooltip renders on hover while collapsed and hides expanded or mobile",
     async (variant) => {
-      const part = <P extends object>(name: string): ((props: P) => HellaNode) =>
+      const part = <P extends object>(name: string): ((props: P) => JSX.Element) =>
         sidebarModulePart<P>(variant, name);
       const unmounts: (() => void)[] = [];
       const hoverButton = (open: () => boolean, mobile?: () => boolean): Promise<Element> => {
@@ -557,7 +547,7 @@ describe("sidebar", () => {
   test.each(sidebarModuleVariants)(
     "$style inset, header, footer, separator, and input compose",
     (variant) => {
-      const part = <P extends object>(name: string): ((props: P) => HellaNode) =>
+      const part = <P extends object>(name: string): ((props: P) => JSX.Element) =>
         sidebarModulePart<P>(variant, name);
       const container = setupContainer();
       const rendered = part<SidebarPartVariantProps>("SidebarInset")({
@@ -568,10 +558,7 @@ describe("sidebar", () => {
           part<SidebarPartVariantProps>("SidebarInput")({ placeholder: "Search" }) as HellaChild,
         ],
       });
-      mount(
-        typeof rendered === "function" ? <div>{rendered as never}</div> : (rendered as never),
-        container,
-      );
+      mount(rendered as never, container);
       const inset = container.firstElementChild as HTMLElement;
       expect(inset.tagName).toBe("MAIN");
       expect(inset.getAttribute("data-slot")).toBe("sidebar-inset");
@@ -602,7 +589,7 @@ describe("sidebar", () => {
 
   test("mobile-sheet trigger chains a user on:click with the owned open toggle", async () => {
     for (const variant of sidebarModuleVariants) {
-      const part = <P extends object>(name: string): ((props: P) => HellaNode) =>
+      const part = <P extends object>(name: string): ((props: P) => JSX.Element) =>
         sidebarModulePart<P>(variant, name);
       const userClick = vi.fn(() => {});
       const container = setupContainer();
@@ -623,7 +610,7 @@ describe("sidebar", () => {
           Trigger({ onToggle: threaded.onToggle, "on:click": userClick }),
         ],
       });
-      mount(typeof rendered === "function" ? <div>{rendered}</div> : rendered, container);
+      mount(rendered, container);
       const wrapper = container.querySelector("[data-slot='sidebar-wrapper']") as HTMLElement;
       await awaitWiring(wrapper);
       flipMedia(true);
@@ -637,13 +624,13 @@ describe("sidebar", () => {
 
   test("menu button chains a user on:click through the button path", () => {
     for (const variant of sidebarModuleVariants) {
-      const part = <P extends object>(name: string): ((props: P) => HellaNode) =>
+      const part = <P extends object>(name: string): ((props: P) => JSX.Element) =>
         sidebarModulePart<P>(variant, name);
       const userClick = vi.fn(() => {});
       const container = setupContainer();
       const MenuButton = part<Record<string, unknown>>("SidebarMenuButton");
       const rendered = MenuButton({ "on:click": userClick, children: "Home" });
-      mount(typeof rendered === "function" ? <div>{rendered}</div> : rendered, container);
+      mount(rendered, container);
       const button = container.querySelector("[data-slot='sidebar-menu-button']") as HTMLElement;
       button.dispatchEvent(new Event("click", { bubbles: true }));
       expect(userClick).toHaveBeenCalledTimes(1);
@@ -698,10 +685,7 @@ function renderPart(
   const props = variant.part === "Provider" ? { children: () => [] } : { children: [] };
   const container = setupContainer();
   const rendered = variant.render({ ...props, ...extra } as never);
-  mount(
-    typeof rendered === "function" ? <div>{rendered as never}</div> : (rendered as never),
-    container,
-  );
+  mount(rendered as never, container);
   return container.querySelector("[data-slot]")!;
 }
 
@@ -715,9 +699,6 @@ function renderSidebarRoot(
 ): HTMLElement {
   const container = setupContainer();
   const rendered = variant.render(props);
-  mount(
-    typeof rendered === "function" ? <div>{rendered as never}</div> : (rendered as never),
-    container,
-  );
+  mount(rendered as never, container);
   return container.querySelector('[data-slot="sidebar"]:not([data-mobile="true"])') as HTMLElement;
 }

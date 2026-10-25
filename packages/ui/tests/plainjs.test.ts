@@ -53,7 +53,7 @@ describe("plain-js delivery", () => {
     expect(button).not.toMatch(/_jsx|createElement/);
     expect(button).not.toMatch(/^\s*interface\b/m);
     expect(button).not.toMatch(/^import type\b/m);
-    expect(button).not.toContain(" as HellaNode");
+    expect(button).not.toContain(" as JSX.Element");
   });
 
   test.each(COMBOS)("$style e2e add --lang js writes plain-JS filenames", async ({ style }) => {
@@ -107,7 +107,7 @@ describe("plain-js delivery", () => {
     addComponent(["button"], { dir: root, lang: "js" });
     const jsx = readFileSync(join(componentsDir(root), "button.jsx"), "utf8");
     const compiled = transformSync(jsx, {
-      plugins: [babelHellaJS],
+      plugins: [[babelHellaJS, { target: "dom" }]],
       filename: "button.jsx",
       ast: false,
       sourceMaps: false,

@@ -1,7 +1,6 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState, delay } from "@utils/test-helpers.js";
-import "@hellajs/dom/features/routed-props";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components import the bare
 // specifier, so the harness mount shares one dom instance with the components.
 import { peekState } from "@hellajs/dom";
@@ -15,7 +14,7 @@ import {
   inputOtpVariants,
   renderVariant,
 } from "./helpers/variants";
-import type { HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HellaChildren } from "@hellajs/dom";
 import type { AnyModule, ComponentVariant, InputOtpVariantProps } from "./helpers/variants";
 
 beforeEach(() => {
@@ -74,12 +73,14 @@ function paste(root: HTMLElement, text: string): void {
 }
 
 const parts = inputOtpPartModules[0]!;
-const Group = parts.InputOTPGroup as unknown as (props: { children?: HellaChildren }) => HellaNode;
-const Slot = parts.InputOTPSlot as unknown as (props: { index: number }) => HellaNode;
-const Separator = parts.InputOTPSeparator as unknown as (props: { class?: string }) => HellaNode;
+const Group = parts.InputOTPGroup as unknown as (props: {
+  children?: HellaChildren;
+}) => JSX.Element;
+const Slot = parts.InputOTPSlot as unknown as (props: { index: number }) => JSX.Element;
+const Separator = parts.InputOTPSeparator as unknown as (props: { class?: string }) => JSX.Element;
 
-function slots(from: number, to: number): HellaNode[] {
-  const out: HellaNode[] = [];
+function slots(from: number, to: number): JSX.Element[] {
+  const out: JSX.Element[] = [];
   let i = from;
   while (i < to) {
     out.push(Slot({ index: i }));
@@ -101,12 +102,12 @@ function flavoredCode(variant: ComponentVariant<InputOtpVariantProps>): HellaChi
 function codeFrom(partsModule: AnyModule): HellaChildren {
   const group = partsModule.InputOTPGroup as unknown as (props: {
     children?: HellaChildren;
-  }) => HellaNode;
-  const slot = partsModule.InputOTPSlot as unknown as (props: { index: number }) => HellaNode;
+  }) => JSX.Element;
+  const slot = partsModule.InputOTPSlot as unknown as (props: { index: number }) => JSX.Element;
   const separator = partsModule.InputOTPSeparator as unknown as (props: {
     class?: string;
-  }) => HellaNode;
-  const part = (index: number): HellaNode => slot({ index });
+  }) => JSX.Element;
+  const part = (index: number): JSX.Element => slot({ index });
   return [
     group({ children: [part(0), part(1), part(2)] }),
     separator({}),

@@ -1,9 +1,12 @@
 import { isFunction } from "./internal/core";
 import { resolveNode, clearRenderedNodes, childNamespaceOf } from "./internal/render";
+import { resolveDeep } from "./internal/utils";
 import { cleanupSubtree } from "./internal/cleanup";
-import { peekHydrateContext, hydrateSequence } from "./internal/hydrate";
+import { peekHydrateContext } from "./internal/hydrate";
+import { adoptClaimFrame } from "./internal/claims";
 import { dispatchError, toError, resolveErrorConfig } from "./internal/dispatch";
 import { getState } from "./internal/state";
+import { child as wireChild } from "./runtime";
 import type { SuspenseProps, HellaElement, HellaChild } from "./types/nodes";
 
 /**
@@ -17,7 +20,7 @@ import type { SuspenseProps, HellaElement, HellaChild } from "./types/nodes";
 function suspendChild(
   parent: Element,
   anchor: Node,
-  value: HellaChild | HellaChild[],
+  value: unknown,
   clearFallback: () => void,
 ): void {
   const ns = childNamespaceOf(parent);
@@ -49,12 +52,17 @@ function suspendChild(
     renderedNodes.push(node);
     parent.insertBefore(node, anchor);
   };
-  if (value && isFunction((value as Promise<unknown>).then)) {
-    (value as Promise<HellaChild | HellaChild[]>)
-      .then((resolved) => {
+  // One deep resolution classifies every child shape: a plain producer fn resolves to its
+  // value (a Promise suspends; a flagged build/classified value renders), while a flagged
+  // build fn classifies by itself — `resolveNode`'s flagged branch invokes it (frame + scope
+  // wiring), never the pre-invocation here, which would construct outside a build frame.
+  const resolved = resolveDeep(value);
+  if (resolved && isFunction((resolved as Promise<unknown>).then)) {
+    (resolved as Promise<unknown>)
+      .then((settled) => {
         if (cancelled || !anchor.parentNode) return;
         clearFallback();
-        insertTracked(resolveNode(resolved, undefined, ns));
+        insertTracked(resolveNode(settled as HellaChild, undefined, ns));
       })
       .catch((err: unknown) => {
         if (cancelled || !anchor.parentNode) return;
@@ -69,7 +77,7 @@ function suspendChild(
     return;
   }
   clearFallback();
-  insertTracked(resolveNode(value, undefined, ns));
+  insertTracked(resolveNode(resolved as HellaChild, parent, ns));
 }
 
 /**
@@ -98,14 +106,26 @@ export function Suspense(props: SuspenseProps): JSX.Element {
         );
         return;
       }
-      // hydrate: existingNodes holds the (swapped) resolved children; hydrate each child against them.
-      // Compiled JSX children arrive as an array — pass it flat so hydrateSequence binds each.
-      const children = Array.isArray(props.children) ? props.children : [props.children];
-      hydrateSequence(
-        parent as unknown as HellaElement,
-        children,
+      // hydrate: existingNodes holds the (swapped) resolved children — claim them IN PLACE:
+      // re-invoke the flagged child with the claim cursor seeded at the stage head, so its
+      // template()/fragment() create fns claim and wire the stage nodes in document order
+      // (the documented hydrate contract — never replacing the server DOM; works identically
+      // for a deferred stage arriving under the region watch, where the entry establishes
+      // the claim context). The stageMissing degradation arm above keeps fresh-mount semantics.
+      const child =
+        Array.isArray(props.children) && props.children.length === 1
+          ? props.children[0]
+          : props.children;
+      adoptClaimFrame(
+        parent,
         hctx.existingNodes[0] ?? null,
-        undefined,
+        () => {
+          // The runtime child dispatch owns every child shape: a flagged build claims through
+          // claimFlaggedChild, a getter adopts its marker-bounded region reactively — feeding
+          // resolveNode directly would stringify fn children (they never reach the wiring).
+          wireChild(parent as unknown as Element, child as HellaChild);
+        },
+        hctx.claimBound ?? null,
       );
       return;
     }
@@ -121,16 +141,21 @@ export function Suspense(props: SuspenseProps): JSX.Element {
       Array.isArray(props.children) && props.children.length === 1
         ? props.children[0]
         : props.children;
-    const value = isFunction(child) ? (child as () => HellaChild | HellaChild[])() : child;
     let fallbackNode: Node | null = null;
     const clearFallback = () => {
       if (fallbackNode?.parentNode) fallbackNode.parentNode.removeChild(fallbackNode);
     };
-    if (value && isFunction((value as Promise<unknown>).then) && props.fallback) {
+    if (
+      child != null &&
+      !Array.isArray(child) &&
+      isFunction(child) &&
+      !(child as { isTemplate?: boolean }).isTemplate &&
+      props.fallback
+    ) {
       fallbackNode = resolveNode(props.fallback, undefined, childNamespaceOf(parent));
       anchor.parentNode?.insertBefore(fallbackNode, anchor);
     }
-    suspendChild(parent, anchor, value, clearFallback);
+    suspendChild(parent, anchor, child, clearFallback);
   }) as JSX.Element;
 
   fn.isDynamic = true;

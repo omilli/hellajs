@@ -1,7 +1,6 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { signal } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
-import "@hellajs/dom/features/routed-props";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components import the bare
 // specifier, and Portal's hook wiring (observer walk, element state) only works when the test's
 // mount and the component's Portal share one dom instance.
@@ -366,10 +365,6 @@ function renderPart(
 ): Element {
   const container = setupContainer();
   const rendered = variant.render({ children: [], ...extra } as unknown as Record<string, never>);
-  // A reactive fn root cannot pass through mount's resolve-once unwrap — wrap it like the harness does.
-  mount(
-    typeof rendered === "function" ? <div>{rendered as never}</div> : (rendered as never),
-    container,
-  );
+  mount(rendered as never, container);
   return container.firstElementChild!;
 }

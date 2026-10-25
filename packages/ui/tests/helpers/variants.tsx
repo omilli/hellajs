@@ -62,13 +62,7 @@ import { Table as TableCssDefault } from "../../dist/registry/table/css/table";
 import { Table as TableTailwindDefault } from "../../dist/registry/table/tailwind/table";
 import * as TableCssJsx from "../../dist/registry/table/css/table";
 import * as TableTailwindJsx from "../../dist/registry/table/tailwind/table";
-import type {
-  GlobalHTMLAttributes,
-  HTMLAttributes,
-  HellaChild,
-  HellaChildren,
-  HellaNode,
-} from "@hellajs/dom";
+import type { GlobalHTMLAttributes, HTMLAttributes, HellaChild, HellaChildren } from "@hellajs/dom";
 import type { UiStyle } from "@hellajs/ui";
 
 /** Prop bag shared by every compiled Button variant (mirrors the emitted ButtonProps). */
@@ -134,7 +128,7 @@ export interface DialogPartVariantProps extends GlobalHTMLAttributes {
 /** One compiled component flavor — a style's canonical. */
 export interface ComponentVariant<P extends object> {
   style: UiStyle;
-  render: (props: P) => HellaNode;
+  render: (props: P) => JSX.Element;
   /** Resolves the compared root for portal variants; defaults to the mount container's first element child. */
   root?: () => Element | null;
 }
@@ -326,7 +320,7 @@ export const DIALOG_PARTS = [
 /** The named Tabs parts (the other Tabs exports). */
 export const TABS_PARTS = ["List", "Trigger", "Content"] as const;
 
-export type AnyModule = Record<string, (props: never) => HellaNode>;
+export type AnyModule = Record<string, (props: never) => JSX.Element>;
 
 /** Builds one PartVariant per flavor for a named component part. */
 function partVariants<P extends object>(
@@ -337,7 +331,7 @@ function partVariants<P extends object>(
   return modules.map(([mod, style]) => ({
     part,
     style,
-    render: mod[`${prop}${part}`] as unknown as (props: P) => HellaNode,
+    render: mod[`${prop}${part}`] as unknown as (props: P) => JSX.Element,
   }));
 }
 
@@ -607,9 +601,10 @@ export const tablePartVariants: PartVariant<TableCellVariantProps>[] = TABLE_PAR
 export function renderVariant<P extends object>(variant: ComponentVariant<P>, props: P): Element {
   const container = setupContainer();
   const rendered = variant.render(props);
-  // A reactive fn root cannot pass through mount's resolve-once unwrap — wrap it so it mounts
-  // as a reactive child like any template slot.
-  mount(typeof rendered === "function" ? <div>{rendered}</div> : rendered, container);
+  // An isDynamic meta-component result (Portal/ForEach roots) has no flagged build for mount to
+  // root — the template wrapper dispatches it as a child (child() hands it the parent);
+  // flagged builds mount directly and are the container's root.
+  mount("isTemplate" in rendered ? rendered : <div>{rendered}</div>, container);
   return variant.root ? variant.root()! : container.firstElementChild!;
 }
 
@@ -1090,14 +1085,14 @@ export const fieldVariants: PartVariant<FieldVariantProps>[] = [
     style: "css",
     render: (FieldCssJsx as unknown as AnyModule).Field as unknown as (
       props: FieldVariantProps,
-    ) => HellaNode,
+    ) => JSX.Element,
   },
   {
     part: "Field",
     style: "tailwind",
     render: (FieldTailwindJsx as unknown as AnyModule).Field as unknown as (
       props: FieldVariantProps,
-    ) => HellaNode,
+    ) => JSX.Element,
   },
 ];
 
@@ -1110,14 +1105,14 @@ export const itemVariants: PartVariant<ItemVariantProps>[] = [
     style: "css",
     render: (ItemCssJsx as unknown as AnyModule).Item as unknown as (
       props: ItemVariantProps,
-    ) => HellaNode,
+    ) => JSX.Element,
   },
   {
     part: "Item",
     style: "tailwind",
     render: (ItemTailwindJsx as unknown as AnyModule).Item as unknown as (
       props: ItemVariantProps,
-    ) => HellaNode,
+    ) => JSX.Element,
   },
 ];
 
@@ -1159,14 +1154,14 @@ export const bubbleVariants: PartVariant<BubbleVariantProps>[] = [
     style: "css",
     render: (BubbleCssJsx as unknown as AnyModule).Bubble as unknown as (
       props: BubbleVariantProps,
-    ) => HellaNode,
+    ) => JSX.Element,
   },
   {
     part: "Bubble",
     style: "tailwind",
     render: (BubbleTailwindJsx as unknown as AnyModule).Bubble as unknown as (
       props: BubbleVariantProps,
-    ) => HellaNode,
+    ) => JSX.Element,
   },
 ];
 
@@ -1198,14 +1193,14 @@ export const messageVariants: PartVariant<MessageVariantProps>[] = [
     style: "css",
     render: (MessageCssJsx as unknown as AnyModule).Message as unknown as (
       props: MessageVariantProps,
-    ) => HellaNode,
+    ) => JSX.Element,
   },
   {
     part: "Message",
     style: "tailwind",
     render: (MessageTailwindJsx as unknown as AnyModule).Message as unknown as (
       props: MessageVariantProps,
-    ) => HellaNode,
+    ) => JSX.Element,
   },
 ];
 
@@ -1267,14 +1262,14 @@ export const messageScrollerVariants: PartVariant<MessageScrollerVariantProps>[]
     style: "css",
     render: (MessageScrollerCssJsx as unknown as AnyModule).MessageScroller as unknown as (
       props: MessageScrollerVariantProps,
-    ) => HellaNode,
+    ) => JSX.Element,
   },
   {
     part: "MessageScroller",
     style: "tailwind",
     render: (MessageScrollerTailwindJsx as unknown as AnyModule).MessageScroller as unknown as (
       props: MessageScrollerVariantProps,
-    ) => HellaNode,
+    ) => JSX.Element,
   },
 ];
 
@@ -1335,14 +1330,14 @@ export const attachmentVariants: PartVariant<AttachmentVariantProps>[] = [
     style: "css",
     render: (AttachmentCssJsx as unknown as AnyModule).Attachment as unknown as (
       props: AttachmentVariantProps,
-    ) => HellaNode,
+    ) => JSX.Element,
   },
   {
     part: "Attachment",
     style: "tailwind",
     render: (AttachmentTailwindJsx as unknown as AnyModule).Attachment as unknown as (
       props: AttachmentVariantProps,
-    ) => HellaNode,
+    ) => JSX.Element,
   },
 ];
 
@@ -1755,13 +1750,13 @@ export const tooltipVariants: ComponentVariant<TooltipVariantProps>[] = [
     style: "css",
     render: (TooltipCssJsx as unknown as AnyModule).Tooltip as unknown as (
       props: TooltipVariantProps,
-    ) => HellaNode,
+    ) => JSX.Element,
   },
   {
     style: "tailwind",
     render: (TooltipTailwindJsx as unknown as AnyModule).Tooltip as unknown as (
       props: TooltipVariantProps,
-    ) => HellaNode,
+    ) => JSX.Element,
   },
 ];
 
@@ -1811,13 +1806,13 @@ export const hoverCardVariants: ComponentVariant<HoverCardVariantProps>[] = [
     style: "css",
     render: (HoverCardCssJsx as unknown as AnyModule).HoverCard as unknown as (
       props: HoverCardVariantProps,
-    ) => HellaNode,
+    ) => JSX.Element,
   },
   {
     style: "tailwind",
     render: (HoverCardTailwindJsx as unknown as AnyModule).HoverCard as unknown as (
       props: HoverCardVariantProps,
-    ) => HellaNode,
+    ) => JSX.Element,
   },
 ];
 
@@ -1876,13 +1871,13 @@ export const popoverVariants: ComponentVariant<PopoverVariantProps>[] = [
     style: "css",
     render: (PopoverCssJsx as unknown as AnyModule).Popover as unknown as (
       props: PopoverVariantProps,
-    ) => HellaNode,
+    ) => JSX.Element,
   },
   {
     style: "tailwind",
     render: (PopoverTailwindJsx as unknown as AnyModule).Popover as unknown as (
       props: PopoverVariantProps,
-    ) => HellaNode,
+    ) => JSX.Element,
   },
 ];
 
@@ -1913,8 +1908,8 @@ export function menuModulePart<P extends object>(
   modules: MenuModuleTable,
   variant: { style: UiStyle },
   name: string,
-): (props: P) => HellaNode {
-  return modules[variant.style][name] as unknown as (props: P) => HellaNode;
+): (props: P) => JSX.Element {
+  return modules[variant.style][name] as unknown as (props: P) => JSX.Element;
 }
 
 /** Item shape of every compiled menu RadioGroup variant (mirrors the emitted RadioGroupEntry). */
@@ -1995,13 +1990,13 @@ export const dropdownMenuVariants: ComponentVariant<DropdownMenuVariantProps>[] 
     style: "css",
     render: (DropdownMenuCssJsx as unknown as AnyModule).DropdownMenu as unknown as (
       props: DropdownMenuVariantProps,
-    ) => HellaNode,
+    ) => JSX.Element,
   },
   {
     style: "tailwind",
     render: (DropdownMenuTailwindJsx as unknown as AnyModule).DropdownMenu as unknown as (
       props: DropdownMenuVariantProps,
-    ) => HellaNode,
+    ) => JSX.Element,
   },
 ];
 
@@ -2085,13 +2080,13 @@ export const contextMenuVariants: ComponentVariant<ContextMenuVariantProps>[] = 
     style: "css",
     render: (ContextMenuCssJsx as unknown as AnyModule).ContextMenu as unknown as (
       props: ContextMenuVariantProps,
-    ) => HellaNode,
+    ) => JSX.Element,
   },
   {
     style: "tailwind",
     render: (ContextMenuTailwindJsx as unknown as AnyModule).ContextMenu as unknown as (
       props: ContextMenuVariantProps,
-    ) => HellaNode,
+    ) => JSX.Element,
   },
 ];
 
@@ -2184,13 +2179,13 @@ export const menubarVariants: ComponentVariant<MenubarVariantProps>[] = [
     style: "css",
     render: (MenubarCssJsx as unknown as AnyModule).Menubar as unknown as (
       props: MenubarVariantProps,
-    ) => HellaNode,
+    ) => JSX.Element,
   },
   {
     style: "tailwind",
     render: (MenubarTailwindJsx as unknown as AnyModule).Menubar as unknown as (
       props: MenubarVariantProps,
-    ) => HellaNode,
+    ) => JSX.Element,
   },
 ];
 
@@ -2251,13 +2246,13 @@ export const navigationMenuVariants: ComponentVariant<NavigationMenuVariantProps
     style: "css",
     render: (NavigationMenuCssJsx as unknown as AnyModule).NavigationMenu as unknown as (
       props: NavigationMenuVariantProps,
-    ) => HellaNode,
+    ) => JSX.Element,
   },
   {
     style: "tailwind",
     render: (NavigationMenuTailwindJsx as unknown as AnyModule).NavigationMenu as unknown as (
       props: NavigationMenuVariantProps,
-    ) => HellaNode,
+    ) => JSX.Element,
   },
 ];
 
@@ -2299,13 +2294,13 @@ export const breadcrumbVariants: ComponentVariant<BreadcrumbVariantProps>[] = [
     style: "css",
     render: (BreadcrumbCssJsx as unknown as AnyModule).Breadcrumb as unknown as (
       props: BreadcrumbVariantProps,
-    ) => HellaNode,
+    ) => JSX.Element,
   },
   {
     style: "tailwind",
     render: (BreadcrumbTailwindJsx as unknown as AnyModule).Breadcrumb as unknown as (
       props: BreadcrumbVariantProps,
-    ) => HellaNode,
+    ) => JSX.Element,
   },
 ];
 
@@ -2399,13 +2394,13 @@ export const selectVariants: ComponentVariant<SelectVariantProps>[] = [
     style: "css",
     render: (SelectCssJsx as unknown as AnyModule).Select as unknown as (
       props: SelectVariantProps,
-    ) => HellaNode,
+    ) => JSX.Element,
   },
   {
     style: "tailwind",
     render: (SelectTailwindJsx as unknown as AnyModule).Select as unknown as (
       props: SelectVariantProps,
-    ) => HellaNode,
+    ) => JSX.Element,
   },
 ];
 
@@ -2510,13 +2505,13 @@ export const comboboxVariants: ComponentVariant<ComboboxVariantProps>[] = [
     style: "css",
     render: (ComboboxCssJsx as unknown as AnyModule).Combobox as unknown as (
       props: ComboboxVariantProps,
-    ) => HellaNode,
+    ) => JSX.Element,
   },
   {
     style: "tailwind",
     render: (ComboboxTailwindJsx as unknown as AnyModule).Combobox as unknown as (
       props: ComboboxVariantProps,
-    ) => HellaNode,
+    ) => JSX.Element,
   },
 ];
 
@@ -2593,13 +2588,13 @@ export const commandVariants: ComponentVariant<CommandVariantProps>[] = [
     style: "css",
     render: (CommandCssJsx as unknown as AnyModule).Command as unknown as (
       props: CommandVariantProps,
-    ) => HellaNode,
+    ) => JSX.Element,
   },
   {
     style: "tailwind",
     render: (CommandTailwindJsx as unknown as AnyModule).Command as unknown as (
       props: CommandVariantProps,
-    ) => HellaNode,
+    ) => JSX.Element,
   },
 ];
 
@@ -3175,6 +3170,6 @@ export const sidebarModuleVariants: SidebarModuleVariant[] = [
 export function sidebarModulePart<P extends object>(
   variant: SidebarModuleVariant,
   name: string,
-): (props: P) => HellaNode {
-  return variant.mod[name] as unknown as (props: P) => HellaNode;
+): (props: P) => JSX.Element {
+  return variant.mod[name] as unknown as (props: P) => JSX.Element;
 }

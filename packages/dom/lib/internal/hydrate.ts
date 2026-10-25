@@ -1,34 +1,15 @@
-import type {
-  HellaNode,
-  HellaChild,
-  HellaElement,
-  RenderFn,
-  ElementMountFn,
-  DirectListenerSpec,
-} from "../types/nodes";
-import { isFalsy, isFunction, isObject, isNull, objectLoop } from "./core";
-import {
-  renderProp,
-  resolveDeep,
-  isHellaNode,
-  chainScopes,
-  wireFragmentScope,
-  routePrefixedProps,
-  toText,
-} from "./utils";
-import { setNodeHandler, bindDirectHandler } from "./events";
-import { dispatchError, toError } from "./dispatch";
+import type { HellaElement, HellaChild, RenderFn } from "../types/nodes";
+import { isFunction, isObject, isNull } from "./core";
+import { resolveDeep, isTemplateBuild, toText } from "./utils";
+import { dispatchError, findBoundary, toError } from "./dispatch";
 import { registry } from "../registry";
-import { getState, peekState, popBuildParent, pushBuildParent, registerOverlay } from "./state";
 import { deferSuspenseRegion, resetDeferredState, setDeferredAdopters } from "./deferred";
 import {
-  mountNode,
   resolveNode,
   getBoundaryConfig,
   clearRenderedNodes,
   childNamespaceOf,
   HTML_NS,
-  NO_VALUE,
 } from "./render";
 import { drainAnchorCleanup } from "./cleanup";
 
@@ -44,10 +25,10 @@ export interface HydrateCtx {
   anchor: Node;
   /** Existing server DOM nodes for this region, gathered from between its `<!--[-->…<!--]-->` markers. */
   existingNodes: Node[];
-  /** Recurse adoption into an adopted child element. */
-  hydrateNode: (node: HellaNode, existing: Node | null, boundary?: Element) => Node;
   /** True when a `<!--hsN-->` stage sentinel was gathered but its staged `<template>` never arrived (interrupted stream) — `<Suspense>` re-suspends client-side. */
   stageMissing?: boolean;
+  /** The node that followed the region's close marker at consume time — a claiming body's frame bound (ownership ends at the region's edge). */
+  claimBound?: Node | null;
 }
 
 const hydrateStack: HydrateCtx[] = [];
@@ -81,8 +62,11 @@ export function resetHydrateState(): void {
   resetDeferredState();
 }
 
-/** Region-open Comment node discriminator (parser strips `<!--`/`-->`, leaving nodeValue `[`). The close is read inline by `gatherRegion`. */
-function isMarkOpen(n: Node | null): boolean {
+/**
+ * Region-open Comment node discriminator (parser strips `<!--`/`-->`, leaving nodeValue `[`). The close is read inline by `gatherRegion`.
+ * @internal Exported for `lib/runtime.ts`'s adoption context, whose claim cursors probe the same markers.
+ */
+export function isMarkOpen(n: Node | null): boolean {
   return !isNull(n) && n.nodeType === Node.COMMENT_NODE && n.nodeValue === "[";
 }
 
@@ -112,8 +96,10 @@ function gatherRegion(open: Node): { nodes: Node[]; close: Node } {
  * Consumes a marker-bounded region: gathers its nodes, removes the open/close markers, inserts a
  * persistent text anchor where the open marker was. Returns the anchor, the gathered nodes, and the
  * DOM pointer past the region (the node that followed the close marker).
+ * @internal Exported for `lib/runtime.ts`'s adoption context — the compiled child/text arms consume the
+ * region their wiring call owns through this same reader (no parallel implementation).
  */
-function consumeRegion(
+export function consumeRegion(
   parent: HellaElement,
   open: Node,
 ): { anchor: Node; existing: Node[]; next: Node | null } {
@@ -188,9 +174,12 @@ export function swapSuspenseStage(existing: Node[], anchor: Node): StageSwapResu
 /**
  * @internal
  * Pushes a HydrateCtx seeded with the gathered region nodes + the walker's anchor, calls the
- * isDynamic component fn (which adopts via {@link peekHydrateContext}), then pops. Exported for
+ * isDynamic component fn (which adopts via {@link peekHydrateContext}), then pops. The body owns
+ * its own claiming: Suspense frames at the stage head under `claimBound`; the bare-adopt bodies
+ * (ForEach/Transition/Lazy) pair nodes positionally without claims, and their degrade paths run
+ * `constructFresh` (mount semantics under an active root frame). Exported for
  * `internal/deferred.ts`, whose deferred arms adopt arrived/late regions through the registered
- * adopter — the walker coupling (hydrateNode + the ctx stack) lives here.
+ * adopter — the region coupling (the ctx stack) lives here.
  */
 export function adoptRegion(
   parent: HellaElement,
@@ -198,26 +187,31 @@ export function adoptRegion(
   anchor: Node,
   existing: Node[],
   stageMissing = false,
+  next: Node | null = null,
 ): void {
-  pushHydrateContext({ anchor, existingNodes: existing, hydrateNode, stageMissing });
+  // `claimBound` carries the region's close-marker successor so a meta body that claims under its
+  // own nested frame (Suspense) stops its leftover scan at the region's edge instead of the
+  // parent's following sibling sites.
+  pushHydrateContext({ anchor, existingNodes: existing, stageMissing, claimBound: next });
   child(parent);
   popHydrateContext();
 }
 
-// Registration breaks the circular import: deferred.ts needs these walker-coupled fns, hydrate.ts needs its state accessors (setMountNode pattern)
+// Registration breaks the circular import: deferred.ts needs these region-coupled fns, hydrate.ts needs its state accessors (the injection pattern)
 setDeferredAdopters(adoptRegion, swapSuspenseStage);
 
 /**
  * Sets up a reactive (non-dynamic) child's effect against a marker-bounded region: the server-rendered
  * nodes are ADOPTED as the initial render (first run skipped); subsequent signal changes clear + render
- * fresh (mirroring `appendToParent`, incl. the isDynamic-resolved `Proxy` branch — safe here because
- * `clearRenderedNodes` runs before re-rendering on subsequent runs). Each re-run first drains any
+ * fresh, incl. the isDynamic-resolved `Proxy` branch — safe here because
+ * `clearRenderedNodes` runs before re-rendering on subsequent runs. Each re-run first drains any
  * component state left on the persistent region anchor (`drainAnchorCleanup` — a no-op for the common
  * text/element case), so a dynamic component's effect and disposers never outlive their run.
+ * @internal Exported for the runtime's adoption machinery — the compiled text/child arms drive it.
  */
-function adoptReactiveRegion(
+export function adoptReactiveRegion(
   parent: HellaElement,
-  child: HellaChild,
+  child: unknown,
   anchor: Node,
   existing: Node[],
   boundaryElement?: Element,
@@ -260,41 +254,11 @@ function adoptReactiveRegion(
       }
       const isDyn = isFunction(resolved) && (resolved as RenderFn).isDynamic;
       if (firstRun && !isDyn) {
+        // First run adopts the gathered server nodes as-is (bare adopt): resolved values under
+        // dom-target output are flagged builds/primitives, which claim positionally through the
+        // compiled wiring calls instead — this arm only covers regions the walker's reactive
+        // machinery owns. resolveDeep already registered the closure's own dependencies.
         firstRun = false;
-        // Adopted ELEMENT regions must still be wired: pair the resolved vnodes
-        // with the server nodes positionally and hydrateNode them, so prop
-        // effects and handlers register (a bare adopt leaves the region inert
-        // whenever the closure reads no top-level signal — e.g. a list whose
-        // signal reads live inside per-item prop getters). Text regions and
-        // count/tag mismatches keep the bare adopt; resolveDeep already
-        // registered the closure's own dependencies.
-        if (Array.isArray(resolved) && resolved.length === renderedNodes.length) {
-          let pairable = true;
-          let i = 0;
-          while (i < resolved.length) {
-            const vnode = resolved[i] as HellaNode;
-            const el = renderedNodes[i];
-            if (
-              !isObject(vnode) ||
-              (vnode as HellaNode).tag === undefined ||
-              !el ||
-              el.nodeType !== Node.ELEMENT_NODE ||
-              !tagMatches(el as Element, vnode.tag as string)
-            ) {
-              pairable = false;
-              break;
-            }
-            i++;
-          }
-          if (pairable) {
-            let j = 0;
-            while (j < resolved.length) {
-              hydrateNode(resolved[j] as HellaNode, renderedNodes[j] as Element, boundaryElement);
-              j++;
-            }
-            return;
-          }
-        }
         return;
       }
       firstRun = false;
@@ -319,10 +283,11 @@ function adoptReactiveRegion(
       // node ahead of the anchor would become the region's first node, and hydrate's fragment
       // scope rides exactly that node (regionPrev.nextSibling) — the next re-run's clear would
       // dispose the chained component scope one region flip early (killing the component's
-      // effects while it stays mounted). Only arrays and tag/raw objects mount fresh nodes.
+      // effects while it stays mounted). Only arrays and template-build/raw objects mount fresh nodes.
       if (
         Array.isArray(resolved) ||
-        (isObject(resolved) && ((resolved as HellaNode).tag !== undefined || "raw" in resolved))
+        isTemplateBuild(resolved) ||
+        (isObject(resolved) && "raw" in resolved)
       ) {
         const node = resolveNode(resolved as HellaChild, parent, childNamespaceOf(parent));
         if (node.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
@@ -340,7 +305,10 @@ function adoptReactiveRegion(
       }
       anchor.textContent = toText(resolved);
     } catch (err) {
-      const config = getBoundaryConfig(boundaryElement);
+      // Run-time boundary resolution (mirrors the mount path): the nearest boundary of
+      // the region's parent, falling back to the caller's threaded one.
+      const boundary = boundaryElement ?? findBoundary(parent) ?? undefined;
+      const config = getBoundaryConfig(boundary);
       dispatchError(toError(err), { phase: "mount", element: parent, config });
     }
   });
@@ -349,304 +317,55 @@ function adoptReactiveRegion(
 /**
  * Tag equality against an existing server node: HTML parsers uppercase `tagName`, while elements
  * in a foreign namespace (SVG, MathML) keep the authored case — compare exact-case there.
+ * @internal Exported for `lib/runtime.ts`'s claim arms, which verify claimed server nodes against the
+ * compiled template's root tag (structural parity guard at the claim site).
  */
-function tagMatches(element: Element, tag: string): boolean {
+export function tagMatches(element: Element, tag: string): boolean {
   const ns = element.namespaceURI;
   return element.tagName === (ns && ns !== HTML_NS ? tag : tag.toUpperCase());
 }
 
 /**
- * Replaces a mismatched server node with a freshly mounted subtree in place.
+ * Runs the isDynamic adoption dispatch over an already-consumed region — `lib/runtime.ts`'s compiled
+ * child arm drives it for marker-bounded flagged build fns: the same `ssr` meta kinds through one
+ * dispatcher, no parallel switch. ForEach/Transition adopt the gathered nodes; Portal passes `[]`
+ * (server rendered nothing in-place) and re-mounts into the target; Lazy adopts the gathered nodes
+ * too — server content (a loaded render from `ssr.async`/`ssr.stream`, or a sync render's loading
+ * UI) stays until the loader's fresh run swaps it (`Lazy.ts` skips the loading insert when the
+ * region holds server nodes and `clearRenderedNodes`s the server nodes on settle — no flash).
+ * Suspense runs `swapSuspenseStage` — the no-script/HappyDOM fallback (a staged `<template>` whose
+ * id matches a sentinel comment replaces the fallback; the swap also returns the sentinel comment
+ * itself). In a browser the inline `$hs` swap script (emitted by `@hellajs/ssr`) has already
+ * swapped each region as it arrived, so this runs only when that script hasn't (e.g. in tests).
+ * Either way it then adopts the resolved children. When the sentinel is present but its staged
+ * `<template>` never arrived (interrupted stream), the ctx is flagged `stageMissing` and
+ * `<Suspense>` degrades to fresh-mount semantics — fallback kept, child re-suspended client-side,
+ * content swapped on settle, rejections bubbled — EXCEPT while `document.readyState === "loading"`
+ * (hydrate executing mid-parse), where the region is instead registered in `deferredRegions`
+ * (`deferSuspenseRegion`, `internal/deferred.ts`) — see §hydrate in dom's AGENTS.md for the
+ * selective-hydration watch. `next` is the DOM pointer past the consumed region (the node that
+ * followed its close marker), forwarded to the deferral registry verbatim.
+ * @internal Exported for the runtime's compiled child arm (the shared isDynamic dispatch).
  */
-function replaceMismatch(node: HellaNode, existing: Node | null, boundaryElement?: Element): Node {
-  const insertParent = existing?.parentNode;
-  if (insertParent) pushBuildParent(insertParent);
-  const fresh = mountNode(node, boundaryElement, childNamespaceOf(existing));
-  if (insertParent) popBuildParent();
-  if (existing && existing.parentNode) {
-    existing.parentNode.replaceChild(fresh, existing);
-  }
-  return fresh;
-}
-
-/**
- * @internal
- * Hydrates a HellaNode into an EXISTING server-rendered element — attaches
- * scope/error/hooks/event handlers/bindings without recreating the element.
- * Mirrors `mountNode`'s step order, diverging at create-vs-use and skipping
- * `props` (the server already applied them via `ssr()`). On tag mismatch, warns
- * and subtree-replaces. Returns the hydrated element, or a fresh subtree on mismatch.
- */
-export function hydrateNode(
-  node: HellaNode,
-  existing: Node | null,
-  boundaryElement?: Element,
-): Node {
-  if (node.static && existing && existing.nodeType === Node.ELEMENT_NODE) {
-    const staticTag = node.tag as string | undefined;
-    if (staticTag && !tagMatches(existing as Element, staticTag)) {
-      console.warn(
-        `[dom] hydrate mismatch: expected <${staticTag}>, found <${(existing as Element).tagName.toLowerCase()}>`,
-      );
-      return replaceMismatch(node, existing, boundaryElement);
-    }
-    // An adopted static element still owns its component's effects — wire the scope
-    // so cleanup disposes it (mirrors the non-static path's componentScope copy).
-    if (node.componentScope) {
-      const adoptState = getState(existing);
-      adoptState.componentScope = chainScopes(adoptState.componentScope, node.componentScope);
-    }
-    return existing as Node;
-  }
-
-  const { tag, props, on, e, hooks, children, componentScope, error } = node;
-
-  if (!existing || existing.nodeType !== Node.ELEMENT_NODE) {
-    console.warn("[dom] hydrate mismatch: expected element node");
-    return replaceMismatch(node, existing, boundaryElement);
-  }
-
-  const element = existing as HellaElement;
-  if (tag && !tagMatches(element, tag as string)) {
-    console.warn(
-      `[dom] hydrate mismatch: expected <${tag}>, found <${element.tagName.toLowerCase()}>`,
-    );
-    return replaceMismatch(node, existing, boundaryElement);
-  }
-
-  if (componentScope) {
-    const state = getState(element);
-    state.componentScope = chainScopes(state.componentScope, componentScope);
-  }
-  // Prefixed props keys ("on:click" from a component's rest-forwarding) slice
-  // into their live buckets before wiring; other props render as attributes.
-  const routed = routePrefixedProps(
-    props as Record<string, unknown>,
-    on as Record<string, unknown>,
-    e as Record<string, unknown>,
-    hooks,
-    error,
-  );
-  if (routed.error) {
-    const state = getState(element);
-    state.errorConfig = routed.error;
-    state.originalNode = node;
-  }
-  const currentBoundary = routed.error ? element : boundaryElement;
-
-  if (routed.hooks) {
-    routed.hooks.beforeMount && registry.addHook(element, "beforeMount", routed.hooks.beforeMount);
-    routed.hooks.afterMount &&
-      registry.addHook(element, "afterMount", routed.hooks.afterMount as ElementMountFn);
-    routed.hooks.beforeDestroy &&
-      registry.addHook(element, "beforeDestroy", routed.hooks.beforeDestroy as ElementMountFn);
-    routed.hooks.afterDestroy &&
-      registry.addHook(element, "afterDestroy", routed.hooks.afterDestroy);
-    routed.hooks.beforeUpdate &&
-      registry.addHook(element, "beforeUpdate", routed.hooks.beforeUpdate as ElementMountFn);
-    routed.hooks.afterUpdate &&
-      registry.addHook(element, "afterUpdate", routed.hooks.afterUpdate as ElementMountFn);
-
-    if (routed.hooks.beforeMount) {
-      try {
-        routed.hooks.beforeMount();
-      } catch (err) {
-        const config = getBoundaryConfig(currentBoundary);
-        dispatchError(toError(err), { phase: "mount", element, config });
-      }
-    }
-  }
-
-  // Static props already applied by ssr(); wire only function-ref props as effects
-  objectLoop(routed.props, (key, value) => {
-    if (!isFunction(value)) return;
-    let last: unknown = NO_VALUE;
-    registry.addEffect(element, () => {
-      try {
-        const v = value();
-        if (v === last) return;
-        last = v;
-        renderProp(element, key, v);
-      } catch (err) {
-        const config = getBoundaryConfig(currentBoundary);
-        const fallback = dispatchError(toError(err), { phase: "update", element, config });
-        if (fallback) {
-          const target = currentBoundary ?? element;
-          target.replaceChildren(mountNode(fallback));
-        }
-      }
-    });
-  });
-
-  objectLoop(routed.on, (eventName, handler) =>
-    setNodeHandler(element, eventName, handler as EventListener),
-  );
-
-  if (routed.e) {
-    objectLoop(routed.e, (eventName, handler) =>
-      bindDirectHandler(element, eventName, handler as EventListener | DirectListenerSpec),
-    );
-  }
-
-  hydrateSequence(element, children, element.firstChild, currentBoundary);
-  return element;
-}
-
-/**
- * @internal
- * Walks AST children in parallel with existing server DOM via a node pointer, locating each dynamic
- * region by its `<!--[-->…<!--]-->` Comment markers (emitted by `ssr`). Static text/elements match by
- * position; reactive children + isDynamic components + fragments are marker-bounded and adopted.
- * @param parent The existing element whose children are being hydrated
- * @param children AST children
- * @param current DOM pointer (first unconsumed server node)
- * @param boundaryElement Nearest error boundary
- * @returns The advanced DOM pointer
- */
-export function hydrateSequence(
+export function adoptDynamicRegion(
   parent: HellaElement,
-  children: HellaChild[] | undefined,
-  current: Node | null,
-  boundaryElement?: Element,
-): Node | null {
-  if (!children || children.length === 0) return current;
-  let i = 0;
-  const len = children.length;
-  while (i < len) {
-    const child = children[i];
-
-    if (isObject(child) && "raw" in child) {
-      if (current && isMarkOpen(current)) {
-        current = consumeRegion(parent, current).next;
-      } else {
-        console.warn("[dom] hydrate: expected raw-region marker, not found");
-        const tpl = document.createElement("template");
-        tpl.innerHTML = child.raw;
-        parent.insertBefore(tpl.content, current);
-      }
-      i++;
-      continue;
-    }
-
-    // Nested array children (e.g. a JSX `{items.map(…)}` expression) — recurse in order,
-    // consuming server nodes positionally, mirroring ssr's array-children branch
-    if (Array.isArray(child)) {
-      current = hydrateSequence(parent, child, current, boundaryElement);
-      i++;
-      continue;
-    }
-
-    if (isHellaNode(child)) {
-      const node = child as HellaNode;
-      if (node.tag === "$") {
-        // fragment child — bounded by markers; gather, remove both markers, recurse children inline.
-        // Hydrate anchors lead their region (consumeRegion inserts the anchor AT the open
-        // marker), so the stable carrier is the region's FIRST node — but it exists only
-        // after the recursion consumes the inner regions (the pre-recursion first node
-        // can be an inner open marker the walk itself removes), so re-derive the region
-        // head from the node before it and wire after recursing. An empty region → dispose.
-        if (current && isMarkOpen(current)) {
-          const { close } = gatherRegion(current);
-          const firstChild = current.nextSibling;
-          const regionPrev = current.previousSibling; // capture before removing the markers
-          parent.removeChild(current);
-          if (close !== current) parent.removeChild(close);
-          const empty = firstChild === close;
-          if (node.componentScope && empty) node.componentScope();
-          current = hydrateSequence(parent, node.children, firstChild, boundaryElement);
-          if (node.componentScope && !empty) {
-            wireFragmentScope(
-              regionPrev ? regionPrev.nextSibling : parent.firstChild,
-              null,
-              node.componentScope,
-            );
-          }
-        } else {
-          console.warn("[dom] hydrate: expected fragment marker, not found");
-          const preRecursion = current; // degenerate warn path — the carrier identity is best-effort
-          current = hydrateSequence(parent, node.children, current, boundaryElement);
-          if (node.componentScope) wireFragmentScope(preRecursion, null, node.componentScope);
-        }
-      } else {
-        const result = hydrateNode(node, current, boundaryElement);
-        if (result && !result.parentNode) {
-          parent.appendChild(result);
-          // A replacement built without an insert-parent frame (mismatch with a detached/null
-          // server node) lands here — register it into `parent` so an ancestor fast-path clean
-          // reaches it.
-          const resultState = peekState(result);
-          if (resultState) registerOverlay(result, resultState);
-        }
-        current = result ? result.nextSibling : null;
-      }
-      i++;
-      continue;
-    }
-
-    if (isFunction(child) && (child as RenderFn).isDynamic) {
-      current = hydrateDynamic(parent, child as RenderFn, current);
-      i++;
-      continue;
-    }
-
-    if (isFunction(child)) {
-      // reactive child — bounded by markers
-      if (current && isMarkOpen(current)) {
-        const { anchor, existing, next } = consumeRegion(parent, current);
-        adoptReactiveRegion(parent, child, anchor, existing, boundaryElement);
-        current = next;
-      } else {
-        console.warn("[dom] hydrate: expected reactive-region marker, not found");
-        const anchor = document.createTextNode("");
-        if (current) parent.insertBefore(anchor, current);
-        else parent.appendChild(anchor);
-        adoptReactiveRegion(parent, child, anchor, [], boundaryElement);
-      }
-      i++;
-      continue;
-    }
-
-    // null/undefined/false render nothing server-side (ssr's child classification) —
-    // consume no node, or every later positional match would shift by one
-    if (isFalsy(child)) {
-      i++;
-      continue;
-    }
-
-    // static text / number / primitive — consume the matching server node by position
-    current = current ? current.nextSibling : null;
-    i++;
-  }
-  return current;
-}
-
-/**
- * Dispatches an isDynamic child against its marker-bounded region: consumes the region, then either
- * adopts the gathered nodes (ForEach/Transition; Lazy keeps them until its loader re-run replaces
- * them) or drops them and re-runs (Portal).
- */
-function hydrateDynamic(parent: HellaElement, child: RenderFn, current: Node | null): Node | null {
-  if (!current || !isMarkOpen(current)) {
-    console.warn("[dom] hydrate: expected isDynamic-region marker, not found");
-    const anchor = document.createTextNode("");
-    if (current) parent.insertBefore(anchor, current);
-    else parent.appendChild(anchor);
-    adoptRegion(parent, child, anchor, []);
-    return current;
-  }
-  const { anchor, existing, next } = consumeRegion(parent, current);
+  child: RenderFn,
+  anchor: Node,
+  existing: Node[],
+  next: Node | null,
+): void {
   const meta = child.ssr;
   let swappedStage: { nodes: Node[]; missing: boolean; sentinel: Comment | null };
   switch (meta?.kind) {
     case "forEach":
     case "transition":
-      adoptRegion(parent, child, anchor, existing);
+      adoptRegion(parent, child, anchor, existing, false, next);
       break;
     case "portal":
-      adoptRegion(parent, child, anchor, []); // server rendered nothing in-place
+      adoptRegion(parent, child, anchor, [], false, next); // server rendered nothing in-place
       break;
     case "lazy":
-      adoptRegion(parent, child, anchor, existing); // server content (loaded render, or loading UI from a sync render) stays until Lazy's fresh loader run replaces it — no flash
+      adoptRegion(parent, child, anchor, existing, false, next); // server content (loaded render, or loading UI from a sync render) stays until Lazy's fresh loader run replaces it — no flash
       break;
     case "suspense":
       // no-script fallback: staged <template> → resolved children (a browser's inline $hs already swapped on arrival);
@@ -665,10 +384,9 @@ function hydrateDynamic(parent: HellaElement, child: RenderFn, current: Node | n
         });
         break;
       }
-      adoptRegion(parent, child, anchor, swappedStage.nodes, swappedStage.missing);
+      adoptRegion(parent, child, anchor, swappedStage.nodes, swappedStage.missing, next);
       break;
     default:
-      adoptRegion(parent, child, anchor, existing);
+      adoptRegion(parent, child, anchor, existing, false, next);
   }
-  return next;
 }

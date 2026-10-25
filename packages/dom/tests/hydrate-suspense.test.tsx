@@ -1,9 +1,9 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
-import { flush, signal } from "@hellajs/core";
+import { flush } from "@hellajs/core";
 import { delay, resetTestState, setupContainer, suppressConsole } from "@utils/test-helpers.js";
 import { hydrate, mount, Suspense, component, onError } from "@hellajs/dom";
-import type { HellaNode } from "@hellajs/dom";
-import { streamContainer, ssrContainer } from "./helpers";
+import type { HellaNode, TemplateBuildFn } from "@hellajs/dom";
+import { twoTargetStreamed, twoTargetContainer } from "./helpers";
 
 beforeEach(() => {
   resetTestState();
@@ -11,86 +11,133 @@ beforeEach(() => {
 
 describe("dom hydrate <Suspense>", () => {
   test("swaps staged children in, removes the template, and hydrates them reactively", async () => {
-    const count = signal(0);
-    const App = () => (
-      <div id="root">
-        <Suspense fallback={<span id="fb">loading</span>}>
-          {
-            <b id="b" data-n={count}>
-              x
-            </b>
-          }
-        </Suspense>
-      </div>
-    );
-    const container = await streamContainer((<App></App>) as HellaNode);
+    const { container, client } = await twoTargetStreamed(`
+      import { Suspense } from "@hellajs/dom";
+      import { signal } from "@hellajs/core";
+      const count = signal(0);
+      const App = () => (
+        <div id="root">
+          <Suspense fallback={<span id="fb">loading</span>}>
+            {
+              <b id="b" data-n={count}>
+                x
+              </b>
+            }
+          </Suspense>
+        </div>
+      );
+      const __out = { App, count };
+    `);
     expect(container.querySelector("#fb")).not.toBeNull(); // fallback present pre-hydrate
 
-    hydrate(<App></App>, container);
+    hydrate(client.App as TemplateBuildFn, container);
     expect(container.querySelector("#fb")).toBeNull(); // fallback swapped out
     expect(container.querySelector("template")).toBeNull(); // template removed
     const b = container.querySelector("#b")!;
     expect(b.getAttribute("data-n")).toBe("0");
 
-    count(7);
+    (client.count as (v: number) => void)(7);
     flush();
     expect(b.getAttribute("data-n")).toBe("7"); // children hydrated + reactive
   });
 
-  test("hydrates async-resolved children (Promise getter) from the staged template", async () => {
-    const App = () => (
-      <div id="root">
-        <Suspense fallback={<i>wait</i>}>{() => Promise.resolve(<p id="p">data</p>)}</Suspense>
-      </div>
-    );
-    const container = await streamContainer((<App></App>) as HellaNode);
+  test("degrades to a client re-suspend when the streamed stage never arrives", async () => {
+    // Per-arm child identity proves the CLIENT arm's own child rendered: the server's
+    // resolved copy rides the staged <template> — stripped here to simulate the dead stream.
+    const { container, client } = await twoTargetStreamed(`
+      import { Suspense } from "@hellajs/dom";
+      const child = () =>
+        Promise.resolve(
+          __HELLA_ARM === "server" ? <p id="p-server">data</p> : <p id="p-client">late</p>,
+        );
+      const App = () => (
+        <div id="root">
+          <Suspense fallback={<span id="fb">loading</span>}>{child}</Suspense>
+        </div>
+      );
+      const __out = { App };
+    `);
+    expect(container.querySelector("template")).not.toBeNull();
+    container.querySelector("template")!.remove();
 
-    hydrate(<App></App>, container);
+    // suppressConsole takes no callback — install, hydrate, restore, then assert.
+    const captured = suppressConsole();
+    try {
+      hydrate(client.App as TemplateBuildFn, container);
+    } finally {
+      captured.restore();
+    }
+    expect(captured.warns.some((w) => String(w[0]).includes("suspense stage missing"))).toBe(true);
+
+    await delay();
+    expect(container.querySelector("#p-client")!.textContent).toBe("late");
+    expect(container.querySelector("#p-server")).toBeNull(); // server copy died with the template
+    expect(container.querySelector("#fb")).toBeNull(); // fallback cleared on settle
+  });
+
+  test("hydrates async-resolved children (Promise getter) from the staged template", async () => {
+    const { container, client } = await twoTargetStreamed(`
+      import { Suspense } from "@hellajs/dom";
+      const App = () => (
+        <div id="root">
+          <Suspense fallback={<i>wait</i>}>{() => Promise.resolve(<p id="p">data</p>)}</Suspense>
+        </div>
+      );
+      const __out = { App };
+    `);
+
+    hydrate(client.App as TemplateBuildFn, container);
     expect(container.querySelector("#p")!.textContent).toBe("data");
     expect(container.querySelector("i")).toBeNull(); // fallback gone
   });
 
   test("hydrates a fragment child (multiple resolved nodes)", async () => {
-    const App = () => (
-      <div id="root">
-        <Suspense fallback={<i>wait</i>}>
-          {
-            <>
-              <b id="b1">1</b>
-              <b id="b2">2</b>
-            </>
-          }
-        </Suspense>
-      </div>
-    );
-    const container = await streamContainer((<App></App>) as HellaNode);
+    const { container, client } = await twoTargetStreamed(`
+      import { Suspense } from "@hellajs/dom";
+      const App = () => (
+        <div id="root">
+          <Suspense fallback={<i>wait</i>}>
+            {
+              <>
+                <b id="b1">1</b>
+                <b id="b2">2</b>
+              </>
+            }
+          </Suspense>
+        </div>
+      );
+      const __out = { App };
+    `);
 
-    hydrate(<App></App>, container);
+    hydrate(client.App as TemplateBuildFn, container);
     expect(container.querySelector("#b1")!.textContent).toBe("1");
     expect(container.querySelector("#b2")!.textContent).toBe("2");
   });
 
   test("hydrates array children and wires each reactive binding", async () => {
     // JSX compiles multiple children to an array; hydrate must bind each swapped child, not just place it.
-    const handler = vi.fn(() => {});
-    const App = () => (
-      <div id="root">
-        <Suspense fallback={<i>wait</i>}>
-          <button id="hx-a" on:click={handler}>
-            A
-          </button>
-          <button id="hx-b" on:click={handler}>
-            B
-          </button>
-        </Suspense>
-      </div>
-    );
-    const container = await streamContainer((<App></App>) as HellaNode);
+    const { container, client } = await twoTargetStreamed(`
+      import { Suspense } from "@hellajs/dom";
+      const hits = { n: 0 };
+      const App = () => (
+        <div id="root">
+          <Suspense fallback={<i>wait</i>}>
+            <button id="hx-a" on:click={() => { hits.n++; }}>
+              A
+            </button>
+            <button id="hx-b" on:click={() => { hits.n++; }}>
+              B
+            </button>
+          </Suspense>
+        </div>
+      );
+      const __out = { App, hits };
+    `);
 
-    hydrate(<App></App>, container);
+    hydrate(client.App as TemplateBuildFn, container);
     container.querySelector("#hx-a")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     container.querySelector("#hx-b")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    expect(handler).toHaveBeenCalledTimes(2);
+    expect((client.hits as { n: number }).n).toBe(2);
   });
 
   test("mounts children directly on a fresh client mount (no server HTML, fallback not shown)", () => {
@@ -153,22 +200,25 @@ describe("dom hydrate <Suspense>", () => {
   });
 
   test("adopts children from an ssr.async render (no stage — children already present)", async () => {
-    const handler = vi.fn(() => {});
-    const App = () => (
-      <div id="root">
-        <Suspense fallback={<i>wait</i>}>
-          <button id="btn" on:click={handler}>
-            go
-          </button>
-        </Suspense>
-      </div>
-    );
-    const container = ssrContainer((<App></App>) as HellaNode); // sync ssr → children present, no template
+    const { container, client } = await twoTargetContainer(`
+      import { Suspense } from "@hellajs/dom";
+      const hits = { n: 0 };
+      const App = () => (
+        <div id="root">
+          <Suspense fallback={<i>wait</i>}>
+            <button id="btn" on:click={() => { hits.n++; }}>
+              go
+            </button>
+          </Suspense>
+        </div>
+      );
+      const __out = { App, hits };
+    `); // sync ssr → children present, no template
     expect(container.querySelector("#btn")).not.toBeNull();
 
-    hydrate(<App></App>, container);
-    document.getElementById("btn")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    expect(handler).toHaveBeenCalledTimes(1);
+    hydrate(client.App as TemplateBuildFn, container);
+    container.querySelector("#btn")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect((client.hits as { n: number }).n).toBe(1);
   });
 
   test("fresh-mount Promise child shows fallback, then swaps resolved content in", async () => {
@@ -209,7 +259,7 @@ describe("dom hydrate <Suspense>", () => {
       <div>
         {component(Suspense, {
           fallback: <i id="fb">wait</i>,
-          children: [() => Promise.resolve((<p id="p">data</p>) as HellaNode)],
+          children: [() => Promise.resolve(<p id="p">data</p>)],
         })}
       </div>,
       container,
@@ -235,7 +285,7 @@ describe("dom hydrate <Suspense>", () => {
   });
 
   test("fresh-mount Promise rejection bubbles to onError and renders its fallback", async () => {
-    const handler = vi.fn(() => (<p id="err">failed</p>) as HellaNode);
+    const handler = vi.fn(() => <p id="err">failed</p>);
     const off = onError(handler);
     const container = setupContainer();
     mount(
@@ -288,7 +338,7 @@ describe("dom hydrate <Suspense>", () => {
     const container = document.getElementById("c")!;
     expect(container.querySelector("#fb")).not.toBeNull(); // pending fallback shown
     handle.unmount(); // suspenseCleanup → cancelled
-    resolvePromise((<p id="late">late</p>) as HellaNode); // resolve after unmount
+    resolvePromise(<p id="late">late</p>); // resolve after unmount
     await pending;
     await delay(0);
     expect(container.querySelector("#late")).toBeNull(); // cancelled — resolved content never inserted
@@ -299,7 +349,7 @@ describe("dom hydrate <Suspense>", () => {
     const pending = new Promise<HellaNode>((_, rej) => {
       rejectPromise = rej;
     });
-    const handler = vi.fn(() => (<p id="err"></p>) as HellaNode);
+    const handler = vi.fn(() => <p id="err"></p>);
     const off = onError(handler);
     const handle = mount(
       <div id="c">

@@ -1,7 +1,6 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { signal } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
-import "@hellajs/dom/features/routed-props";
 import { mount, peekState } from "@hellajs/dom";
 import {
   assertStructuralParity,
@@ -397,13 +396,15 @@ describe("select", () => {
     },
   );
 
-  test.each(selectVariants)(
-    "$style fires a user on:click handler on the trigger root across both styles",
+  test.each(selectPartVariants.filter((variant) => variant.part === "Trigger"))(
+    "$style overrides a forwarded on:click with the trigger's internal click handler across both styles",
     (variant) => {
       const userClick = vi.fn(() => {});
-      const trigger = renderVariant(variant, { items: FRUITS, "on:click": userClick });
+      const onOpen = vi.fn(() => {});
+      const trigger = renderVariant(variant, { children: "Open", "on:click": userClick, onOpen });
       trigger.dispatchEvent(new Event("click"));
-      expect(userClick).toHaveBeenCalledTimes(1);
+      expect(onOpen).toHaveBeenCalledTimes(1);
+      expect(userClick).not.toHaveBeenCalled();
     },
   );
 

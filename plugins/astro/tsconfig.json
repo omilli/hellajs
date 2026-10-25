@@ -1,7 +1,10 @@
 {
   "compilerOptions": {
-    "lib": ["ESNext"],
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "types": ["node"],
+    "paths": {
+      "@utils/*": ["../../utils/*"]
+    },
     "target": "ESNext",
     "module": "preserve",
     "jsx": "react-jsx",

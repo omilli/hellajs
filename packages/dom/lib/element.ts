@@ -5,15 +5,16 @@ import type {
   ComponentRenderFn,
   ComponentSlots,
   ElementOptions,
-  HellaNode,
 } from "./types/nodes";
+import type { TemplateBuildFn } from "./runtime";
 
 /**
  * Defines a custom element with light DOM and slot support.
  * Props are reactive functions - when attributes change, effects re-run.
  * Children are captured before mount and available via props.children and props.slots.
  * @param tagName The custom element tag name (must contain a hyphen)
- * @param render Render function that receives props and returns a HellaNode
+ * @param render Render function that receives props and returns a HellaNode (server target)
+ * or a flagged build fn (dom target)
  * @param options Optional element options — `shadow` attaches a shadow root instead of rendering to light DOM
  * @throws {Error} When tagName is not a hyphenated string or render is not a function.
  */
@@ -94,7 +95,9 @@ export function element<T extends object = ComponentProps & Partial<ComponentSlo
         : this;
 
       this._dispose = scope(() => {
-        mount(render(props) as HellaNode, root);
+        // A dom-target render returns the flagged build; a hand-built HellaNode result throws
+        // mount's documented rejection at attach time.
+        mount(render(props) as TemplateBuildFn, root);
       });
     }
 

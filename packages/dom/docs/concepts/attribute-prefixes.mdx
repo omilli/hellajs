@@ -155,22 +155,6 @@ At a component boundary, `error:fallback` passes through verbatim: the component
 
 See [`error:`](/reference/dom/error) for full details.
 
-## Hand-Built Prefixes
+## Prefixed Props at Component Boundaries
 
-Prefixes wired at runtime (a component forwarding them through rest props) load their routing module through the compiler's feature imports; see [templates](/learn/concepts/templates) for how bundle composition works. Nodes built by hand skip the compiler entirely, so prefixes reaching the mount path from hand-built [`HellaNode`](/reference/dom) objects need one explicit import per feature, at any entry point before mount:
-
-```js
-import { mount } from "@hellajs/dom";
-import "@hellajs/dom/features/routed-props";
-import "@hellajs/dom/features/hooks";
-
-const handler = (event) => console.log(event);
-const node = {
-  tag: "button",
-  props: { "on:click": handler, "hook:afterMount": (el) => console.log(el) },
-};
-
-mount(node, "#app");
-```
-
-Without the import the prefixed key renders as a plain attribute; the import routes it into its live bucket exactly as the compiler-emitted path does.
+Prefixes wired at runtime (a component forwarding them through rest props) need no routing module: the runtime spread funnels every key through `prop()`, which routes the four families in dom core, while the compiler's feature imports load the matching machinery (`direct-events`, `hooks`, `errors`); see [templates](/learn/concepts/templates) for how bundle composition works. A prefixed attribute in component position stays verbatim in the component's props, and the component re-emits it onto an element, whose element-position syntax loads the feature. There is no hand-built escape hatch: v3 mounts compiled builds only, and a hand-built [`HellaNode`](/reference/dom) passed to [`mount`](/reference/dom/mount) or [`hydrate`](/reference/dom/hydrate) throws (see [the v3 migration guide](/learn/concepts/migration-v3)).

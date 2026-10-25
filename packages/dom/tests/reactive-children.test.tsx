@@ -2,7 +2,7 @@ import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { mount, hydrate, component, ForEach } from "@hellajs/dom";
-import type { HellaChildren, ComponentFn } from "@hellajs/dom";
+import type { HellaChildren, ComponentFn, TemplateBuildFn } from "@hellajs/dom";
 
 beforeEach(() => {
   resetTestState();
@@ -29,7 +29,7 @@ describe("dom", () => {
     });
 
     test("renders the JSX compile shape (children array) identically", () => {
-      mount(component(Box as ComponentFn, { children: [() => <i>jsx</i>] }));
+      mount(component(Box as ComponentFn, { children: [() => <i>jsx</i>] }) as TemplateBuildFn);
 
       expect(document.getElementById("box")!.innerHTML).toBe("<i>jsx</i>");
     });
@@ -71,7 +71,7 @@ describe("dom", () => {
     test("keeps reactive text children inside children arrays as text, in place", () => {
       const count = signal(7);
 
-      mount(component(Box as ComponentFn, { children: [() => count()] }));
+      mount(component(Box as ComponentFn, { children: [() => count()] }) as TemplateBuildFn);
       const box = document.getElementById("box")!;
       expect(box.textContent).toBe("7");
       const textNode = box.firstChild!;

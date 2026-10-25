@@ -180,7 +180,7 @@ describe("dom", () => {
 
       mount(
         <div id="container">
-          <Lazy loader={() => promise.then(() => (<span>Done</span>) as HellaNode)}></Lazy>
+          <Lazy loader={() => promise.then(() => <span>Done</span>)}></Lazy>
         </div>,
       );
 

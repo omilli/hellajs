@@ -1,7 +1,6 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
-import "@hellajs/dom/features/routed-props";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components import the bare
 // specifier, so the harness mount and the component's hook wiring share one dom instance.
 import { mount, peekState } from "@hellajs/dom";
@@ -35,8 +34,7 @@ interface MountedTabs {
 function mountTabs(variant: TabsVariant, props: TabsVariantProps): MountedTabs {
   const container = setupContainer();
   const rendered = variant.render(props);
-  // A reactive fn root cannot pass through mount's resolve-once unwrap — wrap it like the harness does.
-  mount(typeof rendered === "function" ? <div>{rendered as never}</div> : rendered, container);
+  mount(rendered, container);
   const root = container.firstElementChild as HTMLElement;
   const tablist = root.querySelector('[role="tablist"]') as HTMLElement;
   const tabs = Array.from(root.querySelectorAll('[role="tab"]')) as HTMLElement[];
@@ -309,7 +307,7 @@ describe("tabs", () => {
         children: "Label",
       };
       const rendered = variant.render(props as never);
-      mount(typeof rendered === "function" ? <div>{rendered as never}</div> : rendered, container);
+      mount(rendered, container);
       const tab = container.firstElementChild!;
       tab.dispatchEvent(new Event("click"));
       expect(userClick).toHaveBeenCalledTimes(1);
@@ -345,10 +343,6 @@ function renderPart(variant: (typeof tabsPartVariants)[number]): Element {
     props.children = "Label";
   }
   const rendered = variant.render(props as never);
-  // A reactive fn root cannot pass through mount's resolve-once unwrap — wrap it like the harness does.
-  mount(
-    typeof rendered === "function" ? <div>{rendered as never}</div> : (rendered as never),
-    container,
-  );
+  mount(rendered as never, container);
   return container.firstElementChild!;
 }

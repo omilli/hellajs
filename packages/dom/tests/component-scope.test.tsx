@@ -2,7 +2,7 @@ import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { effect, flush, signal } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
 import { mount, component, ForEach, peekState } from "@hellajs/dom";
-import type { HellaElement, HellaNode, RenderFn } from "@hellajs/dom";
+import type { HellaElement } from "@hellajs/dom";
 
 beforeEach(() => {
   resetTestState();
@@ -413,7 +413,7 @@ describe("dom", () => {
           outerRuns();
           outerCount();
         });
-        return component(Inner, {}) as HellaNode & RenderFn;
+        return component(Inner, {}) as JSX.Element;
       };
 
       mount(

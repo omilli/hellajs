@@ -162,6 +162,13 @@ export function traverseDescendants(node: Node, callback: (node: Node) => void) 
 export function cleanupSubtree(root: Node) {
   if (peekState(root)) {
     clean(root);
+    // Lazy-state world sweep: descendants whose state was created after insertion (a fragment
+    // root's carrier wired by `wireFragmentScope`, a region anchor stated late) may have found no
+    // stateful ancestor to register into — the root's `dirtyChildren` set is not authoritative.
+    // `clean` no-ops on already-cleaned nodes (state deleted), so the sweep only reaches leaks.
+    traverseDescendants(root, (descendant) => {
+      if (descendant !== root && peekState(descendant)) clean(descendant);
+    });
   } else {
     traverseDescendants(root, clean);
   }

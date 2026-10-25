@@ -1,7 +1,6 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { delay, resetTestState, suppressConsole } from "@utils/test-helpers.js";
 import { mount, onError } from "@hellajs/dom";
-import type { HellaNode } from "@hellajs/dom";
 
 beforeEach(() => {
   resetTestState();
@@ -10,7 +9,7 @@ beforeEach(() => {
 describe("dom", () => {
   describe("async mount", () => {
     test("renders content from async component function", async () => {
-      mount(async () => (<div id="async-loaded">loaded</div>) as HellaNode);
+      mount(async () => <div id="async-loaded">loaded</div>);
       expect(document.getElementById("async-loaded")).toBeNull();
       await delay();
       expect(document.getElementById("async-loaded")?.textContent).toBe("loaded");
@@ -52,7 +51,7 @@ describe("dom", () => {
       const slow = () =>
         new Promise<void>((resolve) => {
           resolveMount = resolve;
-        }).then(() => (<div id="late">late</div>) as HellaNode);
+        }).then(() => <div id="late">late</div>);
 
       const handle = mount(slow);
       handle.unmount();

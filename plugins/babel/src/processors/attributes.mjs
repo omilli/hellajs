@@ -1,18 +1,17 @@
 import { maybeReactive } from "../utils/reactive.mjs";
 
 // Shared empty detection result — attribute-free elements trigger no feature imports.
-const NO_FEATURES = { hooks: false, errors: false, direct: false, routed: false };
+const NO_FEATURES = { hooks: false, errors: false, direct: false };
 
 /**
  * Categorize JSX attributes into five typed arrays, reporting which dom feature
  * modules the attribute syntax needs (hook:/error:/e:/on: in element position route
- * into compiled buckets; the same prefixes in COMPONENT position are forwarded onto
- * elements at runtime via routePrefixedProps, so they additionally need the
- * routed-props feature).
+ * into compiled buckets; the same prefixes in COMPONENT position stay verbatim in
+ * the component's props — the component's own emission routes them onto elements).
  * @param {typeof import("@babel/core").types} t
  * @param {import("@babel/core").JSXAttribute[]} attributes
  * @param {boolean} isComponent
- * @returns {{ props: import("@babel/core").ObjectProperty[], on: import("@babel/core").ObjectProperty[], hooks: import("@babel/core").ObjectProperty[], e: import("@babel/core").ObjectProperty[], error: import("@babel/core").ObjectProperty[], features: { hooks: boolean, errors: boolean, direct: boolean, routed: boolean } }}
+ * @returns {{ props: import("@babel/core").ObjectProperty[], on: import("@babel/core").ObjectProperty[], hooks: import("@babel/core").ObjectProperty[], e: import("@babel/core").ObjectProperty[], error: import("@babel/core").ObjectProperty[], features: { hooks: boolean, errors: boolean, direct: boolean } }}
  */
 export function processAttributes(t, attributes, isComponent) {
   if (!attributes.length)
@@ -23,7 +22,7 @@ export function processAttributes(t, attributes, isComponent) {
     hooks = [],
     e = [],
     error = [];
-  const features = { hooks: false, errors: false, direct: false, routed: false };
+  const features = { hooks: false, errors: false, direct: false };
 
   attributes.forEach((attr) => {
     if (t.isJSXAttribute(attr)) {
@@ -42,11 +41,10 @@ export function processAttributes(t, attributes, isComponent) {
         value = t.booleanLiteral(true);
       }
 
-      // Component calls keep prefixed keys verbatim in props — the component
-      // re-emits them onto elements, where dom routes them into live buckets
-      // at render time (routePrefixedProps). Bucket arrays stay element-only.
+      // Component calls keep prefixed keys verbatim in props — the component's own
+      // emission routes them onto elements, whose element-position syntax loads the
+      // matching features. Bucket arrays stay element-only.
       if (isComponent && /^(error|hook|e|on):/.test(key)) {
-        features.routed = true;
         if (key.startsWith("hook:")) features.hooks = true;
         else if (key.startsWith("error:")) features.errors = true;
         else if (key.startsWith("e:")) features.direct = true;

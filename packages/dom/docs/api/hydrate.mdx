@@ -6,11 +6,14 @@ Attaches reactivity to existing server-rendered HTML in place: re-executes the c
 
 ```typescript
 function hydrate(
-  hellaNode: HellaNode | (() => HellaNode) | (() => Promise<HellaNode | (() => HellaNode)>),
+  node:
+    | TemplateBuildFn
+    | (() => TemplateBuildFn)
+    | (() => Promise<TemplateBuildFn | (() => TemplateBuildFn)>),
   target?: string | Element
 ): MountHandle
 ```
-- `hellaNode`: The same node or component function passed to [`ssr`](/reference/ssr/ssr) on the server.
+- `node`: The same compiled component build the server rendered: a [flagged build fn](/reference/dom/runtime) (the `component()` result of a `target: "dom"` client build), a function returning one, or an async function resolving to one. Hand-built HellaNode input throws the documented rejection.
 - `target`: A CSS selector string or DOM Element whose existing children are the server output. Defaults to `"#app"`.
 - **Returns**: A [`MountHandle`](/reference/dom/mount#mounthandle) with `flush()` and `unmount()` methods. `unmount()` removes every adopted root, including all children of a fragment root.
 
@@ -49,11 +52,17 @@ hydrate(<App />, "#app");
 
 ### Adopt, Don't Re-Render
 
-Unlike [`mount`](/reference/dom/mount), which calls `replaceChildren` and rebuilds the tree, `hydrate` walks the existing DOM and attaches reactivity to the nodes already there. Element identity is preserved: a button the server rendered is the same button the client binds `on:click` to. Static attributes are left untouched (the server already applied them); only function-ref prop effects, `on:`/`e:` handlers, hooks, and reactive children are wired up.
+Unlike [`mount`](/reference/dom/mount), which calls `replaceChildren` and rebuilds the tree, `hydrate` claims the existing DOM and attaches reactivity to the nodes the server shipped. Element identity is preserved: a button the server rendered is the same button the client binds `on:click` to. Static attributes are left untouched (the server already applied them); only function-ref prop effects, `on:`/`e:` handlers, hooks, and reactive children are wired up.
 
 ### Server HTML Must Match
 
-`hydrate` assumes the target's children are exactly what `ssr` produced from the same tree with the same initial state. Reactive state must initialize to the values the server rendered. When the DOM and the tree disagree, `hydrate` warns and re-mounts the mismatched subtree from scratch; the page still works, and the warning surfaces the drift.
+`hydrate` assumes the target's children are exactly what `ssr` produced from the same tree with the same initial state. Reactive state must initialize to the values the server rendered. When the DOM and the tree disagree, `hydrate` warns and re-mounts the mismatched subtree from scratch; the page still works, and the warning surfaces the drift. A compiled imperative root (below) is stricter: claims are positional, so any divergence between the server output and the compiled templates is structural, and `hydrate` throws instead of warning.
+
+### Compiled Imperative Roots
+
+A client build compiled with the babel plugin's `target: "dom"` option (build-tooling config, never per-file) produces flagged build functions instead of HellaNode trees. `hydrate` accepts them through the same call and adopts the server output through the construction calls themselves: `template()` and `fragment()` claim the matching server nodes in place (node identity is preserved, nothing is cloned), and `text`, `prop`, `on`, and `child` wire onto the claimed nodes.
+
+Adoption claims nodes by structural position: claim order equals construction order equals document order, which the compiler's emission guarantees. The runtime verifies claim exhaustion, so a server output that disagrees with the compiled templates throws `[dom] hydrate: unmatched server DOM for imperative root`. The parity requirement is attribute-for-attribute equality between the compiled template HTML and [`ssr`](/reference/ssr/ssr)'s serialization for the same JSX; keep both targets fed from the same build so they cannot drift.
 
 ### Keyed List Adoption
 

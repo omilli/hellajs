@@ -8,40 +8,36 @@ import { parityCases, attributeCases, unknownKindNode, headParityCases } from ".
 
 describe("ssr.async", () => {
   test("resolves a static node to the same HTML as ssr", async () => {
-    expect(await ssr.async((<div>hi</div>) as HellaNode)).toBe("<div>hi</div>");
+    expect(await ssr.async(<div>hi</div>)).toBe("<div>hi</div>");
   });
 
   test("returns a Promise<string>", () => {
-    const result = ssr.async((<div></div>) as HellaNode);
+    const result = ssr.async(<div></div>);
     expect(result instanceof Promise).toBe(true);
   });
 
   test("awaits a Promise-returning child in a marker-bounded region", async () => {
-    expect(await ssr.async((<p>{() => Promise.resolve(5)}</p>) as HellaNode)).toBe(
-      "<p><!--[-->5<!--]--></p>",
-    );
+    expect(await ssr.async(<p>{() => Promise.resolve(5)}</p>)).toBe("<p><!--[-->5<!--]--></p>");
   });
 
   test('escapes an awaited Promise value inside the region (<, >, &, ")', async () => {
-    expect(await ssr.async((<p>{() => Promise.resolve('<b>&"x')}</p>) as HellaNode)).toBe(
+    expect(await ssr.async(<p>{() => Promise.resolve('<b>&"x')}</p>)).toBe(
       "<p><!--[-->&lt;b&gt;&amp;&quot;x<!--]--></p>",
     );
   });
 
   test("awaits a Promise-returning function-ref prop value as an attribute", async () => {
-    expect(await ssr.async((<input value={() => Promise.resolve("x")} />) as HellaNode)).toBe(
-      '<input value="x">',
-    );
+    expect(await ssr.async(<input value={() => Promise.resolve("x")} />)).toBe('<input value="x">');
   });
 
   test("awaits the Promise nodes that warn under sync ssr with zero warns", async () => {
     // Same child + prop shapes the sync tests assert warn on — the async walker awaits them (no warn, resolved output).
     const suppressed = suppressConsole();
     try {
-      expect(await ssr.async((<div>{() => Promise.resolve(5)}</div>) as HellaNode)).toBe(
+      expect(await ssr.async(<div>{() => Promise.resolve(5)}</div>)).toBe(
         "<div><!--[-->5<!--]--></div>",
       );
-      expect(await ssr.async((<input value={() => Promise.resolve("x")} />) as HellaNode)).toBe(
+      expect(await ssr.async(<input value={() => Promise.resolve("x")} />)).toBe(
         '<input value="x">',
       );
       expect(suppressed.warns).toHaveLength(0);
@@ -85,21 +81,21 @@ describe("ssr.async", () => {
   });
 
   test("awaits a Promise resolving to a HellaNode and recurses", async () => {
-    expect(await ssr.async((<div>{() => Promise.resolve(<b>on</b>)}</div>) as HellaNode)).toBe(
+    expect(await ssr.async(<div>{() => Promise.resolve(<b>on</b>)}</div>)).toBe(
       "<div><!--[--><b>on</b><!--]--></div>",
     );
   });
 
   test("fully unwraps nested thenables (Promise resolving to a Promise)", async () => {
-    expect(await ssr.async((<p>{() => Promise.resolve(Promise.resolve(1))}</p>) as HellaNode)).toBe(
+    expect(await ssr.async(<p>{() => Promise.resolve(Promise.resolve(1))}</p>)).toBe(
       "<p><!--[-->1<!--]--></p>",
     );
   });
 
   test("propagates a rejected Promise to the caller", async () => {
-    await expect(
-      ssr.async((<p>{() => Promise.reject(new Error("boom"))}</p>) as HellaNode),
-    ).rejects.toThrow("boom");
+    await expect(ssr.async(<p>{() => Promise.reject(new Error("boom"))}</p>)).rejects.toThrow(
+      "boom",
+    );
   });
 
   test("parity: ssr.async matches ssr for non-Promise trees (static)", async () => {
@@ -159,13 +155,11 @@ describe("ssr.async", () => {
   });
 
   test("serializes static props (covers the props loop)", async () => {
-    expect(await ssr.async((<div class={"card"}>x</div>) as HellaNode)).toBe(
-      '<div class="card">x</div>',
-    );
+    expect(await ssr.async(<div class={"card"}>x</div>)).toBe('<div class="card">x</div>');
   });
 
   test("renders nothing for a static boolean true child (covers the fallback)", async () => {
-    expect(await ssr.async((<div>{true}</div>) as HellaNode)).toBe("<div></div>");
+    expect(await ssr.async(<div>{true}</div>)).toBe("<div></div>");
   });
 
   test("renders an empty marker region and warns for an unknown ssr kind", async () => {
@@ -186,7 +180,7 @@ describe("ssr.async", () => {
   });
 
   test("Lazy awaits the loader and renders the loaded component (plain-node form)", async () => {
-    const loader = vi.fn(() => Promise.resolve((<b id="loaded">loaded</b>) as HellaNode));
+    const loader = vi.fn(() => Promise.resolve(<b id="loaded">loaded</b>));
     const node = (
       <div>
         a<Lazy loader={loader} loading={<span>…</span>}></Lazy>b

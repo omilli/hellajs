@@ -1,7 +1,6 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState, setupContainer } from "@utils/test-helpers.js";
-import "@hellajs/dom/features/routed-props";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components import the bare
 // specifier, so the harness mount shares one dom instance with the components.
 import { mount } from "@hellajs/dom";
@@ -22,8 +21,7 @@ beforeEach(() => {
 function mountToggle(variant: ChildrenVariant<ToggleVariantProps>, props: ToggleVariantProps) {
   const container = setupContainer();
   const rendered = variant.render(props);
-  // A reactive fn root cannot pass through mount's resolve-once unwrap — wrap it like the harness does.
-  mount(typeof rendered === "function" ? <div>{rendered as never}</div> : rendered, container);
+  mount(rendered, container);
   return container.firstElementChild as HTMLElement;
 }
 

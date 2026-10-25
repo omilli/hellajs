@@ -1,0 +1,76 @@
+# V3 Migration
+
+V3 flips the client default: JSX compiles to imperative DOM construction through `@hellajs/dom/runtime`, hand-built HellaNode trees are no longer a mount input, and the HellaNode AST remains only the server's currency for `@hellajs/ssr`.
+
+## What Changed
+
+- Client builds compiled through the [babel plugin](/plugins/babel) (directly or through a wrapper) now emit imperative construction calls: cached `template()`/`fragment()` clones wired by `text`, `prop`, `on`, and `child`. Nothing is walked at runtime.
+- [`mount`](/reference/dom/mount) and [`hydrate`](/reference/dom/hydrate) accept compiled build functions only. Hand-built HellaNode input throws the documented rejection instead of mounting.
+- `HellaNode` stays exported as the `@hellajs/ssr` and compiler contract. It is no longer a mount input.
+- Build-tool defaults flip: client bundles get the imperative emission, server bundles keep the AST. App sources written in JSX need no changes.
+
+## Who Needs to Act
+
+| If you... | Then |
+|---|---|
+| Write app sources in JSX and build through vite, rollup, or astro | Nothing. Wrapper defaults produce the imperative client output automatically. |
+| Call `babelPluginHellajs` directly (esbuild bridges, custom pipelines) | Pass `{ target: "dom" }` on client passes; leave `"ast"` (the default) on server passes. |
+| Built trees by hand (`{ tag, props, children }`) and passed them to `mount` | Rebuild those trees imperatively through the [runtime](/reference/dom/runtime) module, or express them as JSX and compile them. |
+
+## Wrapper Defaults
+
+| Tool | V2 default | V3 default |
+|---|---|---|
+| vite | `ast` everywhere | client builds `dom`, server builds `ast`; an explicit `target` option wins |
+| rollup | `ast` | `dom` (rollup bundles clients); pass `{ target: "ast" }` for a server bundle |
+| astro | `ast` | per environment: server `ast`, client `dom`, unconditional |
+| babel plugin (direct) | `ast` | unchanged: `ast` stays the library default; wrappers own the flip |
+| esbuild bridge over the babel plugin | n/a | pass `{ target }` per pipeline exactly as above |
+
+## Hand-Built Trees, Before and After
+
+A v2 hand-built counter passed a HellaNode tree straight to `mount`, and the runtime walker expanded it:
+
+```jsx
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+
+const count = signal(0);
+mount(
+  {
+    tag: "div",
+    children: [
+      { tag: "span", children: ["Count: ", count] },
+    ],
+  },
+  "#app",
+);
+```
+
+In v3 the same tree is either compiled JSX (preferred) or built through the [runtime](/reference/dom/runtime) module. The runtime shape maps one-to-one from the node tree: each static element becomes a cached template create fn, each child a `text`/`child` call, each reactive prop a `prop` call:
+
+```jsx
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+import { template, mark, text, prop } from "@hellajs/dom/runtime";
+
+const count = signal(0);
+
+const App = mark(() => {
+  const root = template(`<div><span></span></div>`)();
+  const span = root.firstElementChild;
+  text(span, "Count: ");
+  text(span, count);
+  return root;
+});
+
+mount(App, "#app");
+```
+
+Prefer JSX: the compiled output is exactly this shape, without the hand wiring. The runtime module exists so generated code has a stable surface, and so tools that cannot run the babel plugin can still build reactive DOM. Hand-authored templates whose content belongs inside an `<svg>` or `<math>` subtree pass the parse namespace (`template("<g><circle/></g>", "http://www.w3.org/2000/svg")`); the compiler emits the same argument for the svg-interior templates it hoists, and a template parsed without it creates HTML-namespace elements that a live `<svg>` never upgrades. Hand-runtime templates containing hyphenated tag names (custom elements) import `@hellajs/dom/features/custom-elements` alongside the runtime module: the compiler emits that import for any program whose JSX contains a hyphenated tag, and it is what arms template clones to upgrade defined elements before insertion; without it, clones stay plain.
+
+## Mount and Hydrate Contracts
+
+`mount` and `hydrate` accept flagged build functions, functions returning them, and async functions resolving to them. Anything else fails fast at the call site with the entry point named in the message (`[dom] mount: hand-built HellaNode input is not supported`, with the same shape for `hydrate`):
+
+`hydrate` keeps its in-place contract: the compiled build claims the server-rendered nodes and wires them without replacing anything. Claim order equals document order, and a server output that disagrees with the compiled templates throws `[dom] hydrate: unmatched server DOM for imperative root`. See [Hydration](/learn/concepts/hydration) for the full contract.

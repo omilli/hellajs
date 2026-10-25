@@ -1,7 +1,6 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { signal } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
-import "@hellajs/dom/features/routed-props";
 import { mount } from "@hellajs/dom";
 import {
   assertAttrForwarded,
@@ -17,15 +16,14 @@ import {
   type PartVariant,
 } from "./helpers/variants";
 import { awaitDetached, awaitPortaled, newestPortaled, pressKey } from "./helpers/anchored";
-import type { HellaNode } from "@hellajs/dom";
 
 beforeEach(() => {
   resetTestState();
 });
 
 /** Mounts a rendered part, wrapping a reactive fn root like the harness does. */
-const mountPart = (rendered: HellaNode, container: HTMLElement): void => {
-  mount(typeof rendered === "function" ? <div>{rendered as never}</div> : rendered, container);
+const mountPart = (rendered: JSX.Element, container: HTMLElement): void => {
+  mount(rendered, container);
 };
 
 const GROUPED: CommandItemDataVariant[] = [

@@ -146,10 +146,74 @@ export function ensureNamespacesFeatureImport(t, program) {
 }
 
 /**
- * Ensure `import "@hellajs/dom/features/routed-props"` in the program.
+ * Ensure `import "@hellajs/dom/features/custom-elements"` in the program.
  * @param {typeof import("@babel/core").types} t
  * @param {import("@babel/core").NodePath} program
  */
-export function ensureRoutedPropsFeatureImport(t, program) {
-  ensureSideEffectImport(t, program, "@hellajs/dom/features/routed-props");
+export function ensureCustomElementsFeatureImport(t, program) {
+  ensureSideEffectImport(t, program, "@hellajs/dom/features/custom-elements");
+}
+
+// The dom-target compiler contract: named runtime imports come from the public
+// subpath (@hellajs/dom/runtime), never from dom internals — emitted code lists
+// exactly the helpers the file's emission uses, in this canonical order. Locals
+// are aliased to `_hella*` uids: bare names like `text`/`prop`/`on` collide with
+// ordinary user variables (a component prop named `text` would shadow the import
+// inside its own build body).
+const RUNTIME_SOURCE = "@hellajs/dom/runtime";
+const RUNTIME_HELPERS = [
+  "template",
+  "fragment",
+  "mark",
+  "text",
+  "prop",
+  "on",
+  "direct",
+  "hook",
+  "errorConfig",
+  "child",
+];
+
+/**
+ * Ensure `import { template as _hellaTemplate, … } from "@hellajs/dom/runtime"`
+ * carrying exactly the helpers the file's dom-target emission used, each aliased
+ * to the collector's uid local. Merges into an existing runtime declaration
+ * (idempotent per local binding) or unshifts one new declaration.
+ * @param {typeof import("@babel/core").types} t
+ * @param {import("@babel/core").NodePath} program
+ * @param {Map<string, import("@babel/core").Identifier>} used Runtime export name → uid local identifier
+ */
+export function ensureRuntimeImport(t, program, used) {
+  const specifiers = [];
+  let i = 0;
+  while (i < RUNTIME_HELPERS.length) {
+    const name = RUNTIME_HELPERS[i++];
+    const local = used.get(name);
+    if (local) specifiers.push(t.importSpecifier(local, t.identifier(name)));
+  }
+  if (specifiers.length === 0) return;
+
+  const body = program.node.body;
+  i = 0;
+  while (i < body.length) {
+    const node = body[i++];
+    if (t.isImportDeclaration(node) && node.source.value === RUNTIME_SOURCE) {
+      // A namespace/default import cannot carry named clauses (`import * as ns, { x } from`
+      // is invalid) — skip it and fall through to a fresh plugin-owned declaration.
+      const hasNamespaceOrDefault = node.specifiers.some(
+        (spec) => t.isImportNamespaceSpecifier(spec) || t.isImportDefaultSpecifier(spec),
+      );
+      if (hasNamespaceOrDefault) continue;
+      let j = 0;
+      while (j < specifiers.length) {
+        const spec = specifiers[j++];
+        const exists = node.specifiers.some(
+          (candidate) => t.isImportSpecifier(candidate) && candidate.local.name === spec.local.name,
+        );
+        if (!exists) node.specifiers.push(spec);
+      }
+      return;
+    }
+  }
+  program.node.body.unshift(t.importDeclaration(specifiers, t.stringLiteral(RUNTIME_SOURCE)));
 }

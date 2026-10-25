@@ -1,7 +1,6 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { signal } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
-import "@hellajs/dom/features/routed-props";
 import { mount, peekState } from "@hellajs/dom";
 import {
   assertStructuralParity,
@@ -634,7 +633,7 @@ describe("combobox", () => {
         "aria-controls": "fruit-list",
         state: () => "open" as const,
       });
-      mount(typeof rendered === "function" ? <div>{rendered as never}</div> : rendered, container);
+      mount(rendered, container);
       const input = container.querySelector("input")!;
       expect(input.getAttribute("placeholder")).toBe("Search fruit");
       expect(input.id).toBe("fruit-input");
@@ -649,7 +648,7 @@ describe("combobox", () => {
       const userClick = vi.fn(() => {});
       const container = setupContainer();
       const rendered = variant.render({ "on:click": userClick, children: [] });
-      mount(typeof rendered === "function" ? <div>{rendered as never}</div> : rendered, container);
+      mount(rendered, container);
       const trigger = container.querySelector("[data-slot='combobox-trigger']") as HTMLElement;
       trigger.dispatchEvent(new Event("click", { bubbles: true }));
       expect(userClick).toHaveBeenCalledTimes(1);

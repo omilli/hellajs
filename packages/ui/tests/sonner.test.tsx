@@ -1,6 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
-import "@hellajs/dom/features/routed-props";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components import the bare
 // specifier, so the harness mount and a component's Portal must share one dom instance.
 import { mount, peekState } from "@hellajs/dom";
@@ -22,11 +21,9 @@ async function mountToaster(
 ): Promise<HTMLElement> {
   const container = setupContainer();
   const rendered = variant.render(props as never);
-  // A reactive fn root cannot pass through mount's resolve-once unwrap — wrap it like the harness does.
-  mount(
-    typeof rendered === "function" ? <div>{rendered as never}</div> : (rendered as never),
-    container,
-  );
+  // isDynamic meta results (Portal roots) have no flagged build for mount to root — the
+  // template wrapper dispatches them as a child (child() hands them the parent).
+  mount("isTemplate" in rendered ? rendered : <div>{rendered as never}</div>, container);
   for (let i = 0; i < 50; i++) {
     const ol = document.querySelector("[data-sonner-toaster]");
     if (ol) return ol as HTMLElement;

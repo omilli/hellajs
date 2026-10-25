@@ -1,4 +1,10 @@
-import type { ErrorConfig, HellaNode, HookType, HookFn, DirectListenerSpec } from "../types/nodes";
+import type {
+  ErrorConfig,
+  HellaElement,
+  HookType,
+  HookFn,
+  DirectListenerSpec,
+} from "../types/nodes";
 
 /**
  * @internal
@@ -20,7 +26,8 @@ export interface ElementState {
   /** Disposer registered by ForEach on its text anchor: removes every tracked item from its live parent and clears the key maps. */
   forEachCleanup?: () => void;
   errorConfig?: ErrorConfig;
-  originalNode?: HellaNode;
+  /** Reset target for flagged template roots carrying an `error:` config — `dispatchError`'s reset arm re-invokes the build for fresh nodes. */
+  originalBuild?: () => HellaElement;
   cachedBoundary?: Element;
   lazyCleanup?: () => void;
   transitionCleanup?: () => void;
@@ -33,14 +40,19 @@ export interface ElementState {
 
 const elementMap = new WeakMap<Node, ElementState>();
 
-/** Parents currently being built via `appendToParent` — the future ancestor chain for nodes mounted detached. */
+/** Parents currently being built — the future ancestor chain for nodes built detached (reactive regions, flagged build frames, ForEach item builds, event fallbacks). */
 const buildParents: Node[] = [];
+
+/** Insertion namespaces for flagged template builds whose parse could not know their authored namespace (component boundaries sever static JSX ancestry — ForEach items, Lazy loaders, Suspense children). Empty for HTML insertions: the namespaces feature default resolves every parent to HTML, so the frame never opens and the create-fn hot path stays a plain clone. */
+const insertionNs: string[] = [];
 
 /**
  * @internal
- * Marks `parent` as the DOM parent whose child is being mounted. `appendToParent` pushes around
- * each `mountNode` call so the child's creation-time overlay climb can fall back to the stack —
- * mount wiring completes before `appendChild`, leaving `parentNode` null at state creation.
+ * Marks `parent` as the DOM parent whose child is being built. The build frames around
+ * `resolveNode`'s flagged branch, `runReactiveChild`'s region arms, and ForEach's item
+ * builds push so each child's creation-time overlay climb can fall back to the stack —
+ * build wiring completes before the node is inserted, leaving `parentNode` null at state
+ * creation.
  * @param parent The parent the child will be appended to
  */
 export function pushBuildParent(parent: Node): void {
@@ -53,6 +65,36 @@ export function pushBuildParent(parent: Node): void {
  */
 export function popBuildParent(): void {
   buildParents.pop();
+}
+
+/**
+ * @internal
+ * Opens an insertion-namespace frame around a flagged template build whose insertion parent
+ * is foreign-namespace: the create fn's clone step re-creates through the tableless namespace
+ * walk when the parsed tree's namespace ≠ this intent (component-boundary content — the
+ * compiler cannot emit the parse `ns` for JSX inside callbacks).
+ * @param ns The insertion namespace (`childNamespaceOf(parent)`)
+ */
+export function pushInsertionNs(ns: string): void {
+  insertionNs.push(ns);
+}
+
+/**
+ * @internal
+ * Ends the frame opened by `pushInsertionNs`.
+ */
+export function popInsertionNs(): void {
+  insertionNs.pop();
+}
+
+/**
+ * @internal
+ * The innermost open insertion namespace, or undefined (the common case: HTML insertions —
+ * the namespaces feature default never pushes).
+ * @returns The insertion namespace, or undefined for HTML
+ */
+export function peekInsertionNs(): string | undefined {
+  return insertionNs[insertionNs.length - 1];
 }
 
 /**

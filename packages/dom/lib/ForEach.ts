@@ -1,12 +1,13 @@
-import { isHellaNode, resolveValue } from "./internal/utils";
+import { isTemplateBuild, resolveValue } from "./internal/utils";
 import { isFunction } from "./internal/core";
 import { registry } from "./registry";
 import { resolveNode, childNamespaceOf } from "./internal/render";
 import { popBuildParent, pushBuildParent } from "./internal/state";
 import { cleanupSubtree } from "./internal/cleanup";
+import { constructFresh } from "./internal/adoption";
 import { getState } from "./internal/state";
 import type { HydrateCtx } from "./internal/hydrate";
-import type { HellaNode, HellaChild, ForEachProps } from "./types/nodes";
+import type { HellaChild, ForEachProps } from "./types/nodes";
 
 /**
  * Hydration-context source for the adoption branches below — the hydrate entry
@@ -140,7 +141,7 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
               const extracted = extractKey !== undefined ? extractKey(item, i) : undefined;
               if (extracted !== undefined) {
                 key = extracted;
-              } else if (element && isHellaNode(element)) {
+              } else if (element && isTemplateBuild(element)) {
                 const vnodeKey = element.props?.key;
                 if (vnodeKey !== undefined) key = vnodeKey;
               }
@@ -148,11 +149,9 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
                 const id = (item as { id?: unknown })?.id;
                 key = id !== undefined ? id : i;
               }
-              const existing = hctx.existingNodes[i]!;
-              if (element && isHellaNode(element) && (element as HellaNode).tag !== "$") {
-                hctx.hydrateNode(element as HellaNode, existing);
-              }
-              keyToNode.set(key, existing);
+              // Bare adopt: the gathered server node pairs positionally and rides the key maps;
+              // wiring happened at claim time through the compiled build's own calls.
+              keyToNode.set(key, hctx.existingNodes[i]!);
               keyToItem.set(key, item);
               currentKeys.push(key);
               i++;
@@ -185,7 +184,7 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
             const extracted = extractKey !== undefined ? extractKey(item, i) : undefined;
             if (extracted !== undefined) {
               key = extracted;
-            } else if (element && isHellaNode(element)) {
+            } else if (element && isTemplateBuild(element)) {
               const vnodeKey = element.props?.key;
               if (vnodeKey !== undefined) key = vnodeKey;
             }
@@ -193,8 +192,11 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
               const id = (item as { id?: unknown })?.id;
               key = id !== undefined ? id : i;
             }
+            // Fresh build (hydrate mismatch or plain mount) — mount semantics even under an
+            // active adoption claim frame (the mismatch degrade clears the region and rebuilds;
+            // its rows must never claim the parent's remaining children).
             pushBuildParent(actualParent);
-            const node = resolveNode(element, undefined, itemNs);
+            const node = constructFresh(() => resolveNode(element, undefined, itemNs));
             popBuildParent();
             if (node.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
               throw new Error("[dom] ForEach: use must return a single element");
@@ -230,7 +232,7 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
             if (!keyToNode.has(key)) element = use(item, i);
           } else {
             element = use(item, i);
-            if (element && isHellaNode(element)) {
+            if (element && isTemplateBuild(element)) {
               const vnodeKey = element.props?.key;
               if (vnodeKey !== undefined) {
                 key = vnodeKey;

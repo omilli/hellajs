@@ -1,8 +1,7 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { mount } from "@hellajs/dom";
-import type { HellaNode } from "@hellajs/dom";
+
 import { resetTestState, setupContainer } from "@utils/test-helpers.js";
-import "@hellajs/dom/features/routed-props";
 import {
   assertStructuralParity,
   breadcrumbPartVariants,
@@ -24,11 +23,11 @@ function part(
   variant: ComponentVariant<BreadcrumbVariantProps>,
   name: string,
   props: Record<string, unknown> = {},
-): HellaNode {
+): JSX.Element {
   const found = breadcrumbPartVariants.find(
     (candidate) => candidate.part === name && candidate.style === variant.style,
   )!;
-  return (found.render as unknown as (bag: Record<string, unknown>) => HellaNode)(props);
+  return (found.render as unknown as (bag: Record<string, unknown>) => JSX.Element)(props);
 }
 
 describe("breadcrumb", () => {
@@ -80,7 +79,7 @@ describe("breadcrumb", () => {
     (variant) => {
       const container = setupContainer();
       const rendered = part(variant, "Page", { children: "Here" });
-      mount(typeof rendered === "function" ? rendered : rendered, container);
+      mount(rendered, container);
       const page = container.querySelector("[data-slot='breadcrumb-page']")!;
       expect(page.getAttribute("role")).toBe("link");
       expect(page.getAttribute("aria-disabled")).toBe("true");
@@ -94,7 +93,7 @@ describe("breadcrumb", () => {
     (variant) => {
       const container = setupContainer();
       const rendered = part(variant, "Ellipsis");
-      mount(typeof rendered === "function" ? rendered : rendered, container);
+      mount(rendered, container);
       const ellipsis = container.querySelector("[data-slot='breadcrumb-ellipsis']")!;
       expect(ellipsis.getAttribute("role")).toBe("presentation");
       expect(ellipsis.getAttribute("aria-hidden")).toBe("true");
@@ -110,7 +109,7 @@ describe("breadcrumb", () => {
     (variant) => {
       const container = setupContainer();
       const rendered = part(variant, "Separator", { children: "/" });
-      mount(typeof rendered === "function" ? rendered : rendered, container);
+      mount(rendered, container);
       const separator = container.querySelector("[data-slot='breadcrumb-separator']")!;
       expect(separator.querySelector("svg")).toBeNull();
       expect(separator.textContent).toBe("/");
@@ -175,7 +174,7 @@ describe("breadcrumb", () => {
     (variant) => {
       const container = setupContainer();
       const rendered = variant.render({ href: "/", title: "Home", children: ["Home"] });
-      mount(typeof rendered === "function" ? rendered : rendered, container);
+      mount(rendered, container);
       const link = container.firstElementChild!;
       expect(link.getAttribute("href")).toBe("/");
       expect(link.getAttribute("title")).toBe("Home");
@@ -190,7 +189,7 @@ describe("breadcrumb", () => {
     for (const variant of breadcrumbPartVariants) {
       const container = setupContainer();
       const rendered = variant.render({ children: [] });
-      mount(typeof rendered === "function" ? rendered : rendered, container);
+      mount(rendered, container);
       const el = container.firstElementChild!;
       expect(el.getAttribute("data-slot")).toBe(`breadcrumb-${variant.part.toLowerCase()}`);
     }

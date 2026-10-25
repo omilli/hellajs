@@ -1,7 +1,6 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { signal } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
-import "@hellajs/dom/features/routed-props";
 import { mount, peekState } from "@hellajs/dom";
 import type { HellaChildren } from "@hellajs/dom";
 import {
@@ -663,11 +662,11 @@ describe("dropdown-menu", () => {
     },
   );
 
-  test.each(dropdownMenuVariants)(
+  test.each(dropdownMenuPartVariants.filter((variant) => variant.part === "Trigger"))(
     "$style fires a user on:click handler on the trigger root across both styles",
     (variant) => {
       const userClick = vi.fn(() => {});
-      const trigger = renderVariant(variant, { content: "Inspect", "on:click": userClick });
+      const trigger = renderVariant(variant, { children: "Open", "on:click": userClick });
       trigger.dispatchEvent(new Event("click"));
       expect(userClick).toHaveBeenCalledTimes(1);
     },

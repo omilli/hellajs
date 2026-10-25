@@ -1,11 +1,11 @@
 import { isString } from "./internal/core";
-import { resolveValue, isHellaNode } from "./internal/utils";
+import { resolveValue } from "./internal/utils";
 import { resolveNode, childNamespaceOf } from "./internal/render";
 import { cleanupSubtree } from "./internal/cleanup";
 import { registry } from "./registry";
 import { getState } from "./internal/state";
 import { peekHydrateContext } from "./internal/hydrate";
-import type { TransitionProps, HellaNode } from "./types/nodes";
+import type { TransitionProps } from "./types/nodes";
 
 /**
  * Wraps conditional content with enter/leave CSS animations.
@@ -43,14 +43,9 @@ export function Transition(props: TransitionProps): JSX.Element {
         }
 
         if (!current && isFirst && hctx && hctx.existingNodes.length > 0) {
-          // hydrate: adopt the existing server-rendered child as current
+          // hydrate: adopt the existing server-rendered child as current (bare adopt — wiring
+          // happened at claim time through the compiled build's own calls)
           current = hctx.existingNodes[0] ?? null;
-          if (current && children != null) {
-            const resolved = resolveValue(children);
-            if (isHellaNode(resolved) && (resolved as HellaNode).tag !== "$") {
-              hctx.hydrateNode(resolved as HellaNode, current);
-            }
-          }
           if (appear) {
             const appearClass = isString(appear) ? appear : enter;
             if (appearClass && current instanceof Element) {

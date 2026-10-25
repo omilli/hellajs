@@ -2,7 +2,8 @@ import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState } from "@utils/test-helpers.js";
 import { mount, hydrate } from "@hellajs/dom";
-import { ssrContainer } from "./helpers";
+import type { TemplateBuildFn } from "@hellajs/dom";
+import { twoTargetContainer } from "./helpers";
 
 beforeEach(() => {
   resetTestState();
@@ -43,16 +44,18 @@ describe("dom", () => {
       expect(app.container.childNodes.length).toBe(0);
     });
 
-    test("unmount removes every adopted child of a hydrated fragment root", () => {
-      const view = (
-        <>
-          <span id="a">a</span>
-          <span id="b">b</span>
-        </>
-      );
-      const container = ssrContainer(view);
+    test("unmount removes every adopted child of a hydrated fragment root", async () => {
+      const { container, client } = await twoTargetContainer(`
+        const App = () => (
+          <>
+            <span id="a">a</span>
+            <span id="b">b</span>
+          </>
+        );
+        const __out = { App };
+      `);
 
-      const app = hydrate(view, container);
+      const app = hydrate(client.App as TemplateBuildFn, container);
       expect(container.childNodes.length).toBe(2);
 
       app.unmount();
@@ -60,22 +63,25 @@ describe("dom", () => {
       expect(container.childNodes.length).toBe(0);
     });
 
-    test("unmount of a hydrated fragment root disposes prop effects", () => {
-      const cls = signal("initial");
-      const view = (
-        <>
-          <span id="a" class={cls}>
-            a
-          </span>
-          <span id="b">b</span>
-        </>
-      );
-      const container = ssrContainer(view);
+    test("unmount of a hydrated fragment root disposes prop effects", async () => {
+      const { container, client } = await twoTargetContainer(`
+        import { signal } from "@hellajs/core";
+        const cls = signal("initial");
+        const App = () => (
+          <>
+            <span id="a" class={cls}>
+              a
+            </span>
+            <span id="b">b</span>
+          </>
+        );
+        const __out = { App, cls };
+      `);
       const span = container.querySelector("#a")!;
 
-      const app = hydrate(view, container);
+      const app = hydrate(client.App as TemplateBuildFn, container);
       app.unmount();
-      cls("updated");
+      (client.cls as (v: string) => void)("updated");
       flush();
 
       expect(span.className).toBe("initial");

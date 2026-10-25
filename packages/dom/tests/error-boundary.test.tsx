@@ -2,7 +2,6 @@ import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { signal } from "@hellajs/core";
 import { resetTestState, setupContainer, suppressConsole } from "@utils/test-helpers.js";
 import { mount, onError, peekState } from "@hellajs/dom";
-import type { HellaNode } from "@hellajs/dom";
 import { fallbackHandler } from "./helpers";
 
 beforeEach(() => {
@@ -93,7 +92,7 @@ describe("dom", () => {
     });
 
     test("element with only error:category is NOT a boundary", () => {
-      onError(() => (<span>Global</span>) as HellaNode);
+      onError(() => <span>Global</span>);
 
       const container = setupContainer();
       mount(
@@ -167,7 +166,7 @@ describe("dom", () => {
     });
 
     test("error:boundary without error:fallback still acts as boundary", () => {
-      onError(() => (<span>Handler FB</span>) as HellaNode);
+      onError(() => <span>Handler FB</span>);
 
       const container = setupContainer();
       mount(

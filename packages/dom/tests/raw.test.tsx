@@ -2,8 +2,8 @@ import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { mount, hydrate, raw } from "@hellajs/dom";
-import type { HellaNode } from "@hellajs/dom";
-import { ssrContainer, suppressWarn } from "./helpers";
+import type { TemplateBuildFn } from "@hellajs/dom";
+import { twoTargetContainer, suppressWarn } from "./helpers";
 
 beforeEach(() => {
   resetTestState();
@@ -14,45 +14,55 @@ describe("dom raw child", () => {
     expect(raw("<h1>Hi</h1>")).toEqual({ raw: "<h1>Hi</h1>" });
   });
 
-  test("adopts a multi-node raw region in place during hydrate without re-binding", () => {
-    const label = signal("A");
-    const App = () => (
-      <main>
-        {raw("<h1>Hi</h1><p>slot</p>")}
-        <span>{label}</span>
-      </main>
-    );
-    const container = ssrContainer((<App></App>) as HellaNode);
+  test("adopts a multi-node raw region in place during hydrate without re-binding", async () => {
+    const { container, client } = await twoTargetContainer(`
+      import { raw } from "@hellajs/dom";
+      import { signal } from "@hellajs/core";
+      const label = signal("A");
+      const App = () => (
+        <main>
+          {raw("<h1>Hi</h1><p>slot</p>")}
+          <span>{label}</span>
+        </main>
+      );
+      const __out = { App, label };
+    `);
     const h1Before = container.querySelector("h1")!;
     const pBefore = container.querySelector("p")!;
 
-    hydrate((<App></App>) as HellaNode, container);
+    hydrate(client.App as TemplateBuildFn, container);
 
     // raw nodes adopted in place — same element references, not rebuilt
     expect(container.querySelector("h1")).toBe(h1Before);
     expect(container.querySelector("p")).toBe(pBefore);
     // a reactive sibling still binds — hydrate walked past the raw region cleanly
     expect(container.querySelector("span")?.textContent).toBe("A");
-    label("B");
+    (client.label as (v: string) => void)("B");
     flush();
     expect(container.querySelector("span")?.textContent).toBe("B");
   });
 
-  test("warns and parses fresh when the raw-region marker is missing on hydrate", () => {
-    const App = () => <div>{raw("<b>x</b>")}</div>;
-    const container = setupContainer();
+  test("throws the divergence error when the raw-region marker is missing on hydrate", async () => {
+    const { container, client } = await twoTargetContainer(`
+      import { raw } from "@hellajs/dom";
+      const App = () => <div>{raw("<b>x</b>")}</div>;
+      const __out = { App };
+    `);
     container.innerHTML = "<div></div>";
 
-    const { warnings } = suppressWarn(() => hydrate((<App></App>) as HellaNode, container));
-
-    expect(warnings.length).toBeGreaterThan(0);
-    expect(container.querySelector("b")?.textContent).toBe("x");
+    // Raw regions are always marker-bounded; a missing marker is divergence (documented throw —
+    // the walker-era warn+fresh-parse is gone with the walker).
+    expect(() =>
+      suppressWarn(() => {
+        hydrate(client.App as TemplateBuildFn, container);
+      }),
+    ).toThrow("[dom] hydrate: unmatched server DOM for imperative root");
   });
 
   test("mounts a raw child by parsing its HTML via a template (client-only)", () => {
     const App = () => <main>{raw("<h1>Hi</h1><p>slot</p>")}</main>;
     const container = setupContainer();
-    mount((<App></App>) as HellaNode, container);
+    mount(<App></App>, container);
     expect(container.querySelector("h1")?.textContent).toBe("Hi");
     expect(container.querySelector("p")?.textContent).toBe("slot");
   });
@@ -61,7 +71,7 @@ describe("dom raw child", () => {
     const markup = signal("<b>x</b>");
     const App = () => <main>{() => raw(markup())}</main>;
     const container = setupContainer();
-    mount((<App></App>) as HellaNode, container);
+    mount(<App></App>, container);
     expect(container.querySelector("b")?.textContent).toBe("x");
     markup("<b>y</b>");
     flush();

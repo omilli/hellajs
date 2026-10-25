@@ -2,8 +2,7 @@ import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { signal } from "@hellajs/core";
 import { mount } from "@hellajs/dom";
 import { resetTestState, setupContainer } from "@utils/test-helpers.js";
-import "@hellajs/dom/features/routed-props";
-import type { HellaNode } from "@hellajs/dom";
+
 import {
   assertStructuralParity,
   classTokens,
@@ -25,11 +24,11 @@ function part<P extends NavigationMenuPartVariantProps>(
   variant: ComponentVariant<NavigationMenuVariantProps>,
   name: string,
   props: P,
-): HellaNode {
+): JSX.Element {
   const found = navigationMenuPartVariants.find(
     (candidate) => candidate.part === name && candidate.style === variant.style,
   )!;
-  return (found.render as unknown as (bag: P) => HellaNode)(props);
+  return (found.render as unknown as (bag: P) => JSX.Element)(props);
 }
 
 interface NavFixture {
@@ -200,7 +199,7 @@ describe("navigation-menu", () => {
   test.each(navigationMenuVariants)("$style marks the active link with data-active", (variant) => {
     const container = setupContainer();
     const rendered = part(variant, "Link", { href: "#docs", active: true, children: "Docs" });
-    mount(typeof rendered === "function" ? rendered : rendered, container);
+    mount(rendered, container);
     const link = container.querySelector("[data-slot='navigation-menu-link']")!;
     expect(link.getAttribute("data-active")).toBe("true");
     expect(link.getAttribute("href")).toBe("#docs");
@@ -321,7 +320,7 @@ describe("navigation-menu", () => {
       const rendered = variant.render({
         children: [part(variant, "Indicator", { active: () => value() !== "" })],
       });
-      const handle = mount(typeof rendered === "function" ? rendered : rendered, container);
+      const handle = mount(rendered, container);
       const indicator = container.querySelector(
         "[data-slot='navigation-menu-indicator']",
       ) as HTMLElement;
@@ -384,7 +383,7 @@ describe("navigation-menu", () => {
         children: [],
         ...(variant.part === "Content" ? { active: () => true } : {}),
       });
-      mount(typeof rendered === "function" ? rendered : rendered, container);
+      mount(rendered, container);
       // Content resolves through the portal; Viewport carries its slot on the inner div.
       const el =
         variant.part === "Content"

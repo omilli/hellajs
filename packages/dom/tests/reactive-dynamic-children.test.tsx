@@ -2,8 +2,8 @@ import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState, delay, setupContainer } from "@utils/test-helpers.js";
 import { mount, hydrate, ForEach, Transition, Lazy, Suspense, registry } from "@hellajs/dom";
-import type { HellaNode } from "@hellajs/dom";
-import { ssrContainer } from "./helpers";
+import type { HellaNode, TemplateBuildFn } from "@hellajs/dom";
+import { twoTargetContainer } from "./helpers";
 
 beforeEach(() => {
   resetTestState();
@@ -152,7 +152,7 @@ describe("dom", () => {
       flush();
       await delay(0);
 
-      resolveChild((<b>late</b>) as HellaNode);
+      resolveChild(<b>late</b>);
       await delay(0);
 
       expect(host.textContent).toBe("none");
@@ -166,7 +166,7 @@ describe("dom", () => {
         <div id="host">
           {() =>
             toggle() ? (
-              Lazy({ loader: () => new Promise<HellaNode>(() => {}), loading: <em>L-loading</em> })
+              Lazy({ loader: () => new Promise<never>(() => {}), loading: <em>L-loading</em> })
             ) : (
               <p>none</p>
             )
@@ -258,39 +258,47 @@ describe("dom", () => {
       expect(canary.deref()).toBeUndefined();
     });
 
-    test("hydrate reactive region renders and clears a dynamic ForEach across toggles", () => {
-      const items = signal(["a", "b"]);
-      const toggle = signal(false);
-      const getter = () =>
-        toggle() ? ForEach({ each: items, use: (item: string) => <li>{item}</li> }) : <p>none</p>;
-      const container = ssrContainer(<div id="host">{getter}</div>);
+    test("hydrate reactive region renders and clears a dynamic ForEach across toggles", async () => {
+      const { container, client } = await twoTargetContainer(`
+        import { ForEach } from "@hellajs/dom";
+        import { signal } from "@hellajs/core";
+        const items = signal(["a", "b"]);
+        const toggle = signal(false);
+        const getter = () => (toggle() ? ForEach({ each: items, use: (item) => <li>{item}</li> }) : <p>none</p>);
+        const App = () => <div id="host">{getter}</div>;
+        const __out = { App, toggle };
+      `);
 
-      hydrate(<div id="host">{getter}</div>, container);
+      hydrate(client.App as TemplateBuildFn, container);
 
       const host = document.getElementById("host")!;
       expect(host.textContent).toBe("none");
 
-      toggle(true);
+      (client.toggle as (v: boolean) => void)(true);
       flush();
       expect(host.querySelectorAll("li")).toHaveLength(2);
 
-      toggle(false);
+      (client.toggle as (v: boolean) => void)(false);
       flush();
 
       expect(host.textContent).toBe("none");
       expect(host.querySelectorAll("li").length).toBe(0);
     });
 
-    test("hydrate region re-run drains effects registered on the region anchor", () => {
-      const name = signal("a");
-      const toggle = signal(false);
-      const getter = () => (toggle() ? <b>{name()}</b> : <p>none</p>);
-      const container = ssrContainer(<div id="host">{getter}</div>);
+    test("hydrate region re-run drains effects registered on the region anchor", async () => {
+      const { container, client } = await twoTargetContainer(`
+        import { signal } from "@hellajs/core";
+        const name = signal("a");
+        const toggle = signal(false);
+        const getter = () => (toggle() ? <b>{name()}</b> : <p>none</p>);
+        const App = () => <div id="host">{getter}</div>;
+        const __out = { App, name, toggle };
+      `);
 
-      hydrate(<div id="host">{getter}</div>, container);
+      hydrate(client.App as TemplateBuildFn, container);
 
       const host = document.getElementById("host")!;
-      // the reactive region's persistent anchor is the empty text node the walker left in place
+      // the reactive region's persistent anchor is the empty text node the claim left in place
       const anchor = Array.from(host.childNodes).find(
         (n) => n.nodeType === Node.TEXT_NODE && n.textContent === "",
       )!;
@@ -298,9 +306,9 @@ describe("dom", () => {
       registry.addEffect(anchor, effectRuns);
       expect(effectRuns).toHaveBeenCalledTimes(1);
 
-      toggle(true);
+      (client.toggle as (v: boolean) => void)(true);
       flush();
-      name("z");
+      (client.name as (v: string) => void)("z");
       flush();
 
       // the region anchor persists (no deleteState) and keeps rendering, but the effect

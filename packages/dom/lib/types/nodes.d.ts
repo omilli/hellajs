@@ -1,4 +1,5 @@
 import type { DOMEventMap, HTMLAttributeMap, HTMLAttributes } from "./attributes";
+import type { TemplateBuildFn } from "../runtime";
 
 // ============================================================================
 // CORE VIRTUAL DOM
@@ -23,9 +24,18 @@ export type HellaPrimitive<T = unknown> =
   | ((...args: unknown[]) => T);
 
 /**
- * Any value that can be rendered as a child in a HellaNode.
+ * Any value that can be rendered as a child in a HellaNode. On the server (`@hellajs/ssr`)
+ * every child is a `HellaNode`/primitive; on a `target: "dom"` client build the compiler
+ * emits flagged build fns ({@link TemplateBuildFn}), which ride the same union.
  */
-export type HellaChild = HellaNode | HellaRaw | HellaPrimitive | Node | null | undefined;
+export type HellaChild =
+  | HellaNode
+  | HellaRaw
+  | HellaPrimitive
+  | TemplateBuildFn
+  | Node
+  | null
+  | undefined;
 
 /**
  * Children for a component's props. Compiled JSX children arrive as an array;
@@ -44,11 +54,12 @@ export interface HellaRaw {
 
 /**
  * Error configuration attached to elements via error: prefix attributes.
- * Controls error boundary behavior and fallback rendering.
+ * Controls error boundary behavior and fallback rendering. The fallback is a flagged
+ * build fn (the compiler's client-side output) — invoked for fresh fallback nodes.
  */
 export interface ErrorConfig {
   boundary?: boolean;
-  fallback?: (error: Error) => HellaNode;
+  fallback?: (error: Error) => TemplateBuildFn;
   category?: string;
 }
 
@@ -66,9 +77,9 @@ export interface ErrorContext {
 
 /**
  * Error handler function type for onError() registration.
- * Return HellaNode to render fallback, null/void to continue to next handler.
+ * Return a flagged build fn to render fallback, null/void to continue to next handler.
  */
-export type ErrorFn = (error: Error, context: ErrorContext) => HellaNode | null | void;
+export type ErrorFn = (error: Error, context: ErrorContext) => TemplateBuildFn | null | void;
 
 /**
  * Direct event listener paired with native listener options.
@@ -85,7 +96,11 @@ export interface DirectListenerSpec<E extends Event = Event> {
 }
 
 /**
- * Represents a virtual DOM node.
+ * Represents a virtual DOM node — the server-target currency: machine-authored by the
+ * babel plugin's `"ast"` target for [`@hellajs/ssr`](/@hellajs/ssr)'s pure stringifier.
+ * It is NOT a mount/hydrate input on the client: `mount`/`hydrate` accept flagged build
+ * fns (`target: "dom"` output), and a hand-built HellaNode input throws the documented
+ * rejection.
  * @template T
  */
 export interface HellaNode<T extends HTMLTagName = HTMLTagName> {
@@ -101,7 +116,7 @@ export interface HellaNode<T extends HTMLTagName = HTMLTagName> {
   hooks?: ElementHooks;
   /** The children of the node. */
   children?: HellaChild[];
-  /** Template hoisting marker — set by the babel plugin on hoisted fully-static subtrees. */
+  /** Template hoisting marker — set by the babel plugin on hoisted fully-static subtrees. Inert client-side metadata (client statics are templates); the server walker reads it to share the subtree by reference across serializations. */
   static?: true;
   /** Component scope dispose function. */
   componentScope?: () => void;
@@ -138,7 +153,7 @@ export interface MountHandle {
 // Types for component functions, props, and rendering
 // ============================================================================
 
-export type ComponentReturn = HellaNode | (() => HellaNode);
+export type ComponentReturn = HellaNode | TemplateBuildFn;
 
 /**
  * Component function signature for reusable components.
@@ -377,9 +392,9 @@ export interface LazyOptions {
  * Props for the Lazy component.
  */
 export interface LazyProps {
-  loader: (options?: LazyOptions) => Promise<ComponentFn | HellaNode>;
+  loader: (options?: LazyOptions) => Promise<ComponentFn | TemplateBuildFn>;
   loading?: HellaChild;
-  fallback?: HellaChild;
+  fallback?: TemplateBuildFn;
   props?: Record<string, unknown>;
 }
 

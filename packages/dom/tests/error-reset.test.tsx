@@ -1,7 +1,10 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { signal } from "@hellajs/core";
-import { resetTestState, setupContainer } from "@utils/test-helpers.js";
-import { mount, onError } from "@hellajs/dom";
+import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
+import { component, mount, onError } from "@hellajs/dom";
+import { child, errorConfig, mark, prop, template } from "@hellajs/dom/runtime";
+import type { ComponentFn } from "@hellajs/dom";
+
 beforeEach(() => {
   resetTestState();
 });
@@ -178,6 +181,63 @@ describe("dom", () => {
       shouldThrow(false);
       resetFn!();
       expect(container.textContent).toBe("Original");
+    });
+
+    test("flagged root error config dispatches to the fallback and reset re-invokes the build", async () => {
+      const shouldThrow = signal(true);
+      let resetFn: (() => void) | undefined;
+      const destroyTracker = vi.fn();
+      onError((_, context) => {
+        resetFn = context.reset;
+        return context.config?.fallback?.(_) ?? null;
+      });
+
+      const rowTpl = template(`<div id="rt-err"><span class="val"></span></div>`);
+      const build = mark(
+        vi.fn(() => {
+          const root = rowTpl();
+          errorConfig(
+            root,
+            {
+              fallback: () => (
+                <span id="rt-fb" hook:afterDestroy={destroyTracker}>
+                  F
+                </span>
+              ),
+            },
+            build,
+          );
+          prop(root, "class", () => {
+            if (shouldThrow()) throw new Error("boom");
+            return "ok";
+          });
+          return root;
+        }),
+      );
+      const Root = () => build;
+
+      mount(<div id="rt-err-host"></div>);
+      child(document.getElementById("rt-err-host")!, component(Root as ComponentFn, {}));
+      const root = document.getElementById("rt-err")!;
+
+      expect(root.textContent).toBe("F");
+      expect(root.querySelector(".val")).toBeNull();
+      expect(resetFn).toBeDefined();
+      expect(build).toHaveBeenCalledTimes(1);
+
+      shouldThrow(false);
+      resetFn!();
+
+      expect(build).toHaveBeenCalledTimes(2);
+      const freshRoot = root.firstElementChild as Element;
+      expect(freshRoot.classList.contains("ok")).toBe(true);
+      expect(freshRoot.querySelector(".val")).not.toBeNull();
+      expect(root.querySelector("#rt-fb")).toBeNull();
+      for (let i = 0; i < 50; i++) {
+        if (destroyTracker.mock.calls.length > 0) break;
+        await delay();
+      }
+      expect(destroyTracker).toHaveBeenCalledTimes(1);
     });
   });
 });

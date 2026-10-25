@@ -1,29 +1,18 @@
-import type {
-  HellaNode,
-  HellaChild,
-  HellaElement,
-  RenderFn,
-  ErrorConfig,
-  ElementHooks,
-  DirectListenerSpec,
-} from "../types/nodes";
-import { isFunction, isString, isNumber, isObject, objectLoop } from "./core";
-import {
-  renderProp,
-  toText,
-  resolveDeep,
-  chainScopes,
-  wireFragmentScope,
-  routePrefixedProps,
-  routedPropsActive,
-} from "./utils";
-import { setNodeHandler, bindDirectHandler } from "./events";
-import { dispatchError, toError } from "./dispatch";
+import type { HellaChild, HellaElement, RenderFn, ErrorConfig } from "../types/nodes";
+import { isFunction, isObject } from "./core";
+import { toText, resolveDeep, chainScopes, wireFragmentScope, isTemplateBuild } from "./utils";
+import { dispatchError, findBoundary, toError } from "./dispatch";
+import { constructFresh, peekAdoption } from "./adoption";
 import { registry } from "../registry";
 import { cleanupSubtree } from "./cleanup";
-import { getState, peekState, popBuildParent, pushBuildParent } from "./state";
-
-let staticDom = new WeakMap<HellaNode, Element | DocumentFragment>();
+import {
+  getState,
+  peekState,
+  popBuildParent,
+  pushBuildParent,
+  popInsertionNs,
+  pushInsertionNs,
+} from "./state";
 
 /**
  * @internal
@@ -49,7 +38,7 @@ export const HTML_NS = "http://www.w3.org/1999/xhtml";
  * createElementNS inheritance under foreign-namespace parents.
  *
  * Exported `let` is deliberate: the feature swaps the implementation at module init
- * through {@link setNamespaceResolution} (the `setMountNode` injection pattern) while
+ * through {@link setNamespaceResolution} (the injection pattern) while
  * every importer keeps the live binding.
  * @param tag The tag to create
  * @param ns The namespace URI inherited from the insertion parent, or undefined for HTML
@@ -84,7 +73,7 @@ interface NamespaceResolution {
 /**
  * @internal
  * Registers the namespaces feature's element-creation + child-namespace resolution (the
- * `setMountNode` injection pattern — the SVG/MathML constants and the createElementNS
+ * injection pattern — the SVG/MathML constants and the createElementNS
  * branches live in `lib/features/namespaces.ts` so namespace wiring tree-shakes out of
  * HTML-only bundles).
  * @param resolution The namespace resolution implementations
@@ -110,7 +99,7 @@ export let parseRawHtml: (html: string) => DocumentFragment = () =>
 
 /**
  * @internal
- * Registers the raw feature's HTML parser (the `setMountNode` injection pattern — the
+ * Registers the raw feature's HTML parser (the injection pattern — the
  * template parse lives in `lib/features/raw.ts` so it tree-shakes out of bundles that
  * never import `raw`).
  * @param parse The HTML parser implementation
@@ -120,75 +109,37 @@ export function setRawHtmlParser(parse: (html: string) => DocumentFragment): voi
 }
 
 /**
- * @internal
- * Applies one element's routed error config and resolves the boundary its
- * construction-time wiring dispatches against: the element itself when it carries an
- * error config, else the inherited boundary. The default (errors feature not loaded)
- * applies nothing and inherits — routed error configs only exist when the feature does.
- *
- * Exported `let` is deliberate: swapped at module init by the errors feature via
- * {@link setMountBoundaryResolver} while every importer keeps the live binding.
- * @param element The created element
- * @param routed The vnode's routed buckets
- * @param node The vnode (snapshotted as the reset target)
- * @param boundaryElement The inherited boundary, or undefined
- * @returns The boundary for this element's wiring
+ * The custom-elements feature's clone-upgrade implementations, registered at its module init.
  */
-export let resolveMountBoundary: (
-  element: HellaElement,
-  routed: {
-    error: ErrorConfig | undefined;
-  },
-  node: HellaNode,
-  boundaryElement: Element | undefined,
-) => Element | undefined = (_element, _routed, _node, boundaryElement) => boundaryElement;
-
-/**
- * @internal
- * Registers the errors feature's mount-boundary resolution (the `setMountNode`
- * injection pattern — the error-config application lives in `lib/features/errors.ts`
- * so error wiring tree-shakes out of bundles that never load the feature).
- * @param resolver The mount-boundary resolver
- */
-export function setMountBoundaryResolver(resolver: typeof resolveMountBoundary): void {
-  resolveMountBoundary = resolver;
+interface CloneUpgrading {
+  /** True when any element in the parsed tree has a hyphenated local name. */
+  hasCustomElements(node: Node): boolean;
+  /** Upgrades every defined custom element in a fresh clone, replacing the node when the root itself is one. */
+  upgradeClone(node: Node): Node;
 }
 
 /**
  * @internal
- * Wires one element's routed lifecycle hooks. The default (hooks feature not loaded)
- * wires nothing — routed hook buckets only exist when the feature does.
+ * The template/fragment clone-upgrade pass for defined custom elements. The default (custom-elements
+ * feature not loaded) is `undefined` — template builders resolve to a no-upgrade create path, so
+ * programs without hyphenated tags neither scan clones nor ship the machinery. The custom-elements
+ * feature (`lib/features/custom-elements.ts`, loaded by the babel plugin for hyphenated JSX tag
+ * names) registers the parse-time scan + create-time upgrade here.
  *
- * Exported `let` is deliberate: swapped at module init by the hooks feature via
- * {@link setMountHookWiring} while every importer keeps the live binding.
- * @param element Target element
- * @param hooks The vnode's routed hooks bucket
- * @param boundary The nearest error boundary element, or undefined
+ * Exported `let` is deliberate: swapped at module init by the feature via
+ * {@link setCloneUpgrader} while every importer keeps the live binding.
  */
-export let wireMountHooks: (
-  element: Element,
-  hooks: Partial<ElementHooks> | undefined,
-  boundary: Element | undefined,
-) => void = () => {};
+export let cloneUpgrading: CloneUpgrading | undefined;
 
 /**
  * @internal
- * Registers the hooks feature's mount-hook wiring (the `setMountNode` injection
- * pattern — the hook registration + beforeMount run live in `lib/features/hooks.ts`
- * so hook wiring tree-shakes out of hook-free bundles).
- * @param wiring The mount-hook wiring implementation
+ * Registers the custom-elements feature's clone upgrade (the injection pattern — the
+ * hyphen scan and upgrade walk live in `lib/features/custom-elements.ts` so they
+ * tree-shake out of bundles without hyphenated tags).
+ * @param upgrading The clone-upgrade implementations
  */
-export function setMountHookWiring(wiring: typeof wireMountHooks): void {
-  wireMountHooks = wiring;
-}
-
-/**
- * @internal
- * Clears the `staticDom` prototype cache — the next mount of each `static` subtree rebuilds
- * a fresh prototype. Wired into `resetDom()` for test isolation.
- */
-export function clearStaticCache(): void {
-  staticDom = new WeakMap();
+export function setCloneUpgrader(upgrading: CloneUpgrading): void {
+  cloneUpgrading = upgrading;
 }
 
 /**
@@ -229,10 +180,11 @@ export function clearRenderedNodes(nodes: Node[] | undefined, parent: Node) {
  * ssr `walkChildren` array branch.
  * @param value The value to resolve (HellaChild, array of children, function, or primitive)
  * @param parent Optional parent element for effect registration
- * @param ns Optional namespace URI forwarded to `mountNode` for HellaNode children
+ * @param ns Optional namespace URI applied to foreign-namespace children
  * @returns The resolved DOM Node
  */
 export function resolveNode(value: HellaChild | HellaChild[], parent?: Node, ns?: string): Node {
+  if (value instanceof Node) return value;
   if (Array.isArray(value)) {
     const fragment = document.createDocumentFragment();
     let i = 0;
@@ -243,12 +195,44 @@ export function resolveNode(value: HellaChild | HellaChild[], parent?: Node, ns?
     }
     return fragment;
   }
-  if (isObject(value)) {
-    // HellaNode first — the common object child; DOM Nodes expose tagName, never tag
-    if ((value as HellaNode).tag !== undefined) return mountNode(value as HellaNode, undefined, ns);
-    if ("raw" in value) return parseRawHtml((value as { raw: string }).raw);
-  }
+  if (isObject(value) && "raw" in value) return parseRawHtml((value as { raw: string }).raw);
   if (isFunction(value)) {
+    // A flagged template build fn constructs its own root — invoke it (build frame around the
+    // call so creation-time overlay climbs see `parent`), then wire its componentScope onto
+    // the returned root: element roots carry it on their own state; fragment roots are
+    // ephemeral on append, so the scope rides the fragment's first child (the carrier
+    // `fragment()` pre-states) through the shared fragment-scope wiring.
+    if (isTemplateBuild(value)) {
+      // try/finally, not bare push/pop: the build genuinely fails at runtime (first-call template
+      // parse throws on rootless html) and a leaked frame would feed every later build a stale
+      // insertion namespace / build parent.
+      try {
+        if (parent) pushBuildParent(parent);
+        if (ns !== undefined) pushInsertionNs(ns);
+        const root = value();
+        if (value.componentScope) {
+          if (root.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
+            // An all-wirings fragment under adoption returns an empty token (its wirings claimed in
+            // the enclosing parent) — the scope carrier is the first claimed region's anchor (the
+            // pre-flip `regionPrev.nextSibling` contract: leads the parent, survives every swap,
+            // never drained). Mount/clone fragments still carry on the last child (anchors trail).
+            const claimRecord = peekAdoption()?.fragments.get(root);
+            const carrier =
+              claimRecord && claimRecord.claimedAnchors.length > 0
+                ? claimRecord.claimedAnchors[0]!
+                : root.lastChild;
+            wireFragmentScope(carrier, null, value.componentScope);
+          } else {
+            const rootState = getState(root);
+            rootState.componentScope = chainScopes(rootState.componentScope, value.componentScope);
+          }
+        }
+        return root;
+      } finally {
+        if (ns !== undefined) popInsertionNs();
+        if (parent) popBuildParent();
+      }
+    }
     // A reactive child is a region, not text: deep-resolve, then swap nodes or text ahead of a
     // persistent anchor. The anchor rides a detached carrier fragment so the effect's first
     // (synchronous) run inserts into it before the caller mounts the returned fragment — later
@@ -268,214 +252,6 @@ export function resolveNode(value: HellaChild | HellaChild[], parent?: Node, ns?
 
 /**
  * @internal
- * Mounts a HellaNode to a DOM element or fragment with all properties and lifecycle hooks.
- * With the namespaces feature loaded (svg/math JSX, or the hydrate entry), a `svg` root
- * always creates in the SVG namespace and a `math` root in MathML; other tags inherit
- * `ns` when mounted under a foreign-namespace parent. Without the feature every tag
- * creates in HTML (see {@link createDomElement}).
- * @param node The HellaNode to mount
- * @param boundaryElement The nearest error boundary element (for error propagation during construction)
- * @param ns Optional namespace URI inherited from the insertion parent
- * @returns The mounted DOM element or fragment
- */
-export function mountNode(
-  node: HellaNode,
-  boundaryElement?: Element,
-  ns?: string,
-): HellaElement | DocumentFragment {
-  if (node.static) {
-    const cached = staticDom.get(node);
-    if (cached) {
-      const clone = cached.cloneNode(true) as HellaElement | DocumentFragment;
-      // The clone carries no ElementState — re-wire the scope for re-mounts of the
-      // same node object (e.g. reset() re-mounting state.originalNode). A fragment
-      // clone's children move out on insert, so the scope rides its last child
-      // (chain: the child can carry an inner component's scope — same last-child
-      // carrier as the `$` branch; a static fragment's children never swap); an
-      // empty fragment clone has no DOM lifetime — dispose now.
-      if (node.componentScope) {
-        const target = clone.nodeType === Node.DOCUMENT_FRAGMENT_NODE ? clone.lastChild : clone;
-        if (target) {
-          const cloneState = getState(target);
-          cloneState.componentScope = chainScopes(cloneState.componentScope, node.componentScope);
-        } else {
-          node.componentScope();
-        }
-      }
-      return clone;
-    }
-  }
-
-  const { tag, props, on, e, hooks, children, componentScope, error } = node;
-
-  if (tag === "$") {
-    const fragment = document.createDocumentFragment();
-    appendToParent(fragment as unknown as HellaElement, children, boundaryElement, ns);
-    // The fragment is ephemeral — insertBefore/appendChild move its children out
-    // and discard it — so the scope rides its LAST child (chained: the child can
-    // already carry an inner component's scope, e.g. a compiled fragment `<>text<${B} /></>`). Mount-side
-    // anchors trail their content (every reactive/dynamic child appends its persistent
-    // anchor before inserting rendered nodes ahead of it), so the last node survives
-    // every child swap; a static tail persists until subtree removal. An empty
-    // fragment mounts nothing that owns the scope — wireFragmentScope disposes it.
-    if (componentScope) wireFragmentScope(fragment.lastChild, null, componentScope);
-    if (node.static) staticDom.set(node, fragment);
-    return fragment;
-  }
-
-  const element = createDomElement(tag as string, ns);
-
-  // Prefixed props keys ("on:click" from a component's rest-forwarding) slice
-  // into their live buckets before wiring; other props render as attributes.
-  // Feature-free bundles skip the call entirely — the identity bundle rebuild stays
-  // by design (dual wiring paths would fork the error-boundary threading for a micro win).
-  const routed = routedPropsActive
-    ? routePrefixedProps(props as Record<string, unknown>, on, e, hooks, error)
-    : { props: props as Record<string, unknown> | undefined, on, e, hooks, error };
-
-  if (componentScope) {
-    const state = getState(element);
-    state.componentScope = chainScopes(state.componentScope, componentScope);
-  }
-
-  const currentBoundary = resolveMountBoundary(element, routed, node, boundaryElement);
-  wireMountHooks(element, routed.hooks, currentBoundary);
-
-  objectLoop(routed.props, (key, value) => {
-    if (!isFunction(value)) {
-      renderProp(element, key, value);
-      return;
-    }
-    let last: unknown = NO_VALUE;
-    registry.addEffect(element, () => {
-      try {
-        const v = value();
-        if (v === last) return;
-        last = v;
-        renderProp(element, key, v);
-      } catch (err) {
-        const config = getBoundaryConfig(currentBoundary);
-        const fallback = dispatchError(toError(err), { phase: "update", element, config });
-        if (fallback) {
-          const target = currentBoundary ?? element;
-          target.replaceChildren(mountNode(fallback));
-        }
-      }
-    });
-  });
-
-  objectLoop(routed.on, (eventName, handler) =>
-    setNodeHandler(element, eventName, handler as EventListener),
-  );
-
-  if (routed.e) {
-    objectLoop(routed.e, (eventName, handler) =>
-      bindDirectHandler(element, eventName, handler as EventListener | DirectListenerSpec),
-    );
-  }
-
-  appendToParent(element, children, currentBoundary);
-
-  if (node.static) staticDom.set(node, element);
-  return element;
-}
-
-/**
- * Appends children to a parent element with reactive support.
- * Handles static text, HellaNodes, functions, and forEach.
- * @param parent The parent element
- * @param children The children to append
- * @param currentBoundary The nearest error boundary element (for error propagation during construction)
- * @param ns Namespace inherited from the insertion context — used when `parent` is a DocumentFragment
- */
-function appendToParent(
-  parent: HellaElement,
-  children?: HellaChild[],
-  currentBoundary?: Element,
-  ns?: string,
-  topLevel = true,
-) {
-  if (!children || children.length === 0) return;
-
-  if (topLevel && children.length === 1) {
-    const only = children[0];
-    if (isString(only)) {
-      parent.textContent = only;
-      return;
-    }
-    // String(0): happy-dom's textContent setter drops falsy values, and a raw number
-    // relies on engine-side coercion — normalize to the createTextNode result instead.
-    if (isNumber(only)) {
-      parent.textContent = String(only);
-      return;
-    }
-  }
-
-  // Elements self-derive the child namespace; fragments carry the insertion context's ns
-  const childNs = parent.nodeType === Node.ELEMENT_NODE ? childNamespaceOf(parent) : ns;
-
-  let i = 0;
-  const len = children.length;
-  while (i < len) {
-    const child = children[i];
-    i++;
-
-    if (Array.isArray(child)) {
-      // Nested array children (e.g. a JSX `{items.map(…)}` expression evaluating to an
-      // array, or component passthrough) — splice their elements in order, mirroring
-      // ssr's array-children branch. Never a mid-list textContent target.
-      appendToParent(parent, child, currentBoundary, childNs, false);
-      continue;
-    }
-
-    if (isString(child)) {
-      parent.appendChild(document.createTextNode(child));
-      continue;
-    }
-
-    if (isFunction(child)) {
-      if ((child as RenderFn).isDynamic) {
-        child(parent);
-        continue;
-      }
-
-      const anchor = document.createTextNode("");
-      parent.appendChild(anchor);
-
-      let nodes: Node[] | undefined = undefined;
-
-      registry.addEffect(parent, () => {
-        nodes = runReactiveChild(anchor, nodes, child, parent, currentBoundary, childNs);
-      });
-
-      continue;
-    }
-
-    if (isObject(child)) {
-      // HellaNode first — the common object child; raw sentinels and DOM Nodes never carry tag
-      if ((child as HellaNode).tag !== undefined) {
-        // mountNode wires the child's state before any DOM link exists — the build frame lets
-        // the child's creation-time overlay climb see this parent as its future ancestor.
-        pushBuildParent(parent);
-        const mounted = mountNode(child as HellaNode, currentBoundary, childNs);
-        popBuildParent();
-        parent.appendChild(mounted);
-      } else if ("raw" in child) {
-        parent.appendChild(parseRawHtml((child as { raw: string }).raw));
-      } else if (child instanceof Node) {
-        parent.appendChild(child);
-      }
-      continue;
-    }
-
-    if (isNumber(child)) {
-      parent.appendChild(document.createTextNode(String(child)));
-    }
-    // booleans, null, undefined render nothing
-  }
-}
-
-/**
  * Shared effect body for every reactive child region — direct element children and
  * children-array entries alike: deep-resolves the child, clears the previous run's nodes, and
  * mounts the classified value at the region anchor. A resolved `isDynamic` render function
@@ -493,7 +269,7 @@ function appendToParent(
  * @param ns The namespace URI inherited at the insertion site
  * @returns The region's node list after this run — the caller's closure rebinds it for the next run
  */
-function runReactiveChild(
+export function runReactiveChild(
   anchor: Node,
   nodes: Node[] | undefined,
   child: unknown,
@@ -511,6 +287,12 @@ function runReactiveChild(
 
     if (isFunction(resolved) && (resolved as RenderFn).isDynamic) {
       anchor.textContent = "";
+      // A component()-wrapped meta's wrapper scope disposes with the region anchor.
+      const renderScope = (resolved as { componentScope?: () => void }).componentScope;
+      if (renderScope) {
+        const anchorState = getState(anchor);
+        anchorState.componentScope = chainScopes(anchorState.componentScope, renderScope);
+      }
       const proxyParent = new Proxy(actualParent as Element, {
         get(target, prop) {
           if (prop === "appendChild") {
@@ -532,8 +314,10 @@ function runReactiveChild(
     }
 
     if (
+      resolved instanceof Node ||
       Array.isArray(resolved) ||
-      (isObject(resolved) && ((resolved as HellaNode).tag !== undefined || "raw" in resolved))
+      isTemplateBuild(resolved) ||
+      (isObject(resolved) && "raw" in resolved)
     ) {
       anchor.textContent = "";
       pushBuildParent(actualParent);
@@ -555,14 +339,17 @@ function runReactiveChild(
 
     anchor.textContent = toText(resolved);
   } catch (e) {
-    const config = getBoundaryConfig(currentBoundary);
+    // The runtime resolves the boundary at run time (no construction-time threading):
+    // the nearest boundary of the live parent, falling back to the caller's threaded one.
+    const boundary = currentBoundary ?? findBoundary(actualParent) ?? undefined;
+    const config = getBoundaryConfig(boundary);
     const fallback = dispatchError(toError(e), { phase: "mount", element: actualParent, config });
     if (fallback) {
       clearRenderedNodes(nodes, actualParent);
       anchor.textContent = "";
 
       pushBuildParent(actualParent);
-      const fbNode = mountNode(fallback);
+      const fbNode = constructFresh(() => resolveNode(fallback, parent, ns));
       popBuildParent();
       (nodes ??= []).push(fbNode);
       actualParent.insertBefore(fbNode, anchor);

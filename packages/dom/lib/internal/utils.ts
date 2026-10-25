@@ -1,7 +1,8 @@
 import { isFunction, isPlainObject, isObject, isFalsy, isString } from "./core";
 import { getState, peekState, registerOverlay } from "./state";
 import { traverseDescendants } from "./cleanup";
-import type { HellaNode, HellaElement, RenderFn, ElementHooks, ErrorConfig } from "../types/nodes";
+import type { HellaNode, HellaElement, RenderFn } from "../types/nodes";
+import type { TemplateBuildFn } from "../runtime";
 
 /**
  * @internal
@@ -15,6 +16,20 @@ import type { HellaNode, HellaElement, RenderFn, ElementHooks, ErrorConfig } fro
  */
 export function isHellaNode(value: unknown): value is HellaNode {
   return isObject(value) && (value as HellaNode).tag !== undefined;
+}
+
+/**
+ * @internal
+ * Hot-path discriminator for flagged template build fns — the `@hellajs/dom/runtime`
+ * protocol mark (`mark()` / `component()` set `isTemplate: true` on the fn). Companion to
+ * {@link isHellaNode}: every HellaNode-children consumer that must additionally accept
+ * compiled build fns branches on this before the reactive-region classification, which
+ * would otherwise swallow the fn.
+ * @param value The value to check
+ * @returns True if the value is a flagged template build function
+ */
+export function isTemplateBuild(value: unknown): value is TemplateBuildFn {
+  return isFunction(value) && (value as TemplateBuildFn).isTemplate === true;
 }
 
 /**
@@ -111,68 +126,6 @@ export function renderProp(element: HellaElement, key: string, value: unknown) {
 
 /**
  * @internal
- * Effective buckets for one vnode after prefixed-prop routing — prefixed keys sliced
- * out of props, routed values merged over on/e/hooks/error. Shared with the routed-props
- * feature, whose registered implementation must match this seam's shape.
- */
-export interface RoutedBuckets {
-  props: Record<string, unknown> | undefined;
-  on: Record<string, unknown> | undefined;
-  e: Record<string, unknown> | undefined;
-  hooks: Partial<ElementHooks> | undefined;
-  error: ErrorConfig | undefined;
-}
-
-/**
- * @internal
- * Routes a vnode's props through prefixed-key slicing. The default (routed-props
- * feature not loaded) is the identity pass-through — colon-free props, today's fast
- * path; colon-carrying props from hand-built vnodes need the documented
- * `import "@hellajs/dom/features/routed-props"` escape hatch.
- *
- * Exported `let` is deliberate: the feature swaps the implementation at module init
- * through {@link setRoutedPropsResolver} (the `setMountNode` injection pattern) while
- * every importer keeps the live binding. The helper runs once per element render.
- * @param props The vnode's props record
- * @param on The vnode's delegated-events bucket
- * @param e The vnode's direct-events bucket
- * @param hooks The vnode's lifecycle-hooks bucket
- * @param error The vnode's error-config bucket
- * @returns Effective buckets — prefixed keys sliced out of props, routed values merged over on/e/hooks/error
- */
-export let routePrefixedProps: (
-  props: Record<string, unknown> | undefined,
-  on: Record<string, unknown> | undefined,
-  e: Record<string, unknown> | undefined,
-  hooks: Partial<ElementHooks> | undefined,
-  error: ErrorConfig | undefined,
-) => RoutedBuckets = (props, on, e, hooks, error) => ({ props, on, e, hooks, error });
-
-/**
- * @internal
- * Whether the routed-props feature has registered its resolver — `mountNode` skips the
- * {@link routePrefixedProps} seam call (and its live-binding indirection) entirely on
- * feature-free bundles.
- * Exported `let` is deliberate: flipped once at module init through
- * {@link setRoutedPropsResolver} (the `setMountNode` injection pattern) while every
- * importer keeps the live binding.
- */
-export let routedPropsActive = false;
-
-/**
- * @internal
- * Registers the routed-props feature's resolver (the `setMountNode` injection pattern —
- * the implementation lives in `lib/features/routed-props.ts` so unused prefixed-prop
- * routing tree-shakes out of bundles that never forward prefixed attrs to components).
- * @param resolver The routed-props implementation
- */
-export function setRoutedPropsResolver(resolver: typeof routePrefixedProps): void {
-  routePrefixedProps = resolver;
-  routedPropsActive = true;
-}
-
-/**
- * @internal
  * Chains two component-scope dispose functions into one. Two components can
  * legitimately own a single node (a component returning another component's
  * result; a fragment root's scope riding one of its children), and `clean()` calls
@@ -246,16 +199,20 @@ export function resolveValue(value: unknown): unknown {
 
 /**
  * @internal
- * Resolves a value by repeatedly calling plain (non-`isDynamic`) functions until a non-function
- * or an `isDynamic` render function remains — reactive child chains (`() => () => nodes`, a
- * component slot forwarding `${() => props.children}`) classify by their final value. A
- * self-referential getter loops forever, the same user bug as a self-referencing computed.
+ * Resolves a value by repeatedly calling plain (non-`isDynamic`, non-template) functions until a
+ * non-function, an `isDynamic` render function, or a flagged template build fn remains — reactive
+ * child chains (`() => () => nodes`, a component slot forwarding `${() => props.children}`) classify
+ * by their final value. A self-referential getter loops forever, the same user bug as a
+ * self-referencing computed.
  * @param value The value to resolve
- * @returns The chain-final non-function value, or the `isDynamic` function that stopped the chain
+ * @returns The chain-final value, or the `isDynamic`/template-build function that stopped the chain
  */
 export function resolveDeep(value: unknown): unknown {
   let current = value;
-  while (isFunction(current) && !(current as RenderFn).isDynamic) {
+  // A flagged template build fn classifies by itself (the region swaps its constructed root in),
+  // so the chain stops there — invoking it here would construct outside the consumer's build
+  // frame and reduce the root to a text-coercion.
+  while (isFunction(current) && !(current as RenderFn).isDynamic && !isTemplateBuild(current)) {
     current = (current as () => unknown)();
   }
   return current;

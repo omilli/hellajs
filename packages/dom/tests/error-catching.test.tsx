@@ -2,7 +2,7 @@ import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState, setupContainer, suppressConsole } from "@utils/test-helpers.js";
 import { mount, onError } from "@hellajs/dom";
-import type { HellaNode, ErrorContext } from "@hellajs/dom";
+import type { ErrorContext } from "@hellajs/dom";
 import { fallbackHandler } from "./helpers";
 
 beforeEach(() => {
@@ -87,7 +87,7 @@ describe("dom", () => {
 
     test("direct event handler is replaced when updated on same element", () => {
       const calls: string[] = [];
-      onError(() => (<span>E</span>) as HellaNode);
+      onError(() => <span>E</span>);
 
       const container = setupContainer();
       const h1 = () => calls.push("h1");
@@ -115,7 +115,7 @@ describe("dom", () => {
     test("direct event handler error without boundary replaces element", () => {
       const suppressed = suppressConsole();
       try {
-        onError((error: Error) => (<span>E: {error.message}</span>) as HellaNode);
+        onError((error: Error) => <span>E: {error.message}</span>);
 
         const container = setupContainer();
         mount(
@@ -181,7 +181,7 @@ describe("dom", () => {
     });
 
     test("effect error in registry.addEffect is caught", () => {
-      onError((error: Error) => (<span>E: {error.message}</span>) as HellaNode);
+      onError((error: Error) => <span>E: {error.message}</span>);
 
       const shouldThrow = signal(false);
       const container = setupContainer();

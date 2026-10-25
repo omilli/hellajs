@@ -2,6 +2,7 @@ import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState } from "@utils/test-helpers.js";
 import { mount, ForEach, peekState } from "@hellajs/dom";
+import { mark, template, text } from "@hellajs/dom/runtime";
 import type { Signal } from "@hellajs/core";
 import { createList, createKeyedList, getListTexts } from "./helpers";
 
@@ -694,6 +695,35 @@ describe("dom", () => {
 
       expect(document.querySelector("li")).not.toBe(nodeBefore);
       expect(getListTexts()).toEqual(["A"]);
+    });
+
+    test("keyed reconciliation reads props.key off flagged build fns and preserves node identity across a swap", () => {
+      const items = signal(["a", "b", "c"]);
+      const Row = (label: string) =>
+        mark(
+          () => {
+            const root = template(`<li><span class="lbl"></span></li>`)();
+            text(root.children[0]!, label);
+            return root;
+          },
+          { key: label },
+        );
+
+      mount(
+        <ul>
+          <ForEach each={items} use={(item: string) => Row(item)}></ForEach>
+        </ul>,
+      );
+
+      const lis = () => Array.from(document.querySelectorAll("li"));
+      expect(lis().map((li) => li.textContent)).toEqual(["a", "b", "c"]);
+      const second = lis()[1]!;
+
+      items(["c", "b", "a"]);
+      flush();
+
+      expect(lis().map((li) => li.textContent)).toEqual(["c", "b", "a"]);
+      expect(lis()[1]).toBe(second);
     });
   });
 });

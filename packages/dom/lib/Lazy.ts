@@ -1,9 +1,10 @@
 import { isFunction } from "./internal/core";
+import { isTemplateBuild } from "./internal/utils";
 import { getState } from "./internal/state";
-import { mountNode, resolveNode, childNamespaceOf, clearRenderedNodes } from "./internal/render";
+import { resolveNode, childNamespaceOf, clearRenderedNodes } from "./internal/render";
 import { cleanupSubtree } from "./internal/cleanup";
 import { peekHydrateContext } from "./internal/hydrate";
-import type { LazyProps, HellaNode } from "./types/nodes";
+import type { LazyProps, ComponentFn } from "./types/nodes";
 
 /**
  * Lazily loads and renders async components with optional loading and fallback states.
@@ -58,10 +59,17 @@ export function Lazy(props: LazyProps): JSX.Element {
         if (isCancelled || !anchor.parentNode) return;
         if (loadingNode?.parentNode) loadingNode.parentNode.removeChild(loadingNode);
         if (existing.length) clearRenderedNodes(existing, parent); // swap the server-rendered region for the fresh mount
-        const resolved = isFunction(component) ? component(props.props) : component;
-        const mounted = mountNode(
-          resolved as HellaNode,
-          undefined,
+        // A flagged build is bound (component() results carry no props param) — used directly;
+        // an unbound ComponentFn is called with the forwarded props. The loaded build then
+        // invokes through `resolveNode`'s flagged branch — its build frame (parent passed) and
+        // componentScope wiring are the shared seams; the root inserts at the anchor in the
+        // anchor's namespace, preserving the existing swap order.
+        const resolved = isTemplateBuild(component)
+          ? component
+          : (component as ComponentFn)(props.props ?? {});
+        const mounted = resolveNode(
+          resolved,
+          anchor.parentNode!,
           childNamespaceOf(anchor.parentNode),
         );
         contentNode = mounted;

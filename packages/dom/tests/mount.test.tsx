@@ -2,7 +2,7 @@ import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { flush, signal, batch } from "@hellajs/core";
 import { resetTestState } from "@utils/test-helpers.js";
 import { mount } from "@hellajs/dom";
-import type { HellaNode } from "@hellajs/dom";
+import type { TemplateBuildFn } from "@hellajs/dom";
 
 beforeEach(() => {
   resetTestState();
@@ -24,7 +24,7 @@ describe("dom", () => {
     test("a shared static vnode mounts as a distinct clone per mount", () => {
       // the shape the babel plugin emits for fully-static subtrees:
       // one module-level hoisted object, `static: true`, mounted many times
-      const shared: HellaNode = (
+      const shared = (
         <div id="shared" class="box">
           static text<span>nested</span>
         </div>
@@ -50,12 +50,12 @@ describe("dom", () => {
     });
 
     test("creates nested element structures", () => {
-      const nested = (
-        <div>
+      mount(
+        <div id="nested-root">
           <span>Nested</span>
-        </div>
+        </div>,
       );
-      expect(nested.children![0] as HellaNode).toHaveProperty("tag", "span");
+      expect(document.querySelector("#nested-root > span")?.textContent).toBe("Nested");
     });
 
     test("wraps multiple root elements in fragment", () => {
@@ -65,19 +65,22 @@ describe("dom", () => {
           <div>B</div>
         </>
       );
-      expect(multi.tag).toBe("$");
-      expect(multi.children!.length).toBe(2);
+      expect((multi as unknown as TemplateBuildFn).isTemplate).toBe(true);
+      mount(<div id="frag-host">{multi}</div>);
+      expect(document.getElementById("frag-host")?.textContent).toBe("AB");
     });
 
     test("parses self-closing tags", () => {
-      const selfClose = <input type="text" placeholder="Enter" />;
-      expect(selfClose.tag).toBe("input");
-      expect(selfClose.props!.type).toBe("text");
+      mount(<input id="self-close" type="text" placeholder="Enter" />);
+      const el = document.getElementById("self-close") as HTMLInputElement;
+      expect(el.tagName).toBe("INPUT");
+      expect(el.getAttribute("type")).toBe("text");
+      expect(el.getAttribute("placeholder")).toBe("Enter");
     });
 
     test("sets boolean attributes to true", () => {
-      const bool = <input disabled />;
-      expect(bool.props!.disabled).toBe(true);
+      mount(<input id="bool-attr" disabled />);
+      expect((document.getElementById("bool-attr") as HTMLInputElement).disabled).toBe(true);
     });
 
     test("renders reactive signals", () => {
@@ -215,11 +218,7 @@ describe("dom", () => {
     test("dynamic fragments from signal items", () => {
       const items = signal(["a", "b"]);
 
-      mount(
-        <div id="frag-container">
-          {() => ({ tag: "$", children: items().map((i) => ({ tag: "em", children: [i] })) })}
-        </div>,
-      );
+      mount(<div id="frag-container">{() => items().map((i) => <em>{i}</em>)}</div>);
 
       const container = document.getElementById("frag-container")!;
       expect(container.querySelectorAll("em").length).toBe(2);

@@ -1,5 +1,8 @@
-import type { HellaNode, DirectListenerSpec } from "../types/nodes";
-import { dispatchError, findBoundary, resolveErrorConfig, toError, getMountNode } from "./dispatch";
+import type { DirectListenerSpec } from "../types/nodes";
+import type { TemplateBuildFn } from "../runtime";
+import { dispatchError, findBoundary, resolveErrorConfig, toError } from "./dispatch";
+import { resolveNode } from "./render";
+import { constructFresh } from "./adoption";
 import { getState, peekState, popBuildParent, pushBuildParent } from "./state";
 
 const globalListeners = new Set<string>();
@@ -28,18 +31,18 @@ export function setNodeHandler(element: Element, type: string, handler: EventLis
  * Renders an error-boundary fallback by replacing the boundary's (or the
  * element's own) children. Shared by the delegated and direct handler paths
  * (the direct handler implementation lives in the direct-events feature).
+ * The fallback is a flagged build fn — invoked through `resolveNode`'s flagged
+ * branch (its build frame + componentScope wiring are the shared seams) and
+ * swapped in over the boundary-or-element target.
  * @param element The element whose handler threw
- * @param fallback The fallback HellaNode to render
+ * @param fallback The fallback flagged build fn to render
  */
-export function renderEventFallback(element: Element, fallback: HellaNode) {
+export function renderEventFallback(element: Element, fallback: TemplateBuildFn) {
   const target = findBoundary(element) ?? element;
-  const mountNode = getMountNode();
-  if (mountNode) {
-    pushBuildParent(target);
-    const fresh = mountNode(fallback);
-    popBuildParent();
-    target.replaceChildren(fresh);
-  }
+  pushBuildParent(target);
+  const fresh = constructFresh(() => resolveNode(fallback, target));
+  popBuildParent();
+  target.replaceChildren(fresh);
 }
 
 /**
@@ -84,7 +87,7 @@ function delegatedHandler(event: Event) {
  * `import "@hellajs/dom/features/direct-events"` escape hatch.
  *
  * Exported `let` is deliberate: the feature swaps the implementation at module init
- * through {@link setDirectEventFeature} (the `setMountNode` injection pattern) while
+ * through {@link setDirectEventFeature} (the injection pattern) while
  * every importer keeps the live binding.
  * @param element Target element
  * @param type Event type (e.g., 'focus', 'blur', 'load')
@@ -124,7 +127,7 @@ interface DirectEventFeature {
 
 /**
  * @internal
- * Registers the direct-events feature's handler machinery (the `setMountNode` injection
+ * Registers the direct-events feature's handler machinery (the injection
  * pattern — the implementations live in `lib/features/direct-events.ts` so unused
  * `e:` wiring tree-shakes out of bundles that never load the feature).
  * @param feature The direct-event handler implementations

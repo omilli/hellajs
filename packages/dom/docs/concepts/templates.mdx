@@ -141,4 +141,4 @@ mount(App, "#app");
 
 Apps never import feature modules directly. Features your code does not use never load, and their wiring tree-shakes out of the bundle entirely: a hook-free, error-free app ships the mount core only.
 
-Nodes built by hand (no compiler pass) skip detection, so wiring a [`raw`](/reference/dom/raw) child, `hook:` buckets, or forwarded prefixes into a hand-built [`HellaNode`](/reference/dom) needs its feature imported once; see [`attribute prefixes`](/learn/concepts/attribute-prefixes) for the escape hatch.
+Nodes built by hand (no compiler pass) have no mount path at all in v3: hand-built [`HellaNode`](/reference/dom) input throws at [`mount`](/reference/dom/mount)/[`hydrate`](/reference/dom/hydrate). Every compiled build carries the feature imports its syntax needs; see [the v3 migration guide](/learn/concepts/migration-v3) and [`attribute prefixes`](/learn/concepts/attribute-prefixes).

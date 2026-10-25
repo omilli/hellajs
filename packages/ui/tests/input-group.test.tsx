@@ -1,6 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { resetTestState, setupContainer } from "@utils/test-helpers.js";
-import "@hellajs/dom/features/routed-props";
 import { mount } from "@hellajs/dom";
 import {
   assertAttrForwarded,
@@ -41,7 +40,7 @@ function mountGroup(
 ): HTMLElement {
   const container = setupContainer();
   const rendered = variant.render({ children } as InputGroupVariantProps);
-  mount(typeof rendered === "function" ? <div>{rendered as never}</div> : rendered, container);
+  mount(rendered, container);
   return container.firstElementChild as HTMLElement;
 }
 

@@ -1,30 +1,34 @@
 <babel-plugin>
 
-Build-time Babel transform (`babel-plugin-hellajs`) that compiles JSX into HellaNode object expressions and `component(...)` calls. Entry point: `index.mjs` — `babelHellaJS()` returns `{ inherits: jsxSyntax, visitor }`. **No config options**; signature takes no parameters.
+Build-time Babel transform (`babel-plugin-hellajs`) that compiles JSX into HellaNode object expressions and `component(...)` calls. Entry point: `index.mjs` — `babelHellaJS(babel, options)` returns `{ inherits: jsxSyntax, visitor }`.
+
+**Wrapper-owned option contract.** The plugin takes ONE option, `{ target = "ast" }`. The target is build-environment config set by the vite/rollup/astro wrappers, never user-configurable per file. Options validate at plugin construction: a non-object options value, an unknown key, or a target outside `{ "ast", "dom" }` throws immediately (not at transform). `"ast"` (default) keeps the historical emission byte-identical; `"dom"` lowers element/fragment JSX to imperative `@hellajs/dom/runtime` construction (§Imperative emission). Babel calls plugin functions as `(babelCoreModule, userOptions)` — user options are the SECOND argument; the wrappers validate eagerly by calling `babelHellaJS(undefined, pluginOptions)` at construction so bad config fails before the build's first transform.
 
 ## Mental model
 
-- **JSX path**: `JSXElement` / `JSXFragment` visitors walk Babel's parsed JSX AST and `path.replaceWith` either a HellaNode object expression, a `component(Tag, props)` call, or a passthrough `Tag(props)` call.
+- **JSX path**: `JSXElement` / `JSXFragment` visitors walk Babel's parsed JSX AST and `path.replaceWith` either a HellaNode object expression, a `component(Tag, props)` call, a passthrough `Tag(props)` call, or — under `target: "dom"` — an imperative `mark(...)` construction site (§Imperative emission).
 - **Attribute categorization** splits into **five** categories (see table below).
 - **Components are wrapped with `component(Tag, props)`** — `component` is auto-imported from `@hellajs/dom`. Three passthrough components (`ForEach`, `Portal`, `Lazy`) bypass the wrapper and call `Tag(props)` directly.
+- **The two targets share one pipeline** — component detection, passthrough handling, attribute/child processors, feature collection, and fragment dispatch are identical; only element/fragment expression emission differs (`buildHellaNode` vs `buildImperativeSite`). Drift between targets is the top maintenance risk; the shared processors are the control.
 
 ## Files
 
 | File | Responsibility |
 |---|---|
-| `index.mjs` | Plugin entry; spreads the JSX visitors; inherits `@babel/plugin-syntax-jsx`. |
-| `src/transformers/jsx.mjs` | `Program` exit (feature-import emission) + `JSXElement` + `JSXFragment` visitors; tag-type dispatch (component / element / fragment); per-file feature collection. |
+| `index.mjs` | Plugin entry; parses/validates `{ target }` (throws on unknown keys/invalid values at construction); spreads the JSX visitors; inherits `@babel/plugin-syntax-jsx`. |
+| `src/transformers/jsx.mjs` | `Program` exit (feature-import + `@hellajs/dom/runtime` import emission) + `JSXElement` + `JSXFragment` visitors; tag-type dispatch (component / element / fragment); per-file feature collection; `target: "dom"` routes element/fragment sites to the imperative builder (components and the ast paths verbatim). |
 | `src/processors/attributes.mjs` | `processAttributes`: prefix categorization, `JSXExpressionContainer` unwrap, camelCase→kebab conversion, element-path `maybeReactive` application; reports the `features` flags (`hooks`/`errors`/`direct`/`routed`) alongside the buckets. |
 | `src/processors/children.mjs` | `filterEmptyChildren`: drops empty/whitespace text + JSXEmptyExpression, normalizes whitespace, marks bare `props.children` as a SpreadElement. |
 | `src/builders/children.mjs` | `buildChildrenValue`: children list → array expression (joined when all-static); any SpreadElement flips the whole list to an `[].concat(...)` call so passthrough children are safe for every `HellaChildren` shape. |
 | `src/builders/vnode.mjs` | `buildHellaNode`: emits object expression with `tag` + non-empty category fields + `buildChildrenValue` children. |
 | `src/builders/component.mjs` | `buildComponentCall`: emits `component(Tag, props)` or passthrough `Tag(props)`; merges children into props. |
-| `src/utils/imports.mjs` | `ensureNamedImport` + `ensureSideEffectImport` + helpers (`ensureCreateComponentImport`, `ensureForEachImport`, `ensurePortalImport`, `ensureLazyImport`, `ensure{Hooks,Errors,DirectEvents,Namespaces,RoutedProps}FeatureImport`). |
+| `src/builders/imperative.mjs` | `buildImperativeSite` (target: "dom"): one element/fragment JSX site → hoisted `template()`/`fragment()` const + `mark()`ed build fn over `@hellajs/dom/runtime` calls; owns template-HTML serialization (literal-prop folding, void/raw-text tags, entity escaping), the leading-static-prefix fold boundary, anchor child-index paths, root `key` extraction, the `errorConfig` named-fn self-reference, and the svg/math ancestry thread (nested foreign-interior sites emit the parse-namespace URI as the template/fragment call's second argument; `foreignObject` resets the thread); returns the `mark(...)` call plus the site's feature flags. |
+| `src/utils/imports.mjs` | `ensureNamedImport` + `ensureSideEffectImport` + helpers (`ensureCreateComponentImport`, `ensureForEachImport`, `ensurePortalImport`, `ensureLazyImport`, `ensure{Hooks,Errors,DirectEvents,Namespaces,CustomElements}FeatureImport`) + `ensureRuntimeImport` (`@hellajs/dom/runtime` named imports in the canonical helper order). |
 | `src/utils/passthrough.mjs` | `PASSTHROUGH_INJECTORS` map: passthrough tag name → its `ensure*Import` helper, keyed off `PASSTHROUGH_NAMES`. |
 | `src/utils/babel.mjs` | `getTagCallee`: JSXIdentifier → Identifier; JSXMemberExpression → MemberExpression (recursive); throws otherwise. |
 | `src/constants.mjs` | `FRAGMENT_TAG = '$'`, `PASSTHROUGH_NAMES`. |
 | `src/utils/reactive.mjs` | `maybeReactive(t, expr)` + `containsCall`: auto-wrap heuristic — wraps a call-containing expression in `() => expr` for reactivity (skip if top-level is already a function = the double-wrap guard; skip a top-level `raw()` call — a value sentinel, not a reactive read). Applied to element children and element attribute values. |
-| `src/utils/static.mjs` | Static-subtree hoisting: `tryBuildStaticJSX` (raw-JSX predicate + builder, reuses `processAttributes`/`filterEmptyChildren` for normalization parity), `hoistStaticJSX`, `hoistVNode` (`program.scope.push` const). |
+| `src/utils/static.mjs` | Static-subtree hoisting: `tryBuildStaticJSX` (raw-JSX predicate + builder, reuses `processAttributes`/`filterEmptyChildren` for normalization parity), `hoistStaticJSX`, `hoistVNode` (`program.scope.push` const), `isLiteralValue` (exported — the dom target's template folding reuses the same literal rule). |
 
 ## Visitor pipeline
 
@@ -41,8 +45,19 @@ Build-time Babel transform (`babel-plugin-hellajs`) that compiles JSX into Hella
 
 **Static-hoist safety rules**: lowercase string tag (element or `$` fragment); NO `on:`/`e:`/`hook:`/`error:` attributes at all; props limited to string/number/boolean literals (no spreads, no expressions); children limited to static text and other fully-static elements. Components, member-expression tags, slots, and anything `maybeReactive` would wrap are excluded by construction. Static children of a disqualified parent hoist individually at their own visit. Both root kinds dispose correctly: `component()` spreads a `static` root into a fresh per-invocation node and chains its scope onto any inner scope the node carries, and the scope is wired into every mount — element roots onto the element, `$` fragment roots onto a swap-stable carrier: the last child on the mount paths (mount anchors trail their content) and the first region node on hydrate adopt (hydrate anchors lead; staticDom clone included; empty fragments dispose at mount).
 
-**`JSXFragment`** (JSXFragment visitor in `createJSXTransformers`, `src/transformers/jsx.mjs`) — `buildHellaNode(t, '$', [], [], [], [], children, [])`. Fragment nodes have no attributes (empty props/on/e/hooks/error).
+**`JSXFragment`** (JSXFragment visitor in `createJSXTransformers`, `src/transformers/jsx.mjs`) — ast target: `buildHellaNode(t, '$', [], [], [], [], children, [])`. Fragment nodes have no attributes (empty props/on/e/hooks/error). Under `target: "dom"` both visitors route to the imperative builder instead (§Imperative emission); the site builder reports the prefixed-attr features its elements carried, and the visitor collects them (folded descendants never get their own visitor call, so per-site collection replaces the per-visit collection the ast path gets).
 </visitor-pipeline>
+
+## Imperative emission (target: "dom")
+
+`buildImperativeSite` (`src/builders/imperative.mjs`) lowers one element/fragment JSX expression to a `mark(...)` call (emitted under its aliased uid local, e.g. `_hellaMark` — every runtime helper imports as `text as _hellaText`-style so bare user variables like a `text` prop can never shadow the import) over a hoisted `template("…")`/`fragment("…", ns?)` const (uid names `_hellaTpl` / `_hellaFrag` / `_hellaBuild`, pushed onto program scope — scope merges them into one declaration at the top of the output, ahead of the exit-unshifted imports). EVERY element expression is marked — uniform, no position analysis; `mark` is an `Object.assign`. The build body is `const _hellaRoot = _hellaTpl(); <wiring calls in document order>; return _hellaRoot;` — `template()` state-inits the clone before returning, so the calls never need ordering.
+
+- **Fold rules** — compile-time literal props (minus the property-assigned keys `value`/`checked`/`selected`/`innerHTML`, which keep renderProp's property semantics as `prop()` sites) fold into the template html (`true` → bare attribute, `false`/`null` → omitted: parser absence ≡ renderProp's removeAttribute). Children fold only up to the FIRST dynamic child; after it every child emits as a runtime call (static text → `text`, static subtrees → nested marked sites, expressions → `text`/`child` by whether the expression contains element JSX). Runtime appends land after the folded prefix, so node order is preserved. Full-static subtrees (the `tryBuildStaticJSX` oracle, minus property keys) produce a bare create build fn — zero runtime calls in the body.
+- **Dynamic sites, in document order** — expression props → `prop(anchor, "k", <maybeReactive'd value>)`; `on:x` → `on(anchor, "x", h)`; `e:x` → `direct(anchor, "x", h)` + direct-events feature; `hook:x` → `hook(anchor, "x", h)` + hooks feature; `error:*` → `errorConfig(anchor, { … }, _hellaBuild)` + errors feature (the build fn is a NAMED function expression so the reset slot self-references without hoisting); dynamic children → `text(anchor, v)` for text-valued positions, `child(anchor, v)` otherwise (nested element JSX inside child expressions is replaced by its own marked site when babel re-traverses the replacement). Anchors address folded structure by child-index member expressions: index 0 → `firstElementChild`, else `children[n]` (element indices — static text never creates elements, dynamic children are omitted from the template).
+- **Root `key`** — spliced from the root's attributes into `mark(fn, { key })` metadata: renderProp never renders `key` and `ForEach` reads flagged-fn `props.key`; folding it would mint a real attribute no walker ever created. Keys on descendants are dropped (inert metadata). A root key never folds into html.
+- **Spreads** — `{...rest}` on an element emits `Object.keys(rest).forEach(k => prop(anchor, k, rest[k]))` so renderProp's per-key dispatch (property keys, falsy removal, reactive values) applies verbatim; `{props.children}` emits `child(anchor, props.children)` (`child` recurses arrays whole — no concat needed).
+- **Serialization** — html entities escaped in text and double-quoted attribute values; void tags (`br`, `img`, `input`, …) serialize without an end tag (`</br>` would parse as a SECOND element); `style`/`script` children are raw text (escaping would corrupt css/js); whitespace normalization and data/aria kebab-casing reuse `filterEmptyChildren`/`processAttributes` verbatim.
+- **Imports** — runtime helpers come from `@hellajs/dom/runtime` ONLY (never dom internals), listing exactly the helpers the file's emission used, in the canonical `RUNTIME_HELPERS` order; feature imports behave exactly as the ast target (a site rooted at svg/math carries its namespace through the html parse's native switch, and svg/math-interior NESTED sites — the ones after a dynamic boundary — emit the parse-namespace URI argument the runtime's tableless rebuild takes; component boundaries (ForEach `use`, Lazy loaders, Suspense children arrays) sever static ancestry, so those templates parse ns-less and re-create at insertion through dom's insertion-ns frame — the namespaces import stays emitted for svg/math either way).
 
 ## Attribute categories
 
@@ -64,12 +79,12 @@ Per file (the plugin instance is created per transform), each JSX element report
 | Syntax | Feature import |
 |---|---|
 | `hook:` attr (element or component position) | `@hellajs/dom/features/hooks` |
-| `error:` attr (element position) | `@hellajs/dom/features/errors` |
-| `e:` attr (element position) | `@hellajs/dom/features/direct-events` |
-| any prefixed attr in COMPONENT position (`on:`/`e:`/`hook:`/`error:` — forwarded onto elements at runtime) | `@hellajs/dom/features/routed-props` (+ the prefix's own feature for `hook:`/`error:`/`e:`) |
-| `svg` / `math` element tag (incl. inside a hoisted static subtree — the hoist skips child traversal, so `collectStaticNamespaces` scans the pre-replacement node) | `@hellajs/dom/features/namespaces` |
+| `error:` attr (element or component position) | `@hellajs/dom/features/errors` |
+| `e:` attr (element or component position) | `@hellajs/dom/features/direct-events` |
+| `svg` / `math` element tag (incl. inside a hoisted static subtree — the hoist skips child traversal, so `collectStaticFeatures` scans the pre-replacement node) | `@hellajs/dom/features/namespaces` |
+| hyphenated element tag name (custom-element candidate; same pre-replacement scan covers folded subtrees, the visitor check covers dynamic elements) | `@hellajs/dom/features/custom-elements` |
 
-`on:` in element position emits nothing (delegated events are core); `raw`/`onError`/`hydrate` named imports emit nothing (the API anchors load their features). Collection keys off the same prefixes `processAttributes` already buckets; emission order is fixed (hooks, errors, direct-events, namespaces, routed-props) for deterministic output.
+`on:` emits nothing in any position (delegated events are core; a runtime-spread `on:` key routes through dom's `prop()`). `raw`/`onError`/`hydrate` named imports emit nothing (the API anchors load their features). Collection keys off the same prefixes `processAttributes` already buckets; emission order is fixed (hooks, errors, direct-events, namespaces, custom-elements) for deterministic output.
 
 ## Component detection and wrapping
 
@@ -99,7 +114,7 @@ Emitted by `buildHellaNode` (`src/builders/vnode.mjs`). **Each field after `tag`
 | `error` | object | `error:`-prefixed. |
 | `children` | array | filtered children; if every child is a `StringLiteral` they are joined into one string inside a single-element array. |
 
-For components, **all five category arrays are merged into a single `props` object** with prefixed attrs kept under verbatim string keys (`"on:click"`, `"hook:mount"`); the bucket arrays stay empty, so the `component(Tag, props)` call never carries bare `on` / `hooks` / `e` / `error` fields. The component forwards them by re-emitting the prefixed key onto an element; dom's render/hydrate (`routePrefixedProps`) then slices them into live buckets.
+For components, **all five category arrays are merged into a single `props` object** with prefixed attrs kept under verbatim string keys (`"on:click"`, `"hook:mount"`); the bucket arrays stay empty, so the `component(Tag, props)` call never carries bare `on` / `hooks` / `e` / `error` fields. The component forwards them by re-emitting the prefixed key onto an element; the runtime spread funnels every key through dom's `prop()`, whose four-family routing (`on:`/`e:`/`hook:`/`error:`) lands them on the same seams the explicit emission calls (`runtime.ts`, the `on`/`direct`/`hook` bodies plus a per-key `errorConfig` merge).
 
 ## Import injection
 
@@ -111,12 +126,15 @@ For components, **all five category arrays are merged into a single `props` obje
 | `ensureForEachImport` | `@hellajs/dom` | `ForEach` |
 | `ensurePortalImport` | `@hellajs/dom` | `Portal` |
 | `ensureLazyImport` | `@hellajs/dom` | `Lazy` |
+| `ensureRuntimeImport` | `@hellajs/dom/runtime` | the helpers the file's dom-target emission used (canonical order: `template`, `fragment`, `mark`, `text`, `prop`, `on`, `direct`, `hook`, `errorConfig`, `child`), each aliased to its `_hella<Name>` uid local |
 
 ## Non-obvious behaviors
 
 Grounded in tests — verify any change against these:
 
 - **`component`, not `componentScope`** — wrap identifier is `component` from `@hellajs/dom`.
+- **Plugin options are the SECOND argument** — babel calls plugin fns as `(babelCoreModule, userOptions)`; direct calls validate `options` only in that position (`babelHellaJS(undefined, { target })`). `undefined`/absent → `"ast"`.
+- **Dom target: uniform marking + fold boundary** — every element expression is a `mark`ed build fn (no position analysis); literal props minus `value`/`checked`/`selected`/`innerHTML` fold into the template html; the leading static run of children folds, and the first dynamic child flips the rest to runtime calls in document order (`text`/`child`/nested sites). Root `key` moves to `mark` metadata. Spreads iterate per key through `prop()` at runtime. Goldens: `tests/imperative.test.ts`.
 - **Passthroughs: `ForEach`, `Portal`, `Lazy`** — three names, single-sourced in `constants.mjs` (`PASSTHROUGH_NAMES` set) and `utils/passthrough.mjs` (`PASSTHROUGH_INJECTORS` map).
 - **Five attribute categories** — `error:` and `e:` exist alongside `on:` / `hook:`.
 - **`e:` vs `on:`** — direct vs delegated events; both can appear on the same element (`<div e:click={direct} on:click={delegated} />`).
@@ -134,11 +152,11 @@ Grounded in tests — verify any change against these:
 
 ## Tests
 
-Four files under `tests/`: `transform.test.ts` (full pipeline), `processor.test.ts` (attribute/child processing), `builder.test.ts` (`buildHellaNode`, `buildComponentCall`), `tag-callee.test.ts` (`getTagCallee`).
+Five files under `tests/`: `transform.test.ts` (full pipeline + `target` option parsing/validation + the no-options ast-default regression golden), `imperative.test.ts` (dom-target golden outputs: every emission rule of §Imperative emission), `processor.test.ts` (attribute/child processing), `builder.test.ts` (`buildHellaNode`, `buildComponentCall`), `tag-callee.test.ts` (`getTagCallee`). Suites under `plugins/vite/tests/` and `plugins/rollup/tests/` cover wrapper `{ target }` forwarding (vite's `transform` is async; rollup's `transform`/`load` are sync).
 
-- **Helpers** — `transformJSX(code)` runs `babel.transformSync` with `configFile: false` and the plugin; `normalize(output)` collapses whitespace for full-output equality asserts; `getNamedImports(code, source)` regex-extracts specifier names.
+- **Helpers** — `transformJSX(code, options?)` runs `babel.transformSync` with `configFile: false` and the plugin (options forwarded as the babel tuple's second element); `normalize(output)` collapses whitespace for full-output equality asserts; `getNamedImports(code, source)` regex-extracts specifier names.
 - **Style** — integration-style: most tests exercise the full transform and assert either `toContain` on substrings or `toBe` on `normalize()` output. Some tests import internals directly from `src/**/*.mjs` — a documented carveout (`guides/tests.md` §Test Coverage, `plugins/**` rule).
-- **Run** — `vp run coverage babel` (the scoped plugin gate; tests import from source `index.mjs`, not `dist/`) + `vp run lint` for rules + type-check. **NEVER run a bare `vp test` against the full repo without scoping to the plugin path.**
+- **Run** — `vp run coverage babel` (the scoped plugin gate; tests import from source `index.mjs`, not `dist/`; vite/rollup need their own scoped runs — their `index.mjs` is coverage-excluded by design) + `vp run lint` for rules + type-check. **NEVER run a bare `vp test` against the full repo without scoping to the plugin path.**
 
 ## Performance notes (verified)
 

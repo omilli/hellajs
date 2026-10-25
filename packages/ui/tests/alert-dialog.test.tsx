@@ -1,11 +1,10 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { signal } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
-import "@hellajs/dom/features/routed-props";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components import the bare
 // specifier, and Portal's hook wiring (observer walk, element state) only works when the test's
 // mount and the component's Portal share one dom instance.
-import type { HellaNode } from "@hellajs/dom";
+
 import { mount, peekState } from "@hellajs/dom";
 import {
   assertStructuralParity,
@@ -364,7 +363,7 @@ describe("alert-dialog", () => {
  */
 function renderPart(
   variant: (typeof alertDialogPartVariants)[number],
-  children?: HellaNode[],
+  children?: JSX.Element[],
   extra: Record<string, unknown> = {},
 ): Element {
   const container = setupContainer();
@@ -372,10 +371,8 @@ function renderPart(
     string,
     never
   >);
-  // A reactive fn root cannot pass through mount's resolve-once unwrap — wrap it like the harness does.
-  mount(
-    typeof rendered === "function" ? <div>{rendered as never}</div> : (rendered as never),
-    container,
-  );
+  // isDynamic meta results (Portal roots) have no flagged build for mount to root — the
+  // template wrapper dispatches them as a child (child() hands them the parent).
+  mount("isTemplate" in rendered ? rendered : <div>{rendered as never}</div>, container);
   return container.firstElementChild!;
 }

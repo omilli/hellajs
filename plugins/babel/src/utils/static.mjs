@@ -1,15 +1,16 @@
-// Static-subtree hoisting.
+// Static-subtree hoisting (AST target only — the dom target's imperative sites fold
+// statics into their template html instead).
 //
 // A fully-static JSX subtree (lowercase tag, literal-only props, no
 // on:/e:/hook:/error: attributes, static text + static element children) is
-// hoisted to a module-level constant tagged `static: true`. dom's `staticDom`
-// WeakMap then mounts every later use of that constant via a single
-// `cloneNode(true)` instead of re-walking construction, and the constant is
-// allocated once per site instead of per call.
+// hoisted to a module-level constant tagged `static: true` and allocated once per
+// site. The AST is shared by reference; component() clones the root per instance
+// (the `static` spread), and the marker is inert server metadata — the server
+// pipeline stringifies the shared AST directly.
 //
-// The safety rules mirror dom's documented static guarantee: cached prototypes
-// carry zero ElementState (no handlers/effects/hooks), so clones are inert and
-// sharing the AST object is safe. Anything dynamic — expressions, components,
+// The safety rules mirror dom's documented static guarantee: shared AST roots
+// carry zero per-instance state (no handlers/effects/hooks), so clones are inert
+// and sharing the AST object is safe. Anything dynamic — expressions, components,
 // prefixed attributes, spreads — disqualifies the subtree; static children of a
 // disqualified parent still hoist individually.
 
@@ -21,12 +22,13 @@ import { FRAGMENT_TAG } from "../constants.mjs";
 /**
  * True if an emitted (Babel) value is a plain literal safe to embed in a shared
  * static vnode: strings, numbers, booleans. Everything else (identifiers,
- * calls, arrows, template literals, …) is dynamic.
+ * calls, arrows, template literals, …) is dynamic. Shared with the dom target's
+ * imperative builder, whose template folding uses the same literal rule.
  * @param {typeof import("@babel/core").types} t
  * @param {import("@babel/core").Expression} value
  * @returns {boolean}
  */
-function isLiteralValue(t, value) {
+export function isLiteralValue(t, value) {
   return t.isStringLiteral(value) || t.isNumericLiteral(value) || t.isBooleanLiteral(value);
 }
 

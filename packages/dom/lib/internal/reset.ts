@@ -2,7 +2,6 @@ import { resetQueueState } from "./queue";
 import { resetEventState } from "./events";
 import { resetSelectorState } from "./selectors";
 import { resetErrorState } from "./dispatch";
-import { clearStaticCache } from "./render";
 import { resetHydrateState } from "./hydrate";
 import { resetHoverIntentState } from "../hoverIntent";
 import { resetLayerStack } from "../layerDismissal";
@@ -15,7 +14,6 @@ export function resetDom() {
   resetEventState();
   resetSelectorState();
   resetErrorState();
-  clearStaticCache();
   resetHydrateState();
   resetHoverIntentState();
   resetLayerStack();
