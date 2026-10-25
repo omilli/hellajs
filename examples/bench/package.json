@@ -2,10 +2,13 @@
   "name": "js-framework-benchmark-hellajs",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "author": "omilli",
   "scripts": {
-    "bundle": "rollup -c rollup.config.mjs",
-    "serve": "npm run bundle && bun index.html"
+    "bundle": "rollup -c",
+    "serve": "npm run bundle && bun index.html",
+    "build-prod": "rollup -c --environment production",
+    "serve-prod": "npm run build-prod && bun index.html"
   },
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^16.0.3",
