@@ -8,7 +8,8 @@ import type {
 } from "./types/nodes";
 import { isFunction, isNumber, isObject, isString } from "./internal/core";
 import { renderProp, resolveDeep, toText, isTemplateBuild, isHellaNode } from "./internal/utils";
-import { setNodeHandler, bindDirectHandler } from "./internal/events";
+import { setNodeHandler } from "./internal/events";
+import { bindDirectHandler } from "./internal/cleanup";
 import { dispatchError, findBoundary, toError } from "./internal/dispatch";
 import {
   adopting,

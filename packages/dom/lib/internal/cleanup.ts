@@ -1,7 +1,6 @@
-import { removeDirectHandlers } from "./events";
 import { deleteState, peekState } from "./state";
 import type { ElementState } from "./state";
-import type { HookType } from "../types/nodes";
+import type { DirectListenerSpec, HookType } from "../types/nodes";
 
 let cleanedRootMarker: ((root: Node) => void) | null = null;
 
@@ -13,6 +12,67 @@ let cleanedRootMarker: ((root: Node) => void) | null = null;
  */
 export function setCleanedRootMarker(mark: (root: Node) => void): void {
   cleanedRootMarker = mark;
+}
+
+/**
+ * @internal
+ * Sets a direct (non-delegated) event handler on an element — wraps the handler with
+ * error-boundary support and replaces the previous handler for the same event type.
+ * The default (direct-events feature not loaded) registers nothing: `e:` JSX loads the
+ * feature via the babel plugin, and hand-built `e` buckets need the documented
+ * `import "@hellajs/dom/features/direct-events"` escape hatch.
+ *
+ * Exported `let` is deliberate: the feature swaps the implementation at module init
+ * through {@link setDirectEventFeature} (the injection pattern) while
+ * every importer keeps the live binding. Hosted in cleanup.ts, not events.ts:
+ * `clean` reads `removeDirectHandlers` locally, and events.ts imports render.ts
+ * (which imports cleanup.ts) — an events host made cleanup → events a module cycle.
+ * @param element Target element
+ * @param type Event type (e.g., 'focus', 'blur', 'load')
+ * @param handler Event handler function, or a `{ handler, options }` spec whose
+ * native listener options (once/passive/capture) are forwarded to addEventListener
+ */
+export let bindDirectHandler: (
+  element: Element,
+  type: string,
+  handler: EventListener | DirectListenerSpec,
+) => void = () => {};
+
+/**
+ * @internal
+ * Removes all direct handlers from an element during cleanup. The default
+ * (direct-events feature not loaded) does nothing — direct-handler maps are only
+ * allocated by the feature's registration.
+ * @param node Node to cleanup
+ * @param handlers The node's direct-handler map (caller already holds the state)
+ */
+export let removeDirectHandlers: (
+  node: Node,
+  handlers: Map<string, DirectListenerSpec>,
+) => void = () => {};
+
+/**
+ * The direct-events feature's handler implementations, registered at its module init.
+ */
+interface DirectEventFeature {
+  bindDirectHandler: (
+    element: Element,
+    type: string,
+    handler: EventListener | DirectListenerSpec,
+  ) => void;
+  removeDirectHandlers: (node: Node, handlers: Map<string, DirectListenerSpec>) => void;
+}
+
+/**
+ * @internal
+ * Registers the direct-events feature's handler machinery (the injection
+ * pattern — the implementations live in `lib/features/direct-events.ts` so unused
+ * `e:` wiring tree-shakes out of bundles that never load the feature).
+ * @param feature The direct-event handler implementations
+ */
+export function setDirectEventFeature(feature: DirectEventFeature): void {
+  bindDirectHandler = feature.bindDirectHandler;
+  removeDirectHandlers = feature.removeDirectHandlers;
 }
 
 /**

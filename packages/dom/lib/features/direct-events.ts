@@ -1,7 +1,8 @@
 import type { DirectListenerSpec } from "../types/nodes";
 import { dispatchError, resolveErrorConfig, toError } from "../internal/dispatch";
 import { getState } from "../internal/state";
-import { renderEventFallback, setDirectEventFeature } from "../internal/events";
+import { setDirectEventFeature } from "../internal/cleanup";
+import { renderEventFallback } from "../internal/events";
 
 /**
  * Sets a direct (non-delegated) event handler on an element.
