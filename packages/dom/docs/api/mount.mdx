@@ -112,7 +112,7 @@ app.unmount();
 
 ### Hand-Built Input Is Rejected
 
-`mount` accepts compiled build functions only. A hand-built HellaNode (`{ tag: "div", ... }`) throws at mount time with the documented rejection (`[dom] mount: hand-built HellaNode input is not supported`). JSX sources go through the [babel plugin](/plugins/babel), which emits the build functions `mount` consumes. If you were mounting hand-built HellaNode trees, see [the v3 migration guide](/learn/concepts/migration-v3) and the [runtime](/reference/dom/runtime) reference.
+`mount` accepts compiled build functions only. A hand-built HellaNode (`{ tag: "div", ... }`) throws at mount time with the documented rejection (`[dom] mount: hand-built HellaNode input is not supported`). JSX sources go through the [babel plugin](/plugins/babel), which emits the build functions `mount` consumes. To construct DOM without the compiler, use the [runtime](/reference/dom/runtime) module instead.
 
 ### Single Mount Point
 

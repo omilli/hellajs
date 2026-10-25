@@ -1,5 +1,5 @@
 ---
-title: Client default compiles to imperative DOM emission; HellaNode is server-only currency as of v3
+title: Client default compiles to imperative DOM emission; HellaNode is server-only currency
 description: JSX client builds emit @hellajs/dom/runtime construction by default; mount/hydrate reject hand-built HellaNode input, and the AST survives only as the ssr/compiler contract.
 tags: [babel, dom, ssr, hellanode, jsx, imperative, architecture, bench]
 confirmed: 2026-10-23
@@ -9,8 +9,8 @@ confirmed: 2026-10-23
 
 Earlier attempts to ditch the HellaNode runtime (direct DOM-emission compile, then hoisted
 shell templates with per-instance holes) were rejected on memory/cost grounds, and the
-conclusion "the HellaNode is the runtime composition currency" hardened into a rule. v3
-reverses it through a different mechanism than either rejected attempt: cached template
+conclusion "the HellaNode is the runtime composition currency" hardened into a rule. The
+imperative-client flip reverses it through a different mechanism than either rejected attempt: cached template
 clones (one parsed prototype per static html string, `cloneNode(true)` per instance) plus
 positional adoption for hydration — no per-instance shell allocation, no walker, and the
 AST is no longer a runtime input at all. What broke the deadlock:
@@ -26,7 +26,7 @@ AST is no longer a runtime input at all. What broke the deadlock:
   (`packages/dom/lib/internal/claims.ts`), preserving element identity.
 
 The earlier rejections remain valid for THEIR mechanisms: do not re-propose per-instance
-shell templates with holes (memory cost verdict stands). The v3 design differs (shared
+shell templates with holes (memory cost verdict stands). The imperative-client design differs (shared
 template cache, no holes), and the flip decision supersedes the "keep the AST as runtime
 currency" rule.
 

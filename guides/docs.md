@@ -605,7 +605,7 @@ JSX is the only example syntax in every package, `dom` included. Write every exa
 [`name`](/reference/{package}/{name})
 ```
 
-- Always backtick-wrap function/method names in cross-references. Plain text for concept references.
+- Always backtick-wrap function/method names in cross-references. Plain text for concept references and subpath modules ([runtime](/reference/dom/runtime)): a backticked display name must be a barrel export of the target package, or `vp run doc-links` fails it.
 - Always use full path format — never relative links.
 - Link on first mention of an export within a doc. Subsequent mentions don't need links.
 - Section headings should not contain links.
@@ -760,7 +760,7 @@ Run this when holding a Docs file (`.mdx` / `.md`). Each item is a yes/no or a c
 - [ ] Callback parameter types match what the implementation passes
 
 **Cross-references & tone**
-- [ ] Function/method names backtick-wrapped in cross-references; concepts in plain text
+- [ ] Function/method names backtick-wrapped in cross-references; concepts and subpath modules in plain text (backticked names must be barrel exports; enforced by `vp run doc-links`)
 - [ ] Full path format `/reference/{package}/{export}`; link on first mention only
 - [ ] No `## Related` section; cross-references inline
 - [ ] Present tense, no hedging; tone matches doc type (API = factual, Concept = educational, Pattern = terse)

@@ -26,6 +26,18 @@ module.exports = {
 };
 ```
 
+## Build Target
+
+The plugin emits HellaNode AST objects by default (`target: "ast"`), the input format of `@hellajs/ssr`. Client pipelines that run the compiled output in the browser pass `{ target: "dom" }` to emit imperative construction calls against `@hellajs/dom/runtime` instead:
+
+```js
+module.exports = {
+  plugins: [['babel-plugin-hellajs', { target: 'dom' }]]
+};
+```
+
+The vite, rollup, and astro wrappers own this option themselves, so direct babel plugin use is the only path that needs it.
+
 ## TypeScript
 
 For TypeScript projects, combine with the TypeScript preset.
@@ -98,6 +110,8 @@ const _hellaStatic = {
 const Row = () => _hellaStatic;
 ```
 
-The runtime keeps a prototype DOM subtree per static node, so every mount of the constant is a single native `cloneNode(true)` instead of re-walking construction. Repeated renders of the same site (list rows, re-mounted panels) share one object instead of allocating per call. Static children of a dynamic parent hoist individually.
+The hoisted constant is shared by reference: repeated renders of the same site (list rows, re-mounted panels) reuse one object instead of allocating per call. Static children of a dynamic parent hoist individually.
 
 Because these constants are shared, mutating a returned node is unsafe: every mount of the same site reuses the one object.
+
+Static hoisting applies to the `ast` target; the `dom` target folds static subtrees into cached `template()` prototypes instead.

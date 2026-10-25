@@ -29,7 +29,6 @@ export const navigation: Record<NavSection, NavEntry[]> = {
         "SSR",
         "Hydration",
         "Headless-Behaviors",
-        "Migration-V3",
       ],
     },
     {

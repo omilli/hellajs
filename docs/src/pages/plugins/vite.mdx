@@ -26,6 +26,10 @@ export default defineConfig({
 });
 ```
 
+## Build Target
+
+JSX compiles per build environment: client builds emit imperative DOM construction through `@hellajs/dom/runtime`, and server or SSR builds emit the HellaNode AST that `@hellajs/ssr` stringifies. Pass an explicit `target` option (`"dom"` or `"ast"`) to override the per-environment resolution.
+
 ## TypeScript
 
 The plugin includes full TypeScript support. Configure your `tsconfig.json`.

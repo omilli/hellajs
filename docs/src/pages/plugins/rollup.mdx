@@ -33,6 +33,10 @@ export default {
 };
 ```
 
+## Build Target
+
+Rollup bundles clients, so the plugin emits imperative DOM construction through `@hellajs/dom/runtime` by default. Pass `{ target: "ast" }` when the bundle runs server-side and feeds `@hellajs/ssr`.
+
 ## TypeScript
 
 The plugin includes built-in TypeScript support. No additional configuration is needed beyond ensuring your `tsconfig.json` is properly configured.

@@ -1,6 +1,6 @@
 # HellaJS @hellajs/css vs. Emotion / Styled Components / vanilla-extract / Panda CSS
 
-A ground-up comparison based on the actual source code of `@hellajs/css` v3. Every claim below was verified against `packages/css/lib/` (including `lib/internal/`). Competitor versions researched this session: Emotion 11.14 (`@emotion/css` 11.13.5, `@emotion/react` 11.14.0, `@emotion/styled` 11.14.1), styled-components 6.5.3, vanilla-extract 1.21.2, Panda CSS 1.12.0; facts sourced from each project's official docs and npm registry manifests.
+A ground-up comparison based on the actual source code of `@hellajs/css` v2. Every claim below was verified against `packages/css/lib/` (including `lib/internal/`). Competitor versions researched this session: Emotion 11.14 (`@emotion/css` 11.13.5, `@emotion/react` 11.14.0, `@emotion/styled` 11.14.1), styled-components 6.5.3, vanilla-extract 1.21.2, Panda CSS 1.12.0; facts sourced from each project's official docs and npm registry manifests.
 
 ---
 
