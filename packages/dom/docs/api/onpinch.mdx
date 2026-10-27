@@ -1,33 +1,6 @@
 # onPinch
 
-Tracks a two-pointer pinch on an element and reports scale and translation deltas, returning the dispose handle that removes all pointer listeners.
-
-## API
-
-```typescript
-function onPinch(
-  el: HTMLElement,
-  handlers: PinchHandlers
-): () => void
-```
-
-```typescript
-interface PinchState {
-  scale: number;
-  dx: number;
-  dy: number;
-}
-
-interface PinchHandlers {
-  onStart?: (event: PointerEvent) => void;
-  onMove: (state: PinchState) => void;
-  onEnd?: () => void;
-}
-```
-
-- `el`: Element receiving the pointer events.
-- `handlers`: `onStart` fires once when the second pointer lands; `onMove` fires per tracked-pointer move with scale and centroid deltas from the gesture start; `onEnd` fires once when either tracked pointer ends.
-- **Returns**: Dispose handle. Calling it removes all five pointer listeners.
+Track a two-finger pinch: every move reports zoom scale and pan offset from the gesture's start, and your code owns the transform.
 
 ## Basic Usage
 
@@ -57,6 +30,33 @@ const Image = () => (
 mount(<Image />, "#app");
 // Spreading two fingers scales the image; moving the pair translates it
 ```
+
+## API
+
+```typescript
+function onPinch(
+  el: HTMLElement,
+  handlers: PinchHandlers
+): () => void
+```
+
+```typescript
+interface PinchState {
+  scale: number;
+  dx: number;
+  dy: number;
+}
+
+interface PinchHandlers {
+  onStart?: (event: PointerEvent) => void;
+  onMove: (state: PinchState) => void;
+  onEnd?: () => void;
+}
+```
+
+- `el`: Element receiving the pointer events.
+- `handlers`: `onStart` fires once when the second pointer lands; `onMove` fires per tracked-pointer move with scale and centroid deltas from the gesture start; `onEnd` fires once when either tracked pointer ends.
+- **Returns**: Dispose handle. Calling it removes all five pointer listeners.
 
 ## Key Concepts
 

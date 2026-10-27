@@ -2,67 +2,9 @@ import Callout from "@components/Callout.astro";
 
 # registry
 
-Low-level API for manually registering effects and lifecycle hooks on DOM elements.
+Register effects and lifecycle hooks on DOM elements directly, with automatic cleanup when the element is removed.
 
-<Callout variant="info">This is mostly an internal API. You typically don't need to use this directly unless building custom rendering utilities or framework integrations.</Callout>
-
-## API
-
-```typescript
-const registry: {
-  addEffect(node: Node, effectFn: () => void): void;
-  addHook(element: Element, type: HookType, handler: HookFn): void;
-}
-
-type HookType = 
-  | "beforeMount" 
-  | "afterMount" 
-  | "beforeUpdate" 
-  | "afterUpdate" 
-  | "beforeDestroy" 
-  | "afterDestroy";
-```
-
-### `addEffect`
-
-Registers a reactive effect on an element. The effect is automatically disposed when the element is removed from the DOM.
-
-```js
-import { registry } from "@hellajs/dom";
-
-const element = document.createElement("div");
-
-registry.addEffect(element, () => {
-  element.textContent = `Count: ${count}`;
-});
-```
-
-Effects also trigger `beforeUpdate` and `afterUpdate` hooks when the element is mounted, provided the hooks feature is loaded. Any `hook:` prop or `$ref` usage loads it automatically at startup, so ordinary apps always see the bracket; only a custom bundle built without the feature registers effects without it (effects registered before the feature loads never gain the bracket retroactively). Dynamic components (`ForEach`, `Transition`) register their internal effect on their own anchor, so a parent element's `hook:beforeUpdate`/`hook:afterUpdate` do not fire for list or visibility updates.
-
-### `addHook`
-
-Registers a lifecycle hook on an element. Multiple hooks of the same type stack (all execute).
-
-```js
-registry.addHook(element, "afterMount", () => {
-  console.log("Element mounted");
-});
-
-registry.addHook(element, "beforeDestroy", (node) => {
-  console.log("About to remove:", node);
-});
-```
-
-### Lifecycle Hooks
-
-| Hook | Timing | Receives Element |
-|------|--------|------------------|
-| `beforeMount` | Before element added to DOM | No |
-| `afterMount` | After element added to DOM: at mount time, or immediately when registered on an already-mounted element | Yes |
-| `beforeUpdate` | Before reactive effect runs | Yes |
-| `afterUpdate` | After reactive effect runs | Yes |
-| `beforeDestroy` | Before cleanup begins | Yes |
-| `afterDestroy` | After cleanup completes | No |
+<Callout variant="info">Low-level API. You only need this when building custom rendering utilities or framework integrations; normal apps get the same behavior through JSX templates, [`hook:`](/reference/dom/hook), and [`$ref`](/reference/dom/$ref).</Callout>
 
 ## Basic Usage
 
@@ -78,7 +20,7 @@ registry.addEffect(button, () => {
   button.setAttribute("data-count", String(count()));
 });
 
-// Lifecycle hook: fires when mounted through HellaJS
+// Lifecycle hook: fires when the element is mounted through HellaJS
 registry.addHook(button, "afterMount", (el) => {
   console.log("mounted", el.tagName);
 });
@@ -87,107 +29,95 @@ document.body.append(button);
 count(1); // button now has data-count="1"
 ```
 
-## Key Concepts
+When the button is later removed from the DOM, the effect is disposed and the hooks run, with no manual teardown.
 
-### Automatic Cleanup
+## API
 
-HellaJS uses a dual cleanup strategy:
-
-**Synchronous cleanup**: When reactive children are replaced or removed (via `ForEach`, conditional rendering, etc.), `cleanupSubtree()` runs immediately, disposing effects, handlers, and hooks before the DOM node is removed.
-
-**Safety net**: A scoped `MutationObserver` watches only mount target containers (registered via `mount()`). When nodes are externally removed from these containers, cleanup is deferred:
-
-```
-Node removed from mount target
-         ↓
-Added to cleanupQueue
-         ↓
-queueMicrotask(processCleanupQueue)
-         ↓
-For each disconnected node:
-  - Run beforeDestroy hooks
-  - Dispose component scope
-  - Dispose portal cleanup
-  - Dispose lazy cleanup
-  - Dispose transition cleanup
-  - Dispose all effects
-  - Remove direct event handlers
-  - Run afterDestroy hooks
-  - Clear all stored data
-```
-
-Third-party DOM mutations outside mount targets do not trigger HellaJS processing.
-
-### Custom Rendering Example
-
-Building a custom element renderer that integrates with the lifecycle system:
-
-```js
-import { signal } from "@hellajs/core";
-import { registry } from "@hellajs/dom";
-
-function renderReactiveElement(tag, props) {
-  const element = document.createElement(tag);
-  
-  // Add reactive text binding
-  if (typeof props.text === "function") {
-    registry.addEffect(element, () => {
-      element.textContent = props.text();
-    });
-  }
-  
-  // Add lifecycle hooks
-  if (props.onMount) {
-    registry.addHook(element, "afterMount", props.onMount);
-  }
-  
-  return element;
+```typescript
+const registry: {
+  addEffect(node: Node, effectFn: () => void): void;
+  addHook(element: Element, type: HookType, handler: HookFn): void;
 }
 
-// Usage
-const count = signal(0);
-
-const button = renderReactiveElement("button", {
-  text: () => `Count: ${count}`,
-  onMount: () => console.log("Button ready")
-});
-
-document.body.appendChild(button);
-// Effect updates text reactively
-// Cleanup happens automatically when button is removed
+type HookType =
+  | "beforeMount"
+  | "afterMount"
+  | "beforeUpdate"
+  | "afterUpdate"
+  | "beforeDestroy"
+  | "afterDestroy";
 ```
 
-## Important Considerations
+### `addEffect`
 
-### Deferred Processing
+Registers a reactive effect on an element, stacking with any effects already registered there. The effect is disposed when the element is removed from the DOM.
 
-Cleanup of externally-removed nodes and `afterMount` for dynamically added nodes are deferred via `queueMicrotask`. This batches operations and ensures processing completes before the browser paints.
+```js
+import { registry } from "@hellajs/dom";
+
+const element = document.createElement("div");
+
+registry.addEffect(element, () => {
+  element.textContent = `Count: ${count}`;
+});
+```
+
+While the element is mounted, each run of the effect is bracketed by the element's `beforeUpdate` and `afterUpdate` hooks. Updates driven by dynamic components ([`ForEach`](/reference/dom/foreach), [`Transition`](/reference/dom/transition)) run on their own anchors, so a parent element's update hooks do not fire for list or visibility changes.
+
+### `addHook`
+
+Registers a lifecycle hook on an element. Multiple hooks of the same type stack: all execute, in registration order.
+
+```js
+registry.addHook(element, "afterMount", () => {
+  console.log("Element mounted");
+});
+
+registry.addHook(element, "beforeDestroy", (node) => {
+  console.log("About to remove:", node);
+});
+```
+
+Direct `addHook` calls need the hooks feature loaded; any `hook:` prop or `$ref` usage loads it at startup. The hook timings:
+
+| Hook | Timing | Receives Element |
+|------|--------|------------------|
+| `beforeMount` | Before element added to DOM | No |
+| `afterMount` | After element added to DOM: at mount time, or immediately when registered on an already-mounted element | Yes |
+| `beforeUpdate` | Before reactive effect runs | Yes |
+| `afterUpdate` | After reactive effect runs | Yes |
+| `beforeDestroy` | Before cleanup begins | Yes |
+| `afterDestroy` | After cleanup completes | No |
+
+## Key Concepts
+
+### Two Cleanup Paths
+
+- **Reactive swaps are synchronous**: when HellaJS itself replaces or removes nodes (conditional rendering, list updates), effects, handlers, and hooks are disposed immediately, before the DOM node leaves the tree.
+- **External removals are batched**: when other code removes nodes from a mounted container (`el.remove()`), cleanup runs on a microtask, before the browser paints. Nodes re-appended before the microtask fires are recognized as moved and skip cleanup entirely.
 
 ```js
 element.remove();
-// Cleanup hasn't happened yet
+// Cleanup has not run yet
 
 await Promise.resolve();
-// Now cleanup has processed
+// Cleanup has processed
 ```
 
-### Connection Check
+Only mount target containers are watched; nodes removed outside them get no automatic cleanup.
 
-Nodes are only cleaned if truly disconnected - moved nodes (remove then re-append) skip cleanup:
+## Important Considerations
+
+### Moved Nodes Are Not Cleaned
+
+A node removed and re-appended before the cleanup microtask fires is treated as moved, not removed:
 
 ```js
 const el = document.querySelector(".item");
-el.remove();           // Queued for cleanup
-parent.prepend(el);    // Re-connected before processing
-// Cleanup skips this node (still connected)
+el.remove();        // Queued for cleanup
+parent.prepend(el); // Re-connected before processing: cleanup skips it
 ```
 
-### Hook Stacking
+### Effects Outside a Reactive Run
 
-Multiple hooks of the same type all execute in registration order:
-
-```js
-registry.addHook(el, "afterMount", () => console.log("First"));
-registry.addHook(el, "afterMount", () => console.log("Second"));
-// Both run: "First" then "Second"
-```
+`addEffect` registers with `separate` semantics: the effect does not link to an enclosing reactive owner, so its lifetime is exactly the element's DOM lifetime.

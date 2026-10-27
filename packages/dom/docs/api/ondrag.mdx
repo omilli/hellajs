@@ -1,27 +1,6 @@
 # onDrag
 
-Tracks a pointer drag on an element and reports cumulative deltas from the drag start, returning the dispose handle that removes all pointer listeners.
-
-## API
-
-```typescript
-function onDrag(
-  el: HTMLElement,
-  handlers: DragHandlers
-): () => void
-```
-
-```typescript
-interface DragHandlers {
-  onStart?: (event: PointerEvent) => void;
-  onMove: (delta: { dx: number; dy: number; event: PointerEvent }) => void;
-  onEnd?: () => void;
-}
-```
-
-- `el`: Element receiving the pointer events.
-- `handlers`: `onStart` fires once on primary-button pointerdown; `onMove` fires per pointermove with deltas accumulated from the drag start; `onEnd` fires once when the drag ends.
-- **Returns**: Dispose handle. Calling it removes all five pointer listeners.
+Track a pointer drag on an element: every move reports the total distance from the press point, and your code owns what the numbers mean.
 
 ## Basic Usage
 
@@ -51,6 +30,27 @@ const Thumb = () => (
 mount(<Thumb />, "#app");
 // Dragging the thumb reports cumulative distance from the press point
 ```
+
+## API
+
+```typescript
+function onDrag(
+  el: HTMLElement,
+  handlers: DragHandlers
+): () => void
+```
+
+```typescript
+interface DragHandlers {
+  onStart?: (event: PointerEvent) => void;
+  onMove: (delta: { dx: number; dy: number; event: PointerEvent }) => void;
+  onEnd?: () => void;
+}
+```
+
+- `el`: Element receiving the pointer events.
+- `handlers`: `onStart` fires once on primary-button pointerdown; `onMove` fires per pointermove with deltas accumulated from the drag start; `onEnd` fires once when the drag ends.
+- **Returns**: Dispose handle. Calling it removes all five pointer listeners.
 
 ## Key Concepts
 

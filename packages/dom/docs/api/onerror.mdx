@@ -1,6 +1,38 @@
 # onError
 
-Global error handler for catching errors in reactive rendering, event handlers, and lifecycle hooks. Elements can configure local error behavior with [`error:fallback`](/reference/dom/error) and [`error:category`](/reference/dom/error) attributes.
+Catch errors anywhere in the rendered app: one global handler receives render, mount, update, and event errors, and decides what to show instead.
+
+## Basic Usage
+
+Register a handler before mounting. Return a node to render fallback UI, or `null` to log only.
+
+```jsx
+import { mount, onError } from "@hellajs/dom";
+
+onError((error, context) => {
+  console.error(`[${context.phase}] ${error.message}`);
+  return <div class="error">Something went wrong</div>;
+});
+
+const RiskyChild = () => <div>risky content</div>;
+
+mount(
+  <main>
+    <RiskyChild />
+  </main>
+);
+```
+
+The returned function unregisters the handler:
+
+```jsx
+const off = onError((error) => {
+  console.error(error.message);
+  return null;
+});
+
+off(); // this handler no longer receives errors
+```
 
 ## API
 
@@ -8,81 +40,16 @@ Global error handler for catching errors in reactive rendering, event handlers, 
 function onError(fn: ErrorFn | null): () => void
 ```
 
-- `fn`: Error handler function or `null` to clear all handlers.
-- **Returns**: A function that unregisters this handler when called. Pass `null` to clear all handlers.
+- `fn`: Error handler function, or `null` to clear all handlers.
+- **Returns**: A function that unregisters this handler when called.
 
-## Basic Usage
-
-```jsx
-import { onError, mount } from "@hellajs/dom";
-
-const ChildComponent = () => <div>child content</div>;
-
-// Set global handler
-onError((error, context) => {
-  // Use element's fallback if available
-  if (context.config?.fallback) {
-    return context.config.fallback(error);
-  }
-  // Default fallback
-  return <div class="error">{error.message}</div>;
-});
-
-// Element with custom fallback
-mount(
-  <div error:fallback={(e: Error) => <span>Error: {e.message}</span>}>
-    <ChildComponent />
-  </div>
-);
-```
+Multiple handlers execute in registration order; the first non-null return wins.
 
 ## Key Concepts
 
-### Logging Errors
+### What the Handler Receives
 
-```jsx
-onError((error, context) => {
-  console.error(`[${context.phase}] ${error.message}`, {
-    element: context.element,
-    category: context.config?.category
-  });
-  return null; // No UI change
-});
-```
-
-### Category-Based Handling
-
-```jsx
-const reportToService = (error: Error) => console.error(error);
-
-onError((error, context) => {
-  const category = context.config?.category;
-
-  if (category === "critical") {
-    reportToService(error);
-    return <div>Critical error occurred</div>;
-  }
-
-  if (category === "modal") {
-    return <div class="modal-error">{error.message}</div>;
-  }
-
-  // Default handling
-  return <div>Something went wrong</div>;
-});
-
-// Usage with categories
-const criticalFallback = (e: Error) => <div>Critical: {e.message}</div>;
-const App = () => <div>App content</div>;
-
-mount(
-  <div error:category="critical" error:fallback={criticalFallback}>
-    <App />
-  </div>
-);
-```
-
-### ErrorContext
+The second argument carries the error's origin: the phase it threw in, the element it threw on (when one exists), the triggering event (for event errors), and the element's `error:` config when one applies.
 
 ```typescript
 interface ErrorContext {
@@ -100,96 +67,65 @@ interface ErrorConfig {
 }
 ```
 
-### Return Values
+### Return Values Decide the UI
 
 | Return | Behavior |
 |--------|----------|
-| `HellaNode` | Renders the returned node as fallback UI (for bind, event, reactive child errors only) |
-| `null` | Logs error, no UI change |
-| `void` | Logs error, no UI change |
+| Node | Renders the returned node as fallback UI (errors from reactive children, bindings, and event handlers) |
+| `null` or `void` | Logs the error, no UI change |
 
-**Note**: Fallback UI is only rendered for errors from reactive children, function-ref prop callbacks, and event handlers. Render phase and `beforeMount` hook errors are logged but do not render fallback UI.
+Fallback UI only renders for errors from reactive children, function-ref bindings, and event handlers. Render-phase and `hook:beforeMount` errors are logged but cannot render fallback UI.
 
 ### Error Phases
 
 | Phase | When it occurs | Has element | Fallback UI |
 |-------|----------------|-------------|-------------|
 | `render` | Component function throws | No | No |
-| `mount` | Error during initial mount | Yes | Yes (reactive children), No (beforeMount) |
-| `update` | Error in reactive update | Yes | Yes (bind), No (beforeUpdate/afterUpdate) |
+| `mount` | Error during initial mount | Yes | Yes (reactive children), No (`beforeMount`) |
+| `update` | Error in reactive update | Yes | Yes (bindings), No (`beforeUpdate`/`afterUpdate`) |
 | `event` | Error in event handler | Yes | Yes |
 
-### Element Configuration
+### Categories Route by Region
 
-Use `error:` prefix attributes on elements to configure error behavior:
-
-#### error:fallback
-
-Function that receives the error and returns a HellaNode:
+Tag elements with `error:category` and branch on `context.config?.category` to treat regions differently: report critical areas to a logging service while rendering inline messages elsewhere.
 
 ```jsx
-const FlakyComponent = () => <div>Flaky content</div>;
+const reportToService = (error: Error) => console.error(error);
 
-mount(
-  <div error:fallback={(e: Error) => <span>Failed: {e.message}</span>}>
-    <FlakyComponent />
-  </div>
-);
-```
+onError((error, context) => {
+  if (context.config?.category === "critical") {
+    reportToService(error);
+    return <div>Critical error occurred</div>;
+  }
 
-#### error:category
+  return <div class="error">{error.message}</div>;
+});
 
-String category passed to the global handler for filtering/logging:
-
-```jsx
 const Sidebar = () => <div>Sidebar</div>;
 
-<div error:category="sidebar">
-  <Sidebar />
-</div>
-```
-
-### Config Resolution
-
-- **First found wins** - Stops at first element with `error:` attributes
-- **No merging** - Child config doesn't inherit from parent
-- **No element for render phase** - `config` is undefined when component throws during render
-
-### What Gets Caught
-
-The error handler catches errors from:
-
-- **Reactive children** - Functions that throw during render (fallback UI rendered)
-- **Reactive bindings** - function-ref prop callback errors (fallback UI rendered)
-- **Event handlers** - `on:` and `e:` handler errors (fallback UI rendered)
-- **beforeMount hook** - `hook:beforeMount` errors (error logged, no fallback UI)
-
-```jsx
-const fallback = (e: Error) => <div>Failed: {e.message}</div>;
-const mightThrow = () => "btn-primary"; // stand-in for a function that may throw
-
 mount(
-  <div error:fallback={fallback}>
-    {/* Reactive child error - fallback rendered */}
-    {() => { throw new Error("Render error"); }}
-
-    {/* Bind callback error - fallback rendered */}
-    <div class={mightThrow()} />
-
-    {/* Event handler error - fallback rendered */}
-    <button on:click={() => { throw new Error("Click error"); }}>Click</button>
-
-    {/* Lifecycle hook error - logged, no fallback UI */}
-    <div hook:beforeMount={() => { throw new Error("Hook error"); }} />
+  <div error:category="critical">
+    <Sidebar />
   </div>
 );
 ```
 
-**Note**: `beforeUpdate` and `afterUpdate` hook errors are caught and dispatched, but no fallback UI is rendered for them.
+### Element-Level Fallbacks Come First
 
-### Nested Error Boundaries
+An element's own [`error:fallback`](/reference/dom/error) handles its subtree's errors; reach it from the global handler through `context.config.fallback`. The full element-side contract (fallback, category, boundaries, config resolution) lives in the [`error:`](/reference/dom/error) doc.
 
-When nested elements have error configs, the nearest one wins:
+```jsx
+onError((error, context) =>
+  context.config?.fallback?.(error)
+    ?? <div class="error">Something went wrong</div>
+);
+```
+
+## Important Considerations
+
+### Nested Configs: Nearest Wins
+
+When nested elements carry `error:` configs, the innermost one around the failing subtree applies; child configs never merge with parent configs.
 
 ```jsx
 const outerFallback = (e: Error) => <div>Outer error: {e.message}</div>;
@@ -205,66 +141,6 @@ mount(
 // Result: innerFallback is used
 ```
 
-### Full Error Boundary Setup
+### No Handler Means console.error
 
-```jsx
-import { signal } from "@hellajs/core";
-import { mount, onError } from "@hellajs/dom";
-
-const logError = (error: Error, info: Record<string, unknown>) =>
-  console.error(error, info);
-const DataDisplay = (props: { data: unknown }) => <div>Data view</div>;
-
-// Global handler
-onError((error, context) => {
-  // Log to service
-  logError(error, {
-    phase: context.phase,
-    category: context.config?.category
-  });
-
-  // Use element fallback or default
-  return context.config?.fallback?.(error)
-    ?? <div class="error">Something went wrong</div>;
-});
-
-const App = () => {
-  const data = signal(null);
-
-  return (
-    <div error:fallback={(e: Error) => (
-      <div class="error-boundary">
-        <p>{e.message}</p>
-        <button on:click={() => location.reload()}>
-          Reload
-        </button>
-      </div>
-    )}>
-      <DataDisplay data={data} />
-    </div>
-  );
-};
-
-mount(App, "#app");
-```
-
-### Per-Component Error Handling
-
-```jsx
-const RiskyChild = () => <div>risky content</div>;
-
-const SafeComponent = () => {
-  return (
-    <div
-      error:category="safe-component"
-      error:fallback={(e: Error) => (
-        <div class="safe-error">
-          Component failed: {e.message}
-        </div>
-      )}
-    >
-      <RiskyChild />
-    </div>
-  );
-};
-```
+With no `onError` handler registered, errors log to `console.error` and the app keeps running where it can.

@@ -4,7 +4,7 @@ Short patterns for common DOM rendering tasks using [`@hellajs/dom`](/reference/
 
 ### Reactive Class Names
 
-Use a function-ref `class` (a `() => …` wrapper) with a ternary for state-driven styling.
+A ternary that reads a signal keeps `class` reactive; no wrapper needed.
 
 ```jsx
 import { signal } from "@hellajs/core";
@@ -62,7 +62,7 @@ mount(template, "#app");
 
 ### Conditional Rendering
 
-Wrap conditionals in function references for reactivity.
+A condition that reads a signal re-evaluates when it changes.
 
 ```jsx
 import { signal } from "@hellajs/core";

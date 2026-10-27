@@ -1,12 +1,10 @@
 # Templates
 
-Templates bind reactive values directly to DOM elements, enabling surgical updates without virtual DOM diffing.
+Write UI as JSX: the compiler wires your signals to the DOM, and updates touch only what changed. No virtual DOM, no runtime template parsing.
 
-## Compiled Templates
+## The Shape of a Template
 
-JSX is the only template syntax. A build-time plugin (`babel-plugin-hellajs`, wired by the Vite, Rollup, and Astro integrations) compiles each component into plain [`HellaNode`](/reference/dom) objects: the same AST [`mount`](/reference/dom/mount) consumes, built once at module load instead of parsed at runtime. Nothing in the shipped bundle parses markup; the compiler does that work when your app builds.
-
-Compilation is where reactivity gets wired. The rules below describe what the compiler emits; every rule holds identically on the server, where [`ssr`](/reference/ssr) walks the same AST to a string.
+JSX is the only template syntax. A build-time plugin (`babel-plugin-hellajs`, wired by the Vite, Rollup, and Astro integrations) compiles each component into the structures [`mount`](/reference/dom/mount) consumes. The same rules hold on the server, where [`ssr`](/reference/ssr/ssr) walks the tree to a string.
 
 ```jsx
 import { mount } from "@hellajs/dom";
@@ -24,24 +22,24 @@ const App = () => (
 mount(App, "#app");
 ```
 
-### Reactive Bindings
+## Reactive Bindings
 
-A signal **reference** is the simplest reactive binding. A **compound** expression (arithmetic, conditional, method call) calls the signal and the compiler auto-wraps it in a reactive thunk. Both update the DOM when their dependencies change.
+A signal **reference** is the simplest reactive binding. A **compound** expression (arithmetic, conditional, method call) calls the signal, and the compiler wires the reactivity for you. Both update the DOM when their dependencies change.
 
 ```jsx
 // Signal reference: updates when count changes
 <h1>{count}</h1>
 
-// Arithmetic: re-runs when count changes (auto-wrapped; no manual wrapper)
+// Arithmetic: re-runs when count changes
 <h2>{count() * 2}</h2>
 
 // Reactive conditional: re-evaluates when count changes
 {count() > 5 && <p>Great job!</p>}
 ```
 
-The auto-wrap applies to element children and element attributes only. Component children and props arrive as plain values; pass an explicit thunk when a component documents a getter prop. An explicit function is never wrapped again, so `{() => count() * 2}` behaves exactly like the auto-wrapped form.
+The automatic wiring applies to element children and element attributes only. Component children and props arrive as plain values; pass an explicit function when a component documents a getter prop.
 
-### Static Values
+## Static Values
 
 To read a signal once with no reactivity, hoist the read out of the template or wrap it in [`untracked`](/reference/core/untracked).
 
@@ -56,9 +54,7 @@ const total = count();
 <h1>{untracked(() => count())}</h1>
 ```
 
-### Value Normalization
-
-`false`, `null`, and `undefined` render as empty strings. `0` is preserved as `"0"`.
+`false`, `null`, and `undefined` render as nothing; `0` renders `"0"`.
 
 ```jsx
 {false}      // renders nothing
@@ -67,27 +63,24 @@ const total = count();
 {0}          // renders "0"
 ```
 
-### Array Attributes
+## Array Attributes
 
-Array values for attributes are joined with spaces, filtering falsy values. A call inside the array makes the whole attribute reactive in compiled code; no manual wrapper needed.
+Array values for attributes join with spaces, falsy entries dropped. A call inside the array keeps the attribute reactive.
 
 ```jsx
 const isActive = signal(true);
 
-<div class={["base", isActive() && "active", "always"]}>
-  {/* Compiled: isActive() auto-wraps, class="base active always"; → "base always" once false */}
-</div>
+// class="base active always"; drops "active" once isActive() is false
+<div class={["base", isActive() && "active", "always"]} />
 ```
 
-## Static Hoisting
+## Static Markup Is Cheap
 
-A fully-static subtree (lowercase tag, literal-only props, static text and children) hoists to a module-level constant allocated once per site. Every later use mounts that constant via a single clone instead of re-walking construction, so repeated static markup costs one allocation total.
-
-Anything dynamic disqualifies the subtree: expressions, components, spreads, and [`attribute prefixes`](/learn/concepts/attribute-prefixes) (`on:`, `e:`, `hook:`, `error:`), which bind handlers and lifecycle hooks the clone must not share. Static children of a disqualified parent still hoist individually, so one dynamic boundary never flattens the whole tree.
+A fully static subtree (lowercase tag, literal props, static text) is allocated once per site and cloned on every later use, so repeating static markup costs almost nothing. Expressions, components, spreads, and prefixed attributes (`on:`, `hook:`, ...) disqualify a subtree from this treatment; static children inside a dynamic parent still benefit individually.
 
 ## SVG and MathML
 
-SVG and MathML mount in their correct namespaces automatically: an `<svg>` root creates in the SVG namespace, descendants inherit it, and a `<math>` root creates in the MathML namespace. No wrappers or namespace configuration are needed.
+SVG and MathML mount in their correct namespaces automatically: an `<svg>` root creates in the SVG namespace, descendants inherit it, and `<math>` behaves the same. No wrappers or namespace configuration needed.
 
 ```jsx
 import { mount } from "@hellajs/dom";
@@ -104,7 +97,7 @@ Dynamic content works the same way: [`ForEach`](/reference/dom/foreach), [`Lazy`
 
 ### CamelCase Tags
 
-Multi-word SVG and MathML tags are authored camelCase (`clipPath`, `linearGradient`, `feGaussianBlur`), exactly as in hand-written SVG. The compiler preserves tag case, and cased attributes like `viewBox` and `patternUnits` pass through unchanged.
+Multi-word SVG and MathML tags are authored camelCase (`clipPath`, `linearGradient`, `feGaussianBlur`), exactly as in hand-written SVG. Cased attributes like `viewBox` and `patternUnits` pass through unchanged.
 
 ### foreignObject Resets to HTML
 
@@ -120,25 +113,8 @@ Inside `<foreignObject>` the namespace resets to HTML: its children are regular 
 
 One edge: error fallback UI (from [`error:fallback`](/reference/dom/error)) always renders as HTML, even when the failing boundary sits inside an SVG subtree; keep fallback markup HTML-only.
 
-## Bundle Composition
+## Only What You Use Ships
 
-Every prefix and namespace the compiler detects maps to a small runtime feature module: [`hook:`](/reference/dom/hook) and [`error:`](/reference/dom/error) load their lifecycle and boundary wiring, [`e:`](/reference/dom/e) loads direct-event binding, component-position [`attribute prefixes`](/learn/concepts/attribute-prefixes) load prop routing, and `<svg>`/`<math>` load namespace resolution. The compiler emits a side-effect import for each feature it sees, next to the component imports it already writes:
+The compiler detects every prefix and namespace your templates use and loads just the matching runtime wiring: [`hook:`](/reference/dom/hook) and [`error:`](/reference/dom/error) load their features, [`e:`](/reference/dom/e) loads direct events, `<svg>`/`<math>` load namespace resolution. Features your code never uses never load and tree-shake out entirely: a hook-free, error-free app ships the mount core only.
 
-```jsx
-import "@hellajs/dom/features/hooks";
-import "@hellajs/dom/features/errors";
-import { component, mount } from "@hellajs/dom";
-import { signal } from "@hellajs/core";
-
-const App = () => (
-  <div error:fallback={<span>Boom</span>}>
-    <span hook:afterMount={(el) => console.log(el)} />
-  </div>
-);
-
-mount(App, "#app");
-```
-
-Apps never import feature modules directly. Features your code does not use never load, and their wiring tree-shakes out of the bundle entirely: a hook-free, error-free app ships the mount core only.
-
-Nodes built by hand (no compiler pass) have no mount path at all: hand-built [`HellaNode`](/reference/dom) input throws at [`mount`](/reference/dom/mount)/[`hydrate`](/reference/dom/hydrate). Every compiled build carries the feature imports its syntax needs; see [`attribute prefixes`](/learn/concepts/attribute-prefixes) and the [runtime](/reference/dom/runtime) reference.
+Templates require the compiler: hand-built tree objects throw at [`mount`](/reference/dom/mount) and [`hydrate`](/reference/dom/hydrate). To build DOM without JSX, use the imperative [runtime](/reference/dom/runtime) module.

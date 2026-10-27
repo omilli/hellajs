@@ -1,16 +1,11 @@
 # on:
 
-Delegated event handlers attached globally to `document.body` in the capture phase. Benefits include one listener per event type regardless of element count, automatic cleanup when elements are removed, and consistent capture-phase behavior.
+Delegated event handlers: one shared listener per event type, automatic cleanup, and innermost-first dispatch.
 
 ## Usage
 
 ```jsx
 import { mount } from "@hellajs/dom";
-
-const parentHandler = () => console.log("parent");
-const childHandler = () => console.log("child");
-const handler1 = () => console.log("one");
-const handler2 = (e?: Event) => console.log("two");
 
 const App = () => {
   const handleClick = () => console.log("clicked");
@@ -23,6 +18,8 @@ const App = () => {
 mount(App, "#app");
 ```
 
+Handlers receive the event and can be stacked on one element:
+
 ```jsx
 const handleClick = () => console.log("clicked");
 const handleChange = (event: Event) => console.log(event.target);
@@ -34,32 +31,33 @@ const handleFocus = () => console.log("focused");
 
 ## Key Concepts
 
-### Event Delegation
+### Delegation, Not per Element
 
-1. A global listener is created on `document.body` for each event type
-2. Your handler is stored in the element's internal state, tracked via a WeakMap, and invoked by the global listener
-3. When clicked, the global listener routes the event via `composedPath()`
+`on:` registers one listener per event type on `document.body`, no matter how many elements use it. Handlers are cleaned up automatically when their element is removed from the DOM.
 
-### Event Phase
+### Innermost Handler First
 
-Delegated events fire in the **capture phase** (before the event reaches the target). This is different from direct event listeners which default to the bubble phase.
+Handlers fire from the event's target outward: the innermost element's handler runs first, then each ancestor's in turn.
 
 ```jsx
-// on: dispatch
+const parentHandler = () => console.log("parent");
+const childHandler = () => console.log("child");
+
 <div on:click={parentHandler}>
   <button on:click={childHandler}>Click</button>
 </div>
 
-// childHandler fires first, then parentHandler
+// Clicking the button logs "child", then "parent"
 ```
-
-Handlers fire target-first (innermost element first) because the global listener walks `composedPath()` from the target outward.
 
 ### Propagation
 
-HellaJS never stops propagation automatically; by default every `on:` handler on the event path runs. A handler calling `event.stopPropagation()` (or `stopImmediatePropagation()`) halts the delegated walk: handlers further out on the path do not fire.
+Every `on:` handler on the event path runs by default. Calling `event.stopPropagation()` (or `stopImmediatePropagation()`) halts the walk: handlers further out do not fire.
 
 ```jsx
+const handler1 = () => console.log("one");
+const handler2 = (e?: Event) => console.log("two");
+
 // Both handlers fire
 <div on:click={handler1}>
   <div on:click={handler2}>
@@ -82,9 +80,9 @@ HellaJS never stops propagation automatically; by default every `on:` handler on
 
 ### Touch and Wheel Are Passive by Default
 
-Delegated listeners live on `document.body`, and browsers treat body-level `touchstart`, `touchmove`, and `wheel` listeners as passive by default. Calling `event.preventDefault()` inside a delegated `on:` handler for these events silently does nothing; the scroll cannot be canceled.
+Browsers treat body-level `touchstart`, `touchmove`, and `wheel` listeners as passive by default, and delegated `on:` handlers live on `document.body`. Calling `event.preventDefault()` inside a delegated handler for these events silently does nothing; the scroll cannot be canceled.
 
-For cancelable gestures, attach a direct listener with the spec form and opt out explicitly:
+For cancelable gestures, attach a direct listener and opt out explicitly:
 
 ```jsx
 <div

@@ -1,19 +1,6 @@
 # layerDismissal
 
-Dismisses stacked overlays one layer at a time: Escape and outside pointerdowns fire a layer's handler only while it is top of the shared stack, returning the dispose handle that pops the stack and removes the listeners.
-
-## API
-
-```typescript
-function layerDismissal(
-  nodes: () => (Node | null)[],
-  onDismiss: () => void
-): () => void
-```
-
-- `nodes`: Getter returning the nodes counted as inside the layer; `null` entries are ignored. Re-invoked on every event.
-- `onDismiss`: Zero-argument callback fired when the top layer is dismissed.
-- **Returns**: Dispose handle. Calling it pops the layer off the stack and removes both document listeners.
+Dismiss stacked overlays one at a time: Escape or an outside click closes only the top layer, so a gesture never collapses a whole stack.
 
 ## Basic Usage
 
@@ -39,6 +26,19 @@ const Menu = () => (
 mount(<Menu />, "#app");
 // Escape or an outside click removes the menu while it is topmost
 ```
+
+## API
+
+```typescript
+function layerDismissal(
+  nodes: () => (Node | null)[],
+  onDismiss: () => void
+): () => void
+```
+
+- `nodes`: Getter returning the nodes counted as inside the layer; `null` entries are ignored. Re-invoked on every event.
+- `onDismiss`: Zero-argument callback fired when the top layer is dismissed.
+- **Returns**: Dispose handle. Calling it pops the layer off the stack and removes both document listeners.
 
 ## Key Concepts
 

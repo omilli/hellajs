@@ -1,6 +1,6 @@
 # error:
 
-Element-level error configuration for fallback UI, error categorization, and boundary control. Works with [`onError`](/reference/dom/onerror) to handle errors from reactive children, bindings, and event handlers.
+Handle errors where they happen: fallback UI on a wrapping element, error categories for filtering, and boundaries that stop propagation.
 
 ## Usage
 
@@ -65,7 +65,7 @@ An element with `error:fallback` is automatically a boundary. Use `error:boundar
 
 ## Important Considerations
 
-### Config Resolution
+### How Config Is Picked
 
 - **First found wins**: Walking up the DOM tree stops at the first element with any `error:` attributes
 - **No merging**: Child config does not inherit from parent config

@@ -1,21 +1,6 @@
 # menuTypeahead
 
-Wireable typeahead search for menu items: printable keystrokes buffer into a query and the first matching item is selected, returning the dispose handle that removes the listener and clears the buffer timer.
-
-## API
-
-```typescript
-function menuTypeahead(
-  container: ParentNode,
-  resolveItems: () => { node: HTMLElement; text: string }[],
-  onSelect: (item: { node: HTMLElement; text: string }) => void
-): () => void
-```
-
-- `container`: Element receiving the menu's keydown events.
-- `resolveItems`: Getter returning the current searchable items. Re-invoked on every keystroke, so dynamically rendered menus stay live.
-- `onSelect`: Called with the first matching item.
-- **Returns**: Dispose handle. Calling it removes the keydown listener and clears the buffer timer.
+Let menu users type to select: keystrokes buffer into a search and the first matching item is picked.
 
 ## Basic Usage
 
@@ -49,6 +34,21 @@ const Menu = () => (
 mount(<Menu />, "#app");
 // Typing "re" selects Rename
 ```
+
+## API
+
+```typescript
+function menuTypeahead(
+  container: ParentNode,
+  resolveItems: () => { node: HTMLElement; text: string }[],
+  onSelect: (item: { node: HTMLElement; text: string }) => void
+): () => void
+```
+
+- `container`: Element receiving the menu's keydown events.
+- `resolveItems`: Getter returning the current searchable items. Re-invoked on every keystroke, so dynamically rendered menus stay live.
+- `onSelect`: Called with the first matching item.
+- **Returns**: Dispose handle. Calling it removes the keydown listener and clears the buffer timer.
 
 ## Key Concepts
 

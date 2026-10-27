@@ -1,21 +1,6 @@
 # $ref
 
-Reactive reference to a single DOM element with chainable methods for bindings, events, and hooks.
-
-## API
-
-```typescript
-// Find the first element matching a CSS selector
-function $ref<T extends Element = Element>(selector: string): DomRef<T>
-
-// Wrap an element you already hold
-function $ref<T extends Element = Element>(element: T): DomRef<T>
-```
-- `selector`: A CSS selector string to find the first matching element.
-- `element`: An element to wrap directly. Operations apply immediately.
-- **Returns**: A reactive reference with `.bind()`, `.on()`, and `.hooks()` methods.
-
-For multiple elements with auto-watching, see [`$collection`](/reference/dom/$collection).
+Bind reactivity to one existing DOM element: reactive text and attributes, event handlers, and lifecycle hooks, all chained off a single reference.
 
 ## Basic Usage
 
@@ -36,6 +21,23 @@ button.bind(() => `Count: ${count}`);
 // Add event handler
 button.on("click", () => count(count() + 1));
 ```
+
+The reference is reactive: when `count` changes, the button text updates on its own.
+
+## API
+
+```typescript
+// Find the first element matching a CSS selector
+function $ref<T extends Element = Element>(selector: string): DomRef<T>
+
+// Wrap an element you already hold
+function $ref<T extends Element = Element>(element: T): DomRef<T>
+```
+- `selector`: A CSS selector string to find the first matching element.
+- `element`: An element to wrap directly. Operations apply immediately.
+- **Returns**: A reactive reference with `.bind()`, `.on()`, and `.hooks()` methods.
+
+For multiple elements with auto-watching, see [`$collection`](/reference/dom/$collection).
 
 ## Key Concepts
 
@@ -66,7 +68,7 @@ $ref(".counter")
 
 Use `.bind()` for text content or attributes.
 
-**Text/Value binding** - pass a string or reactive function:
+**Text/value binding** - pass a string or reactive function:
 
 ```js
 const status = signal("idle");
@@ -147,7 +149,7 @@ const button = document.createElement("button");
 document.body.appendChild(button);
 
 $ref(button)
-  .bind(() => `Count: ${count()}`)
+  .bind(() => `Count: ${count}`)
   .on("click", () => count(count() + 1));
 ```
 
@@ -170,35 +172,19 @@ import { $collection } from "@hellajs/dom";
 const refs = $collection(".item");
 ```
 
-### Safe No-Op on Missing Elements
+### Missing Elements Are Safe
 
-If the selector doesn't match any element, all methods are safe no-ops.
-
-```js
-const ref = $ref(".nonexistent");
-ref()  // null
-ref.node  // null
-
-// These do nothing (no errors thrown)
-ref.bind("text");
-ref.on("click", () => {});
-ref.hooks({ afterMount: () => {} });
-```
-
-### Auto-Watching Missing Elements
-
-When a selector matches no element, `$ref` automatically watches for a matching element. Operations are queued and applied when it appears. An element passed directly is always resolved, so it never starts watching.
+If the selector matches nothing yet, `$ref` watches for a matching element: operations are queued and applied when it appears, and every method is a safe no-op until then. `$ref` stops watching once it finds its element.
 
 ```js
 const ref = $ref(".not-in-yet");
 
-// Element doesn't exist - operations are queued
+ref()   // null
+ref()   // still null; nothing throws
+
+// Queued; applies automatically when a matching element is added to the DOM
 ref.bind("Hello");
 ref.on("click", () => console.log("clicked"));
-
-// Later, when element is added to DOM:
-document.body.appendChild(div);
-// Queued operations automatically apply!
 ```
 
-This differs from `$collection` which continuously watches for all matching elements. `$ref` stops watching once it finds its element.
+An element passed directly is always resolved, so it never starts watching. This differs from [`$collection`](/reference/dom/$collection), which continuously watches for all matching elements.

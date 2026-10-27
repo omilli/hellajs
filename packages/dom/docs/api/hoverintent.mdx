@@ -1,30 +1,6 @@
 # hoverIntent
 
-Opens after a pointer or focus hover delay and closes after a leave delay, returning the dispose handle that removes the listeners and clears pending timers.
-
-## API
-
-```typescript
-function hoverIntent(
-  target: Element,
-  handlers: HoverIntentOptions
-): () => void
-```
-
-```typescript
-interface HoverIntentOptions {
-  onOpen: () => void;
-  onClose: () => void;
-  openDelay?: number;
-  closeDelay?: number;
-}
-```
-
-- `target`: Element watched for hover and focus intent.
-- `handlers`: `onOpen` fires when the open delay elapses; `onClose` fires after the close delay, on an outside pointerdown while open, or on keyboard blur.
-- `openDelay`: Pointer-hover milliseconds before `onOpen` fires. Default `700`.
-- `closeDelay`: Pointer-leave milliseconds before `onClose` fires. Default `300`.
-- **Returns**: Dispose handle. Calling it removes all listeners and clears pending timers.
+Open a surface after a hover or focus delay and close it after a leave delay: the tooltip and hover-card timing contract.
 
 ## Basic Usage
 
@@ -57,6 +33,30 @@ mount(<Avatar />, "#app");
 // Hovering or focusing the avatar sets show(true) after 200ms
 ```
 
+## API
+
+```typescript
+function hoverIntent(
+  target: Element,
+  handlers: HoverIntentOptions
+): () => void
+```
+
+```typescript
+interface HoverIntentOptions {
+  onOpen: () => void;
+  onClose: () => void;
+  openDelay?: number;
+  closeDelay?: number;
+}
+```
+
+- `target`: Element watched for hover and focus intent.
+- `handlers`: `onOpen` fires when the open delay elapses; `onClose` fires after the close delay, on an outside pointerdown while open, or on keyboard blur.
+- `openDelay`: Pointer-hover milliseconds before `onOpen` fires. Default `700`.
+- `closeDelay`: Pointer-leave milliseconds before `onClose` fires. Default `300`.
+- **Returns**: Dispose handle. Calling it removes all listeners and clears pending timers.
+
 ## Key Concepts
 
 ### Pointer and Keyboard Parity
@@ -69,7 +69,7 @@ A pointerdown outside the target skips the close delay: if the surface is open, 
 
 ### The Shared Skip-Delay Window
 
-A module-level clock records when a surface last opened. If a new target is entered within 500ms of that open, `onOpen` fires instantly, with no delay. Moving the pointer between adjacent triggers never re-incurs the delay, which is why the clock is shared across all consumers rather than per wiring. The window resets when the page reloads.
+When any `hoverIntent` surface opened within the last 500ms, the next open fires instantly, with no delay. Moving the pointer between adjacent triggers never re-incurs the wait.
 
 ## Important Considerations
 

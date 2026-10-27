@@ -1,19 +1,6 @@
 # onOutside
 
-Calls a handler when a document pointerdown lands outside every node a getter resolves, returning the dispose handle that removes the listener.
-
-## API
-
-```typescript
-function onOutside(
-  targets: () => (Node | null)[],
-  handler: () => void
-): () => void
-```
-
-- `targets`: Getter returning the nodes counted as inside; `null` entries are ignored. Re-invoked on every pointerdown.
-- `handler`: Zero-argument callback fired when the pointerdown lands outside all resolved targets.
-- **Returns**: Dispose handle. Calling it removes the document pointerdown listener.
+Call a handler when a pointerdown lands outside the elements you mark as inside.
 
 ## Basic Usage
 
@@ -39,6 +26,19 @@ const Menu = () => (
 mount(<Menu />, "#app");
 // Clicking anywhere outside the menu removes it
 ```
+
+## API
+
+```typescript
+function onOutside(
+  targets: () => (Node | null)[],
+  handler: () => void
+): () => void
+```
+
+- `targets`: Getter returning the nodes counted as inside; `null` entries are ignored. Re-invoked on every pointerdown.
+- `handler`: Zero-argument callback fired when the pointerdown lands outside all resolved targets.
+- **Returns**: Dispose handle. Calling it removes the document pointerdown listener.
 
 ## Key Concepts
 

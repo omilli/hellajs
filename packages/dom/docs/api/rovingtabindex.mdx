@@ -1,21 +1,6 @@
 # rovingTabIndex
 
-Implements the roving tabindex pattern over a container's items: arrow keys move focus along the active orientation, Home and End jump to the ends, and `tabindex` roves with focus until the dispose handle is called.
-
-## API
-
-```typescript
-function rovingTabIndex(
-  container: ParentNode,
-  options?: RovingTabIndexOptions
-): () => void
-```
-
-- `container`: Element whose items form the roving group.
-- `options.selector`: Item selector. Defaults to the shared focusable collector.
-- `options.orientation`: `"horizontal"` or `"vertical"`; arrow keys traverse only that axis. Both axes are active when unset.
-- `options.loop`: Wrap from the last item to the first and back. Default `true`.
-- **Returns**: Dispose handle. Calling it removes the keydown wiring and restores each item's original `tabindex` attribute.
+Arrow-key focus navigation over a group of items: arrows move focus, Home and End jump to the ends, and the single tab stop roves with focus.
 
 ## Basic Usage
 
@@ -43,6 +28,21 @@ mount(<Tabs />, "#app");
 // Arrow keys move focus between tabs; tabindex roves (0 on the focused tab,
 // -1 on the rest); on unmount the original tabindex attributes are restored
 ```
+
+## API
+
+```typescript
+function rovingTabIndex(
+  container: ParentNode,
+  options?: RovingTabIndexOptions
+): () => void
+```
+
+- `container`: Element whose items form the roving group.
+- `options.selector`: Item selector. Defaults to the shared focusable collector.
+- `options.orientation`: `"horizontal"` or `"vertical"`; arrow keys traverse only that axis. Both axes are active when unset.
+- `options.loop`: Wrap from the last item to the first and back. Default `true`.
+- **Returns**: Dispose handle. Calling it removes the keydown wiring and restores each item's original `tabindex` attribute.
 
 ## Key Concepts
 

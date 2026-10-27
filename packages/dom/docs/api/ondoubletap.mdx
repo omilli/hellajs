@@ -1,30 +1,6 @@
 # onDoubleTap
 
-Fires a handler when a second tap lands within a window and optionally reports a lone tap after the window expires, returning the dispose handle that removes the pointer listeners.
-
-## API
-
-```typescript
-function onDoubleTap(
-  el: HTMLElement,
-  options: DoubleTapOptions
-): () => void
-```
-
-```typescript
-interface DoubleTapOptions {
-  /** Fired when a second tap's pointerup lands within `interval` of the first. */
-  onDoubleTap: (event: PointerEvent) => void;
-  /** Fires once when no second tap arrives within `interval`. Opt-in. */
-  onSingleTap?: (event: PointerEvent) => void;
-  /** Max ms between the two taps' pointerup events. Default 250. */
-  interval?: number;
-}
-```
-
-- `el`: Element receiving the pointer events.
-- `options`: `onDoubleTap` fires once when a second tap's `pointerup` lands within `interval` of the first, receiving the second tap's event; `onSingleTap` fires once per expired window with the first tap's event, and without it a lone tap costs nothing; `interval` is the max ms between the two taps' `pointerup` events (default 250).
-- **Returns**: Dispose handle. Calling it removes the pointer listeners and clears a pending timer.
+Detect a double tap: the second tap within a window fires once, and a lone tap can report itself when you opt in.
 
 ## Basic Usage
 
@@ -56,6 +32,30 @@ const Photo = () => (
 mount(<Photo />, "#app");
 // A second tap within 250ms toggles the zoom; a lone tap logs the selection point
 ```
+
+## API
+
+```typescript
+function onDoubleTap(
+  el: HTMLElement,
+  options: DoubleTapOptions
+): () => void
+```
+
+```typescript
+interface DoubleTapOptions {
+  /** Fired when a second tap's pointerup lands within `interval` of the first. */
+  onDoubleTap: (event: PointerEvent) => void;
+  /** Fires once when no second tap arrives within `interval`. Opt-in. */
+  onSingleTap?: (event: PointerEvent) => void;
+  /** Max ms between the two taps' pointerup events. Default 250. */
+  interval?: number;
+}
+```
+
+- `el`: Element receiving the pointer events.
+- `options`: `onDoubleTap` fires once when a second tap's `pointerup` lands within `interval` of the first, receiving the second tap's event; `onSingleTap` fires once per expired window with the first tap's event, and without it a lone tap costs nothing; `interval` is the max ms between the two taps' `pointerup` events (default 250).
+- **Returns**: Dispose handle. Calling it removes the pointer listeners and clears a pending timer.
 
 ## Key Concepts
 

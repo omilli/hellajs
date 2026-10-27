@@ -1,14 +1,11 @@
 # e:
 
-Event handlers attached directly to the element via `addEventListener`. Use `e:` sparingly since it creates one listener per element, versus the single global listener used by [`on:`](/reference/dom/on).
+Event handlers attached directly to the element. Use for non-bubbling events (`focus`, `blur`), cancelable gestures, or third-party code expecting real listeners; everything else belongs on [`on:`](/reference/dom/on).
 
 ## Usage
 
 ```jsx
 import { mount } from "@hellajs/dom";
-
-const parentHandler = () => console.log("parent");
-const childHandler = () => console.log("child");
 
 const App = () => (
   <form e:submit={(e) => e.preventDefault()}>
@@ -19,32 +16,7 @@ const App = () => (
 mount(App, "#app");
 ```
 
-Use `e:` instead of `on:` when a handler must be a real DOM listener on the element: for non-bubbling events (`focus`, `blur`), for third-party libraries that expect direct listeners, or for edge cases where delegation causes issues. Delegated `on:` handlers also honor `stopPropagation()` (see [`on:`](/reference/dom/on)) but only `e:` participates in the browser's native listener chain.
-
-```jsx
-<div e:click={(e) => e.stopPropagation()}>
-  {/* clicks won't bubble to parent */}
-</div>
-```
-
-## Key Concepts
-
-### Event Phase
-
-Direct events fire in the **bubble phase** (after the event reaches the target). This is the default DOM behavior and differs from `on:` which uses capture phase.
-
-```jsx
-// Bubble phase (e:)
-<div e:click={parentHandler}>
-  <button e:click={childHandler}>Click</button>
-</div>
-
-// childHandler fires first, then parentHandler
-```
-
-### Propagation Control
-
-With `e:` handlers, `stopPropagation()` works through the browser's native listener chain: it stops real listeners, including ones other libraries registered on the same elements:
+A direct listener participates in the browser's native listener chain, so `stopPropagation()` stops real listeners on the same elements, including ones other libraries registered:
 
 ```jsx
 <div e:click={() => console.log("parent")}>
@@ -59,9 +31,26 @@ With `e:` handlers, `stopPropagation()` works through the browser's native liste
 // Only "child - stops here" is logged
 ```
 
+## Key Concepts
+
+### Bubble Phase, Child First
+
+Direct events fire in the bubble phase, the DOM default: the target's handler runs first, then ancestors' handlers as the event bubbles up.
+
+```jsx
+const parentHandler = () => console.log("parent");
+const childHandler = () => console.log("child");
+
+<div e:click={parentHandler}>
+  <button e:click={childHandler}>Click</button>
+</div>
+
+// Clicking the button logs "child", then "parent"
+```
+
 ### Listener Options
 
-The `e:` value is either the handler function or a spec object pairing the handler with native listener options: `once`, `passive`, and `capture` are forwarded to `addEventListener` verbatim. The spec matches the exported `DirectListenerSpec` type.
+The `e:` value is either the handler function or a spec object pairing the handler with native listener options: `once`, `passive`, and `capture` are forwarded to `addEventListener` verbatim.
 
 ```jsx
 const onceHandler = () => console.log("fired");
@@ -77,6 +66,4 @@ const trackMove = (event: MouseEvent) => console.log(event.clientX);
 </div>
 ```
 
-Use the spec form when a gesture must be cancelable: `passive: false` opts out of the browser's passive-by-default touch and wheel treatment; see [`on:`](/reference/dom/on) for why delegated handlers cannot do this.
-
-The compiler detects `e:` syntax and emits the corresponding feature import, so direct-event wiring tree-shakes out of apps that never use it; see [templates](/learn/concepts/templates) for how bundle composition works.
+Use the spec form when a gesture must be cancelable: `passive: false` opts out of the browser's passive-by-default touch and wheel treatment; delegated [`on:`](/reference/dom/on) handlers cannot do this.

@@ -1,6 +1,21 @@
 # computeAnchorPosition
 
-Computes fixed-position coordinates for a floating rect against an anchor rect: pure math with no DOM access, and the seam [`anchorPosition`](/reference/dom/anchorposition) delegates to.
+Compute where a floating element should sit against an anchor: pure rect math, no DOM, testable anywhere.
+
+## Basic Usage
+
+```typescript
+import { computeAnchorPosition } from "@hellajs/dom";
+
+const result = computeAnchorPosition(
+  { top: 100, left: 24, width: 96, height: 32 },
+  { width: 200, height: 120 },
+  { width: 1024, height: 768 },
+  { placement: "top", offset: 8 }
+);
+// No room above: flips to "bottom" and clamps x into the viewport
+// result: { x: 0, y: 140, placement: "bottom", width: 200 }
+```
 
 ## API
 
@@ -35,21 +50,6 @@ type Placement =
   | "right"
   | "right-start"
   | "right-end";
-```
-
-## Basic Usage
-
-```typescript
-import { computeAnchorPosition } from "@hellajs/dom";
-
-const result = computeAnchorPosition(
-  { top: 100, left: 24, width: 96, height: 32 },
-  { width: 200, height: 120 },
-  { width: 1024, height: 768 },
-  { placement: "top", offset: 8 }
-);
-// No room above: flips to "bottom" and clamps x into the viewport
-// result: { x: 0, y: 140, placement: "bottom", width: 200 }
 ```
 
 ## Key Concepts

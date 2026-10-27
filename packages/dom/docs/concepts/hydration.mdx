@@ -1,10 +1,10 @@
 # Hydration
 
-Attach client reactivity to HTML the server rendered, so the user sees content immediately and the page becomes interactive without rebuilding the DOM.
+Make server-rendered HTML interactive without rebuilding it. The user sees the page immediately; `hydrate` attaches event handlers and reactivity to the elements already on screen.
 
-## The Hydration Model
+## Hydrate a Server-Rendered Page
 
-Hydration re-executes the component tree on the client and attaches effects, event handlers, and state to the **existing** server-rendered DOM. The server's HTML survives; HellaJS never wipes it. This is the same model SolidJS uses, distinct from React-style re-rendering: component bodies run again (they create signals and effects that can't be serialized), but `createElement` becomes "use the element already at this position."
+Render the app on the server, then run the same component on the client with [`hydrate`](/reference/dom/hydrate) instead of [`mount`](/reference/dom/mount):
 
 ```jsx
 import { signal } from "@hellajs/core";
@@ -16,41 +16,42 @@ const App = () => {
   return <button on:click={() => count(count() + 1)}>Clicked {count} times</button>;
 };
 
-// Server ships the rendered button
+// Server: ship the rendered button
 const body = ssr(<App />);
 ```
 
 ```jsx
-// Client attaches the click handler to the existing button
+// Client: attach the click handler to the existing button
 hydrate(<App />, "#app");
 ```
 
-The button the server rendered is the exact node the client binds `on:click` to; element identity is preserved.
+Component bodies run again on the client (they create signals and effects that cannot be serialized), but the DOM is reused: the button the server rendered is the exact node the client binds `on:click` to. Nothing is wiped or rebuilt when the HTML matches.
 
-## When to Hydrate vs Enhance
+## Rules for a Clean Hydrate
 
-[`hydrate`](/reference/dom/hydrate) re-executes the whole tree against the existing DOM. It is the right tool when you want a fully interactive app from server-rendered HTML. For lighter needs, prefer:
+- **Pass the same tree.** The component you hydrate must be the same component the server rendered, with the same structure of elements.
+- **Start from the same state.** Signals must initialize to the values the server rendered. A signal that starts elsewhere is a mismatch.
+- **Mismatches stay usable.** When the HTML and the tree disagree, `hydrate` warns and rebuilds just the mismatched subtree; the rest of the page keeps working.
 
-- [`$ref`](/reference/dom/$ref) / [`$collection`](/reference/dom/$collection): bind a few existing static nodes into reactivity without re-executing any component tree.
-- Island [`mount`](/reference/dom/mount): mount a reactive component into an empty placeholder the server left. Use this when most of the page is static and only a region is interactive.
+## When to Hydrate, Enhance, or Mount an Island
 
-A full-tree `mount` over the server container is a footgun: `mount` replaces the container's children and rebuilds, discarding the server HTML. Reserve it for throwaway, SEO-only content.
+- [`hydrate`](/reference/dom/hydrate): the right tool when you want a fully interactive app from server-rendered HTML.
+- [`$ref`](/reference/dom/$ref) / [`$collection`](/reference/dom/$collection): bind a few existing elements into reactivity, no component tree at all. Lightest option.
+- Island [`mount`](/reference/dom/mount): mount a reactive component into an empty placeholder the server left. Use it when most of the page is static and only one region is interactive.
 
-## The Serialization Contract
+Do not run a full-tree `mount` over the server container: `mount` replaces the container's children, discarding the server HTML.
 
-Hydration relies on the server HTML matching what [`mount`](/reference/dom/mount) would produce: tag names, attributes, and element structure must agree. [`ssr`](/reference/ssr/ssr) mirrors `mount`'s attribute rules, so element-bounded structure hydrates cleanly. Reactive state must initialize to the same values the server rendered: a signal that starts at a different value is a mismatch.
+## Server-Rendered Lists
 
-When the DOM and the tree disagree, `hydrate` warns and re-mounts the mismatched subtree from scratch. The page keeps working; the warning surfaces the drift.
-
-## Keyed List Adoption
-
-[`ForEach`](/reference/dom/foreach) items the server rendered are adopted directly into the list's reconciliation map. Keys are re-derived at hydrate time from the same `each` and `use` calls the server made; no per-item `data-key` attributes or markers appear in the HTML, and the list region itself is bounded by the same `<!--[-->…<!--]-->` comment markers as every dynamic region. After hydrate, pushing, removing, or reordering items reconciles against the adopted nodes through the normal keyed-diff algorithm.
+[`ForEach`](/reference/dom/foreach) items the server rendered are picked up directly: after `hydrate`, pushing, removing, and reordering items works normally. Keys are re-derived from the same `each` and `use` calls the server made, so keep keys stable between server and client.
 
 ```jsx
+import { signal } from "@hellajs/core";
 import { ForEach } from "@hellajs/dom";
 
 const items = signal([{ id: 1, label: "First" }, { id: 2, label: "Second" }]);
-const App = () => (
+
+const ItemList = () => (
   <ul>
     <ForEach
       each={items}
@@ -59,29 +60,23 @@ const App = () => (
   </ul>
 );
 
-// Server emits the two <li>s; client adopts them, then list updates reconcile normally
-hydrate(<App />, "#app");
+// Server emits the two <li>s; after hydrate, list updates work normally
+hydrate(<ItemList />, "#app");
 ```
 
-## Selective Hydration
+## Hydrating a Streaming Page
 
-[`hydrate`](/reference/dom/hydrate) normally runs once, after the stream has delivered everything. When the hydrate script executes **while the document is still streaming** (`document.readyState === "loading"`, an inline script parsed before the stream's staged templates arrive), a [`<Suspense>`](/reference/dom/suspense) region whose staged `<template>` hasn't arrived yet is **deferred** instead of degraded: the server's fallback stays mounted, the children are never re-run, and a watcher on the hydrate container adopts the region the moment its content lands, wiring props, handlers, and effects exactly like the synchronous path. Everything outside the deferred region is interactive immediately.
+When the page streams ( [`ssr`](/reference/ssr/ssr) with suspense regions), the hydrate script can run before all content has arrived. Regions whose content is still streaming are deferred: the loading fallback stays on screen, and everything else becomes interactive immediately. When the content lands, the region adopts it and goes interactive too, no reload needed.
 
 ```js
-// client; placed mid-stream, so the script runs before the staged templates arrive
+// client; placed mid-stream, so the script runs before all content arrives
 import { hydrate } from "@hellajs/dom";
 
 hydrate(page(), "#app");
-// Present regions adopt now; a region whose stage hasn't arrived defers:
-// its fallback stays on screen and it adopts when the content lands.
+// Regions still streaming stay on their fallback; they adopt when the content lands
 ```
 
-In a browser the inline `$hs` swap script (emitted by [`ssr.stream`](/@hellajs/ssr)) no-ops for a deferred region (hydrate has already consumed the region markers it balance-walks to), so the staged template stays in the DOM and hydrate's watcher swaps it in. One mechanism covers the scripted and no-script shapes.
+Two behaviors to rely on:
 
-### Event Replay
-
-Discrete events (`click`, `mousedown`, `mouseup`, `keydown`, `change`) dispatched on a deferred region's fallback are buffered while it is pending and replayed once it adopts: a click on a loading placeholder reaches the handler on the resolved content, matching React 19's selective-hydration behavior. Replay is positional, not coordinate-exact: the event re-dispatches as a synthesized bubbling `Event` on the resolved node occupying the buffered target's slot within the region. Events elsewhere fire normally during deferral and are never buffered; if the stream dies before the region adopts, its buffered events are discarded.
-
-### Dead Streams
-
-If the document finishes loading (`readystatechange` → `complete`) while regions are still deferred, the stream is dead: each remaining region degrades to client-side re-suspension: the fallback stays mounted, the children re-run, and the resolved content swaps in when it settles. This matches the behavior `hydrate` applies when it runs after loading with a missing stage.
+- **Clicks on a pending region are replayed.** A click on a loading fallback is buffered and delivered to the resolved content once it arrives, so early interactions are not lost. Events elsewhere on the page fire normally right away.
+- **A dead stream recovers.** If the stream ends before a region's content arrives, that region renders on the client instead: the fallback stays until the content is ready, then swaps in.

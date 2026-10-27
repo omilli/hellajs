@@ -1,6 +1,6 @@
 # hook:
 
-Lifecycle hooks allow you to run code at specific points during an element's lifetime. Unlike component-based frameworks, hooks are tied directly to DOM elements.
+Run code at points in an element's life: before or after it enters the DOM, around reactive updates, and at removal. Hooks attach directly to elements, no component wrapper needed.
 
 ## Usage
 
@@ -42,16 +42,14 @@ mount(App, "#app");
 
 ### Access to Element
 
-Most lifecycle hooks receive the element as the first argument. Exceptions: `beforeMount` and `afterDestroy` do not receive an element argument. The hook parameter is typed `node?: Element`, so TypeScript treats it as possibly undefined even though the runtime always passes the element; narrow before using HTMLElement-specific APIs.
+Most hooks receive the element as the first argument; `beforeMount` and `afterDestroy` do not. The parameter is typed `node?: Element`, so narrow before using element-specific APIs.
 
 ```jsx
 <div
   hook:afterMount={(element) => {
-    // element is the DOM node (HTMLElement after an instanceof narrow)
     if (element instanceof HTMLElement) element.style.color = "red";
   }}
   hook:beforeDestroy={(element) => {
-    // cleanup using the element reference
     console.log("cleaning up", element?.tagName);
   }}
 >
@@ -59,9 +57,9 @@ Most lifecycle hooks receive the element as the first argument. Exceptions: `bef
 </div>
 ```
 
-### Common Patterns
+### Initialize and Tear Down Third-Party Tools
 
-Store per-element state in a `WeakMap` keyed by the element: typed, garbage-collectable, and no property stashing on DOM nodes.
+The workhorse pattern: set up in `afterMount`, tear down in `beforeDestroy`, and keep per-element state in a `WeakMap` keyed by the element (typed, garbage-collectable, no property stashing on DOM nodes).
 
 ```jsx
 interface Instance {
@@ -69,14 +67,13 @@ interface Instance {
 }
 
 const instances = new WeakMap<Element, Instance>();
-const subscribe = (onData: (data: string) => void) => ({
-  unsubscribe: () => console.log("unsubscribed"),
+const createInstance = (el: Element) => ({
+  destroy: () => console.log("torn down", el.tagName),
 });
 
 <div
   hook:afterMount={(el) => {
-    if (!el) return;
-    instances.set(el, { destroy: () => console.log("destroyed", el.tagName) });
+    if (el) instances.set(el, createInstance(el));
   }}
   hook:beforeDestroy={(el) => {
     if (el) instances.get(el)?.destroy();
@@ -84,30 +81,11 @@ const subscribe = (onData: (data: string) => void) => ({
 />
 ```
 
-#### Initialize Third-Party Library
+The same shape drives chart libraries, subscriptions, observers, or any API with separate init and dispose steps: store the handle in the WeakMap, call its cleanup in `beforeDestroy`.
 
-```jsx
-interface Chart {
-  destroy(): void;
-}
+### Measure After Insertion
 
-const charts = new WeakMap<Element, Chart>();
-const createChart = (el: Element) => ({
-  destroy: () => console.log("chart destroyed", el.tagName),
-});
-
-<div
-  hook:afterMount={(el) => {
-    //… real libraries: const chart = new Chart(el, config)
-    if (el) charts.set(el, createChart(el));
-  }}
-  hook:beforeDestroy={(el) => {
-    if (el) charts.get(el)?.destroy();
-  }}
-/>
-```
-
-#### Measure DOM Dimensions
+`afterMount` is the first moment dimensions are real:
 
 ```jsx
 <div
@@ -117,25 +95,3 @@ const createChart = (el: Element) => ({
   }}
 />
 ```
-
-#### Setup and Cleanup Subscriptions
-
-```jsx
-const subscriptions = new WeakMap<Element, { unsubscribe(): void }>();
-const dataSource = { subscribe: (onData: (data: string) => void) => ({ unsubscribe: () => console.log("done") }) };
-
-<div
-  hook:afterMount={(el) => {
-    if (!el) return;
-    subscriptions.set(
-      el,
-      dataSource.subscribe((data) => (el.textContent = data))
-    );
-  }}
-  hook:beforeDestroy={(el) => {
-    if (el) subscriptions.get(el)?.unsubscribe();
-  }}
-/>
-```
-
-The compiler detects `hook:` syntax and emits the corresponding feature import, so hook wiring tree-shakes out of apps that never use it; see [templates](/learn/concepts/templates) for how bundle composition works.

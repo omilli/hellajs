@@ -145,7 +145,7 @@ const Dashboard = () => {
 - `loading`: Shown during async load (optional; without it the space stays empty)
 - `fallback`: Shown on loader error only (optional)
 
-The `loader` returns a Promise resolving to a component function or HellaNode. Loader errors are caught inside `Lazy` and trigger the `fallback` directly; they do not bubble to the global [`onError`](/reference/dom/onerror) handler.
+The `loader` returns a Promise resolving to a component function. Loader errors are caught inside `Lazy` and trigger the `fallback` directly; they do not bubble to the global [`onError`](/reference/dom/onerror) handler.
 
 When the parent element is removed during loading, the loader is automatically cancelled. Loaders performing network requests can accept an options object with an `AbortSignal`:
 
@@ -154,7 +154,7 @@ When the parent element is removed during loading, the loader is automatically c
   loader={({ signal } = {}) =>
     fetch("/api/widget.js", { signal })
       .then(r => r.text())
-      .then(html => ({ tag: "div", children: [html] }))
+      .then(html => () => <div>{html}</div>)
   }
   loading={<div>Loading widget...</div>}
   fallback={<div>Widget unavailable</div>}

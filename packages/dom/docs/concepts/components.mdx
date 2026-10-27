@@ -1,72 +1,77 @@
 # Components
 
-Components are simple functions that return elements. They compose naturally through props and children, and maintain reactivity across boundaries.
+Components are plain functions that return elements. They compose through props and children, keep reactivity across boundaries, and clean up their effects when they leave the DOM.
 
-## Component Syntax
+## Defining and Using
 
-Components use uppercase names in JSX.
+A component is a function with an uppercase name in JSX.
 
 ```jsx
 import type { HellaChildren } from "@hellajs/dom";
 
-const MyComponent = ({ title, children }: { title: string; children?: HellaChildren }) => {
- return  <div>{title} - {children}</div>;
-}
+type CardProps = { title: string; children?: HellaChildren };
 
-// JSX
-<MyComponent title="Hi">Content</MyComponent>
-```
-
-## Component Composition
-
-Components compose through props and children, just like regular function arguments.
-
-```jsx
-import { mount } from "@hellajs/dom";
-
-const Card = ({ title, variant = "default", children }: { title: string; variant?: string; children?: HellaChildren }) => (
-  <div class={`card card-${variant}`}>
-    <div class="card-header"><h2>{title}</h2></div>
+const Card = ({ title, children }: CardProps) => (
+  <div class="card">
+    <h2>{title}</h2>
     <div class="card-content">{children}</div>
   </div>
 );
 
-const Button = ({ variant = "primary", click, children }: { variant?: string; click: () => void; children?: HellaChildren }) => (
+// JSX
+<Card title="Hi">Content</Card>
+```
+
+## Composition
+
+Components nest like ordinary functions. Extract multi-prop types to a named `type` and pass handlers as plain props the component wires itself.
+
+```jsx
+import { mount } from "@hellajs/dom";
+import type { HellaChildren } from "@hellajs/dom";
+
+type ButtonProps = { variant?: string; click: () => void; children?: HellaChildren };
+
+const Button = ({ variant = "primary", click, children }: ButtonProps) => (
   <button class={`btn btn-${variant}`} on:click={click}>
     {children}
   </button>
 );
 
-const MyPage = () => (
-  <Card title="Welcome" variant="highlighted">
+type PageProps = { title: string };
+
+const MyPage = ({ title }: PageProps) => (
+  <Card title={title}>
     <p>Welcome to our application!</p>
-    <Button click={() => alert("Hello!")}>Get Started</Button>
+    <Button click={() => console.log("Hello!")}>Get Started</Button>
   </Card>
 );
 
-mount(MyPage, "#app");
+mount(<MyPage title="Welcome" />, "#app");
 ```
 
-Prefixed attrs at a call site also pass through verbatim: `<Button on:click={fn}>` arrives as `props["on:click"]`, and the component forwards prefixed attrs back onto its root element, where the runtime routes them to the matching live bucket. Plain event props like the `click` prop above remain valid: they are ordinary values the component wires itself.
+Prefixed attrs at a call site also pass through verbatim: `<Button on:click={fn}>` arrives as `props["on:click"]`, and the component forwards it back onto its root element. See [attribute prefixes](/learn/concepts/attribute-prefixes).
 
-In the JSX flavor, forward the whole set with rest props: declare `HTMLAttributes<"button">` in the props type and spread `{...rest}` onto the root element. TypeScript already accepts the full canonical form:
+To forward the whole set, type the component with `HTMLAttributes` and spread the rest props onto the root:
 
 ```jsx
 import type { HTMLAttributes } from "@hellajs/dom";
 
-const Button = ({ variant = "primary", children, ...rest }: HTMLAttributes<"button"> & { variant?: string }) => (
-  <button class={`btn btn-${variant}`} {...rest}>{children}</button>
+type SpreadButtonProps = HTMLAttributes<"button"> & { variant?: string };
+
+const SpreadButton = ({ variant = "primary", ...rest }: SpreadButtonProps) => (
+  <button class={`btn btn-${variant}`} {...rest} />
 );
 
 // Every prefixed key arrives verbatim and forwards:
-// <Button disabled on:click={fn} on:focusin={fn} />
+// <SpreadButton disabled on:click={fn} on:focusin={fn} />
 ```
 
-Caller attributes override the component's own defaults: `{...rest}` spreads last, after any declared attributes, so a caller's `disabled` or `on:click` wins over the `class` the component sets.
+Caller attributes override the component's own defaults: `{...rest}` spreads last, so a caller's `disabled` or `on:click` wins.
 
-## Component Data Flow
+## Data Flow: Pass Signals as Props
 
-Pass signals as props to maintain reactivity across component boundaries. The child component reads the signal prop in a template expression; element children auto-wrap, so the binding is reactive.
+Hand a signal to a child component and read it inside the child's template expressions; the binding stays reactive across the boundary.
 
 ```jsx
 import { mount } from "@hellajs/dom";
@@ -74,8 +79,9 @@ import { signal } from "@hellajs/core";
 import type { Signal } from "@hellajs/core";
 
 type Todo = { id: number; text: string; priority: string; done: boolean };
+type TodoCardProps = { todo: Signal<Todo> };
 
-const TodoCard = ({ todo }: { todo: Signal<Todo> }) => (
+const TodoCard = ({ todo }: TodoCardProps) => (
   <div class="todo-card">
     <h3>{todo().text}</h3>
     <p>Priority: {todo().priority}</p>
@@ -90,7 +96,7 @@ const TodoApp = () => {
     id: 1,
     text: "Learn HellaJS",
     priority: "high",
-    done: false
+    done: false,
   });
 
   return (
@@ -100,7 +106,7 @@ const TodoApp = () => {
         id: 2,
         text: "Build awesome app",
         priority: "medium",
-        done: true
+        done: true,
       })}>
         Switch Todo
       </button>
@@ -113,11 +119,11 @@ mount(TodoApp, "#app");
 
 ### Component props and children are not auto-wrapped
 
-Auto-wrapping applies to **element** children. Component props and component children are passed through as-is: a component may treat `props.children` or a prop as a plain value (not a function). So `<Comp>{expr}</Comp>` passes the eager-evaluated value; to keep a component child reactive, pass a signal reference (`<Comp>{mySignal}</Comp>`) or an explicit wrapper (`<Comp>{() => expr}</Comp>`).
+Automatic reactive wiring applies to **element** children. Component props and component children pass through as-is: `<Comp>{expr}</Comp>` passes the eager-evaluated value. To keep a component child reactive, pass a signal reference (`<Comp>{mySignal}</Comp>`) or an explicit function (`<Comp>{() => expr}</Comp>`).
 
-## Component Scope
+## Scope and Cleanup
 
-Effects created within components are automatically scoped and cleaned up when the component is removed from the DOM.
+Effects created inside a component are scoped to it and disposed when the component leaves the DOM.
 
 ```jsx
 import { mount } from "@hellajs/dom";
@@ -128,18 +134,11 @@ const Timer = () => {
 
   effect(() => console.log(`Count: ${count}`));
 
-  return (
-    <div>
-      <h1>{count}</h1>
-    </div>
-  );
-  
-  //effect auto-cleanup on unmount
+  return <h1>{count}</h1>;
 };
 
 mount(Timer, "#app");
+// When Timer leaves the DOM, its effect is disposed automatically
 ```
 
-The low-level [`component`](/reference/dom/component) function wraps component functions with automatic scope management. JSX wraps components automatically. Dynamic components (ForEach, Portal, Lazy, Transition, Suspense) bypass this wrapper since they manage their own scope.
-
-Render errors (thrown during component execution) are dispatched through the error system and return an empty fragment. See [Error Handling](/learn/concepts/error-handling) for details.
+JSX wraps every component with this scope automatically; the low-level [`component`](/reference/dom/component) function does the same for hand-built trees. Render errors dispatch through the error system and render an empty fragment; see [Error Handling](/learn/concepts/error-handling).

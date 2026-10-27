@@ -1,6 +1,38 @@
 # element
 
-Defines reactive custom elements with light DOM rendering, opt-in shadow DOM, and slot support.
+Define a reactive custom element: attributes arrive as reactive getters, children and named slots are captured for projection, and updates re-render in place. Light DOM by default, shadow DOM opt-in.
+
+## Basic Usage
+
+Call `element` with a hyphenated tag name and a render function. Attributes on the element become reactive getters in `props`.
+
+```jsx
+import { signal } from "@hellajs/core";
+import { element } from "@hellajs/dom";
+
+type CounterProps = { initial?: () => string | null };
+
+element("my-counter", (props: CounterProps) => {
+  const count = signal(Number(props.initial?.()) || 0);
+
+  return (
+    <div>
+      <span>{count}</span>
+      <button on:click={() => count(count() + 1)}>+</button>
+    </div>
+  );
+});
+```
+
+```html
+<my-counter initial="5"></my-counter>
+```
+
+Change the attribute later and the element updates:
+
+```js
+document.querySelector("my-counter").setAttribute("initial", "10");
+```
 
 ## API
 
@@ -14,131 +46,83 @@ function element<T extends object = ComponentProps & Partial<ComponentSlots>>(
 type ComponentRenderFn<T> = (props: T) => HellaNode | (() => HellaNode);
 
 interface ComponentProps {
-  [key: string]: () => string | null;  // Reactive attribute getters
+  [key: string]: () => string | null;
 }
 
 interface ComponentSlots {
-  children?: Node[];                    // Default slot content
-  slots?: Record<string, Node[]>;       // Named slot content
+  children?: Node[];
+  slots?: Record<string, Node[]>;
 }
 
 interface ElementOptions {
-  shadow?: boolean | ShadowRootInit;    // Attach a shadow root (defaults to light DOM)
+  shadow?: boolean | ShadowRootInit;
 }
 ```
 
-## Basic Usage
-
-Define custom elements that integrate with the reactive system.
-
-```js
-import { signal } from "@hellajs/core";
-import { element } from "@hellajs/dom";
-
-element("my-counter", (props) => {
-  const count = signal(Number(props.initial?.()) || 0);
-  
-  return {
-    tag: "div",
-    children: [
-      { tag: "span", children: [count] },
-      { tag: "button", on: { click: () => count(count() + 1) }, children: ["+"] }
-    ]
-  };
-});
-```
-
-```html
-<my-counter initial="5"></my-counter>
-```
+- `tagName`: The custom element tag name; must contain a hyphen (Web Components standard).
+- `render`: Render function receiving `props`; returns the element's tree. Attribute values arrive as reactive getters (`ComponentProps`); children and named slots arrive as `ComponentSlots`.
+- `options.shadow`: Render into a shadow root instead of light DOM.
 
 ## Key Concepts
 
-### Reactive Props
+### Reactive Attributes
 
-Attribute values are provided as reactive getter functions - accessing them inside effects creates dependencies.
+Every attribute is a getter function returning the current string value (or `null` when absent). Call it inside an effect or reactive expression and the element re-renders when the attribute changes.
 
-```js
-element("greeting-card", (props) => {
-  // props.name() returns current attribute value
-  // Automatically updates when attribute changes
-  return {
-    tag: "h1",
-    children: [() => `Hello, ${props.name?.() ?? "World"}!`]
-  };
-});
+```jsx
+type GreetingProps = { name?: () => string | null };
+
+element("greeting-card", (props: GreetingProps) => (
+  <h1>Hello, {props.name?.() ?? "World"}!</h1>
+));
 ```
 
 ```html
 <greeting-card name="Alice"></greeting-card>
 <script>
-  // Dynamically update
+  // Renders "Hello, Bob!" after this line
   document.querySelector("greeting-card").setAttribute("name", "Bob");
-  // Renders: "Hello, Bob!"
 </script>
 ```
 
-### Slot Support
+Attributes are strings: parse numbers and booleans where you need them.
 
-Capture children and named slots from the custom element's light DOM.
+```jsx
+type SliderProps = {
+  min?: () => string | null;
+  max?: () => string | null;
+  value?: () => string | null;
+};
 
-```js
-element("card-layout", (props) => ({
-  tag: "article",
-  children: [
-    { tag: "header", children: props.slots?.header },
-    { tag: "main", children: props.children },
-    { tag: "footer", children: props.slots?.footer }
-  ]
-}));
+element("my-slider", (props: SliderProps) => {
+  const min = () => Number(props.min?.() ?? 0);
+  const max = () => Number(props.max?.() ?? 100);
+  const value = signal(Number(props.value?.() ?? 50));
+
+  return <input type="range" min={min()} max={max()} value={value} />;
+});
+```
+
+### Slots and Children
+
+Children of the element are captured before the first render. Unnamed children land in `props.children`; children carrying a `slot` attribute group into `props.slots` by slot name. Render them anywhere in the tree.
+
+```jsx
+element("card-layout", (props) => (
+  <article>
+    <header>{props.slots?.header}</header>
+    <main>{props.children}</main>
+    <footer>{props.slots?.footer}</footer>
+  </article>
+));
 ```
 
 ```html
 <card-layout>
   <h1 slot="header">Card Title</h1>
   <p>Main content goes here</p>
-  <p>More main content</p>
   <small slot="footer">Footer text</small>
 </card-layout>
-```
-
-Result:
-- `props.slots.header` → `[<h1>Card Title</h1>]`
-- `props.children` → `[<p>Main content</p>, <p>More main content</p>]`
-- `props.slots.footer` → `[<small>Footer text</small>]`
-
-### Internal Signals
-
-Create reactive state within custom elements - updates are scoped to the element.
-
-```js
-element("toggle-switch", (props) => {
-  const isOn = signal(props.default?.() === "true");
-  
-  return {
-    tag: "button",
-    props: { class: "toggle", "aria-pressed": () => String(isOn()) },
-    on: { click: () => isOn(!isOn()) },
-    children: [() => isOn() ? "ON" : "OFF"]
-  };
-});
-```
-
-### With JSX
-
-Use JSX for component definitions with familiar markup syntax.
-
-```jsx
-import { element } from "@hellajs/dom";
-
-type BadgeProps = { avatar?: () => string | null; name?: () => string | null };
-
-element("user-badge", (props: BadgeProps) => (
-  <div class="badge">
-    <img src={props.avatar?.() ?? undefined} alt="avatar" />
-    <span>{props.name?.() ?? "Anonymous"}</span>
-  </div>
-));
 ```
 
 ### Shadow DOM
@@ -146,24 +130,22 @@ element("user-badge", (props: BadgeProps) => (
 Pass `{ shadow: true }` to render into an open shadow root instead of light DOM; page CSS no longer leaks into the element's content.
 
 ```jsx
-import { element } from "@hellajs/dom";
-
-element("my-widget", (props: { children?: Node[] }) => <div class="box">{props.children}</div>, { shadow: true });
+element("my-widget", (props: { children?: Node[] }) => (
+  <div class="box">{props.children}</div>
+), { shadow: true });
 ```
 
-An object is passed to `attachShadow` verbatim, so `mode: "closed"` works too: outside JavaScript cannot reach the root via `el.shadowRoot`, while the element itself keeps rendering and updating normally.
+An options object is passed to `attachShadow` verbatim, so `mode: "closed"` works too. Projection still uses the captured `props.children` and `props.slots` nodes; native `<slot>` element projection is not available under `shadow: true` (see [Custom Elements](/learn/concepts/custom-elements)).
 
-Projection still uses captured `props.children`/`props.slots` nodes moved into the shadow render output; native `<slot>` element projection is not available under `shadow: true` (see [Custom Elements](/learn/concepts/custom-elements)).
+### Full Components
 
-### Complex Components
-
-Combine with ForEach, signals, and other features.
+Everything composes: signals, [`ForEach`](/reference/dom/foreach), events, slots.
 
 ```jsx
 import { signal } from "@hellajs/core";
 import { element, ForEach } from "@hellajs/dom";
 
-element("todo-list", (props) => {
+element("todo-list", () => {
   const items = signal<{ id: number; text: string }[]>([]);
   const input = signal("");
 
@@ -176,8 +158,6 @@ element("todo-list", (props) => {
 
   return (
     <div class="todo-list">
-      <header>{props.slots?.header}</header>
-
       <div class="input-group">
         <input
           type="text"
@@ -193,109 +173,45 @@ element("todo-list", (props) => {
           use={(item: { id: number; text: string }) => <li key={item.id}>{item.text}</li>}
         />
       </ul>
-
-      <footer>{props.children}</footer>
     </div>
   );
 });
 ```
 
-### Connection, Disconnection, and Reconnection
-
-#### Connection
-
-Custom elements mount when connected to the DOM. Children are captured before rendering.
-
-```js
-element("lifecycle-demo", (props) => {
-  console.log("Element connected");
-  
-  // Children already captured in props.children
-  console.log("Children:", props.children);
-  
-  return { tag: "div", children: props.children };
-});
-```
-
-#### Disconnection
-
-Effects and reactive bindings are automatically cleaned up when the element is removed.
-
-```js
-element("auto-refresh", (props) => {
-  const data = signal(null);
-  
-  // This effect auto-cleans on disconnect
-  effect(() => {
-    const id = setInterval(() => fetchData().then(data), 5000);
-    return () => clearInterval(id);
-  });
-  
-  return { tag: "div", children: [() => data()?.text ?? "Loading..."] };
-});
-```
-
-#### Reconnection
-
-Elements reinitialize when reconnected to the DOM.
-
-```js
-const el = document.querySelector("my-element");
-el.remove();           // Disconnects, cleans up
-document.body.append(el);  // Reconnects, reinitializes
-```
-
 ## Important Considerations
 
-### Tag Name Requirements
+### Connect, Disconnect, Reconnect
 
-Custom element names must contain a hyphen (Web Components standard).
+Effects and bindings are cleaned up when the element is removed from the DOM, and re-initialized when it is connected again. Children are captured after the parser finishes, before the first render, so `props.children` is always available inside the render function.
 
-```js
-// ✅ Valid names
-element("my-component", render);
-element("user-profile", render);
-element("x-button", render);
+```jsx
+import { effect, signal } from "@hellajs/core";
 
-// ❌ Invalid names (no hyphen)
-element("mycomponent", render);
-element("button", render);
+element("auto-refresh", () => {
+  const data = signal("");
+
+  // Clears its interval when the element is removed
+  effect(() => {
+    const id = setInterval(() => data(String(new Date())), 5000);
+    return () => clearInterval(id);
+  });
+
+  return <div>{data}</div>;
+});
 ```
 
 ### Light DOM by Default
 
-Content renders in the element's light DOM, not shadow DOM. Styles from the page apply normally.
+Content renders in the element's light DOM, so page CSS applies normally. Opt into encapsulation with `{ shadow: true }` (see [Shadow DOM](#shadow-dom)).
+
+### Tag Names Need a Hyphen
 
 ```js
-element("styled-box", () => ({
-  tag: "div",
-  props: { class: "box" }  // Styled by page CSS
-}));
+// ✅ Valid names
+element("my-component", render);
+element("x-button", render);
+
+// ❌ Invalid: no hyphen
+element("mycomponent", render);
+element("button", render);
 ```
-
-Pass `{ shadow: true }` in the third argument to opt into shadow DOM encapsulation (see [Shadow DOM](#shadow-dom)).
-
-### Attribute vs Property
-
-Props provide attribute values as strings. Parse numbers/booleans as needed.
-
-```jsx
-type SliderProps = {
-  min?: () => string | null;
-  max?: () => string | null;
-  value?: () => string | null;
-};
-
-element("my-slider", (props: SliderProps) => {
-  // Attributes are strings, convert as needed
-  const min = () => Number(props.min?.() ?? 0);
-  const max = () => Number(props.max?.() ?? 100);
-  const value = signal(Number(props.value?.() ?? 50));
-
-  return <input type="range" min={min()} max={max()} value={value} />;
-});
-```
-
-### Children Timing
-
-Children are captured in `connectedCallback` after the DOM parser completes. The render is deferred with `Promise.resolve()` to ensure children are available.

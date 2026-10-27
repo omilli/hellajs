@@ -1,34 +1,11 @@
 # Transition
 
-Wraps conditional content with enter/leave CSS animations for show/hide patterns.
-
-## API
-
-```typescript
-function Transition(props: TransitionProps): JSX.Element
-
-interface TransitionProps {
-  show: boolean | (() => boolean);       // Controls visibility
-  children?: HellaChild | HellaChild[];    // Content to render when visible (single child or array)
-  enter?: string;                         // CSS class added on enter
-  leave?: string;                         // CSS class added on leave
-  duration?: number;                      // Animation length in ms (default: 300)
-  appear?: boolean | string;              // Opt-in first-mount animation
-}
-```
-
-- `show`: Boolean or reactive function returning boolean. Controls visibility.
-- `children`: Content to render when visible: a single child or an array (use reactive bindings for dynamic content).
-- `enter`: CSS class added when content enters the DOM (e.g., `"fade-in"`).
-- `leave`: CSS class added when content begins leaving. Triggers deferred removal.
-- `duration`: Animation length in ms. Must match the CSS animation. Default: `300`.
-- `appear`: Opt-in first-mount animation. `true` reuses the `enter` class; a string uses a custom class.
-- **Returns**: A function with `isDynamic: true` that mounts into a parent element.
+Animate content in and out: an `enter` class plays on show, a `leave` class plays before removal.
 
 ## Basic Usage
 
 ```jsx
-import { signal, flush } from "@hellajs/core";
+import { signal } from "@hellajs/core";
 import { mount, Transition } from "@hellajs/dom";
 
 const visible = signal(true);
@@ -44,11 +21,34 @@ const App = () => (
 mount(App, "#app");
 ```
 
+## API
+
+```typescript
+function Transition(props: TransitionProps): JSX.Element
+
+interface TransitionProps {
+  show: boolean | (() => boolean);
+  children?: HellaChild | HellaChild[];
+  enter?: string;
+  leave?: string;
+  duration?: number;
+  appear?: boolean | string;
+}
+```
+
+- `show`: Boolean or reactive function returning boolean. Controls visibility.
+- `children`: Content to render when visible: a single child or an array.
+- `enter`: CSS class added when content enters the DOM (e.g., `"fade-in"`).
+- `leave`: CSS class added when content begins leaving. Triggers deferred removal.
+- `duration`: Animation length in ms. Must match the CSS animation. Default: `300`.
+- `appear`: Opt-in first-mount animation. `true` reuses the `enter` class; a string uses a custom class.
+- **Returns**: A dynamic render function that mounts into a parent element.
+
 ## Key Concepts
 
 ### Enter And Leave Animations
 
-When `show` becomes `true` and no node is present, the children are inserted and the `enter` class is added. When `show` becomes `false` and a `leave` class is configured, the class is added and DOM removal is deferred by `duration + 50` ms so the leave animation can play out.
+When `show` becomes `true` and no node is present, the children are inserted and the `enter` class is added. When `show` becomes `false` and a `leave` class is configured, the class is added and DOM removal waits out the animation before the node leaves.
 
 ```jsx
 const visible = signal(false);
@@ -70,7 +70,7 @@ Without a `leave` class, hiding is synchronous: the node is removed immediately 
 
 ### Appear (First-Mount) Animation
 
-On the very first render, the `enter` class is suppressed unless the `appear` prop is set. This prevents an enter animation from firing on initial page load. Pass `appear={true}` to reuse the `enter` class on first mount, or pass a string to use a custom class.
+On the very first render, the `enter` class is suppressed unless the `appear` prop is set. This prevents an enter animation from firing on initial page load.
 
 ```jsx
 <Transition show={true} enter="fade-in" appear={true}>
@@ -88,16 +88,18 @@ On the very first render, the `enter` class is suppressed unless the `appear` pr
 
 ### Rapid Toggle Rescue
 
-Toggling `show` back to `true` while a leave animation is in progress cancels the pending removal: the leave timer is cleared, the `leave` class is removed, and the node stays in the DOM. This makes show/hide toggling safe to spam without flicker.
+Toggling `show` back to `true` while a leave animation is in progress cancels the pending removal: the node stays in the DOM with the `leave` class removed. Toggling can be spammed without flicker.
 
 ```jsx
+import { flush, signal } from "@hellajs/core";
+
 const visible = signal(true);
 
 // Start a leave
 visible(false);
 flush();
 
-// Cancel it mid-animation; node is rescued, leave class removed
+// Cancel it mid-animation; the node is rescued
 visible(true);
 flush();
 ```
@@ -118,8 +120,8 @@ With the CSS above, `duration` must be `300`. The extra 50ms buffer handles fram
 
 ### Enter Class Persists
 
-The `enter` class is not removed after the animation plays. This is harmless for one-shot CSS animations, but matters if the class carries side effects (e.g., `display: none` or transitions that re-trigger).
+The `enter` class is not removed after the animation plays. Harmless for one-shot CSS animations; matters if the class carries side effects (e.g., `display: none` or transitions that re-trigger).
 
 ### No CSS Included
 
-Transition only toggles classes; the CSS animations themselves must be defined by the user, either via the [`css`](/reference/css/css) package or a stylesheet.
+Transition only toggles classes; the animations themselves must be defined by you, either via the [`css`](/reference/css/css) package or a stylesheet.

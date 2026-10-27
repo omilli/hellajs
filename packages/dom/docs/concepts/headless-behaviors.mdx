@@ -1,49 +1,57 @@
 # Headless Behaviors
 
-Headless behaviors are pure DOM wiring functions: focus traps, escape and outside-click listeners, roving tabindex, anchor positioning, hover intent, menu typeahead, pointer drag, swipe gestures, pinch gestures, timed presses, double taps, and layered dismissal. They move focus, position overlays, and attach document-level events; they never own markup or state.
+Ready-made wiring for common UI mechanics: trapping focus in a dialog, closing a menu on outside clicks, anchoring a popover to its trigger, opening tooltips on a hover delay, searching a menu by typing, and tracking pointer gestures. Each is a plain function you call with DOM elements and callbacks.
 
-## Behavior Functions, Not Components
+## Close a Menu on Outside Clicks
 
-Each behavior is one function that takes real DOM nodes and returns a dispose handle. There is no component wrapper, no props object, no hidden instance: [`trapFocus`](/reference/dom/trapfocus) takes a container, [`onEscape`](/reference/dom/onescape) takes a target and a callback, [`onOutside`](/reference/dom/onoutside) takes a getter and a callback, [`rovingTabIndex`](/reference/dom/rovingtabindex) takes a container, [`anchorPosition`](/reference/dom/anchorposition) takes an anchor and a floating element, [`hoverIntent`](/reference/dom/hoverintent) takes a target and open/close handlers, [`menuTypeahead`](/reference/dom/menutypeahead) takes a container and an item getter, [`onDrag`](/reference/dom/ondrag) takes an element and move handling, [`onSwipe`](/reference/dom/onswipe) takes commit and cancel handling for a swipe, [`onPinch`](/reference/dom/onpinch) takes scale and translation handling for a two-pointer pinch, [`onLongPress`](/reference/dom/onlongpress) takes a timed-press handler with drift tolerance, [`onDoubleTap`](/reference/dom/ondoubletap) takes double- and single-tap handling, and [`layerDismissal`](/reference/dom/layerdismissal) takes a getter and a callback.
-
-A headless component layer would rebuild component machinery HellaJS already has (component detection, lazy and async wrappers) and force props-passthrough plumbing onto what are three one-line wirings. Behavior functions compose with whatever renders the DOM: signals and templates, portals, custom elements, or no HellaJS at all.
-
-## State Stays in Caller Signals
-
-The behaviors hold no per-instance state. Which panel is open, which tab is active, whether the menu is dismissed: all of it lives in your signals, and the behaviors read it through the callbacks and getters you hand them. [`onOutside`](/reference/dom/onoutside) never learns what a portal is; it re-invokes your getter and trusts the nodes it returns. Two deliberate exceptions coordinate across wirings: [`hoverIntent`](/reference/dom/hoverintent) keeps a shared skip-delay clock and [`layerDismissal`](/reference/dom/layerdismissal) keeps a shared layer stack. The functions are dependency-free wiring over real nodes: they take plain nodes and callbacks, so they compose with any state model, HellaJS or not.
+Every behavior follows the same pattern as this one: call it with an element and a callback, get work done.
 
 ```jsx
 import { signal } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
-import { onOutside } from "@hellajs/dom";
+import { mount, onOutside } from "@hellajs/dom";
 
 const open = signal(false);
 
 const Menu = () => (
   <nav hook:afterMount={(node) => {
     if (!(node instanceof HTMLElement)) return;
-    // open() is the single source of truth; onOutside only reports the gesture
+    // open() stays the single source of truth; onOutside only reports the click
     onOutside(() => [node], () => open(false));
   }}>
-    <button>Menu</button>
+    <button on:click={() => open(!open())}>Menu</button>
   </nav>
 );
 
 mount(<Menu />, "#app");
 ```
 
-## The Dispose-Handle Contract
+The `hook:afterMount` hook fires when the `<nav>` enters the DOM and hands you the element; [`onOutside`](/reference/dom/onoutside) calls your handler whenever a pointerdown lands outside the nodes its getter returns. Your signal owns the state; the behavior only reports the gesture.
 
-Every behavior returns `() => void`. The handle removes the listeners and undoes the DOM mutations the behavior made ([`trapFocus`](/reference/dom/trapfocus) restores the pre-trap focus, [`rovingTabIndex`](/reference/dom/rovingtabindex) restores original `tabindex` attributes, [`anchorPosition`](/reference/dom/anchorposition) stops repositioning). Several wirings listen on `document` or `window`, so a dispose skipped on close leaks a live global listener: call the handle in the same path that closes or unmounts the UI.
+## What You Can Use
 
-## Composing With `hook:` and `$ref`
+| Job | Behavior |
+|---|---|
+| Dismiss on Escape or outside click | [`onEscape`](/reference/dom/onescape), [`onOutside`](/reference/dom/onoutside), [`layerDismissal`](/reference/dom/layerdismissal) |
+| Keyboard navigation | [`trapFocus`](/reference/dom/trapfocus), [`rovingTabIndex`](/reference/dom/rovingtabindex), [`menuTypeahead`](/reference/dom/menutypeahead) |
+| Position a floating element | [`anchorPosition`](/reference/dom/anchorposition), [`computeAnchorPosition`](/reference/dom/computeanchorposition) |
+| Open and close on a delay | [`hoverIntent`](/reference/dom/hoverintent) |
+| Pointer gestures | [`onDrag`](/reference/dom/ondrag), [`onSwipe`](/reference/dom/onswipe), [`onPinch`](/reference/dom/onpinch), [`onLongPress`](/reference/dom/onlongpress), [`onDoubleTap`](/reference/dom/ondoubletap) |
 
-The `hook:` element prefixes are the natural mount and cleanup points: wire in `hook:afterMount`, dispose in `hook:beforeDestroy`. The hook hands you the very element it sits on, so no querying is needed at any layer.
+Each has its own reference page with the full options.
+
+## The Shared Contract
+
+- **Elements and callbacks in, dispose handle out.** Every behavior returns `() => void`. Several of them listen on `document` or `window`, so call the handle when the UI closes or the element unmounts; a skipped dispose leaves a live global listener behind.
+- **State stays in your signals.** Which panel is open, which tab is active: all of it lives in your code. The behaviors read current state through the getters and callbacks you hand them, and never hold per-instance state.
+- **They compose with any renderer.** The functions take plain DOM nodes, so they work with templates and signals, portals, custom elements, or no HellaJS at all.
+
+## Wire With hook: Mount and Cleanup
+
+`hook:afterMount` is the natural place to wire a behavior and `hook:beforeDestroy` the place to dispose it. The dialog below combines three behaviors: trapped focus, Escape to close, and outside click to close.
 
 ```jsx
 import { signal } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
-import { trapFocus, onEscape, onOutside } from "@hellajs/dom";
+import { mount, trapFocus, onEscape, onOutside } from "@hellajs/dom";
 
 const open = signal(false);
 const cleanup: (() => void)[] = [];
@@ -73,15 +81,18 @@ const Dialog = () => (
 mount(<div>{() => (open() ? <Dialog /> : <p>Nothing open</p>)}</div>, "#app");
 ```
 
-For markup you did not render (static HTML, server-generated pages), [`$ref`](/reference/dom/$ref) and [`$collection`](/reference/dom/$collection) fill the same role: resolve the nodes, wire the behaviors, keep the handles beside the ref. Inside your own templates, prefer `hook:`. The behaviors take plain `Node`s, so any way of producing a node works.
+[`trapFocus`](/reference/dom/trapfocus) keeps Tab and Shift+Tab inside the panel, wrapping from the last focusable child to the first. When the dialog closes, `beforeDestroy` fires and every handle runs.
 
-## Anchoring Floating Elements
+## Wire Existing HTML
 
-[`anchorPosition`](/reference/dom/anchorposition) pins a floating element to an anchor and repositions it on scroll and resize; flip, shift-clamp, and width matching come from one `options` object. Every coordinate it applies is computed by [`computeAnchorPosition`](/reference/dom/computeanchorposition), a pure function over plain rects, so placement logic is testable without a DOM.
+For markup you did not render (static HTML, server-generated pages), [`$ref`](/reference/dom/$ref) and [`$collection`](/reference/dom/$collection) fill the same role: resolve the nodes, wire the behaviors, keep the handles beside the ref. Inside your own templates, prefer `hook:`.
+
+## Anchor a Floating Element
+
+[`anchorPosition`](/reference/dom/anchorposition) pins a floating element to an anchor and keeps it placed while the page scrolls or resizes. One `options` object controls placement, offset, and matching the floating width to the anchor.
 
 ```jsx
-import { mount } from "@hellajs/dom";
-import { anchorPosition } from "@hellajs/dom";
+import { mount, anchorPosition } from "@hellajs/dom";
 
 let disposeAnchor: (() => void) | undefined;
 
@@ -91,7 +102,10 @@ const MenuButton = () => (
       hook:afterMount={(node) => {
         if (!(node instanceof HTMLElement)) return;
         const panel = node.nextElementSibling as HTMLElement;
-        disposeAnchor = anchorPosition(node, panel, { placement: "bottom-start" });
+        disposeAnchor = anchorPosition(node, panel, {
+          placement: "bottom-start",
+          matchAnchorWidth: true,
+        });
       }}
       hook:beforeDestroy={() => disposeAnchor?.()}
     >
@@ -104,25 +118,26 @@ const MenuButton = () => (
 mount(<MenuButton />, "#app");
 ```
 
-## Hover Intent and the Shared Skip-Delay Window
+Need a one-shot position with no tracking? [`computeAnchorPosition`](/reference/dom/computeanchorposition) computes placement over plain rects, no listeners attached.
 
-[`hoverIntent`](/reference/dom/hoverintent) is the tooltip and hover-card timing contract: an open delay on hover or focus, a close delay on leave, an immediate close on an outside press. It also keeps a module-level skip-delay clock: opening within 500ms of a previous open fires `onOpen` instantly, so moving between adjacent triggers never re-incurs the delay. The clock is shared by every wiring on the page.
+## Open on Hover With a Delay
+
+[`hoverIntent`](/reference/dom/hoverintent) is the tooltip timing contract: open after a hover or focus delay, close after a leave delay, close instantly on an outside press. The delay is shared across the page: when any trigger opened within the last 500ms, the next open fires instantly, so moving between adjacent triggers never feels laggy.
 
 ```jsx
 import { signal } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
-import { hoverIntent } from "@hellajs/dom";
+import { mount, hoverIntent } from "@hellajs/dom";
 
-const show = signal(false);
+const showTip = signal(false);
 let disposeIntent: (() => void) | undefined;
 
-const Trigger = () => (
+const TipButton = () => (
   <button
     hook:afterMount={(node) => {
       if (!(node instanceof HTMLElement)) return;
       disposeIntent = hoverIntent(node, {
-        onOpen: () => show(true),
-        onClose: () => show(false)
+        onOpen: () => showTip(true),
+        onClose: () => showTip(false),
       });
     }}
     hook:beforeDestroy={() => disposeIntent?.()}
@@ -131,23 +146,24 @@ const Trigger = () => (
   </button>
 );
 
-mount(<Trigger />, "#app");
+mount(<TipButton />, "#app");
 ```
 
-## Menu Typeahead
+Delays are configurable through the same options object.
 
-[`menuTypeahead`](/reference/dom/menutypeahead) buffers printable keystrokes into a case-insensitive query (reset 500ms after the last key) and selects the first match: a `startsWith` scan first, then a substring scan that wraps around from the item after the last selection. Arrow keys and modifier chords pass through untouched, so typeahead composes with roving-focus navigation.
+## Search a Menu by Typing
+
+[`menuTypeahead`](/reference/dom/menutypeahead) lets a menu user type to select: printable keystrokes buffer into a case-insensitive query and the first match is selected, preferring items that start with the query. The query resets 500ms after the last keystroke. Arrow keys and modifier chords pass through untouched, so typeahead composes with [`rovingTabIndex`](/reference/dom/rovingtabindex) navigation.
 
 ```jsx
-import { mount } from "@hellajs/dom";
-import { menuTypeahead } from "@hellajs/dom";
+import { mount, menuTypeahead } from "@hellajs/dom";
 
 let disposeTypeahead: (() => void) | undefined;
 
 const collectItems = (menu: HTMLElement) =>
   Array.from(menu.querySelectorAll<HTMLElement>("[data-menu-item]")).map((node) => ({
     node,
-    text: node.textContent ?? ""
+    text: node.textContent ?? "",
   }));
 
 const Menu = () => (
@@ -168,16 +184,15 @@ const Menu = () => (
 mount(<Menu />, "#app");
 ```
 
-## Pointer Drag
+## Track Pointer Gestures
 
-[`onDrag`](/reference/dom/ondrag) reports cumulative deltas from the drag start and leaves all value math to the consumer: slider thumbs clamp, drawer swipes measure distance. It captures the pointer when the environment allows it and ends once on `pointerup`, `pointercancel`, or `lostpointercapture`. Draggable elements need `touch-action: none` to hold off native scrolling; the wiring never touches styles.
+[`onDrag`](/reference/dom/ondrag) reports cumulative `{ dx, dy }` deltas from the drag start and leaves all value math to you: slider thumbs clamp, drawer swipes measure distance. One drag ends on `pointerup`, `pointercancel`, or a lost capture.
 
 ```jsx
 import { signal } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
-import { onDrag } from "@hellajs/dom";
+import { mount, onDrag } from "@hellajs/dom";
 
-const offset = signal(0);
+const dragOffset = signal(0);
 let disposeDrag: (() => void) | undefined;
 
 const Thumb = () => (
@@ -186,7 +201,7 @@ const Thumb = () => (
     style="touch-action: none"
     hook:afterMount={(node) => {
       if (!(node instanceof HTMLElement)) return;
-      disposeDrag = onDrag(node, { onMove: ({ dx }) => offset(dx) });
+      disposeDrag = onDrag(node, { onMove: ({ dx }) => dragOffset(dx) });
     }}
     hook:beforeDestroy={() => disposeDrag?.()}
   />
@@ -195,13 +210,16 @@ const Thumb = () => (
 mount(<Thumb />, "#app");
 ```
 
-## Layered Dismissal
+Give draggable elements `touch-action: none` in your CSS so native scrolling does not steal the pointer; the wiring never touches styles.
 
-[`layerDismissal`](/reference/dom/layerdismissal) is the outside-click and Escape contract for overlays that stack: a submenu over a menu over a popover. Each layer pushes onto a shared module-level stack, and a gesture reaches only the top layer, so one dismissal closes one surface. The `onDismiss` callback must dispose the layer in the same path; the dismissal never pops the stack itself.
+The gesture family covers the rest: [`onSwipe`](/reference/dom/onswipe) commits a swipe past a threshold or velocity, [`onPinch`](/reference/dom/onpinch) reports scale and translation for two-finger pinches, [`onLongPress`](/reference/dom/onlongpress) fires after a timed press with drift tolerance, and [`onDoubleTap`](/reference/dom/ondoubletap) fires on a second tap within a window.
+
+## Dismiss Stacked Overlays One Layer at a Time
+
+When overlays stack (a submenu over a menu over a popover), a dismissal should close one surface, not all of them. [`layerDismissal`](/reference/dom/layerdismissal) keeps a page-wide stack: Escape or an outside click dismisses only the top layer. Your `onDismiss` callback must dispose the wiring in the same path.
 
 ```jsx
-import { mount } from "@hellajs/dom";
-import { layerDismissal } from "@hellajs/dom";
+import { mount, layerDismissal } from "@hellajs/dom";
 
 let disposeLayer: (() => void) | undefined;
 
@@ -220,3 +238,5 @@ const Submenu = () => (
 
 mount(<Submenu />, "#app");
 ```
+
+For single-surface cases, `onEscape` and `onOutside` are enough; reach for `layerDismissal` when surfaces stack.

@@ -1,20 +1,8 @@
 # $collection
 
-Reactive reference to multiple DOM elements with automatic watching for dynamically added elements.
-
-## API
-
-```typescript
-function $collection<T extends Element = Element>(selector: string): DomCollection<T>
-```
-- `selector`: A CSS selector string to find all matching elements.
-- **Returns**: A reactive reference with declarative methods and array-like access.
-
-For a single element without collection overhead, see [`$ref`](/reference/dom/$ref).
+Bind reactivity to every element matching a selector: reactive text and attributes, event handlers, and lifecycle hooks applied to all matches, including elements added to the page later.
 
 ## Basic Usage
-
-Use `$collection` to select and manipulate multiple existing DOM elements reactively.
 
 ```js
 import { signal } from "@hellajs/core";
@@ -32,11 +20,23 @@ buttons.bind(() => `Count: ${count}`);
 buttons.on("click", () => count(count() + 1));
 ```
 
+Elements added to the DOM later that match the selector pick up the same bindings automatically.
+
+## API
+
+```typescript
+function $collection<T extends Element = Element>(selector: string): DomCollection<T>
+```
+- `selector`: A CSS selector string to find all matching elements.
+- **Returns**: A reactive reference with declarative methods and array-like access.
+
+For a single element without collection watching, see [`$ref`](/reference/dom/$ref).
+
 ## Key Concepts
 
 ### Callable Reference
 
-The returned reference is callable - invoke it to get raw DOM nodes by index.
+The returned reference is callable: invoke it with an index to get the raw DOM node at that position (undefined when out of bounds).
 
 ```js
 const ref = $collection(".item");
@@ -44,30 +44,22 @@ const ref = $collection(".item");
 ref()    // First matched element
 ref(0)   // Same as above
 ref(1)   // Second matched element
-ref(99)  // undefined (out of bounds)
+ref(99)  // undefined
 ```
 
-### Length Property
+### Length and Iteration
 
-Access the number of matched elements.
+`length` counts the matches; `forEach` visits the current element wrappers for per-element logic.
 
 ```js
-const items = $collection(".item");
+const items = $collection(".items");
+
 console.log(items.length); // Number of matched elements
-```
 
-### Bracket Access
-
-Access individual element wrappers using bracket notation.
-
-```js
-const ref = $collection(".item");
-
-ref[0]  // First ReactiveElement wrapper
-ref[1]  // Second ReactiveElement wrapper
-
-// Access the raw DOM node
-ref[0].node  // First DOM element
+items.forEach((element, index) => {
+  element.bind(`Item ${index + 1}`);
+  element.bind({ "data-index": index.toString() });
+});
 ```
 
 ### Method Chaining
@@ -84,9 +76,9 @@ $collection(".counter")
 
 ### Reactive Bindings
 
-Use `.bind()` for text content or attributes on **all** matched elements.
+`.bind()` for text content or attributes, applied to **all** matched elements.
 
-**Text/Value binding** - pass a string or reactive function:
+**Text/value binding** - pass a string or reactive function:
 
 ```js
 const status = signal("idle");
@@ -119,29 +111,18 @@ Attribute behavior:
 
 ### Event Handlers
 
-Attach event handlers to all elements with proper `this` context.
+Attach handlers to all matched elements, with `this` bound to the clicked element.
 
 ```js
 $collection(".btn").on("click", function(event) {
-  console.log("Clicked:", this);  // "this" is the clicked element
+  console.log("Clicked:", this);
   console.log("Event:", event);
-});
-```
-
-### forEach Iteration
-
-Iterate over element wrappers for per-element logic.
-
-```js
-$collection(".items").forEach((element, index) => {
-  element.bind(`Item ${index + 1}`);
-  element.bind({ "data-index": index.toString() });
 });
 ```
 
 ### Lifecycle Hooks
 
-Add lifecycle hooks to all elements.
+Add hooks to all matched elements: `beforeMount`, `afterMount`, `beforeUpdate`, `afterUpdate`, `beforeDestroy`, `afterDestroy`. On already-mounted elements, `afterMount` runs immediately.
 
 ```js
 $collection(".card").hooks({
@@ -150,75 +131,40 @@ $collection(".card").hooks({
 });
 ```
 
-Available hooks: `beforeMount`, `afterMount`, `beforeUpdate`, `afterUpdate`, `beforeDestroy`, `afterDestroy`
+## Important Considerations
 
-If elements are already mounted, `afterMount` hooks execute immediately.
+### Watching Is the Difference From $ref
 
-### Automatic Watching
-
-`$collection` watches for new elements matching the selector via an independent MutationObserver. This observer is activated only when `$ref`/`$collection` selectors exist and stops when all are disposed. All queued operations are automatically applied to elements added later.
+`$collection` keeps watching the DOM for new matching elements and applies every queued binding, handler, and hook to them on arrival. [`$ref`](/reference/dom/$ref) stops after finding its one element.
 
 ```js
 const ref = $collection(".dynamic-item");
 ref.bind("Hello");  // Applied to existing elements
 
-// Later, when new elements are added to DOM:
+// Later, anywhere in the app:
 document.body.innerHTML += '<div class="dynamic-item"></div>';
-// The new element automatically gets text "Hello"
+// The new element now reads "Hello"
 ```
 
-This is the key difference from `$ref` - collections automatically watch for and process new matching elements.
+### Stop Watching With dispose()
 
-### Cleanup
-
-Call `dispose()` to stop watching for new elements and clear queued operations.
+Call `dispose()` to stop watching and drop queued operations. Bindings already applied to matched elements stay for each element's remaining lifetime and clean up when the element leaves the DOM.
 
 ```js
 const ref = $collection(".temporary");
 ref.bind("Content");
 
-// When done watching
+// Stop watching; later matches get nothing
 ref.dispose();
 ```
 
-After disposing, new elements matching the selector will not receive the queued operations.
+### Bracket Access Is a Creation-Time Snapshot
 
-Effects and handlers already applied to matched elements are not torn down by `dispose()`; they persist for the lifetime of each element and are cleaned up when the element is removed from the DOM.
-
-## Important Considerations
-
-### All Operations Apply to All Elements
-
-Every method applies to **all** matched elements.
-
-```js
-// Sets text on ALL elements with class "message"
-$collection(".message").bind("Updated");
-```
-
-### Bracket Access Snapshot
-
-Bracket access (`ref[0]`) provides a snapshot at creation time. New elements added via the independent ref observer are accessible through `forEach` or the callable syntax.
+`ref[0]` gives the wrapper that existed at creation; elements the watcher picked up later are reachable through `forEach` and the callable syntax.
 
 ```js
 const ref = $collection(".item");
+
 ref[0]  // First wrapper at creation time
 ref()   // First element (always current)
-
-// Use forEach for all current elements including new ones
-ref.forEach((el, i) => console.log(i, el.node));
-```
-
-### Use $ref for Single Elements
-
-If you only need the first matching element and don't need auto-watching, use [`$ref`](/reference/dom/$ref) for less overhead.
-
-```js
-// For single element without watching
-import { $ref } from "@hellajs/dom";
-const single = $ref(".unique-element");
-
-// For multiple elements with watching
-import { $collection } from "@hellajs/dom";
-const multiple = $collection(".repeated-element");
 ```

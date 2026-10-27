@@ -1,6 +1,6 @@
 ## DOM
 
-Surgical DOM rendering without virtual DOM diffing. Only elements with reactive dependencies update, not entire trees. Features automatic cleanup via scoped MutationObserver on mount targets and synchronous cleanup during reactive updates, global event delegation, and keyed list reconciliation.
+Render UI with plain functions and JSX. Updates touch only the parts of the DOM that changed, cleanup is automatic, and everything ships tree-shaken to what you use.
 
 ### Installation
 
@@ -45,51 +45,51 @@ mount(Counter, "#app");
 - **[on:](/reference/dom/on)**: Delegated event listeners
 - **[e:](/reference/dom/e)**: Direct event listeners
 - **[hook:](/reference/dom/hook)**: Element lifecycle hooks
-- **[error:](/reference/dom/error)**: Element-level error configuration
+- **[error:](/reference/dom/error)**: Element-level error handling
 
 #### Functions
 
-- **[mount](/reference/dom/mount)**: Mount a component to a DOM element
+- **[mount](/reference/dom/mount)**: Render a component into a DOM element
 - **[hydrate](/reference/dom/hydrate)**: Attach reactivity to server-rendered HTML in place
-- **[element](/reference/dom/element)**: Define custom Web Components
-- **[raw](/reference/dom/raw)**: Embed pre-rendered HTML as an opaque, unescaped child
-- **[ForEach](/reference/dom/foreach)**: Keyed reactive list rendering
+- **[element](/reference/dom/element)**: Author reactive Web Components
+- **[raw](/reference/dom/raw)**: Embed pre-rendered HTML unescaped
+- **[ForEach](/reference/dom/foreach)**: Render lists that track a signal, keyed for reuse
 - **[Portal](/reference/dom/portal)**: Render children in a different DOM location
-- **[Lazy](/reference/dom/lazy)**: Lazy-load components on demand
-- **[Transition](/reference/dom/transition)**: Animate show/hide content with enter/leave CSS classes
-- **[Suspense](/reference/dom/suspense)**: Out-of-order streaming boundary for server rendering
-- **[onError](/reference/dom/onerror)**: Set a global error handler
-- **[$ref](/reference/dom/$ref)**: Bind to a single existing DOM element
-- **[$collection](/reference/dom/$collection)**: Bind to multiple existing DOM elements
-- **[component](/reference/dom/component)**: Low-level component creation
-- **[registry](/reference/dom/registry)**: Low-level lifecycle management API for DOM elements. Manages effects and hooks attached to elements
-- **[runtime](/reference/dom/runtime)**: Compiled DOM construction functions emitted by the babel plugin's imperative target
-- **[trapFocus](/reference/dom/trapfocus)**: Trap Tab and Shift+Tab inside a container, wrapping at the edges
-- **[onEscape](/reference/dom/onescape)**: Call a handler on Escape keydown at a target
-- **[onOutside](/reference/dom/onoutside)**: Call a handler on document pointerdown outside resolved targets
-- **[rovingTabIndex](/reference/dom/rovingtabindex)**: Arrow-key focus movement with a roving tabindex over a container's items
-- **[anchorPosition](/reference/dom/anchorposition)**: Pin a floating element to an anchor across scroll and resize, with flip and shift-clamp
-- **[computeAnchorPosition](/reference/dom/computeanchorposition)**: Pure placement math over plain rects: coordinates, post-flip placement, width
-- **[hoverIntent](/reference/dom/hoverintent)**: Open and close overlays on hover or focus delay, with a shared skip-delay window
-- **[menuTypeahead](/reference/dom/menutypeahead)**: Buffer printable keystrokes into a menu search and select the first match
-- **[onDrag](/reference/dom/ondrag)**: Track a pointer drag and report cumulative deltas from the start
-- **[onSwipe](/reference/dom/onswipe)**: Track a pointer swipe with threshold and velocity commit
-- **[onPinch](/reference/dom/onpinch)**: Track a two-pointer pinch and report scale and translation deltas
-- **[onLongPress](/reference/dom/onlongpress)**: Fire a handler after a timed press with drift tolerance
-- **[onDoubleTap](/reference/dom/ondoubletap)**: Fire on a second tap within a window, with an opt-in delayed single tap
-- **[layerDismissal](/reference/dom/layerdismissal)**: Dismiss stacked overlays one layer at a time on Escape or outside press
+- **[Lazy](/reference/dom/lazy)**: Load components on demand with loading and error states
+- **[Transition](/reference/dom/transition)**: Animate content in and out with CSS classes
+- **[Suspense](/reference/dom/suspense)**: Streaming and async boundary with fallback UI
+- **[onError](/reference/dom/onerror)**: Catch app-wide errors with one global handler
+- **[$ref](/reference/dom/$ref)**: Bind reactivity to one existing element
+- **[$collection](/reference/dom/$collection)**: Bind reactivity to every element matching a selector
+- **[component](/reference/dom/component)**: Scope manual component trees for cleanup (low-level)
+- **[registry](/reference/dom/registry)**: Register effects and hooks on elements directly (low-level)
+- **[runtime](/reference/dom/runtime)**: Imperative DOM construction functions for compiler output
+- **[trapFocus](/reference/dom/trapfocus)**: Keep Tab navigation inside a container
+- **[onEscape](/reference/dom/onescape)**: Call a handler on Escape at a target
+- **[onOutside](/reference/dom/onoutside)**: Call a handler on clicks outside elements
+- **[rovingTabIndex](/reference/dom/rovingtabindex)**: Arrow-key focus navigation over a group
+- **[anchorPosition](/reference/dom/anchorposition)**: Pin a floating element to an anchor, tracking scroll and resize
+- **[computeAnchorPosition](/reference/dom/computeanchorposition)**: Compute floating placement as pure math
+- **[hoverIntent](/reference/dom/hoverintent)**: Open and close overlays on hover or focus delays
+- **[menuTypeahead](/reference/dom/menutypeahead)**: Select menu items by typing
+- **[onDrag](/reference/dom/ondrag)**: Track pointer drags with total distance from the start
+- **[onSwipe](/reference/dom/onswipe)**: Commit or cancel swipes by distance or speed
+- **[onPinch](/reference/dom/onpinch)**: Track two-finger pinch zoom and pan
+- **[onLongPress](/reference/dom/onlongpress)**: Fire a handler after a press is held
+- **[onDoubleTap](/reference/dom/ondoubletap)**: Detect double taps, optionally reporting single taps
+- **[layerDismissal](/reference/dom/layerdismissal)**: Dismiss stacked overlays one layer at a time
 
 ### Concepts
 
-- **[Templates](/learn/concepts/templates)**: JSX template syntax for reactive UIs
-- **[Attribute Prefixes](/learn/concepts/attribute-prefixes)**: on:, hook:, e:, error: prefixes
+- **[Templates](/learn/concepts/templates)**: JSX templates, reactive bindings, SVG and MathML
+- **[Attribute Prefixes](/learn/concepts/attribute-prefixes)**: on:, e:, hook:, error: prefixes
 - **[Components](/learn/concepts/components)**: Component composition, data flow, and scope
-- **[Control Flow](/learn/concepts/control-flow)**: Conditional rendering, lists, portals, lazy loading, and transitions
-- **[Error Handling](/learn/concepts/error-handling)**: Global and element-level error boundaries
-- **[Reactive Refs](/learn/concepts/reactive-refs)**: $ref and $collection for existing DOM elements
+- **[Control Flow](/learn/concepts/control-flow)**: Conditionals, lists, portals, lazy loading, transitions
+- **[Error Handling](/learn/concepts/error-handling)**: Global and element-level error handling
+- **[Reactive Refs](/learn/concepts/reactive-refs)**: Making existing DOM elements reactive
 - **[Custom Elements](/learn/concepts/custom-elements)**: Web Components with reactive props
-- **[Hydration](/learn/concepts/hydration)**: Attach reactivity to server-rendered HTML in place
-- **[Headless Behaviors](/learn/concepts/headless-behaviors)**: Focus traps, anchoring, hover intent, typeahead, drag, and layered dismissal as pure dispose-handle functions
+- **[Hydration](/learn/concepts/hydration)**: Attach reactivity to server-rendered HTML
+- **[Headless Behaviors](/learn/concepts/headless-behaviors)**: Focus traps, anchoring, hover intent, typeahead, gestures, and layered dismissal as plain functions
 
 ### Patterns
 

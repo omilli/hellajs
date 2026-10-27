@@ -1,19 +1,6 @@
 # onEscape
 
-Calls a handler when an Escape keydown fires on a target, returning the dispose handle that removes the listener.
-
-## API
-
-```typescript
-function onEscape(
-  target: Node | Window,
-  handler: () => void
-): () => void
-```
-
-- `target`: Node or window receiving the keydown. The listener fires for Escape keydowns on the target and anything bubbling into it.
-- `handler`: Zero-argument callback fired on Escape.
-- **Returns**: Dispose handle. Calling it removes the keydown listener.
+Call a handler when Escape is pressed on a target.
 
 ## Basic Usage
 
@@ -36,6 +23,19 @@ const Panel = () => (
 
 mount(<Panel />, "#app");
 ```
+
+## API
+
+```typescript
+function onEscape(
+  target: Node | Window,
+  handler: () => void
+): () => void
+```
+
+- `target`: Node or window receiving the keydown. The listener fires for Escape keydowns on the target and anything bubbling into it.
+- `handler`: Zero-argument callback fired on Escape.
+- **Returns**: Dispose handle. Calling it removes the keydown listener.
 
 ## Key Concepts
 

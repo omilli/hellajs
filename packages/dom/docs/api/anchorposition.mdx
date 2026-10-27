@@ -1,21 +1,6 @@
 # anchorPosition
 
-Positions an element as a fixed overlay anchored to another element and keeps it placed across scroll and resize, returning the dispose handle that removes the listeners.
-
-## API
-
-```typescript
-function anchorPosition(
-  anchor: Element,
-  floating: HTMLElement,
-  options?: AnchorPositionOptions
-): () => void
-```
-
-- `anchor`: Element the floating element anchors to.
-- `floating`: Element positioned against the anchor.
-- `options`: `placement` (default `"bottom"`), `offset` gap in px (default `0`), `matchAnchorWidth` stretch, `dir` (defaults to the anchor's computed `direction`), and `onUpdate`, called after each reposition with the final placement.
-- **Returns**: Dispose handle. Calling it removes the window scroll and resize listeners.
+Pin a floating element to an anchor and keep it placed: it follows the anchor across scroll and resize, flips when it would overflow the viewport, and clamps inside it.
 
 ## Basic Usage
 
@@ -48,11 +33,26 @@ mount(<Picker />, "#app");
 // The panel sits below the button at the start edge and tracks it on scroll
 ```
 
+## API
+
+```typescript
+function anchorPosition(
+  anchor: Element,
+  floating: HTMLElement,
+  options?: AnchorPositionOptions
+): () => void
+```
+
+- `anchor`: Element the floating element anchors to.
+- `floating`: Element positioned against the anchor.
+- `options`: `placement` (default `"bottom"`), `offset` gap in px (default `0`), `matchAnchorWidth` stretch, `dir` (defaults to the anchor's computed `direction`), and `onUpdate`, called after each reposition with the final placement.
+- **Returns**: Dispose handle. Calling it removes the window scroll and resize listeners.
+
 ## Key Concepts
 
 ### Placement, Flip, and Shift
 
-`placement` is a side (`top`, `bottom`, `left`, `right`) plus an optional alignment (`-start` or `-end`): twelve values, matching the shadcn `side`/`align` pair. When the floating element does not fit on the requested side it flips to the opposite side, then both axes shift to clamp inside the viewport. `onUpdate` receives the final placement after every reposition, so menus can re-check flip-dependent details such as arrow direction.
+`placement` is a side (`top`, `bottom`, `left`, `right`) plus an optional alignment (`-start` or `-end`): twelve values. When the floating element does not fit on the requested side it flips to the opposite side, then both axes shift to clamp inside the viewport. `onUpdate` receives the final placement after every reposition, so menus can re-check flip-dependent details such as arrow direction.
 
 ### Width Matching
 

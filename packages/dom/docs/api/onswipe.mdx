@@ -1,6 +1,38 @@
 # onSwipe
 
-Tracks a pointer swipe on an element and commits or cancels the gesture on release by distance and velocity, returning the dispose handle that removes all pointer listeners.
+Commit or cancel a swipe on release: a drag far enough or fast enough on one axis commits with its direction, anything else snaps back.
+
+## Basic Usage
+
+```jsx
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+import { onSwipe } from "@hellajs/dom";
+
+const offset = signal(0);
+let disposeSwipe: (() => void) | undefined;
+
+const Drawer = () => (
+  <div
+    class="drawer"
+    style="touch-action: none"
+    hook:afterMount={(node) => {
+      if (!(node instanceof HTMLElement)) return;
+      disposeSwipe = onSwipe(node, {
+        onMove: ({ dx }) => offset(dx),
+        onCommit: ({ direction }) => {
+          if (direction === "left") offset(0);
+        },
+        onCancel: () => offset(0)
+      });
+    }}
+    hook:beforeDestroy={() => disposeSwipe?.()}
+  />
+);
+
+mount(<Drawer />, "#app");
+// A release past 50px on one axis, or a fast fling, commits with its direction; anything else cancels
+```
 
 ## API
 
@@ -44,38 +76,6 @@ interface SwipeOptions {
 - `handlers`: `onStart` fires once on primary-button pointerdown; `onMove` fires per pointermove with deltas accumulated from the swipe start; `onCommit` fires once on release when the gesture committed; `onCancel` fires once on any other release.
 - `options`: `threshold` is the dominant-axis px distance that commits on release (default 50); `velocity` is the release velocity floor in px/ms that commits below threshold (default 0.5).
 - **Returns**: Dispose handle. Calling it removes all five pointer listeners.
-
-## Basic Usage
-
-```jsx
-import { signal } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
-import { onSwipe } from "@hellajs/dom";
-
-const offset = signal(0);
-let disposeSwipe: (() => void) | undefined;
-
-const Drawer = () => (
-  <div
-    class="drawer"
-    style="touch-action: none"
-    hook:afterMount={(node) => {
-      if (!(node instanceof HTMLElement)) return;
-      disposeSwipe = onSwipe(node, {
-        onMove: ({ dx }) => offset(dx),
-        onCommit: ({ direction }) => {
-          if (direction === "left") offset(0);
-        },
-        onCancel: () => offset(0)
-      });
-    }}
-    hook:beforeDestroy={() => disposeSwipe?.()}
-  />
-);
-
-mount(<Drawer />, "#app");
-// A release past 50px on one axis, or a fast fling, commits with its direction; anything else cancels
-```
 
 ## Key Concepts
 

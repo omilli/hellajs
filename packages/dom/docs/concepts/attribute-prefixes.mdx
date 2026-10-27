@@ -1,12 +1,10 @@
 # Attribute Prefixes
 
-HellaJS uses a prefix system to categorize element attributes. Each prefix maps to a specific behavior,  events, reactive bindings, lifecycle hooks, or error configuration.
+Attributes that carry behavior instead of values: `on:` and `e:` for events, `hook:` for lifecycle, `error:` for error handling. Plain attributes stay reactive without any prefix.
 
-## Events
+## Delegated Events: on:
 
-### Delegated Events
-
-Delegated event handlers attached globally to `document.body` in the capture phase. Recommended for most cases: (1,000 buttons = 1 click listener).
+One shared listener per event type, automatic cleanup. Reach for it by default: 1,000 buttons still cost one click listener.
 
 ```jsx
 import { mount } from "@hellajs/dom";
@@ -18,15 +16,11 @@ const App = () => (
 mount(App, "#app");
 ```
 
-At a component boundary, `on:click` passes through verbatim: the component receives `props["on:click"]` and forwards it by re-emitting `on:click` on the root element, where it routes back into the delegated path.
+Handlers fire innermost-first, and `stopPropagation()` works as expected. One limit: delegated `touchstart`/`touchmove`/`wheel` handlers are passive, so `event.preventDefault()` silently fails; use `e:` with `{ passive: false }` for cancelable gestures. See [`on:`](/reference/dom/on).
 
-See [`on:`](/reference/dom/on) for full details.
+## Direct Events: e:
 
-**Passive by default:** browsers treat body-level `touchstart`/`touchmove`/`wheel` listeners as passive by default, so `event.preventDefault()` inside delegated handlers for these events silently fails. Use [`e:`](/reference/dom/e) with `{ passive: false }` for cancelable gestures.
-
-### Direct Events
-
-Non-delegated event handlers attached directly to elements in the bubble phase. Use when a handler must be a real listener on the element: non-bubbling events (`focus`, `blur`) or third-party libraries that expect direct listeners.
+A real listener on the element itself, in the bubble phase. Use it for non-bubbling events (`focus`, `blur`), cancelable gestures, or third-party code that expects direct listeners.
 
 ```jsx
 import { mount } from "@hellajs/dom";
@@ -41,15 +35,11 @@ const App = () => (
 mount(App, "#app");
 ```
 
-At a component boundary, `e:click` passes through verbatim: the component receives `props["e:click"]` and forwards it by re-emitting `e:click` on the root element, which attaches the direct listener.
+The value may also be a `{ handler, options }` spec forwarding native listener options (`once`/`passive`/`capture`) to `addEventListener`. See [`e:`](/reference/dom/e).
 
-See [`e:`](/reference/dom/e) for full details.
+## Reactive Attributes: No Prefix
 
-The value may also be a `{ handler, options }` spec forwarding native listener options (`once`/`passive`/`capture`) to `addEventListener`.
-
-## Reactive Attributes
-
-A function-ref is reactive: any attribute whose value is a function reference, a bare signal (`class={mySignal}`) or an expression (`class={active() ? "on" : "off"}`), updates the DOM when its dependencies change, with no prefix.
+Any attribute whose value is a function or signal is reactive: the DOM updates when the value's dependencies change.
 
 ```jsx
 import { mount } from "@hellajs/dom";
@@ -66,9 +56,7 @@ const App = () => (
 mount(App, "#app");
 ```
 
-### Style Objects
-
-The `style` attribute accepts an object of CSS declarations alongside plain strings. camelCase keys serialize to kebab-case, falsy declarations are skipped, and numbers carry no automatic units: write `"12px"`, not `12`.
+The `style` attribute also accepts an object of CSS declarations: camelCase keys serialize to kebab-case, falsy declarations are skipped, and numbers carry no automatic units (write `"12px"`, not `12`).
 
 ```jsx
 import { mount } from "@hellajs/dom";
@@ -76,28 +64,17 @@ import { signal } from "@hellajs/core";
 
 const theme = signal("light");
 
-mount(<div style={{ color: theme() === "dark" ? "#fff" : "#000", fontSize: "12px" }}>hi</div>, "#app");
-```
-
-A function-ref style object re-serializes the whole declaration list when its dependencies change; a static object serializes once. String style values pass through unchanged.
-
-In JSX/TSX the static form is a plain object expression (typed via the exported `StyleObject`, camelCase keys, explicit units):
-
-```jsx
-import { mount } from "@hellajs/dom";
-
-const App = () => (
-  <div style={{ color: "#333", fontSize: "12px" }}>hi</div>
+mount(
+  <div style={{ color: theme() === "dark" ? "#fff" : "#000", fontSize: "12px" }}>hi</div>,
+  "#app"
 );
-
-mount(App, "#app");
 ```
 
-## Lifecycle Hooks
+A reactive style object re-serializes when its dependencies change; a static one serializes once.
 
-### Element Lifecycle Hooks
+## Lifecycle Hooks: hook:
 
-Element-level lifecycle hooks that fire at specific points in an element's existence. Unlike other frameworks, lifecycle hooks are tied directly to elements, not component scope. Multiple hooks of the same type on the same element all execute in registration order.
+Run code at points in an element's life: entering the DOM, around updates, at removal. Hooks attach to elements directly, and multiple hooks of the same type all run in registration order.
 
 ```jsx
 import { mount } from "@hellajs/dom";
@@ -114,23 +91,11 @@ const App = () => (
 mount(App, "#app");
 ```
 
-**Available hooks:**
-- `hook:beforeMount`: Synchronously before element is inserted into DOM (no element argument)
-- `hook:afterMount`: After element is in DOM (synchronously by the time `mount()`/`hydrate()` returns); nodes added dynamically after the initial mount fire on the next microtask
-- `hook:beforeUpdate`: Before reactive updates (errors caught, no fallback UI)
-- `hook:afterUpdate`: After reactive updates (errors caught, no fallback UI)
-- `hook:beforeDestroy`: Before removal
-- `hook:afterDestroy`: After removal and effect cleanup (no element argument)
+The full timing table (`beforeMount` through `afterDestroy`) lives in [`hook:`](/reference/dom/hook).
 
-At a component boundary, `hook:afterMount` passes through verbatim: the component receives `props["hook:afterMount"]` and forwards it by re-emitting `hook:afterMount` on the root element, which registers the hook.
+## Error Configuration: error:
 
-See [`hook:`](/reference/dom/hook) for timing details and usage patterns.
-
-## Error Configuration
-
-### Element Error Handling
-
-Element-level error configuration for fine-grained error boundaries.
+Handle a subtree's errors where it sits: fallback UI, a category for filtering, or a boundary that stops propagation.
 
 ```jsx
 import { mount } from "@hellajs/dom";
@@ -146,15 +111,16 @@ const App = () => (
 mount(App, "#app");
 ```
 
-**Available attributes:**
-- `error:fallback`: Function receiving the error, returns fallback UI
-- `error:category`: String for error categorization
-- `error:boundary`: Boolean marking element as error boundary (stops error propagation without requiring a fallback)
+See [`error:`](/reference/dom/error) for the full contract.
 
-At a component boundary, `error:fallback` passes through verbatim: the component receives `props["error:fallback"]` and forwards it by re-emitting `error:fallback` on the root element, which wires the boundary config.
+## Prefixes Pass Through Components
 
-See [`error:`](/reference/dom/error) for full details.
+A prefixed attribute on a component arrives in its props verbatim (`props["on:click"]`, `props["hook:afterMount"]`). Forward it by re-emitting the same attribute on an element in the component's template; the wiring activates on the element.
 
-## Prefixed Props at Component Boundaries
+```jsx
+type SubmitButtonProps = { "on:click"?: () => void };
 
-Prefixes wired at runtime (a component forwarding them through rest props) need no routing module: the runtime spread funnels every key through `prop()`, which routes the four families in dom core, while the compiler's feature imports load the matching machinery (`direct-events`, `hooks`, `errors`); see [templates](/learn/concepts/templates) for how bundle composition works. A prefixed attribute in component position stays verbatim in the component's props, and the component re-emits it onto an element, whose element-position syntax loads the feature. There is no hand-built escape hatch: `mount` and `hydrate` accept compiled builds only, and a hand-built [`HellaNode`](/reference/dom) passed to [`mount`](/reference/dom/mount) or [`hydrate`](/reference/dom/hydrate) throws.
+const SubmitButton = (props: SubmitButtonProps) => (
+  <button on:click={props["on:click"] ?? (() => {})}>Submit</button>
+);
+```

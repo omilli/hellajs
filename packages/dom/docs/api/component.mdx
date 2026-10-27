@@ -2,122 +2,121 @@ import Callout from "@components/Callout.astro";
 
 # component
 
-Wraps a component function with automatic effect cleanup scope.
+Wrap a manually-built component so its effects clean up when the component is removed from the DOM.
 
-<Callout variant="info">This is a low-level API used internally by the Babel plugin. You only need this when building components with raw HellaNode AST objects.</Callout>
-
-## API
-
-```typescript
-function component(componentFn: ComponentFn, props: Record<string, unknown>): HellaNode
-```
-
-- `componentFn`: A function that returns a HellaNode.
-- `props`: Props object passed to the component function.
-- **Returns**: HellaNode with attached `componentScope` disposer for automatic cleanup.
+<Callout variant="info">This is a low-level API. JSX users never need it: the babel plugin wraps every component call automatically. Reach for it only when constructing component trees by hand.</Callout>
 
 ## Basic Usage
 
-When manually constructing component trees, wrap component calls with `component()`. You don't need `component()` with JSX syntax; the Babel plugin handles it automatically.
+When you build trees by hand (raw AST objects, no JSX), wrap component calls with `component()`. Effects created inside the component are then scoped to it and disposed on removal.
 
 ```js
 import { signal } from "@hellajs/core";
 import { mount, component } from "@hellajs/dom";
 
-// A component function
 const Counter = (props) => {
   const count = signal(props.initial ?? 0);
-  
+
   return {
     tag: "button",
     on: { click: () => count(count() + 1) },
-    children: [count]
+    children: [count],
   };
 };
 
-// Manual AST construction - must use component()
+// Manual tree construction: wrap each component call
 const app = {
   tag: "div",
   children: [
     component(Counter, { initial: 5 }),
-    component(Counter, { initial: 10 })
-  ]
+    component(Counter, { initial: 10 }),
+  ],
 };
 
 mount(app, document.body);
 ```
 
-Without `component()`, effects created inside `Counter` would not be cleaned up when the node is removed from the DOM.
+Without `component()`, effects created inside `Counter` would never be cleaned up when the node is removed.
+
+## API
+
+```typescript
+function component<P extends Record<string, unknown>>(
+  fn: (props: P) => ComponentReturn,
+  props: P
+): ComponentReturn
+```
+
+- `fn`: The component function to wrap.
+- `props`: Props object passed to the component function.
+- **Returns**: The component's build result with the disposal scope attached.
 
 ## Key Concepts
 
 ### JSX vs Raw AST
 
-**With JSX (automatic):**
+With JSX, the wrapping is automatic:
 
 ```jsx
 const Counter = ({ initial }: { initial: number }) => <div>Count: {initial}</div>;
 
-// Babel transforms this to component(Counter, { initial: 5 })
-<Counter initial={5} />
+// The plugin compiles this to component(Counter, { initial: 5 })
+<Counter initial={5} />;
 ```
 
-**With raw AST (manual):**
+With a hand-built tree, you wrap by hand:
 
 ```js
-// You must wrap manually
 component(Counter, { initial: 5 })
 ```
 
-## Important Considerations
+### Each Level Needs Its Own Scope
 
-### Always Wrap Components
-
-Without `component()`, effects leak and are never cleaned up:
-
-```js
-// ❌ Effects will leak
-const app = {
-  tag: "div",
-  children: [Counter({ initial: 5 })]  // Direct call - no cleanup!
-};
-
-// ✅ Effects properly scoped
-const app = {
-  tag: "div",
-  children: [component(Counter, { initial: 5 })]
-};
-```
-
-### Passthrough Components
-
-Some special components like `ForEach`, `Portal`, `Lazy`, `Transition`, and `Suspense` bypass the `component()` wrapper because they manage their own cleanup:
-
-```jsx
-import { ForEach, Portal, Lazy } from "@hellajs/dom";
-
-const items = ["a", "b", "c"];
-const renderItem = (item: string) => <li>{item}</li>;
-
-// These components have `isDynamic: true` and are called directly without the `component()` wrapper
-const list = ForEach({ each: items, use: renderItem });
-const portal = Portal({ to: "#modal", children: [<div>Modal content</div>] });
-const lazy = Lazy({ loader: () => import("./Heavy.js") });
-```
-
-### Nested Components
-
-Each component level needs its own scope:
+Nested components each get their own `component()` call, at every level:
 
 ```js
 const Parent = (props) => ({
   tag: "div",
   children: [
     component(Child, { name: "first" }),
-    component(Child, { name: "second" })
-  ]
+    component(Child, { name: "second" }),
+  ],
 });
 
 // Parent itself wrapped when used
 mount(component(Parent, {}), document.body);
+```
+
+## Important Considerations
+
+### Unwrapped Components Leak
+
+A direct component call creates effects with no owner:
+
+```js
+// ❌ Effects created inside Counter are never cleaned up
+const app = {
+  tag: "div",
+  children: [Counter({ initial: 5 })],
+};
+
+// ✅ Effects scoped and disposed with the node
+const app = {
+  tag: "div",
+  children: [component(Counter, { initial: 5 })],
+};
+```
+
+### Meta-Components Wrap Themselves
+
+[`ForEach`](/reference/dom/foreach), [`Portal`](/reference/dom/portal), [`Lazy`](/reference/dom/lazy), [`Transition`](/reference/dom/transition), and [`Suspense`](/reference/dom/suspense) manage their own cleanup: call them directly, without `component()`.
+
+```js
+import { ForEach } from "@hellajs/dom";
+
+const items = ["a", "b", "c"];
+const renderItem = (item) => ({ tag: "li", children: [item] });
+
+// No component() wrapper needed
+const list = ForEach({ each: items, use: renderItem });
 ```
