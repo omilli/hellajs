@@ -14,6 +14,8 @@ Decision index — jump to the section for the decision you are making. This gui
 | Function vs Prefix doc structure? | §Function & Prefix Docs |
 | Multi-method export (`resource`, `resourceCache`, `store`)? | §Multi-Method Exports |
 | Which section does new content go in? | §Content Scope → What Goes Where |
+| Content depth or internals disclosure? | §Content Strategy → Internals Budget |
+| Tone for a doc type? | §Content Strategy → Tone by Doc Type |
 | Signature format in `## API`? | §API Section |
 | Overloaded function? | §API Section → Overloaded Functions |
 | Callable namespace member (`ssr.async`)? | §API Section → Callable Namespaces |
@@ -29,7 +31,7 @@ Decision index — jump to the section for the decision you are making. This gui
 | Website wrapper page? | §Website Wrapper Pages |
 | Site-only / cross-package page? | §Website Wrapper Pages → Site-Authored Content Pages |
 
-Sections in order: File Locations & Naming · Decision Precedence · Template Selection · Function & Prefix Docs · Concept Docs · Pattern Docs · Index Docs · Tutorial Docs · Website Wrapper Pages · **Extending Existing Content** · Content Scope · API Section · Code Examples · Example Syntax (JSX Default) · Cross-References · Tables · Alert Boxes · Content Tone · Typography · Section Headings · Length Targets · Verification Checklist.
+Sections in order: File Locations & Naming · Decision Precedence · **Content Strategy** · Template Selection · Function & Prefix Docs · Concept Docs · Pattern Docs · Index Docs · Tutorial Docs · Website Wrapper Pages · **Extending Existing Content** · Content Scope · API Section · Code Examples · Example Syntax (JSX Default) · Cross-References · Tables · Alert Boxes · Typography · Section Headings · Length Targets · Verification Checklist.
 
 ## File Locations & Naming
 
@@ -59,10 +61,48 @@ layout: ../../../layouts/MainLayout.astro
 
 When rules conflict, resolve in this order:
 
-1. **Accuracy** — code examples must reflect actual behavior
-2. **Consistency** — follow the template structure and conventions
-3. **Clarity** — a reader unfamiliar with the codebase understands the doc
-4. **Examples first** — where an example can demonstrate the claim, lead with the example; prose carries only what code cannot show (constraints, ordering, gotchas)
+1. **Accuracy** — examples and claims match actual behavior
+2. **Reader clarity** — a developer new to HellaJS understands the doc without seeing the codebase (§Content Strategy)
+3. **Consistency** — follow the template structure and conventions
+4. **Brevity** — the shortest complete telling; the examples-first method (§Content Strategy) is the default route to all four
+
+## Content Strategy
+
+Docs serve a developer new to HellaJS reading top-down to accomplish a task. Every doc answers, in order: what is this for, how do I use it, what should I watch out for. The reader has not seen the codebase and never needs to.
+
+### Task-First Framing
+
+Open with the job the reader gets done, not the library's design. The one-line description states the outcome ("Animate elements in and out of the DOM with CSS classes"), never the internal shape ("returns a function with `isDynamic: true`" — that is implementation, and it lives in `## API` at most).
+
+### Examples First
+
+The example precedes its explanation. Per topic: runnable example, then prose naming what the example shows, then constraints and gotchas the example cannot show. Where a claim can be demonstrated, demonstrate it; prose carries only what code cannot (constraints, ordering, failure modes).
+
+### Internals Budget
+
+Internal mechanism appears only when it changes what the reader does. Test each candidate fact: does knowing this change how the reader writes code, calls the API, or debugs a failure?
+
+- **Passes**: state the observable behavior plus the required action; the mechanism gets at most one clause.
+- **Fails**: cut it. Marker comments, reconciliation maps, module-level clocks, algorithm names, and design rationale ("a component layer would rebuild machinery HellaJS already has") never appear.
+
+A mechanism the reader must act on is a contract, not an internal: document it as behavior ("call the dispose handle in the same path that closes the UI; several behaviors listen on `document`, and a skipped dispose leaks a live listener").
+
+### Plain Language
+
+Define package vocabulary on first use or replace it with everyday words; never stack unexplained terms. One idea per sentence; 1-4 sentences per paragraph. Present tense, direct voice, no hedging.
+
+### Progressive Depth
+
+Simplest to advanced within every doc: the opening example is the smallest complete use case; edge cases and advanced compositions follow the basics, never open the doc.
+
+### Tone by Doc Type
+
+| Doc type | Tone |
+|---|---|
+| API docs | Direct and factual. Describe behavior, not intentions: "Signals create reactive links", not "You can use signals to...". "Returns a class name", not "Will return...". |
+| Concept docs | Explanatory and educational; analogies allowed. Present tense, no hedging. Cross-reference API docs on first mention of each export. |
+| Pattern docs | Terse. One sentence per pattern, then the code. |
+| Tutorials | Conversational ("Let's build...", "Now add..."). Imperative for instructions; Code Explanation bullets stay factual. |
 
 ## Template Selection
 
@@ -82,13 +122,13 @@ Function docs use this structure. **Prefix docs are identical except**: use `## 
 
 One-line description of what the export does.
 
-## API                                    ← Function docs only
-
-TypeScript signature with parameter descriptions.
-
 ## Basic Usage / ## Usage                 ← "Basic Usage" for functions, "Usage" for prefixes
 
 Self-contained, runnable example with imports.
+
+## API                                    ← Function docs only
+
+TypeScript signature with parameter descriptions.
 
 ## Key Concepts (optional but common)
 
@@ -106,11 +146,13 @@ Pitfalls, anti-patterns, and edge cases.
 ### Section Rules
 
 - **`# Title`**: Always present. Matches the export name exactly (`# signal`, `# ForEach`, `# $ref`, `# on:`). Never skip.
-- **One-line description**: Always present immediately after the title. One sentence. Be consistent within a package (period for definition-style, no period for tagline-style).
-- **`## API`** (function docs only): Always present. TypeScript signature with parameter descriptions. Method `###` sub-headings (Multi-Method Exports pattern) are reserved for exported methods only — never interleave usage/examples/concepts between method sub-headings; those belong under `## Key Concepts` as a `###`.
-- **`## Basic Usage` / `## Usage`**: Always present. Self-contained, runnable, with imports.
+- **One-line description**: Always present immediately after the title. One sentence stating the reader's outcome (§Content Strategy → Task-First Framing). Be consistent within a package (period for definition-style, no period for tagline-style).
+- **`## Basic Usage` / `## Usage`**: Always present, always first after the description — the reader runs code before reading types (§Content Strategy → Examples First). Self-contained, runnable, with imports.
+- **`## API`** (function docs only): Always present, directly after `## Basic Usage`. TypeScript signature with parameter descriptions. Method `###` sub-headings (Multi-Method Exports pattern) are reserved for exported methods only — never interleave usage/examples/concepts between method sub-headings; those belong under `## Key Concepts` as a `###`.
 - **`## Key Concepts`**: Present when there are multiple behaviors/features to explain. `###` sub-headings for each. Any non-standard content lives here as a `###`.
 - **`## Important Considerations`**: For gotchas/anti-patterns/non-obvious behaviors. `###` sub-headings for each.
+
+**Order migration**: docs written before the example-first order (`## API` preceding `## Basic Usage`) are pending a batched migration; new and revised docs use the order above. `audit-docs` reports legacy order as one sweep finding, not a per-doc blocker.
 
 ## Concept Docs
 
@@ -136,6 +178,8 @@ Detailed explanation.
 
 - **`# Title`**: Always present. Capitalized concept name (`# Routing`, `# State`, `# Styling`). Exception: ui component concept docs consumed by a ui-section wrapper page omit the H1 — the wrapper page's `<h1>` is the page's only top-level heading and the doc opens at `## API`.
 - **`##` sections**: Free-form, organized by topic. Use descriptive section names.
+- **Section order**: simplest to advanced (§Content Strategy → Progressive Depth); the first example is the smallest complete use case.
+- **Internals**: pass the §Content Strategy → Internals Budget test; concept docs explain behavior and contracts, never machinery or design rationale.
 - **Hella terms only**: ui component concept docs describe behavior in hella terms; upstream-catalog references (shadcn, Radix, "the ref") do not appear in component docs — catalog provenance lives in `packages/ui/README.md` and `ui-comparison.md`.
 - **Code examples**: Self-contained with imports on first example per page.
 - **Cross-references**: Link to API docs on first mention of each export.
@@ -666,15 +710,6 @@ For single-sentence callouts needing more emphasis than plain prose but less tha
 
 At most one per section. Prefer inline `⚠️` for in-code warnings; Callout components for multi-sentence or critical warnings.
 
-## Content Tone
-
-All doc types: present tense, no hedging ("Prevents propagation" not "Helps prevent propagation"). Where an example can demonstrate the claim, lead with the example; prose carries only what code cannot show (constraints, ordering, gotchas).
-
-- **API Docs**: Direct and factual. No "you can" or "you might want to". Describe behavior, not intentions: "Signals create reactive links" not "You can use signals to create reactive links". "Returns a class name" not "Will return a class name".
-- **Concept Docs**: Explanatory and educational. May use analogies. Still present tense, no hedging. Cross-reference API docs on first mention of each export.
-- **Pattern Docs**: Terse. Minimal prose, let the code speak. One sentence intro per pattern, then the code block.
-- **Tutorial Docs**: Conversational ("Let's build...", "Now add...", "Try clicking..."). Present tense for descriptions, imperative for instructions. Code Explanation bullets use factual tone (not conversational).
-
 ## Typography
 
 Em dashes (`—`, `&mdash;`, `&#8212;`, `&#x2014;`, `&#8213;`) and en dashes (`–`, `&ndash;`, `&#x2013;`) are **banned** in every user-facing file: root and site READMEs, `packages/{pkg}/docs/**/*.mdx`, package `README.md` / `CHANGELOG.md` / `{pkg}-comparison.md`, `plugins/{p}/README.md`, `examples/*/tutorial.mdx`, `docs/src/pages/**/*.mdx`, and `.changeset/*.md`. The ban covers prose, tables, frontmatter descriptions, and comments inside code blocks (fences are no exemption: tutorial code comments are user-visible). ASCII `-` stays legal everywhere (`--` CSS custom properties, `---` rules, hyphenated names).
@@ -692,7 +727,7 @@ Rewrites must not change meaning, link targets, identifiers, or fenced code sema
 
 ## Section Headings
 
-Headings at every level (`#`, `##`, `###`, `####`) must describe their specific topic. Generic labels — `Overview`, `Summary`, `Comparison`, `Implementation`, `Lifecycle`, `Details` — communicate nothing to a reader scanning the table of contents and are **banned**. Internal implementation mechanics are not documented at all — no source dumps and no internals sections. Name the subject directly or cut the content.
+Headings at every level (`#`, `##`, `###`, `####`) must describe their specific topic. Generic labels — `Overview`, `Summary`, `Comparison`, `Implementation`, `Lifecycle`, `Details` — communicate nothing to a reader scanning the table of contents and are **banned**. Internal implementation mechanics are not documented at all — no source dumps and no internals sections; §Content Strategy → Internals Budget is the governing rule. Name the subject directly or cut the content.
 
 Name the subject directly: `### JSX vs Raw AST` instead of `### Comparison`; `### Connection, Disconnection, and Reconnection` instead of `### Lifecycle`.
 
@@ -726,11 +761,17 @@ Run this when holding a Docs file (`.mdx` / `.md`). Each item is a yes/no or a c
 
 **Structure (Function & Prefix docs)**
 - [ ] `# Title` matches the export name exactly (`# signal`, `# ForEach`, `# on:`)
-- [ ] One-line description immediately after the title
-- [ ] `## API` present (Function docs only); `## Basic Usage` (functions) / `## Usage` (prefixes)
+- [ ] One-line description immediately after the title; states the reader's outcome, not the internal shape (§Content Strategy → Task-First Framing)
+- [ ] `## Basic Usage` (functions) / `## Usage` (prefixes) present and first; `## API` (Function docs only) directly after it — new and revised docs use the example-first order, legacy signature-first docs are pending batched migration
 - [ ] Multi-method exports use `###` sub-headings under `## API`; no usage interleaved between methods
 - [ ] Callable-namespace members shown as valid TypeScript — typed namespace-object block or call site, never pseudo-syntax (§API Section → Callable Namespaces)
 - [ ] Interface blocks carry no trailing member comments (doc-snippets signature-only detector; type imports from skipped signature blocks are discarded)
+
+**Content strategy**
+- [ ] Every topic: runnable example before its explanation; prose carries only what code cannot show (§Content Strategy → Examples First)
+- [ ] Internals pass the budget test — observable behavior plus required action, mechanism at most one clause; no marker comments, module-level clocks, algorithm names, or design rationale (§Content Strategy → Internals Budget)
+- [ ] No unexplained vocabulary; first use is defined or replaced with everyday words (§Content Strategy → Plain Language)
+- [ ] Content ordered simplest to advanced; the opening example is the smallest complete use case (§Content Strategy → Progressive Depth)
 
 **Code examples**
 - [ ] `typescript` for annotated API code; `js` for plain JavaScript; `jsx` for JSX; correct tag per §Language Tags
@@ -763,7 +804,7 @@ Run this when holding a Docs file (`.mdx` / `.md`). Each item is a yes/no or a c
 - [ ] Function/method names backtick-wrapped in cross-references; concepts and subpath modules in plain text (backticked names must be barrel exports; enforced by `vp run doc-links`)
 - [ ] Full path format `/reference/{package}/{export}`; link on first mention only
 - [ ] No `## Related` section; cross-references inline
-- [ ] Present tense, no hedging; tone matches doc type (API = factual, Concept = educational, Pattern = terse)
+- [ ] Present tense, no hedging; tone matches doc type (§Content Strategy → Tone by Doc Type)
 
 **Typography**
 - [ ] No em/en dashes or their HTML entities in any user-facing file (prose, tables, frontmatter descriptions, code-block comments); numeric ranges use ASCII hyphens; enforced by `vp run em-dash` (composed into `vp run lint:guards`)

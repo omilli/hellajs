@@ -71,7 +71,7 @@
 
   ## Skills
 
-  Thirteen first-party skills: a behavioural backbone, a discovery→plan→worker→feedback→memory loop, and the meta skills maintaining it. Edit them directly via `author` (voice, skill anatomy, cross-reference sync); `feedback` proposals may target skills as well as `AGENTS.md`. No global-inherited layer, no graceful-degradation fallback. `prime` loads first on any substantive task; the rest are discovered on demand.
+  Fourteen first-party skills: a behavioural backbone, a discovery→plan→worker→feedback→memory loop, the production skills (author, docs-writer), and the meta skills maintaining it. Edit them directly via `author` (voice, skill anatomy, cross-reference sync); `feedback` proposals may target skills as well as `AGENTS.md`. No global-inherited layer, no graceful-degradation fallback. `prime` loads first on any substantive task; the rest are discovered on demand.
 
   The loop: `idea` / `audit-*` / `feature` (entry) → `plan` → `worker` (back to `plan` on a gap, `idea` on a fork) → `feedback` → `memory`. A guide conflict emits a guide-update proposal (§Non-negotiables). A codebase-fact drift — AGENTS.md prose describing behavior the source has outgrown (file maps, invariant one-liners) — is not a rule conflict: route it to `plan` as a factual fix in the change's blast radius. A Break-severity finding from any entry skill carries an empirical repro (a failing command/test) or a source-read enumeration of every path realizing it — a narrated scenario is not evidence; `plan` refuses to pin a DoD test to an unverified Break.
 
@@ -90,6 +90,7 @@
   | `feedback` | After a run: thread-scan the session transcript (failed/repeated commands, context bloat, wasted round-trips) for ground-truth evidence, then conservatively apply config/skill edits, uncommitted. |
   | `memory` | Persist verified decisions/facts to `memory/`; refresh/nuke. |
   | `author` | Author/revise `AGENTS.md`, agent prompts, rules files, skills. Standalone. |
+  | `docs-writer` | Produce/revise package docs: read the source contract, frame by reader task, draft example-first, hold internals to the budget; pairs with `guides/docs.md` (rules) as its production counterpart. Standalone. |
 
   Plus one standalone project skill outside the pack: `comparison` (`.agents/skills/comparison/`) — generate a package comparison doc vs competitors.
 
@@ -114,7 +115,7 @@
   |---|---|
   | Writing/editing source, types, JSDoc, imports, package structure | `guides/code.md` |
   | Writing tests or assertions | `guides/tests.md` |
-  | Writing docs, `.mdx`, or examples | `guides/docs.md` |
+  | Writing docs, `.mdx`, or examples | `guides/docs.md` + `docs-writer` skill (production method) |
   | Writing build scripts (`scripts/**`, `utils/**`) | `guides/scripts.md` |
 
   Config files (`tsconfig*`, `vite.config.ts`, `lint/*.js`, `package.json`, build plugins) follow `guides/code.md` plus its Config verification checklist. A file is verified against the guide matching its *own* extension, not the task's Type tag — a `*.test.ts` against `tests.md`, `.md`/`.mdx` against `docs.md`, `*.ts`/`*.tsx`/`*.mjs` under `lib/`/`scripts/`/`plugins/` against `code.md`.
