@@ -62,7 +62,7 @@ Copied source imports packages as regular dependencies of your project. `add` re
 | Any component, css style | `@hellajs/css` |
 | Any component, tailwind style | `clsx`, `tailwind-merge`, `tw-animate-css` |
 
-Every component entry declares `@hellajs/core` and `@hellajs/dom` as base peers; `add` checks them in your `package.json` alongside the style's extras.
+Every component entry declares `@hellajs/core` and `@hellajs/dom` as base peers; the components that wire behaviors (menus, popovers, select, combobox, tabs, radio-group, slider, resizable, scroll-area, sonner, sidebar, tooltip, hover-card, drawer, sheet, dialog, alert-dialog, command) also declare `@hellajs/headless`. `add` checks them in your `package.json` alongside the style's extras.
 
 ## The cn Helper
 

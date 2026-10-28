@@ -1,5 +1,5 @@
 import { signal } from "@hellajs/core";
-import { onDrag } from "@hellajs/dom";
+import { onDrag } from "@hellajs/headless";
 import type { HTMLAttributes } from "@hellajs/dom";
 
 interface SliderProps extends HTMLAttributes<"span"> {

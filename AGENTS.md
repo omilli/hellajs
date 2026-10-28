@@ -23,7 +23,8 @@
   | Package | Responsibility |
   |---|---|
   | core | Reactive primitives over a doubly-linked dependency DAG: signals = sources, computed = transforms, effects = sinks. Glitch-free, topological propagation. |
-  | dom | Surgical DOM updates (no VDOM): scoped MutationObserver cleanup, capture-phase event delegation, keyed list reconciliation (LIS), portals, lazy/async components, transitions, reactive refs, error boundaries, `hydrate()`, and the headless behavior functions (focus trap, escape/outside dismissal, roving tabindex, anchor positioning, hover intent, menu typeahead, pointer drag, layered dismissal). |
+  | dom | Surgical DOM updates (no VDOM): scoped MutationObserver cleanup, capture-phase event delegation, keyed list reconciliation (LIS), portals, lazy/async components, transitions, reactive refs, error boundaries, `hydrate()`. |
+  | headless | Headless behavior functions (focus trap, escape/outside dismissal, roving tabindex, anchor positioning, hover intent, menu typeahead, pointer drag/swipe/pinch/long-press/double-tap, layered dismissal) plus the foundation layer the ui registry templates consume; takes signals in and returns wiring (state stays in the user's signals). Deps core+dom. |
   | css | Type-safe CSS-in-JS: `css()` + scoped `style()` (content-hashed class), `cssText()` SSR collector, text-keyed refcounting, reactive `vars()`, `cva()` recipes, `cx()`. |
   | resource | Reactive async fetching: fetcher-scoped cache (LRU + TTL), dedup, SWR, abort control, optimistic mutations, polling/retry. |
   | router | Reactive routing: nested routes, parameter inheritance, lifecycle hooks, History API. Resolution: redirects → nested → flat → notFound. |

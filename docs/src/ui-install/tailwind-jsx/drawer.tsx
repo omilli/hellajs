@@ -1,6 +1,7 @@
 import { effect, signal } from "@hellajs/core";
-import { onDrag, onEscape, onOutside, Portal, trapFocus } from "@hellajs/dom";
+import { Portal, registry } from "@hellajs/dom";
 import type { HellaChild, HellaChildren, HTMLAttributes } from "@hellajs/dom";
+import { modal, onDrag } from "@hellajs/headless";
 import type { Signal } from "@hellajs/core";
 
 type DrawerState = () => "open" | "closed";
@@ -213,8 +214,6 @@ export function DrawerContent({
   class: cls,
   ...attrs
 }: DrawerContentProps): JSX.Element {
-  const wirings: (() => void)[] = [];
-  const teardown: (() => void)[] = [];
   let panel: HTMLElement | undefined;
   const direction = drawerDirection ?? "bottom";
   let dragging = false;
@@ -223,33 +222,16 @@ export function DrawerContent({
   // last two drag samples — the release velocity source.
   let samples: { d: number; t: number }[] = [];
 
-  const disposeWirings = (): void => {
-    while (wirings.length) wirings.pop()!();
-  };
-
-  const installWirings = (): void => {
-    if (panel === undefined || wirings.length > 0 || state?.() === "closed") return;
-    const target = panel;
-    if (closeOnEscape !== false && onClose) wirings.push(onEscape(target, onClose));
-    if (closeOnOutside !== false && onClose) wirings.push(onOutside(() => [target], onClose));
-    wirings.push(trapFocus(target));
-  };
-
   const startExit = (): void => {
     if (panel === undefined || !panel.isConnected) return;
     panel.style.transform = EXIT_TRANSFORM[direction];
   };
 
-  // The exit runs unwired: flipping to "closed" tears the trap/escape/outside
-  // handlers down immediately, slides the panel off-edge through the restored
-  // transition, and reopening re-arms them without a remount.
+  // The close flip slides the panel off-edge through the restored transition
+  // (trap/escape/outside disarm through modal's own re-arm); reopening
+  // re-arms without a remount.
   effect(() => {
-    if (state?.() === "closed") {
-      disposeWirings();
-      startExit();
-    } else {
-      installWirings();
-    }
+    if (state?.() === "closed") startExit();
   });
 
   const releaseVelocity = (): number => {
@@ -277,18 +259,19 @@ export function DrawerContent({
         node.style.transform = EXIT_TRANSFORM[direction];
         void node.offsetWidth;
         node.style.transform = "";
-        installWirings();
-        // The exit's transitionend (state already "closed") is the primary
-        // unmount trigger; the copied fallback budget in the root is the net.
-        const onTransitionEnd = (event: TransitionEvent): void => {
-          if (event.target === node && event.propertyName === "transform" && state?.() === "closed")
-            onExited?.();
-        };
-        node.addEventListener("transitionend", onTransitionEnd);
-        teardown.push(() => node.removeEventListener("transitionend", onTransitionEnd));
+        // A manual composition without a state getter arms permanently and
+        // disposes with the panel.
+        modal(node, {
+          state: state ?? (() => "open"),
+          onClose,
+          escape: closeOnEscape,
+          outside: closeOnOutside,
+          onExited,
+        });
         // Whole-panel drag along the dismissal axis. Interactive elements opt
-        // out so buttons inside the panel stay clickable.
-        teardown.push(
+        // out so buttons inside the panel stay clickable. Node-registered, so
+        // the wiring disposes when the panel leaves the DOM.
+        registry.addEffect(node, () =>
           onDrag(node, {
             onStart: (event) => {
               if (state?.() !== "open") return;
@@ -331,10 +314,6 @@ export function DrawerContent({
             },
           }),
         );
-      }}
-      hook:beforeDestroy={() => {
-        disposeWirings();
-        while (teardown.length) teardown.pop()!();
       }}
       {...attrs}
     >

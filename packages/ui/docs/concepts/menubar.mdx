@@ -4,7 +4,7 @@ The `Menubar` root renders the `role="menubar"` bar and owns which menu is open:
 
 The bar and its menus coordinate through a document-level announcement: opening a menu announces its id, siblings close on a foreign announcement (the second trigger click closes the first menu), and the bar mirrors the announcement into its value store.
 
-The content anchors against its trigger (bottom, start aligned, 8px gap, -4px cross-axis shift) and dismisses through [`layerDismissal`](/reference/dom/layerdismissal): Escape and an outside pointerdown close the top layer, item activation closes every open layer, and focus returns to the trigger.
+The content anchors against its trigger (bottom, start aligned, 8px gap, -4px cross-axis shift) and dismisses through [`layerDismissal`](/reference/headless/layerdismissal): Escape and an outside pointerdown close the top layer, item activation closes every open layer, and focus returns to the trigger.
 
 Fourteen named parts ship beside the default `Menubar`: `MenubarMenu`, `MenubarTrigger`, `MenubarGroup`, `MenubarContent`, `MenubarItem`, `MenubarCheckboxItem`, `MenubarRadioGroup`, `MenubarRadioItem`, `MenubarLabel`, `MenubarSeparator`, `MenubarShortcut`, `MenubarSub`, `MenubarSubTrigger`, and `MenubarSubContent`. The item parts take the same explicit-state props as their dropdown-menu counterparts: the checkbox item takes a `checked` accessor, the radio group is items-driven, and each sub owns its own open signal with hover-intent timing.
 

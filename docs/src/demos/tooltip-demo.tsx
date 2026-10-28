@@ -1,7 +1,8 @@
 import { signal } from "@hellajs/core";
 import { Button } from "@components/ui/button.js";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip.js";
-import { hoverIntent, Portal } from "@hellajs/dom";
+import { Portal } from "@hellajs/dom";
+import { hoverIntent } from "@hellajs/headless";
 
 export function TooltipDemo() {
   return (

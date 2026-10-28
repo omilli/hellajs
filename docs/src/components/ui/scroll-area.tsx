@@ -1,5 +1,5 @@
 import { signal } from "@hellajs/core";
-import { onDrag } from "@hellajs/dom";
+import { onDrag } from "@hellajs/headless";
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 interface ScrollBarProps extends HTMLAttributes<"div"> {

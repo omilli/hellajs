@@ -1,0 +1,40 @@
+{
+  "name": "@hellajs/headless",
+  "version": "1.4.2",
+  "homepage": "https://github.com/omilli/hellajs.git",
+  "bugs": {
+    "url": "https://github.com/omilli/hellajs/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/omilli/hellajs.git",
+    "directory": "packages/headless"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "import": "./dist/*.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "peerDependencies": {
+    "@hellajs/core": "^1.0.11",
+    "@hellajs/dom": "^1.4.2"
+  }
+}

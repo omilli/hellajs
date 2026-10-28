@@ -45,6 +45,7 @@
     "@hellajs/core": "*",
     "@hellajs/css": "*",
     "@hellajs/dom": "*",
+    "@hellajs/headless": "*",
     "@hellajs/resource": "*",
     "@hellajs/router": "*",
     "@hellajs/ssr": "*",

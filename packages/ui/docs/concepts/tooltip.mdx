@@ -2,9 +2,9 @@
 
 A hover-triggered label: the trigger wraps your content, the label portals into `document.body`, opens after a hover delay, and anchors to the trigger with collision flipping. Keyboard focus opens it with the same path a pointer takes.
 
-The composed `Tooltip` wraps its children in the trigger span. Hovering starts the open timer; leaving starts the close timer; focusing the trigger follows the same path for keyboard users. Adjacent triggers share a 500ms skip window through [`hoverIntent`](/reference/dom/hoverintent): moving from one tooltip straight onto another opens the next one instantly, without paying the delay again - after 500ms without any tooltip open, the full delay applies.
+The composed `Tooltip` wraps its children in the trigger span. Hovering starts the open timer; leaving starts the close timer; focusing the trigger follows the same path for keyboard users. Adjacent triggers share a 500ms skip window through [`hoverIntent`](/reference/headless/hoverintent): moving from one tooltip straight onto another opens the next one instantly, without paying the delay again - after 500ms without any tooltip open, the full delay applies.
 
-Three named parts ship beside the default `Tooltip`: `TooltipTrigger`, `TooltipContent`, and `TooltipProvider`. State is explicit - portal the content yourself, hand it a `state` accessor, and wire the trigger's hover with [`hoverIntent`](/reference/dom/hoverintent).
+Three named parts ship beside the default `Tooltip`: `TooltipTrigger`, `TooltipContent`, and `TooltipProvider`. State is explicit - portal the content yourself, hand it a `state` accessor, and wire the trigger's hover with [`hoverIntent`](/reference/headless/hoverintent).
 
 ### Tooltip
 
@@ -22,7 +22,7 @@ Accepts all native `span` attributes (forwarded to the root element).
 
 ### TooltipTrigger
 
-The manual trigger span; the composed `Tooltip` renders the same shape wired to [`hoverIntent`](/reference/dom/hoverintent) and carries the label's id as its `aria-describedby`.
+The manual trigger span; the composed `Tooltip` renders the same shape wired to [`hoverIntent`](/reference/headless/hoverintent) and carries the label's id as its `aria-describedby`.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
@@ -31,7 +31,7 @@ Accepts all native `span` attributes (forwarded to the root element).
 
 ### TooltipContent
 
-The `role="tooltip"` label carrying `data-slot="tooltip-content"`, positioned through [`anchorPosition`](/reference/dom/anchorposition) (fixed coordinates against the trigger, flipping to the opposite side on viewport collision, repositioning on scroll and resize).
+The `role="tooltip"` label carrying `data-slot="tooltip-content"`, positioned through [`anchorPosition`](/reference/headless/anchorposition) (fixed coordinates against the trigger, flipping to the opposite side on viewport collision, repositioning on scroll and resize).
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |

@@ -1,6 +1,7 @@
 import { effect, signal } from "@hellajs/core";
-import { onEscape, Portal, trapFocus } from "@hellajs/dom";
+import { Portal } from "@hellajs/dom";
 import type { HellaChild, HellaChildren, HTMLAttributes } from "@hellajs/dom";
+import { modal } from "@hellajs/headless";
 
 type AlertDialogState = () => "open" | "closed";
 
@@ -170,28 +171,6 @@ export function AlertDialogContent({
   class: cls,
   ...attrs
 }: AlertDialogContentProps): JSX.Element {
-  const wirings: (() => void)[] = [];
-  const teardown: (() => void)[] = [];
-  let panel: HTMLElement | undefined;
-
-  const disposeWirings = (): void => {
-    while (wirings.length) wirings.pop()!();
-  };
-
-  const installWirings = (): void => {
-    if (panel === undefined || wirings.length > 0 || state?.() === "closed") return;
-    const target = panel;
-    if (closeOnEscape !== false && onClose) wirings.push(onEscape(target, onClose));
-    wirings.push(trapFocus(target));
-  };
-
-  // The exit runs unwired: flipping to "closed" tears the trap/escape
-  // handlers down immediately; reopening re-arms them without a remount.
-  effect(() => {
-    if (state?.() === "closed") disposeWirings();
-    else installWirings();
-  });
-
   return (
     <div
       data-slot="alert-dialog-content"
@@ -204,19 +183,15 @@ export function AlertDialogContent({
       }
       hook:afterMount={(node) => {
         if (!(node instanceof HTMLElement)) return;
-        panel = node;
-        installWirings();
-        // The exit's animationend (state already "closed") is the primary
-        // unmount trigger; the entry's animationend is ignored.
-        const onAnimationEnd = (): void => {
-          if (state?.() === "closed") onExited?.();
-        };
-        node.addEventListener("animationend", onAnimationEnd);
-        teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
-      }}
-      hook:beforeDestroy={() => {
-        disposeWirings();
-        while (teardown.length) teardown.pop()!();
+        // A manual composition without a state getter arms permanently and
+        // disposes with the panel.
+        modal(node, {
+          state: state ?? (() => "open"),
+          onClose,
+          escape: closeOnEscape,
+          outside: false,
+          onExited,
+        });
       }}
       {...attrs}
     >

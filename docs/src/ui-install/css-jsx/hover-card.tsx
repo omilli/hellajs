@@ -1,6 +1,8 @@
 import { effect, signal } from "@hellajs/core";
-import { anchorPosition, hoverIntent, Portal } from "@hellajs/dom";
-import type { HellaChild, HellaChildren, Placement, HTMLAttributes } from "@hellajs/dom";
+import { Portal } from "@hellajs/dom";
+import type { HellaChild, HellaChildren, HTMLAttributes } from "@hellajs/dom";
+import { anchorPosition, hoverIntent } from "@hellajs/headless";
+import type { Placement } from "@hellajs/headless";
 
 type AnchorSide = "top" | "bottom" | "left" | "right";
 

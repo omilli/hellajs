@@ -1,6 +1,6 @@
 ## API
 
-The composed `Combobox` takes its options as data and renders the input shell plus the portaled panel: focusing the input opens the panel, typing filters it. The copied file carries its input-group shell inline (the entry never cross-imports) and wires its positioning, dismissal, and typeahead from the `@hellajs/dom` behavior functions.
+The composed `Combobox` takes its options as data and renders the input shell plus the portaled panel: focusing the input opens the panel, typing filters it. The copied file carries its input-group shell inline (the entry never cross-imports) and wires its positioning, dismissal, and typeahead from the `@hellajs/headless` behavior functions.
 
 The input always shows the query, never the selection: the selected value lives in `onValueChange` (render it through `ComboboxValue` where needed). The combobox submits nothing by itself; pair it with `native-select` (or a hidden input of your own) when a form needs the value.
 
@@ -240,11 +240,11 @@ const PrefixPicker = () => (
 
 ## Keyboard and Multiple Selection
 
-The input keeps focus the whole time (`role="combobox"`): ArrowDown and ArrowUp move the active option (skipping disabled entries, wrapping at the edges), Enter commits it, and Escape clears the query and then closes. The active option carries `data-highlighted`, and the input's `aria-activedescendant` points at its id. Printable keystrokes also feed a [`menuTypeahead`](/reference/dom/menutypeahead) buffer that walks the visible options, so typing refines the filter and the highlight together.
+The input keeps focus the whole time (`role="combobox"`): ArrowDown and ArrowUp move the active option (skipping disabled entries, wrapping at the edges), Enter commits it, and Escape clears the query and then closes. The active option carries `data-highlighted`, and the input's `aria-activedescendant` points at its id. Printable keystrokes also feed a [`menuTypeahead`](/reference/headless/menutypeahead) buffer that walks the visible options, so typing refines the filter and the highlight together.
 
 In single mode, Enter closes the panel and clears the query. In `multiple` mode, Enter toggles the active value in or out of the array and the panel stays open; each selected value renders as a `ComboboxChip` whose remove button toggles it back out. `showClear` adds a clear affordance that wipes the whole selection.
 
-Dismissal runs through [`layerDismissal`](/reference/dom/layerdismissal): Escape and a pointerdown outside the wrapper close the top layer. Closing starts the exit - the panel stays mounted under `data-state="closed"` until its animation ends, with dismissal wiring down while it leaves. The panel positions itself through [`anchorPosition`](/reference/dom/anchorposition) with `matchAnchorWidth`, anchored to the input wrapper (the chips wrapper in multiple mode), flipping sides on viewport collision.
+Dismissal runs through [`layerDismissal`](/reference/headless/layerdismissal): Escape and a pointerdown outside the wrapper close the top layer. Closing starts the exit - the panel stays mounted under `data-state="closed"` until its animation ends, with dismissal wiring down while it leaves. The panel positions itself through [`anchorPosition`](/reference/headless/anchorposition) with `matchAnchorWidth`, anchored to the input wrapper (the chips wrapper in multiple mode), flipping sides on viewport collision.
 
 ## Dynamic items
 

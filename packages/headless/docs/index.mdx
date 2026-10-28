@@ -1,0 +1,66 @@
+## Headless
+
+Headless behavior functions for common UI mechanics: trapping focus, Escape and outside dismissal, roving tabindex, anchor positioning, hover intent, menu typeahead, pointer gestures, and layered dismissal. Each is a plain function that takes elements and callbacks and returns a dispose handle; state stays in your signals. The functions take plain DOM nodes, so they compose with HellaJS templates, custom elements, or no renderer at all. The `modal` foundation composes the dialog-family wiring with automatic, node-scoped disposal instead of a dispose handle.
+
+### Installation
+
+```bash
+npm install @hellajs/core @hellajs/dom @hellajs/headless
+```
+
+### Example
+
+```jsx
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+import { trapFocus, onEscape, onOutside } from "@hellajs/headless";
+
+const open = signal(false);
+const cleanup: (() => void)[] = [];
+
+const Dialog = () => (
+  <div class="overlay">
+    <div
+      class="panel"
+      hook:afterMount={(node) => {
+        if (!(node instanceof HTMLElement)) return;
+        cleanup.push(
+          trapFocus(node),
+          onEscape(node, () => open(false)),
+          onOutside(() => [node], () => open(false))
+        );
+      }}
+      hook:beforeDestroy={() => {
+        cleanup.forEach((dispose) => dispose());
+        cleanup.length = 0;
+      }}
+    >
+      <button on:click={() => open(false)}>Close</button>
+    </div>
+  </div>
+);
+
+mount(<div>{() => (open() ? <Dialog /> : <p>Nothing open</p>)}</div>, "#app");
+```
+
+### API
+
+- **[trapFocus](/reference/headless/trapfocus)**: Keep Tab navigation inside a container
+- **[onEscape](/reference/headless/onescape)**: Call a handler on Escape at a target
+- **[onOutside](/reference/headless/onoutside)**: Call a handler on clicks outside elements
+- **[rovingTabIndex](/reference/headless/rovingtabindex)**: Arrow-key focus navigation over a group
+- **[anchorPosition](/reference/headless/anchorposition)**: Pin a floating element to an anchor, tracking scroll and resize
+- **[computeAnchorPosition](/reference/headless/computeanchorposition)**: Compute floating placement as pure math
+- **[hoverIntent](/reference/headless/hoverintent)**: Open and close overlays on hover or focus delays
+- **[menuTypeahead](/reference/headless/menutypeahead)**: Select menu items by typing
+- **[onDrag](/reference/headless/ondrag)**: Track pointer drags with total distance from the start
+- **[onSwipe](/reference/headless/onswipe)**: Commit or cancel swipes by distance or speed
+- **[onPinch](/reference/headless/onpinch)**: Track two-finger pinch zoom and pan
+- **[onLongPress](/reference/headless/onlongpress)**: Fire a handler after a press is held
+- **[onDoubleTap](/reference/headless/ondoubletap)**: Detect double taps, optionally reporting single taps
+- **[layerDismissal](/reference/headless/layerdismissal)**: Dismiss stacked overlays one layer at a time
+- **[modal](/reference/headless/modal)**: Arm a modal panel: trap, dismissal, and exit notification with automatic disposal
+
+### Concepts
+
+- **[Headless Behaviors](/learn/concepts/headless-behaviors)**: Focus traps, anchoring, hover intent, typeahead, gestures, and layered dismissal as plain functions

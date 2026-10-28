@@ -2,8 +2,8 @@
   "name": "js-framework-benchmark-hellajs",
   "version": "1.0.0",
   "private": true,
-  "type": "module",
   "author": "omilli",
+  "type": "module",
   "scripts": {
     "bundle": "rollup -c",
     "serve": "npm run bundle && bun index.html",

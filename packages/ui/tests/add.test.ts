@@ -267,8 +267,8 @@ describe("addComponent", () => {
   );
 
   test.each([
-    ["css", "@hellajs/core @hellajs/dom @hellajs/css"],
-    ["tailwind", "@hellajs/core @hellajs/dom tw-animate-css clsx tailwind-merge"],
+    ["css", "@hellajs/core @hellajs/dom @hellajs/css @hellajs/headless"],
+    ["tailwind", "@hellajs/core @hellajs/dom @hellajs/headless tw-animate-css clsx tailwind-merge"],
   ] as [UiStyle, string][])(
     "dialog peer warning names exactly the missing packages for the %s style",
     (style, installLine) => {
@@ -279,8 +279,8 @@ describe("addComponent", () => {
   );
 
   test.each([
-    ["css", "@hellajs/core @hellajs/dom @hellajs/css"],
-    ["tailwind", "@hellajs/core @hellajs/dom tw-animate-css clsx tailwind-merge"],
+    ["css", "@hellajs/core @hellajs/dom @hellajs/css @hellajs/headless"],
+    ["tailwind", "@hellajs/core @hellajs/dom @hellajs/headless tw-animate-css clsx tailwind-merge"],
   ] as [UiStyle, string][])(
     "tabs peer warning names exactly the missing packages for the %s style",
     (style, installLine) => {

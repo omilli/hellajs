@@ -21,6 +21,9 @@
       "@dom/*": [
         "../packages/dom/docs/*"
       ],
+      "@headless/*": [
+        "../packages/headless/docs/*"
+      ],
       "@resource/*": [
         "../packages/resource/docs/*"
       ],
@@ -32,9 +35,6 @@
       ],
       "@ssr/*": [
         "../packages/ssr/docs/*"
-      ],
-      "@primitives/*": [
-        "../packages/primitives/docs/*"
       ],
       "@ui/*": [
         "../packages/ui/docs/*"

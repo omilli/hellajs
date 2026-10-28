@@ -1,6 +1,7 @@
 import { describe, test, expect, beforeEach, afterEach, vi } from "vite-plus/test";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { mount, peekState, resetDom } from "@hellajs/dom";
+import { resetHeadless } from "@hellajs/headless";
 import {
   assertStructuralParity,
   classTokens,
@@ -23,12 +24,14 @@ import {
 let now: number;
 let originalNow: () => number;
 
-// resetTestState resets the @hellajs/dom instance; the compiled registry
-// components import the bare specifier, whose shared hoverIntent clock and layer
-// stack need the bare instance's own reset.
+// resetTestState resets the harness's instances; the compiled registry
+// components import the bare specifiers, so the bare dom and headless
+// instances get their own resets here — headless owns the shared hoverIntent
+// clock and layer stack.
 beforeEach(() => {
   resetTestState();
   resetDom();
+  resetHeadless();
   originalNow = Date.now;
   now = originalNow();
   Date.now = () => now;

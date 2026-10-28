@@ -92,6 +92,10 @@ export const navigation: Record<NavSection, NavEntry[]> = {
         "component",
         "registry",
         "runtime",
+      ]
+    },
+    {
+      headless: [
         "trapFocus",
         "onEscape",
         "onOutside",
@@ -106,6 +110,7 @@ export const navigation: Record<NavSection, NavEntry[]> = {
         "onLongPress",
         "onDoubleTap",
         "layerDismissal",
+        "modal",
       ]
     },
     {

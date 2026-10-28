@@ -2,7 +2,7 @@
 
 A click-toggled panel: the trigger button opens an anchored, non-modal surface; Escape and an outside press dismiss it; stacked popovers dismiss one layer at a time, top first.
 
-Clicking toggles; the trigger carries `data-state` and `aria-expanded` so styling and assistive tech track the open state. Dismissal runs through [`layerDismissal`](/reference/dom/layerdismissal): Escape and a pointerdown outside the panel ask the top layer to close. The popover is non-modal - no focus trap, and focus moves to the panel on open. Closing keeps the panel mounted under `data-state="closed"` until its exit animation ends, with the dismissal wiring down while it leaves.
+Clicking toggles; the trigger carries `data-state` and `aria-expanded` so styling and assistive tech track the open state. Dismissal runs through [`layerDismissal`](/reference/headless/layerdismissal): Escape and a pointerdown outside the panel ask the top layer to close. The popover is non-modal - no focus trap, and focus moves to the panel on open. Closing keeps the panel mounted under `data-state="closed"` until its exit animation ends, with the dismissal wiring down while it leaves.
 
 Six named parts ship beside the default `Popover`: `PopoverTrigger`, `PopoverContent`, `PopoverAnchor`, `PopoverHeader`, `PopoverTitle`, and `PopoverDescription`. State is explicit - portal the content yourself, hand it a `state` accessor and an `onDismiss` callback, and point its `anchor` at whatever should anchor it.
 
@@ -33,7 +33,7 @@ Accepts all native `button` attributes (forwarded to the root element).
 
 ### PopoverContent
 
-The `role="dialog"` panel carrying `tabindex="-1"` for the focus-on-open contract, positioned through [`anchorPosition`](/reference/dom/anchorposition) (fixed coordinates against the anchor, collision flipping, repositioning on scroll and resize) and dismissed through [`layerDismissal`](/reference/dom/layerdismissal) (Escape and outside pointerdown close only the top layer, so popovers stack cleanly). Composing it without `onDismiss` holds the panel open by never installing that wiring.
+The `role="dialog"` panel carrying `tabindex="-1"` for the focus-on-open contract, positioned through [`anchorPosition`](/reference/headless/anchorposition) (fixed coordinates against the anchor, collision flipping, repositioning on scroll and resize) and dismissed through [`layerDismissal`](/reference/headless/layerdismissal) (Escape and outside pointerdown close only the top layer, so popovers stack cleanly). Composing it without `onDismiss` holds the panel open by never installing that wiring.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |

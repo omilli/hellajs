@@ -1,6 +1,8 @@
 import { effect, signal } from "@hellajs/core";
-import { anchorPosition, ForEach, layerDismissal, menuTypeahead, Portal } from "@hellajs/dom";
-import type { Placement, HTMLAttributes, HellaChildren } from "@hellajs/dom";
+import { ForEach, Portal } from "@hellajs/dom";
+import { anchorPosition, layerDismissal, menuTypeahead } from "@hellajs/headless";
+import type { Placement } from "@hellajs/headless";
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 type AnchorSide = "top" | "bottom" | "left" | "right";
 

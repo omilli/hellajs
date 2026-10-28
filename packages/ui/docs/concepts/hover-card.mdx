@@ -2,11 +2,11 @@
 
 A rich preview card: hovering a trigger opens an anchored panel, moving the pointer into the panel keeps it open, and leaving both closes it. Keyboard focus follows the same open and close path a pointer takes.
 
-Two named parts ship beside the default `HoverCard`: `HoverCardTrigger` and `HoverCardContent`. State is explicit - portal the content yourself, hand it a `state` accessor, and wire both regions' hover through [`hoverIntent`](/reference/dom/hoverintent).
+Two named parts ship beside the default `HoverCard`: `HoverCardTrigger` and `HoverCardContent`. State is explicit - portal the content yourself, hand it a `state` accessor, and wire both regions' hover through [`hoverIntent`](/reference/headless/hoverintent).
 
 ### HoverCard
 
-The composed `HoverCard` wraps its children in the trigger span. It opens 200ms after the pointer rests on the trigger and closes 300ms after it leaves. Moving the pointer from the trigger into the panel keeps it open: the content carries a second [`hoverIntent`](/reference/dom/hoverintent) with zero delays that re-arms the open state the moment the pointer enters, cancelling the trigger's pending close. Leaving the content closes it immediately; returning to the trigger cancels that close in turn, so crossing between the two regions in either direction never flickers. The `content` prop portals into `document.body` while open.
+The composed `HoverCard` wraps its children in the trigger span. It opens 200ms after the pointer rests on the trigger and closes 300ms after it leaves. Moving the pointer from the trigger into the panel keeps it open: the content carries a second [`hoverIntent`](/reference/headless/hoverintent) with zero delays that re-arms the open state the moment the pointer enters, cancelling the trigger's pending close. Leaving the content closes it immediately; returning to the trigger cancels that close in turn, so crossing between the two regions in either direction never flickers. The `content` prop portals into `document.body` while open.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
@@ -21,7 +21,7 @@ A controlled `open` stops the root from writing its internal signal; `onOpenChan
 
 ### HoverCardTrigger
 
-The manual trigger span; the composed `HoverCard` renders the same shape wired to [`hoverIntent`](/reference/dom/hoverintent) with the 200ms/300ms delays and focus parity.
+The manual trigger span; the composed `HoverCard` renders the same shape wired to [`hoverIntent`](/reference/headless/hoverintent) with the 200ms/300ms delays and focus parity.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
@@ -30,7 +30,7 @@ Accepts all native `span` attributes (forwarded to the root element).
 
 ### HoverCardContent
 
-The panel `div` carrying `data-slot="hover-card-content"`, positioned through [`anchorPosition`](/reference/dom/anchorposition) at a 4px offset. When both callbacks are given, hovering the content re-arms the open state with zero delays - the keep-open contract.
+The panel `div` carrying `data-slot="hover-card-content"`, positioned through [`anchorPosition`](/reference/headless/anchorposition) at a 4px offset. When both callbacks are given, hovering the content re-arms the open state with zero delays - the keep-open contract.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
@@ -46,4 +46,4 @@ Accepts all native `div` attributes (forwarded to the root element).
 
 `state` drives `data-state` and the enter/exit cycle. The anchor resolves to the element the panel anchors to; positioning is skipped when undefined. `onOpen` fires when the pointer enters the panel, re-arming the open state; `onClose` fires when it leaves; `onExited` fires when the exit animation ends under `data-state="closed"`.
 
-Every part also takes a `class` string, landing last in its style composition. [`anchorPosition`](/reference/dom/anchorposition) fixes the coordinates against the trigger, flips on viewport collision, and repositions on scroll and resize.
+Every part also takes a `class` string, landing last in its style composition. [`anchorPosition`](/reference/headless/anchorposition) fixes the coordinates against the trigger, flips on viewport collision, and repositions on scroll and resize.

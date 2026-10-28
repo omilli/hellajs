@@ -1,0 +1,88 @@
+# modal
+
+Arm a modal panel in one call: focus trap, Escape and outside dismissal, and the exit hook the panel unmounts through, all disposed with the node.
+
+## Basic Usage
+
+```jsx
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+import { modal } from "@hellajs/headless";
+
+const open = signal(false);
+
+const Panel = () => (
+  <div
+    role="dialog"
+    aria-modal="true"
+    hook:afterMount={(node) => {
+      if (node instanceof HTMLElement) {
+        modal(node, {
+          state: () => (open() ? "open" : "closed"),
+          onClose: () => open(false),
+          onExited: () => showPanel(false),
+        });
+      }
+    }}
+  >
+    <button on:click={() => open(false)}>Close</button>
+  </div>
+);
+
+mount(<Panel />, "#app");
+// Flipping open() arms the trap, Escape, and outside dismissal; flipping it
+// back disarms them. When the panel's exit animation ends, onExited fires so
+// you can unmount. Removing the panel disposes everything.
+```
+
+## API
+
+```typescript
+function modal(node: HTMLElement, options: ModalOptions): void
+```
+
+| Option | Type | Description |
+|---|---|---|
+| `state` | `() => "open" \| "closed"` | The component's open-state getter. `"open"` arms the wiring, `"closed"` disarms it. |
+| `options.onClose` | `() => void` | Called by Escape and outside dismissal while armed. |
+| `options.escape` | `boolean` | Arm Escape-key dismissal. Default `true`. |
+| `options.outside` | `boolean` | Arm outside-pointerdown dismissal. Default `true`. |
+| `options.onExited` | `() => void` | Called when the exit animation or transition ends while `state()` is `"closed"`, the exit-unmount trigger. |
+
+- **Returns**: Nothing. The wiring disposes itself when the node leaves the DOM.
+- **Throws** when `node` or `state` is missing: `[headless] modal: node is required`, `[headless] modal: state is required`.
+
+## Key Concepts
+
+### Two Lifetimes
+
+The arms split by lifetime, which is what makes reopen work without a remount. The trap, Escape, and outside dismissal re-arm with the state getter: armed while `"open"`, disarmed the moment it flips to `"closed"`, re-armed on reopen. The exit listener ties to the node instead: installed once, kept through the close flip (removing it early would kill `onExited` before the exit animation ends), removed only when the node is destroyed.
+
+### Automatic, Node-Scoped Disposal
+
+The wiring registers on the element, not in your code. When the node leaves the DOM, the armed handlers and the exit listener are torn down with it. That is the difference from the dispose-handle behaviors: no `cleanup` array, no `hook:beforeDestroy` drain.
+
+### Exit Notification
+
+`onExited` fires on `animationend` while `state()` is `"closed"`, which covers CSS-animation exits (dialog, alert dialog, sheet). It also fires on the panel's own transform `transitionend`, which covers transition-based exits (drawer). The entry animation's end is ignored, so `onExited` reports only the exit.
+
+## Important Considerations
+
+### Missing onClose Disables the Dismissal Arms
+
+Escape and outside dismissal fire `onClose`, so without one there is nothing to call: with `escape` and `outside` at their defaults and no `onClose` passed, both arms stay off and only the focus trap arms. This mirrors the optional-handler semantics of `onEscape` and `onOutside`, and nothing throws.
+
+```typescript
+// Only the focus trap arms; Escape and outside clicks stay inert
+modal(node, { state });
+```
+
+### Input Validation
+
+`modal()` throws when the node or the state getter is missing.
+
+```typescript
+// ❌ Throws
+modal(null, { state }); // [headless] modal: node is required
+modal(node, {} as ModalOptions); // [headless] modal: state is required
+```

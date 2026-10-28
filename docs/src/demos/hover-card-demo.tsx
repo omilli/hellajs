@@ -1,6 +1,7 @@
 import { signal } from "@hellajs/core";
 import { style } from "@hellajs/css";
-import { hoverIntent, Portal } from "@hellajs/dom";
+import { Portal } from "@hellajs/dom";
+import { hoverIntent } from "@hellajs/headless";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@components/ui/hover-card.js";
 
 

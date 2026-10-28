@@ -18,24 +18,9 @@ export { component } from "./component";
 export { raw } from "./raw";
 export { registry } from "./registry";
 export { onError } from "./error";
-export { trapFocus } from "./trapFocus";
-export { onEscape } from "./onEscape";
-export { onOutside } from "./onOutside";
-export { rovingTabIndex } from "./rovingTabIndex";
-export { anchorPosition } from "./anchorPosition";
-export { computeAnchorPosition } from "./computeAnchorPosition";
-export { hoverIntent } from "./hoverIntent";
-export { menuTypeahead } from "./menuTypeahead";
-export { onDrag } from "./onDrag";
-export { onSwipe } from "./onSwipe";
-export { onPinch } from "./onPinch";
-export { onLongPress } from "./onLongPress";
-export { onDoubleTap } from "./onDoubleTap";
-export { layerDismissal } from "./layerDismissal";
 
 export type * from "./types/nodes";
 export type * from "./types/attributes";
-export type * from "./types/behaviors";
 
 declare global {
   namespace JSX {

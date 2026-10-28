@@ -1,6 +1,8 @@
 import { effect, signal } from "@hellajs/core";
-import { anchorPosition, hoverIntent, Portal } from "@hellajs/dom";
-import type { HellaChild, HellaChildren, Placement } from "@hellajs/dom";
+import { Portal } from "@hellajs/dom";
+import type { HellaChild, HellaChildren } from "@hellajs/dom";
+import { anchorPosition, hoverIntent } from "@hellajs/headless";
+import type { Placement } from "@hellajs/headless";
 import type {
   AnchorSide,
   AnchorAlign,

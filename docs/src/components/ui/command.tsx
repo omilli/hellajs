@@ -1,6 +1,7 @@
 import { effect, signal } from "@hellajs/core";
-import { onEscape, onOutside, Portal, trapFocus } from "@hellajs/dom";
+import { Portal } from "@hellajs/dom";
 import type { HellaChild, HTMLAttributes, HellaChildren } from "@hellajs/dom";
+import { onEscape, onOutside, trapFocus } from "@hellajs/headless";
 
 interface CommandItemData {
   value: string;

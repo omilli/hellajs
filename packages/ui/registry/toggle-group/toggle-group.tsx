@@ -1,5 +1,6 @@
 import { signal } from "@hellajs/core";
-import { ForEach, rovingTabIndex } from "@hellajs/dom";
+import { ForEach } from "@hellajs/dom";
+import { rovingTabIndex } from "@hellajs/headless";
 import type { ToggleGroupProps, ToggleGroupItemProps } from "./toggle-group-types.js";
 
 // @hella:styles

@@ -19,6 +19,6 @@ export default {
     typescript(),
     rollupHellaJS(),
     resolve(),
-    process.env.production && terser(TERSER_OPTIONS)
+    process.env.production && terser(TERSER_OPTIONS),
   ].filter(Boolean),
 };

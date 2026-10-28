@@ -1,6 +1,7 @@
 import { signal } from "@hellajs/core";
-import { $ref, ForEach, onDrag, Portal } from "@hellajs/dom";
+import { $ref, ForEach, Portal } from "@hellajs/dom";
 import type { HellaChild, HTMLAttributes } from "@hellajs/dom";
+import { onDrag } from "@hellajs/headless";
 import type { Signal } from "@hellajs/core";
 
 type ToastType = "success" | "error" | "warning" | "info";

@@ -1,4 +1,5 @@
 import { resetDom } from "@hellajs/dom";
+import { resetHeadless } from "@hellajs/headless";
 import { resetCss, resetVars } from "@hellajs/css";
 import { resetResource } from "@hellajs/resource";
 import { resetRouter } from "@hellajs/router";
@@ -138,6 +139,7 @@ export function getHostStylesheet(host) {
 export function resetTestState(html = '<div id="app"></div>') {
   document.body.innerHTML = html;
   resetDom();
+  resetHeadless();
   resetCss();
   resetVars();
   resetResource();

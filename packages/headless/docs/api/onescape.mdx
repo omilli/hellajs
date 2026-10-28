@@ -1,0 +1,88 @@
+# onEscape
+
+Call a handler when Escape is pressed on a target.
+
+## Basic Usage
+
+```jsx
+import { mount } from "@hellajs/dom";
+import { onEscape } from "@hellajs/headless";
+
+let dismiss: (() => void) | undefined;
+
+const Panel = () => (
+  <div
+    hook:afterMount={(node) => {
+      if (node instanceof HTMLElement) dismiss = onEscape(node, () => node.remove());
+    }}
+    hook:beforeDestroy={() => dismiss?.()}
+  >
+    Press Escape while focus is inside this panel to remove it
+  </div>
+);
+
+mount(<Panel />, "#app");
+```
+
+## API
+
+```typescript
+function onEscape(
+  target: Node | Window,
+  handler: () => void
+): () => void
+```
+
+- `target`: Node or window receiving the keydown. The listener fires for Escape keydowns on the target and anything bubbling into it.
+- `handler`: Zero-argument callback fired on Escape.
+- **Returns**: Dispose handle. Calling it removes the keydown listener.
+
+## Key Concepts
+
+### Escape Only
+
+The handler fires for `key === "Escape"` and nothing else; every other key is ignored without touching default behavior.
+
+### Pairs with onOutside
+
+Escape covers the keyboard close gesture; [`onOutside`](/reference/headless/onoutside) covers the pointer gesture. A dismissible panel wires both on the same node and disposes both on close:
+
+```jsx
+import { mount } from "@hellajs/dom";
+import { onEscape, onOutside } from "@hellajs/headless";
+
+const dismissals: (() => void)[] = [];
+const close = () => {
+  dismissals.forEach((dispose) => dispose());
+  dismissals.length = 0;
+};
+
+const Panel = () => (
+  <div
+    hook:afterMount={(node) => {
+      if (!(node instanceof HTMLElement)) return;
+      dismissals.push(onEscape(node, close), onOutside(() => [node], close));
+    }}
+    hook:beforeDestroy={close}
+  >
+    <button on:click={close}>Close</button>
+  </div>
+);
+
+mount(<Panel />, "#app");
+```
+
+## Important Considerations
+
+### Dispose With the Feature
+
+The listener attaches to the target for as long as the wiring lives. A component that unmounts must call the dispose handle in its cleanup path, or the handler keeps firing on a detached tree.
+
+### Input Validation
+
+`onEscape()` throws when `target` or `handler` is `null` or `undefined`: `[headless] onEscape: target is required`, `[headless] onEscape: handler is required`.
+
+```typescript
+// ❌ Throws
+onEscape(null, () => {}); // [headless] onEscape: target is required
+```

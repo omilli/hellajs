@@ -4,6 +4,7 @@ import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components import the bare
 // specifier, so the harness mount and the component's Portal/hover wiring share one dom instance.
 import { mount, peekState, resetDom } from "@hellajs/dom";
+import { resetHeadless } from "@hellajs/headless";
 import {
   assertAttrForwarded,
   assertHandlerForwarded,
@@ -26,10 +27,12 @@ import { pointerEnter } from "./helpers/anchored";
 
 beforeEach(() => {
   resetTestState();
-  // resetTestState resets the @hellajs/dom instance; the compiled registry
-  // components import the bare specifier, whose shared hoverIntent clock and layer
-  // stack need the bare instance's own reset.
+  // resetTestState resets the harness's instances; the compiled registry
+  // components import the bare specifiers, so the bare dom and headless
+  // instances get their own resets here — headless owns the shared hoverIntent
+  // clock and layer stack.
   resetDom();
+  resetHeadless();
   installMediaStub();
 });
 

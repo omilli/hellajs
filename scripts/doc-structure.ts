@@ -113,6 +113,7 @@ const ALIAS_DIRS: Record<string, string> = {
   core: "packages/core/docs",
   css: "packages/css/docs",
   dom: "packages/dom/docs",
+  headless: "packages/headless/docs",
   resource: "packages/resource/docs",
   router: "packages/router/docs",
   store: "packages/store/docs",

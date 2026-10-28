@@ -1,6 +1,7 @@
 import { effect, signal } from "@hellajs/core";
-import { anchorPosition, hoverIntent, onEscape, onOutside, Portal, trapFocus } from "@hellajs/dom";
+import { Portal } from "@hellajs/dom";
 import type { HellaChild, HellaChildren } from "@hellajs/dom";
+import { anchorPosition, hoverIntent, onEscape, onOutside, trapFocus } from "@hellajs/headless";
 import type {
   SidebarProviderProps,
   SidebarProps,
