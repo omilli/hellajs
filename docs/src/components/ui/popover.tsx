@@ -1,8 +1,5 @@
-import { effect, signal } from "@hellajs/core";
-import { Portal } from "@hellajs/dom";
-import type { HellaChild, HellaChildren, HTMLAttributes } from "@hellajs/dom";
-import { anchorPosition, layerDismissal } from "@hellajs/headless";
-import type { Placement } from "@hellajs/headless";
+import { popover } from "@hellajs/headless";
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 type AnchorSide = "top" | "bottom" | "left" | "right";
 
@@ -112,21 +109,18 @@ const description = style("popover-description", {
   color: tokens.mutedForeground,
 });
 
-const placementOf = (side: AnchorSide, align: AnchorAlign): Placement =>
-  align === "center" ? side : `${side}-${align}`;
-
 /** Bare anchor span - the manual composition's positioning target when the trigger should not anchor. */
 export function PopoverAnchor({ children, class: cls, ...attrs }: PopoverAnchorProps): JSX.Element {
+  const { Anchor } = popover();
   return (
-    <span
-      data-slot="popover-anchor"
+    <Anchor
       class={
         [cls]
       }
       {...attrs}
     >
       {children}
-    </span>
+    </Anchor>
   );
 }
 
@@ -136,27 +130,27 @@ export function PopoverTrigger({
   class: cls,
   ...attrs
 }: PopoverTriggerProps): JSX.Element {
+  const { Trigger } = popover();
   return (
-    <button
-      type="button"
-      data-slot="popover-trigger"
+    <Trigger
       class={
         [cls]
       }
       {...attrs}
     >
       {children}
-    </button>
+    </Trigger>
   );
 }
 
+/** The manual content layer; the composed Popover portals the same wiring under its trigger's state. */
 export function PopoverContent({
   state,
   id,
-  side: sideProp,
-  align: alignProp,
+  side,
+  align,
   sideOffset,
-  alignOffset: alignOffsetProp,
+  alignOffset,
   anchor,
   onDismiss,
   onExited,
@@ -164,98 +158,56 @@ export function PopoverContent({
   class: cls,
   ...attrs
 }: PopoverContentProps): JSX.Element {
-  const side = sideProp ?? "bottom";
-  const align = alignProp ?? "center";
-  const alignOffset = alignOffsetProp ?? 0;
-  const stateOf = (): "open" | "closed" => state?.() ?? "open";
-  const wirings: (() => void)[] = [];
-  const teardown: (() => void)[] = [];
-
-  const disposeWirings = (): void => {
-    while (wirings.length) wirings.pop()!();
-  };
-
-  // The exit runs unwired: flipping to "closed" tears the layer down
-  // immediately; reopening remounts fresh wirings with the content.
-  effect(() => {
-    if (stateOf() === "closed") disposeWirings();
+  const { Content } = popover({
+    open: () => (state?.() ?? "open") === "open",
+    onOpenChange: (next) => {
+      if (!next) onDismiss?.();
+    },
+    anchor,
   });
-
   return (
-    <div
-      role="dialog"
-      tabindex="-1"
+    <Content
       id={id}
-      data-slot="popover-content"
-      data-state={stateOf()}
-      data-side={side}
-      data-align={align}
+      side={side}
+      align={align}
+      sideOffset={sideOffset}
+      alignOffset={alignOffset}
+      onExited={onExited}
       class={
         [content, cls]
       }
-      hook:afterMount={(node) => {
-        if (!(node instanceof HTMLElement)) return;
-        const anchorEl = anchor?.();
-        if (anchorEl != null)
-          wirings.push(
-            anchorPosition(anchorEl, node, {
-              placement: placementOf(side, align),
-              offset: sideOffset ?? 4,
-            }),
-          );
-        if (alignOffset !== 0) {
-          // Cross-axis shift over the placed coordinates; the placement axis
-          // stays owned by anchorPosition's left/top writes.
-          node.style.translate =
-            side === "top" || side === "bottom" ? `${alignOffset}px 0` : `0 ${alignOffset}px`;
-        }
-        if (onDismiss) wirings.push(layerDismissal(() => [node, anchorEl ?? null], onDismiss));
-        // Non-modal: no trap - focus moves to the content on open, upstream parity.
-        node.focus();
-        // The exit's animationend (state already "closed") is the primary
-        // unmount trigger; the entry's animationend is ignored.
-        const onAnimationEnd = (): void => {
-          if (stateOf() === "closed") onExited?.();
-        };
-        node.addEventListener("animationend", onAnimationEnd);
-        teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
-      }}
-      hook:beforeDestroy={() => {
-        disposeWirings();
-        while (teardown.length) teardown.pop()!();
-      }}
       {...attrs}
     >
       {children}
-    </div>
+    </Content>
   );
 }
 
 export function PopoverHeader({ children, class: cls, ...attrs }: PopoverPartProps): JSX.Element {
+  const { Header } = popover();
   return (
-    <div
-      data-slot="popover-header"
+    <Header
       class={
         [header, cls]
       }
       {...attrs}
     >
       {children}
-    </div>
+    </Header>
   );
 }
 
 export function PopoverTitle({ children, class: cls, ...attrs }: PopoverPartProps): JSX.Element {
+  const { Title } = popover();
   return (
-    <div
-      data-slot="popover-title"
+    <Title
       class={
         [title, cls]
       }
       {...attrs}
     >
       {children}
-    </div>
+    </Title>
   );
 }
 
@@ -264,116 +216,38 @@ export function PopoverDescription({
   class: cls,
   ...attrs
 }: PopoverDescriptionProps): JSX.Element {
+  const { Description } = popover();
   return (
-    <p
-      data-slot="popover-description"
+    <Description
       class={
         [description, cls]
       }
       {...attrs}
     >
       {children}
-    </p>
+    </Description>
   );
 }
-
-let popoverCount = 0;
 
 export function Popover({
   open,
   onOpenChange,
-  anchor: anchorProp,
-  "on:click": userClick,
+  anchor,
   children,
   content: contentSlot,
   class: cls,
   ...attrs
 }: PopoverProps): JSX.Element {
-  const internal = signal(false);
-  const isOpen = (): boolean => (open !== undefined ? open() : internal());
-  const setOpen = (next: boolean): void => {
-    if (open === undefined) internal(next);
-    onOpenChange?.(next);
-  };
-  const toggle = (): void => setOpen(!isOpen());
-
-  const contentId = `hella-popover-content-${++popoverCount}`;
-  // `visible` alone gates the render so an open→closed flip never unmounts
-  // before this watcher starts the exit (reading open() in the template
-  // would flash the subtree away one evaluation early).
-  const visible = signal(false);
-  let wasOpen = false;
-  let fallback: ReturnType<typeof setTimeout> | undefined;
-  let triggerNode: Element | undefined;
-
-  const finishExit = (): void => {
-    if (fallback !== undefined) {
-      clearTimeout(fallback);
-      fallback = undefined;
-    }
-    visible(false);
-  };
-
-  // Flip to open renders immediately; flip to closed starts the exit - the
-  // content stays mounted under data-state="closed" until its animationend
-  // (or the copied duration budget) unmounts it.
-  effect(() => {
-    if (isOpen()) {
-      wasOpen = true;
-      finishExit();
-      visible(true);
-    } else if (wasOpen) {
-      wasOpen = false;
-      visible(true);
-      fallback = setTimeout(finishExit, 250);
-    }
-  });
-
-  const state = (): "open" | "closed" => (isOpen() ? "open" : "closed");
-  const anchor = (): Element | undefined => anchorProp?.() ?? triggerNode;
-  const triggerChildren = flattenChildren(children);
-
+  const { Trigger, Content } = popover({ open, onOpenChange, anchor });
   return (
-    <button
-      type="button"
-      data-slot="popover-trigger"
-      data-state={state()}
-      aria-expanded={isOpen() ? "true" : "false"}
-      aria-controls={contentId}
+    <Trigger
       class={
         [cls]
       }
-      on:click={function (e) {
-        userClick?.call(this, e);
-        toggle();
-      }}
-      hook:afterMount={(node) => {
-        if (!(node instanceof HTMLElement)) return;
-        triggerNode = node;
-      }}
       {...attrs}
     >
-      {triggerChildren}
-      {() =>
-        visible() && (
-          <Portal to="body">
-            <PopoverContent
-              state={state}
-              id={contentId}
-              anchor={anchor}
-              onDismiss={() => setOpen(false)}
-              onExited={finishExit}
-              children={contentSlot}
-            />
-          </Portal>
-        )
-      }
-    </button>
+      {children}
+      <Content>{contentSlot}</Content>
+    </Trigger>
   );
-}
-
-/** Flattens a HellaChildren value into HellaChild[] for explicit children props. */
-function flattenChildren(children: HellaChildren | undefined): HellaChild[] {
-  if (children === undefined) return [];
-  return Array.isArray(children) ? children : [children];
 }

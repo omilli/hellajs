@@ -1,0 +1,78 @@
+# tooltip
+
+Creates the three tooltip parts in one call: a provider grouping slot, a hover trigger, and the ported content label. The factory closure owns the open state, the open-delay timing through the shared skip-delay clock, and the generated content id.
+
+## Basic Usage
+
+```tsx
+import { mount } from "@hellajs/dom";
+import { tooltip } from "@hellajs/headless";
+
+const Tip = tooltip({ delay: 300 });
+
+mount(
+  <div>
+    <Tip.Trigger>Hover me</Tip.Trigger>
+    <Tip.Content side="top">Tooltip text</Tip.Content>
+  </div>,
+  "#app",
+);
+// Hovering the trigger opens the label after the delay; leaving starts the
+// close timer. The label portals into document.body, anchors to the trigger,
+// and closes on Escape, an outside press, or the close delay.
+```
+
+`Trigger` and `Content` connect through the factory closure, so they compose as siblings or nest the content inside the trigger. Omitting `delay` keeps the 700ms default.
+
+## API
+
+```typescript
+function tooltip(options?: TooltipOptions): TooltipParts
+```
+
+- `options.open`: Controlled open-state getter. Passing it makes the tooltip controlled; omitting it keeps state internal.
+- `options.onOpenChange`: Called on every open-state change, owned hover and dismissal alike.
+- `options.delay`: Pointer-hover ms before the content opens. Default `700`.
+- **Returns**: The part set, composed as `Tip.Trigger`-style members.
+
+### Parts
+
+| Part | Renders |
+|---|---|
+| `Provider` | Passthrough grouping `div` carrying `data-slot="tooltip-provider"` |
+| `Trigger` | `span` carrying `aria-describedby` and the hover/focus intent wiring |
+| `Content` | `role="tooltip"` label portaled into `document.body`, carrying `data-state`, `data-side`, and `data-align` |
+
+Every part spreads `class` and native attributes onto its element; parts own structure, styling stays in the wrapper.
+
+### Content props
+
+| Prop | Type | Default |
+|---|---|---|
+| `side` | `"top" \| "bottom" \| "left" \| "right"` | `"top"` |
+| `align` | `"start" \| "center" \| "end"` | `"center"` |
+| `sideOffset` | `number` | `0` |
+| `alignOffset` | `number` | `0` |
+| `anchor` | `() => Element \| undefined` | The factory's trigger node |
+| `onExited` | `() => void` | `-` |
+| `id` | `string` | The generated content id |
+
+## Key Concepts
+
+### The Shared Skip-Delay Clock
+
+Adjacent triggers share a 500ms window through [`hoverIntent`](/reference/headless/hoverintent): moving from one tooltip straight onto another opens the next one instantly, without paying the delay again. After 500ms without any hover layer open, the full delay applies.
+
+### Anchoring and Dismissal
+
+While open, the label is positioned against the trigger through [`anchorPosition`](/reference/headless/anchorposition) (fixed coordinates, collision flipping, repositioning on scroll and resize) and dismissed through [`layerDismissal`](/reference/headless/layerdismissal): Escape and an outside pointerdown close only the top layer. Focus never moves - the engine refocuses whatever already holds it, so hovering never steals focus from the trigger.
+
+### The Exit Machine
+
+Flipping to closed starts the exit: the label stays mounted under `data-state="closed"` until its `animationend` (or a 250ms budget when no animation runs) unmounts it. Call the factory in component scope so the machine's effect disposes with the component.
+
+## Important Considerations
+
+### Call the Factory in Component Scope
+
+`tooltip()` starts a state machine whose effect must dispose with the component that owns it. Module-level calls with an internal signal leak that effect; module-level calls are safe only with a controlled `open` getter, where the machine never subscribes to factory state.

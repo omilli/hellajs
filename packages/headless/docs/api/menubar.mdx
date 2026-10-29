@@ -1,0 +1,99 @@
+# menubar
+
+Creates a desktop-style menu bar: the `Bar` root plus a `menu()` factory whose menus announce to the bar, so opening one closes its siblings and the horizontal arrows hand off between triggers.
+
+## Basic Usage
+
+```tsx
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+import { menubar } from "@hellajs/headless";
+
+const openMenu = signal("");
+
+const Menubar = menubar({
+  value: () => openMenu(),
+  onValueChange: (next) => openMenu(next),
+});
+
+const File = Menubar.menu({ value: "file" });
+const Edit = Menubar.menu({ value: "edit" });
+const Export = File.sub();
+
+mount(
+  <Menubar.Bar>
+    <File.Trigger>File</File.Trigger>
+    <File.Content>
+      <File.Item shortcut="⌘O">Open</File.Item>
+      <Export.Trigger>Export</Export.Trigger>
+      <Export.Content>
+        <Export.Item>As PDF</Export.Item>
+      </Export.Content>
+    </File.Content>
+    <Edit.Trigger>Edit</Edit.Trigger>
+    <Edit.Content>
+      <Edit.Item>Copy</Edit.Item>
+      <Edit.Item>Paste</Edit.Item>
+    </Edit.Content>
+  </Menubar.Bar>,
+  "#app",
+);
+// Clicking File opens its menu and mirrors "file" into the bar's value.
+// Clicking Edit then closes File: each menu announces its flips, the bar
+// mirrors the open id, and siblings close on a foreign announcement.
+```
+
+Omitting `value` keeps the bar's open-menu id internal; `onValueChange` still reports every flip.
+
+## API
+
+```typescript
+function menubar(options?: MenubarOptions): MenubarParts
+```
+
+- `options.value`: Controlled id of the open menu (`""` when closed). When given, the bar never writes its internal signal and `onValueChange` reports every flip.
+- `options.onValueChange`: Called whenever the open menu changes.
+- **Returns**: `Bar` and `menu`.
+
+### Bar
+
+| Prop | Type | Default |
+|---|---|---|
+| `value` | `() => string` | The bar's internal id signal |
+| `onValueChange` | `(value: string) => void` | `-` |
+
+`Bar` renders `role="menubar"`. With no menu open, the horizontal arrows rove focus across its triggers with wrap-around.
+
+### menu()
+
+```typescript
+function menu(options?: MenubarMenuOptions): MenuParts
+```
+
+- `options.value`: This menu's id in the bar's open-menu value; a generated id stands in when omitted.
+- `options.open`, `options.onOpenChange`: The same controlled-or-internal open state as [`menu`](/reference/headless/menu).
+- **Returns**: The full menu part set (`Trigger`, `Content`, `Item`, `CheckboxItem`, `RadioGroup`, `RadioItem`, `Label`, `Separator`, `Group`, `Shortcut`, `sub()`).
+
+## Key Concepts
+
+### Bar Coordination
+
+Every bar menu announces its flips through the shared coordination events. A sibling's announcement closes the menu without re-announcing, and the bar mirrors the announcements into its value, so one-open-at-a-time holds across any number of `Bar.menu()` calls.
+
+### Open-then-Move
+
+Inside an open bar menu, both horizontal arrows hand off to the adjacent trigger in the same bar: focus moves, the neighbor opens, and the announcement closes the first menu. The direction flips with the resolved writing direction.
+
+### Bar Menu Content Defaults
+
+A bar menu's content drops below its trigger with a wider gap (`sideOffset` 8, `alignOffset` -4) and the full part set of [`menu`](/reference/headless/menu), including `sub()` for nested submenus.
+
+## Important Considerations
+
+### Call the Factories in Component Scope
+
+`menubar()` and each `Bar.menu()` call start effects that must dispose with the component that owns them. Create the bar and its menus in the component that renders the `Bar`, and keep the `Trigger` and `Content` parts inside the same mounted tree.
+
+### The Value Is an Id, Not a Selection
+
+The bar's value mirrors which menu is open (`""` when none). It is a coordination channel, not a data selection; the menu items keep their own state.

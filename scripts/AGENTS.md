@@ -50,7 +50,7 @@
     ├─ isCacheValid(dir, cacheDir) && distExists?   → return cached
     ├─ cleanBuildDir(distDir)
     ├─ buildBundle(packageInfo, cwd, bundleMode)    // esbuild lib/index.ts → bundle.js (+ bundle.min.js via terser)
-    ├─ buildIndividualModules(packageInfo, cwd)     // esbuild per lib/**/*.ts → dist/**, .js imports fixed (+ .min.js)
+    ├─ buildIndividualModules(packageInfo, cwd)     // esbuild per lib/**/*.ts → dist/**, .js imports fixed (+ .min.js); .tsx packages add the ast-target dist/ssr mirror via buildSsrModules
     ├─ buildDeclarations(packageInfo, cwd)          // node_modules/.bin/tsc --emitDeclarationOnly
     ├─ copyDeclarationFiles(packageInfo)            // lib/**/*.d.ts → dist/
     ├─ compileRegistry(packageInfo)                 // ui only: registry → dist/registry (+ .d.ts)
@@ -68,7 +68,8 @@
   | `bundle.ts` | Thin entry: args → orchestrate → report → exit |
   | `bundle/config.ts` | `BUILD_CONFIG`, `VARIANTS`, `BuildResult`/`BuildSummary`/`PackageGraph`/`BuildMetrics` types, `derivePackageGraph()` |
   | `bundle/orchestrate.ts` | `buildSinglePackageEntry` (retry), `buildPackagesParallel` (dependency-aware), `buildAllPackagesFromOrder`, `reportSummary`/`reportSingleResult` |
-  | `bundle/esbuild-build.ts` | `buildBundle` + `buildIndividualModules` + inline import-extension / minified-path rewriting |
+  | `bundle/esbuild-build.ts` | `buildBundle` + `buildIndividualModules` + inline minified-path rewriting; per-module import-extension fixup shared from `ssr-build.ts` |
+  | `bundle/ssr-build.ts` | `buildSsrModules` (ast-target per-module `dist/ssr/**` emission for `.tsx` packages, regular variant only) + `fixRelativeImports` (the shared extension fixup) |
   | `bundle/optimize.ts` | `applyTerser` (node_modules/.bin/terser) + `fixMinifiedImports` (4-pass regex) |
   | `bundle/declarations.ts` | `buildDeclarations` (node_modules/.bin/tsc) + `copyDeclarationFiles` |
   | `bundle/registry.ts` | `compileRegistry` (ui-only): canonical registry files per style spliced with their conventional style module through the vite-mirror babel transform via `applyStyleVariant` → `dist/registry/<name>/{css,tailwind}`, verbatim theme/cn copies, shared dep modules alongside tailwind output (canonical-carrying component deps skipped: self-contained, compiled at their own dist paths), `.d.ts` via tsc over staged generated sources (the splice typecheck gate; also the canonicals' only typecheck). |

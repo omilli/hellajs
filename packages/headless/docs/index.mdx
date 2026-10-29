@@ -1,6 +1,6 @@
 ## Headless
 
-Headless behavior functions for common UI mechanics: trapping focus, Escape and outside dismissal, roving tabindex, anchor positioning, hover intent, menu typeahead, pointer gestures, and layered dismissal. Each is a plain function that takes elements and callbacks and returns a dispose handle; state stays in your signals. The functions take plain DOM nodes, so they compose with HellaJS templates, custom elements, or no renderer at all. The `modal` foundation composes the dialog-family wiring with automatic, node-scoped disposal instead of a dispose handle.
+Headless wiring for common UI mechanics: trapping focus, Escape and outside dismissal, roving tabindex, anchor positioning, hover intent, menu typeahead, pointer gestures, and layered dismissal. Each behavior is a plain function that takes elements and callbacks and returns a dispose handle; state stays in your signals. The `modal` foundation composes the dialog-family wiring with automatic, node-scoped disposal instead of a dispose handle, and the parts factories (`popover`, `menu`, `menubar`, `tooltip`, `hoverCard`) grow a components tier: camelCase factories whose components render structure, never styles.
 
 ### Installation
 
@@ -60,7 +60,12 @@ mount(<div>{() => (open() ? <Dialog /> : <p>Nothing open</p>)}</div>, "#app");
 - **[onDoubleTap](/reference/headless/ondoubletap)**: Detect double taps, optionally reporting single taps
 - **[layerDismissal](/reference/headless/layerdismissal)**: Dismiss stacked overlays one layer at a time
 - **[modal](/reference/headless/modal)**: Arm a modal panel: trap, dismissal, and exit notification with automatic disposal
+- **[popover](/reference/headless/popover)**: Create the six popover parts in one factory call with controlled-or-internal state
+- **[menu](/reference/headless/menu)**: Create the full menu part set in one factory call: trigger, content, selectable rows, and submenus
+- **[menubar](/reference/headless/menubar)**: Create a menu bar whose menus announce to the bar: one open at a time, roving triggers, open-then-move
+- **[tooltip](/reference/headless/tooltip)**: Create the tooltip parts in one factory call: provider slot, hover trigger, and the ported anchored label
+- **[hoverCard](/reference/headless/hovercard)**: Create the hover-card parts in one factory call: hover trigger and the ported keep-open panel
 
 ### Concepts
 
-- **[Headless Behaviors](/learn/concepts/headless-behaviors)**: Focus traps, anchoring, hover intent, typeahead, gestures, and layered dismissal as plain functions
+- **[Headless Behaviors](/learn/concepts/headless-behaviors)**: Focus traps, anchoring, hover intent, typeahead, gestures, layered dismissal, and the parts factories as plain functions

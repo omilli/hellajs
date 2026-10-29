@@ -13,8 +13,12 @@ export { onLongPress } from "./onLongPress";
 export { onDoubleTap } from "./onDoubleTap";
 export { layerDismissal } from "./layerDismissal";
 export { modal } from "./modal";
+export { popover } from "./popover";
+export { menu, menubar } from "./menu";
+export { tooltip, hoverCard } from "./tooltip";
 
 export { resetHeadless } from "./internal/reset";
 
 export type * from "./types/behaviors";
 export type * from "./types/foundations";
+export type * from "./types/parts";

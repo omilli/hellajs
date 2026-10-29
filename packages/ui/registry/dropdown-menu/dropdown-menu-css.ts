@@ -142,6 +142,14 @@ export const item = style("dropdown-menu-item", {
   "&[data-variant='destructive'] svg": {
     color: `${tokens.destructive} !important`,
   },
+
+  "& [menu-shortcut]": {
+    color: tokens.mutedForeground,
+    fontSize: "0.75rem",
+    letterSpacing: "0.1em",
+    lineHeight: "1rem",
+    marginLeft: "auto",
+  },
 });
 
 export const checkItem = style("dropdown-menu-check-item", {
@@ -175,6 +183,17 @@ export const checkItem = style("dropdown-menu-check-item", {
     height: "1rem",
     width: "1rem",
   },
+
+  "& [menu-indicator]": {
+    alignItems: "center",
+    display: "flex",
+    height: "0.875rem",
+    justifyContent: "center",
+    left: "0.5rem",
+    pointerEvents: "none",
+    position: "absolute",
+    width: "0.875rem",
+  },
 });
 
 export const radioItem = style("dropdown-menu-radio-item", {
@@ -207,6 +226,22 @@ export const radioItem = style("dropdown-menu-radio-item", {
   "& svg:not([class*='size-'])": {
     height: "1rem",
     width: "1rem",
+  },
+
+  "& [data-slot='menu-indicator']": {
+    alignItems: "center",
+    display: "flex",
+    height: "0.875rem",
+    justifyContent: "center",
+    left: "0.5rem",
+    pointerEvents: "none",
+    position: "absolute",
+    width: "0.875rem",
+  },
+  "& [data-slot='menu-radio-icon']": {
+    fill: "currentColor",
+    height: "0.5rem",
+    width: "0.5rem",
   },
 });
 
@@ -295,6 +330,12 @@ export const subTrigger = style("dropdown-menu-sub-trigger", {
   },
   "& svg:not([class*='text-'])": {
     color: tokens.mutedForeground,
+  },
+
+  "& [menu-chevron]": {
+    height: "1rem",
+    marginLeft: "auto",
+    width: "1rem",
   },
 });
 

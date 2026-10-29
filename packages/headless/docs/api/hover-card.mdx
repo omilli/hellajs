@@ -1,0 +1,77 @@
+# hoverCard
+
+Creates the two hover-card parts in one call: a hover trigger and the ported content panel. The factory closure owns the open state, the 200ms/300ms timings, and the crossing contract - moving the pointer from the trigger into the panel never closes it.
+
+## Basic Usage
+
+```tsx
+import { mount } from "@hellajs/dom";
+import { hoverCard } from "@hellajs/headless";
+
+const Card = hoverCard({ openDelay: 200, closeDelay: 300 });
+
+mount(
+  <div>
+    <Card.Trigger>@hellajs</Card.Trigger>
+    <Card.Content side="bottom">Profile details</Card.Content>
+  </div>,
+  "#app",
+);
+// Hovering the trigger opens the panel after the open delay. Moving into the
+// panel keeps it open; leaving both closes it after the close delay. Escape
+// and an outside press close it too.
+```
+
+Omitting both timings keeps the defaults, and `Trigger` and `Content` connect through the factory closure, so they compose as siblings or nest the content inside the trigger.
+
+## API
+
+```typescript
+function hoverCard(options?: HoverCardOptions): HoverCardParts
+```
+
+- `options.open`: Controlled open-state getter. Passing it makes the hover card controlled; omitting it keeps state internal.
+- `options.onOpenChange`: Called on every open-state change, owned hover and dismissal alike.
+- `options.openDelay`: Pointer-hover ms before the content opens. Default `200`.
+- `options.closeDelay`: Pointer-leave ms before the content closes. Default `300`.
+- **Returns**: The part set, composed as `Card.Trigger`-style members.
+
+### Parts
+
+| Part | Renders |
+|---|---|
+| `Trigger` | `span` carrying the hover/focus intent wiring and the crossing ownership flags |
+| `Content` | Panel `div` portaled into `document.body`, carrying `data-state`, `data-side`, and `data-align` |
+
+Every part spreads `class` and native attributes onto its element; parts own structure, styling stays in the wrapper.
+
+### Content props
+
+| Prop | Type | Default |
+|---|---|---|
+| `side` | `"top" \| "bottom" \| "left" \| "right"` | `"bottom"` |
+| `align` | `"start" \| "center" \| "end"` | `"center"` |
+| `sideOffset` | `number` | `4` |
+| `alignOffset` | `number` | `0` |
+| `anchor` | `() => Element \| undefined` | The factory's trigger node |
+| `onExited` | `() => void` | `-` |
+
+## Key Concepts
+
+### The Crossing Contract
+
+Pointer-ownership flags track which region holds the pointer. Entering the content re-arms the open state with zero delays and cancels the trigger's pending close; returning to the trigger cancels the content's own close in turn. Crossing between the two regions in either direction never flickers.
+
+### Anchoring and Dismissal
+
+While open, the panel is positioned against the trigger through [`anchorPosition`](/reference/headless/anchorposition) (fixed coordinates, collision flipping, repositioning on scroll and resize) at a 4px gap, and dismissed through [`layerDismissal`](/reference/headless/layerdismissal): Escape and an outside pointerdown close only the top layer. Focus never moves - the engine refocuses whatever already holds it, so hovering never steals focus from the trigger.
+
+### The Exit Machine
+
+Flipping to closed starts the exit: the panel stays mounted under `data-state="closed"` until its `animationend` (or a 250ms budget when no animation runs) unmounts it. Call the factory in component scope so the machine's effect disposes with the component.
+
+## Important Considerations
+
+### Call the Factory in Component Scope
+
+`hoverCard()` starts a state machine whose effect must dispose with the component that owns it. Module-level calls with an internal signal leak that effect; module-level calls are safe only with a controlled `open` getter, where the machine never subscribes to factory state.

@@ -187,14 +187,14 @@ describe("hover-card", () => {
         variant.render({ anchor: () => anchor, side: "right", onOpen, onClose, children: [] }),
         container,
       );
-      const content = container.firstElementChild as HTMLElement;
+      const content = await awaitPortaled("hover-card-content");
       expect(content.style.left).toBe("254px");
       expect(content.style.top).toBe("110px");
       pointerEnter(content);
       await delay(10);
       expect(onOpen).toHaveBeenCalledTimes(1);
       handle.unmount();
-      expect(content.isConnected).toBe(false);
+      await awaitDetached(content);
     },
   );
 
@@ -226,10 +226,11 @@ describe("hover-card", () => {
 
   test.each(hoverCardPartVariants.filter((variant) => variant.part === "Content"))(
     "$style content part forwards user attrs",
-    (variant) => {
+    async (variant) => {
       const container = setupContainer();
       mount(variant.render({ "aria-label": "panel", children: [] }), container);
-      expect(container.firstElementChild!.getAttribute("aria-label")).toBe("panel");
+      const content = await awaitPortaled("hover-card-content");
+      expect(content.getAttribute("aria-label")).toBe("panel");
     },
   );
 
@@ -237,12 +238,16 @@ describe("hover-card", () => {
     assertStructuralParity(hoverCardVariants, { content: "Parity" });
   });
 
-  test("renders every named part with its data-slot across both styles", () => {
+  test("renders every named part with its data-slot across both styles", async () => {
     for (const variant of hoverCardPartVariants) {
       const container = setupContainer();
       const rendered = variant.render({ children: [] });
       mount(rendered, container);
-      const el = container.firstElementChild!;
+      // The content part portals itself; every other part renders in place.
+      const el =
+        variant.part === "Content"
+          ? await awaitPortaled("hover-card-content")
+          : container.firstElementChild!;
       expect(el.getAttribute("data-slot")).toBe(`hover-card-${variant.part.toLowerCase()}`);
       expect(el.tagName).toBe(variant.part === "Trigger" ? "SPAN" : "DIV");
     }

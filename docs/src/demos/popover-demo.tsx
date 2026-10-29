@@ -1,7 +1,6 @@
 import { signal } from "@hellajs/core";
 import { Button } from "@components/ui/button.js";
 import { Popover, PopoverContent, PopoverDescription, PopoverHeader, PopoverTitle } from "@components/ui/popover.js";
-import { Portal } from "@hellajs/dom";
 
 function panel(name: string) {
   return (
@@ -37,16 +36,12 @@ export function PopoverManualDemo() {
         hook:afterMount={(node: Element) => { trigger = node; }}
         on:click={() => open(!open())}
       >Open</Button>
-      {() => open() && (
-        <Portal to="body">
-          <PopoverContent state={state} anchor={() => trigger} onDismiss={() => open(false)}>
-            <PopoverHeader>
-              <PopoverTitle>Dimensions</PopoverTitle>
-              <PopoverDescription>Set the width and height.</PopoverDescription>
-            </PopoverHeader>
-          </PopoverContent>
-        </Portal>
-      )}
+      <PopoverContent state={state} anchor={() => trigger} onDismiss={() => open(false)}>
+        <PopoverHeader>
+          <PopoverTitle>Dimensions</PopoverTitle>
+          <PopoverDescription>Set the width and height.</PopoverDescription>
+        </PopoverHeader>
+      </PopoverContent>
     </>
   );
 }

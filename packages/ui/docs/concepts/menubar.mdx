@@ -62,7 +62,7 @@ The `role="menu"` surface with the full keyboard model, anchored against its tri
 | `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
-`state` drives `data-state` and the enter/exit cycle; `closed` tears the wirings down. The anchor resolves to the element the content anchors to; positioning is skipped when undefined. `onDismiss` receives Escape and outside pointerdowns from the top layer, and item selection closes every open layer through it; `onExited` fires when the exit animation ends. Both horizontal arrows report outward through `onArrow` (bar open-then-move) when the focused item is not a sub-trigger.
+`state` drives `data-state` and the enter/exit cycle; `closed` tears the wiring down. The anchor resolves to the element the content anchors to; positioning is skipped when undefined. `onDismiss` receives Escape and outside pointerdowns from the top layer, and item selection closes every open layer through it; `onExited` fires when the exit animation ends. Both horizontal arrows hand off to the adjacent bar trigger (open-then-move) as the factory bar-menu wiring's own behavior; the `onArrow` prop stays accepted for manual compatibility.
 
 ### MenubarGroup
 
@@ -85,7 +85,7 @@ A `role="menuitem"` row; activation closes every open layer.
 | `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
-A user `on:click` chains with the owned close (it fires before the close-all activation event); `destructive` renders the destructive `data-variant` treatment; `inset` renders `data-inset="true"`; `disabled` renders `data-disabled` plus `aria-disabled` and blocks the user's `on:click` and the close; `shortcut` renders as a trailing `MenubarShortcut` span.
+A user `on:click` chains with the owned close (it fires before the close-all activation event); `destructive` renders the destructive `data-variant` treatment; `inset` renders `data-inset="true"`; `disabled` renders `data-disabled` plus `aria-disabled` and blocks the user's `on:click` and the close; `shortcut` renders as a trailing shortcut span (`data-slot="menu-shortcut"`, styled by the item's descendant rules); the standalone `MenubarShortcut` part stays available for manual composition.
 
 ### MenubarCheckboxItem
 

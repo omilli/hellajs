@@ -4,7 +4,7 @@ A hover-triggered label: the trigger wraps your content, the label portals into 
 
 The composed `Tooltip` wraps its children in the trigger span. Hovering starts the open timer; leaving starts the close timer; focusing the trigger follows the same path for keyboard users. Adjacent triggers share a 500ms skip window through [`hoverIntent`](/reference/headless/hoverintent): moving from one tooltip straight onto another opens the next one instantly, without paying the delay again - after 500ms without any tooltip open, the full delay applies.
 
-Three named parts ship beside the default `Tooltip`: `TooltipTrigger`, `TooltipContent`, and `TooltipProvider`. State is explicit - portal the content yourself, hand it a `state` accessor, and wire the trigger's hover with [`hoverIntent`](/reference/headless/hoverintent).
+Three named parts ship beside the default `Tooltip`: `TooltipTrigger`, `TooltipContent`, and `TooltipProvider`. Each is a thin styled wrapper over the [`tooltip`](/reference/headless/tooltip) factory's part set, so the hover timing, anchoring, dismissal, and exit timing stay in one place. State is still explicit on the manual parts: hand `TooltipContent` a `state` accessor, and point its `anchor` at whatever should anchor it; it portals into `document.body` itself.
 
 ### Tooltip
 
@@ -31,7 +31,7 @@ Accepts all native `span` attributes (forwarded to the root element).
 
 ### TooltipContent
 
-The `role="tooltip"` label carrying `data-slot="tooltip-content"`, positioned through [`anchorPosition`](/reference/headless/anchorposition) (fixed coordinates against the trigger, flipping to the opposite side on viewport collision, repositioning on scroll and resize).
+The `role="tooltip"` label carrying `data-slot="tooltip-content"`, wired by the [`tooltip`](/reference/headless/tooltip) factory: positioned against the anchor through [`anchorPosition`](/reference/headless/anchorposition) (fixed coordinates against the trigger, flipping to the opposite side on viewport collision, repositioning on scroll and resize) and dismissed through [`layerDismissal`](/reference/headless/layerdismissal) - Escape and an outside pointerdown close only the top layer. A controlled `state` accessor holds the label open unless the composer reacts.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |

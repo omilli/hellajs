@@ -1,10 +1,5 @@
-import { effect, signal } from "@hellajs/core";
-import { ForEach, Portal } from "@hellajs/dom";
-import { anchorPosition, layerDismissal, menuTypeahead } from "@hellajs/headless";
-import type { Placement } from "@hellajs/headless";
+import { menu, menubar } from "@hellajs/headless";
 import type {
-  AnchorSide,
-  AnchorAlign,
   MenubarTriggerProps,
   MenubarContentProps,
   MenubarPartProps,
@@ -24,13 +19,9 @@ import type {
 // @hella:styles
 declare const base: string;
 declare const checkItem: string;
-declare const chevron: string;
 declare const content: string;
-declare const icon: string;
-declare const indicator: string;
 declare const item: string;
 declare const label: string;
-declare const radioIcon: string;
 declare const radioItem: string;
 declare const separator: string;
 declare const shortcut: string;
@@ -39,217 +30,16 @@ declare const subTrigger: string;
 declare const trigger: string;
 // @hella:end
 
-const placementOf = (side: AnchorSide, align: AnchorAlign): Placement =>
-  align === "center" ? side : `${side}-${align}`;
-
-/** Document-level coordination events: opening a menu closes its bar siblings, and the bar mirrors which menu is open. */
-const OPEN_EVENT = "hella:menubar-open";
-const CLOSE_EVENT = "hella:menubar-close";
-
-/** Document-level activation event: item selection closes every open menu layer (Radix close-on-select). */
-const SELECT_EVENT = "hella:menu-select";
-
-const closeAllMenus = (): void => {
-  document.dispatchEvent(new CustomEvent(SELECT_EVENT));
-};
-
-/** Open/close state shared by the bar menu wrapper and submenus: controlled override, exit-holding `visible` gate. */
-function menuOpenState(props: { open?: () => boolean; onOpenChange?: (open: boolean) => void }) {
-  const internal = signal(false);
-  const isOpen = (): boolean => (props.open !== undefined ? props.open() : internal());
-  const setOpen = (next: boolean): void => {
-    if (props.open === undefined) internal(next);
-    props.onOpenChange?.(next);
-  };
-  // `visible` alone gates the render so an open→closed flip never unmounts
-  // before this watcher starts the exit (reading open() in the template
-  // would flash the subtree away one evaluation early).
-  const visible = signal(false);
-  let wasOpen = false;
-  let fallback: ReturnType<typeof setTimeout> | undefined;
-  const finishExit = (): void => {
-    if (fallback !== undefined) {
-      clearTimeout(fallback);
-      fallback = undefined;
-    }
-    visible(false);
-  };
-  // Flip to open renders immediately; flip to closed starts the exit - the
-  // content stays mounted under data-state="closed" until its animationend
-  // (or the copied duration budget) unmounts it.
-  effect(() => {
-    if (isOpen()) {
-      wasOpen = true;
-      finishExit();
-      visible(true);
-    } else if (wasOpen) {
-      wasOpen = false;
-      visible(true);
-      fallback = setTimeout(finishExit, 250);
-    }
-  });
-  return {
-    isOpen,
-    setOpen,
-    state: (): "open" | "closed" => (isOpen() ? "open" : "closed"),
-    visible,
-    finishExit,
-  };
-}
-
-/** The menu's activatable items in DOM order, disabled entries excluded (roving, typeahead, and focus-first share this). */
-const menuItems = (node: ParentNode): HTMLElement[] => {
-  const found = node.querySelectorAll("[role^='menuitem']");
-  const items: HTMLElement[] = [];
-  let i = 0;
-  while (i < found.length) {
-    const el = found[i] as HTMLElement;
-    if (!el.hasAttribute("data-disabled")) items.push(el);
-    i++;
-  }
-  return items;
-};
-
-/** The same items shaped for `menuTypeahead`'s text matching. */
-const menuEntries = (node: ParentNode): { node: HTMLElement; text: string }[] => {
-  const items = menuItems(node);
-  const entries: { node: HTMLElement; text: string }[] = [];
-  let i = 0;
-  while (i < items.length) {
-    entries.push({ node: items[i]!, text: items[i]!.textContent ?? "" });
-    i++;
-  }
-  return entries;
-};
-
-/** The content-owned keyboard model shared by the bar menu and its submenus: roving arrows with wrap, Home/End, Enter/Space activation, Tab close-all, and optional horizontal-arrow handoffs (the bar menu reports both outward for open-then-move; a submenu reports ArrowLeft to close). */
-const menuKeyDown =
-  (handlers: { onArrowLeft?: () => void; onArrowRight?: () => void } = {}) =>
-  (node: HTMLElement) =>
-  (event: Event): void => {
-    const e = event as KeyboardEvent;
-    const items = menuItems(node);
-    const current = items.indexOf(document.activeElement as HTMLElement);
-    if (e.key === "Tab") {
-      closeAllMenus();
-      return;
-    }
-    if (e.key === "Enter" || e.key === " ") {
-      if (current === -1) return;
-      e.preventDefault();
-      items[current]!.dispatchEvent(new Event("click", { bubbles: true }));
-      return;
-    }
-    const rtl = getComputedStyle(node).direction === "rtl";
-    const enterKey = rtl ? "ArrowLeft" : "ArrowRight";
-    const exitKey = rtl ? "ArrowRight" : "ArrowLeft";
-    if (e.key === enterKey && current !== -1) {
-      const el = items[current]!;
-      if (el.getAttribute("aria-haspopup") === "menu") {
-        e.preventDefault();
-        el.dispatchEvent(new Event("click", { bubbles: true }));
-      } else if (handlers.onArrowRight) {
-        e.preventDefault();
-        handlers.onArrowRight();
-      }
-      return;
-    }
-    if (e.key === exitKey && handlers.onArrowLeft) {
-      e.preventDefault();
-      handlers.onArrowLeft();
-      return;
-    }
-    if (e.key !== "ArrowDown" && e.key !== "ArrowUp" && e.key !== "Home" && e.key !== "End") return;
-    if (items.length === 0) return;
-    e.preventDefault();
-    let target: number;
-    if (e.key === "Home") target = 0;
-    else if (e.key === "End") target = items.length - 1;
-    else if (current === -1) target = e.key === "ArrowDown" ? 0 : items.length - 1;
-    else target = (current + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
-    items[target]!.focus();
-  };
-
-/** The check icon (refs/icons/check.svg), created per call so reactive swaps never share nodes between clones. */
-const checkIcon = (): JSX.Element => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="2"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    aria-hidden="true"
-    class={
-      // @hella:compose
-      [icon]
-      // @hella:end
-    }
-  >
-    <path d="M20 6 9 17l-5-5" />
-  </svg>
-);
-
-/** The circle icon (refs/icons/circle.svg), created per call so reactive swaps never share nodes between clones. */
-const circleIcon = (): JSX.Element => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="2"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    aria-hidden="true"
-    class={
-      // @hella:compose
-      [radioIcon]
-      // @hella:end
-    }
-  >
-    <circle cx="12" cy="12" r="10" />
-  </svg>
-);
-
-/** The chevron-right icon (refs/icons/chevron-right.svg), created per call so reactive swaps never share nodes between clones. */
-const chevronIcon = (): JSX.Element => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="2"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    aria-hidden="true"
-    class={
-      // @hella:compose
-      [chevron]
-      // @hella:end
-    }
-  >
-    <path d="m9 18 6-6-6-6" />
-  </svg>
-);
-
-/** The manual trigger button; the composed Menubar renders the same shape wired to toggle + aria state. */
+/** The manual trigger button; the composed MenubarMenu renders the same shape wired to toggle + aria state. */
 export function MenubarTrigger({
   children,
   class: cls,
   ...attrs
 }: MenubarTriggerProps): JSX.Element {
+  const { Trigger } = menubar().menu();
   return (
-    <button
-      type="button"
+    <Trigger
       data-slot="menubar-trigger"
-      aria-haspopup="menu"
       class={
         // @hella:compose
         [trigger, cls]
@@ -258,10 +48,11 @@ export function MenubarTrigger({
       {...attrs}
     >
       {children}
-    </button>
+    </Trigger>
   );
 }
 
+/** The manual content layer; the composed MenubarMenu portals the same wiring under its trigger's state. */
 export function MenubarContent({
   state,
   id,
@@ -280,96 +71,41 @@ export function MenubarContent({
   const side = sideProp ?? "bottom";
   const align = alignProp ?? "start";
   const alignOffset = alignOffsetProp ?? -4;
-  const stateOf = (): "open" | "closed" => state?.() ?? "open";
-  const wirings: (() => void)[] = [];
-  const teardown: (() => void)[] = [];
-
-  const disposeWirings = (): void => {
-    while (wirings.length) wirings.pop()!();
-  };
-
-  // The exit runs unwired: flipping to "closed" tears the layer down
-  // immediately; reopening remounts fresh wirings with the content.
-  effect(() => {
-    if (stateOf() === "closed") disposeWirings();
+  // Open-then-move is the factory bar-menu wiring's own behavior now -
+  // consumed here so it never reaches the DOM as an attribute.
+  void onArrow;
+  const { Content } = menubar().menu({
+    open: () => (state?.() ?? "open") === "open",
+    onOpenChange: (next) => {
+      if (!next) onDismiss?.();
+    },
   });
-
   return (
-    <div
-      role="menu"
-      tabindex="-1"
+    <Content
       id={id}
+      side={side}
+      align={align}
+      sideOffset={sideOffset}
+      alignOffset={alignOffset}
+      anchor={anchor}
+      onExited={onExited}
       data-slot="menubar-content"
-      data-state={stateOf()}
-      data-side={side}
-      data-align={align}
       class={
         // @hella:compose
         [content, cls]
         // @hella:end
       }
-      hook:afterMount={(node) => {
-        if (!(node instanceof HTMLElement)) return;
-        const anchorEl = anchor?.();
-        if (anchorEl != null)
-          wirings.push(
-            anchorPosition(anchorEl, node, {
-              placement: placementOf(side, align),
-              offset: sideOffset ?? 8,
-            }),
-          );
-        if (alignOffset !== 0) {
-          // Cross-axis shift over the placed coordinates; the placement axis
-          // stays owned by anchorPosition's left/top writes.
-          node.style.translate =
-            side === "top" || side === "bottom" ? `${alignOffset}px 0` : `0 ${alignOffset}px`;
-        }
-        if (onDismiss) {
-          wirings.push(layerDismissal(() => [node, anchorEl ?? null], onDismiss));
-          const onSelect = (): void => onDismiss?.();
-          document.addEventListener(SELECT_EVENT, onSelect);
-          wirings.push(() => document.removeEventListener(SELECT_EVENT, onSelect));
-        }
-        wirings.push(
-          menuTypeahead(
-            node,
-            () => menuEntries(node),
-            (entry) => entry.node.focus(),
-          ),
-        );
-        const onKey = menuKeyDown(
-          onArrow
-            ? { onArrowLeft: () => onArrow("left"), onArrowRight: () => onArrow("right") }
-            : {},
-        )(node);
-        node.addEventListener("keydown", onKey);
-        wirings.push(() => node.removeEventListener("keydown", onKey));
-        // Focus moves to the first activatable item on open (the content
-        // itself when the menu is empty).
-        const first = menuItems(node)[0];
-        (first ?? node).focus();
-        // The exit's animationend (state already "closed") is the primary
-        // unmount trigger; the entry's animationend is ignored.
-        const onAnimationEnd = (): void => {
-          if (stateOf() === "closed") onExited?.();
-        };
-        node.addEventListener("animationend", onAnimationEnd);
-        teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
-      }}
-      hook:beforeDestroy={() => {
-        disposeWirings();
-        while (teardown.length) teardown.pop()!();
-      }}
       {...attrs}
     >
       {children}
-    </div>
+    </Content>
   );
 }
 
 export function MenubarGroup({ children, class: cls, ...attrs }: MenubarPartProps): JSX.Element {
+  const { Group } = menu();
   return (
-    <div
+    <Group
       data-slot="menubar-group"
       class={
         // @hella:compose
@@ -379,96 +115,61 @@ export function MenubarGroup({ children, class: cls, ...attrs }: MenubarPartProp
       {...attrs}
     >
       {children}
-    </div>
+    </Group>
   );
 }
 
 export function MenubarItem({
   destructive,
   inset,
-  disabled,
   "on:click": userClick,
   shortcut: shortcutSlot,
   children,
   class: cls,
   ...attrs
 }: MenubarItemProps): JSX.Element {
+  const { Item } = menu();
   return (
-    <div
-      role="menuitem"
-      tabindex="-1"
+    <Item
+      destructive={destructive}
+      inset={inset}
+      shortcut={shortcutSlot}
+      on:click={userClick}
       data-slot="menubar-item"
-      data-variant={destructive ? "destructive" : "default"}
-      data-inset={inset ? "true" : undefined}
-      data-disabled={disabled ? "true" : undefined}
-      aria-disabled={disabled ? "true" : undefined}
       class={
         // @hella:compose
         [item, cls]
         // @hella:end
       }
-      on:click={function (e) {
-        if (disabled) return;
-        userClick?.call(this, e);
-        closeAllMenus();
-      }}
       {...attrs}
     >
       {children}
-      {() =>
-        shortcutSlot !== undefined ? <MenubarShortcut>{shortcutSlot}</MenubarShortcut> : null
-      }
-    </div>
+    </Item>
   );
 }
 
 export function MenubarCheckboxItem({
   checked: checkedProp,
   onCheckedChange,
-  disabled,
   children,
   class: cls,
   ...attrs
 }: MenubarCheckboxItemProps): JSX.Element {
-  const accessor = typeof checkedProp === "function" ? checkedProp : undefined;
-  const internal = signal(typeof checkedProp === "boolean" ? checkedProp : false);
-  const checked = (): boolean => (accessor ? accessor() : internal());
-  const toggle = (): void => {
-    if (disabled) return;
-    const next = !checked();
-    if (!accessor) internal(next);
-    onCheckedChange?.(next);
-    closeAllMenus();
-  };
+  const { CheckboxItem } = menu();
   return (
-    <div
-      role="menuitemcheckbox"
-      tabindex="-1"
+    <CheckboxItem
+      checked={checkedProp}
+      onCheckedChange={onCheckedChange}
       data-slot="menubar-checkbox-item"
-      aria-checked={checked() ? "true" : "false"}
-      data-state={checked() ? "checked" : "unchecked"}
-      data-disabled={disabled ? "true" : undefined}
-      aria-disabled={disabled ? "true" : undefined}
       class={
         // @hella:compose
         [checkItem, cls]
         // @hella:end
       }
-      on:click={toggle}
       {...attrs}
     >
-      <span
-        data-slot="menubar-indicator"
-        class={
-          // @hella:compose
-          [indicator]
-          // @hella:end
-        }
-      >
-        {() => (checked() ? checkIcon() : null)}
-      </span>
       {children}
-    </div>
+    </CheckboxItem>
   );
 }
 
@@ -481,14 +182,13 @@ export function MenubarRadioGroup({
   class: cls,
   ...attrs
 }: MenubarRadioGroupProps): JSX.Element {
-  const internal = signal("");
-  const current = (): string => (valueProp !== undefined ? valueProp() : internal());
-  const select = (value: string): void => {
-    if (valueProp === undefined) internal(value);
-    onValueChange?.(value);
-  };
+  const { RadioGroup } = menu();
   return (
-    <div
+    <RadioGroup
+      items={items}
+      keyBy={keyBy}
+      value={valueProp}
+      onValueChange={onValueChange}
       data-slot="menubar-radio-group"
       class={
         // @hella:compose
@@ -498,21 +198,7 @@ export function MenubarRadioGroup({
       {...attrs}
     >
       {children}
-      <ForEach
-        each={items ?? (() => [])}
-        use={(entry) => (
-          <MenubarRadioItem
-            key={keyBy ? entry.value : undefined}
-            value={entry.value}
-            checked={() => current() === entry.value}
-            disabled={entry.disabled}
-            onSelect={() => select(entry.value)}
-          >
-            {entry.label}
-          </MenubarRadioItem>
-        )}
-      />
-    </div>
+    </RadioGroup>
   );
 }
 
@@ -520,47 +206,26 @@ export function MenubarRadioItem({
   value,
   checked: checkedProp,
   onSelect,
-  disabled,
   children,
   class: cls,
   ...attrs
 }: MenubarRadioItemProps): JSX.Element {
-  const checked = (): boolean =>
-    typeof checkedProp === "function" ? checkedProp() : (checkedProp ?? false);
+  const { RadioItem } = menu();
   return (
-    <div
-      role="menuitemradio"
-      tabindex="-1"
+    <RadioItem
+      value={value}
+      checked={checkedProp}
+      onSelect={onSelect}
       data-slot="menubar-radio-item"
-      data-value={value}
-      aria-checked={checked() ? "true" : "false"}
-      data-state={checked() ? "checked" : "unchecked"}
-      data-disabled={disabled ? "true" : undefined}
-      aria-disabled={disabled ? "true" : undefined}
       class={
         // @hella:compose
         [radioItem, cls]
         // @hella:end
       }
-      on:click={() => {
-        if (disabled) return;
-        onSelect?.();
-        closeAllMenus();
-      }}
       {...attrs}
     >
-      <span
-        data-slot="menubar-indicator"
-        class={
-          // @hella:compose
-          [indicator]
-          // @hella:end
-        }
-      >
-        {() => (checked() ? circleIcon() : null)}
-      </span>
       {children}
-    </div>
+    </RadioItem>
   );
 }
 
@@ -570,10 +235,11 @@ export function MenubarLabel({
   class: cls,
   ...attrs
 }: MenubarLabelProps): JSX.Element {
+  const { Label } = menu();
   return (
-    <div
+    <Label
+      inset={inset}
       data-slot="menubar-label"
-      data-inset={inset ? "true" : undefined}
       class={
         // @hella:compose
         [label, cls]
@@ -582,14 +248,14 @@ export function MenubarLabel({
       {...attrs}
     >
       {children}
-    </div>
+    </Label>
   );
 }
 
 export function MenubarSeparator({ class: cls, ...attrs }: MenubarPartProps): JSX.Element {
+  const { Separator } = menu();
   return (
-    <div
-      role="separator"
+    <Separator
       data-slot="menubar-separator"
       class={
         // @hella:compose
@@ -606,8 +272,9 @@ export function MenubarShortcut({
   class: cls,
   ...attrs
 }: MenubarShortcutProps): JSX.Element {
+  const { Shortcut } = menu();
   return (
-    <span
+    <Shortcut
       data-slot="menubar-shortcut"
       class={
         // @hella:compose
@@ -617,7 +284,7 @@ export function MenubarShortcut({
       {...attrs}
     >
       {children}
-    </span>
+    </Shortcut>
   );
 }
 
@@ -629,55 +296,25 @@ export function MenubarSubTrigger({
   class: cls,
   ...attrs
 }: MenubarSubTriggerProps): JSX.Element {
-  const stateOf = (): "open" | "closed" => state?.() ?? "closed";
-  const teardown: (() => void)[] = [];
+  const sub = menu().sub({
+    open: state ? () => state() === "open" : undefined,
+    onOpenChange: (next) => {
+      if (next) onOpen?.();
+    },
+  });
   return (
-    <div
-      role="menuitem"
-      tabindex="-1"
+    <sub.Trigger
+      inset={inset}
       data-slot="menubar-sub-trigger"
-      data-state={stateOf()}
-      data-inset={inset ? "true" : undefined}
-      aria-haspopup="menu"
-      aria-expanded={stateOf() === "open" ? "true" : "false"}
       class={
         // @hella:compose
         [subTrigger, cls]
         // @hella:end
       }
-      on:click={() => onOpen?.()}
-      hook:afterMount={(node) => {
-        if (!(node instanceof HTMLElement) || !onOpen) return;
-        // Hover intent: ~100ms rest opens, leaving before it fires cancels.
-        let timer: ReturnType<typeof setTimeout> | null = null;
-        const enter = (): void => {
-          if (timer !== null) return;
-          timer = setTimeout(() => {
-            timer = null;
-            onOpen?.();
-          }, 100);
-        };
-        const leave = (): void => {
-          if (timer === null) return;
-          clearTimeout(timer);
-          timer = null;
-        };
-        node.addEventListener("pointerenter", enter);
-        node.addEventListener("pointerleave", leave);
-        teardown.push(() => {
-          node.removeEventListener("pointerenter", enter);
-          node.removeEventListener("pointerleave", leave);
-          if (timer !== null) clearTimeout(timer);
-        });
-      }}
-      hook:beforeDestroy={() => {
-        while (teardown.length) teardown.pop()!();
-      }}
       {...attrs}
     >
       {children}
-      {chevronIcon()}
-    </div>
+    </sub.Trigger>
   );
 }
 
@@ -697,82 +334,33 @@ export function MenubarSubContent({
 }: MenubarSubContentProps): JSX.Element {
   const side = sideProp ?? "right";
   const align = alignProp ?? "start";
-  const stateOf = (): "open" | "closed" => state?.() ?? "open";
-  const wirings: (() => void)[] = [];
-  const teardown: (() => void)[] = [];
-
-  const disposeWirings = (): void => {
-    while (wirings.length) wirings.pop()!();
-  };
-
-  // The exit runs unwired: flipping to "closed" tears the layer down
-  // immediately; reopening remounts fresh wirings with the content.
-  effect(() => {
-    if (stateOf() === "closed") disposeWirings();
+  // ArrowLeft-exit and pointerenter-cancel are the factory sub wiring's own
+  // behaviors now - consumed here so they never reach the DOM as attributes.
+  void onArrowLeft;
+  void onPointerEnter;
+  const { Content } = menu().sub({
+    open: () => (state?.() ?? "open") === "open",
+    onOpenChange: (next) => {
+      if (!next) onDismiss?.();
+    },
   });
-
   return (
-    <div
-      role="menu"
-      tabindex="-1"
+    <Content
+      side={side}
+      align={align}
+      sideOffset={sideOffset}
+      anchor={anchor}
+      onExited={onExited}
       data-slot="menubar-sub-content"
-      data-state={stateOf()}
-      data-side={side}
-      data-align={align}
       class={
         // @hella:compose
         [subContent, cls]
         // @hella:end
       }
-      hook:afterMount={(node) => {
-        if (!(node instanceof HTMLElement)) return;
-        const anchorEl = anchor?.();
-        if (anchorEl != null)
-          wirings.push(
-            anchorPosition(anchorEl, node, {
-              placement: placementOf(side, align),
-              offset: sideOffset ?? 0,
-            }),
-          );
-        if (onDismiss) {
-          // Submenu layers register their own dismissal: Escape pops one
-          // level, an outside pointerdown closes the sub before the parent.
-          wirings.push(layerDismissal(() => [node, anchorEl ?? null], onDismiss));
-          const onSelect = (): void => onDismiss?.();
-          document.addEventListener(SELECT_EVENT, onSelect);
-          wirings.push(() => document.removeEventListener(SELECT_EVENT, onSelect));
-        }
-        wirings.push(
-          menuTypeahead(
-            node,
-            () => menuEntries(node),
-            (entry) => entry.node.focus(),
-          ),
-        );
-        const onKey = menuKeyDown(onArrowLeft ? { onArrowLeft } : {})(node);
-        node.addEventListener("keydown", onKey);
-        wirings.push(() => node.removeEventListener("keydown", onKey));
-        if (onPointerEnter) {
-          const onPointerEnterListener = (): void => onPointerEnter?.();
-          node.addEventListener("pointerenter", onPointerEnterListener);
-          wirings.push(() => node.removeEventListener("pointerenter", onPointerEnterListener));
-        }
-        const first = menuItems(node)[0];
-        (first ?? node).focus();
-        const onAnimationEnd = (): void => {
-          if (stateOf() === "closed") onExited?.();
-        };
-        node.addEventListener("animationend", onAnimationEnd);
-        teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
-      }}
-      hook:beforeDestroy={() => {
-        disposeWirings();
-        while (teardown.length) teardown.pop()!();
-      }}
       {...attrs}
     >
       {children}
-    </div>
+    </Content>
   );
 }
 
@@ -782,99 +370,31 @@ export function MenubarSub({
   class: cls,
   ...attrs
 }: MenubarSubProps): JSX.Element {
-  const s = menuOpenState({});
-  let triggerNode: HTMLElement | undefined;
-  let openTimer: ReturnType<typeof setTimeout> | null = null;
-  let closeTimer: ReturnType<typeof setTimeout> | null = null;
-
-  // Closing the submenu returns focus to its trigger; the root's own restore
-  // owns the top-level handoff, so a detached trigger is left alone.
-  let subWasOpen = false;
-  effect(() => {
-    if (s.isOpen()) subWasOpen = true;
-    else if (subWasOpen) {
-      subWasOpen = false;
-      if (triggerNode?.isConnected) triggerNode.focus();
-    }
-  });
-
+  const sub = menu().sub();
   return (
-    <div
-      role="menuitem"
-      tabindex="-1"
+    <sub.Trigger
       data-slot="menubar-sub-trigger"
-      data-state={s.state()}
-      aria-haspopup="menu"
-      aria-expanded={s.isOpen() ? "true" : "false"}
       class={
         // @hella:compose
         [subTrigger, cls]
         // @hella:end
       }
-      on:click={() => s.setOpen(true)}
-      hook:afterMount={(node) => {
-        if (!(node instanceof HTMLElement)) return;
-        triggerNode = node;
-        // Hover intent: ~100ms rest opens; leaving schedules a close that
-        // entering the submenu content cancels (the pointer is in transit).
-        const enter = (): void => {
-          if (closeTimer !== null) {
-            clearTimeout(closeTimer);
-            closeTimer = null;
-          }
-          if (openTimer !== null) return;
-          openTimer = setTimeout(() => {
-            openTimer = null;
-            s.setOpen(true);
-          }, 100);
-        };
-        const leave = (): void => {
-          if (openTimer !== null) {
-            clearTimeout(openTimer);
-            openTimer = null;
-          }
-          if (closeTimer !== null) return;
-          closeTimer = setTimeout(() => {
-            closeTimer = null;
-            s.setOpen(false);
-          }, 300);
-        };
-        node.addEventListener("pointerenter", enter);
-        node.addEventListener("pointerleave", leave);
-      }}
-      hook:beforeDestroy={() => {
-        if (openTimer !== null) clearTimeout(openTimer);
-        if (closeTimer !== null) clearTimeout(closeTimer);
-      }}
       {...attrs}
     >
       {children}
-      {chevronIcon()}
-      {() =>
-        s.visible() && (
-          <Portal to="body">
-            <MenubarSubContent
-              state={s.state}
-              anchor={() => triggerNode}
-              onDismiss={() => s.setOpen(false)}
-              onExited={s.finishExit}
-              onArrowLeft={() => s.setOpen(false)}
-              onPointerEnter={() => {
-                if (closeTimer !== null) {
-                  clearTimeout(closeTimer);
-                  closeTimer = null;
-                }
-              }}
-              children={contentSlot}
-            />
-          </Portal>
-        )
-      }
-    </div>
+      <sub.Content
+        data-slot="menubar-sub-content"
+        class={
+          // @hella:compose
+          [subContent]
+          // @hella:end
+        }
+      >
+        {contentSlot}
+      </sub.Content>
+    </sub.Trigger>
   );
 }
-
-let menubarMenuCount = 0;
 
 export function MenubarMenu({
   value,
@@ -885,58 +405,8 @@ export function MenubarMenu({
   class: cls,
   ...attrs
 }: MenubarMenuProps): JSX.Element {
-  const s = menuOpenState({ open, onOpenChange });
-  const menuId = value ?? `hella-menubar-menu-${++menubarMenuCount}`;
-  const contentId = `${menuId}-content`;
-  let triggerNode: HTMLElement | undefined;
-  const wirings: (() => void)[] = [];
-
-  // Announce every flip so sibling menus close (second opens, first closes)
-  // and the bar mirrors which menu is open. Closing under Tab runs through
-  // closeAllMenus, so the item-model activation event also lands here.
-  let wasOpen = false;
-  effect(() => {
-    if (s.isOpen()) {
-      wasOpen = true;
-      document.dispatchEvent(new CustomEvent(OPEN_EVENT, { detail: { id: menuId } }));
-    } else if (wasOpen) {
-      wasOpen = false;
-      document.dispatchEvent(new CustomEvent(CLOSE_EVENT, { detail: { id: menuId } }));
-    }
-  });
-
-  // Focus returns to the trigger when the menu closes (one open→closed flip
-  // only, so the initial closed state never steals focus at mount).
-  let wasOpenForFocus = false;
-  effect(() => {
-    if (s.isOpen()) wasOpenForFocus = true;
-    else if (wasOpenForFocus) {
-      wasOpenForFocus = false;
-      triggerNode?.focus();
-    }
-  });
-
-  // Bar coordination: a sibling opening closes this menu without re-announcing.
-  const onSiblingOpen = (event: Event): void => {
-    const id = (event as CustomEvent).detail?.id;
-    if (id !== menuId) s.setOpen(false);
-  };
-
-  // Open-then-move: both horizontal arrows hand off to the adjacent trigger in
-  // the same bar; its click opens that menu and the announcement closes this one.
-  const onArrow = (direction: "left" | "right"): void => {
-    if (!triggerNode) return;
-    const bar = triggerNode.closest("[data-slot='menubar']");
-    const triggers = bar ? Array.from(bar.querySelectorAll("[data-slot='menubar-trigger']")) : [];
-    const index = triggers.indexOf(triggerNode);
-    if (index === -1 || triggers.length < 2) return;
-    const next = triggers[
-      (index + (direction === "right" ? 1 : -1) + triggers.length) % triggers.length
-    ] as HTMLElement;
-    next.focus();
-    next.dispatchEvent(new Event("click", { bubbles: true }));
-  };
-
+  const { menu } = menubar();
+  const File = menu({ value, open, onOpenChange });
   return (
     <div
       data-slot="menubar-menu"
@@ -946,54 +416,28 @@ export function MenubarMenu({
         [cls]
         // @hella:end
       }
-      hook:afterMount={(node) => {
-        if (node instanceof HTMLElement)
-          triggerNode = node.querySelector("[data-slot='menubar-trigger']") ?? undefined;
-        document.addEventListener(OPEN_EVENT, onSiblingOpen);
-        wirings.push(() => document.removeEventListener(OPEN_EVENT, onSiblingOpen));
-      }}
-      hook:beforeDestroy={() => {
-        while (wirings.length) wirings.pop()!();
-      }}
       {...attrs}
     >
-      <button
-        type="button"
+      <File.Trigger
         data-slot="menubar-trigger"
-        data-state={s.state()}
-        aria-haspopup="menu"
-        aria-expanded={s.isOpen() ? "true" : "false"}
-        aria-controls={contentId}
         class={
           // @hella:compose
           [trigger]
           // @hella:end
         }
-        on:click={() => s.setOpen(!s.isOpen())}
-        on:keydown={(e) => {
-          if ((e as KeyboardEvent).key === "ArrowDown" && !s.isOpen()) {
-            e.preventDefault();
-            s.setOpen(true);
-          }
-        }}
       >
         {children}
-      </button>
-      {() =>
-        s.visible() && (
-          <Portal to="body">
-            <MenubarContent
-              state={s.state}
-              id={contentId}
-              anchor={() => triggerNode}
-              onDismiss={() => s.setOpen(false)}
-              onExited={s.finishExit}
-              onArrow={onArrow}
-              children={contentSlot}
-            />
-          </Portal>
-        )
-      }
+      </File.Trigger>
+      <File.Content
+        data-slot="menubar-content"
+        class={
+          // @hella:compose
+          [content]
+          // @hella:end
+        }
+      >
+        {contentSlot}
+      </File.Content>
     </div>
   );
 }
@@ -1005,76 +449,18 @@ export function Menubar({
   class: cls,
   ...attrs
 }: MenubarProps): JSX.Element {
-  const internal = signal("");
-  const active = (): string => (valueProp !== undefined ? valueProp() : internal());
-  const setActive = (value: string): void => {
-    if (valueProp === undefined) internal(value);
-    onValueChange?.(value);
-  };
-  const wirings: (() => void)[] = [];
-  let barNode: HTMLElement | undefined;
-
-  // Mirror the menus' announcements into the bar's open-menu value.
-  const onMenuOpen = (event: Event): void => {
-    const id = (event as CustomEvent).detail?.id;
-    if (typeof id === "string") setActive(id);
-  };
-  const onMenuClose = (event: Event): void => {
-    const id = (event as CustomEvent).detail?.id;
-    if (typeof id === "string" && active() === id) setActive("");
-  };
-
-  // Bar keyboard with no menu open: left/right move focus between triggers
-  // (open-then-move is the content's onArrow handoff, not the bar's). A direct
-  // listener, not on: - delegation leaves currentTarget at body.
-  const onKeyDown = (event: Event): void => {
-    const e = event as KeyboardEvent;
-    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
-    const focused = document.activeElement?.closest?.(
-      "[data-slot='menubar-trigger']",
-    ) as HTMLElement | null;
-    if (!focused || focused.getAttribute("data-state") === "open") return;
-    const bar = focused.closest("[data-slot='menubar']");
-    if (!bar || bar !== barNode) return;
-    const triggers = Array.from(bar.querySelectorAll("[data-slot='menubar-trigger']"));
-    if (triggers.length === 0) return;
-    const current = triggers.indexOf(focused);
-    if (current === -1) return;
-    e.preventDefault();
-    const next = triggers[
-      (current + (e.key === "ArrowRight" ? 1 : -1) + triggers.length) % triggers.length
-    ] as HTMLElement;
-    next.focus();
-  };
-
+  const { Bar } = menubar({ value: valueProp, onValueChange });
   return (
-    <div
-      role="menubar"
+    <Bar
       data-slot="menubar"
       class={
         // @hella:compose
         [base, cls]
         // @hella:end
       }
-      hook:afterMount={(node) => {
-        if (!(node instanceof HTMLElement)) return;
-        barNode = node;
-        node.addEventListener("keydown", onKeyDown);
-        wirings.push(() => node.removeEventListener("keydown", onKeyDown));
-        document.addEventListener(OPEN_EVENT, onMenuOpen);
-        document.addEventListener(CLOSE_EVENT, onMenuClose);
-        wirings.push(() => {
-          document.removeEventListener(OPEN_EVENT, onMenuOpen);
-          document.removeEventListener(CLOSE_EVENT, onMenuClose);
-        });
-      }}
-      hook:beforeDestroy={() => {
-        while (wirings.length) wirings.pop()!();
-        barNode = undefined;
-      }}
       {...attrs}
     >
       {children}
-    </div>
+    </Bar>
   );
 }

@@ -1,0 +1,120 @@
+# menu
+
+Creates the full menu part set in one call: the trigger, the ported content layer, the selectable and structural rows, and `sub()` for nested submenus. The factory closure owns the open state, the exit timing, and the close-on-select coordination.
+
+## Basic Usage
+
+```tsx
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+import { menu } from "@hellajs/headless";
+
+const open = signal(false);
+const grid = signal(true);
+
+const save = () => {};
+
+const Menu = menu({
+  open: () => open(),
+  onOpenChange: (next) => open(next),
+});
+
+mount(
+  <div>
+    <Menu.Trigger>Actions</Menu.Trigger>
+    <Menu.Content side="bottom" align="start">
+      <Menu.Item onSelect={save} shortcut="⌘S">Save</Menu.Item>
+      <Menu.CheckboxItem checked={grid}>Grid</Menu.CheckboxItem>
+      <Menu.Separator />
+      <Menu.RadioGroup
+        items={[
+          { value: "light", label: "Light" },
+          { value: "dark", label: "Dark" },
+        ]}
+      />
+    </Menu.Content>
+  </div>,
+  "#app",
+);
+// The trigger toggles the factory's open state and carries data-state plus
+// aria-expanded. Content portals into document.body, anchors to the trigger,
+// and closes on Escape, an outside press, or any item selection; closing keeps
+// it mounted under data-state="closed" until its exit animation ends.
+```
+
+Omitting `open` keeps the state internal, so the parts work standalone:
+
+```tsx
+const Menu = menu();
+// <Menu.Trigger> toggles the factory's own signal.
+```
+
+## API
+
+```typescript
+function menu(options?: MenuOptions): MenuParts
+```
+
+- `options.open`: Controlled open-state getter. Passing it makes the menu controlled; omitting it keeps state internal.
+- `options.onOpenChange`: Called on every open-state change, owned toggle and dismissal alike.
+- `options.trigger`: The trigger model, `"click"` (default) or `"contextmenu"`. The contextmenu mode renders a zone that opens the menu at the pointer through a virtual anchor.
+- **Returns**: The part set, composed as `Menu.Trigger`-style members.
+
+### Parts
+
+| Part | Renders |
+|---|---|
+| `Trigger` | `button` owning the click toggle, `data-state`, `aria-expanded`, `aria-haspopup`, and `aria-controls`; a `span` zone in the contextmenu mode |
+| `Content` | `role="menu"` panel portaled into `document.body`, carrying `data-state`, `data-side`, and `data-align` |
+| `Item` | `role="menuitem"` row that closes the menu on select unless `closeOnSelect: false` |
+| `CheckboxItem` | `role="menuitemcheckbox"` row with a check indicator, controlled-or-internal `checked` state |
+| `RadioGroup` | Grouping `div` with controlled-or-internal value state and optional declarative `items` |
+| `RadioItem` | `role="menuitemradio"` row reporting its selection to the owning group or `onSelect` |
+| `Label` | Grouping `div` carrying `data-slot="menu-label"` |
+| `Separator` | `role="separator"` divider |
+| `Group` | Grouping `div` carrying `data-slot="menu-group"` |
+| `Shortcut` | Trailing `span` for shortcut hints; `Item` renders it automatically from its `shortcut` prop |
+| `sub()` | Factory for a nested submenu: its own open state, anchored to its own trigger |
+
+Every part spreads `class` and native attributes onto its element; parts own structure, styling stays in the wrapper.
+
+### Content props
+
+| Prop | Type | Default |
+|---|---|---|
+| `side` | `"top" \| "bottom" \| "left" \| "right"` | `"bottom"` |
+| `align` | `"start" \| "center" \| "end"` | `"start"` |
+| `sideOffset` | `number` | `4` (`0` in the contextmenu mode) |
+| `alignOffset` | `number` | `0` |
+| `anchor` | `() => Element \| undefined` | The factory's trigger or virtual anchor |
+| `onArrowLeft` | `() => void` | `-` |
+| `onExited` | `() => void` | `-` |
+| `id` | `string` | The generated content id |
+
+## Key Concepts
+
+### Controlled or Internal State
+
+Pass `open` and the factory never holds state: the getter is the single source of truth and `onOpenChange` reports every requested flip. Omit `open` and the factory keeps its own signal; `onOpenChange` still reports, so either shape composes with the registry's `value`/`onValueChange` contract. `CheckboxItem` and `RadioGroup` follow the same contract per row and per group.
+
+### Selection Semantics
+
+Activating an `Item` calls its `onSelect`, then dispatches the shared selection event that closes every open menu layer; `closeOnSelect: false` skips the close for palette-style rows. `CheckboxItem` toggles and closes; `RadioItem` reports to its group and closes.
+
+### The Keyboard Model
+
+While open, the content owns the keyboard: arrows rove the enabled items with wrap-around and Home/End bounds, Enter and Space activate the focused row, Tab closes every layer, and typing runs [`menuTypeahead`](/reference/headless/menutypeahead) against the item labels. ArrowRight enters a submenu from its trigger and flips with the resolved writing direction.
+
+### Submenus
+
+`Menu.sub()` returns the same part set bound to a nested closure: `sub.Trigger` opens on click, on ArrowRight, or after a short hover rest; `sub.Content` anchors to its own trigger, closes on ArrowLeft, and cancels a pending close when the pointer enters it. The submenu rides the same layer stack as its parent, so Escape and outside presses dismiss it first.
+
+## Important Considerations
+
+### Call the Factory in Component Scope
+
+`menu()` starts a state machine whose effect must dispose with the component that owns it. Module-level calls with an internal signal leak that effect; module-level calls are safe only with a controlled `open` getter, where the machine never subscribes to factory state.
+
+### One Factory Per Menu Instance
+
+Each `menu()` call is one menu: create it in the component that renders the trigger and compose its `Content` inside the same mounted tree. A bar of menus with one-open-at-a-time coordination is [`menubar`](/reference/headless/menubar)'s job, not several loose `menu()` calls.

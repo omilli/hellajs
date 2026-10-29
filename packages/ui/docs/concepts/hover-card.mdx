@@ -2,7 +2,7 @@
 
 A rich preview card: hovering a trigger opens an anchored panel, moving the pointer into the panel keeps it open, and leaving both closes it. Keyboard focus follows the same open and close path a pointer takes.
 
-Two named parts ship beside the default `HoverCard`: `HoverCardTrigger` and `HoverCardContent`. State is explicit - portal the content yourself, hand it a `state` accessor, and wire both regions' hover through [`hoverIntent`](/reference/headless/hoverintent).
+Two named parts ship beside the default `HoverCard`: `HoverCardTrigger` and `HoverCardContent`. Each is a thin styled wrapper over the [`hoverCard`](/reference/headless/hovercard) factory's part set, so the hover timings, crossing contract, anchoring, dismissal, and exit timing stay in one place. State is still explicit on the manual parts: hand `HoverCardContent` a `state` accessor plus `onOpen`/`onClose` for the keep-open wiring, and point its `anchor` at whatever should anchor it; it portals into `document.body` itself.
 
 ### HoverCard
 
@@ -21,7 +21,7 @@ A controlled `open` stops the root from writing its internal signal; `onOpenChan
 
 ### HoverCardTrigger
 
-The manual trigger span; the composed `HoverCard` renders the same shape wired to [`hoverIntent`](/reference/headless/hoverintent) with the 200ms/300ms delays and focus parity.
+The manual trigger span; the composed `HoverCard` renders the same shape wired to the 200ms/300ms delays and focus parity.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
@@ -30,7 +30,7 @@ Accepts all native `span` attributes (forwarded to the root element).
 
 ### HoverCardContent
 
-The panel `div` carrying `data-slot="hover-card-content"`, positioned through [`anchorPosition`](/reference/headless/anchorposition) at a 4px offset. When both callbacks are given, hovering the content re-arms the open state with zero delays - the keep-open contract.
+The panel `div` carrying `data-slot="hover-card-content"`, wired by the [`hoverCard`](/reference/headless/hovercard) factory: positioned through [`anchorPosition`](/reference/headless/anchorposition) at a 4px offset, kept open by a zero-delay re-arm while hovered, and dismissed through [`layerDismissal`](/reference/headless/layerdismissal) - Escape and an outside pointerdown report through `onClose`.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |

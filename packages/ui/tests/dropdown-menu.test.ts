@@ -211,15 +211,13 @@ describe("dropdown-menu", () => {
       const destructive = content.querySelector("[data-variant='destructive']")!;
       expect(destructive.getAttribute("data-slot")).toBe("dropdown-menu-item");
       expect(destructive.textContent).toContain("Delete");
-      expect(destructive.querySelector("[data-slot='dropdown-menu-shortcut']")!.textContent).toBe(
-        "⌫",
-      );
+      expect(destructive.querySelector("[data-slot='menu-shortcut']")!.textContent).toBe("⌫");
       const inset = content.querySelector("[data-inset]")!;
       expect(inset.textContent).toContain("Indented");
       const rename = [...content.querySelectorAll("[role='menuitem']")].find((el) =>
         el.textContent?.includes("Rename"),
       )!;
-      expect(rename.querySelector("[data-slot='dropdown-menu-shortcut']")!.textContent).toBe("⌘R");
+      expect(rename.querySelector("[data-slot='menu-shortcut']")!.textContent).toBe("⌘R");
     },
   );
 
@@ -682,10 +680,11 @@ describe("dropdown-menu", () => {
 
   test.each(dropdownMenuPartVariants.filter((variant) => variant.part === "Content"))(
     "$style content part respects a user-supplied id",
-    (variant) => {
+    async (variant) => {
       const container = setupContainer();
       mount(variant.render({ id: "custom-menu", children: [] }), container);
-      expect(container.firstElementChild!.getAttribute("id")).toBe("custom-menu");
+      const content = await awaitPortaled("dropdown-menu-content");
+      expect(content.getAttribute("id")).toBe("custom-menu");
     },
   );
 
@@ -702,12 +701,11 @@ describe("dropdown-menu", () => {
     );
   });
 
-  test("renders every named part with its data-slot across both styles", () => {
+  test("renders every named part with its data-slot across both styles", async () => {
     for (const variant of dropdownMenuPartVariants) {
       const container = setupContainer();
       const rendered = variant.render({ children: [] });
       mount(rendered, container);
-      const el = container.firstElementChild!;
       const slot =
         variant.part === "CheckboxItem"
           ? "dropdown-menu-checkbox-item"
@@ -720,13 +718,18 @@ describe("dropdown-menu", () => {
                 : variant.part === "SubContent"
                   ? "dropdown-menu-sub-content"
                   : `dropdown-menu-${variant.part.toLowerCase()}`;
+      // Content and SubContent portal themselves; every other part renders in place.
+      const el =
+        variant.part === "Content" || variant.part === "SubContent"
+          ? await awaitPortaled(slot)
+          : container.firstElementChild!;
       expect(el.getAttribute("data-slot")).toBe(slot);
     }
   });
 
   test.each(dropdownMenuPartVariants.filter((variant) => variant.part === "Content"))(
     "$style content part anchors, takes focus, and drains its wirings on disposal",
-    (variant) => {
+    async (variant) => {
       const anchor = document.createElement("button");
       document.body.appendChild(anchor);
       pinRect(anchor, 100, 50, 200, 20);
@@ -742,7 +745,7 @@ describe("dropdown-menu", () => {
         }),
         container,
       );
-      const content = container.firstElementChild as HTMLElement;
+      const content = await awaitPortaled("dropdown-menu-content");
       expect(content.style.left).toBe("254px");
       expect(content.style.translate).toBe("0 8px");
       expect(content.getAttribute("data-side")).toBe("right");
@@ -750,7 +753,7 @@ describe("dropdown-menu", () => {
       pressEscape();
       expect(onDismiss).toHaveBeenCalledTimes(1);
       handle.unmount();
-      expect(content.isConnected).toBe(false);
+      await awaitDetached(content);
     },
   );
 

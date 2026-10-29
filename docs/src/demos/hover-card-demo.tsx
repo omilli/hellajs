@@ -1,8 +1,7 @@
 import { signal } from "@hellajs/core";
 import { style } from "@hellajs/css";
-import { Portal } from "@hellajs/dom";
 import { hoverIntent } from "@hellajs/headless";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@components/ui/hover-card.js";
+import { HoverCard, HoverCardContent } from "@components/ui/hover-card.js";
 
 
 
@@ -35,7 +34,7 @@ export function HoverCardManualDemo() {
 
   return (
     <>
-      <HoverCardTrigger
+      <span
         hook:afterMount={(node: Element) => {
           trigger = node;
           hoverIntent(node, {
@@ -47,19 +46,15 @@ export function HoverCardManualDemo() {
         }}
       >
         <a href="#release" on:click={(e: Event) => e.preventDefault()}>Release notes</a>
-      </HoverCardTrigger>
-      {() => open() && (
-        <Portal to="body">
-          <HoverCardContent
-            state={state}
-            anchor={() => trigger}
-            onOpen={() => open(true)}
-            onClose={() => open(false)}
-          >
-            <p>Moving into the card re-arms the open state, so it stays open under the pointer.</p>
-          </HoverCardContent>
-        </Portal>
-      )}
+      </span>
+      <HoverCardContent
+        state={state}
+        anchor={() => trigger}
+        onOpen={() => open(true)}
+        onClose={() => open(false)}
+      >
+        <p>Moving into the card re-arms the open state, so it stays open under the pointer.</p>
+      </HoverCardContent>
     </>
   );
 }

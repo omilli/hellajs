@@ -437,7 +437,7 @@ describe("menubar", () => {
       const content = await openMenu(file!);
       const destructive = content.querySelector("[data-variant='destructive']")!;
       expect(destructive.textContent).toContain("Delete");
-      expect(destructive.querySelector("[data-slot='menubar-shortcut']")!.textContent).toBe("⌫");
+      expect(destructive.querySelector("[data-slot='menu-shortcut']")!.textContent).toBe("⌫");
       expect(content.querySelector("[data-inset]")!.textContent).toContain("Indented");
     },
   );
@@ -670,10 +670,11 @@ describe("menubar", () => {
 
   test.each(menubarPartVariants.filter((variant) => variant.part === "Content"))(
     "$style content part respects a user-supplied id",
-    (variant) => {
+    async (variant) => {
       const container = setupContainer();
       mount(variant.render({ id: "custom-menubar-content", children: [] }), container);
-      expect(container.firstElementChild!.getAttribute("id")).toBe("custom-menubar-content");
+      const content = await awaitPortaled("menubar-content");
+      expect(content.getAttribute("id")).toBe("custom-menubar-content");
     },
   );
 
@@ -690,12 +691,11 @@ describe("menubar", () => {
     );
   });
 
-  test("renders every named part with its data-slot across both styles", () => {
+  test("renders every named part with its data-slot across both styles", async () => {
     for (const variant of menubarPartVariants) {
       const container = setupContainer();
       const rendered = variant.render({ children: [] });
       mount(rendered, container);
-      const el = container.firstElementChild!;
       const slot =
         variant.part === "CheckboxItem"
           ? "menubar-checkbox-item"
@@ -708,6 +708,11 @@ describe("menubar", () => {
                 : variant.part === "SubContent"
                   ? "menubar-sub-content"
                   : `menubar-${variant.part.toLowerCase()}`;
+      // Content and SubContent portal themselves; every other part renders in place.
+      const el =
+        variant.part === "Content" || variant.part === "SubContent"
+          ? await awaitPortaled(slot)
+          : container.firstElementChild!;
       expect(el.getAttribute("data-slot")).toBe(slot);
     }
   });

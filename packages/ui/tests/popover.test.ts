@@ -139,7 +139,7 @@ describe("popover", () => {
 
   test.each(popoverPartVariants.filter((variant) => variant.part === "Content"))(
     "$style content part positions with sideOffset and alignOffset, takes focus, and drains its wirings on disposal",
-    (variant) => {
+    async (variant) => {
       const anchor = document.createElement("button");
       document.body.appendChild(anchor);
       pinRect(anchor, 100, 50, 200, 20);
@@ -156,7 +156,7 @@ describe("popover", () => {
         }),
         container,
       );
-      const content = container.firstElementChild as HTMLElement;
+      const content = await awaitPortaled("popover-content");
       expect(content.style.left).toBe("150px");
       expect(content.style.top).toBe("94px");
       expect(content.style.translate).toBe("8px 0");
@@ -165,7 +165,7 @@ describe("popover", () => {
       pressEscape();
       expect(onDismiss).toHaveBeenCalledTimes(1);
       handle.unmount();
-      expect(content.isConnected).toBe(false);
+      await awaitDetached(content);
     },
   );
 
@@ -211,10 +211,11 @@ describe("popover", () => {
 
   test.each(popoverPartVariants.filter((variant) => variant.part === "Content"))(
     "$style content part respects a user-supplied id",
-    (variant) => {
+    async (variant) => {
       const container = setupContainer();
       mount(variant.render({ id: "custom-popover", children: [] }), container);
-      expect(container.firstElementChild!.getAttribute("id")).toBe("custom-popover");
+      const content = await awaitPortaled("popover-content");
+      expect(content.getAttribute("id")).toBe("custom-popover");
     },
   );
 
@@ -222,12 +223,16 @@ describe("popover", () => {
     assertStructuralParity(popoverVariants, { content: "Parity" }, ["aria-controls"]);
   });
 
-  test("renders every named part with its data-slot across both styles", () => {
+  test("renders every named part with its data-slot across both styles", async () => {
     for (const variant of popoverPartVariants) {
       const container = setupContainer();
       const rendered = variant.render({ children: [] });
       mount(rendered, container);
-      const el = container.firstElementChild!;
+      // The content part portals itself; every other part renders in place.
+      const el =
+        variant.part === "Content"
+          ? await awaitPortaled("popover-content")
+          : container.firstElementChild!;
       if (variant.part === "Title") {
         expect(el.getAttribute("data-slot")).toBe("popover-title");
         expect(el.tagName).toBe("DIV");

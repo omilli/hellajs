@@ -183,7 +183,7 @@ describe("tooltip", () => {
 
   test.each(tooltipPartVariants.filter((variant) => variant.part === "Content"))(
     "$style content part positions against the anchor and drains its wirings on disposal",
-    (variant) => {
+    async (variant) => {
       const anchor = document.createElement("button");
       document.body.appendChild(anchor);
       pinRect(anchor, 100, 50, 200, 20);
@@ -192,11 +192,11 @@ describe("tooltip", () => {
         variant.render({ anchor: () => anchor, side: "left", children: [] }),
         container,
       );
-      const content = container.firstElementChild as HTMLElement;
+      const content = await awaitPortaled("tooltip-content");
       expect(content.style.left).toBe("50px");
       expect(content.style.top).toBe("110px");
       handle.unmount();
-      expect(content.isConnected).toBe(false);
+      await awaitDetached(content);
     },
   );
 
@@ -228,10 +228,11 @@ describe("tooltip", () => {
 
   test.each(tooltipPartVariants.filter((variant) => variant.part === "Content"))(
     "$style content part respects a user-supplied id",
-    (variant) => {
+    async (variant) => {
       const container = setupContainer();
       mount(variant.render({ id: "custom-tooltip", children: [] }), container);
-      expect(container.firstElementChild!.getAttribute("id")).toBe("custom-tooltip");
+      const content = await awaitPortaled("tooltip-content");
+      expect(content.getAttribute("id")).toBe("custom-tooltip");
     },
   );
 
@@ -239,12 +240,16 @@ describe("tooltip", () => {
     assertStructuralParity(tooltipVariants, { content: "Parity" }, ["aria-describedby"]);
   });
 
-  test("renders every named part with its data-slot across both styles", () => {
+  test("renders every named part with its data-slot across both styles", async () => {
     for (const variant of tooltipPartVariants) {
       const container = setupContainer();
       const rendered = variant.render({ children: [] });
       mount(rendered, container);
-      const el = container.firstElementChild!;
+      // The content part portals itself; every other part renders in place.
+      const el =
+        variant.part === "Content"
+          ? await awaitPortaled("tooltip-content")
+          : container.firstElementChild!;
       if (variant.part === "Content") {
         expect(el.getAttribute("data-slot")).toBe("tooltip-content");
         expect(el.getAttribute("role")).toBe("tooltip");

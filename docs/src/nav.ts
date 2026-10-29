@@ -111,6 +111,11 @@ export const navigation: Record<NavSection, NavEntry[]> = {
         "onDoubleTap",
         "layerDismissal",
         "modal",
+        "popover",
+        "menu",
+        "menubar",
+        "tooltip",
+        "hoverCard",
       ]
     },
     {

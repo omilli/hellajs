@@ -65,7 +65,7 @@ A `role="menuitem"` row; activation closes every open layer.
 | `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
-A user `on:click` chains with the owned close (it fires before the close-all activation event); `destructive` renders the destructive `data-variant` treatment; `inset` renders `data-inset="true"` for the indented alignment; `disabled` renders `data-disabled` plus `aria-disabled` and blocks the user's `on:click` and the close; `shortcut` renders as a trailing `ContextMenuShortcut` span.
+A user `on:click` chains with the owned close (it fires before the close-all activation event); `destructive` renders the destructive `data-variant` treatment; `inset` renders `data-inset="true"` for the indented alignment; `disabled` renders `data-disabled` plus `aria-disabled` and blocks the user's `on:click` and the close; `shortcut` renders as a trailing shortcut span (`data-slot="menu-shortcut"`, styled by the item's descendant rules); the standalone `ContextMenuShortcut` part stays available for manual composition.
 
 ### ContextMenuCheckboxItem
 
@@ -181,7 +181,7 @@ Every part also takes a `class` string, landing last in its style composition.
 
 ## Dismissal and Positioning
 
-Coordinate anchoring: opening plants a zero-size fixed anchor node at the pointer position (`data-slot="context-menu-anchor"` in the document body) and positions the surface against it through [`anchorPosition`](/reference/headless/anchorposition) on the `bottom-start` placement, so the menu's top-left corner sits at the click point with the same collision flipping and scroll or resize repositioning as every anchored overlay. Reopening moves the anchor; closing removes it and restores focus to the trigger zone.
+Coordinate anchoring: opening plants a zero-size fixed anchor node at the pointer position (a zero-size `data-slot="menu-anchor"` span in the document body) and positions the surface against it through [`anchorPosition`](/reference/headless/anchorposition) on the `bottom-start` placement, so the menu's top-left corner sits at the click point with the same collision flipping and scroll or resize repositioning as every anchored overlay. Reopening moves the anchor; closing removes it and restores focus to the trigger zone.
 
 Dismissal runs through [`layerDismissal`](/reference/headless/layerdismissal): Escape and a pointerdown outside the panel ask the top layer to close, so stacked menus dismiss one layer at a time. Activating an item closes every open menu layer through a document-level activation event, which is also how Enter and Space close from the keyboard. Focus moves to the first activatable item on open; the menu is non-modal, with no focus trap.
 

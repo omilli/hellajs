@@ -67,7 +67,7 @@ A `role="menuitem"` row; activation closes every open layer.
 | `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
-A user `on:click` chains with the owned close (it fires before the close-all activation event); `destructive` renders the destructive `data-variant` treatment; `inset` renders `data-inset="true"` for the indented alignment; `disabled` renders `data-disabled` plus `aria-disabled` and blocks the user's `on:click` and the close; `shortcut` renders as a trailing `DropdownMenuShortcut` span.
+A user `on:click` chains with the owned close (it fires before the close-all activation event); `destructive` renders the destructive `data-variant` treatment; `inset` renders `data-inset="true"` for the indented alignment; `disabled` renders `data-disabled` plus `aria-disabled` and blocks the user's `on:click` and the close; `shortcut` renders as a trailing shortcut span (`data-slot="menu-shortcut"`, styled by the item's descendant rules); the standalone `DropdownMenuShortcut` part stays available for manual composition.
 
 ### DropdownMenuCheckboxItem
 
@@ -178,7 +178,7 @@ The `role="menu"` sub-surface, anchored against its sub-trigger (right, start al
 | `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
-`onDismiss` closes the sub's own layer; `onExited` fires when the exit animation ends; `onArrowLeft` closes the submenu; `onPointerEnter` cancels the trigger's pending close when the pointer enters the content.
+`onDismiss` closes the sub's own layer and `onExited` fires when the exit animation ends. ArrowLeft exit and pointerentry close-cancel are the submenu factory wiring's own behaviors now; the matching props stay accepted for manual compatibility.
 
 Every part also takes a `class` string, landing last in its style composition.
 

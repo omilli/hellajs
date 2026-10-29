@@ -1,8 +1,5 @@
-import { effect, signal } from "@hellajs/core";
-import { Portal } from "@hellajs/dom";
-import type { HellaChild, HellaChildren, HTMLAttributes } from "@hellajs/dom";
-import { anchorPosition, hoverIntent } from "@hellajs/headless";
-import type { Placement } from "@hellajs/headless";
+import { hoverCard } from "@hellajs/headless";
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 type AnchorSide = "top" | "bottom" | "left" | "right";
 
@@ -76,32 +73,29 @@ const content = style("hover-card-content", {
   },
 });
 
-const placementOf = (side: AnchorSide, align: AnchorAlign): Placement =>
-  align === "center" ? side : `${side}-${align}`;
-
-/** The manual trigger span; the composed HoverCard renders the same shape wired to hoverIntent. */
+/** The manual trigger span; the composed HoverCard renders the same shape wired to the hover timings. */
 export function HoverCardTrigger({
   children,
   class: cls,
   ...attrs
 }: HoverCardTriggerProps): JSX.Element {
+  const { Trigger } = hoverCard();
   return (
-    <span
-      data-slot="hover-card-trigger"
+    <Trigger
       class={
         [cls]
       }
       {...attrs}
     >
       {children}
-    </span>
+    </Trigger>
   );
 }
 
 export function HoverCardContent({
   state,
-  side: sideProp,
-  align: alignProp,
+  side,
+  align,
   anchor,
   onOpen,
   onClose,
@@ -110,49 +104,26 @@ export function HoverCardContent({
   class: cls,
   ...attrs
 }: HoverCardContentProps): JSX.Element {
-  const side = sideProp ?? "bottom";
-  const align = alignProp ?? "center";
-  const stateOf = (): "open" | "closed" => state?.() ?? "open";
-  const wirings: (() => void)[] = [];
-  const teardown: (() => void)[] = [];
+  const { Content } = hoverCard({
+    open: () => (state?.() ?? "open") === "open",
+    onOpenChange: (next) => {
+      if (next) onOpen?.();
+      else onClose?.();
+    },
+  });
   return (
-    <div
-      data-slot="hover-card-content"
-      data-state={stateOf()}
-      data-side={side}
-      data-align={align}
+    <Content
+      side={side}
+      align={align}
+      anchor={anchor}
+      onExited={onExited}
       class={
         [content, cls]
       }
-      hook:afterMount={(node) => {
-        if (!(node instanceof HTMLElement)) return;
-        const anchorEl = anchor?.();
-        if (anchorEl != null)
-          wirings.push(
-            anchorPosition(anchorEl, node, { placement: placementOf(side, align), offset: 4 }),
-          );
-        if (onOpen && onClose) {
-          // Zero delays: entering the content re-opens instantly and leaving
-          // it closes immediately - the keep-open contract of the composed
-          // HoverCard.
-          wirings.push(hoverIntent(node, { onOpen, onClose, openDelay: 0, closeDelay: 0 }));
-        }
-        // The exit's animationend (state already "closed") is the primary
-        // unmount trigger; the entry's animationend is ignored.
-        const onAnimationEnd = (): void => {
-          if (stateOf() === "closed") onExited?.();
-        };
-        node.addEventListener("animationend", onAnimationEnd);
-        teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
-      }}
-      hook:beforeDestroy={() => {
-        while (wirings.length) wirings.pop()!();
-        while (teardown.length) teardown.pop()!();
-      }}
       {...attrs}
     >
       {children}
-    </div>
+    </Content>
   );
 }
 
@@ -164,137 +135,16 @@ export function HoverCard({
   class: cls,
   ...attrs
 }: HoverCardProps): JSX.Element {
-  const internal = signal(false);
-  const isOpen = (): boolean => (open !== undefined ? open() : internal());
-  const setOpen = (next: boolean): void => {
-    if (open === undefined) internal(next);
-    onOpenChange?.(next);
-  };
-
-  // `visible` alone gates the render so an open→closed flip never unmounts
-  // before this watcher starts the exit (reading open() in the template
-  // would flash the subtree away one evaluation early).
-  const visible = signal(false);
-  let wasOpen = false;
-  let fallback: ReturnType<typeof setTimeout> | undefined;
-  let triggerNode: Element | undefined;
-
-  const finishExit = (): void => {
-    if (fallback !== undefined) {
-      clearTimeout(fallback);
-      fallback = undefined;
-    }
-    visible(false);
-  };
-
-  // Flip to open renders immediately; flip to closed starts the exit - the
-  // content stays mounted under data-state="closed" until its animationend
-  // (or the copied duration budget) unmounts it.
-  effect(() => {
-    if (isOpen()) {
-      wasOpen = true;
-      finishExit();
-      visible(true);
-    } else if (wasOpen) {
-      wasOpen = false;
-      visible(true);
-      fallback = setTimeout(finishExit, 250);
-    }
-  });
-
-  const state = (): "open" | "closed" => (isOpen() ? "open" : "closed");
-  const disposals: (() => void)[] = [];
-  const triggerChildren = flattenChildren(children);
-
-  // Pointer ownership flags: each region's close only fires when the pointer
-  // has not moved into the other region, so crossing trigger → content never
-  // closes and returning content → trigger cancels the content's own close.
-  let overTrigger = false;
-  let overContent = false;
-
-  const openFromTrigger = (): void => {
-    overTrigger = true;
-    overContent = false;
-    setOpen(true);
-  };
-  const closeFromTrigger = (): void => {
-    if (overContent) return;
-    overTrigger = false;
-    setOpen(false);
-  };
-  const openFromContent = (): void => {
-    overContent = true;
-    overTrigger = false;
-    setOpen(true);
-  };
-  const closeFromContent = (): void => {
-    if (overTrigger) return;
-    overContent = false;
-    setOpen(false);
-  };
-
+  const { Trigger, Content } = hoverCard({ open, onOpenChange });
   return (
-    <span
-      data-slot="hover-card-trigger"
+    <Trigger
       class={
         [cls]
       }
-      hook:afterMount={(node) => {
-        if (!(node instanceof HTMLElement)) return;
-        triggerNode = node;
-        // Upstream delays: 200ms open, 300ms close. hoverIntent stays armed
-        // for the trigger's lifetime - reopen works without a remount.
-        disposals.push(
-          hoverIntent(node, {
-            onOpen: openFromTrigger,
-            onClose: closeFromTrigger,
-            openDelay: 200,
-            closeDelay: 300,
-          }),
-        );
-        // A re-enter on an already-open trigger short-circuits inside
-        // hoverIntent's enter (before onOpen), so the pointer-ownership flags
-        // are maintained by dedicated listeners.
-        const markEnter = (): void => {
-          overTrigger = true;
-          overContent = false;
-        };
-        const markLeave = (): void => {
-          overTrigger = false;
-        };
-        node.addEventListener("pointerenter", markEnter);
-        node.addEventListener("pointerleave", markLeave);
-        disposals.push(() => {
-          node.removeEventListener("pointerenter", markEnter);
-          node.removeEventListener("pointerleave", markLeave);
-        });
-      }}
-      hook:beforeDestroy={() => {
-        while (disposals.length) disposals.pop()!();
-      }}
       {...attrs}
     >
-      {triggerChildren}
-      {() =>
-        visible() && (
-          <Portal to="body">
-            <HoverCardContent
-              state={state}
-              anchor={() => triggerNode}
-              onOpen={openFromContent}
-              onClose={closeFromContent}
-              onExited={finishExit}
-              children={contentSlot}
-            />
-          </Portal>
-        )
-      }
-    </span>
+      {children}
+      <Content>{contentSlot}</Content>
+    </Trigger>
   );
-}
-
-/** Flattens a HellaChildren value into HellaChild[] for explicit children props. */
-function flattenChildren(children: HellaChildren | undefined): HellaChild[] {
-  if (children === undefined) return [];
-  return Array.isArray(children) ? children : [children];
 }

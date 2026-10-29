@@ -30,17 +30,28 @@ interface RegistryManifest {
 /**
  * Transform registry source with the exact options `plugins/vite/index.mjs`
  * applies, so compiled registry variants match what a user's Vite build
- * produces from the same text.
+ * produces from the same text. Package builds reuse the same pass for their
+ * own `.tsx` sources (headless's parts factories), keeping one JSX →
+ * imperative-construction compilation across registry and package output.
  * @param code Flavor-resolved registry source text.
  * @param filename Source file name (drives babel's TS/JSX parsing).
+ * @param target Babel plugin emission target — `"dom"` (default) lowers
+ * elements to imperative `@hellajs/dom/runtime` construction; `"ast"` lowers
+ * them to HellaNode literals (the `@hellajs/ssr` walker's currency) for a
+ * package's `dist/ssr` variant.
  * @returns Compiled JavaScript.
  */
-function transformRegistrySource(code: string, filename: string): string {
+export function transformRegistrySource(
+  code: string,
+  filename: string,
+  target: "dom" | "ast" = "dom",
+): string {
   const result = transformSync(code, {
-    // Parity with plugins/vite/index.mjs's client default: registry variants compile to
-    // imperative @hellajs/dom/runtime construction — the registry's consumers (package
-    // tests, docs-ui demos) mount the output client-side, which rejects ast input.
-    plugins: [[babelHellaJS, { target: "dom" }]],
+    // "dom" is parity with plugins/vite/index.mjs's client default: registry variants
+    // compile to imperative @hellajs/dom/runtime construction — the registry's consumers
+    // (package tests, docs-ui demos) mount the output client-side, which rejects ast
+    // input. The "ast" target serves package ssr variants, never the registry itself.
+    plugins: [[babelHellaJS, { target }]],
     presets: [presetTypeScript],
     filename,
     ast: false,

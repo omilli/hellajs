@@ -1,8 +1,5 @@
-import { effect, signal } from "@hellajs/core";
-import { Portal } from "@hellajs/dom";
-import type { HellaChild, HellaChildren, HTMLAttributes } from "@hellajs/dom";
-import { anchorPosition, hoverIntent } from "@hellajs/headless";
-import type { Placement } from "@hellajs/headless";
+import { tooltip } from "@hellajs/headless";
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 type AnchorSide = "top" | "bottom" | "left" | "right";
 
@@ -80,9 +77,6 @@ const content = style("tooltip-content", {
   },
 });
 
-const placementOf = (side: AnchorSide, align: AnchorAlign): Placement =>
-  align === "center" ? side : `${side}-${align}`;
-
 /**
  * Passthrough wrapper - upstream config-carrier kept for copy-paste parity.
  * Divergence: delay config is the per-Tooltip `delayDuration` prop here, so
@@ -93,186 +87,90 @@ export function TooltipProvider({
   class: cls,
   ...attrs
 }: TooltipProviderProps): JSX.Element {
+  const { Provider } = tooltip();
   return (
-    <div
-      data-slot="tooltip-provider"
+    <Provider
       class={
         [cls]
       }
       {...attrs}
     >
       {children}
-    </div>
+    </Provider>
   );
 }
 
-/** The manual trigger span; the composed Tooltip renders the same shape wired to hoverIntent. */
+/** The manual trigger span; the composed Tooltip renders the same shape wired to the open delay. */
 export function TooltipTrigger({
   children,
   class: cls,
   ...attrs
 }: TooltipTriggerProps): JSX.Element {
+  const { Trigger } = tooltip();
   return (
-    <span
-      data-slot="tooltip-trigger"
+    <Trigger
       class={
         [cls]
       }
       {...attrs}
     >
       {children}
-    </span>
+    </Trigger>
   );
 }
 
 export function TooltipContent({
   state,
   id,
-  side: sideProp,
-  align: alignProp,
+  side,
+  align,
   anchor,
   onExited,
   children,
   class: cls,
   ...attrs
 }: TooltipContentProps): JSX.Element {
-  const side = sideProp ?? "top";
-  const align = alignProp ?? "center";
-  const stateOf = (): "open" | "closed" => state?.() ?? "open";
-  const wirings: (() => void)[] = [];
-  const teardown: (() => void)[] = [];
+  const { Content } = tooltip({
+    open: () => (state?.() ?? "open") === "open",
+  });
   return (
-    <div
-      role="tooltip"
+    <Content
       id={id}
-      data-slot="tooltip-content"
-      data-state={stateOf()}
-      data-side={side}
-      data-align={align}
+      side={side}
+      align={align}
+      anchor={anchor}
+      onExited={onExited}
       class={
         [content, cls]
       }
-      hook:afterMount={(node) => {
-        if (!(node instanceof HTMLElement)) return;
-        const anchorEl = anchor?.();
-        if (anchorEl != null)
-          wirings.push(anchorPosition(anchorEl, node, { placement: placementOf(side, align) }));
-        // The exit's animationend (state already "closed") is the primary
-        // unmount trigger; the entry's animationend is ignored.
-        const onAnimationEnd = (): void => {
-          if (stateOf() === "closed") onExited?.();
-        };
-        node.addEventListener("animationend", onAnimationEnd);
-        teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
-      }}
-      hook:beforeDestroy={() => {
-        while (wirings.length) wirings.pop()!();
-        while (teardown.length) teardown.pop()!();
-      }}
       {...attrs}
     >
       {children}
-    </div>
+    </Content>
   );
 }
-
-let tooltipCount = 0;
 
 export function Tooltip({
   content: contentSlot,
   delayDuration,
-  side: sideProp,
-  align: alignProp,
+  side,
+  align,
   children,
   class: cls,
   ...attrs
 }: TooltipProps): JSX.Element {
-  const contentId = `hella-tooltip-content-${++tooltipCount}`;
-  const open = signal(false);
-  // `visible` alone gates the render so an open→closed flip never unmounts
-  // before this watcher starts the exit (reading open() in the template
-  // would flash the subtree away one evaluation early).
-  const visible = signal(false);
-  let wasOpen = false;
-  let fallback: ReturnType<typeof setTimeout> | undefined;
-  let triggerNode: Element | undefined;
-
-  const finishExit = (): void => {
-    if (fallback !== undefined) {
-      clearTimeout(fallback);
-      fallback = undefined;
-    }
-    visible(false);
-  };
-
-  // Flip to open renders immediately; flip to closed starts the exit - the
-  // content stays mounted under data-state="closed" until its animationend
-  // (or the copied duration budget) unmounts it.
-  effect(() => {
-    if (open()) {
-      wasOpen = true;
-      finishExit();
-      visible(true);
-    } else if (wasOpen) {
-      wasOpen = false;
-      visible(true);
-      fallback = setTimeout(finishExit, 250);
-    }
-  });
-
-  const state = (): "open" | "closed" => (open() ? "open" : "closed");
-  const side = sideProp ?? "top";
-  const align = alignProp ?? "center";
-  const disposals: (() => void)[] = [];
-  const triggerChildren = flattenChildren(children);
-
+  const { Trigger, Content } = tooltip({ delay: delayDuration });
   return (
-    <span
-      data-slot="tooltip-trigger"
-      aria-describedby={contentId}
+    <Trigger
       class={
         [cls]
       }
-      hook:afterMount={(node) => {
-        if (!(node instanceof HTMLElement)) return;
-        triggerNode = node;
-        // hoverIntent stays armed for the trigger's lifetime - reopen works
-        // without a remount (the skip-delay window is the primitive's global).
-        disposals.push(
-          hoverIntent(node, {
-            onOpen: () => open(true),
-            onClose: () => open(false),
-            openDelay: delayDuration ?? 700,
-          }),
-        );
-      }}
-      hook:beforeDestroy={() => {
-        while (disposals.length) disposals.pop()!();
-      }}
       {...attrs}
     >
-      {triggerChildren}
-      {() =>
-        visible() && (
-          <Portal to="body">
-            <TooltipContent
-              state={state}
-              id={contentId}
-              side={side}
-              align={align}
-              anchor={() => triggerNode}
-              onExited={finishExit}
-              children={contentSlot}
-            />
-          </Portal>
-        )
-      }
-    </span>
+      {children}
+      <Content side={side} align={align}>
+        {contentSlot}
+      </Content>
+    </Trigger>
   );
-}
-
-/** Flattens a HellaChildren value into HellaChild[] for explicit children props. */
-function flattenChildren(children: HellaChildren | undefined): HellaChild[] {
-  if (children === undefined) return [];
-  return Array.isArray(children) ? children : [children];
 }

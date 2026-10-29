@@ -51,6 +51,40 @@ Each has its own reference page with the full options.
 
 A foundation layers the behaviors into one wiring for a component family. [`modal`](/reference/headless/modal) is the first: it composes [`trapFocus`](/reference/headless/trapfocus), [`onEscape`](/reference/headless/onescape), and [`onOutside`](/reference/headless/onoutside) the way every dialog, alert dialog, sheet, and drawer panel arms them, re-arms with your state getter on reopen, and disposes with the node instead of a dispose handle. Call it from `hook:afterMount`; there is no cleanup to track.
 
+## Parts
+
+Where behaviors wire nodes you render, a part factory renders the structure for you. Call [`popover`](/reference/headless/popover) and it returns the full part set as members, so dotted JSX compiles as a component and the wrapper keeps the styling:
+
+```jsx
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+import { popover } from "@hellajs/headless";
+
+const open = signal(false);
+
+const Popover = popover({
+  open: () => open(),
+  onOpenChange: (next) => open(next),
+});
+
+const Settings = () => (
+  <div>
+    <Popover.Trigger>Settings</Popover.Trigger>
+    <Popover.Content side="bottom">Panel content</Popover.Content>
+  </div>
+);
+
+mount(<Settings />, "#app");
+```
+
+The naming convention is camelCase factory, TitleCase binding: `const Popover = popover(...)` composes as `<Popover.Trigger>`. The factory closure owns the wiring the parts share, so the trigger's toggle, the content's anchoring and dismissal, and the exit timing stay in sync without any context primitive.
+
+State is controlled-or-internal, the same contract as the registry's `value`/`onValueChange`: pass an `open` getter and the factory treats it as the single source of truth, reporting every flip through `onOpenChange`; omit it and the factory keeps its own signal. Parts render structure, never styles: they carry `data-slot` and `data-state` hooks and spread your `class` and attributes, so the styled wrapper stays yours.
+
+## Render Parts on the Server
+
+Parts render on the server. The package publishes a second, server-safe build behind the `ssr` export condition: the same factories and parts, compiled so importing them never touches the DOM. A server build that sets the `ssr` condition resolves that variant, and the client build keeps resolving the regular entry, so the markup the server emits hydrates interactive through the dom build. Astro projects with the HellaJS integration get this with no extra configuration; on other stacks, add `ssr` to your server build's export conditions.
+
 ## Wire With hook: Mount and Cleanup
 
 `hook:afterMount` is the natural place to wire a behavior and `hook:beforeDestroy` the place to dispose it. The dialog below combines three behaviors: trapped focus, Escape to close, and outside click to close.

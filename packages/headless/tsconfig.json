@@ -3,5 +3,5 @@
   "compilerOptions": {
     "rootDir": "./lib"
   },
-  "include": ["./lib/**/*.ts"]
+  "include": ["./lib/**/*.ts", "./lib/**/*.tsx"]
 }

@@ -51,21 +51,27 @@ export async function applyTerser(filePath: string, shouldMangle: boolean): Prom
 export async function fixMinifiedImports(filePath: string): Promise<void> {
   let content = await fs.readFile(filePath, "utf8");
 
-  content = content.replace(/from\s*["'](\.\.?\/[^"']+)["']/g, (match, importPath: string) => {
-    if (
-      importPath.endsWith(".js") ||
-      importPath.endsWith(".min.js") ||
-      importPath.endsWith(".json")
-    ) {
-      return match;
-    }
-    return match.replace(importPath, `${importPath}.min.js`);
-  });
+  content = content.replace(
+    /(?:from|import)\s*["'](\.\.?\/[^"']+)["']/g,
+    (match, importPath: string) => {
+      if (
+        importPath.endsWith(".js") ||
+        importPath.endsWith(".min.js") ||
+        importPath.endsWith(".json")
+      ) {
+        return match;
+      }
+      return match.replace(importPath, `${importPath}.min.js`);
+    },
+  );
 
-  content = content.replace(/from\s*["']([^"']*\.js)["']/g, (match, importPath: string) => {
-    if (importPath.endsWith(".min.js")) return match;
-    return match.replace(importPath, importPath.replace(".js", ".min.js"));
-  });
+  content = content.replace(
+    /(?:from|import)\s*["']([^"']*\.js)["']/g,
+    (match, importPath: string) => {
+      if (importPath.endsWith(".min.js")) return match;
+      return match.replace(importPath, importPath.replace(".js", ".min.js"));
+    },
+  );
 
   content = content.replace(
     /import\s*\(\s*["'](\.\.?\/[^"']+)["']\s*\)/g,

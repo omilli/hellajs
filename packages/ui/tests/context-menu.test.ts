@@ -92,7 +92,7 @@ describe("context-menu", () => {
       );
       // The zero-size anchor node exists synchronously after the dispatch; pinning
       // its rect before the observer-driven mount walk feeds the fixed-coords path.
-      const anchor = document.querySelector("[data-slot='context-menu-anchor']")!;
+      const anchor = document.querySelector("[data-slot='menu-anchor']")!;
       pinRect(anchor, 40, 40, 0, 0);
       const content = await awaitPortaled("context-menu-content");
       expect(content.style.left).toBe("40px");
@@ -104,11 +104,11 @@ describe("context-menu", () => {
 
   test.each(contextMenuVariants)("$style moves the zero-size anchor on reopen", async (variant) => {
     await openContextMenu(variant);
-    const firstAnchor = document.querySelector("[data-slot='context-menu-anchor']")!;
+    const firstAnchor = document.querySelector("[data-slot='menu-anchor']")!;
     pressEscape();
     await awaitDetached(firstAnchor);
     await openContextMenu(variant, undefined, 10, 20);
-    const secondAnchor = document.querySelector("[data-slot='context-menu-anchor']") as HTMLElement;
+    const secondAnchor = document.querySelector("[data-slot='menu-anchor']") as HTMLElement;
     expect(secondAnchor).not.toBe(firstAnchor);
     expect(secondAnchor.style.left).toBe("10px");
     expect(secondAnchor.style.top).toBe("20px");
@@ -176,7 +176,7 @@ describe("context-menu", () => {
       ]);
       const destructive = content.querySelector("[data-variant='destructive']")!;
       expect(destructive.textContent).toContain("Delete");
-      expect(content.querySelector("[data-slot='context-menu-shortcut']")!.textContent).toBe("⌘R");
+      expect(content.querySelector("[data-slot='menu-shortcut']")!.textContent).toBe("⌘R");
       pressKey(content, "Enter");
       expect(onclick).toHaveBeenCalledTimes(1);
       expect(content.getAttribute("data-state")).toBe("closed");
@@ -465,10 +465,11 @@ describe("context-menu", () => {
 
   test.each(contextMenuPartVariants.filter((variant) => variant.part === "Content"))(
     "$style content part respects a user-supplied id",
-    (variant) => {
+    async (variant) => {
       const container = setupContainer();
       mount(variant.render({ id: "custom-menu", children: [] }), container);
-      expect(container.firstElementChild!.getAttribute("id")).toBe("custom-menu");
+      const content = await awaitPortaled("context-menu-content");
+      expect(content.getAttribute("id")).toBe("custom-menu");
     },
   );
 
@@ -485,12 +486,11 @@ describe("context-menu", () => {
     );
   });
 
-  test("renders every named part with its data-slot across both styles", () => {
+  test("renders every named part with its data-slot across both styles", async () => {
     for (const variant of contextMenuPartVariants) {
       const container = setupContainer();
       const rendered = variant.render({ children: [] });
       mount(rendered, container);
-      const el = container.firstElementChild!;
       const slot =
         variant.part === "CheckboxItem"
           ? "context-menu-checkbox-item"
@@ -503,6 +503,11 @@ describe("context-menu", () => {
                 : variant.part === "SubContent"
                   ? "context-menu-sub-content"
                   : `context-menu-${variant.part.toLowerCase()}`;
+      // Content and SubContent portal themselves; every other part renders in place.
+      const el =
+        variant.part === "Content" || variant.part === "SubContent"
+          ? await awaitPortaled(slot)
+          : container.firstElementChild!;
       expect(el.getAttribute("data-slot")).toBe(slot);
     }
   });

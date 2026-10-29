@@ -47,6 +47,28 @@ The server renders the component to HTML with `<!--[-->…<!--]-->` markers; the
 
 A complete walkthrough lives in the [Astro Islands tutorial](https://hellajs.com/learn/tutorials/astro-islands).
 
+## Headless parts on the server
+
+The integration adds the bundler-only `ssr` export condition to Astro's server environments (`ssr` and `prerender`), so JSX-bearing `@hellajs/*` packages resolve their server-safe build on the server with no extra configuration: importing them never touches the DOM. The client environments keep the regular entry, so the markup the server emits hydrates interactive through the dom build. Consume the [headless parts](https://hellajs.com/reference/headless/popover) directly in island code:
+
+```tsx
+// src/Popover.tsx
+import { popover } from "@hellajs/headless";
+
+const Popover = popover();
+
+export default function Settings() {
+  return (
+    <div>
+      <Popover.Trigger>Settings</Popover.Trigger>
+      <Popover.Content side="bottom">Panel content</Popover.Content>
+    </div>
+  );
+}
+```
+
+The server renders the trigger button and the closed content gate to HTML; the client hydrates it in place. Packages without an `ssr` condition resolve their regular entry in every environment, exactly as before.
+
 ## Imperative client target
 
 The babel plugin's JSX emission has two targets. The default `ast` target produces the HellaNode trees `@hellajs/ssr` serializes; the `target: "dom"` option produces imperative construction calls against `@hellajs/dom/runtime`. The target is wrapper-owned build config (Vite, Rollup, or the astro integration's internal wiring), never a per-file option.
