@@ -1,0 +1,125 @@
+# command
+
+Creates the command palette parts in one call: the search input, the ranked list with its groups, and the option rows. The factory closure owns the query, the ranking filter, the active-by-value cursor, and the commit wiring. With `items` the `List` renders the ranked order data-driven; without them the `Item` children you render register in DOM order and the ranked filter hides non-matches in place.
+
+## Basic Usage
+
+```tsx
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+import { command } from "@hellajs/headless";
+
+const items = [
+  { value: "theme-light", label: "Light theme", group: "Theme", shortcut: "⌘1" },
+  { value: "theme-dark", label: "Dark theme", group: "Theme", shortcut: "⌘2" },
+  { value: "deploy", label: "Deploy site", group: "Actions", keywords: ["publish", "ship"] },
+];
+
+const Command = command({ items });
+
+mount(
+  <div>
+    <Command.Input placeholder="Type a command…" />
+    <Command.List />
+  </div>,
+  "#app",
+);
+// Typing ranks the matches across labels, values, and keywords, and the first
+// match starts active. Arrows and Home/End rove, Enter commits the active
+// item's onSelect, and Escape clears the query.
+```
+
+Pass a custom `filter` to replace the default ranking entirely, or omit `items` and render the rows yourself:
+
+```tsx
+const Command = command({});
+
+<Command.Input placeholder="Type a command…" />
+<Command.List>
+  <Command.Group heading="Suggestions">
+    <Command.Item value="calendar" onSelect={runCalendar}>
+      Calendar <Command.Shortcut>⌘C</Command.Shortcut>
+    </Command.Item>
+  </Command.Group>
+  <Command.Empty>No results.</Command.Empty>
+</Command.List>
+```
+
+The palette dialog composes the same parts inside a modal-wired panel:
+
+```tsx
+const open = signal(false);
+
+const Palette = command({});
+
+<Palette.Dialog open={() => open()} onClose={() => open(false)} title="Command palette">
+  <Palette.Input placeholder="Type a command…" />
+  <Palette.List>…</Palette.List>
+</Palette.Dialog>
+```
+
+## API
+
+```typescript
+function command(options?: CommandOptions): CommandParts
+```
+
+- `options.items`: The item entries, an array or a getter. A getter keeps the list reactive across appends, removes, and reorders. Passing `items` switches the factory to data-driven rendering.
+- `options.filter`: Replaces the default ranking filter (earlier matches, word-boundary starts, keyword hits).
+- `options.loop`: Wraps arrow movement at the edges. The default clamps.
+- `options.value`: Controlled active value. Passing it makes the command controlled; omitting it keeps the cursor internal.
+- `options.onValueChange`: Called with every requested move and selection.
+- **Returns**: The part set, composed as `Command.Input`-style members.
+
+### Parts
+
+| Part | Renders |
+|---|---|
+| `Input` | The search row: icon plus query input carrying the keyboard model |
+| `List` | `role="listbox"` whose option ids derive as `<listId>-opt-<value>`; renders the ranked body when `items` was passed, else its children |
+| `Item` | `role="option"` row with `aria-selected`, `data-selected`, and `data-disabled`; commits on click |
+| `Empty` | The zero-match row; the ranked body mounts it with its default text |
+| `Group` | A structural group with its heading row; `hidden` drops the whole group |
+| `Separator` | A structural separator |
+| `Shortcut` | A trailing shortcut hint span |
+| `Dialog` | The palette-in-dialog composition: overlay, portaled `modal()`-wired panel, screen-reader header, close button, and the command surface holding your parts |
+
+Every part spreads `class` and native attributes onto its element; parts own structure, styling stays in the wrapper.
+
+### Options
+
+| Option | Type | Default |
+|---|---|---|
+| `items` | `CommandEntry[] \| (() => CommandEntry[])` | `-` |
+| `filter` | `(items, query) => entries` | ranking filter |
+| `loop` | `boolean` | `false` |
+| `value` | `() => string` | internal signal |
+| `onValueChange` | `(value: string) => void` | `-` |
+
+## Key Concepts
+
+### Data-Driven or DOM-Order Registration
+
+With `items`, the list re-renders the ranked order per keystroke: only matching entries exist in the DOM, groups render in first-appearance order over the original array, and a group whose items all score zero renders `hidden`. Without `items`, the rendered `Item` children register in DOM order (the listbox engine's live scan, so dynamic children join roving per keypress) and typing hides non-matches in place instead of reordering them.
+
+### The Ranking Filter
+
+The default filter scores every item case-insensitively against its label, value, and keywords. A match scores higher when it starts earlier in the string and higher still when it starts at a word boundary (after a space, dash, slash, dot, or underscore, or at position zero); every keyword that matches adds a fixed bonus, so items hitting two keywords outrank items hitting one. A zero score drops the item out. Pass `filter` to replace it entirely: it receives the full item list and the live query and returns the items to render, ranked.
+
+### Keyboard Model
+
+The input keeps focus the whole time. ArrowDown and ArrowUp move the active item over the enabled entries, wrapping under `loop` and clamping otherwise; Home and End jump to the first and last enabled item; Enter runs the active item's `onSelect` and reports its value through `onValueChange`; Escape clears the query first (inside the dialog, a second Escape with an empty query closes through the modal wiring). Each cursor move scrolls the newly active item to the nearest edge of the list. Disabled rows are skipped by the cursor and never commit.
+
+### The Palette Dialog
+
+`Dialog` renders the overlay, the portaled panel, a screen-reader-only header (wiring `aria-labelledby` and `aria-describedby`), the close button, and the command surface holding your parts. Focus is trapped in the panel, Escape and an outside press call `onClose`, and the exit animation unmounts the surface through the shared [`modal`](/reference/headless/modal) foundation, so closing disarms the wiring immediately and reopening re-arms it.
+
+## Important Considerations
+
+### Call the Factory in Component Scope
+
+`command()` starts state machinery whose effects must dispose with the component that owns it. Mounting the tree unmounts every layer and drains the open-state wiring; module-level calls with an internal signal leak that wiring.
+
+### Controlled Getters Notify One Direction
+
+`onValueChange` reports moves and selections the factory drives. Changing a controlled `value` signal directly is the controller's own move and notifies no one.

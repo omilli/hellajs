@@ -9,6 +9,73 @@ const inLeft = keyframes({ from: { opacity: "0", transform: "translateX(0.5rem) 
 const inRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem) scale(0.95)" } });
 const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 
+// The headless factory renders the option rows, scroll buttons, viewport, and
+// chevron icons classless; these shared rule blocks restyle them through their
+// data-slots from the wrapper roots (content) and are shared with the
+// manually composed Item part that roots the row rules directly.
+const itemRules = {
+  alignItems: "center",
+  borderRadius: `calc(${tokens.radius} * 0.6)`,
+  cursor: "default",
+  display: "flex",
+  fontSize: "0.875rem",
+  gap: "0.5rem",
+  lineHeight: "1.25rem",
+  outline: "2px solid transparent",
+  outlineOffset: "2px",
+  paddingBlock: "0.375rem",
+  paddingLeft: "0.5rem",
+  paddingRight: "2rem",
+  position: "relative",
+  userSelect: "none",
+  width: "100%",
+  "&:focus": {
+    backgroundColor: tokens.accent,
+    color: tokens.accentForeground,
+  },
+  "&[data-disabled]": {
+    opacity: "0.5",
+    pointerEvents: "none",
+  },
+  "& > span:last-child": {
+    alignItems: "center",
+    display: "flex",
+    gap: "0.5rem",
+  },
+  "& svg": {
+    flexShrink: "0",
+    pointerEvents: "none",
+  },
+  "& svg:not([class*='size-'])": {
+    height: "1rem",
+    width: "1rem",
+  },
+  "& svg:not([class*='text-'])": {
+    color: tokens.mutedForeground,
+  },
+  "& [data-slot='select-item-indicator']": {
+    alignItems: "center",
+    display: "flex",
+    height: "0.875rem",
+    justifyContent: "center",
+    position: "absolute",
+    right: "0.5rem",
+    width: "0.875rem",
+  },
+  "& [data-slot='select-check-icon']": {
+    height: "1rem",
+    width: "1rem",
+  },
+};
+
+const scrollButtonRules = {
+  alignItems: "center",
+  cursor: "default",
+  display: "flex",
+  justifyContent: "center",
+  paddingBlock: "0.25rem",
+};
+
 export const base = style("select-trigger", {
   alignItems: "center",
   backgroundColor: "transparent",
@@ -75,6 +142,11 @@ export const base = style("select-trigger", {
   "&:is(.dark *)[aria-invalid='true']": {
     boxShadow: `0 1px 2px 0 rgb(0 0 0 / 0.05), 0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
   },
+  "& [data-slot='select-chevron']": {
+    height: "1rem",
+    opacity: "0.5",
+    width: "1rem",
+  },
 });
 
 export const content = style("select-content", {
@@ -117,67 +189,28 @@ export const content = style("select-content", {
   "&[data-state='closed']": {
     animation: `${out} 150ms ease-in both`,
   },
-});
-
-export const viewport = style("select-viewport", {
-  height: "var(--radix-select-trigger-height)",
-  minWidth: "var(--radix-select-trigger-width)",
-  padding: "0.25rem",
-  scrollPaddingBlock: "0.25rem",
-  width: "100%",
-});
-
-export const item = style("select-item", {
-  alignItems: "center",
-  borderRadius: `calc(${tokens.radius} * 0.6)`,
-  cursor: "default",
-  display: "flex",
-  fontSize: "0.875rem",
-  gap: "0.5rem",
-  lineHeight: "1.25rem",
-  outline: "2px solid transparent",
-  outlineOffset: "2px",
-  paddingBlock: "0.375rem",
-  paddingLeft: "0.5rem",
-  paddingRight: "2rem",
-  position: "relative",
-  userSelect: "none",
-  width: "100%",
-  "&:focus": {
-    backgroundColor: tokens.accent,
-    color: tokens.accentForeground,
+  "& [data-slot='select-viewport']": {
+    height: "var(--radix-select-trigger-height)",
+    minWidth: "var(--radix-select-trigger-width)",
+    padding: "0.25rem",
+    scrollPaddingBlock: "0.25rem",
+    width: "100%",
   },
-  "&[data-disabled]": {
-    opacity: "0.5",
-    pointerEvents: "none",
-  },
-  "& > span:last-child": {
-    alignItems: "center",
-    display: "flex",
-    gap: "0.5rem",
-  },
-  "& svg": {
-    flexShrink: "0",
-    pointerEvents: "none",
-  },
-  "& svg:not([class*='size-'])": {
+  "& [data-slot='select-scroll-up-button']": scrollButtonRules,
+  "& [data-slot='select-scroll-down-button']": scrollButtonRules,
+  "& [data-slot='select-chevron-up']": {
     height: "1rem",
     width: "1rem",
   },
-  "& svg:not([class*='text-'])": {
-    color: tokens.mutedForeground,
+  "& [data-slot='select-chevron']": {
+    height: "1rem",
+    opacity: "0.5",
+    width: "1rem",
   },
+  "& [data-slot='select-item']": itemRules,
 });
 
-export const indicator = style("select-indicator", {
-  alignItems: "center",
-  display: "flex",
-  height: "0.875rem",
-  justifyContent: "center",
-  position: "absolute",
-  right: "0.5rem",
-  width: "0.875rem",
-});
+export const item = style("select-item", itemRules);
 
 export const icon = style("select-icon", {
   height: "1rem",
@@ -206,10 +239,4 @@ export const separator = style("select-separator", {
   pointerEvents: "none",
 });
 
-export const scrollButton = style("select-scroll-button", {
-  alignItems: "center",
-  cursor: "default",
-  display: "flex",
-  justifyContent: "center",
-  paddingBlock: "0.25rem",
-});
+export const scrollButton = style("select-scroll-button", scrollButtonRules);

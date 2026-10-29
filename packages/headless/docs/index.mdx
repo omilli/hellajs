@@ -1,6 +1,6 @@
 ## Headless
 
-Headless wiring for common UI mechanics: trapping focus, Escape and outside dismissal, roving tabindex, anchor positioning, hover intent, menu typeahead, pointer gestures, and layered dismissal. Each behavior is a plain function that takes elements and callbacks and returns a dispose handle; state stays in your signals. The `modal` foundation composes the dialog-family wiring with automatic, node-scoped disposal instead of a dispose handle, and the parts factories (`popover`, `menu`, `menubar`, `tooltip`, `hoverCard`) grow a components tier: camelCase factories whose components render structure, never styles.
+Headless wiring for common UI mechanics: trapping focus, Escape and outside dismissal, roving tabindex, anchor positioning, hover intent, menu typeahead, pointer gestures, and layered dismissal. Each behavior is a plain function that takes elements and callbacks and returns a dispose handle; state stays in your signals. The `modal` foundation composes the dialog-family wiring with automatic, node-scoped disposal instead of a dispose handle, and the parts factories (`popover`, `menu`, `menubar`, `tooltip`, `hoverCard`, `combobox`, `select`, `command`) grow a components tier: camelCase factories whose components render structure, never styles.
 
 ### Installation
 
@@ -65,6 +65,9 @@ mount(<div>{() => (open() ? <Dialog /> : <p>Nothing open</p>)}</div>, "#app");
 - **[menubar](/reference/headless/menubar)**: Create a menu bar whose menus announce to the bar: one open at a time, roving triggers, open-then-move
 - **[tooltip](/reference/headless/tooltip)**: Create the tooltip parts in one factory call: provider slot, hover trigger, and the ported anchored label
 - **[hoverCard](/reference/headless/hovercard)**: Create the hover-card parts in one factory call: hover trigger and the ported keep-open panel
+- **[combobox](/reference/headless/combobox)**: Create the combobox parts in one factory call: query input, filtered option panel, and multi-select chips
+- **[select](/reference/headless/select)**: Create the select parts in one factory call: trigger, value label, and the ported roving listbox
+- **[command](/reference/headless/command)**: Create the command palette parts in one factory call: search input, ranked list, and the modal-wired palette dialog
 
 ### Concepts
 

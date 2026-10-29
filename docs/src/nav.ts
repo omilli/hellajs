@@ -116,6 +116,9 @@ export const navigation: Record<NavSection, NavEntry[]> = {
         "menubar",
         "tooltip",
         "hoverCard",
+        "combobox",
+        "select",
+        "command",
       ]
     },
     {

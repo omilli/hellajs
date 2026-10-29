@@ -1,7 +1,7 @@
 import { effect, signal } from "@hellajs/core";
 import { Portal } from "@hellajs/dom";
 import type { HellaChild, HellaChildren, HTMLAttributes } from "@hellajs/dom";
-import { anchorPosition, hoverIntent, onEscape, onOutside, trapFocus } from "@hellajs/headless";
+import { anchorPosition, hoverIntent, modal } from "@hellajs/headless";
 
 /**
  * The state SidebarProvider threads to its children function - hella has no
@@ -1194,7 +1194,8 @@ export function Sidebar({
 /**
  * The mobile panel: the ref renders Sidebar inside its Sheet entry; this
  * entry is self-contained, so the sheet mechanics (overlay, slide pair,
- * escape/outside/trap wiring, exit hold) are duplicated inline.
+ * exit hold) are duplicated inline - the trap/escape/outside wiring rides
+ * modal().
  */
 function SidebarMobileSheet(props: SidebarMobileSheetProps): JSX.Element {
   const side = props.side;
@@ -1206,21 +1207,6 @@ function SidebarMobileSheet(props: SidebarMobileSheetProps): JSX.Element {
   const visible = signal(false);
   let wasOpen = false;
   let fallback: ReturnType<typeof setTimeout> | undefined;
-  const wirings: (() => void)[] = [];
-  const teardown: (() => void)[] = [];
-  let panel: HTMLElement | undefined;
-
-  const disposeWirings = (): void => {
-    while (wirings.length) wirings.pop()!();
-  };
-
-  const installWirings = (): void => {
-    if (panel === undefined || wirings.length > 0 || props.open() === false) return;
-    const target = panel;
-    wirings.push(onEscape(target, props.onClose));
-    wirings.push(onOutside(() => [target], props.onClose));
-    wirings.push(trapFocus(target));
-  };
 
   const finishExit = (): void => {
     if (fallback !== undefined) {
@@ -1243,13 +1229,6 @@ function SidebarMobileSheet(props: SidebarMobileSheetProps): JSX.Element {
       visible(true);
       fallback = setTimeout(finishExit, 350);
     }
-  });
-
-  // The exit runs unwired: flipping closed tears the trap/escape/outside
-  // handlers down immediately; reopening re-arms them without a remount.
-  effect(() => {
-    if (props.open() === false) disposeWirings();
-    else installWirings();
   });
 
   const state = (): "open" | "closed" => (props.open() ? "open" : "closed");
@@ -1282,19 +1261,15 @@ function SidebarMobileSheet(props: SidebarMobileSheetProps): JSX.Element {
               }
               hook:afterMount={(node) => {
                 if (!(node instanceof HTMLElement)) return;
-                panel = node;
-                installWirings();
-                // The exit's animationend (state already "closed") is the
-                // primary unmount trigger; the entry's is ignored.
-                const onAnimationEnd = (): void => {
-                  if (props.open() === false) finishExit();
-                };
-                node.addEventListener("animationend", onAnimationEnd);
-                teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
-              }}
-              hook:beforeDestroy={() => {
-                disposeWirings();
-                while (teardown.length) teardown.pop()!();
+                // modal() owns the trap/escape/outside arms (re-armed with
+                // the state getter, disposed with the node) and the exit
+                // notify: the exit's animationend (state already "closed")
+                // fires finishExit; the entry's is ignored.
+                modal(node, {
+                  state,
+                  onClose: props.onClose,
+                  onExited: finishExit,
+                });
               }}
             >
               <h2 id={titleId} class="sr-only">

@@ -1,7 +1,5 @@
-import { effect, signal } from "@hellajs/core";
-import { Portal } from "@hellajs/dom";
-import type { HellaChild, HTMLAttributes, HellaChildren } from "@hellajs/dom";
-import { onEscape, onOutside, trapFocus } from "@hellajs/headless";
+import { command } from "@hellajs/headless";
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 interface CommandItemData {
   value: string;
@@ -19,12 +17,13 @@ interface RankedItem {
 }
 
 interface CommandInputProps extends HTMLAttributes<"input"> {
+  children?: HellaChildren;
   class?: string;
 }
 
 interface CommandListProps extends HTMLAttributes<"div"> {
-  /** Reactive items body; a thunk so the composed root's re-ranked list re-renders through the slot. */
-  body?: () => HellaChild | HellaChild[];
+  /** The listbox id; option ids derive as `<id>-opt-<value>`. */
+  id?: string;
   children?: HellaChildren;
   class?: string;
 }
@@ -47,6 +46,9 @@ interface CommandSeparatorProps extends HTMLAttributes<"div"> {
 
 interface CommandItemProps extends HTMLAttributes<"div"> {
   value?: string;
+  /** The option's stable id; defaults to `<listId>-opt-<value>` from the owning factory. */
+  id?: string;
+  disabled?: boolean;
   /** Selected state (the ref's data-selected accent); an accessor follows the owning command's active item. */
   active?: () => boolean;
   /** Called on click and on Enter when the owning command commits. */
@@ -86,126 +88,48 @@ import { cn } from "./cn.js";
 
 export type { CommandItemData };
 
-const MATCH_BASE = 1000;
-const BOUNDARY_BONUS = 500;
-const KEYWORD_BONUS = 100;
-
-const boundaryStart = (haystack: string, at: number): boolean =>
-  at === 0 || " -_/.(".includes(haystack.charAt(at - 1));
-
-const scoreCandidate = (haystack: string, needle: string): number => {
-  const at = haystack.indexOf(needle);
-  if (at === -1) return 0;
-  return MATCH_BASE - at + (boundaryStart(haystack, at) ? BOUNDARY_BONUS : 0);
-};
-
-const scoreItem = (candidate: CommandItemData, needle: string): number => {
-  let best = Math.max(
-    scoreCandidate(candidate.label.toLowerCase(), needle),
-    scoreCandidate(candidate.value.toLowerCase(), needle),
-  );
-  let hits = 0;
-  const keywords = candidate.keywords ?? [];
-  let i = 0;
-  while (i < keywords.length) {
-    const score = scoreCandidate(keywords[i]!.toLowerCase(), needle);
-    if (score > 0) {
-      hits++;
-      if (score > best) best = score;
-    }
-    i++;
-  }
-  if (best === 0) return 0;
-  return best + hits * KEYWORD_BONUS;
-};
-
-/** Ranks items for the query: earlier matches, word-boundary starts, and keyword hits score higher; zero scores drop out. */
-const defaultFilter = (items: CommandItemData[], query: string): CommandItemData[] => {
-  if (query === "") return items;
-  const needle = query.toLowerCase();
-  const ranked: RankedItem[] = [];
-  let i = 0;
-  while (i < items.length) {
-    const score = scoreItem(items[i]!, needle);
-    if (score > 0) ranked.push({ item: items[i]!, score });
-    i++;
-  }
-  return ranked.sort((a, b) => b.score - a.score).map((entry) => entry.item);
-};
-
-export function CommandInput({ class: cls, ...attrs }: CommandInputProps): JSX.Element {
+/** The search row; the composed Command threads the query and keyboard model through the factory. */
+export function CommandInput({ children, class: cls, ...attrs }: CommandInputProps): JSX.Element {
+  const { Input } = command();
   return (
-    <div
-      data-slot="command-input-wrapper"
+    <Input
       class={
-        cn("flex h-9 items-center gap-2 border-b px-3", cls)
-      }
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        aria-hidden="true"
-        class={
-          cn("size-4 shrink-0 opacity-50")
-        }
-      >
-        <path d="m21 21-4.34-4.34" />
-        <circle cx="11" cy="11" r="8" />
-      </svg>
-      <input
-        type="text"
-        data-slot="command-input"
-        autocomplete="off"
-        spellcheck="false"
-        class={
-          cn("flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-hidden placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50")
-        }
-        {...attrs}
-      />
-    </div>
-  );
-}
-
-export function CommandList({
-  body,
-  children,
-  class: cls,
-  ...attrs
-}: CommandListProps): JSX.Element {
-  return (
-    <div
-      role="listbox"
-      data-slot="command-list"
-      aria-label="Suggestions"
-      class={
-        cn("max-h-[300px] scroll-py-1 overflow-x-hidden overflow-y-auto", cls)
+        cn("flex h-9 items-center gap-2 border-b px-3 [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:opacity-50 [&>input]:flex [&>input]:h-10 [&>input]:w-full [&>input]:rounded-md [&>input]:bg-transparent [&>input]:py-3 [&>input]:text-sm [&>input]:outline-hidden [&>input]:placeholder:text-muted-foreground [&>input]:disabled:cursor-not-allowed [&>input]:disabled:opacity-50", cls)
       }
       {...attrs}
     >
-      {() => body?.()}
       {children}
-    </div>
+    </Input>
+  );
+}
+
+/** The scrolling `role="listbox"`; the composed Command hands the factory its items and renders the ranked body. */
+export function CommandList({ id, children, class: cls, ...attrs }: CommandListProps): JSX.Element {
+  const { List } = command();
+  return (
+    <List
+      id={id}
+      class={
+        cn("max-h-[300px] scroll-py-1 overflow-x-hidden overflow-y-auto [&_[data-slot=command-item]]:relative [&_[data-slot=command-item]]:flex [&_[data-slot=command-item]]:cursor-default [&_[data-slot=command-item]]:items-center [&_[data-slot=command-item]]:gap-2 [&_[data-slot=command-item]]:rounded-sm [&_[data-slot=command-item]]:py-1.5 [&_[data-slot=command-item]]:px-2 [&_[data-slot=command-item]]:text-sm [&_[data-slot=command-item]]:outline-hidden [&_[data-slot=command-item]]:select-none [&_[data-slot=command-item]]:data-[disabled=true]:pointer-events-none [&_[data-slot=command-item]]:data-[disabled=true]:opacity-50 [&_[data-slot=command-item]]:data-[selected=true]:bg-accent [&_[data-slot=command-item]]:data-[selected=true]:text-accent-foreground [&_[data-slot=command-item]_svg]:pointer-events-none [&_[data-slot=command-item]_svg]:shrink-0 [&_[data-slot=command-item]_svg:not([class*='size-'])]:size-4 [&_[data-slot=command-item]_svg:not([class*='text-'])]:text-muted-foreground [&_[data-slot=command-item]_[data-slot=command-shortcut]]:ml-auto [&_[data-slot=command-item]_[data-slot=command-shortcut]]:text-xs [&_[data-slot=command-item]_[data-slot=command-shortcut]]:tracking-widest [&_[data-slot=command-item]_[data-slot=command-shortcut]]:text-muted-foreground [&_[data-slot=command-empty]]:py-6 [&_[data-slot=command-empty]]:text-center [&_[data-slot=command-empty]]:text-sm [&_[data-slot=command-group]]:overflow-hidden [&_[data-slot=command-group]]:p-1 [&_[data-slot=command-group]]:text-foreground [&_[data-slot=command-group]_[data-slot=command-group-heading]]:px-2 [&_[data-slot=command-group]_[data-slot=command-group-heading]]:py-1.5 [&_[data-slot=command-group]_[data-slot=command-group-heading]]:text-xs [&_[data-slot=command-group]_[data-slot=command-group-heading]]:font-medium [&_[data-slot=command-group]_[data-slot=command-group-heading]]:text-muted-foreground", cls)
+      }
+      {...attrs}
+    >
+      {children}
+    </List>
   );
 }
 
 export function CommandEmpty({ children, class: cls, ...attrs }: CommandEmptyProps): JSX.Element {
+  const { Empty } = command();
   return (
-    <div
-      data-slot="command-empty"
+    <Empty
       class={
         cn("py-6 text-center text-sm", cls)
       }
       {...attrs}
     >
       {children}
-    </div>
+    </Empty>
   );
 }
 
@@ -216,36 +140,25 @@ export function CommandGroup({
   class: cls,
   ...attrs
 }: CommandGroupProps): JSX.Element {
-  const isHidden = (): boolean => (typeof hidden === "function" ? hidden() : (hidden ?? false));
+  const { Group } = command();
   return (
-    <div
-      data-slot="command-group"
-      hidden={isHidden}
+    <Group
+      heading={heading}
+      hidden={hidden}
       class={
         cn("overflow-hidden p-1 text-foreground [&_[data-slot='command-group-heading']]:px-2 [&_[data-slot='command-group-heading']]:py-1.5 [&_[data-slot='command-group-heading']]:text-xs [&_[data-slot='command-group-heading']]:font-medium [&_[data-slot='command-group-heading']]:text-muted-foreground", cls)
       }
       {...attrs}
     >
-      {heading !== undefined && (
-        <div
-          data-slot="command-group-heading"
-          class={
-            cn("px-2 py-1.5 text-xs font-medium text-muted-foreground")
-          }
-        >
-          {heading}
-        </div>
-      )}
       {children}
-    </div>
+    </Group>
   );
 }
 
 export function CommandSeparator({ class: cls, ...attrs }: CommandSeparatorProps): JSX.Element {
+  const { Separator } = command();
   return (
-    <div
-      role="separator"
-      data-slot="command-separator"
+    <Separator
       class={
         cn("-mx-1 h-px bg-border", cls)
       }
@@ -256,35 +169,29 @@ export function CommandSeparator({ class: cls, ...attrs }: CommandSeparatorProps
 
 export function CommandItem({
   value,
+  id,
   disabled,
   active,
   onSelect,
-  "on:click": userClick,
   children,
   class: cls,
   ...attrs
 }: CommandItemProps): JSX.Element {
+  const { Item } = command();
   return (
-    <div
-      role="option"
-      data-slot="command-item"
-      data-value={value}
-      aria-selected={() => (active?.() ? "true" : "false")}
-      aria-disabled={disabled ? "true" : undefined}
-      data-selected={() => (active?.() ? "true" : undefined)}
-      data-disabled={disabled ? "true" : undefined}
+    <Item
+      value={value}
+      id={id}
+      disabled={disabled}
+      active={active}
+      onSelect={onSelect}
       class={
         cn("relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground", cls)
       }
-      on:click={function (e) {
-        if (disabled) return;
-        userClick?.call(this, e);
-        onSelect?.();
-      }}
       {...attrs}
     >
       {children}
-    </div>
+    </Item>
   );
 }
 
@@ -293,25 +200,23 @@ export function CommandShortcut({
   class: cls,
   ...attrs
 }: CommandShortcutProps): JSX.Element {
+  const { Shortcut } = command();
   return (
-    <span
-      data-slot="command-shortcut"
+    <Shortcut
       class={
         cn("ml-auto text-xs tracking-widest text-muted-foreground", cls)
       }
       {...attrs}
     >
       {children}
-    </span>
+    </Shortcut>
   );
 }
 
-let commandDialogCount = 0;
-
 /**
- * The palette dialog: the composed Dialog surface (overlay, panel, focus trap,
- * escape and outside dismissal) duplicated inline under this entry - registry
- * entries never cross-import - with the command palette scoping on its root.
+ * The palette dialog: the factory's `Dialog` part — overlay, portaled panel
+ * with trap/escape/outside arming, screen-reader header, close button, and the
+ * command surface — styled through descendants of the one wrapper-root class.
  * Manual parts compose inside through children.
  */
 export function CommandDialog({
@@ -323,167 +228,20 @@ export function CommandDialog({
   class: cls,
   ...attrs
 }: CommandDialogProps): JSX.Element {
-  const titleId = `hella-command-dialog-title-${++commandDialogCount}`;
-  const descriptionId = `hella-command-dialog-description-${commandDialogCount}`;
-  // `visible` alone gates the render so an open→closed flip never unmounts
-  // before this watcher starts the exit (reading open() in the template
-  // would flash the subtree away one evaluation early).
-  const visible = signal(false);
-  let wasOpen = false;
-  let fallback: ReturnType<typeof setTimeout> | undefined;
-  const wirings: (() => void)[] = [];
-  const teardown: (() => void)[] = [];
-  let panel: HTMLElement | undefined;
-
-  const finishExit = (): void => {
-    if (fallback !== undefined) {
-      clearTimeout(fallback);
-      fallback = undefined;
-    }
-    visible(false);
-  };
-
-  const disposeWirings = (): void => {
-    while (wirings.length) wirings.pop()!();
-  };
-
-  const installWirings = (): void => {
-    if (panel === undefined || wirings.length > 0 || open() === false) return;
-    const target = panel;
-    wirings.push(onEscape(target, onClose));
-    wirings.push(onOutside(() => [target], onClose));
-    wirings.push(trapFocus(target));
-  };
-
-  // Flip to open renders immediately; flip to closed starts the exit - the
-  // panel stays mounted under data-state="closed" until its animationend
-  // (or the copied 200ms duration budget) unmounts it. The exit runs
-  // unwired: closing tears the trap/escape/outside handlers down
-  // immediately; reopening re-arms them without a remount.
-  effect(() => {
-    if (open()) {
-      wasOpen = true;
-      finishExit();
-      visible(true);
-      installWirings();
-    } else if (wasOpen) {
-      wasOpen = false;
-      visible(true);
-      disposeWirings();
-      fallback = setTimeout(finishExit, 250);
-    }
-  });
-
-  const state = (): "open" | "closed" => (open() ? "open" : "closed");
-
+  const { Dialog } = command();
   return (
-    <>
-      {() =>
-        visible() && (
-          <Portal to="body">
-            <div
-              data-slot="dialog-overlay"
-              data-state={state()}
-              class={
-                cn("fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0")
-              }
-            />
-            <div
-              data-slot="dialog-content"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby={titleId}
-              aria-describedby={descriptionText === undefined ? undefined : descriptionId}
-              data-state={state()}
-              class={
-                cn("fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-0 shadow-lg duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg overflow-hidden", cls)
-              }
-              hook:afterMount={(node) => {
-                if (!(node instanceof HTMLElement)) return;
-                panel = node;
-                installWirings();
-                const onAnimationEnd = (): void => {
-                  if (open() === false) finishExit();
-                };
-                node.addEventListener("animationend", onAnimationEnd);
-                teardown.push(() => {
-                  node.removeEventListener("animationend", onAnimationEnd);
-                  panel = undefined;
-                });
-              }}
-              hook:beforeDestroy={() => {
-                disposeWirings();
-                while (teardown.length) teardown.pop()!();
-              }}
-              {...attrs}
-            >
-              <div
-                data-slot="dialog-header"
-                class={
-                  cn("sr-only")
-                }
-              >
-                {titleText !== undefined && (
-                  <h2
-                    id={titleId}
-                    data-slot="dialog-title"
-                    class={
-                      cn("text-lg leading-none font-semibold")
-                    }
-                  >
-                    {titleText}
-                  </h2>
-                )}
-                {descriptionText !== undefined && (
-                  <p
-                    id={descriptionId}
-                    data-slot="dialog-description"
-                    class={
-                      cn("text-sm text-muted-foreground")
-                    }
-                  >
-                    {descriptionText}
-                  </p>
-                )}
-              </div>
-              <button
-                type="button"
-                data-slot="dialog-close"
-                data-state={state()}
-                class={
-                  cn("absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4")
-                }
-                on:click={() => onClose()}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path d="M18 6 6 18" />
-                  <path d="m6 6 12 12" />
-                </svg>
-                <span class="sr-only">Close</span>
-              </button>
-              <div
-                data-slot="command"
-                class={
-                  cn("flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground", "[&_[data-slot='command-input-wrapper']]:h-12 [&_[data-slot='command-group-heading']]:px-2 [&_[data-slot='command-group-heading']]:font-medium [&_[data-slot='command-group-heading']]:text-muted-foreground [&_[data-slot='command-group']]:px-2 [&_[data-slot='command-group']:not([hidden])~[data-slot='command-group']]:pt-0 [&_[data-slot='command-input-wrapper']_svg]:h-5 [&_[data-slot='command-input-wrapper']_svg]:w-5 [&_[data-slot='command-input']]:h-12 [&_[data-slot='command-item']]:px-2 [&_[data-slot='command-item']]:py-3 [&_[data-slot='command-item']_svg]:h-5 [&_[data-slot='command-item']_svg]:w-5")
-                }
-              >
-                {children}
-              </div>
-            </div>
-          </Portal>
-        )
+    <Dialog
+      open={open}
+      onClose={onClose}
+      title={titleText}
+      description={descriptionText}
+      class={
+        cn("[&_[data-slot=dialog-overlay]]:fixed [&_[data-slot=dialog-overlay]]:inset-0 [&_[data-slot=dialog-overlay]]:z-50 [&_[data-slot=dialog-overlay]]:bg-black/50 [&_[data-slot=dialog-overlay]]:data-[state=closed]:animate-out [&_[data-slot=dialog-overlay]]:data-[state=closed]:fade-out-0 [&_[data-slot=dialog-overlay]]:data-[state=open]:animate-in [&_[data-slot=dialog-overlay]]:data-[state=open]:fade-in-0 [&_[data-slot=dialog-content]]:fixed [&_[data-slot=dialog-content]]:top-[50%] [&_[data-slot=dialog-content]]:left-[50%] [&_[data-slot=dialog-content]]:z-50 [&_[data-slot=dialog-content]]:grid [&_[data-slot=dialog-content]]:w-full [&_[data-slot=dialog-content]]:max-w-[calc(100%-2rem)] [&_[data-slot=dialog-content]]:translate-x-[-50%] [&_[data-slot=dialog-content]]:translate-y-[-50%] [&_[data-slot=dialog-content]]:gap-4 [&_[data-slot=dialog-content]]:rounded-lg [&_[data-slot=dialog-content]]:border [&_[data-slot=dialog-content]]:bg-background [&_[data-slot=dialog-content]]:p-0 [&_[data-slot=dialog-content]]:shadow-lg [&_[data-slot=dialog-content]]:duration-200 [&_[data-slot=dialog-content]]:outline-none [&_[data-slot=dialog-content]]:overflow-hidden [&_[data-slot=dialog-content]]:data-[state=closed]:animate-out [&_[data-slot=dialog-content]]:data-[state=closed]:fade-out-0 [&_[data-slot=dialog-content]]:data-[state=closed]:zoom-out-95 [&_[data-slot=dialog-content]]:data-[state=open]:animate-in [&_[data-slot=dialog-content]]:data-[state=open]:fade-in-0 [&_[data-slot=dialog-content]]:data-[state=open]:zoom-in-95 [&_[data-slot=dialog-content]]:sm:max-w-lg [&_[data-slot=dialog-content]_[data-slot=dialog-header]]:sr-only [&_[data-slot=dialog-content]_[data-slot=dialog-title]]:text-lg [&_[data-slot=dialog-content]_[data-slot=dialog-title]]:leading-none [&_[data-slot=dialog-content]_[data-slot=dialog-title]]:font-semibold [&_[data-slot=dialog-content]_[data-slot=dialog-description]]:text-sm [&_[data-slot=dialog-content]_[data-slot=dialog-description]]:text-muted-foreground [&_[data-slot=dialog-content]_[data-slot=dialog-close]]:absolute [&_[data-slot=dialog-content]_[data-slot=dialog-close]]:top-4 [&_[data-slot=dialog-content]_[data-slot=dialog-close]]:right-4 [&_[data-slot=dialog-content]_[data-slot=dialog-close]]:rounded-xs [&_[data-slot=dialog-content]_[data-slot=dialog-close]]:opacity-70 [&_[data-slot=dialog-content]_[data-slot=dialog-close]]:ring-offset-background [&_[data-slot=dialog-content]_[data-slot=dialog-close]]:transition-opacity [&_[data-slot=dialog-content]_[data-slot=dialog-close]]:hover:opacity-100 [&_[data-slot=dialog-content]_[data-slot=dialog-close]]:focus:ring-2 [&_[data-slot=dialog-content]_[data-slot=dialog-close]]:focus:ring-ring [&_[data-slot=dialog-content]_[data-slot=dialog-close]]:focus:ring-offset-2 [&_[data-slot=dialog-content]_[data-slot=dialog-close]]:focus:outline-hidden [&_[data-slot=dialog-content]_[data-slot=dialog-close]]:disabled:pointer-events-none [&_[data-slot=dialog-content]_[data-slot=dialog-close]]:data-[state=open]:bg-accent [&_[data-slot=dialog-content]_[data-slot=dialog-close]]:data-[state=open]:text-muted-foreground [&_[data-slot=dialog-content]_[data-slot=dialog-close]_svg]:pointer-events-none [&_[data-slot=dialog-content]_[data-slot=dialog-close]_svg]:shrink-0 [&_[data-slot=dialog-content]_[data-slot=dialog-close]_svg:not([class*='size-'])]:size-4 [&_[data-slot=dialog-content]_[data-slot=command]]:flex [&_[data-slot=dialog-content]_[data-slot=command]]:h-full [&_[data-slot=dialog-content]_[data-slot=command]]:w-full [&_[data-slot=dialog-content]_[data-slot=command]]:flex-col [&_[data-slot=dialog-content]_[data-slot=command]]:overflow-hidden [&_[data-slot=dialog-content]_[data-slot=command]]:rounded-md [&_[data-slot=dialog-content]_[data-slot=command]]:bg-popover [&_[data-slot=dialog-content]_[data-slot=command]]:text-popover-foreground [&_[data-slot=dialog-content]_[data-slot=command]_[data-slot=command-input-wrapper]]:h-12 [&_[data-slot=dialog-content]_[data-slot=command]_[data-slot=command-input-wrapper]_svg]:h-5 [&_[data-slot=dialog-content]_[data-slot=command]_[data-slot=command-input-wrapper]_svg]:w-5 [&_[data-slot=dialog-content]_[data-slot=command]_[data-slot=command-input]]:h-12 [&_[data-slot=dialog-content]_[data-slot=command]_[data-slot=command-group]]:px-2 [&_[data-slot=dialog-content]_[data-slot=command]_[data-slot=command-group]:not([hidden])~[data-slot=command-group]]:pt-0 [&_[data-slot=dialog-content]_[data-slot=command]_[data-slot=command-group-heading]]:px-2 [&_[data-slot=dialog-content]_[data-slot=command]_[data-slot=command-group-heading]]:font-medium [&_[data-slot=dialog-content]_[data-slot=command]_[data-slot=command-group-heading]]:text-muted-foreground [&_[data-slot=dialog-content]_[data-slot=command]_[data-slot=command-item]]:px-2 [&_[data-slot=dialog-content]_[data-slot=command]_[data-slot=command-item]]:py-3 [&_[data-slot=dialog-content]_[data-slot=command]_[data-slot=command-item]_svg]:h-5 [&_[data-slot=dialog-content]_[data-slot=command]_[data-slot=command-item]_svg]:w-5", cls)
       }
-    </>
+      {...attrs}
+    >
+      {children}
+    </Dialog>
   );
 }
 
@@ -497,206 +255,26 @@ export function Command({
   class: cls,
   ...attrs
 }: CommandProps): JSX.Element {
-  const resolveItems = (): CommandItemData[] =>
-    typeof items === "function" ? (items as () => CommandItemData[])() : (items ?? []);
-  const query = signal("");
-  const activeIndex = signal(0);
-  let rootNode: HTMLElement | undefined;
-  let previous: string | undefined;
-
-  const ranked = (): CommandItemData[] => (filter ?? defaultFilter)(resolveItems(), query());
-
-  // The active value: the controlled accessor when given, the internal
-  // cursor resolved against the ranked list otherwise.
-  const activeValue = (): string | undefined => {
-    if (value !== undefined) return value();
-    return ranked()[activeIndex()]?.value;
-  };
-
-  const select = (next: number): void => {
-    const entry = ranked()[next];
-    if (entry === undefined) return;
-    if (value !== undefined) onValueChange?.(entry.value);
-    else activeIndex(next);
-  };
-
-  const step = (delta: number): void => {
-    const rankedList = ranked();
-    const len = rankedList.length;
-    if (len === 0) return;
-    const current = activeValue();
-    let at = current === undefined ? -1 : rankedList.findIndex((entry) => entry.value === current);
-    if (at === -1 && delta === -1) at = len;
-    let hops = 0;
-    let next = at;
-    while (hops < len) {
-      if (loop) next = (next + delta + len) % len;
-      else {
-        next = next + delta;
-        if (next < 0 || next >= len) return;
-      }
-      hops++;
-      if (!rankedList[next]!.disabled) {
-        select(next);
-        return;
-      }
-    }
-  };
-
-  const jump = (edge: "first" | "last"): void => {
-    const rankedList = ranked();
-    if (value !== undefined) {
-      let i = edge === "first" ? 0 : rankedList.length - 1;
-      while (i >= 0 && i < rankedList.length) {
-        if (!rankedList[i]!.disabled) {
-          onValueChange?.(rankedList[i]!.value);
-          return;
-        }
-        i = edge === "first" ? i + 1 : i - 1;
-      }
-      return;
-    }
-    let i = edge === "first" ? 0 : rankedList.length - 1;
-    while (i >= 0 && i < rankedList.length) {
-      if (!rankedList[i]!.disabled) {
-        activeIndex(i);
-        return;
-      }
-      i = edge === "first" ? i + 1 : i - 1;
-    }
-  };
-
-  const commit = (): void => {
-    const current = activeValue();
-    const entry = ranked().find((candidate) => candidate.value === current);
-    if (entry === undefined || entry.disabled) return;
-    entry.onSelect?.();
-    onValueChange?.(entry.value);
-  };
-
-  const onKeydown = (e: KeyboardEvent): void => {
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      step(1);
-      return;
-    }
-    if (e.key === "ArrowUp") {
-      e.preventDefault();
-      step(-1);
-      return;
-    }
-    if (e.key === "Home") {
-      e.preventDefault();
-      jump("first");
-      return;
-    }
-    if (e.key === "End") {
-      e.preventDefault();
-      jump("last");
-      return;
-    }
-    if (e.key === "Enter") {
-      e.preventDefault();
-      commit();
-    }
-  };
-
-  // The active item scrolls to the visible edge of the list whenever the
-  // cursor lands on a new value.
-  effect(() => {
-    const current = activeValue();
-    if (current === previous || rootNode === undefined) return;
-    previous = current;
-    if (current === undefined) return;
-    const nodes = rootNode.querySelectorAll("[data-slot='command-item']");
-    let i = 0;
-    while (i < nodes.length) {
-      const el = nodes[i] as HTMLElement;
-      if (el.getAttribute("data-value") === current) {
-        el.scrollIntoView?.({ block: "nearest" });
-        return;
-      }
-      i++;
-    }
-  });
-
-  const commitItem = (entry: CommandItemData): void => {
-    entry.onSelect?.();
-    onValueChange?.(entry.value);
-  };
-
-  const renderItem = (entry: CommandItemData): JSX.Element => (
-    <CommandItem
-      value={entry.value}
-      disabled={entry.disabled}
-      active={() => activeValue() === entry.value}
-      onSelect={() => commitItem(entry)}
-    >
-      {entry.label}
-      {entry.shortcut !== undefined && <CommandShortcut>{entry.shortcut}</CommandShortcut>}
-    </CommandItem>
-  );
-
-  const renderBody = (): HellaChild | HellaChild[] => {
-    const rankedList = ranked();
-    if (rankedList.length === 0) return <CommandEmpty>No results found.</CommandEmpty>;
-    const nodes: HellaChild[] = [];
-    const groups = orderedGroups(resolveItems());
-    let g = 0;
-    const gLen = groups.length;
-    while (g < gLen) {
-      const key = groups[g]!;
-      const members = rankedList.filter((entry) => (entry.group ?? "") === key);
-      if (key === "") {
-        nodes.push(...members.map((entry) => renderItem(entry)));
-      } else {
-        nodes.push(
-          <CommandGroup heading={key} hidden={members.length === 0}>
-            {members.map((entry) => renderItem(entry))}
-          </CommandGroup>,
-        );
-      }
-      g++;
-    }
-    return nodes;
-  };
-
+  const C = command({ items, filter, loop, value, onValueChange });
   return (
     <div
       data-slot="command"
       class={
         cn("flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground", cls)
       }
-      hook:afterMount={(node) => {
-        if (node instanceof HTMLElement) rootNode = node;
-      }}
-      hook:beforeDestroy={() => {
-        rootNode = undefined;
-      }}
       {...attrs}
     >
-      <CommandInput
-        value={query}
-        on:input={(e) => {
-          query((e.target as HTMLInputElement).value);
-          if (value === undefined) activeIndex(0);
-        }}
-        on:keydown={onKeydown}
+      <C.Input
+        class={
+          cn("flex h-9 items-center gap-2 border-b px-3 [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:opacity-50 [&>input]:flex [&>input]:h-10 [&>input]:w-full [&>input]:rounded-md [&>input]:bg-transparent [&>input]:py-3 [&>input]:text-sm [&>input]:outline-hidden [&>input]:placeholder:text-muted-foreground [&>input]:disabled:cursor-not-allowed [&>input]:disabled:opacity-50")
+        }
       />
-      <CommandList body={renderBody} />
+      <C.List
+        class={
+          cn("max-h-[300px] scroll-py-1 overflow-x-hidden overflow-y-auto [&_[data-slot=command-item]]:relative [&_[data-slot=command-item]]:flex [&_[data-slot=command-item]]:cursor-default [&_[data-slot=command-item]]:items-center [&_[data-slot=command-item]]:gap-2 [&_[data-slot=command-item]]:rounded-sm [&_[data-slot=command-item]]:py-1.5 [&_[data-slot=command-item]]:px-2 [&_[data-slot=command-item]]:text-sm [&_[data-slot=command-item]]:outline-hidden [&_[data-slot=command-item]]:select-none [&_[data-slot=command-item]]:data-[disabled=true]:pointer-events-none [&_[data-slot=command-item]]:data-[disabled=true]:opacity-50 [&_[data-slot=command-item]]:data-[selected=true]:bg-accent [&_[data-slot=command-item]]:data-[selected=true]:text-accent-foreground [&_[data-slot=command-item]_svg]:pointer-events-none [&_[data-slot=command-item]_svg]:shrink-0 [&_[data-slot=command-item]_svg:not([class*='size-'])]:size-4 [&_[data-slot=command-item]_svg:not([class*='text-'])]:text-muted-foreground [&_[data-slot=command-item]_[data-slot=command-shortcut]]:ml-auto [&_[data-slot=command-item]_[data-slot=command-shortcut]]:text-xs [&_[data-slot=command-item]_[data-slot=command-shortcut]]:tracking-widest [&_[data-slot=command-item]_[data-slot=command-shortcut]]:text-muted-foreground [&_[data-slot=command-empty]]:py-6 [&_[data-slot=command-empty]]:text-center [&_[data-slot=command-empty]]:text-sm [&_[data-slot=command-group]]:overflow-hidden [&_[data-slot=command-group]]:p-1 [&_[data-slot=command-group]]:text-foreground [&_[data-slot=command-group]_[data-slot=command-group-heading]]:px-2 [&_[data-slot=command-group]_[data-slot=command-group-heading]]:py-1.5 [&_[data-slot=command-group]_[data-slot=command-group-heading]]:text-xs [&_[data-slot=command-group]_[data-slot=command-group-heading]]:font-medium [&_[data-slot=command-group]_[data-slot=command-group-heading]]:text-muted-foreground")
+        }
+      />
       {children}
     </div>
   );
-}
-
-/** Group keys in first-appearance order over the original items; "" holds the ungrouped items. */
-function orderedGroups(items: CommandItemData[]): string[] {
-  const keys: string[] = [];
-  let i = 0;
-  while (i < items.length) {
-    const key = items[i]!.group ?? "";
-    if (!keys.includes(key)) keys.push(key);
-    i++;
-  }
-  return keys;
 }

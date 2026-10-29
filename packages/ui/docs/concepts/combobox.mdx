@@ -1,6 +1,6 @@
 ## API
 
-The composed `Combobox` takes its options as data and renders the input shell plus the portaled panel: focusing the input opens the panel, typing filters it. The copied file carries its input-group shell inline (the entry never cross-imports) and wires its positioning, dismissal, and typeahead from the `@hellajs/headless` behavior functions.
+The composed `Combobox` takes its options as data and renders the input shell plus the portaled panel: focusing the input opens the panel, typing filters it. The copied file composes the [`combobox`](/reference/headless/combobox) parts factory from `@hellajs/headless`, which owns the query state, the filtering, the positioning, the dismissal, and the typeahead.
 
 The input always shows the query, never the selection: the selected value lives in `onValueChange` (render it through `ComboboxValue` where needed). The combobox submits nothing by itself; pair it with `native-select` (or a hidden input of your own) when a form needs the value.
 
@@ -55,9 +55,6 @@ The input-group shell with the chevron toggle and clear addons, carrying the com
 | `showClear` | `boolean` | `-` |
 | `onToggle` | `() => void` | `-` |
 | `onClear` | `() => void` | `-` |
-| `hasValue` | `() => boolean` | `-` |
-| `wire` | `(node) => () => void` | `-` |
-| `portal` | `() => HellaChildren` | `-` |
 
 Accepts all native `input` attributes (forwarded to the inner input element): `placeholder`, `id`, and `aria-controls` ride the spread, and the composed root threads the query updates, keyboard model, and open-on-focus through `on:input`, `on:keydown`, and `on:focus` the same way.
 
@@ -185,8 +182,6 @@ The multiple-mode chips wrapper; anchors the panel in chips compositions.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `chips` | `() => HellaChildren` | `-` |
-| `wire` | `(node) => () => void` | `-` |
-| `portal` | `() => HellaChildren` | `-` |
 | `disabled` | `boolean` | `-` |
 | `children` | `HellaChildren` | `-` |
 

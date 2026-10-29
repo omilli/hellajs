@@ -1,0 +1,97 @@
+# select
+
+Creates the select parts in one call: the trigger button, the chosen-value label, the ported listbox with its scroll affordances, and the option rows. The factory closure owns the selection, the open state, and the generated content id; options register in DOM order from the `Item` children you render.
+
+## Basic Usage
+
+```tsx
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+import { select } from "@hellajs/headless";
+
+const value = signal("");
+
+const Select = select({
+  value: () => value(),
+  onValueChange: (next) => value(next),
+});
+
+mount(
+  <div>
+    <Select.Trigger>
+      <Select.Value placeholder="Choose…" />
+    </Select.Trigger>
+    <Select.Content side="bottom">
+      <Select.Item value="a">Option A</Select.Item>
+      <Select.Item value="b">Option B</Select.Item>
+      <Select.Group>
+        <Select.Label>More</Select.Label>
+        <Select.Item value="c">Option C</Select.Item>
+      </Select.Group>
+    </Select.Content>
+  </div>,
+  "#app",
+);
+// Clicking the trigger (or pressing ArrowDown/ArrowUp on it) opens the
+// listbox. Arrows and Home/End rove the options, Enter and Space commit and
+// close, Tab closes without committing, and closing returns focus to the
+// trigger.
+```
+
+## API
+
+```typescript
+function select(options?: SelectOptions): SelectParts
+```
+
+- `options.value`: Controlled selected value. Passing it makes the select controlled; omitting it keeps selection internal.
+- `options.onValueChange`: Called with every requested selection.
+- **Returns**: The part set, composed as `Select.Trigger`-style members.
+
+### Parts
+
+| Part | Renders |
+|---|---|
+| `Trigger` | `button` owning the click and arrow toggles, `data-state`, `data-size`, `aria-haspopup`, `aria-expanded`, `aria-controls`, and the clear affordance |
+| `Value` | The chosen label `span`; shows the placeholder with `data-placeholder` while empty |
+| `Content` | `role="listbox"` panel portaled into `document.body`, with scroll-up/down buttons around the viewport |
+| `Item` | `role="option"` row with `aria-selected`, `data-state`, `data-disabled`, and a check indicator |
+| `Group`, `Label`, `Separator` | Structural grouping rows |
+| `ScrollUpButton`, `ScrollDownButton` | The repeat-scroll affordances at the listbox edges |
+
+Every part spreads `class` and native attributes onto its element; parts own structure, styling stays in the wrapper.
+
+### Options
+
+| Option | Type | Default |
+|---|---|---|
+| `value` | `() => string` | internal signal |
+| `onValueChange` | `(value: string) => void` | `-` |
+
+## Key Concepts
+
+### Options Register in DOM Order
+
+The listbox reads its options from the `Item` children you render inside `Content`, in DOM order; groups, labels, and separators are free structure. Disabled options (the `disabled` prop sets `data-disabled`) stay visible but drop out of roving, typeahead, and activation.
+
+### Selection and Close Semantics
+
+Open focus lands on the selected enabled option, else the first, and scrolls it to the visible edge. Enter and Space commit the focused option and close; Tab closes without committing; Escape and an outside pointerdown close through the top-layer dismissal. Closing returns focus to the trigger (one flip only), so the initial closed state never steals focus at mount.
+
+### The Chosen Label
+
+`Value` shows the placeholder while the selection is empty and the raw selected value otherwise. Pass a `value` getter (typically resolving the selected entry's label from your own items) to display a different label than the raw value.
+
+### Anchoring and Scrolling
+
+While open, the content is positioned against the trigger through [`anchorPosition`](/reference/headless/anchorposition) (fixed coordinates, matched trigger width, repositioning on scroll and resize) and dismissed through [`layerDismissal`](/reference/headless/layerdismissal). The scroll buttons repeat-scroll the listbox while hovered and hide at their scroll edges.
+
+## Important Considerations
+
+### Call the Factory in Component Scope
+
+`select()` starts state machinery whose effects must dispose with the component that owns it. Mounting the tree unmounts every layer and drains the open-state wiring; module-level calls with an internal signal leak that wiring.
+
+### Controlled Getters Notify One Direction
+
+`onValueChange` reports selections the factory drives. Changing a controlled `value` signal directly is the controller's own move and notifies no one.

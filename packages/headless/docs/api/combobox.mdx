@@ -1,0 +1,112 @@
+# combobox
+
+Creates the combobox parts in one call: the query input with its addon affordances, the ported anchored option panel, the listbox and option rows, and the multi-select chips. The factory closure owns the query, the selection, the active-by-value highlight, and the generated list id.
+
+## Basic Usage
+
+```tsx
+import { signal } from "@hellajs/core";
+import { ForEach, mount } from "@hellajs/dom";
+import { combobox } from "@hellajs/headless";
+
+const items = [
+  { value: "apple", label: "Apple" },
+  { value: "blueberry", label: "Blueberry" },
+  { value: "canteloupe", label: "Canteloupe" },
+];
+
+const Combobox = combobox({ items });
+
+mount(
+  <div>
+    <Combobox.Input placeholder="Search…" />
+    <Combobox.Content side="bottom" align="start">
+      <Combobox.List>
+        <ForEach each={Combobox.matches} keyBy="value">
+          {(entry) => (
+            <Combobox.Item value={entry.value}>{entry.label ?? entry.value}</Combobox.Item>
+          )}
+        </ForEach>
+      </Combobox.List>
+      <Combobox.Empty>No items found.</Combobox.Empty>
+    </Combobox.Content>
+  </div>,
+  "#app",
+);
+// Focusing the input opens the panel; typing filters the matches getter.
+// Arrows rove the enabled options with wrap-around, Enter commits and closes,
+// and Escape clears the query and then closes.
+```
+
+Pass `List` the same `items` and it renders the rows for you, keeping every option mounted while the query hides non-matches:
+
+```tsx
+<Combobox.List items={items} keyBy="value" />
+```
+
+## API
+
+```typescript
+function combobox(options?: ComboboxOptions): ComboboxParts
+```
+
+- `options.items`: The option entries, an array or a getter. A getter keeps the list reactive across appends, removes, and reorders.
+- `options.value`: Controlled selection: one value single-mode, an array under `multiple`. Passing it makes the combobox controlled; omitting it keeps selection internal.
+- `options.onValueChange`: Called with every requested selection.
+- `options.multiple`: Multi-select mode: selections toggle into an array, the panel stays open, and the input surface renders chips.
+- `options.filter`: Replaces the default case-insensitive substring match over item labels.
+- **Returns**: The part set plus the `matches`, `open`, and `setOpen` composition getters.
+
+### Parts
+
+| Part | Renders |
+|---|---|
+| `Input` | The query surface: a `role="combobox"` input inside an addon group, or the chips composition under `multiple` |
+| `Content` | Panel portaled into `document.body`, carrying `data-state`, `data-side`, `data-align`, and `data-empty` |
+| `List` | `role="listbox"` whose option ids derive as `<listId>-opt-<value>` |
+| `Item` | `role="option"` row with `aria-selected`, `data-state`, `data-highlighted`, and a check indicator |
+| `Empty` | Renders when the panel carries `data-empty` (the composed panel mounts it with its default text) |
+| `Value` | The joined selection for compositions that show it outside the input |
+| `Clear` | The selection-wiping affordance |
+| `Chips`, `Chip`, `ChipsInput` | The multi-select composition: selected-value rows with remove buttons and the query input |
+| `Group`, `Label`, `Separator`, `Collection` | Structural grouping rows |
+
+Every part spreads `class` and native attributes onto its element; parts own structure, styling stays in the wrapper.
+
+### Options
+
+| Option | Type | Default |
+|---|---|---|
+| `items` | `ComboboxEntry[] \| (() => ComboboxEntry[])` | `[]` |
+| `value` | `() => string \| string[]` | internal signal |
+| `onValueChange` | `(value: string \| string[]) => void` | `-` |
+| `multiple` | `boolean` | `false` |
+| `filter` | `(items, query) => entries` | case-insensitive substring |
+
+## Key Concepts
+
+### Controlled or Internal State
+
+Pass `value` and the factory never holds the selection: the getter is the single source of truth and `onValueChange` reports every requested commit. Omit `value` and the factory keeps its own signal, so the parts work standalone. The same contract covers the open state through `open` and `onOpenChange`.
+
+### The Query and the matches Getter
+
+`matches` resolves the option list under the live query, and it is the composition surface: render it through your own `ForEach` for full control, or hand `List` the `items` and let it render the rows with non-matches hidden in place. Either way, highlight and selection survive filtering because they are tracked by value.
+
+### Keyboard Model
+
+ArrowDown and ArrowUp open the panel when closed and rove the enabled options with wrap-around when open; disabled options are skipped. Enter commits the active option: closing and clearing the query single-mode, toggling into the array and staying open under `multiple`. Escape clears the query first and closes second. Printable keystrokes ride the typeahead and jump to the matching option through the stable value-derived ids, so the jump lands on the same node after a reorder.
+
+### Single or Multiple
+
+Single mode commits close the panel and clear the query; the addon renders a chevron toggle and, with `showClear`, a wipe affordance. Under `multiple`, commits toggle into the array and keep the panel open, `Input` renders the chips composition instead, and each chip's remove button toggles its value back out.
+
+## Important Considerations
+
+### Call the Factory in Component Scope
+
+`combobox()` starts state machinery whose effects must dispose with the component that owns it. Mounting the tree unmounts every layer and drains the open-state wiring; module-level calls with an internal signal leak that wiring.
+
+### Anchoring and Dismissal
+
+While open, the content is positioned against the input wrapper through [`anchorPosition`](/reference/headless/anchorposition) (fixed coordinates, matched trigger width, repositioning on scroll and resize) and dismissed through [`layerDismissal`](/reference/headless/layerdismissal): Escape and an outside pointerdown close only the top layer. Focus stays in the input the whole time; the panel never steals it.

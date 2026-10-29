@@ -1,7 +1,4 @@
-import { effect, signal } from "@hellajs/core";
-import { ForEach, Portal } from "@hellajs/dom";
-import { anchorPosition, layerDismissal, menuTypeahead } from "@hellajs/headless";
-import type { Placement } from "@hellajs/headless";
+import { combobox } from "@hellajs/headless";
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 type AnchorSide = "top" | "bottom" | "left" | "right";
@@ -58,6 +55,8 @@ interface ComboboxSeparatorProps extends HTMLAttributes<"div"> {
 interface ComboboxItemProps extends HTMLAttributes<"div"> {
   value?: string;
   label?: string;
+  disabled?: boolean;
+  id?: string;
   /** Selected state. A boolean reads statically; an accessor keeps the item reactive against its owning combobox. */
   selected?: boolean | (() => boolean);
   /** Highlighted state (the ref's data-highlighted ring); an accessor follows the active option. */
@@ -71,6 +70,8 @@ interface ComboboxItemProps extends HTMLAttributes<"div"> {
 }
 
 interface ComboboxListProps extends HTMLAttributes<"div"> {
+  /** The listbox id; option ids derive as `<id>-opt-<value>`. */
+  id?: string;
   /** Data-driven items; a plain array reads once at mount, an accessor re-renders the list as it changes. The query keeps rows mounted and toggles their visibility. */
   items?: ComboboxEntry[] | (() => ComboboxEntry[]);
   /** Reuses item DOM through reorders by `value` identity (selection and highlight state survive); order always follows the array. */
@@ -102,11 +103,6 @@ interface ComboboxInputProps extends HTMLAttributes<"input"> {
   showClear?: boolean;
   onToggle?: () => void;
   onClear?: () => void;
-  hasValue?: () => boolean;
-  /** Wires the wrapper on mount and returns its dispose; the composed Combobox anchors the panel here and attaches typeahead. */
-  wire?: (node: HTMLElement) => () => void;
-  /** The portaled panel, mounted while open; rendered as a reactive child inside the wrapper. */
-  portal?: () => HellaChildren;
   children?: HellaChildren;
   class?: string;
 }
@@ -117,10 +113,6 @@ interface ComboboxChipsProps extends HTMLAttributes<"div"> {
   chips?: () => HellaChildren;
   /** Wired, not spread: renders data-disabled and gates the chip remove buttons. */
   disabled?: boolean;
-  /** Wires the chips wrapper on mount and returns its dispose; the composed Combobox anchors the panel here. */
-  wire?: (node: HTMLElement) => () => void;
-  /** The portaled panel, mounted while open; rendered as a reactive child inside the wrapper. */
-  portal?: () => HellaChildren;
   class?: string;
 }
 
@@ -146,6 +138,7 @@ interface ComboboxChipsInputProps extends HTMLAttributes<"input"> {
 }
 
 interface ComboboxContentProps extends HTMLAttributes<"div"> {
+  id?: string;
   state?: () => "open" | "closed";
   side?: AnchorSide;
   align?: AnchorAlign;
@@ -181,134 +174,17 @@ interface ComboboxProps extends HTMLAttributes<"div"> {
 }
 import { cn } from "./cn.js";
 
-const placementOf = (side: AnchorSide, align: AnchorAlign): Placement =>
-  align === "center" ? side : `${side}-${align}`;
-
-/** Open/close state: exit-holding `visible` gate so an open→closed flip never unmounts before the exit starts. */
-function comboboxOpenState() {
-  const internal = signal(false);
-  const isOpen = (): boolean => internal();
-  const setOpen = (next: boolean): void => {
-    internal(next);
-  };
-  // `visible` alone gates the render so an open→closed flip never unmounts
-  // before this watcher starts the exit (reading open() in the template
-  // would flash the subtree away one evaluation early).
-  const visible = signal(false);
-  let wasOpen = false;
-  let fallback: ReturnType<typeof setTimeout> | undefined;
-  const finishExit = (): void => {
-    if (fallback !== undefined) {
-      clearTimeout(fallback);
-      fallback = undefined;
-    }
-    visible(false);
-  };
-  // Flip to open renders immediately; flip to closed starts the exit - the
-  // content stays mounted under data-state="closed" until its animationend
-  // (or the copied duration budget) unmounts it.
-  effect(() => {
-    if (isOpen()) {
-      wasOpen = true;
-      finishExit();
-      visible(true);
-    } else if (wasOpen) {
-      wasOpen = false;
-      visible(true);
-      fallback = setTimeout(finishExit, 250);
-    }
-  });
-  return {
-    isOpen,
-    setOpen,
-    state: (): "open" | "closed" => (isOpen() ? "open" : "closed"),
-    visible,
-    finishExit,
-  };
-}
-
-/** The check icon (refs/icons/check.svg), created per call so reactive swaps never share nodes between clones. */
-const checkIcon = (): JSX.Element => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="2"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    aria-hidden="true"
-    class={
-      cn("pointer-events-none size-4 pointer-coarse:size-5")
-    }
-  >
-    <path d="M20 6 9 17l-5-5" />
-  </svg>
-);
-
-/** The chevron-down icon (refs/icons/chevron-down.svg), created per call so reactive swaps never share nodes between clones. */
-const chevronDownIcon = (): JSX.Element => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="2"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    aria-hidden="true"
-    data-slot="combobox-trigger-icon"
-    class={
-      cn("pointer-events-none size-4 text-muted-foreground")
-    }
-  >
-    <path d="m6 9 6 6 6-6" />
-  </svg>
-);
-
-/** The clear icon (refs/icons/x.svg), created per call so reactive swaps never share nodes between clones. */
-const clearIcon = (): JSX.Element => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="2"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    aria-hidden="true"
-    class={
-      cn("pointer-events-none")
-    }
-  >
-    <path d="M18 6 6 18" />
-    <path d="m6 6 12 12" />
-  </svg>
-);
-
 /** Renders the selected value for compositions that show the selection outside the input. */
 export function ComboboxValue({ value, class: cls, ...attrs }: ComboboxValueProps): JSX.Element {
-  const current = (): string | string[] | undefined =>
-    typeof value === "function" ? value() : value;
+  const { Value } = combobox();
   return (
-    <span
-      data-slot="combobox-value"
+    <Value
+      value={value}
       class={
         cn(cls)
       }
       {...attrs}
-    >
-      {() => {
-        const v = current();
-        return Array.isArray(v) ? v.join(", ") : v;
-      }}
-    </span>
+    />
   );
 }
 
@@ -328,7 +204,24 @@ export function ComboboxTrigger({
       {...attrs}
     >
       {children}
-      {chevronDownIcon()}
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+        data-slot="combobox-trigger-icon"
+        class={
+          cn("pointer-events-none size-4 text-muted-foreground")
+        }
+      >
+        <path d="m6 9 6 6 6-6" />
+      </svg>
     </button>
   );
 }
@@ -340,50 +233,44 @@ export function ComboboxClear({
   class: cls,
   ...attrs
 }: ComboboxClearProps): JSX.Element {
+  const { Clear } = combobox();
   return (
-    <button
-      type="button"
-      data-slot="combobox-clear"
-      aria-label="Clear"
+    <Clear
+      onClear={onClear}
+      on:click={userClick}
       class={
         cn("inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50", "size-6 rounded-md [&_svg:not([class*='size-'])]:size-3", "flex items-center gap-2 text-sm shadow-none size-6 rounded-[calc(var(--radius)-5px)] p-0 has-[>svg]:p-0", cls)
       }
-      on:click={function (e) {
-        userClick?.call(this, e);
-        onClear?.();
-      }}
       {...attrs}
-    >
-      {clearIcon()}
-    </button>
+    />
   );
 }
 
 export function ComboboxGroup({ children, class: cls, ...attrs }: ComboboxGroupProps): JSX.Element {
+  const { Group } = combobox();
   return (
-    <div
-      data-slot="combobox-group"
+    <Group
       class={
         cn(cls)
       }
       {...attrs}
     >
       {children}
-    </div>
+    </Group>
   );
 }
 
 export function ComboboxLabel({ children, class: cls, ...attrs }: ComboboxLabelProps): JSX.Element {
+  const { Label } = combobox();
   return (
-    <div
-      data-slot="combobox-label"
+    <Label
       class={
         cn("px-2 py-1.5 text-xs text-muted-foreground pointer-coarse:px-3 pointer-coarse:py-2 pointer-coarse:text-sm", cls)
       }
       {...attrs}
     >
       {children}
-    </div>
+    </Label>
   );
 }
 
@@ -393,33 +280,38 @@ export function ComboboxCollection({
   class: cls,
   ...attrs
 }: ComboboxCollectionProps): JSX.Element {
+  const { Collection } = combobox();
   return (
-    <div data-slot="combobox-collection" class={cls} {...attrs}>
+    <Collection
+      class={
+        cn(cls)
+      }
+      {...attrs}
+    >
       {children}
-    </div>
+    </Collection>
   );
 }
 
 /** Renders when the query matches nothing; the composed Combobox mounts it with its default text. */
 export function ComboboxEmpty({ children, class: cls, ...attrs }: ComboboxEmptyProps): JSX.Element {
+  const { Empty } = combobox();
   return (
-    <div
-      data-slot="combobox-empty"
+    <Empty
       class={
         cn("hidden w-full justify-center py-2 text-center text-sm text-muted-foreground group-data-empty/combobox-content:flex", cls)
       }
       {...attrs}
     >
       {children}
-    </div>
+    </Empty>
   );
 }
 
 export function ComboboxSeparator({ class: cls, ...attrs }: ComboboxSeparatorProps): JSX.Element {
+  const { Separator } = combobox();
   return (
-    <div
-      role="separator"
-      data-slot="combobox-separator"
+    <Separator
       class={
         cn("-mx-1 my-1 h-px bg-border", cls)
       }
@@ -441,46 +333,24 @@ export function ComboboxItem({
   class: cls,
   ...attrs
 }: ComboboxItemProps): JSX.Element {
-  const selected = (): boolean =>
-    typeof selectedProp === "function" ? selectedProp() : (selectedProp ?? false);
-  const highlighted = (): boolean =>
-    typeof highlightedProp === "function" ? highlightedProp() : (highlightedProp ?? false);
-  // Precomputed so the style prop stays a bare reactive accessor (a compound
-  // attribute expression would stringify through the transform).
-  const hiddenStyle = hidden
-    ? (): string => ((hidden as () => boolean)() ? "display: none" : "")
-    : undefined;
+  const { Item } = combobox();
   return (
-    <div
-      role="option"
-      data-slot="combobox-item"
-      data-value={value}
-      aria-selected={selected() ? "true" : "false"}
-      data-state={selected() ? "checked" : "unchecked"}
-      data-highlighted={() => (highlighted() ? "true" : undefined)}
-      data-disabled={disabled ? "true" : undefined}
-      aria-disabled={disabled ? "true" : undefined}
-      style={hiddenStyle}
+    <Item
+      value={value}
+      label={labelProp}
+      disabled={disabled}
+      selected={selectedProp}
+      highlighted={highlightedProp}
+      hidden={hidden}
+      onselect={onselect}
+      on:click={userClick}
       class={
-        cn("relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-highlighted:bg-accent data-highlighted:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", cls)
+        cn("relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-highlighted:bg-accent data-highlighted:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_[data-slot=combobox-item-indicator]]:pointer-events-none [&_[data-slot=combobox-item-indicator]]:absolute [&_[data-slot=combobox-item-indicator]]:right-2 [&_[data-slot=combobox-item-indicator]]:flex [&_[data-slot=combobox-item-indicator]]:size-4 [&_[data-slot=combobox-item-indicator]]:items-center [&_[data-slot=combobox-item-indicator]]:justify-center [&_[data-slot=combobox-check-icon]]:pointer-events-none [&_[data-slot=combobox-check-icon]]:size-4", cls)
       }
-      on:click={function (e) {
-        if (disabled) return;
-        userClick?.call(this, e);
-        onselect?.();
-      }}
       {...attrs}
     >
-      {() => children ?? labelProp}
-      <span
-        data-slot="combobox-item-indicator"
-        class={
-          cn("pointer-events-none absolute right-2 flex size-4 items-center justify-center")
-        }
-      >
-        {() => (selected() ? checkIcon() : null)}
-      </span>
-    </div>
+      {children}
+    </Item>
   );
 }
 
@@ -498,43 +368,25 @@ export function ComboboxList({
   class: cls,
   ...attrs
 }: ComboboxListProps): JSX.Element {
-  const items = (): ComboboxEntry[] =>
-    typeof itemsProp === "function" ? (itemsProp as () => ComboboxEntry[])() : (itemsProp ?? []);
-  const matches = (): ComboboxEntry[] => {
-    if (filter) return filter(items(), query?.() ?? "");
-    const q = (query?.() ?? "").trim().toLowerCase();
-    if (q === "") return items();
-    return items().filter((entry) => (entry.label ?? entry.value).toLowerCase().includes(q));
-  };
+  const { List } = combobox();
   return (
-    <div
-      role="listbox"
+    <List
       id={id}
-      data-slot="combobox-list"
-      data-empty={() => (emptyProp?.() ? "" : undefined)}
+      items={itemsProp}
+      keyBy={keyBy}
+      query={query}
+      filter={filter}
+      selected={selected}
+      active={active}
+      onselect={onselect}
+      empty={emptyProp}
       class={
-        cn("max-h-[min(calc(--spacing(96)---spacing(9)),calc(var(--available-height)---spacing(9)))] scroll-py-1 overflow-y-auto p-1 data-empty:p-0", cls)
+        cn("max-h-[min(calc(--spacing(96)---spacing(9)),calc(var(--available-height)---spacing(9)))] scroll-py-1 overflow-y-auto p-1 data-empty:p-0 [&_[data-slot=combobox-item]]:relative [&_[data-slot=combobox-item]]:flex [&_[data-slot=combobox-item]]:w-full [&_[data-slot=combobox-item]]:cursor-default [&_[data-slot=combobox-item]]:items-center [&_[data-slot=combobox-item]]:gap-2 [&_[data-slot=combobox-item]]:rounded-sm [&_[data-slot=combobox-item]]:py-1.5 [&_[data-slot=combobox-item]]:pr-8 [&_[data-slot=combobox-item]]:pl-2 [&_[data-slot=combobox-item]]:text-sm [&_[data-slot=combobox-item]]:outline-hidden [&_[data-slot=combobox-item]]:select-none [&_[data-slot=combobox-item]]:data-highlighted:bg-accent [&_[data-slot=combobox-item]]:data-highlighted:text-accent-foreground [&_[data-slot=combobox-item]]:data-[disabled]:pointer-events-none [&_[data-slot=combobox-item]]:data-[disabled]:opacity-50 [&_[data-slot=combobox-item]_svg]:pointer-events-none [&_[data-slot=combobox-item]_svg]:shrink-0 [&_[data-slot=combobox-item]_svg:not([class*='size-'])]:size-4 [&_[data-slot=combobox-item]_[data-slot=combobox-item-indicator]]:pointer-events-none [&_[data-slot=combobox-item]_[data-slot=combobox-item-indicator]]:absolute [&_[data-slot=combobox-item]_[data-slot=combobox-item-indicator]]:right-2 [&_[data-slot=combobox-item]_[data-slot=combobox-item-indicator]]:flex [&_[data-slot=combobox-item]_[data-slot=combobox-item-indicator]]:size-4 [&_[data-slot=combobox-item]_[data-slot=combobox-item-indicator]]:items-center [&_[data-slot=combobox-item]_[data-slot=combobox-item-indicator]]:justify-center [&_[data-slot=combobox-item]_[data-slot=combobox-check-icon]]:pointer-events-none [&_[data-slot=combobox-item]_[data-slot=combobox-check-icon]]:size-4", cls)
       }
       {...attrs}
     >
-      <ForEach
-        each={items}
-        use={(entry) => (
-          <ComboboxItem
-            key={keyBy ? entry.value : undefined}
-            value={entry.value}
-            label={entry.label}
-            disabled={entry.disabled}
-            id={`${id}-opt-${entry.value}`}
-            selected={() => selected?.(entry.value) ?? false}
-            highlighted={() => active?.() === entry.value}
-            hidden={() => !matches().includes(entry)}
-            onselect={() => onselect?.(entry.value)}
-          />
-        )}
-      />
       {children}
-    </div>
+    </List>
   );
 }
 
@@ -547,93 +399,28 @@ export function ComboboxInput({
   showClear,
   onToggle,
   onClear,
-  wire,
-  portal,
   children,
   class: cls,
   ...attrs
 }: ComboboxInputProps): JSX.Element {
-  const state = (): "open" | "closed" => stateProp?.() ?? "closed";
-  let disposeWire: (() => void) | undefined;
+  const { Input } = combobox();
   return (
-    <div
-      data-slot="input-group"
-      role="group"
-      data-disabled={disabled ? "true" : undefined}
+    <Input
+      value={value}
+      disabled={disabled}
+      state={stateProp}
+      activeDescendant={activeDescendant}
+      showTrigger={showTrigger}
+      showClear={showClear}
+      onToggle={onToggle}
+      onClear={onClear}
       class={
-        cn("group/input-group relative flex w-full items-center rounded-md border border-input shadow-xs transition-[color,box-shadow] outline-none dark:bg-input/30 h-9 min-w-0 has-[>textarea]:h-auto has-[>[data-align=inline-start]]:[&>input]:pl-2 has-[>[data-align=inline-end]]:[&>input]:pr-2 has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-end]]:[&>input]:pt-3 has-[[data-slot=input-group-control]:focus-visible]:border-ring has-[[data-slot=input-group-control]:focus-visible]:ring-[3px] has-[[data-slot=input-group-control]:focus-visible]:ring-ring/50 has-[[data-slot][aria-invalid=true]]:border-destructive has-[[data-slot][aria-invalid=true]]:ring-destructive/20 dark:has-[[data-slot][aria-invalid=true]]:ring-destructive/40", cls)
+        cn(cls)
       }
-      hook:afterMount={(node) => {
-        if (node instanceof HTMLElement) disposeWire = wire?.(node);
-      }}
-      hook:beforeDestroy={() => {
-        disposeWire?.();
-        disposeWire = undefined;
-      }}
+      {...attrs}
     >
-      <input
-        type="text"
-        role="combobox"
-        data-slot="input-group-control"
-        aria-autocomplete="list"
-        aria-expanded={state() === "open" ? "true" : "false"}
-        aria-activedescendant={() => activeDescendant?.()}
-        disabled={disabled}
-        value={value}
-        class={
-          cn("h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30", "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50", "aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40", "flex-1 rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0 dark:bg-transparent")
-        }
-        {...attrs}
-      />
-      <div
-        data-slot="input-group-addon"
-        role="group"
-        data-align="inline-end"
-        class={
-          cn("flex h-auto cursor-text items-center justify-center gap-2 py-1.5 text-sm font-medium text-muted-foreground select-none group-data-[disabled=true]/input-group:opacity-50 [&>kbd]:rounded-[calc(var(--radius)-5px)] [&>svg:not([class*='size-'])]:size-4 order-last pr-3 has-[>button]:mr-[-0.45rem] has-[>kbd]:mr-[-0.35rem]")
-        }
-        on:click={(e) => {
-          const target = e.target as HTMLElement;
-          if (target.closest("button")) return;
-          target.closest('[data-slot="input-group"]')?.querySelector("input")?.focus();
-        }}
-      >
-        {() =>
-          showTrigger ? (
-            <button
-              type="button"
-              data-slot="combobox-trigger"
-              aria-label="Toggle"
-              disabled={disabled}
-              class={
-                cn("inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50", "size-6 rounded-md [&_svg:not([class*='size-'])]:size-3", "flex items-center gap-2 text-sm shadow-none size-6 rounded-[calc(var(--radius)-5px)] p-0 has-[>svg]:p-0", "group-has-data-[slot=combobox-clear]/input-group:hidden data-pressed:bg-transparent")
-              }
-              on:click={() => onToggle?.()}
-            >
-              {chevronDownIcon()}
-            </button>
-          ) : null
-        }
-        {() =>
-          showClear ? (
-            <button
-              type="button"
-              data-slot="combobox-clear"
-              aria-label="Clear"
-              disabled={disabled}
-              class={
-                cn("inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50", "size-6 rounded-md [&_svg:not([class*='size-'])]:size-3", "flex items-center gap-2 text-sm shadow-none size-6 rounded-[calc(var(--radius)-5px)] p-0 has-[>svg]:p-0")
-              }
-              on:click={() => onClear?.()}
-            >
-              {clearIcon()}
-            </button>
-          ) : null
-        }
-      </div>
-      {() => portal?.()}
       {children}
-    </div>
+    </Input>
   );
 }
 
@@ -641,32 +428,21 @@ export function ComboboxChips({
   children,
   chips: chipsSlot,
   disabled,
-  wire,
-  portal,
   class: cls,
   ...attrs
 }: ComboboxChipsProps): JSX.Element {
-  let disposeWire: (() => void) | undefined;
+  const { Chips } = combobox();
   return (
-    <div
-      data-slot="combobox-chips"
-      data-disabled={disabled ? "true" : undefined}
+    <Chips
+      chips={chipsSlot}
+      disabled={disabled}
       class={
-        cn("flex min-h-9 flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent bg-clip-padding px-2.5 py-1.5 text-sm shadow-xs transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50 has-aria-invalid:border-destructive has-aria-invalid:ring-[3px] has-aria-invalid:ring-destructive/20 has-data-[slot=combobox-chip]:px-1.5 dark:bg-input/30 dark:has-aria-invalid:border-destructive/50 dark:has-aria-invalid:ring-destructive/40", cls)
+        cn("flex min-h-9 flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent bg-clip-padding px-2.5 py-1.5 text-sm shadow-xs transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50 has-aria-invalid:border-destructive has-aria-invalid:ring-[3px] has-aria-invalid:ring-destructive/20 has-data-[slot=combobox-chip]:px-1.5 dark:bg-input/30 dark:has-aria-invalid:border-destructive/50 dark:has-aria-invalid:ring-destructive/40 [&_[data-slot=combobox-chip]]:flex [&_[data-slot=combobox-chip]]:h-[calc(--spacing(5.5))] [&_[data-slot=combobox-chip]]:w-fit [&_[data-slot=combobox-chip]]:items-center [&_[data-slot=combobox-chip]]:justify-center [&_[data-slot=combobox-chip]]:gap-1 [&_[data-slot=combobox-chip]]:rounded-sm [&_[data-slot=combobox-chip]]:bg-muted [&_[data-slot=combobox-chip]]:px-1.5 [&_[data-slot=combobox-chip]]:text-xs [&_[data-slot=combobox-chip]]:font-medium [&_[data-slot=combobox-chip]]:whitespace-nowrap [&_[data-slot=combobox-chip]]:text-foreground [&_[data-slot=combobox-chip]]:has-disabled:pointer-events-none [&_[data-slot=combobox-chip]]:has-disabled:cursor-not-allowed [&_[data-slot=combobox-chip]]:has-disabled:opacity-50 [&_[data-slot=combobox-chip]]:has-data-[slot=combobox-chip-remove]:pr-0 [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:inline-flex [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:size-6 [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:items-center [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:justify-center [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:gap-2 [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:rounded-[calc(var(--radius)-5px)] [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:p-0 [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:text-sm [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:font-medium [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:whitespace-nowrap [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:transition-all [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:outline-none [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:shadow-none [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:-ml-1 [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:opacity-50 [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:hover:opacity-100 [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:hover:bg-accent [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:hover:text-accent-foreground [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:dark:hover:bg-accent/50 [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:focus-visible:border-ring [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:focus-visible:ring-[3px] [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:focus-visible:ring-ring/50 [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:disabled:pointer-events-none [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:disabled:opacity-50 [&_[data-slot=combobox-chip-remove]_svg]:pointer-events-none [&_[data-slot=combobox-chip-remove]_svg]:shrink-0 [&_[data-slot=combobox-chip-remove]_svg:not([class*='size-'])]:size-3 [&>input]:min-w-16 [&>input]:flex-1 [&>input]:outline-none", cls)
       }
-      hook:afterMount={(node) => {
-        if (node instanceof HTMLElement) disposeWire = wire?.(node);
-      }}
-      hook:beforeDestroy={() => {
-        disposeWire?.();
-        disposeWire = undefined;
-      }}
       {...attrs}
     >
-      {() => chipsSlot?.()}
       {children}
-      {() => portal?.()}
-    </div>
+    </Chips>
   );
 }
 
@@ -679,34 +455,20 @@ export function ComboboxChip({
   class: cls,
   ...attrs
 }: ComboboxChipProps): JSX.Element {
+  const { Chip } = combobox();
   return (
-    <div
-      data-slot="combobox-chip"
-      data-value={value}
-      data-disabled={disabled ? "true" : undefined}
+    <Chip
+      value={value}
+      disabled={disabled}
+      showRemove={showRemove}
+      onRemove={onRemove}
       class={
-        cn("flex h-[calc(--spacing(5.5))] w-fit items-center justify-center gap-1 rounded-sm bg-muted px-1.5 text-xs font-medium whitespace-nowrap text-foreground has-disabled:pointer-events-none has-disabled:cursor-not-allowed has-disabled:opacity-50 has-data-[slot=combobox-chip-remove]:pr-0", cls)
+        cn("flex h-[calc(--spacing(5.5))] w-fit items-center justify-center gap-1 rounded-sm bg-muted px-1.5 text-xs font-medium whitespace-nowrap text-foreground has-disabled:pointer-events-none has-disabled:cursor-not-allowed has-disabled:opacity-50 has-data-[slot=combobox-chip-remove]:pr-0 [&_[data-slot=combobox-chip-remove]]:inline-flex [&_[data-slot=combobox-chip-remove]]:size-6 [&_[data-slot=combobox-chip-remove]]:items-center [&_[data-slot=combobox-chip-remove]]:justify-center [&_[data-slot=combobox-chip-remove]]:gap-2 [&_[data-slot=combobox-chip-remove]]:rounded-[calc(var(--radius)-5px)] [&_[data-slot=combobox-chip-remove]]:p-0 [&_[data-slot=combobox-chip-remove]]:text-sm [&_[data-slot=combobox-chip-remove]]:font-medium [&_[data-slot=combobox-chip-remove]]:whitespace-nowrap [&_[data-slot=combobox-chip-remove]]:transition-all [&_[data-slot=combobox-chip-remove]]:outline-none [&_[data-slot=combobox-chip-remove]]:shadow-none [&_[data-slot=combobox-chip-remove]]:-ml-1 [&_[data-slot=combobox-chip-remove]]:opacity-50 [&_[data-slot=combobox-chip-remove]]:hover:opacity-100 [&_[data-slot=combobox-chip-remove]]:hover:bg-accent [&_[data-slot=combobox-chip-remove]]:hover:text-accent-foreground [&_[data-slot=combobox-chip-remove]]:dark:hover:bg-accent/50 [&_[data-slot=combobox-chip-remove]]:focus-visible:border-ring [&_[data-slot=combobox-chip-remove]]:focus-visible:ring-[3px] [&_[data-slot=combobox-chip-remove]]:focus-visible:ring-ring/50 [&_[data-slot=combobox-chip-remove]]:disabled:pointer-events-none [&_[data-slot=combobox-chip-remove]]:disabled:opacity-50 [&_[data-slot=combobox-chip-remove]_svg]:pointer-events-none [&_[data-slot=combobox-chip-remove]_svg]:shrink-0 [&_[data-slot=combobox-chip-remove]_svg:not([class*='size-'])]:size-3", cls)
       }
       {...attrs}
     >
       {children}
-      {() =>
-        showRemove !== false ? (
-          <button
-            type="button"
-            data-slot="combobox-chip-remove"
-            aria-label="Remove"
-            disabled={disabled}
-            class={
-              cn("inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50", "size-6 rounded-md [&_svg:not([class*='size-'])]:size-3", "flex items-center gap-2 text-sm shadow-none size-6 rounded-[calc(var(--radius)-5px)] p-0 has-[>svg]:p-0", "-ml-1 opacity-50 hover:opacity-100")
-            }
-            on:click={() => onRemove?.()}
-          >
-            {clearIcon()}
-          </button>
-        ) : null
-      }
-    </div>
+    </Chip>
   );
 }
 
@@ -718,17 +480,13 @@ export function ComboboxChipsInput({
   class: cls,
   ...attrs
 }: ComboboxChipsInputProps): JSX.Element {
-  const state = (): "open" | "closed" => stateProp?.() ?? "closed";
+  const { ChipsInput } = combobox();
   return (
-    <input
-      type="text"
-      role="combobox"
-      data-slot="combobox-chip-input"
-      aria-autocomplete="list"
-      aria-expanded={state() === "open" ? "true" : "false"}
-      aria-activedescendant={() => activeDescendant?.()}
-      disabled={disabled}
+    <ChipsInput
       value={value}
+      disabled={disabled}
+      state={stateProp}
+      activeDescendant={activeDescendant}
       class={
         cn("min-w-16 flex-1 outline-none", cls)
       }
@@ -751,68 +509,33 @@ export function ComboboxContent({
   class: cls,
   ...attrs
 }: ComboboxContentProps): JSX.Element {
-  const side = sideProp ?? "bottom";
-  const align = alignProp ?? "start";
-  const state = (): "open" | "closed" => stateProp?.() ?? "open";
-  const wirings: (() => void)[] = [];
-  const teardown: (() => void)[] = [];
-
-  const disposeWirings = (): void => {
-    while (wirings.length) wirings.pop()!();
-  };
-
-  // The exit runs unwired: flipping to "closed" tears the layer down
-  // immediately; reopening remounts fresh wirings with the content.
-  effect(() => {
-    if (state() === "closed") disposeWirings();
+  const { Content } = combobox({
+    open: () => (stateProp?.() ?? "open") === "open",
+    onOpenChange: (next) => {
+      if (!next) onDismiss?.();
+    },
   });
-
   return (
-    <div
-      data-slot="combobox-content"
-      data-state={state()}
-      data-side={side}
-      data-align={align}
-      data-chips={chipsProp ? "true" : undefined}
-      data-empty={() => (emptyProp?.() ? "" : undefined)}
+    <Content
+      side={sideProp}
+      align={alignProp}
+      sideOffset={sideOffset}
+      anchor={anchor}
+      chips={chipsProp}
+      empty={emptyProp}
+      onExited={onExited}
       class={
         cn("group/combobox-content relative max-h-96 w-(--anchor-width) max-w-(--available-width) min-w-[calc(var(--anchor-width)+--spacing(7))] origin-(--transform-origin) overflow-hidden rounded-md bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 data-[chips=true]:min-w-(--anchor-width) data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 *:data-[slot=input-group]:m-1 *:data-[slot=input-group]:mb-0 *:data-[slot=input-group]:h-8 *:data-[slot=input-group]:border-input/30 *:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:shadow-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", cls)
       }
-      hook:afterMount={(node) => {
-        if (!(node instanceof HTMLElement)) return;
-        const anchorEl = anchor?.();
-        if (anchorEl != null)
-          wirings.push(
-            anchorPosition(anchorEl, node, {
-              placement: placementOf(side, align),
-              offset: sideOffset ?? 6,
-              matchAnchorWidth: true,
-            }),
-          );
-        if (onDismiss) {
-          wirings.push(layerDismissal(() => [node, anchorEl ?? null], onDismiss));
-        }
-        const onAnimationEnd = (): void => {
-          if (state() === "closed") onExited?.();
-        };
-        node.addEventListener("animationend", onAnimationEnd);
-        teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
-      }}
-      hook:beforeDestroy={() => {
-        disposeWirings();
-        while (teardown.length) teardown.pop()!();
-      }}
       {...attrs}
     >
       {children}
-    </div>
+    </Content>
   );
 }
 
-let comboboxCount = 0;
-
 export function Combobox({
-  items: itemsProp,
+  items,
   keyBy,
   value,
   onValueChange,
@@ -822,193 +545,30 @@ export function Combobox({
   class: cls,
   ...attrs
 }: ComboboxProps): JSX.Element {
-  const items = (): ComboboxEntry[] =>
-    typeof itemsProp === "function" ? (itemsProp as () => ComboboxEntry[])() : (itemsProp ?? []);
-  const s = comboboxOpenState();
-  const listId = `hella-combobox-list-${++comboboxCount}`;
-  const query = signal("");
-  const internal = signal<string | string[]>(multiple ? [] : "");
-  const current = (): string | string[] => (value !== undefined ? value() : internal());
-  const selectedList = (): string[] => {
-    const v = current();
-    if (Array.isArray(v)) return v;
-    return v !== "" && v !== undefined ? [v] : [];
-  };
-  const select = (next: string): void => {
-    if (multiple) {
-      const currentList = selectedList();
-      const nextList = currentList.includes(next)
-        ? currentList.filter((v) => v !== next)
-        : [...currentList, next];
-      if (value === undefined) internal(nextList);
-      onValueChange?.(nextList);
-      return;
-    }
-    if (value === undefined) internal(next);
-    onValueChange?.(next);
-  };
-  const matches = (): ComboboxEntry[] => {
-    if (filter) return filter(items(), query());
-    const q = query().trim().toLowerCase();
-    if (q === "") return items();
-    return items().filter((entry) => (entry.label ?? entry.value).toLowerCase().includes(q));
-  };
-  // The active option is tracked by value, so highlight survives the
-  // items staying mounted while the query hides and shows them.
-  const activeValue = signal<string | undefined>(undefined);
-  // Value-derived ids stay stable across reorders, so aria-activedescendant
-  // and the typeahead's node lookup survive value-keyed list changes.
-  const optionIdOf = (optionValue: string): string => `${listId}-opt-${optionValue}`;
-  const move = (delta: number): void => {
-    const enabled = matches().filter((entry) => !entry.disabled);
-    if (enabled.length === 0) return;
-    const at = enabled.findIndex((entry) => entry.value === activeValue());
-    const next =
-      at === -1
-        ? delta === 1
-          ? 0
-          : enabled.length - 1
-        : (at + delta + enabled.length) % enabled.length;
-    activeValue(enabled[next]!.value);
-  };
-  const openSelection = (): void => {
-    const enabled = matches().filter((entry) => !entry.disabled);
-    const selected = enabled.find((entry) => selectedList().includes(entry.value));
-    activeValue(selected ? selected.value : enabled[0]?.value);
-  };
-  const setOpen = (next: boolean): void => {
-    if (next && !s.isOpen()) openSelection();
-    s.setOpen(next);
-  };
-  const commit = (next: string): void => {
-    select(next);
-    if (!multiple) {
-      query("");
-      setOpen(false);
-    }
-  };
-  const onKeydown = (e: KeyboardEvent): void => {
-    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-      e.preventDefault();
-      if (!s.isOpen()) {
-        setOpen(true);
-        return;
-      }
-      move(e.key === "ArrowDown" ? 1 : -1);
-      return;
-    }
-    if (e.key === "Enter") {
-      e.preventDefault();
-      const entry = matches().find((candidate) => candidate.value === activeValue());
-      if (!entry || entry.disabled) return;
-      commit(entry.value);
-      return;
-    }
-    if (e.key === "Escape") {
-      if (query() !== "") query("");
-      setOpen(false);
-    }
-  };
-  const inputProps = {
-    value: () => query(),
-    "on:input": (e: Event) => query((e.target as HTMLInputElement).value),
-    "on:keydown": onKeydown,
-    "on:focus": () => setOpen(true),
-    state: s.state,
-    "aria-controls": listId,
-    activeDescendant: (): string | undefined =>
-      s.isOpen() && activeValue() !== undefined ? optionIdOf(activeValue()!) : undefined,
-  };
-  const wire = (node: HTMLElement): (() => void) => {
-    // Typeahead rides the wrapper (printable keystrokes bubble from the
-    // input) and walks the visible options' stable ids.
-    return menuTypeahead(
-      node,
-      () => {
-        const entries: { node: HTMLElement; text: string }[] = [];
-        const matched = matches();
-        let i = 0;
-        while (i < matched.length) {
-          const el = document.getElementById(optionIdOf(matched[i]!.value));
-          if (el) entries.push({ node: el, text: matched[i]!.label ?? matched[i]!.value });
-          i++;
-        }
-        return entries;
-      },
-      (record) => {
-        const entry = items().find((e) => optionIdOf(e.value) === record.node.id);
-        if (entry) activeValue(entry.value);
-      },
-    );
-  };
-  let wrapperNode: HTMLElement | undefined;
-  const portal = (): JSX.Element | null =>
-    s.visible() ? (
-      <Portal to="body">
-        <ComboboxContent
-          state={s.state}
-          chips={multiple}
-          anchor={() => wrapperNode}
-          empty={() => matches().length === 0}
-          onDismiss={() => setOpen(false)}
-          onExited={s.finishExit}
-        >
-          <ComboboxList
-            id={listId}
-            items={items}
-            keyBy={keyBy}
-            query={query}
-            filter={filter}
-            selected={(v) => selectedList().includes(v)}
-            active={activeValue}
-            empty={() => matches().length === 0}
-            onselect={(v) => commit(v)}
-          >
-            <ComboboxEmpty>No items found.</ComboboxEmpty>
-          </ComboboxList>
-        </ComboboxContent>
-      </Portal>
-    ) : null;
-  if (multiple) {
-    return (
-      <ComboboxChips
-        class={cls}
-        {...attrs}
-        chips={() =>
-          selectedList().map((v) => (
-            <ComboboxChip value={v} onRemove={() => select(v)}>
-              {items().find((entry) => entry.value === v)?.label ?? v}
-            </ComboboxChip>
-          ))
-        }
-        wire={(node) => {
-          wrapperNode = node;
-          return wire(node);
-        }}
-        portal={portal}
-      >
-        <ComboboxChipsInput {...inputProps} />
-      </ComboboxChips>
-    );
-  }
+  const C = combobox({ items, value, onValueChange, multiple, filter });
   return (
-    <ComboboxInput
-      {...inputProps}
-      class={cls}
-      {...attrs}
-      showTrigger={true}
-      showClear={showClear}
-      onToggle={() => setOpen(!s.isOpen())}
-      onClear={() => {
-        select("");
-        query("");
-      }}
-      hasValue={() => selectedList().length > 0}
-      wire={(node) => {
-        wrapperNode = node;
-        return wire(node);
-      }}
-      portal={portal}
-    />
+    <C.Input showClear={showClear} class={multiple ? ["flex min-h-9 flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent bg-clip-padding px-2.5 py-1.5 text-sm shadow-xs transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50 has-aria-invalid:border-destructive has-aria-invalid:ring-[3px] has-aria-invalid:ring-destructive/20 has-data-[slot=combobox-chip]:px-1.5 dark:bg-input/30 dark:has-aria-invalid:border-destructive/50 dark:has-aria-invalid:ring-destructive/40 [&_[data-slot=combobox-chip]]:flex [&_[data-slot=combobox-chip]]:h-[calc(--spacing(5.5))] [&_[data-slot=combobox-chip]]:w-fit [&_[data-slot=combobox-chip]]:items-center [&_[data-slot=combobox-chip]]:justify-center [&_[data-slot=combobox-chip]]:gap-1 [&_[data-slot=combobox-chip]]:rounded-sm [&_[data-slot=combobox-chip]]:bg-muted [&_[data-slot=combobox-chip]]:px-1.5 [&_[data-slot=combobox-chip]]:text-xs [&_[data-slot=combobox-chip]]:font-medium [&_[data-slot=combobox-chip]]:whitespace-nowrap [&_[data-slot=combobox-chip]]:text-foreground [&_[data-slot=combobox-chip]]:has-disabled:pointer-events-none [&_[data-slot=combobox-chip]]:has-disabled:cursor-not-allowed [&_[data-slot=combobox-chip]]:has-disabled:opacity-50 [&_[data-slot=combobox-chip]]:has-data-[slot=combobox-chip-remove]:pr-0 [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:inline-flex [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:size-6 [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:items-center [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:justify-center [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:gap-2 [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:rounded-[calc(var(--radius)-5px)] [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:p-0 [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:text-sm [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:font-medium [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:whitespace-nowrap [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:transition-all [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:outline-none [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:shadow-none [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:-ml-1 [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:opacity-50 [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:hover:opacity-100 [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:hover:bg-accent [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:hover:text-accent-foreground [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:dark:hover:bg-accent/50 [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:focus-visible:border-ring [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:focus-visible:ring-[3px] [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:focus-visible:ring-ring/50 [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:disabled:pointer-events-none [&_[data-slot=combobox-chip]_[data-slot=combobox-chip-remove]]:disabled:opacity-50 [&_[data-slot=combobox-chip-remove]_svg]:pointer-events-none [&_[data-slot=combobox-chip-remove]_svg]:shrink-0 [&_[data-slot=combobox-chip-remove]_svg:not([class*='size-'])]:size-3 [&>input]:min-w-16 [&>input]:flex-1 [&>input]:outline-none", cls] : ["group/input-group relative flex w-full items-center rounded-md border border-input shadow-xs transition-[color,box-shadow] outline-none dark:bg-input/30 h-9 min-w-0 has-[>textarea]:h-auto has-[>[data-align=inline-start]]:[&>input]:pl-2 has-[>[data-align=inline-end]]:[&>input]:pr-2 has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-end]]:[&>input]:pt-3 has-[[data-slot=input-group-control]:focus-visible]:border-ring has-[[data-slot=input-group-control]:focus-visible]:ring-[3px] has-[[data-slot=input-group-control]:focus-visible]:ring-ring/50 has-[[data-slot][aria-invalid=true]]:border-destructive has-[[data-slot][aria-invalid=true]]:ring-destructive/20 dark:has-[[data-slot][aria-invalid=true]]:ring-destructive/40 [&>input]:h-9 [&>input]:w-full [&>input]:min-w-0 [&>input]:flex-1 [&>input]:rounded-none [&>input]:border-0 [&>input]:bg-transparent [&>input]:px-3 [&>input]:py-1 [&>input]:text-base [&>input]:shadow-none [&>input]:transition-[color,box-shadow] [&>input]:outline-none [&>input]:selection:bg-primary [&>input]:selection:text-primary-foreground [&>input]:file:inline-flex [&>input]:file:h-7 [&>input]:file:border-0 [&>input]:file:bg-transparent [&>input]:file:text-sm [&>input]:file:font-medium [&>input]:file:text-foreground [&>input]:placeholder:text-muted-foreground [&>input]:disabled:pointer-events-none [&>input]:disabled:cursor-not-allowed [&>input]:disabled:opacity-50 [&>input]:md:text-sm [&>input]:dark:bg-transparent [&>input]:focus-visible:border-ring [&>input]:focus-visible:ring-0 [&>input]:aria-invalid:border-destructive [&>input]:aria-invalid:ring-destructive/20 [&>input]:dark:aria-invalid:ring-destructive/40 [&>[data-slot=input-group-addon]]:flex [&>[data-slot=input-group-addon]]:h-auto [&>[data-slot=input-group-addon]]:cursor-text [&>[data-slot=input-group-addon]]:items-center [&>[data-slot=input-group-addon]]:justify-center [&>[data-slot=input-group-addon]]:gap-2 [&>[data-slot=input-group-addon]]:py-1.5 [&>[data-slot=input-group-addon]]:text-sm [&>[data-slot=input-group-addon]]:font-medium [&>[data-slot=input-group-addon]]:text-muted-foreground [&>[data-slot=input-group-addon]]:select-none [&>[data-slot=input-group-addon]]:order-last [&>[data-slot=input-group-addon]]:pr-3 [&>[data-slot=input-group-addon]>kbd]:rounded-[calc(var(--radius)-5px)] [&>[data-slot=input-group-addon]>svg:not([class*='size-'])]:size-4 [&[data-disabled=true]>[data-slot=input-group-addon]]:opacity-50 [&_[data-slot=combobox-trigger]]:inline-flex [&_[data-slot=combobox-trigger]]:size-6 [&_[data-slot=combobox-trigger]]:items-center [&_[data-slot=combobox-trigger]]:justify-center [&_[data-slot=combobox-trigger]]:gap-2 [&_[data-slot=combobox-trigger]]:rounded-[calc(var(--radius)-5px)] [&_[data-slot=combobox-trigger]]:p-0 [&_[data-slot=combobox-trigger]]:text-sm [&_[data-slot=combobox-trigger]]:font-medium [&_[data-slot=combobox-trigger]]:whitespace-nowrap [&_[data-slot=combobox-trigger]]:transition-all [&_[data-slot=combobox-trigger]]:outline-none [&_[data-slot=combobox-trigger]]:shadow-none [&_[data-slot=combobox-trigger]]:hover:bg-accent [&_[data-slot=combobox-trigger]]:hover:text-accent-foreground [&_[data-slot=combobox-trigger]]:dark:hover:bg-accent/50 [&_[data-slot=combobox-trigger]]:focus-visible:border-ring [&_[data-slot=combobox-trigger]]:focus-visible:ring-[3px] [&_[data-slot=combobox-trigger]]:focus-visible:ring-ring/50 [&_[data-slot=combobox-trigger]]:disabled:pointer-events-none [&_[data-slot=combobox-trigger]]:disabled:opacity-50 [&_[data-slot=combobox-trigger]]:data-pressed:bg-transparent [&_[data-slot=combobox-trigger]_svg]:pointer-events-none [&_[data-slot=combobox-trigger]_svg]:shrink-0 [&_[data-slot=combobox-trigger]_svg:not([class*='size-'])]:size-3 [&_[data-slot=combobox-clear]]:inline-flex [&_[data-slot=combobox-clear]]:size-6 [&_[data-slot=combobox-clear]]:items-center [&_[data-slot=combobox-clear]]:justify-center [&_[data-slot=combobox-clear]]:gap-2 [&_[data-slot=combobox-clear]]:rounded-[calc(var(--radius)-5px)] [&_[data-slot=combobox-clear]]:p-0 [&_[data-slot=combobox-clear]]:text-sm [&_[data-slot=combobox-clear]]:font-medium [&_[data-slot=combobox-clear]]:whitespace-nowrap [&_[data-slot=combobox-clear]]:transition-all [&_[data-slot=combobox-clear]]:outline-none [&_[data-slot=combobox-clear]]:shadow-none [&_[data-slot=combobox-clear]]:hover:bg-accent [&_[data-slot=combobox-clear]]:hover:text-accent-foreground [&_[data-slot=combobox-clear]]:dark:hover:bg-accent/50 [&_[data-slot=combobox-clear]]:focus-visible:border-ring [&_[data-slot=combobox-clear]]:focus-visible:ring-[3px] [&_[data-slot=combobox-clear]]:focus-visible:ring-ring/50 [&_[data-slot=combobox-clear]]:disabled:pointer-events-none [&_[data-slot=combobox-clear]]:disabled:opacity-50 [&_[data-slot=combobox-clear]_svg]:pointer-events-none [&_[data-slot=combobox-clear]_svg]:shrink-0 [&_[data-slot=combobox-clear]_svg:not([class*='size-'])]:size-3 [&_[data-slot=combobox-trigger-icon]]:pointer-events-none [&_[data-slot=combobox-trigger-icon]]:size-4 [&_[data-slot=combobox-trigger-icon]]:text-muted-foreground [&_[data-slot=combobox-clear-icon]]:pointer-events-none [&:has([data-slot=combobox-clear])_[data-slot=combobox-trigger]]:hidden", cls]} {...attrs}>
+      <C.Content
+        class={
+          cn("group/combobox-content relative max-h-96 w-(--anchor-width) max-w-(--available-width) min-w-[calc(var(--anchor-width)+--spacing(7))] origin-(--transform-origin) overflow-hidden rounded-md bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 data-[chips=true]:min-w-(--anchor-width) data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 *:data-[slot=input-group]:m-1 *:data-[slot=input-group]:mb-0 *:data-[slot=input-group]:h-8 *:data-[slot=input-group]:border-input/30 *:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:shadow-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95")
+        }
+      >
+        <C.List
+          items={items}
+          keyBy={keyBy}
+          class={
+            cn("max-h-[min(calc(--spacing(96)---spacing(9)),calc(var(--available-height)---spacing(9)))] scroll-py-1 overflow-y-auto p-1 data-empty:p-0 [&_[data-slot=combobox-item]]:relative [&_[data-slot=combobox-item]]:flex [&_[data-slot=combobox-item]]:w-full [&_[data-slot=combobox-item]]:cursor-default [&_[data-slot=combobox-item]]:items-center [&_[data-slot=combobox-item]]:gap-2 [&_[data-slot=combobox-item]]:rounded-sm [&_[data-slot=combobox-item]]:py-1.5 [&_[data-slot=combobox-item]]:pr-8 [&_[data-slot=combobox-item]]:pl-2 [&_[data-slot=combobox-item]]:text-sm [&_[data-slot=combobox-item]]:outline-hidden [&_[data-slot=combobox-item]]:select-none [&_[data-slot=combobox-item]]:data-highlighted:bg-accent [&_[data-slot=combobox-item]]:data-highlighted:text-accent-foreground [&_[data-slot=combobox-item]]:data-[disabled]:pointer-events-none [&_[data-slot=combobox-item]]:data-[disabled]:opacity-50 [&_[data-slot=combobox-item]_svg]:pointer-events-none [&_[data-slot=combobox-item]_svg]:shrink-0 [&_[data-slot=combobox-item]_svg:not([class*='size-'])]:size-4 [&_[data-slot=combobox-item]_[data-slot=combobox-item-indicator]]:pointer-events-none [&_[data-slot=combobox-item]_[data-slot=combobox-item-indicator]]:absolute [&_[data-slot=combobox-item]_[data-slot=combobox-item-indicator]]:right-2 [&_[data-slot=combobox-item]_[data-slot=combobox-item-indicator]]:flex [&_[data-slot=combobox-item]_[data-slot=combobox-item-indicator]]:size-4 [&_[data-slot=combobox-item]_[data-slot=combobox-item-indicator]]:items-center [&_[data-slot=combobox-item]_[data-slot=combobox-item-indicator]]:justify-center [&_[data-slot=combobox-item]_[data-slot=combobox-check-icon]]:pointer-events-none [&_[data-slot=combobox-item]_[data-slot=combobox-check-icon]]:size-4")
+          }
+        >
+          <C.Empty
+            class={
+              cn("hidden w-full justify-center py-2 text-center text-sm text-muted-foreground group-data-empty/combobox-content:flex")
+            }
+          >
+            No items found.
+          </C.Empty>
+        </C.List>
+      </C.Content>
+    </C.Input>
   );
 }

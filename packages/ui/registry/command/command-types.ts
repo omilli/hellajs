@@ -1,4 +1,4 @@
-import type { HTMLAttributes, HellaChild, HellaChildren } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 export interface CommandItemData {
   value: string;
@@ -16,12 +16,13 @@ export interface RankedItem {
 }
 
 export interface CommandInputProps extends HTMLAttributes<"input"> {
+  children?: HellaChildren;
   class?: string;
 }
 
 export interface CommandListProps extends HTMLAttributes<"div"> {
-  /** Reactive items body; a thunk so the composed root's re-ranked list re-renders through the slot. */
-  body?: () => HellaChild | HellaChild[];
+  /** The listbox id; option ids derive as `<id>-opt-<value>`. */
+  id?: string;
   children?: HellaChildren;
   class?: string;
 }
@@ -44,6 +45,9 @@ export interface CommandSeparatorProps extends HTMLAttributes<"div"> {
 
 export interface CommandItemProps extends HTMLAttributes<"div"> {
   value?: string;
+  /** The option's stable id; defaults to `<listId>-opt-<value>` from the owning factory. */
+  id?: string;
+  disabled?: boolean;
   /** Selected state (the ref's data-selected accent); an accessor follows the owning command's active item. */
   active?: () => boolean;
   /** Called on click and on Enter when the owning command commits. */

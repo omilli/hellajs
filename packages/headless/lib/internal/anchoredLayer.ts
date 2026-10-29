@@ -22,6 +22,8 @@ export interface AnchoredLayerOptions {
   sideOffset?: number;
   /** Cross-axis shift applied after positioning, in px. Default 0. */
   alignOffset?: number;
+  /** Pins the layer's width to the anchor's width. Default false. */
+  matchAnchorWidth?: boolean;
   /** Called by Escape and an outside pointerdown while armed and top of the layer stack. */
   onDismiss?: () => void;
   /** Called when the exit animation or transition ends while `state()` is `"closed"` — the exit-unmount trigger. */
@@ -66,6 +68,7 @@ export function anchoredLayer(node: HTMLElement, options: AnchoredLayerOptions):
   const align = options.align ?? "center";
   const sideOffset = options.sideOffset ?? 4;
   const alignOffset = options.alignOffset ?? 0;
+  const matchAnchorWidth = options.matchAnchorWidth ?? false;
 
   // The re-armable arms live in one node-registered effect, held in a closure
   // the body disarms at its start — flipping to "closed" tears anchoring and
@@ -83,6 +86,7 @@ export function anchoredLayer(node: HTMLElement, options: AnchoredLayerOptions):
         anchorPosition(anchorEl, node, {
           placement: align === "center" ? side : `${side}-${align}`,
           offset: sideOffset,
+          matchAnchorWidth,
         }),
       );
     }

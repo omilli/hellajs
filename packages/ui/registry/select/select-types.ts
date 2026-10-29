@@ -11,6 +11,7 @@ export interface SelectEntry {
 }
 
 export interface SelectTriggerProps extends HTMLAttributes<"button"> {
+  id?: string;
   size?: "sm" | "default";
   /** Resolves the open state for `data-state`/`aria-expanded`; the composed Select wires it. */
   state?: () => "open" | "closed";
@@ -34,6 +35,7 @@ export interface SelectValueProps extends HTMLAttributes<"span"> {
 }
 
 export interface SelectContentProps extends HTMLAttributes<"div"> {
+  id?: string;
   state?: () => "open" | "closed";
   side?: AnchorSide;
   align?: AnchorAlign;
@@ -59,10 +61,12 @@ export interface SelectPartProps extends HTMLAttributes<"div"> {
 export interface SelectItemProps extends HTMLAttributes<"div"> {
   value?: string;
   label?: HellaChildren;
+  disabled?: boolean;
   /** Selected state. A boolean reads statically; an accessor keeps the item reactive against its owning select. */
   selected?: boolean | (() => boolean);
   /** Called on click when the item is enabled; the composed Select commits the value. */
   onselect?: () => void;
+  children?: HellaChildren;
   class?: string;
 }
 
@@ -77,6 +81,8 @@ export interface SelectScrollButtonProps extends HTMLAttributes<"div"> {
 }
 
 export interface SelectProps extends HTMLAttributes<"button"> {
+  id?: string;
+  disabled?: boolean;
   items?: SelectEntry[] | (() => SelectEntry[]);
   /** Reuses option DOM through reorders by `value` identity (selection state survives); order always follows the array. */
   keyBy?: "value";

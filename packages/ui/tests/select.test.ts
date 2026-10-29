@@ -496,12 +496,16 @@ describe("select", () => {
     ]);
   });
 
-  test("renders every named part with its data-slot across both styles", () => {
+  test("renders every named part with its data-slot across both styles", async () => {
     for (const variant of selectPartVariants) {
       const container = setupContainer();
       const rendered = variant.render({ children: [] });
       mount(rendered, container);
-      const el = container.firstElementChild!;
+      // The content part portals itself; every other part renders in place.
+      const el =
+        variant.part === "Content"
+          ? await awaitPortaled("select-content")
+          : container.firstElementChild!;
       const slot =
         variant.part === "ScrollUpButton"
           ? "select-scroll-up-button"
@@ -514,7 +518,7 @@ describe("select", () => {
 
   test.each(selectPartVariants.filter((variant) => variant.part === "Content"))(
     "$style content part anchors with matchAnchorWidth, dismisses, and drains wirings on disposal",
-    (variant) => {
+    async (variant) => {
       const anchor = document.createElement("button");
       document.body.appendChild(anchor);
       pinRect(anchor, 100, 50, 200, 20);
@@ -524,7 +528,7 @@ describe("select", () => {
         variant.render({ anchor: () => anchor, side: "bottom", onDismiss, children: [] }),
         container,
       );
-      const content = container.firstElementChild as HTMLElement;
+      const content = await awaitPortaled("select-content");
       expect(content.style.width).toBe("200px");
       expect(content.style.left).toBe("50px");
       expect(content.style.top).toBe("126px");

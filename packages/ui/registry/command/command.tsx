@@ -1,10 +1,6 @@
-import { effect, signal } from "@hellajs/core";
-import { Portal } from "@hellajs/dom";
-import type { HellaChild } from "@hellajs/dom";
-import { onEscape, onOutside, trapFocus } from "@hellajs/headless";
+import { command } from "@hellajs/headless";
 import type {
   CommandItemData,
-  RankedItem,
   CommandInputProps,
   CommandListProps,
   CommandEmptyProps,
@@ -20,130 +16,39 @@ export type { CommandItemData };
 
 // @hella:styles
 declare const base: string;
-declare const dialogClose: string;
-declare const dialogDescription: string;
-declare const dialogHeader: string;
-declare const dialogOverlay: string;
 declare const dialogPanel: string;
-declare const dialogTitle: string;
 declare const empty: string;
 declare const group: string;
-declare const groupHeading: string;
-declare const icon: string;
-declare const input: string;
 declare const inputWrapper: string;
 declare const item: string;
 declare const list: string;
-declare const palette: string;
 declare const separator: string;
 declare const shortcut: string;
 // @hella:end
 
-const MATCH_BASE = 1000;
-const BOUNDARY_BONUS = 500;
-const KEYWORD_BONUS = 100;
-const BOUNDARY_CHARS = " -_/.(";
-
-const boundaryStart = (haystack: string, at: number): boolean =>
-  at === 0 || BOUNDARY_CHARS.includes(haystack.charAt(at - 1));
-
-const scoreCandidate = (haystack: string, needle: string): number => {
-  const at = haystack.indexOf(needle);
-  if (at === -1) return 0;
-  return MATCH_BASE - at + (boundaryStart(haystack, at) ? BOUNDARY_BONUS : 0);
-};
-
-const scoreItem = (candidate: CommandItemData, needle: string): number => {
-  let best = Math.max(
-    scoreCandidate(candidate.label.toLowerCase(), needle),
-    scoreCandidate(candidate.value.toLowerCase(), needle),
-  );
-  let hits = 0;
-  const keywords = candidate.keywords ?? [];
-  let i = 0;
-  while (i < keywords.length) {
-    const score = scoreCandidate(keywords[i]!.toLowerCase(), needle);
-    if (score > 0) {
-      hits++;
-      if (score > best) best = score;
-    }
-    i++;
-  }
-  if (best === 0) return 0;
-  return best + hits * KEYWORD_BONUS;
-};
-
-/** Ranks items for the query: earlier matches, word-boundary starts, and keyword hits score higher; zero scores drop out. */
-const defaultFilter = (items: CommandItemData[], query: string): CommandItemData[] => {
-  if (query === "") return items;
-  const needle = query.toLowerCase();
-  const ranked: RankedItem[] = [];
-  let i = 0;
-  while (i < items.length) {
-    const score = scoreItem(items[i]!, needle);
-    if (score > 0) ranked.push({ item: items[i]!, score });
-    i++;
-  }
-  return ranked.sort((a, b) => b.score - a.score).map((entry) => entry.item);
-};
-
-export function CommandInput({ class: cls, ...attrs }: CommandInputProps): JSX.Element {
+/** The search row; the composed Command threads the query and keyboard model through the factory. */
+export function CommandInput({ children, class: cls, ...attrs }: CommandInputProps): JSX.Element {
+  const { Input } = command();
   return (
-    <div
-      data-slot="command-input-wrapper"
+    <Input
       class={
         // @hella:compose
         [inputWrapper, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        aria-hidden="true"
-        class={
-          // @hella:compose
-          [icon]
-          // @hella:end
-        }
-      >
-        <path d="m21 21-4.34-4.34" />
-        <circle cx="11" cy="11" r="8" />
-      </svg>
-      <input
-        type="text"
-        data-slot="command-input"
-        autocomplete="off"
-        spellcheck="false"
-        class={
-          // @hella:compose
-          [input]
-          // @hella:end
-        }
-        {...attrs}
-      />
-    </div>
+      {children}
+    </Input>
   );
 }
 
-export function CommandList({
-  body,
-  children,
-  class: cls,
-  ...attrs
-}: CommandListProps): JSX.Element {
+/** The scrolling `role="listbox"`; the composed Command hands the factory its items and renders the ranked body. */
+export function CommandList({ id, children, class: cls, ...attrs }: CommandListProps): JSX.Element {
+  const { List } = command();
   return (
-    <div
-      role="listbox"
-      data-slot="command-list"
-      aria-label="Suggestions"
+    <List
+      id={id}
       class={
         // @hella:compose
         [list, cls]
@@ -151,16 +56,15 @@ export function CommandList({
       }
       {...attrs}
     >
-      {() => body?.()}
       {children}
-    </div>
+    </List>
   );
 }
 
 export function CommandEmpty({ children, class: cls, ...attrs }: CommandEmptyProps): JSX.Element {
+  const { Empty } = command();
   return (
-    <div
-      data-slot="command-empty"
+    <Empty
       class={
         // @hella:compose
         [empty, cls]
@@ -169,7 +73,7 @@ export function CommandEmpty({ children, class: cls, ...attrs }: CommandEmptyPro
       {...attrs}
     >
       {children}
-    </div>
+    </Empty>
   );
 }
 
@@ -180,11 +84,11 @@ export function CommandGroup({
   class: cls,
   ...attrs
 }: CommandGroupProps): JSX.Element {
-  const isHidden = (): boolean => (typeof hidden === "function" ? hidden() : (hidden ?? false));
+  const { Group } = command();
   return (
-    <div
-      data-slot="command-group"
-      hidden={isHidden}
+    <Group
+      heading={heading}
+      hidden={hidden}
       class={
         // @hella:compose
         [group, cls]
@@ -192,28 +96,15 @@ export function CommandGroup({
       }
       {...attrs}
     >
-      {heading !== undefined && (
-        <div
-          data-slot="command-group-heading"
-          class={
-            // @hella:compose
-            [groupHeading]
-            // @hella:end
-          }
-        >
-          {heading}
-        </div>
-      )}
       {children}
-    </div>
+    </Group>
   );
 }
 
 export function CommandSeparator({ class: cls, ...attrs }: CommandSeparatorProps): JSX.Element {
+  const { Separator } = command();
   return (
-    <div
-      role="separator"
-      data-slot="command-separator"
+    <Separator
       class={
         // @hella:compose
         [separator, cls]
@@ -226,37 +117,31 @@ export function CommandSeparator({ class: cls, ...attrs }: CommandSeparatorProps
 
 export function CommandItem({
   value,
+  id,
   disabled,
   active,
   onSelect,
-  "on:click": userClick,
   children,
   class: cls,
   ...attrs
 }: CommandItemProps): JSX.Element {
+  const { Item } = command();
   return (
-    <div
-      role="option"
-      data-slot="command-item"
-      data-value={value}
-      aria-selected={() => (active?.() ? "true" : "false")}
-      aria-disabled={disabled ? "true" : undefined}
-      data-selected={() => (active?.() ? "true" : undefined)}
-      data-disabled={disabled ? "true" : undefined}
+    <Item
+      value={value}
+      id={id}
+      disabled={disabled}
+      active={active}
+      onSelect={onSelect}
       class={
         // @hella:compose
         [item, cls]
         // @hella:end
       }
-      on:click={function (e) {
-        if (disabled) return;
-        userClick?.call(this, e);
-        onSelect?.();
-      }}
       {...attrs}
     >
       {children}
-    </div>
+    </Item>
   );
 }
 
@@ -265,9 +150,9 @@ export function CommandShortcut({
   class: cls,
   ...attrs
 }: CommandShortcutProps): JSX.Element {
+  const { Shortcut } = command();
   return (
-    <span
-      data-slot="command-shortcut"
+    <Shortcut
       class={
         // @hella:compose
         [shortcut, cls]
@@ -276,16 +161,14 @@ export function CommandShortcut({
       {...attrs}
     >
       {children}
-    </span>
+    </Shortcut>
   );
 }
 
-let commandDialogCount = 0;
-
 /**
- * The palette dialog: the composed Dialog surface (overlay, panel, focus trap,
- * escape and outside dismissal) duplicated inline under this entry - registry
- * entries never cross-import - with the command palette scoping on its root.
+ * The palette dialog: the factory's `Dialog` part — overlay, portaled panel
+ * with trap/escape/outside arming, screen-reader header, close button, and the
+ * command surface — styled through descendants of the one wrapper-root class.
  * Manual parts compose inside through children.
  */
 export function CommandDialog({
@@ -297,181 +180,22 @@ export function CommandDialog({
   class: cls,
   ...attrs
 }: CommandDialogProps): JSX.Element {
-  const titleId = `hella-command-dialog-title-${++commandDialogCount}`;
-  const descriptionId = `hella-command-dialog-description-${commandDialogCount}`;
-  // `visible` alone gates the render so an open→closed flip never unmounts
-  // before this watcher starts the exit (reading open() in the template
-  // would flash the subtree away one evaluation early).
-  const visible = signal(false);
-  let wasOpen = false;
-  let fallback: ReturnType<typeof setTimeout> | undefined;
-  const wirings: (() => void)[] = [];
-  const teardown: (() => void)[] = [];
-  let panel: HTMLElement | undefined;
-
-  const finishExit = (): void => {
-    if (fallback !== undefined) {
-      clearTimeout(fallback);
-      fallback = undefined;
-    }
-    visible(false);
-  };
-
-  const disposeWirings = (): void => {
-    while (wirings.length) wirings.pop()!();
-  };
-
-  const installWirings = (): void => {
-    if (panel === undefined || wirings.length > 0 || open() === false) return;
-    const target = panel;
-    wirings.push(onEscape(target, onClose));
-    wirings.push(onOutside(() => [target], onClose));
-    wirings.push(trapFocus(target));
-  };
-
-  // Flip to open renders immediately; flip to closed starts the exit - the
-  // panel stays mounted under data-state="closed" until its animationend
-  // (or the copied 200ms duration budget) unmounts it. The exit runs
-  // unwired: closing tears the trap/escape/outside handlers down
-  // immediately; reopening re-arms them without a remount.
-  effect(() => {
-    if (open()) {
-      wasOpen = true;
-      finishExit();
-      visible(true);
-      installWirings();
-    } else if (wasOpen) {
-      wasOpen = false;
-      visible(true);
-      disposeWirings();
-      fallback = setTimeout(finishExit, 250);
-    }
-  });
-
-  const state = (): "open" | "closed" => (open() ? "open" : "closed");
-
+  const { Dialog } = command();
   return (
-    <>
-      {() =>
-        visible() && (
-          <Portal to="body">
-            <div
-              data-slot="dialog-overlay"
-              data-state={state()}
-              class={
-                // @hella:compose
-                [dialogOverlay]
-                // @hella:end
-              }
-            />
-            <div
-              data-slot="dialog-content"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby={titleId}
-              aria-describedby={descriptionText === undefined ? undefined : descriptionId}
-              data-state={state()}
-              class={
-                // @hella:compose
-                [dialogPanel, cls]
-                // @hella:end
-              }
-              hook:afterMount={(node) => {
-                if (!(node instanceof HTMLElement)) return;
-                panel = node;
-                installWirings();
-                const onAnimationEnd = (): void => {
-                  if (open() === false) finishExit();
-                };
-                node.addEventListener("animationend", onAnimationEnd);
-                teardown.push(() => {
-                  node.removeEventListener("animationend", onAnimationEnd);
-                  panel = undefined;
-                });
-              }}
-              hook:beforeDestroy={() => {
-                disposeWirings();
-                while (teardown.length) teardown.pop()!();
-              }}
-              {...attrs}
-            >
-              <div
-                data-slot="dialog-header"
-                class={
-                  // @hella:compose
-                  [dialogHeader]
-                  // @hella:end
-                }
-              >
-                {titleText !== undefined && (
-                  <h2
-                    id={titleId}
-                    data-slot="dialog-title"
-                    class={
-                      // @hella:compose
-                      [dialogTitle]
-                      // @hella:end
-                    }
-                  >
-                    {titleText}
-                  </h2>
-                )}
-                {descriptionText !== undefined && (
-                  <p
-                    id={descriptionId}
-                    data-slot="dialog-description"
-                    class={
-                      // @hella:compose
-                      [dialogDescription]
-                      // @hella:end
-                    }
-                  >
-                    {descriptionText}
-                  </p>
-                )}
-              </div>
-              <button
-                type="button"
-                data-slot="dialog-close"
-                data-state={state()}
-                class={
-                  // @hella:compose
-                  [dialogClose]
-                  // @hella:end
-                }
-                on:click={() => onClose()}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path d="M18 6 6 18" />
-                  <path d="m6 6 12 12" />
-                </svg>
-                <span class="sr-only">Close</span>
-              </button>
-              <div
-                data-slot="command"
-                class={
-                  // @hella:compose
-                  [base, palette]
-                  // @hella:end
-                }
-              >
-                {children}
-              </div>
-            </div>
-          </Portal>
-        )
+    <Dialog
+      open={open}
+      onClose={onClose}
+      title={titleText}
+      description={descriptionText}
+      class={
+        // @hella:compose
+        [dialogPanel, cls]
+        // @hella:end
       }
-    </>
+      {...attrs}
+    >
+      {children}
+    </Dialog>
   );
 }
 
@@ -485,170 +209,7 @@ export function Command({
   class: cls,
   ...attrs
 }: CommandProps): JSX.Element {
-  const resolveItems = (): CommandItemData[] =>
-    typeof items === "function" ? (items as () => CommandItemData[])() : (items ?? []);
-  const query = signal("");
-  const activeIndex = signal(0);
-  let rootNode: HTMLElement | undefined;
-  let previous: string | undefined;
-
-  const ranked = (): CommandItemData[] => (filter ?? defaultFilter)(resolveItems(), query());
-
-  // The active value: the controlled accessor when given, the internal
-  // cursor resolved against the ranked list otherwise.
-  const activeValue = (): string | undefined => {
-    if (value !== undefined) return value();
-    return ranked()[activeIndex()]?.value;
-  };
-
-  const select = (next: number): void => {
-    const entry = ranked()[next];
-    if (entry === undefined) return;
-    if (value !== undefined) onValueChange?.(entry.value);
-    else activeIndex(next);
-  };
-
-  const step = (delta: number): void => {
-    const rankedList = ranked();
-    const len = rankedList.length;
-    if (len === 0) return;
-    const current = activeValue();
-    let at = current === undefined ? -1 : rankedList.findIndex((entry) => entry.value === current);
-    if (at === -1 && delta === -1) at = len;
-    let hops = 0;
-    let next = at;
-    while (hops < len) {
-      if (loop) next = (next + delta + len) % len;
-      else {
-        next = next + delta;
-        if (next < 0 || next >= len) return;
-      }
-      hops++;
-      if (!rankedList[next]!.disabled) {
-        select(next);
-        return;
-      }
-    }
-  };
-
-  const jump = (edge: "first" | "last"): void => {
-    const rankedList = ranked();
-    if (value !== undefined) {
-      let i = edge === "first" ? 0 : rankedList.length - 1;
-      while (i >= 0 && i < rankedList.length) {
-        if (!rankedList[i]!.disabled) {
-          onValueChange?.(rankedList[i]!.value);
-          return;
-        }
-        i = edge === "first" ? i + 1 : i - 1;
-      }
-      return;
-    }
-    let i = edge === "first" ? 0 : rankedList.length - 1;
-    while (i >= 0 && i < rankedList.length) {
-      if (!rankedList[i]!.disabled) {
-        activeIndex(i);
-        return;
-      }
-      i = edge === "first" ? i + 1 : i - 1;
-    }
-  };
-
-  const commit = (): void => {
-    const current = activeValue();
-    const entry = ranked().find((candidate) => candidate.value === current);
-    if (entry === undefined || entry.disabled) return;
-    entry.onSelect?.();
-    onValueChange?.(entry.value);
-  };
-
-  const onKeydown = (e: KeyboardEvent): void => {
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      step(1);
-      return;
-    }
-    if (e.key === "ArrowUp") {
-      e.preventDefault();
-      step(-1);
-      return;
-    }
-    if (e.key === "Home") {
-      e.preventDefault();
-      jump("first");
-      return;
-    }
-    if (e.key === "End") {
-      e.preventDefault();
-      jump("last");
-      return;
-    }
-    if (e.key === "Enter") {
-      e.preventDefault();
-      commit();
-    }
-  };
-
-  // The active item scrolls to the visible edge of the list whenever the
-  // cursor lands on a new value.
-  effect(() => {
-    const current = activeValue();
-    if (current === previous || rootNode === undefined) return;
-    previous = current;
-    if (current === undefined) return;
-    const nodes = rootNode.querySelectorAll("[data-slot='command-item']");
-    let i = 0;
-    while (i < nodes.length) {
-      const el = nodes[i] as HTMLElement;
-      if (el.getAttribute("data-value") === current) {
-        el.scrollIntoView?.({ block: "nearest" });
-        return;
-      }
-      i++;
-    }
-  });
-
-  const commitItem = (entry: CommandItemData): void => {
-    entry.onSelect?.();
-    onValueChange?.(entry.value);
-  };
-
-  const renderItem = (entry: CommandItemData): JSX.Element => (
-    <CommandItem
-      value={entry.value}
-      disabled={entry.disabled}
-      active={() => activeValue() === entry.value}
-      onSelect={() => commitItem(entry)}
-    >
-      {entry.label}
-      {entry.shortcut !== undefined && <CommandShortcut>{entry.shortcut}</CommandShortcut>}
-    </CommandItem>
-  );
-
-  const renderBody = (): HellaChild | HellaChild[] => {
-    const rankedList = ranked();
-    if (rankedList.length === 0) return <CommandEmpty>No results found.</CommandEmpty>;
-    const nodes: HellaChild[] = [];
-    const groups = orderedGroups(resolveItems());
-    let g = 0;
-    const gLen = groups.length;
-    while (g < gLen) {
-      const key = groups[g]!;
-      const members = rankedList.filter((entry) => (entry.group ?? "") === key);
-      if (key === "") {
-        nodes.push(...members.map((entry) => renderItem(entry)));
-      } else {
-        nodes.push(
-          <CommandGroup heading={key} hidden={members.length === 0}>
-            {members.map((entry) => renderItem(entry))}
-          </CommandGroup>,
-        );
-      }
-      g++;
-    }
-    return nodes;
-  };
-
+  const C = command({ items, filter, loop, value, onValueChange });
   return (
     <div
       data-slot="command"
@@ -657,36 +218,23 @@ export function Command({
         [base, cls]
         // @hella:end
       }
-      hook:afterMount={(node) => {
-        if (node instanceof HTMLElement) rootNode = node;
-      }}
-      hook:beforeDestroy={() => {
-        rootNode = undefined;
-      }}
       {...attrs}
     >
-      <CommandInput
-        value={query}
-        on:input={(e) => {
-          query((e.target as HTMLInputElement).value);
-          if (value === undefined) activeIndex(0);
-        }}
-        on:keydown={onKeydown}
+      <C.Input
+        class={
+          // @hella:compose
+          [inputWrapper]
+          // @hella:end
+        }
       />
-      <CommandList body={renderBody} />
+      <C.List
+        class={
+          // @hella:compose
+          [list]
+          // @hella:end
+        }
+      />
       {children}
     </div>
   );
-}
-
-/** Group keys in first-appearance order over the original items; "" holds the ungrouped items. */
-function orderedGroups(items: CommandItemData[]): string[] {
-  const keys: string[] = [];
-  let i = 0;
-  while (i < items.length) {
-    const key = items[i]!.group ?? "";
-    if (!keys.includes(key)) keys.push(key);
-    i++;
-  }
-  return keys;
 }

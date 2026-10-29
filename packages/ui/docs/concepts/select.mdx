@@ -1,10 +1,10 @@
 ## API
 
-The composed `Select` takes its options as data and renders the trigger plus the portaled listbox; the copied file wires its positioning, dismissal, and typeahead from the `@hellajs/headless` behavior functions.
+The composed `Select` takes its options as data and renders the trigger plus the portaled listbox; the copied file composes the [`select`](/reference/headless/select) parts factory from `@hellajs/headless`, which owns the open state, the positioning, the dismissal, and the listbox keyboard model.
 
 The select renders only the button and listbox: no hidden native form control, so it submits nothing by itself. Pair it with `native-select` when a form needs a submittable field.
 
-Nine named parts ship beside the default `Select`: `SelectTrigger`, `SelectValue`, `SelectContent`, `SelectGroup`, `SelectItem`, `SelectLabel`, `SelectSeparator`, `SelectScrollUpButton`, and `SelectScrollDownButton`. Manual composition passes state explicitly: portal the content yourself, hand it a `state` accessor and an `onDismiss` callback, and thread each item its selected state.
+Nine named parts ship beside the default `Select`: `SelectTrigger`, `SelectValue`, `SelectContent`, `SelectGroup`, `SelectItem`, `SelectLabel`, `SelectSeparator`, `SelectScrollUpButton`, and `SelectScrollDownButton`. Manual composition passes state explicitly: hand `SelectContent` a `state` accessor and an `onDismiss` callback (it portals and arms itself), and thread each item its selected state.
 
 ### Select
 

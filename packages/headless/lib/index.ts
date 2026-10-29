@@ -16,6 +16,9 @@ export { modal } from "./modal";
 export { popover } from "./popover";
 export { menu, menubar } from "./menu";
 export { tooltip, hoverCard } from "./tooltip";
+export { combobox } from "./combobox";
+export { select } from "./select";
+export { command } from "./command";
 
 export { resetHeadless } from "./internal/reset";
 

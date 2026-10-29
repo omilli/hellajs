@@ -1,8 +1,7 @@
-import { effect, signal } from "@hellajs/core";
-import { ForEach, Portal } from "@hellajs/dom";
+import { signal } from "@hellajs/core";
+import { ForEach } from "@hellajs/dom";
 import type { HellaChildren, HTMLAttributes } from "@hellajs/dom";
-import { anchorPosition, layerDismissal, menuTypeahead } from "@hellajs/headless";
-import type { Placement } from "@hellajs/headless";
+import { select } from "@hellajs/headless";
 
 type AnchorSide = "top" | "bottom" | "left" | "right";
 
@@ -15,6 +14,7 @@ interface SelectEntry {
 }
 
 interface SelectTriggerProps extends HTMLAttributes<"button"> {
+  id?: string;
   size?: "sm" | "default";
   /** Resolves the open state for `data-state`/`aria-expanded`; the composed Select wires it. */
   state?: () => "open" | "closed";
@@ -38,6 +38,7 @@ interface SelectValueProps extends HTMLAttributes<"span"> {
 }
 
 interface SelectContentProps extends HTMLAttributes<"div"> {
+  id?: string;
   state?: () => "open" | "closed";
   side?: AnchorSide;
   align?: AnchorAlign;
@@ -63,10 +64,12 @@ interface SelectPartProps extends HTMLAttributes<"div"> {
 interface SelectItemProps extends HTMLAttributes<"div"> {
   value?: string;
   label?: HellaChildren;
+  disabled?: boolean;
   /** Selected state. A boolean reads statically; an accessor keeps the item reactive against its owning select. */
   selected?: boolean | (() => boolean);
   /** Called on click when the item is enabled; the composed Select commits the value. */
   onselect?: () => void;
+  children?: HellaChildren;
   class?: string;
 }
 
@@ -81,6 +84,8 @@ interface SelectScrollButtonProps extends HTMLAttributes<"div"> {
 }
 
 interface SelectProps extends HTMLAttributes<"button"> {
+  id?: string;
+  disabled?: boolean;
   items?: SelectEntry[] | (() => SelectEntry[]);
   /** Reuses option DOM through reorders by `value` identity (selection state survives); order always follows the array. */
   keyBy?: "value";
@@ -94,138 +99,6 @@ interface SelectProps extends HTMLAttributes<"button"> {
   class?: string;
 }
 import { cn } from "./cn.js";
-
-const placementOf = (side: AnchorSide, align: AnchorAlign): Placement =>
-  align === "center" ? side : `${side}-${align}`;
-
-/** Open/close state shared by the composed root and manual compositions: controlled override, exit-holding `visible` gate. */
-function selectOpenState() {
-  const internal = signal(false);
-  const isOpen = (): boolean => internal();
-  const setOpen = (next: boolean): void => {
-    internal(next);
-  };
-  // `visible` alone gates the render so an open→closed flip never unmounts
-  // before this watcher starts the exit (reading open() in the template
-  // would flash the subtree away one evaluation early).
-  const visible = signal(false);
-  let wasOpen = false;
-  let fallback: ReturnType<typeof setTimeout> | undefined;
-  const finishExit = (): void => {
-    if (fallback !== undefined) {
-      clearTimeout(fallback);
-      fallback = undefined;
-    }
-    visible(false);
-  };
-  // Flip to open renders immediately; flip to closed starts the exit - the
-  // content stays mounted under data-state="closed" until its animationend
-  // (or the copied duration budget) unmounts it.
-  effect(() => {
-    if (isOpen()) {
-      wasOpen = true;
-      finishExit();
-      visible(true);
-    } else if (wasOpen) {
-      wasOpen = false;
-      visible(true);
-      fallback = setTimeout(finishExit, 250);
-    }
-  });
-  return {
-    isOpen,
-    setOpen,
-    state: (): "open" | "closed" => (isOpen() ? "open" : "closed"),
-    visible,
-    finishExit,
-  };
-}
-
-/** The listbox's selectable options in DOM order, disabled entries excluded (roving, typeahead, and focus-first share this). */
-const optionItems = (node: ParentNode): HTMLElement[] => {
-  const found = node.querySelectorAll("[role='option']");
-  const items: HTMLElement[] = [];
-  let i = 0;
-  while (i < found.length) {
-    const el = found[i] as HTMLElement;
-    if (!el.hasAttribute("data-disabled")) items.push(el);
-    i++;
-  }
-  return items;
-};
-
-/** The same options shaped for `menuTypeahead`'s text matching. */
-const optionEntries = (node: ParentNode): { node: HTMLElement; text: string }[] => {
-  const items = optionItems(node);
-  const entries: { node: HTMLElement; text: string }[] = [];
-  let i = 0;
-  while (i < items.length) {
-    entries.push({ node: items[i]!, text: items[i]!.textContent ?? "" });
-    i++;
-  }
-  return entries;
-};
-
-/** Moves the highlight ring to one option: focus follows (the ref styles the ring through `focus:`), `data-highlighted` mirrors it for the combobox-shared vocabulary. */
-const highlightOption = (node: ParentNode, target: HTMLElement): void => {
-  const previous = node.querySelectorAll("[data-highlighted]");
-  let i = 0;
-  while (i < previous.length) {
-    (previous[i] as HTMLElement).removeAttribute("data-highlighted");
-    i++;
-  }
-  target.setAttribute("data-highlighted", "true");
-  target.focus();
-};
-
-/** The listbox keyboard model: roving arrows with wrap, Home/End, Enter/Space activation, Tab close. */
-const listKeyDown =
-  (node: HTMLElement, onClose?: () => void) =>
-  (event: Event): void => {
-    const e = event as KeyboardEvent;
-    const items = optionItems(node);
-    const current = items.indexOf(document.activeElement as HTMLElement);
-    if (e.key === "Tab") {
-      onClose?.();
-      return;
-    }
-    if (e.key === "Enter" || e.key === " ") {
-      if (current === -1) return;
-      e.preventDefault();
-      items[current]!.dispatchEvent(new Event("click", { bubbles: true }));
-      return;
-    }
-    if (e.key !== "ArrowDown" && e.key !== "ArrowUp" && e.key !== "Home" && e.key !== "End") return;
-    if (items.length === 0) return;
-    e.preventDefault();
-    let target: number;
-    if (e.key === "Home") target = 0;
-    else if (e.key === "End") target = items.length - 1;
-    else if (current === -1) target = e.key === "ArrowDown" ? 0 : items.length - 1;
-    else target = (current + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
-    highlightOption(node, items[target]!);
-  };
-
-/** The check icon (refs/icons/check.svg), created per call so reactive swaps never share nodes between clones. */
-const checkIcon = (): JSX.Element => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="2"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    aria-hidden="true"
-    class={
-      cn("size-4")
-    }
-  >
-    <path d="M20 6 9 17l-5-5" />
-  </svg>
-);
 
 /** The chevron-down icon (refs/icons/chevron-down.svg), created per call so reactive swaps never share nodes between clones. */
 const chevronDownIcon = (): JSX.Element => (
@@ -317,7 +190,7 @@ export function SelectTrigger({
       aria-expanded={stateOf() === "open" ? "true" : "false"}
       disabled={disabled}
       class={
-        cn("flex w-fit items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-[placeholder]:text-muted-foreground data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 dark:bg-input/30 dark:hover:bg-input/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground", cls)
+        cn("flex w-fit items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-[placeholder]:text-muted-foreground data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 dark:bg-input/30 dark:hover:bg-input/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_[data-slot=select-chevron]]:size-4 [&_[data-slot=select-chevron]]:opacity-50", cls)
       }
       on:click={() => {
         if (disabled) return;
@@ -359,28 +232,22 @@ export function SelectValue({
   class: cls,
   ...attrs
 }: SelectValueProps): JSX.Element {
+  const { Value } = select();
   const current = (): HellaChildren | undefined =>
     typeof value === "function" ? (value as () => HellaChildren | undefined)() : value;
   return (
-    <span
-      data-slot="select-value"
-      data-placeholder={() => {
-        const v = current();
-        return v === undefined || v === "" ? "" : undefined;
-      }}
+    <Value
+      placeholder={placeholder}
+      value={current}
       class={
         cn(cls)
       }
       {...attrs}
-    >
-      {() => {
-        const v = current();
-        return v === undefined || v === "" ? placeholder : v;
-      }}
-    </span>
+    />
   );
 }
 
+/** The manual content layer; the composed Select portals the same wiring under its trigger's state. */
 export function SelectContent({
   state,
   id,
@@ -395,160 +262,44 @@ export function SelectContent({
   class: cls,
   ...attrs
 }: SelectContentProps): JSX.Element {
-  const side = sideProp ?? "bottom";
-  const align = alignProp ?? "start";
-  const stateOf = (): "open" | "closed" => state?.() ?? "open";
-  const wirings: (() => void)[] = [];
-  const teardown: (() => void)[] = [];
-
-  const disposeWirings = (): void => {
-    while (wirings.length) wirings.pop()!();
-  };
-
-  // The exit runs unwired: flipping to "closed" tears the layer down
-  // immediately; reopening remounts fresh wirings with the content.
-  effect(() => {
-    if (stateOf() === "closed") disposeWirings();
-  });
-
-  return (
-    <div
-      role="listbox"
-      tabindex="-1"
-      id={id}
-      data-slot="select-content"
-      data-state={stateOf()}
-      data-side={side}
-      data-align={align}
-      class={
-        cn("relative z-50 max-h-(--radix-select-content-available-height) min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border bg-popover text-popover-foreground shadow-md data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95", cls)
+  const { Content } = select({
+    open: () => (state?.() ?? "open") === "open",
+    onOpenChange: (next) => {
+      if (!next) {
+        onDismiss?.();
+        onClose?.();
       }
-      hook:afterMount={(node) => {
-        if (!(node instanceof HTMLElement)) return;
-        const anchorEl = anchor?.();
-        if (anchorEl != null)
-          wirings.push(
-            anchorPosition(anchorEl, node, {
-              placement: placementOf(side, align),
-              offset: sideOffset ?? 6,
-              matchAnchorWidth: true,
-            }),
-          );
-        if (onDismiss) {
-          wirings.push(layerDismissal(() => [node, anchorEl ?? null], onDismiss));
-        }
-        wirings.push(
-          menuTypeahead(
-            node,
-            () => optionEntries(node),
-            (entry) => highlightOption(node, entry.node),
-          ),
-        );
-        const onKey = listKeyDown(node, onClose);
-        node.addEventListener("keydown", onKey);
-        wirings.push(() => node.removeEventListener("keydown", onKey));
-        // Focus lands on the selected option (first option otherwise) and the
-        // selected option scrolls to the visible edge of the listbox.
-        const items = optionItems(node);
-        const selected = node.querySelector("[aria-selected='true']");
-        const target =
-          (selected instanceof HTMLElement && !selected.hasAttribute("data-disabled")
-            ? selected
-            : items[0]) ?? node;
-        highlightOption(node, target);
-        if (target !== node) target.scrollIntoView?.({ block: "nearest" });
-        // Scroll buttons repeat-scroll the listbox while hovered and hide at
-        // their scroll edges (the ref keeps both mounted, Radix style).
-        const up = node.querySelector("[data-slot='select-scroll-up-button']");
-        const down = node.querySelector("[data-slot='select-scroll-down-button']");
-        const syncEdges = (): void => {
-          if (up instanceof HTMLElement)
-            up.style.visibility = node.scrollTop <= 0 ? "hidden" : "visible";
-          if (down instanceof HTMLElement)
-            down.style.visibility =
-              node.scrollTop + node.clientHeight >= node.scrollHeight ? "hidden" : "visible";
-        };
-        const wireStep = (el: Element | null, delta: number): void => {
-          if (!(el instanceof HTMLElement)) return;
-          let timer: ReturnType<typeof setInterval> | null = null;
-          const start = (): void => {
-            if (timer !== null) return;
-            node.scrollTop = node.scrollTop + delta;
-            timer = setInterval(() => {
-              node.scrollTop = node.scrollTop + delta;
-            }, 50);
-          };
-          const stop = (): void => {
-            if (timer === null) return;
-            clearInterval(timer);
-            timer = null;
-          };
-          el.addEventListener("pointerenter", start);
-          el.addEventListener("pointerleave", stop);
-          teardown.push(() => {
-            el.removeEventListener("pointerenter", start);
-            el.removeEventListener("pointerleave", stop);
-            stop();
-          });
-        };
-        wireStep(up, -32);
-        wireStep(down, 32);
-        node.addEventListener("scroll", syncEdges);
-        teardown.push(() => node.removeEventListener("scroll", syncEdges));
-        syncEdges();
-        // The exit's animationend (state already "closed") is the primary
-        // unmount trigger; the entry's animationend is ignored.
-        const onAnimationEnd = (): void => {
-          if (stateOf() === "closed") onExited?.();
-        };
-        node.addEventListener("animationend", onAnimationEnd);
-        teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
-      }}
-      hook:beforeDestroy={() => {
-        disposeWirings();
-        while (teardown.length) teardown.pop()!();
-      }}
+    },
+  });
+  return (
+    <Content
+      id={id}
+      side={sideProp}
+      align={alignProp}
+      sideOffset={sideOffset}
+      anchor={anchor}
+      onExited={onExited}
+      class={
+        cn("relative z-50 max-h-(--radix-select-content-available-height) min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border bg-popover text-popover-foreground shadow-md data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 [&_[data-slot=select-viewport]]:p-1 [&_[data-slot=select-viewport]]:h-[var(--radix-select-trigger-height)] [&_[data-slot=select-viewport]]:w-full [&_[data-slot=select-viewport]]:min-w-[var(--radix-select-trigger-width)] [&_[data-slot=select-viewport]]:scroll-my-1 [&_[data-slot=select-scroll-up-button]]:flex [&_[data-slot=select-scroll-up-button]]:cursor-default [&_[data-slot=select-scroll-up-button]]:items-center [&_[data-slot=select-scroll-up-button]]:justify-center [&_[data-slot=select-scroll-up-button]]:py-1 [&_[data-slot=select-scroll-down-button]]:flex [&_[data-slot=select-scroll-down-button]]:cursor-default [&_[data-slot=select-scroll-down-button]]:items-center [&_[data-slot=select-scroll-down-button]]:justify-center [&_[data-slot=select-scroll-down-button]]:py-1 [&_[data-slot=select-chevron-up]]:size-4 [&_[data-slot=select-chevron]]:size-4 [&_[data-slot=select-chevron]]:opacity-50 [&_[data-slot=select-item]]:relative [&_[data-slot=select-item]]:flex [&_[data-slot=select-item]]:w-full [&_[data-slot=select-item]]:cursor-default [&_[data-slot=select-item]]:items-center [&_[data-slot=select-item]]:gap-2 [&_[data-slot=select-item]]:rounded-sm [&_[data-slot=select-item]]:py-1.5 [&_[data-slot=select-item]]:pr-8 [&_[data-slot=select-item]]:pl-2 [&_[data-slot=select-item]]:text-sm [&_[data-slot=select-item]]:outline-hidden [&_[data-slot=select-item]]:select-none [&_[data-slot=select-item]]:focus:bg-accent [&_[data-slot=select-item]]:focus:text-accent-foreground [&_[data-slot=select-item]]:data-[disabled]:pointer-events-none [&_[data-slot=select-item]]:data-[disabled]:opacity-50 [&_[data-slot=select-item]_svg]:pointer-events-none [&_[data-slot=select-item]_svg]:shrink-0 [&_[data-slot=select-item]_svg:not([class*='size-'])]:size-4 [&_[data-slot=select-item]_svg:not([class*='text-'])]:text-muted-foreground [&_[data-slot=select-item]>span:last-child]:flex [&_[data-slot=select-item]>span:last-child]:items-center [&_[data-slot=select-item]>span:last-child]:gap-2 [&_[data-slot=select-item]_[data-slot=select-item-indicator]]:pointer-events-none [&_[data-slot=select-item]_[data-slot=select-item-indicator]]:absolute [&_[data-slot=select-item]_[data-slot=select-item-indicator]]:right-2 [&_[data-slot=select-item]_[data-slot=select-item-indicator]]:flex [&_[data-slot=select-item]_[data-slot=select-item-indicator]]:size-3.5 [&_[data-slot=select-item]_[data-slot=select-item-indicator]]:items-center [&_[data-slot=select-item]_[data-slot=select-item-indicator]]:justify-center [&_[data-slot=select-item]_[data-slot=select-check-icon]]:size-4", cls)
+      }
       {...attrs}
     >
-      <div
-        data-slot="select-scroll-up-button"
-        class={
-          cn("flex cursor-default items-center justify-center py-1")
-        }
-      >
-        {chevronUpIcon()}
-      </div>
-      <div
-        data-slot="select-viewport"
-        class={
-          cn("p-1 h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)] scroll-my-1")
-        }
-      >
-        {children}
-      </div>
-      <div
-        data-slot="select-scroll-down-button"
-        class={
-          cn("flex cursor-default items-center justify-center py-1")
-        }
-      >
-        {chevronDownIcon()}
-      </div>
-    </div>
+      {children}
+    </Content>
   );
 }
 
 export function SelectGroup({ children, class: cls, ...attrs }: SelectPartProps): JSX.Element {
+  const { Group } = select();
   return (
-    <div
-      data-slot="select-group"
+    <Group
       class={
         cn(cls)
       }
       {...attrs}
     >
       {children}
-    </div>
+    </Group>
   );
 }
 
@@ -558,62 +309,46 @@ export function SelectItem({
   selected: selectedProp,
   onselect,
   disabled,
+  children,
   class: cls,
   ...attrs
 }: SelectItemProps): JSX.Element {
-  const selected = (): boolean =>
-    typeof selectedProp === "function" ? selectedProp() : (selectedProp ?? false);
+  const { Item } = select();
   return (
-    <div
-      role="option"
-      tabindex="-1"
-      data-slot="select-item"
-      data-value={value}
-      aria-selected={selected() ? "true" : "false"}
-      data-state={selected() ? "checked" : "unchecked"}
-      data-disabled={disabled ? "true" : undefined}
-      aria-disabled={disabled ? "true" : undefined}
+    <Item
+      value={value}
+      label={labelSlot}
+      selected={selectedProp}
+      onselect={onselect}
+      disabled={disabled}
       class={
-        cn("relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2", cls)
+        cn("relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 [&_[data-slot=select-item-indicator]]:pointer-events-none [&_[data-slot=select-item-indicator]]:absolute [&_[data-slot=select-item-indicator]]:right-2 [&_[data-slot=select-item-indicator]]:flex [&_[data-slot=select-item-indicator]]:size-3.5 [&_[data-slot=select-item-indicator]]:items-center [&_[data-slot=select-item-indicator]]:justify-center [&_[data-slot=select-check-icon]]:size-4", cls)
       }
-      on:click={() => {
-        if (disabled) return;
-        onselect?.();
-      }}
       {...attrs}
     >
-      <span
-        data-slot="select-item-indicator"
-        class={
-          cn("absolute right-2 flex size-3.5 items-center justify-center")
-        }
-      >
-        {() => (selected() ? checkIcon() : null)}
-      </span>
-      {() => labelSlot}
-    </div>
+      {children}
+    </Item>
   );
 }
 
 export function SelectLabel({ children, class: cls, ...attrs }: SelectLabelProps): JSX.Element {
+  const { Label } = select();
   return (
-    <div
-      data-slot="select-label"
+    <Label
       class={
         cn("px-2 py-1.5 text-xs text-muted-foreground", cls)
       }
       {...attrs}
     >
       {children}
-    </div>
+    </Label>
   );
 }
 
 export function SelectSeparator({ class: cls, ...attrs }: SelectPartProps): JSX.Element {
+  const { Separator } = select();
   return (
-    <div
-      role="separator"
-      data-slot="select-separator"
+    <Separator
       class={
         cn("pointer-events-none -mx-1 my-1 h-px bg-border", cls)
       }
@@ -627,16 +362,16 @@ export function SelectScrollUpButton({
   class: cls,
   ...attrs
 }: SelectScrollButtonProps): JSX.Element {
+  const { ScrollUpButton } = select();
   return (
-    <div
-      data-slot="select-scroll-up-button"
+    <ScrollUpButton
       class={
         cn("flex cursor-default items-center justify-center py-1", cls)
       }
       {...attrs}
     >
       {() => children ?? chevronUpIcon()}
-    </div>
+    </ScrollUpButton>
   );
 }
 
@@ -645,20 +380,18 @@ export function SelectScrollDownButton({
   class: cls,
   ...attrs
 }: SelectScrollButtonProps): JSX.Element {
+  const { ScrollDownButton } = select();
   return (
-    <div
-      data-slot="select-scroll-down-button"
+    <ScrollDownButton
       class={
         cn("flex cursor-default items-center justify-center py-1", cls)
       }
       {...attrs}
     >
       {() => children ?? chevronDownIcon()}
-    </div>
+    </ScrollDownButton>
   );
 }
-
-let selectCount = 0;
 
 export function Select({
   items,
@@ -671,103 +404,42 @@ export function Select({
   class: cls,
   ...attrs
 }: SelectProps): JSX.Element {
-  const s = selectOpenState();
-  const contentId = `hella-select-content-${++selectCount}`;
   const internal = signal("");
   const current = (): string => (value !== undefined ? value() : internal());
-  const select = (next: string): void => {
-    if (value === undefined) internal(next);
-    onValueChange?.(next);
-  };
+  const S = select({
+    value,
+    onValueChange: (next) => {
+      if (value === undefined) internal(next);
+      onValueChange?.(next);
+    },
+  });
   const resolveItems = (): SelectEntry[] =>
     typeof items === "function" ? (items as () => SelectEntry[])() : (items ?? []);
   const currentLabel = (): HellaChildren | undefined =>
     resolveItems().find((entry) => entry.value === current())?.label;
-  let triggerNode: HTMLElement | undefined;
-
-  // Focus returns to the trigger when the listbox closes (one open→closed
-  // flip only, so the initial closed state never steals focus at mount).
-  let wasOpenForFocus = false;
-  effect(() => {
-    if (s.isOpen()) wasOpenForFocus = true;
-    else if (wasOpenForFocus) {
-      wasOpenForFocus = false;
-      triggerNode?.focus();
-    }
-  });
-
   return (
-    <button
-      type="button"
-      data-slot="select-trigger"
-      data-size={size ?? "default"}
-      data-state={s.state()}
-      aria-haspopup="listbox"
-      aria-expanded={s.isOpen() ? "true" : "false"}
-      aria-controls={contentId}
+    <S.Trigger
+      size={size}
+      clearable={clearable}
       class={
-        cn("flex w-fit items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-[placeholder]:text-muted-foreground data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 dark:bg-input/30 dark:hover:bg-input/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground", cls)
+        cn("flex w-fit items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-[placeholder]:text-muted-foreground data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 dark:bg-input/30 dark:hover:bg-input/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_[data-slot=select-chevron]]:size-4 [&_[data-slot=select-chevron]]:opacity-50", cls)
       }
-      on:click={() => s.setOpen(!s.isOpen())}
-      on:keydown={(e) => {
-        const key = (e as KeyboardEvent).key;
-        if (key !== "ArrowDown" && key !== "ArrowUp") return;
-        e.preventDefault();
-        s.setOpen(true);
-      }}
-      hook:afterMount={(node) => {
-        if (node instanceof HTMLElement) triggerNode = node;
-      }}
       {...attrs}
     >
       <SelectValue placeholder={placeholder} value={currentLabel} />
-      {() =>
-        clearable && current() !== "" ? (
-          <span
-            data-slot="select-clear"
-            role="button"
-            aria-label="Clear"
-            on:click={(e) => {
-              e.stopPropagation();
-              select("");
-            }}
-          >
-            {clearIcon()}
-          </span>
-        ) : null
-      }
-      {chevronDownIcon()}
-      {() =>
-        s.visible() && (
-          <Portal to="body">
-            <SelectContent
-              state={s.state}
-              id={contentId}
-              anchor={() => triggerNode}
-              onDismiss={() => s.setOpen(false)}
-              onExited={s.finishExit}
-              onClose={() => s.setOpen(false)}
-            >
-              <ForEach
-                each={resolveItems}
-                use={(entry) => (
-                  <SelectItem
-                    key={keyBy ? entry.value : undefined}
-                    value={entry.value}
-                    label={entry.label}
-                    disabled={entry.disabled}
-                    selected={() => current() === entry.value}
-                    onselect={() => {
-                      select(entry.value);
-                      s.setOpen(false);
-                    }}
-                  />
-                )}
-              />
-            </SelectContent>
-          </Portal>
-        )
-      }
-    </button>
+      <S.Content>
+        <ForEach
+          each={resolveItems}
+          use={(entry) => (
+            <S.Item
+              key={keyBy ? entry.value : undefined}
+              value={entry.value}
+              label={entry.label}
+              disabled={entry.disabled}
+            />
+          )}
+        />
+      </S.Content>
+    </S.Trigger>
   );
 }

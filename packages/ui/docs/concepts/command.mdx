@@ -1,6 +1,6 @@
 ## API
 
-The default `Command` takes its items as data and renders the search input, the ranked groups, and the keyboard model: the root owns the query signal, ranks matches across labels, values, and keywords, and drives the active item over a flat ranked list. Typing filters; the first match starts active.
+The default `Command` takes its items as data and renders the search input, the ranked groups, and the keyboard model: the copied file composes the [`command`](/reference/headless/command) parts factory from `@hellajs/headless`, which owns the query signal, ranks matches across labels, values, and keywords, and drives the active item over a flat ranked list. Typing filters; the first match starts active. The named parts compose the same factory for standalone use.
 
 Items sharing a `group` render under one heading, in the order the groups first appear in the array; items without a `group` render above the groups. Each item renders its `label` and, when present, a right-aligned `CommandShortcut` hint.
 
@@ -48,11 +48,10 @@ Accepts all native `input` attributes (forwarded to the inner input element): `p
 
 ### CommandList
 
-The scrolling `role="listbox"` container.
+The scrolling `role="listbox"` container. The composed `Command` hands the factory its `items` and the list renders the ranked body itself; manual compositions render their rows as children.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `body` | `() => HellaChild \| HellaChild[]` | `-` |
 | `children` | `HellaChildren` | `-` |
 
 Accepts all native `div` attributes (forwarded to the root element).
@@ -120,7 +119,7 @@ The palette wrapped in the dialog surface: the overlay, the portaled panel, the 
 
 Accepts all native `div` attributes (forwarded to the portaled panel element).
 
-Every part also takes a `class` string, landing last in its style composition. The dialog surface is duplicated inside the command file under `hella-command-dialog` labels, so the palette works without copying the dialog entry; the entry's `dialog` registry dependency exists so standalone dialogs are one `add` away.
+Every part also takes a `class` string, landing last in its style composition. The dialog surface rides the factory's `Dialog` part over the headless [`modal`](/reference/headless/modal) foundation: the trap, escape, and outside-press wiring arm against the open state and dispose with the panel, and the panel class styles the overlay, header, close button, and command surface through descendants of the wrapper root. The entry's `dialog` registry dependency exists so standalone dialogs are one `add` away.
 
 ## Filtering
 

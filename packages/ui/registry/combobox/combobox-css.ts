@@ -9,6 +9,250 @@ const inLeft = keyframes({ from: { opacity: "0", transform: "translateX(0.5rem) 
 const inRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem) scale(0.95)" } });
 const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 
+// The headless factory renders the addon's toggle/clear buttons, the chips
+// rows, and the option rows classless; these merged rule blocks restyle them
+// through their data-slots from the wrapper roots (base, chips, list) and are
+// shared with the manually composed parts that root the same rules directly.
+const addonButtonRules = {
+  alignItems: "center",
+  borderRadius: `calc(${tokens.radius} - 5px)`,
+  boxSizing: "border-box",
+  display: "flex",
+  flexShrink: "0",
+  fontSize: "0.875rem",
+  fontWeight: "500",
+  gap: "0.5rem",
+  justifyContent: "center",
+  lineHeight: "1.25rem",
+  outlineStyle: "none",
+  transition: "all 150ms cubic-bezier(0.4, 0, 0.2, 1)",
+  whiteSpace: "nowrap",
+  height: "1.5rem",
+  width: "1.5rem",
+  padding: "0",
+  boxShadow: "none",
+  "& svg": {
+    flexShrink: "0",
+    pointerEvents: "none",
+  },
+  "& svg:not([class*='size-'])": {
+    height: "0.75rem",
+    width: "0.75rem",
+  },
+  "&:hover": {
+    backgroundColor: tokens.accent,
+    color: tokens.accentForeground,
+  },
+  "&:is(.dark *):hover": {
+    backgroundColor: `color-mix(in oklab, ${tokens.accent} 50%, transparent)`,
+  },
+  "&:focus-visible": {
+    borderColor: tokens.ring,
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
+  },
+  "&:disabled": {
+    opacity: "0.5",
+    pointerEvents: "none",
+  },
+  "&[data-pressed]": {
+    backgroundColor: "transparent",
+  },
+};
+
+const clearButtonRules = {
+  alignItems: "center",
+  borderRadius: `calc(${tokens.radius} - 5px)`,
+  boxSizing: "border-box",
+  display: "flex",
+  flexShrink: "0",
+  fontSize: "0.875rem",
+  fontWeight: "500",
+  gap: "0.5rem",
+  justifyContent: "center",
+  lineHeight: "1.25rem",
+  outlineStyle: "none",
+  transition: "all 150ms cubic-bezier(0.4, 0, 0.2, 1)",
+  whiteSpace: "nowrap",
+  height: "1.5rem",
+  width: "1.5rem",
+  padding: "0",
+  boxShadow: "none",
+  "& svg": {
+    flexShrink: "0",
+    pointerEvents: "none",
+  },
+  "& svg:not([class*='size-'])": {
+    height: "0.75rem",
+    width: "0.75rem",
+  },
+  "&:hover": {
+    backgroundColor: tokens.accent,
+    color: tokens.accentForeground,
+  },
+  "&:is(.dark *):hover": {
+    backgroundColor: `color-mix(in oklab, ${tokens.accent} 50%, transparent)`,
+  },
+  "&:focus-visible": {
+    borderColor: tokens.ring,
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
+  },
+  "&:disabled": {
+    opacity: "0.5",
+    pointerEvents: "none",
+  },
+};
+
+const itemRules = {
+  alignItems: "center",
+  borderRadius: `calc(${tokens.radius} * 0.6)`,
+  cursor: "default",
+  display: "flex",
+  fontSize: "0.875rem",
+  gap: "0.5rem",
+  lineHeight: "1.25rem",
+  outline: "2px solid transparent",
+  outlineOffset: "2px",
+  paddingBlock: "0.375rem",
+  paddingLeft: "0.5rem",
+  paddingRight: "2rem",
+  position: "relative",
+  userSelect: "none",
+  width: "100%",
+  "&[data-highlighted]": {
+    backgroundColor: tokens.accent,
+    color: tokens.accentForeground,
+  },
+  "&[data-disabled]": {
+    opacity: "0.5",
+    pointerEvents: "none",
+  },
+  "& svg": {
+    flexShrink: "0",
+    pointerEvents: "none",
+  },
+  "& svg:not([class*='size-'])": {
+    height: "1rem",
+    width: "1rem",
+  },
+  "& [data-slot='combobox-item-indicator']": {
+    alignItems: "center",
+    display: "flex",
+    height: "1rem",
+    justifyContent: "center",
+    pointerEvents: "none",
+    position: "absolute",
+    right: "0.5rem",
+    width: "1rem",
+  },
+  "& [data-slot='combobox-check-icon']": {
+    height: "1rem",
+    pointerEvents: "none",
+    width: "1rem",
+    "@media (pointer: coarse)": {
+      "&": {
+        height: "1.25rem",
+        width: "1.25rem",
+      },
+    },
+  },
+};
+
+// The factory-rendered input element: the cascade of the old per-element
+// input/inputFocus/inputInvalid/inputControl classes, merged onto one node.
+const inputRules = {
+  background: "transparent",
+  border: `1px solid ${tokens.input}`,
+  borderRadius: "0",
+  borderWidth: "0",
+  boxShadow: "none",
+  fontSize: "1rem",
+  flex: "1 1 0%",
+  height: "2.25rem",
+  lineHeight: "1.5rem",
+  minWidth: "0",
+  outlineStyle: "none",
+  paddingBlock: "0.25rem",
+  paddingInline: "0.75rem",
+  transition:
+    "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
+  width: "100%",
+  "&::file-selector-button": {
+    background: "transparent",
+    border: "none",
+    color: tokens.foreground,
+    display: "inline-flex",
+    fontSize: "0.875rem",
+    fontWeight: "500",
+    height: "1.75rem",
+  },
+  "&::placeholder": {
+    color: tokens.mutedForeground,
+  },
+  "&::selection": {
+    backgroundColor: tokens.primary,
+    color: tokens.primaryForeground,
+  },
+  "&:disabled": {
+    cursor: "not-allowed",
+    opacity: "0.5",
+    pointerEvents: "none",
+  },
+  "@media (min-width: 48rem)": {
+    "&": {
+      fontSize: "0.875rem",
+      lineHeight: "1.25rem",
+    },
+  },
+  "&:is(.dark *)": {
+    background: "transparent",
+  },
+  "&:focus-visible": {
+    borderColor: tokens.ring,
+    boxShadow: "none",
+  },
+  "&[aria-invalid='true']": {
+    borderColor: tokens.destructive,
+  },
+  "&[aria-invalid='true']:focus-visible": {
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 20%, transparent)`,
+  },
+  "&:is(.dark *)[aria-invalid='true']:focus-visible": {
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
+  },
+};
+
+const chipRules = {
+  alignItems: "center",
+  backgroundColor: tokens.muted,
+  borderRadius: `calc(${tokens.radius} * 0.6)`,
+  color: tokens.foreground,
+  display: "flex",
+  fontSize: "0.75rem",
+  fontWeight: "500",
+  gap: "0.25rem",
+  height: "1.375rem",
+  justifyContent: "center",
+  paddingInline: "0.375rem",
+  whiteSpace: "nowrap",
+  width: "fit-content",
+  "&:has(:disabled)": {
+    cursor: "not-allowed",
+    opacity: "0.5",
+    pointerEvents: "none",
+  },
+  "&:has([data-slot='combobox-chip-remove'])": {
+    paddingRight: "0",
+  },
+  "& [data-slot='combobox-chip-remove']": {
+    ...clearButtonRules,
+    marginLeft: "-0.25rem",
+    opacity: "0.5",
+    "&:hover": {
+      opacity: "1",
+    },
+  },
+};
+
 export const base = style("combobox-wrapper", {
   alignItems: "center",
   border: `1px solid ${tokens.input}`,
@@ -48,117 +292,48 @@ export const base = style("combobox-wrapper", {
     {
       boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
     },
-});
-
-export const input = style("combobox-input", {
-  background: "transparent",
-  border: `1px solid ${tokens.input}`,
-  borderRadius: `calc(${tokens.radius} * 0.8)`,
-  boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
-  fontSize: "1rem",
-  height: "2.25rem",
-  lineHeight: "1.5rem",
-  minWidth: "0",
-  outlineStyle: "none",
-  paddingBlock: "0.25rem",
-  paddingInline: "0.75rem",
-  transition:
-    "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
-  width: "100%",
-  "&::file-selector-button": {
-    background: "transparent",
-    border: "none",
-    color: tokens.foreground,
-    display: "inline-flex",
+  "& > input": inputRules,
+  "& > [data-slot='input-group-addon']": {
+    alignItems: "center",
+    color: tokens.mutedForeground,
+    cursor: "text",
+    display: "flex",
     fontSize: "0.875rem",
     fontWeight: "500",
-    height: "1.75rem",
-  },
-  "&::placeholder": {
-    color: tokens.mutedForeground,
-  },
-  "&::selection": {
-    backgroundColor: tokens.primary,
-    color: tokens.primaryForeground,
-  },
-  "&:disabled": {
-    cursor: "not-allowed",
-    opacity: "0.5",
-    pointerEvents: "none",
-  },
-  "@media (min-width: 48rem)": {
-    "&": {
-      fontSize: "0.875rem",
-      lineHeight: "1.25rem",
+    gap: "0.5rem",
+    height: "auto",
+    justifyContent: "center",
+    order: "9999",
+    paddingBlock: "0.375rem",
+    paddingRight: "0.75rem",
+    userSelect: "none",
+    "&:has(> button)": {
+      marginRight: "-0.45rem",
     },
-  },
-  "&:is(.dark *)": {
-    background: `color-mix(in oklab, ${tokens.input} 30%, transparent)`,
-  },
-});
-
-export const inputFocus = style("combobox-input-focus", {
-  "&:focus-visible": {
-    borderColor: tokens.ring,
-    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
-  },
-});
-
-export const inputInvalid = style("combobox-input-invalid", {
-  "&[aria-invalid='true']": {
-    borderColor: tokens.destructive,
-  },
-  "&[aria-invalid='true']:focus-visible": {
-    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 20%, transparent)`,
-  },
-  "&:is(.dark *)[aria-invalid='true']:focus-visible": {
-    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
-  },
-});
-
-export const inputControl = style("combobox-input-control", {
-  background: "transparent",
-  borderRadius: "0",
-  borderWidth: "0",
-  flex: "1 1 0%",
-  boxShadow: "none",
-  "&:focus-visible": {
-    boxShadow: "none",
-  },
-  "&:is(.dark *)": {
-    background: "transparent",
-  },
-});
-
-export const addon = style("combobox-addon", {
-  alignItems: "center",
-  color: tokens.mutedForeground,
-  cursor: "text",
-  display: "flex",
-  fontSize: "0.875rem",
-  fontWeight: "500",
-  gap: "0.5rem",
-  height: "auto",
-  justifyContent: "center",
-  order: "9999",
-  paddingBlock: "0.375rem",
-  paddingRight: "0.75rem",
-  userSelect: "none",
-  "&:has(> button)": {
-    marginRight: "-0.45rem",
-  },
-  "&:has(> kbd)": {
-    marginRight: "-0.35rem",
-  },
-  "& > kbd": {
-    borderRadius: `calc(${tokens.radius} - 5px)`,
-  },
-  "& > svg:not([class*='size-'])": {
-    height: "1rem",
-    width: "1rem",
-  },
-  "&[data-disabled='true']": {
-    opacity: "0.5",
+    "&:has(> kbd)": {
+      marginRight: "-0.35rem",
+    },
+    "& > kbd": {
+      borderRadius: `calc(${tokens.radius} - 5px)`,
+    },
+    "& > svg:not([class*='size-'])": {
+      height: "1rem",
+      width: "1rem",
+    },
+    "&[data-disabled='true']": {
+      opacity: "0.5",
+    },
+    "& > [data-slot='combobox-trigger']": addonButtonRules,
+    "& > [data-slot='combobox-clear']": clearButtonRules,
+    "& [data-slot='combobox-trigger-icon']": {
+      color: tokens.mutedForeground,
+      height: "1rem",
+      pointerEvents: "none",
+      width: "1rem",
+    },
+    "& [data-slot='combobox-clear-icon']": {
+      pointerEvents: "none",
+    },
   },
 });
 
@@ -237,20 +412,6 @@ export const sizeIconXs = style("combobox-size-icon-xs", {
   },
 });
 
-export const triggerExtra = style("combobox-trigger-extra", {
-  "&[data-pressed]": {
-    backgroundColor: "transparent",
-  },
-});
-
-export const chipRemoveExtra = style("combobox-chip-remove-extra", {
-  marginLeft: "-0.25rem",
-  opacity: "0.5",
-  "&:hover": {
-    opacity: "1",
-  },
-});
-
 export const trigger = style("combobox-trigger", {
   "& svg:not([class*='size-'])": {
     height: "1rem",
@@ -326,68 +487,10 @@ export const list = style("combobox-list", {
   "&[data-empty]": {
     padding: "0",
   },
+  "& [data-slot='combobox-item']": itemRules,
 });
 
-export const item = style("combobox-item", {
-  alignItems: "center",
-  borderRadius: `calc(${tokens.radius} * 0.6)`,
-  cursor: "default",
-  display: "flex",
-  fontSize: "0.875rem",
-  gap: "0.5rem",
-  lineHeight: "1.25rem",
-  outline: "2px solid transparent",
-  outlineOffset: "2px",
-  paddingBlock: "0.375rem",
-  paddingLeft: "0.5rem",
-  paddingRight: "2rem",
-  position: "relative",
-  userSelect: "none",
-  width: "100%",
-  "&[data-highlighted]": {
-    backgroundColor: tokens.accent,
-    color: tokens.accentForeground,
-  },
-  "&[data-disabled]": {
-    opacity: "0.5",
-    pointerEvents: "none",
-  },
-  "& svg": {
-    flexShrink: "0",
-    pointerEvents: "none",
-  },
-  "& svg:not([class*='size-'])": {
-    height: "1rem",
-    width: "1rem",
-  },
-});
-
-export const itemIndicator = style("combobox-item-indicator", {
-  alignItems: "center",
-  display: "flex",
-  height: "1rem",
-  justifyContent: "center",
-  pointerEvents: "none",
-  position: "absolute",
-  right: "0.5rem",
-  width: "1rem",
-});
-
-export const icon = style("combobox-icon", {
-  height: "1rem",
-  pointerEvents: "none",
-  width: "1rem",
-  "@media (pointer: coarse)": {
-    "&": {
-      height: "1.25rem",
-      width: "1.25rem",
-    },
-  },
-});
-
-export const xIcon = style("combobox-x-icon", {
-  pointerEvents: "none",
-});
+export const item = style("combobox-item", itemRules);
 
 export const label = style("combobox-label", {
   color: tokens.mutedForeground,
@@ -461,31 +564,15 @@ export const chips = style("combobox-chips", {
     borderColor: `color-mix(in oklab, ${tokens.destructive} 50%, transparent)`,
     boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
   },
+  "& [data-slot='combobox-chip']": chipRules,
+  "& > input": {
+    flex: "1 1 0%",
+    minWidth: "4rem",
+    outlineStyle: "none",
+  },
 });
 
-export const chip = style("combobox-chip", {
-  alignItems: "center",
-  backgroundColor: tokens.muted,
-  borderRadius: `calc(${tokens.radius} * 0.6)`,
-  color: tokens.foreground,
-  display: "flex",
-  fontSize: "0.75rem",
-  fontWeight: "500",
-  gap: "0.25rem",
-  height: "1.375rem",
-  justifyContent: "center",
-  paddingInline: "0.375rem",
-  whiteSpace: "nowrap",
-  width: "fit-content",
-  "&:has(:disabled)": {
-    cursor: "not-allowed",
-    opacity: "0.5",
-    pointerEvents: "none",
-  },
-  "&:has([data-slot='combobox-chip-remove'])": {
-    paddingRight: "0",
-  },
-});
+export const chip = style("combobox-chip", chipRules);
 
 export const chipsInput = style("combobox-chips-input", {
   flex: "1 1 0%",

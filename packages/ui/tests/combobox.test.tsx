@@ -468,12 +468,16 @@ describe("combobox", () => {
     assertStructuralParity(comboboxVariants, { items: FRUITS, placeholder: "Parity" });
   });
 
-  test("renders every named part with its data-slot across both styles", () => {
+  test("renders every named part with its data-slot across both styles", async () => {
     for (const variant of comboboxPartVariants) {
       const container = setupContainer();
       const rendered = variant.render({ children: [] });
       mount(rendered, container);
-      const el = container.firstElementChild!;
+      // The content part portals itself; every other part renders in place.
+      const el =
+        variant.part === "Content"
+          ? await awaitPortaled("combobox-content")
+          : container.firstElementChild!;
       const slot =
         variant.part === "Input"
           ? "input-group"
@@ -486,7 +490,7 @@ describe("combobox", () => {
 
   test.each(comboboxPartVariants.filter((variant) => variant.part === "Content"))(
     "$style content part anchors with matchAnchorWidth, dismisses, and drains wirings on disposal",
-    (variant) => {
+    async (variant) => {
       const anchor = document.createElement("button");
       document.body.appendChild(anchor);
       pinRect(anchor, 100, 50, 200, 20);
@@ -496,7 +500,7 @@ describe("combobox", () => {
         variant.render({ anchor: () => anchor, side: "bottom", onDismiss, children: [] }),
         container,
       );
-      const content = container.firstElementChild as HTMLElement;
+      const content = await awaitPortaled("combobox-content");
       expect(content.style.width).toBe("200px");
       expect(content.style.left).toBe("50px");
       expect(content.style.top).toBe("126px");

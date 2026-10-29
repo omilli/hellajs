@@ -54,6 +54,8 @@ export interface ComboboxSeparatorProps extends HTMLAttributes<"div"> {
 export interface ComboboxItemProps extends HTMLAttributes<"div"> {
   value?: string;
   label?: string;
+  disabled?: boolean;
+  id?: string;
   /** Selected state. A boolean reads statically; an accessor keeps the item reactive against its owning combobox. */
   selected?: boolean | (() => boolean);
   /** Highlighted state (the ref's data-highlighted ring); an accessor follows the active option. */
@@ -67,6 +69,8 @@ export interface ComboboxItemProps extends HTMLAttributes<"div"> {
 }
 
 export interface ComboboxListProps extends HTMLAttributes<"div"> {
+  /** The listbox id; option ids derive as `<id>-opt-<value>`. */
+  id?: string;
   /** Data-driven items; a plain array reads once at mount, an accessor re-renders the list as it changes. The query keeps rows mounted and toggles their visibility. */
   items?: ComboboxEntry[] | (() => ComboboxEntry[]);
   /** Reuses item DOM through reorders by `value` identity (selection and highlight state survive); order always follows the array. */
@@ -98,11 +102,6 @@ export interface ComboboxInputProps extends HTMLAttributes<"input"> {
   showClear?: boolean;
   onToggle?: () => void;
   onClear?: () => void;
-  hasValue?: () => boolean;
-  /** Wires the wrapper on mount and returns its dispose; the composed Combobox anchors the panel here and attaches typeahead. */
-  wire?: (node: HTMLElement) => () => void;
-  /** The portaled panel, mounted while open; rendered as a reactive child inside the wrapper. */
-  portal?: () => HellaChildren;
   children?: HellaChildren;
   class?: string;
 }
@@ -113,10 +112,6 @@ export interface ComboboxChipsProps extends HTMLAttributes<"div"> {
   chips?: () => HellaChildren;
   /** Wired, not spread: renders data-disabled and gates the chip remove buttons. */
   disabled?: boolean;
-  /** Wires the chips wrapper on mount and returns its dispose; the composed Combobox anchors the panel here. */
-  wire?: (node: HTMLElement) => () => void;
-  /** The portaled panel, mounted while open; rendered as a reactive child inside the wrapper. */
-  portal?: () => HellaChildren;
   class?: string;
 }
 
@@ -142,6 +137,7 @@ export interface ComboboxChipsInputProps extends HTMLAttributes<"input"> {
 }
 
 export interface ComboboxContentProps extends HTMLAttributes<"div"> {
+  id?: string;
   state?: () => "open" | "closed";
   side?: AnchorSide;
   align?: AnchorAlign;
