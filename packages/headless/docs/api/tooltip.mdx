@@ -17,9 +17,10 @@ mount(
   </div>,
   "#app",
 );
-// Hovering the trigger opens the label after the delay; leaving starts the
-// close timer. The label portals into document.body, anchors to the trigger,
-// and closes on Escape, an outside press, or the close delay.
+// Hovering the trigger opens the label after the delay; leaving closes it
+// immediately (pass `closeDelay` to restore a grace window). The label portals
+// into document.body, anchors to the trigger, and closes on pointer leave,
+// Escape, or an outside press.
 ```
 
 `Trigger` and `Content` connect through the factory closure, so they compose as siblings or nest the content inside the trigger. Omitting `delay` keeps the 700ms default.
@@ -33,6 +34,7 @@ function tooltip(options?: TooltipOptions): TooltipComponents
 - `options.open`: Controlled open-state getter. Passing it makes the tooltip controlled; omitting it keeps state internal.
 - `options.onOpenChange`: Called on every open-state change, owned hover and dismissal alike.
 - `options.delay`: Pointer-hover ms before the content opens. Default `700`.
+- `options.closeDelay`: Pointer-leave ms before the content closes. Default `0`. The label hides immediately on leave (Radix parity); a positive value restores a grace window.
 - **Returns**: The component set, composed as `Tip.Trigger`-style members.
 
 ### Components

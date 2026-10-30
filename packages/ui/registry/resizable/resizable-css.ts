@@ -20,6 +20,7 @@ export const handle = style("resizable-handle", {
   outlineStyle: "none",
   "&::after": {
     bottom: "0",
+    content: '""',
     left: "50%",
     position: "absolute",
     top: "0",
@@ -34,6 +35,7 @@ export const handle = style("resizable-handle", {
     width: "100%",
   },
   "&[aria-orientation='horizontal']::after": {
+    content: '""',
     height: "0.25rem",
     left: "0",
     translate: "0 -50%",

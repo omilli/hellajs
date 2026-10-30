@@ -1,6 +1,6 @@
 # navigationMenu
 
-Creates the navigation menu components in one call: the bar root, its list of items, the viewport-shared panels, and the moving indicator. The closure owns the open-value store; a value-carrying trigger announces its clicks, the root mirrors the announcement into the store, and the matching panel portals into the shared viewport.
+Creates the navigation menu components in one call: the bar root, its list of items, the viewport-shared panels, and the moving indicator. The closure owns the open-value store; a value-carrying trigger announces its clicks and hover-opens, the bar containing the trigger mirrors the announcement into the store, and the matching panel portals into the shared viewport.
 
 ## Basic Usage
 
@@ -36,9 +36,9 @@ mount(
   </Nav.Root>,
   "#app",
 );
-// Clicking a trigger opens its panel in the shared viewport; clicking
-// another trigger swaps the panel, clicking the open trigger closes
-// the bar, and the indicator slides under the active trigger.
+// Hovering or clicking a trigger opens its panel in the shared viewport;
+// another trigger swaps the panel, clicking the open trigger or leaving the
+// open panel closes it, and the indicator slides under the active trigger.
 ```
 
 ## API
@@ -56,11 +56,11 @@ function navigationMenu(options?: NavigationMenuOptions): NavigationMenuComponen
 
 | Component | Renders |
 |---|---|
-| `Root` | The bar root (`data-slot="navigation-menu"`) that mirrors trigger announcements into the store and appends the shared viewport slot as its last child |
+| `Root` | The bar root (`data-slot="navigation-menu"`) that mirrors announcements from triggers inside it into the store, closes the open panel on outside pointerdown, and appends the shared viewport slot as its last child |
 | `List` | The `ul` list row (`data-slot="navigation-menu-list"`) wrapping the items |
 | `Item` | The `li` item (`data-slot="navigation-menu-item"`) wrapping a trigger and its content anchor |
-| `Trigger` | The trigger button carrying `data-value`, `aria-expanded`, `data-state`, and the chevron icon; its click announces `{ id, open }` on the document-level activation event |
-| `Content` | The panel for a `value`: portals into the shared viewport slot and exits under `data-state="closed"` through `animationend` (or the 250ms budget) |
+| `Trigger` | The trigger button carrying `data-value`, `aria-expanded`, `data-state`, and the chevron icon; its click and non-touch pointer-enter announce `{ id, open }` (with the trigger node) on the document-level activation event |
+| `Content` | The panel for a `value`: portals into the shared viewport slot, publishes its measured size and trigger alignment to the slot, and exits under `data-state="closed"` through `animationend` (or the 250ms budget) |
 | `Link` | The leaf `a` link carrying `data-active="true"` for the accent styles |
 | `Viewport` | The shared slot (`data-slot="navigation-menu-viewport"`) whose `data-state` tracks the store; every `Content` portals into it |
 | `Indicator` | The moving underline that measures the active trigger against the bar and translates under it |
@@ -77,13 +77,13 @@ Every component spreads `class` and native attributes onto its element; componen
 
 ## Key Concepts
 
-### One Store, Announced Clicks
+### One Store, Announced Interactions
 
-The trigger does not write the store: a trigger carrying `value` announces the requested state on the `hella:navigation-menu-activate` document event, and every mounted root mirrors the announcement into its own store. Opening one panel closes the others (one open at a time), and a second click on the open trigger closes the bar. The announcement stream is also what the indicator follows, so components keep coordinating even when they render in different scopes.
+The trigger does not write the store: a trigger carrying `value` announces the requested state on the `hella:navigation-menu-activate` document event (clicks and non-touch pointer enters both announce, carrying the trigger node), and the bar containing that trigger mirrors it into its own store. Opening one panel closes the others (one open at a time), and a second click on the open trigger closes the bar. Hovering a trigger opens its panel; leaving the open trigger or panel closes it through a 100ms grace that entering the panel cancels, and a pointerdown outside the bar (and any viewport slot) closes the open panel immediately. The announcement stream is also what the indicator follows, so a bar's parts keep coordinating even when each renders from its own factory call.
 
 ### Content Renders Into the Shared Viewport
 
-Every `Content` portals into the first `[data-slot="navigation-menu-viewport"]` in the document, the slot the root appends as its last child. The panel's enter and exit ride the viewport's `data-state`, so swapping panels animates the outgoing content before the viewport releases it. A `viewport` prop on `Content` names another portal target; with `viewport: false` on the factory, the root renders no slot and a manual `Viewport` (with an `id`) receives the panels.
+Every `Content` portals into the first `[data-slot="navigation-menu-viewport"]` in the document, the slot the root appends as its last child. On mount the panel publishes its measured size to the slot through the `--radix-navigation-menu-viewport-width/height` vars the viewport css reads and stamps the viewport wrapper's `translateX` so the panel sits under its trigger (its own `data-value` trigger, else the bar's sole expanded trigger), clamped so the panel stays inside the bar; the closing panel keeps the last values through the exit. The panel's enter and exit ride the viewport's `data-state`, so swapping panels animates the outgoing content before the viewport releases it. A closed viewport passes pointer events through (radix parity: no interaction while animating out). A `viewport` prop on `Content` names another portal target; with `viewport: false` on the factory, the root renders no slot and a manual `Viewport` (with an `id`) receives the panels.
 
 ### Exits Run Through a Grace Budget
 
@@ -97,12 +97,12 @@ Closing never unmounts immediately: the panel stays mounted under `data-state="c
 
 ### Call the Factory in Component Scope
 
-`navigationMenu()` creates the state signals that must dispose with the component that owns it. `Root` drops its announcement listener and `Indicator` its announcement and resize wiring at unmount; a module-level factory call leaks them. Call the factory inside the component that renders the components.
+`navigationMenu()` creates the state signals that must dispose with the component that owns it. `Root` drops its announcement and outside-pointerdown listeners and `Indicator` its announcement and resize wiring at unmount; a module-level factory call leaks them. Call the factory inside the component that renders the components.
 
 ### Values Are Global Trigger Names
 
-The indicator resolves the active trigger by querying `[data-value='<id>']` for the announced id, so trigger values act as page-global names. Two bars reusing the same values would both mirror each other's announcements and measure each other's triggers; keep trigger values unique per page.
+The indicator resolves the active trigger by querying `[data-value='<id>']` for the announced id, so trigger values act as page-global names. Announcements mirror only into the bar containing the trigger, but the indicator's document-wide query still measures the first matching trigger; keep trigger values unique per page.
 
 ### No Panels Open on the First Render
 
-Content panels portal into the viewport slot the root appends, and a portal resolving during the initial mount walk would run before that slot attaches. The store always starts closed (`""`); open a panel through a trigger click (or the controller's `value` write) after mount.
+Content panels portal into the viewport slot the root appends, and a portal resolving during the initial mount walk would run before that slot attaches. The store always starts closed (`""`); open a panel through a trigger click or hover (or the controller's `value` write) after mount.

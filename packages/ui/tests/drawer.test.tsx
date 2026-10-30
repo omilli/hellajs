@@ -410,6 +410,28 @@ describe("drawer", () => {
     },
   );
 
+  test.each(drawerVariants)(
+    "$style carries the padded content binding on the portaled panel",
+    async (variant) => {
+      const drawer = mountDrawer(variant, { onClose: () => {}, title: "Filters" });
+      drawer.open(true);
+      const panel = await drawer.panel();
+      if (variant.style === "css") {
+        // The direction binding shares the drawer-content prefix (drawer-content-bottom-<hash>),
+        // so the bare content token excludes the direction scope segments.
+        expect(
+          classTokens(panel).some(
+            (token) =>
+              token.startsWith("drawer-content") &&
+              !/^drawer-content-(right|left|top|bottom)/.test(token),
+          ),
+        ).toBe(true);
+      } else {
+        expect(classTokens(panel)).toContain("p-4");
+      }
+    },
+  );
+
   test.each(drawerPartVariants.filter((entry) => entry.part === "Close"))(
     "$style Close chains a user on:click with its owned dismiss",
     (variant) => {

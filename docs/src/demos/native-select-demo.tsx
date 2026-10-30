@@ -1,5 +1,5 @@
 import { signal } from "@hellajs/core";
-import { NativeSelect } from "@components/ui/native-select.js";
+import { NativeSelect, NativeSelectOption } from "@components/ui/native-select.js";
 
 export function NativeSelectDemo() {
   const region = signal("eu");
@@ -11,9 +11,9 @@ export function NativeSelectDemo() {
         on:change={(e: Event) => region((e.target as HTMLSelectElement).value)}
         aria-label="Region"
       >
-        <option value="eu">EU Central</option>
-        <option value="us">US East</option>
-        <option value="ap" disabled>AP South (coming soon)</option>
+        <NativeSelectOption value="eu">EU Central</NativeSelectOption>
+        <NativeSelectOption value="us">US East</NativeSelectOption>
+        <NativeSelectOption value="ap" disabled>AP South (coming soon)</NativeSelectOption>
       </NativeSelect>
       <p class="demo-muted">{() => `Echoing: ${region()}`}</p>
     </>
@@ -24,8 +24,8 @@ export function NativeSelectCompactDemo() {
   return (
     <>
       <NativeSelect size="sm" aria-label="Compact select">
-        <option value="a">Compact option A</option>
-        <option value="b">Compact option B</option>
+        <NativeSelectOption value="a">Compact option A</NativeSelectOption>
+        <NativeSelectOption value="b">Compact option B</NativeSelectOption>
       </NativeSelect>
     </>
   );

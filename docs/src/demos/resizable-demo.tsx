@@ -3,6 +3,7 @@ import { style } from "@hellajs/css";
 import { ResizablePanelGroup as Resizable, ResizableHandle, ResizablePanel } from "@components/ui/resizable.js";
 
 const viewport = style({
+  alignSelf: "stretch",
   height: "12rem",
   width: "100%",
 }, { label: "demo-viewport" });

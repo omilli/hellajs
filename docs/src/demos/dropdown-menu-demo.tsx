@@ -1,5 +1,4 @@
 import { signal } from "@hellajs/core";
-import { Button } from "@components/ui/button.js";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -34,7 +33,7 @@ export function DropdownMenuDemo() {
   return (
     <>
       <div class="demo-row">
-        <DropdownMenu content={formatItems}><Button variant="outline">Format</Button></DropdownMenu>
+        <DropdownMenu content={formatItems}>Format</DropdownMenu>
       </div>
     </>
   );
@@ -58,7 +57,7 @@ export function DropdownMenuSubmenuDemo() {
   return (
     <>
       <div class="demo-row">
-        <DropdownMenu content={fileItems}><Button variant="outline">File</Button></DropdownMenu>
+        <DropdownMenu content={fileItems}>File</DropdownMenu>
       </div>
     </>
   );

@@ -18,8 +18,8 @@ export function PopoverDemo() {
   return (
     <>
       <div class="demo-row">
-        <Popover content={panel("Width")}><Button>Width</Button></Popover>
-        <Popover content={panel("Height")}><Button variant="outline">Height</Button></Popover>
+        <Popover content={panel("Width")}>Width</Popover>
+        <Popover content={panel("Height")}>Height</Popover>
       </div>
     </>
   );

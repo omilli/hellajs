@@ -9,6 +9,58 @@ const inLeft = keyframes({ from: { opacity: "0", transform: "translateX(0.5rem) 
 const inRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem) scale(0.95)" } });
 const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 
+export const base = style("popover-trigger", {
+  alignItems: "center",
+  background: tokens.background,
+  border: `1px solid ${tokens.border}`,
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
+  boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+  boxSizing: "border-box",
+  display: "inline-flex",
+  flexShrink: "0",
+  fontSize: "0.875rem",
+  fontWeight: "500",
+  gap: "0.5rem",
+  height: "2.25rem",
+  justifyContent: "center",
+  lineHeight: "1.25rem",
+  outlineStyle: "none",
+  paddingBlock: "0.5rem",
+  paddingInline: "1rem",
+  transition: "all 150ms cubic-bezier(0.4, 0, 0.2, 1)",
+  whiteSpace: "nowrap",
+  "& svg": {
+    flexShrink: "0",
+    pointerEvents: "none",
+  },
+  "& svg:not([class*='size-'])": {
+    height: "1rem",
+    width: "1rem",
+  },
+  "&:focus-visible": {
+    borderColor: tokens.ring,
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
+  },
+  "&:disabled": {
+    opacity: "0.5",
+    pointerEvents: "none",
+  },
+  "&:hover": {
+    backgroundColor: tokens.accent,
+    color: tokens.accentForeground,
+  },
+  "&:has(> svg)": {
+    paddingInline: "0.75rem",
+  },
+  "&:is(.dark *)": {
+    borderColor: tokens.input,
+    background: `color-mix(in oklab, ${tokens.input} 30%, transparent)`,
+  },
+  "&:is(.dark *):hover": {
+    background: `color-mix(in oklab, ${tokens.input} 50%, transparent)`,
+  },
+});
+
 export const content = style("popover-content", {
   backgroundColor: tokens.popover,
   border: `1px solid ${tokens.border}`,

@@ -14,6 +14,7 @@ export const base = style("native-select", {
   border: `1px solid ${tokens.input}`,
   borderRadius: `calc(${tokens.radius} * 0.8)`,
   boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+  colorScheme: "light",
   fontSize: "0.875rem",
   height: "2.25rem",
   lineHeight: "1.25rem",
@@ -42,6 +43,7 @@ export const base = style("native-select", {
   },
   "&:is(.dark *)": {
     background: `color-mix(in oklab, ${tokens.input} 30%, transparent)`,
+    colorScheme: "dark",
   },
   "&:is(.dark *):hover": {
     background: `color-mix(in oklab, ${tokens.input} 50%, transparent)`,
@@ -81,11 +83,11 @@ export const icon = style("native-select-icon", {
 });
 
 export const option = style("native-select-option", {
-  backgroundColor: "Canvas",
-  color: "CanvasText",
+  backgroundColor: tokens.popover,
+  color: tokens.popoverForeground,
 });
 
 export const optgroup = style("native-select-optgroup", {
-  backgroundColor: "Canvas",
-  color: "CanvasText",
+  backgroundColor: tokens.popover,
+  color: tokens.popoverForeground,
 });

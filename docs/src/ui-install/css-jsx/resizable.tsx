@@ -46,6 +46,7 @@ const handle = style("resizable-handle", {
   outlineStyle: "none",
   "&::after": {
     bottom: "0",
+    content: '""',
     left: "50%",
     position: "absolute",
     top: "0",
@@ -60,6 +61,7 @@ const handle = style("resizable-handle", {
     width: "100%",
   },
   "&[aria-orientation='horizontal']::after": {
+    content: '""',
     height: "0.25rem",
     left: "0",
     translate: "0 -50%",
@@ -149,7 +151,7 @@ export function ResizableHandle({
       data-slot="resizable-handle"
       role="separator"
       tabindex={disabled ? -1 : 0}
-      aria-orientation="horizontal"
+      aria-orientation="vertical"
       aria-disabled={disabled ? "true" : undefined}
       data-disabled={disabled ? "true" : undefined}
       class={
@@ -222,7 +224,10 @@ export function ResizablePanelGroup({
   };
 
   const wireHandle = (group: HTMLElement, handleEl: HTMLElement, prevIndex: number): void => {
-    handleEl.setAttribute("aria-orientation", direction);
+    handleEl.setAttribute(
+      "aria-orientation",
+      direction === "horizontal" ? "vertical" : "horizontal",
+    );
     if (handleEl.getAttribute("aria-disabled") === "true") return;
     let groupSize = 0;
     let startSizes: number[] | null = null;

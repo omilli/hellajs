@@ -92,11 +92,10 @@ describe("tooltip", () => {
     },
   );
 
-  test.each(tooltipVariants)("$style closes after the close delay", async (variant) => {
+  test.each(tooltipVariants)("$style closes immediately on pointer leave", async (variant) => {
     const { trigger, content } = await openTooltip(variant);
     pointerLeave(trigger);
-    expect(content.getAttribute("data-state")).toBe("open");
-    await delay(320);
+    await delay(10);
     expect(content.getAttribute("data-state")).toBe("closed");
   });
 

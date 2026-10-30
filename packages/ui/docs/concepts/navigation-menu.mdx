@@ -2,7 +2,7 @@
 
 Each trigger and content takes its active state as an accessor, and the owner signal sits in your component.
 
-Triggers carrying a `value` announce clicks on a document-level event, so the root's store and the appended viewport follow without extra wiring: the store is a mirror, never a second state owner. Rendering the indicator with no `active` or `anchor` props joins the same announcement stream and follows the active trigger automatically.
+Triggers carrying a `value` announce clicks and hover-opens on a document-level event, and the bar containing the trigger mirrors them into its store, so each menu on a page keeps its own open state: hovering a trigger opens its panel, leaving the open trigger or panel closes it after a short grace, a pointerdown outside the bar closes it, and the viewport follows without extra wiring. Rendering the indicator with no `active` or `anchor` props joins the same announcement stream and follows the active trigger automatically.
 
 Seven named components ship beside the default `NavigationMenu`: `NavigationMenuList`, `NavigationMenuItem`, `NavigationMenuTrigger`, `NavigationMenuContent`, `NavigationMenuLink`, `NavigationMenuViewport`, and `NavigationMenuIndicator`.
 
@@ -12,12 +12,12 @@ Seven named components ship beside the default `NavigationMenu`: `NavigationMenu
 | ---- | ---- | ------- |
 | `value` | `() => string` | `-` |
 | `onValueChange` | `(value: string) => void` | `-` |
-| `viewport` | `boolean` | `true` |
+| `viewport` | `boolean` | `false` |
 | `class` | `string` | `-` |
 | `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
-`value` is the controlled id of the open panel ("" when closed), fed by trigger announcements; the root never writes it when given. `viewport={false}` renders no shared viewport slot, for manual `NavigationMenuViewport` placement.
+`value` is the controlled id of the open panel ("" when closed), fed by trigger announcements; the root never writes it when given. The root renders no shared viewport slot by default: render `NavigationMenuViewport` explicitly as the panels' portal target. Pass `viewport` to opt back in to the auto-appended slot.
 
 ### NavigationMenuList
 
@@ -102,8 +102,8 @@ Every component also takes a `class` string, landing last in its style compositi
 
 ## Viewport and Indicator
 
-Every `NavigationMenuContent` portals into the viewport slot (`[data-slot="navigation-menu-viewport"]`), the slot sits absolutely under the bar, and the panel's enter and exit are fade and zoom keyframes on the viewport's `data-state`. The indicator measures the active trigger against the bar (on mount, on activation, and on resize) and translates under it with a 200ms transform and width transition.
+Every `NavigationMenuContent` portals into the viewport slot (`[data-slot="navigation-menu-viewport"]`), the slot sits absolutely under the bar and its panel opens directly under the hovered trigger (the wrapper re-centers toward the active trigger, clamped inside the bar), and the panel's enter and exit are fade and zoom keyframes on the viewport's `data-state`. The indicator measures the active trigger against the bar (on mount, on activation, and on resize) and translates under it with a 200ms transform and width transition.
 
 Closing runs through the same exit budget as the menus: a closed panel stays mounted under `data-state="closed"` until its `animationend` (or the 250ms fallback) unmounts it, so a trigger swap animates the outgoing panel before the viewport releases it.
 
-For a second navigation menu on the same page, render `NavigationMenuViewport` manually with `viewport={false}`, give the slot an `id`, and pass `#<id>` as each content's `viewport` selector so panels land in their own slot.
+Every `NavigationMenu` expects its own explicitly rendered `NavigationMenuViewport`. For a second navigation menu on the same page, give each slot an `id` and pass `#<id>` as that menu's content `viewport` selector so panels land in their own slot.

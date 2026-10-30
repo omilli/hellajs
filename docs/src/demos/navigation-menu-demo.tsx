@@ -3,7 +3,6 @@ import {
   NavigationMenu,
   NavigationMenuContent,
   NavigationMenuItem,
-  NavigationMenuIndicator,
   NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuTrigger,
@@ -27,21 +26,20 @@ export function NavigationMenuDemo() {
           <NavigationMenuList>
             <NavigationMenuItem>
               {trigger("learn", "Learn", value, toggle)}
-              <NavigationMenuContent active={() => value() === "learn"}>
+              <NavigationMenuContent active={() => value() === "learn"} viewport="#nav-playground">
                 <NavigationMenuLink href="#intro">Introduction</NavigationMenuLink>
                 <NavigationMenuLink href="#themes">Themes and Tokens</NavigationMenuLink>
               </NavigationMenuContent>
             </NavigationMenuItem>
             <NavigationMenuItem>
               {trigger("reference", "Reference", value, toggle)}
-              <NavigationMenuContent active={() => value() === "reference"}>
+              <NavigationMenuContent active={() => value() === "reference"} viewport="#nav-playground">
                 <NavigationMenuLink href="#components">Components</NavigationMenuLink>
                 <NavigationMenuLink href="#utils">Headless Utils</NavigationMenuLink>
               </NavigationMenuContent>
             </NavigationMenuItem>
           </NavigationMenuList>
-          <NavigationMenuViewport active={() => value() !== ""} />
-          <NavigationMenuIndicator />
+          <NavigationMenuViewport id="nav-playground" active={() => value() !== ""} />
         </NavigationMenu>
       </div>
     </>
@@ -59,15 +57,14 @@ export function NavigationMenuActiveLinksDemo() {
           <NavigationMenuList>
             <NavigationMenuItem>
               {trigger("resources", "Resources", value, toggle)}
-              <NavigationMenuContent active={() => value() === "resources"}>
+              <NavigationMenuContent active={() => value() === "resources"} viewport="#nav-active-links">
                 <NavigationMenuLink href="#guide" active={true}>Guide</NavigationMenuLink>
                 <NavigationMenuLink href="#api">API Reference</NavigationMenuLink>
                 <NavigationMenuLink href="#examples">Examples</NavigationMenuLink>
               </NavigationMenuContent>
             </NavigationMenuItem>
           </NavigationMenuList>
-          <NavigationMenuViewport active={() => value() !== ""} />
-          <NavigationMenuIndicator active={() => value() !== ""} />
+          <NavigationMenuViewport id="nav-active-links" active={() => value() !== ""} />
         </NavigationMenu>
       </div>
     </>

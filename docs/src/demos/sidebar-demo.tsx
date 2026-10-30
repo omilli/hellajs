@@ -30,10 +30,22 @@ const muted = style({
   fontSize: "0.875rem",
 }, { label: "demo-muted" });
 
+const shell = style({
+  position: "relative",
+  width: "100%",
+  height: "30rem",
+  overflow: "hidden",
+  border: `1px solid ${tokens.border}`,
+  borderRadius: tokens.radius,
+  background: tokens.background,
+  transform: "translateZ(0)",
+}, { label: "demo-sidebar-shell" });
+
 export function SidebarDemo() {
   return (
-    <SidebarProvider children={(state) => (
-      <div class="demo-stack">
+    <div class={shell}>
+      <SidebarProvider children={(state) => (
+          <>
           <Sidebar open={state.open} mobile={state.mobile} openMobile={state.openMobile} onOpenMobileChange={state.setOpenMobile} collapsible="icon">
             <SidebarHeader><span class="demo-muted">Acme Inc</span></SidebarHeader>
             <SidebarContent>
@@ -57,8 +69,9 @@ export function SidebarDemo() {
           <SidebarInset>
             <SidebarTrigger onToggle={state.onToggle} />
           </SidebarInset>
-        </div>
+          </>
       )} />
+    </div>
   );
 }
 

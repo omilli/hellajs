@@ -194,6 +194,24 @@ describe("popover", () => {
   );
 
   test.each(popoverVariants)(
+    "$style carries the base class on the trigger and the content class on the open content",
+    async (variant) => {
+      const { trigger, content } = await openPopover(variant);
+      if (variant.style === "css") {
+        expect(classTokens(trigger).some((token) => token.startsWith("popover-trigger"))).toBe(
+          true,
+        );
+        expect(classTokens(content).some((token) => token.startsWith("popover-content"))).toBe(
+          true,
+        );
+      } else {
+        expect(classTokens(trigger)).toContain("inline-flex");
+        expect(classTokens(content)).toContain("bg-popover");
+      }
+    },
+  );
+
+  test.each(popoverVariants)(
     "$style merges a user class into the trigger root's class across both styles",
     (variant) => {
       const trigger = renderVariant(variant, { content: "Body", class: "user-class" });

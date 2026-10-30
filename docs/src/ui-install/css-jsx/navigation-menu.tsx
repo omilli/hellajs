@@ -224,8 +224,10 @@ const viewportWrapper = style("navigation-menu-viewport-wrapper", {
   display: "flex",
   justifyContent: "center",
   left: "0",
+  pointerEvents: "none",
   position: "absolute",
   top: "100%",
+  width: "100%",
   zIndex: "50",
   "& [data-slot='navigation-menu-viewport']": {
     backgroundColor: tokens.popover,
@@ -241,9 +243,11 @@ const viewportWrapper = style("navigation-menu-viewport-wrapper", {
     width: "100%",
     "&[data-state='open']": {
       animation: `${in90} 150ms ease-out both`,
+      pointerEvents: "auto",
     },
     "&[data-state='closed']": {
       animation: `${out} 150ms ease-in both`,
+      pointerEvents: "none",
     },
     "@media (min-width: 48rem)": {
       "&": {
@@ -434,7 +438,9 @@ export function NavigationMenu({
   const Nav = navigationMenu({
     value: valueProp,
     onValueChange,
-    viewport: viewport !== false,
+    // Explicit opt-in only: the default renders no auto-appended slot, so an
+    // explicit NavigationMenuViewport is the single portal target.
+    viewport: viewport === true,
   });
   return (
     <Nav.Root

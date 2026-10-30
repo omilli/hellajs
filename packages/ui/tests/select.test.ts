@@ -78,6 +78,21 @@ describe("select", () => {
   );
 
   test.each(selectVariants)(
+    "$style carries the content class on the open content and the item class on its items",
+    async (variant) => {
+      const { content } = await openSelect(variant);
+      const firstItem = content.querySelector("[data-slot='select-item']")!;
+      if (variant.style === "css") {
+        expect(classTokens(content).some((token) => token.startsWith("select-content"))).toBe(true);
+        expect(classTokens(firstItem).some((token) => token.startsWith("select-item"))).toBe(true);
+      } else {
+        expect(classTokens(content)).toContain("bg-popover");
+        expect(classTokens(firstItem)).toContain("rounded-sm");
+      }
+    },
+  );
+
+  test.each(selectVariants)(
     "$style renders options with role, aria-selected, and the check indicator",
     async (variant) => {
       const onValueChange = vi.fn<(value: string) => void>(() => {});

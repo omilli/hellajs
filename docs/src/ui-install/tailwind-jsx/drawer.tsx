@@ -249,7 +249,7 @@ export function DrawerContent({
       role="dialog"
       aria-modal="true"
       class={
-        cn("group/drawer-content fixed z-50 flex h-auto flex-col bg-background transition ease-in-out data-[dragging]:transition-none", contentDirections[direction], cls)
+        cn("group/drawer-content fixed z-50 flex h-auto flex-col p-4 bg-background transition ease-in-out data-[dragging]:transition-none", contentDirections[direction], cls)
       }
       hook:afterMount={(node) => {
         if (!(node instanceof HTMLElement)) return;
@@ -331,7 +331,7 @@ export function DrawerHeader({ children, class: cls, ...attrs }: DrawerPartProps
     <div
       data-slot="drawer-header"
       class={
-        cn("flex flex-col gap-0.5 p-4 group-data-[vaul-drawer-direction=bottom]/drawer-content:text-center group-data-[vaul-drawer-direction=top]/drawer-content:text-center md:gap-1.5 md:text-left", cls)
+        cn("flex flex-col gap-0.5 group-data-[vaul-drawer-direction=bottom]/drawer-content:text-center group-data-[vaul-drawer-direction=top]/drawer-content:text-center md:gap-1.5 md:text-left", cls)
       }
       {...attrs}
     >
@@ -345,7 +345,7 @@ export function DrawerFooter({ children, class: cls, ...attrs }: DrawerPartProps
     <div
       data-slot="drawer-footer"
       class={
-        cn("mt-auto flex flex-col gap-2 p-4", cls)
+        cn("mt-auto flex flex-col gap-2", cls)
       }
       {...attrs}
     >

@@ -44,7 +44,7 @@ const TOKENS = {
     "opacity-50",
     "select-none",
   ],
-  option: ["bg-[Canvas]", "text-[CanvasText]"],
+  option: ["bg-popover", "text-popover-foreground"],
 };
 
 /** One authored option element — options are caller-authored native children. */

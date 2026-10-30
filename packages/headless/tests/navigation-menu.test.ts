@@ -142,6 +142,132 @@ describe("navigationMenu", () => {
     expect(nav.referenceTrigger.getAttribute("data-state")).toBe("open");
   });
 
+  test("the opened content publishes its measured size to the viewport slot through the css vars", async () => {
+    const width = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "offsetWidth")!;
+    const height = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "offsetHeight")!;
+    Object.defineProperty(HTMLElement.prototype, "offsetWidth", {
+      configurable: true,
+      get: () => 320,
+    });
+    Object.defineProperty(HTMLElement.prototype, "offsetHeight", {
+      configurable: true,
+      get: () => 200,
+    });
+    try {
+      const parts = navigationMenu();
+      const nav = mountNav(parts);
+      await awaitWiring(nav.root);
+      const content = await nav.clickTrigger(nav.learnTrigger);
+      expect(nav.viewport.contains(content)).toBe(true);
+      expect(nav.viewport.style.getPropertyValue("--radix-navigation-menu-viewport-width")).toBe(
+        `${content.offsetWidth}px`,
+      );
+      expect(nav.viewport.style.getPropertyValue("--radix-navigation-menu-viewport-height")).toBe(
+        `${content.offsetHeight}px`,
+      );
+    } finally {
+      Object.defineProperty(HTMLElement.prototype, "offsetWidth", width);
+      Object.defineProperty(HTMLElement.prototype, "offsetHeight", height);
+    }
+  });
+
+  test("the opened content aligns the viewport wrapper under its trigger, clamped inside the bar", async () => {
+    const width = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "offsetWidth")!;
+    const height = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "offsetHeight")!;
+    Object.defineProperty(HTMLElement.prototype, "offsetWidth", {
+      configurable: true,
+      get: () => 320,
+    });
+    Object.defineProperty(HTMLElement.prototype, "offsetHeight", {
+      configurable: true,
+      get: () => 200,
+    });
+    try {
+      const parts = navigationMenu();
+      const nav = mountNav(parts);
+      await awaitWiring(nav.root);
+      const wrapper = nav.viewport.parentElement as HTMLElement;
+      pinRect(wrapper, 0, 0, 400, 36);
+      pinRect(nav.learnTrigger, 0, 40, 120, 36);
+      await nav.clickTrigger(nav.learnTrigger);
+      // Trigger center (100) is 100px left of the wrapper center (200); the
+      // panel half-width budget is (400 - 320) / 2 = 40, so the offset clamps.
+      expect(wrapper.style.transform).toBe("translateX(-40px)");
+    } finally {
+      Object.defineProperty(HTMLElement.prototype, "offsetWidth", width);
+      Object.defineProperty(HTMLElement.prototype, "offsetHeight", height);
+    }
+  });
+
+  test("hovering a trigger opens its panel without a click", async () => {
+    const parts = navigationMenu();
+    const nav = mountNav(parts);
+    await awaitWiring(nav.root);
+    nav.learnTrigger.dispatchEvent(new Event("pointerenter"));
+    const content = await openContent();
+    expect(nav.viewport.contains(content)).toBe(true);
+    expect(nav.viewport.getAttribute("data-state")).toBe("open");
+    expect(nav.learnTrigger.getAttribute("data-state")).toBe("open");
+  });
+
+  test("touch pointerenter does not open; the tap click path still does", async () => {
+    const parts = navigationMenu();
+    const nav = mountNav(parts);
+    await awaitWiring(nav.root);
+    nav.learnTrigger.dispatchEvent(new PointerEvent("pointerenter", { pointerType: "touch" }));
+    await delay(0);
+    expect(document.querySelectorAll("[data-slot='navigation-menu-content']").length).toBe(0);
+  });
+
+  test("leaving the trigger closes through the grace; entering the panel cancels it", async () => {
+    const parts = navigationMenu();
+    const nav = mountNav(parts);
+    await awaitWiring(nav.root);
+    const content = await nav.clickTrigger(nav.learnTrigger);
+    nav.learnTrigger.dispatchEvent(new Event("pointerleave"));
+    content.dispatchEvent(new Event("pointerenter"));
+    await delay(140);
+    expect(content.isConnected).toBe(true);
+    expect(nav.viewport.getAttribute("data-state")).toBe("open");
+  });
+
+  test("leaving the open panel closes it after the grace", async () => {
+    const parts = navigationMenu();
+    const nav = mountNav(parts);
+    await awaitWiring(nav.root);
+    const content = await nav.clickTrigger(nav.learnTrigger);
+    content.dispatchEvent(new Event("pointerleave"));
+    await delay(140);
+    expect(nav.viewport.getAttribute("data-state")).toBe("closed");
+    content.dispatchEvent(new Event("animationend"));
+    await awaitDetached(content);
+  });
+
+  test("a pointerdown outside the bar and viewport closes the open panel", async () => {
+    const parts = navigationMenu();
+    const nav = mountNav(parts);
+    await awaitWiring(nav.root);
+    const content = await nav.clickTrigger(nav.learnTrigger);
+    document.body.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+    expect(nav.viewport.getAttribute("data-state")).toBe("closed");
+    content.dispatchEvent(new Event("animationend"));
+    await awaitDetached(content);
+  });
+
+  test("announcements scope to the bar containing the trigger", async () => {
+    const onValueChangeB = vi.fn(() => {});
+    const partsA = navigationMenu();
+    const partsB = navigationMenu({ onValueChange: onValueChangeB });
+    const navA = mountNav(partsA);
+    const navB = mountNav(partsB);
+    await awaitWiring(navA.root);
+    await awaitWiring(navB.root);
+    await navA.clickTrigger(navA.learnTrigger);
+    expect(navA.viewport.getAttribute("data-state")).toBe("open");
+    expect(navB.viewport.getAttribute("data-state")).toBe("closed");
+    expect(onValueChangeB).not.toHaveBeenCalled();
+  });
+
   test("a second click on the open trigger closes the bar", async () => {
     const parts = navigationMenu();
     const nav = mountNav(parts);

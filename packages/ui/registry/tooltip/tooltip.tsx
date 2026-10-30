@@ -109,7 +109,15 @@ export function Tooltip({
       {...attrs}
     >
       {children}
-      <Content side={side} align={align}>
+      <Content
+        side={side}
+        align={align}
+        class={
+          // @hella:compose
+          [content]
+          // @hella:end
+        }
+      >
         {contentSlot}
       </Content>
     </Trigger>

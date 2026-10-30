@@ -188,7 +188,9 @@ export function NavigationMenu({
   const Nav = navigationMenu({
     value: valueProp,
     onValueChange,
-    viewport: viewport !== false,
+    // Explicit opt-in only: the default renders no auto-appended slot, so an
+    // explicit NavigationMenuViewport is the single portal target.
+    viewport: viewport === true,
   });
   return (
     <Nav.Root

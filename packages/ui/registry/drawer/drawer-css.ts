@@ -22,6 +22,7 @@ export const content = style("drawer-content", {
   display: "flex",
   flexDirection: "column",
   height: "auto",
+  padding: "1rem",
   position: "fixed",
   transition: "opacity 150ms ease-in-out, transform 150ms ease-in-out",
   zIndex: "50",
@@ -137,7 +138,6 @@ export const header = style("drawer-header", {
   display: "flex",
   flexDirection: "column",
   gap: "0.125rem",
-  padding: "1rem",
   "&:is([data-vaul-drawer-direction='bottom'] *)": {
     textAlign: "center",
   },
@@ -157,7 +157,6 @@ export const footer = style("drawer-footer", {
   flexDirection: "column",
   gap: "0.5rem",
   marginTop: "auto",
-  padding: "1rem",
 });
 
 export const title = style("drawer-title", {

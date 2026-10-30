@@ -669,7 +669,11 @@ export function Select({
       {...attrs}
     >
       <SelectValue placeholder={placeholder} value={currentLabel} />
-      <S.Content>
+      <S.Content
+        class={
+          [content]
+        }
+      >
         <ForEach
           each={resolveItems}
           use={(entry) => (
@@ -678,6 +682,9 @@ export function Select({
               value={entry.value}
               label={entry.label}
               disabled={entry.disabled}
+              class={
+                [item]
+              }
             />
           )}
         />

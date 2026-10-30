@@ -84,12 +84,17 @@ let tooltipCount = 0;
  * <Tip.Trigger>Hover me</Tip.Trigger>
  * <Tip.Content side="top">Tooltip text</Tip.Content>
  * ```
- * @param options `open` getter + `onOpenChange` + the `delay` before opening (default 700).
+ * @param options `open` getter + `onOpenChange` + the `delay` before opening (default 700)
+ * and the `closeDelay` grace before closing (default 0 — close fires immediately on pointer
+ * leave, Radix parity; a positive value restores a hover-card-style grace window).
  * @returns The three part components, composed as `Tip.Trigger`-style members.
  */
 export function tooltip(options: TooltipOptions = {}): TooltipComponents {
   const s = hoverOpenState(options);
   const delay = options.delay ?? 700;
+  // Radix parity: the tooltip hides the moment the pointer leaves; `closeDelay`
+  // restores a grace window for hover-intent style crossings.
+  const closeDelay = options.closeDelay ?? 0;
   const contentId = `hella-tooltip-content-${++tooltipCount}`;
   let triggerNode: Element | undefined;
 
@@ -121,6 +126,7 @@ export function tooltip(options: TooltipOptions = {}): TooltipComponents {
               onOpen: () => s.setOpen(true),
               onClose: () => s.setOpen(false),
               openDelay: delay,
+              closeDelay,
             }),
           );
         }}

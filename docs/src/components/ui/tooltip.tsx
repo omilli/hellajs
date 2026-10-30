@@ -168,7 +168,13 @@ export function Tooltip({
       {...attrs}
     >
       {children}
-      <Content side={side} align={align}>
+      <Content
+        side={side}
+        align={align}
+        class={
+          [content]
+        }
+      >
         {contentSlot}
       </Content>
     </Trigger>

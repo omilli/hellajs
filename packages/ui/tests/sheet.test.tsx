@@ -300,6 +300,28 @@ describe("sheet", () => {
     },
   );
 
+  test.each(sheetVariants)(
+    "$style carries the padded content binding on the portaled panel",
+    async (variant) => {
+      const sheet = mountSheet(variant, { onClose: () => {}, title: "Menu" });
+      sheet.open(true);
+      const panel = await sheet.panel();
+      if (variant.style === "css") {
+        // The side binding shares the sheet-content prefix (sheet-content-right-<hash>),
+        // so the bare content token excludes the side scope segments.
+        expect(
+          classTokens(panel).some(
+            (token) =>
+              token.startsWith("sheet-content") &&
+              !/^sheet-content-(right|left|top|bottom)/.test(token),
+          ),
+        ).toBe(true);
+      } else {
+        expect(classTokens(panel)).toContain("p-4");
+      }
+    },
+  );
+
   test.each(sheetPartVariants.filter((entry) => entry.part === "Close"))(
     "$style Close chains a user on:click with its owned dismiss",
     (variant) => {

@@ -185,7 +185,7 @@ export function SheetContent({
       role="dialog"
       aria-modal="true"
       class={
-        cn("fixed z-50 flex flex-col gap-4 bg-background shadow-lg transition ease-in-out data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:animate-in data-[state=open]:duration-500", contentSides[resolvedSide], cls)
+        cn("fixed z-50 flex flex-col gap-4 p-4 bg-background shadow-lg transition ease-in-out data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:animate-in data-[state=open]:duration-500", contentSides[resolvedSide], cls)
       }
       hook:afterMount={(node) => {
         if (!(node instanceof HTMLElement)) return;
@@ -212,7 +212,7 @@ export function SheetHeader({ children, class: cls, ...attrs }: SheetPartProps):
     <div
       data-slot="sheet-header"
       class={
-        cn("flex flex-col gap-1.5 p-4", cls)
+        cn("flex flex-col gap-1.5", cls)
       }
       {...attrs}
     >
@@ -226,7 +226,7 @@ export function SheetFooter({ children, class: cls, ...attrs }: SheetPartProps):
     <div
       data-slot="sheet-footer"
       class={
-        cn("mt-auto flex flex-col gap-2 p-4", cls)
+        cn("mt-auto flex flex-col gap-2", cls)
       }
       {...attrs}
     >

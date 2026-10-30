@@ -2239,7 +2239,8 @@ export const NAVIGATION_MENU_PARTS = [
 
 /**
  * Every compiled NavigationMenu variant (the NavigationMenu export) from dist/registry.
- * The composed root appends the shared viewport slot its contents portal into.
+ * The composed root renders no auto-appended viewport slot: portal target is an
+ * explicitly rendered NavigationMenuViewport.
  */
 export const navigationMenuVariants: ComponentVariant<NavigationMenuVariantProps>[] = [
   {

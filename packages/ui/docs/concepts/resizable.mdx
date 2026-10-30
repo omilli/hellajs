@@ -62,5 +62,5 @@ Some panel-group layout features are absent; they stay out of scope rather than 
 |---|---|
 | Role | `separator` on each handle |
 | Focus | Handles carry `tabindex="0"` (`-1` while disabled) with the focus ring from the style layer |
-| Orientation | `aria-orientation` on the group and every handle, set from `direction` at mount |
+| Orientation | `aria-orientation` from `direction` on the group; the perpendicular value on every handle, so a horizontal group's handles read `vertical` |
 | Disabled | `aria-disabled` and `data-disabled` on the handle |

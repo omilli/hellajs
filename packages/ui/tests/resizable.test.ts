@@ -110,7 +110,7 @@ describe("resizable", () => {
       expect(root.getAttribute("aria-orientation")).toBe("horizontal");
       const handle = root.querySelector("[data-slot='resizable-handle']") as HTMLElement;
       expect(handle.getAttribute("role")).toBe("separator");
-      expect(handle.getAttribute("aria-orientation")).toBe("horizontal");
+      expect(handle.getAttribute("aria-orientation")).toBe("vertical");
     },
   );
 
@@ -197,7 +197,7 @@ describe("resizable", () => {
       await awaitWiring(root);
       expect(root.getAttribute("aria-orientation")).toBe("vertical");
       const handle = root.querySelector("[data-slot='resizable-handle']") as HTMLElement;
-      expect(handle.getAttribute("aria-orientation")).toBe("vertical");
+      expect(handle.getAttribute("aria-orientation")).toBe("horizontal");
       spyGroupRect(root, { left: 0, top: 0, width: 100, height: 100 });
       dragHandle(handle, [{ y: 10 }]);
       expect(onLayout.mock.calls[0]).toEqual([[60, 40]]);

@@ -13,8 +13,11 @@ import type {
   NavigationMenuViewportProps,
 } from "./types/components";
 
-/** Document-level activation event: triggers carrying a `value` announce clicks so the root's store and its appended viewport follow without context. */
+/** Document-level activation event: triggers carrying a `value` announce clicks and hover-opens (the announce carries the trigger node, so roots scope the mirror to their own bar); content announces hover enter/leave to drive the root's close grace. */
 const ACTIVATE_EVENT = "hella:navigation-menu-activate";
+
+/** Grace between a pointer leaving the trigger or open panel and the panel closing, long enough to travel into the portaled panel. */
+const HOVER_CLOSE_GRACE = 100;
 
 /** The default portal target every Content renders into: the first viewport slot in the document. */
 const VIEWPORT_SELECTOR = "[data-slot='navigation-menu-viewport']";
@@ -45,9 +48,18 @@ const chevronDownIcon = (): JSX.Element => (
  * signal when omitted. Value-carrying `Trigger`s
  * announce clicks on a document-level event; `Root` mirrors the announcement
  * into the store, so exactly one panel is open at a time and a second click
- * on the open trigger closes it. `Content` portals into the shared
+ * on the open trigger closes it. A pointer entering a value-carrying trigger
+ * (non-touch) opens its panel the same way; leaving the trigger or the open
+ * panel closes it through a short grace that entering the panel cancels, and
+ * a pointerdown outside the bar (and any viewport slot) closes the open
+ * panel. Mirroring is scoped: announcements carrying a trigger node are
+ * mirrored only by the bar containing that node, so independent bars on one
+ * page keep independent state. `Content` portals into the shared
  * `Viewport` — the root appends one as its last child (or the `viewport`
- * selector prop names another slot) — and exits through `animationend` (or
+ * selector prop names another slot) — and, on mount, publishes its measured
+ * size to that slot through the `--radix-navigation-menu-viewport-width/height`
+ * vars the viewport css reads, and aligns the viewport wrapper under its
+ * trigger (clamped so the panel stays inside the bar). It exits through `animationend` (or
  * the 250ms budget) after the close flip. `Indicator` tracks the active
  * trigger's position with a measured transform. Call in component scope so
  * the state signals dispose with the component.
@@ -79,26 +91,66 @@ export function navigationMenu(options: NavigationMenuOptions = {}): NavigationM
     onValueChange?.(next);
   };
 
-  // Mirror trigger announcements into the bar's open-value store; the announce
-  // carries the requested state, so this never re-toggles an owner's write.
-  const onActivate = (event: Event): void => {
-    const detail = (event as CustomEvent).detail;
-    if (!isString(detail?.id) || !isBoolean(detail?.open)) return;
-    setActive(detail.open ? detail.id : current() === detail.id ? "" : current());
-  };
-
   const Root = (props: NavigationMenuRootProps): JSX.Element => {
     const { children, class: cls, ...attrs } = props;
+    const wirings: (() => void)[] = [];
+    let closeTimer: ReturnType<typeof setTimeout> | undefined;
     return (
       <div
         data-slot="navigation-menu"
         data-viewport={rendersViewport ? "true" : "false"}
         class={cls}
-        hook:afterMount={() => {
+        hook:afterMount={(node) => {
+          if (!(node instanceof HTMLElement)) return;
+          const cancelClose = (): void => {
+            if (closeTimer !== undefined) {
+              clearTimeout(closeTimer);
+              closeTimer = undefined;
+            }
+          };
+          const armClose = (): void => {
+            cancelClose();
+            closeTimer = setTimeout(() => {
+              closeTimer = undefined;
+              setActive("");
+            }, HOVER_CLOSE_GRACE);
+          };
+          const onActivate = (event: Event): void => {
+            const detail = (event as CustomEvent).detail;
+            // Trigger-carried announcements scope to the bar containing the
+            // trigger; node-less dispatches stay manual/global commands.
+            if (detail?.el instanceof Node && !node.contains(detail.el)) return;
+            if (detail?.kind === "hover-enter") {
+              cancelClose();
+              return;
+            }
+            if (detail?.kind === "hover-leave") {
+              if (isString(detail.id) && current() !== detail.id) return;
+              if (current() === "") return;
+              armClose();
+              return;
+            }
+            if (!isString(detail?.id) || !isBoolean(detail?.open)) return;
+            cancelClose();
+            setActive(detail.open ? detail.id : current() === detail.id ? "" : current());
+          };
+          const onOutsidePointerDown = (event: Event): void => {
+            if (current() === "") return;
+            const target = event.target;
+            if (!(target instanceof Element)) return;
+            if (node.contains(target)) return;
+            if (target.closest("[data-slot='navigation-menu-viewport']")) return;
+            cancelClose();
+            setActive("");
+          };
           document.addEventListener(ACTIVATE_EVENT, onActivate);
+          document.addEventListener("pointerdown", onOutsidePointerDown);
+          wirings.push(() => document.removeEventListener(ACTIVATE_EVENT, onActivate));
+          wirings.push(() => document.removeEventListener("pointerdown", onOutsidePointerDown));
         }}
         hook:beforeDestroy={() => {
-          document.removeEventListener(ACTIVATE_EVENT, onActivate);
+          while (wirings.length) wirings.pop()!();
+          if (closeTimer !== undefined) clearTimeout(closeTimer);
         }}
         {...attrs}
       >
@@ -138,6 +190,14 @@ export function navigationMenu(options: NavigationMenuOptions = {}): NavigationM
     } = props;
     const isOpen = (): boolean =>
       active !== undefined ? active() : id !== undefined && current() === id;
+    const wirings: (() => void)[] = [];
+    let triggerNode: HTMLElement | undefined;
+    const announce = (detail: Record<string, unknown>): void => {
+      if (id === undefined) return;
+      document.dispatchEvent(
+        new CustomEvent(ACTIVATE_EVENT, { detail: { id, el: triggerNode, ...detail } }),
+      );
+    };
 
     return (
       <button
@@ -147,14 +207,36 @@ export function navigationMenu(options: NavigationMenuOptions = {}): NavigationM
         data-state={isOpen() ? "open" : "closed"}
         aria-expanded={isOpen() ? "true" : "false"}
         class={cls}
+        hook:afterMount={(node) => {
+          if (!(node instanceof HTMLElement)) return;
+          triggerNode = node;
+          // pointerenter/leave do not bubble, so they wire directly instead of
+          // through the delegated on: prefix; touch stays click-only.
+          const onPointerEnter = (event: Event): void => {
+            if ((event as PointerEvent).pointerType === "touch" || isOpen()) return;
+            onActivate?.();
+            announce({ open: true });
+          };
+          const onPointerLeave = (event: Event): void => {
+            if ((event as PointerEvent).pointerType === "touch") return;
+            announce({ kind: "hover-leave" });
+          };
+          node.addEventListener("pointerenter", onPointerEnter);
+          node.addEventListener("pointerleave", onPointerLeave);
+          wirings.push(() => node.removeEventListener("pointerenter", onPointerEnter));
+          wirings.push(() => node.removeEventListener("pointerleave", onPointerLeave));
+        }}
+        hook:beforeDestroy={() => {
+          while (wirings.length) wirings.pop()!();
+          triggerNode = undefined;
+        }}
         on:click={function (e) {
           userClick?.call(this, e);
           // The announce carries the requested state (computed before the owner
           // toggle runs), so the root's store mirrors instead of re-toggling.
           const open = !isOpen();
           onActivate?.();
-          if (id !== undefined)
-            document.dispatchEvent(new CustomEvent(ACTIVATE_EVENT, { detail: { id, open } }));
+          announce({ open });
         }}
         {...attrs}
       >
@@ -227,6 +309,65 @@ export function navigationMenu(options: NavigationMenuOptions = {}): NavigationM
                   };
                   node.addEventListener("animationend", onAnimationEnd);
                   teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
+                  // Pointer wiring drives the root's close grace: entering the
+                  // open panel cancels the pending close, leaving arms it.
+                  const onPointerEnter = (event: Event): void => {
+                    if ((event as PointerEvent).pointerType === "touch") return;
+                    document.dispatchEvent(
+                      new CustomEvent(ACTIVATE_EVENT, { detail: { kind: "hover-enter" } }),
+                    );
+                  };
+                  const onPointerLeave = (event: Event): void => {
+                    if ((event as PointerEvent).pointerType === "touch") return;
+                    document.dispatchEvent(
+                      new CustomEvent(ACTIVATE_EVENT, { detail: { kind: "hover-leave" } }),
+                    );
+                  };
+                  node.addEventListener("pointerenter", onPointerEnter);
+                  node.addEventListener("pointerleave", onPointerLeave);
+                  teardown.push(() => node.removeEventListener("pointerenter", onPointerEnter));
+                  teardown.push(() => node.removeEventListener("pointerleave", onPointerLeave));
+                  // Publish the measured size to the viewport slot: the viewport css
+                  // reads these vars for its width/height, and the closing panel
+                  // keeps the last values through the exit hold.
+                  const vp = node.parentElement;
+                  if (vp?.getAttribute("data-slot") === "navigation-menu-viewport") {
+                    vp.style.setProperty(
+                      "--radix-navigation-menu-viewport-width",
+                      `${node.offsetWidth}px`,
+                    );
+                    vp.style.setProperty(
+                      "--radix-navigation-menu-viewport-height",
+                      `${node.offsetHeight}px`,
+                    );
+                    // Align the panel under its trigger: the wrapper spans the bar
+                    // (width: 100% + justify-center is the centering base), so the
+                    // offset shifts from center toward the trigger, clamped to keep
+                    // the panel inside the bar. The transform rides the wrapper (the
+                    // slot's enter/exit keyframes animate transform) and the closing
+                    // panel keeps the last alignment through the exit hold.
+                    const wrapper = vp.parentElement;
+                    // Trigger resolution: the id query for store-driven usage; the
+                    // sole expanded trigger for active-accessor wiring (ids omitted),
+                    // where scoped stores keep exactly one trigger open.
+                    const trigger =
+                      (id !== undefined
+                        ? document.querySelector(
+                            `[data-slot='navigation-menu-trigger'][data-value='${id}']`,
+                          )
+                        : null) ??
+                      document.querySelector(
+                        "[data-slot='navigation-menu-trigger'][aria-expanded='true']",
+                      );
+                    if (wrapper instanceof HTMLElement && trigger) {
+                      const w = wrapper.getBoundingClientRect();
+                      const t = trigger.getBoundingClientRect();
+                      const half = Math.max(0, (w.width - node.offsetWidth) / 2);
+                      const raw = t.left + t.width / 2 - (w.left + w.width / 2);
+                      const offset = Math.max(-half, Math.min(half, raw));
+                      wrapper.style.transform = `translateX(${offset}px)`;
+                    }
+                  }
                 }}
                 hook:beforeDestroy={() => {
                   while (teardown.length) teardown.pop()!();

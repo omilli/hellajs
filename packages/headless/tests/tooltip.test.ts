@@ -100,6 +100,31 @@ describe("tooltip", () => {
     expect(document.querySelector("[data-slot='tooltip-content']")).toBeNull();
   });
 
+  test("closes immediately on pointer leave with no grace delay by default", async () => {
+    const parts = tooltip({ delay: 5 });
+    const trigger = await mountTooltip(parts);
+    pointerEnter(trigger);
+    await delay(30);
+    const content = await openContent();
+    expect(content.getAttribute("data-state")).toBe("open");
+    pointerLeave(trigger);
+    await delay(10);
+    expect(content.getAttribute("data-state")).toBe("closed");
+  });
+
+  test("a positive closeDelay restores the grace window on pointer leave", async () => {
+    const parts = tooltip({ delay: 5, closeDelay: 100 });
+    const trigger = await mountTooltip(parts);
+    pointerEnter(trigger);
+    await delay(30);
+    const content = await openContent();
+    pointerLeave(trigger);
+    await delay(40);
+    expect(content.getAttribute("data-state")).toBe("open");
+    await delay(120);
+    expect(content.getAttribute("data-state")).toBe("closed");
+  });
+
   test("opens instantly inside the shared skip-delay window after a recent tooltip", async () => {
     const first = tooltip({ delay: 5 });
     const firstTrigger = await mountTooltip(first);

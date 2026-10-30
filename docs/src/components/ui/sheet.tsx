@@ -100,6 +100,7 @@ const content = style("sheet-content", {
   display: "flex",
   flexDirection: "column",
   gap: "1rem",
+  padding: "1rem",
   position: "fixed",
   transition: "opacity 150ms ease-in-out, transform 150ms ease-in-out",
   zIndex: "50",
@@ -217,7 +218,6 @@ const header = style("sheet-header", {
   display: "flex",
   flexDirection: "column",
   gap: "0.375rem",
-  padding: "1rem",
 });
 
 const footer = style("sheet-footer", {
@@ -225,7 +225,6 @@ const footer = style("sheet-footer", {
   flexDirection: "column",
   gap: "0.5rem",
   marginTop: "auto",
-  padding: "1rem",
 });
 
 const title = style("sheet-title", {

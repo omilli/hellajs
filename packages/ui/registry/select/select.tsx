@@ -378,7 +378,13 @@ export function Select({
       {...attrs}
     >
       <SelectValue placeholder={placeholder} value={currentLabel} />
-      <S.Content>
+      <S.Content
+        class={
+          // @hella:compose
+          [content]
+          // @hella:end
+        }
+      >
         <ForEach
           each={resolveItems}
           use={(entry) => (
@@ -387,6 +393,11 @@ export function Select({
               value={entry.value}
               label={entry.label}
               disabled={entry.disabled}
+              class={
+                // @hella:compose
+                [item]
+                // @hella:end
+              }
             />
           )}
         />

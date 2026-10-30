@@ -9,6 +9,7 @@ import type {
 } from "./popover-types.js";
 
 // @hella:styles
+declare const base: string;
 declare const content: string;
 declare const description: string;
 declare const header: string;
@@ -43,7 +44,7 @@ export function PopoverTrigger({
     <Trigger
       class={
         // @hella:compose
-        [cls]
+        [base, cls]
         // @hella:end
       }
       {...attrs}
@@ -161,13 +162,21 @@ export function Popover({
     <Trigger
       class={
         // @hella:compose
-        [cls]
+        [base, cls]
         // @hella:end
       }
       {...attrs}
     >
       {children}
-      <Content>{contentSlot}</Content>
+      <Content
+        class={
+          // @hella:compose
+          [content]
+          // @hella:end
+        }
+      >
+        {contentSlot}
+      </Content>
     </Trigger>
   );
 }

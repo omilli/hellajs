@@ -2,7 +2,7 @@
 
 Options are authored by the caller as plain native children; the component never models them as props. `value` accepts a plain string or a bare signal and binds as the select's value property, `on:change` delivers the native event (read the selection with `(e.target as HTMLSelectElement).value`), and the wrapper dims via `:has(select:disabled)` when the control is disabled.
 
-`NativeSelectOption` and `NativeSelectOptGroup` ship beside the default root as styled passthroughs to their native elements; plain native `option` and `optgroup` children also render as-is. A group heading needs a plain native `optgroup` with its `label` attribute.
+`NativeSelectOption` and `NativeSelectOptGroup` ship beside the default root as styled passthroughs to their native elements, rendering the option list with the popover palette in both themes; plain native `option` and `optgroup` children also render as-is. A group heading needs a plain native `optgroup` with its `label` attribute.
 
 ### NativeSelect
 

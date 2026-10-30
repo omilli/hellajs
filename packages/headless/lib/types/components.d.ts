@@ -383,6 +383,8 @@ export interface TooltipOptions {
   onOpenChange?: (open: boolean) => void;
   /** Pointer-hover ms before the content opens. Default 700. */
   delay?: number;
+  /** Pointer-leave ms before the content closes. Default 0 — closes immediately (Radix parity). */
+  closeDelay?: number;
 }
 
 export interface TooltipProviderProps extends HTMLAttributes<"div"> {

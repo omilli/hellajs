@@ -181,7 +181,7 @@ export function NavigationMenuViewport({
       active={activeProp}
       id={id}
       class={
-        cn("absolute top-full left-0 isolate z-50 flex justify-center [&_[data-slot=navigation-menu-viewport]]:origin-top-center [&_[data-slot=navigation-menu-viewport]]:relative [&_[data-slot=navigation-menu-viewport]]:mt-1.5 [&_[data-slot=navigation-menu-viewport]]:h-[var(--radix-navigation-menu-viewport-height)] [&_[data-slot=navigation-menu-viewport]]:w-full [&_[data-slot=navigation-menu-viewport]]:overflow-hidden [&_[data-slot=navigation-menu-viewport]]:rounded-md [&_[data-slot=navigation-menu-viewport]]:border [&_[data-slot=navigation-menu-viewport]]:bg-popover [&_[data-slot=navigation-menu-viewport]]:text-popover-foreground [&_[data-slot=navigation-menu-viewport]]:shadow [&[data-state=closed]_[data-slot=navigation-menu-viewport]]:animate-out [&[data-state=closed]_[data-slot=navigation-menu-viewport]]:zoom-out-95 [&[data-state=open]_[data-slot=navigation-menu-viewport]]:animate-in [&[data-state=open]_[data-slot=navigation-menu-viewport]]:zoom-in-90 md:[&_[data-slot=navigation-menu-viewport]]:w-[var(--radix-navigation-menu-viewport-width)]", cls)
+        cn("pointer-events-none absolute top-full left-0 isolate z-50 flex w-full justify-center [&_[data-slot=navigation-menu-viewport]]:origin-top-center [&_[data-slot=navigation-menu-viewport]]:relative [&_[data-slot=navigation-menu-viewport]]:mt-1.5 [&_[data-slot=navigation-menu-viewport]]:h-[var(--radix-navigation-menu-viewport-height)] [&_[data-slot=navigation-menu-viewport]]:w-full [&_[data-slot=navigation-menu-viewport]]:overflow-hidden [&_[data-slot=navigation-menu-viewport]]:rounded-md [&_[data-slot=navigation-menu-viewport]]:border [&_[data-slot=navigation-menu-viewport]]:bg-popover [&_[data-slot=navigation-menu-viewport]]:text-popover-foreground [&_[data-slot=navigation-menu-viewport]]:shadow [&_[data-slot=navigation-menu-viewport][data-state=closed]]:animate-out [&_[data-slot=navigation-menu-viewport][data-state=closed]]:pointer-events-none [&_[data-slot=navigation-menu-viewport][data-state=closed]]:zoom-out-95 [&_[data-slot=navigation-menu-viewport][data-state=open]]:animate-in [&_[data-slot=navigation-menu-viewport][data-state=open]]:pointer-events-auto [&_[data-slot=navigation-menu-viewport][data-state=open]]:zoom-in-90 md:[&_[data-slot=navigation-menu-viewport]]:w-[var(--radix-navigation-menu-viewport-width)]", cls)
       }
       {...attrs}
     />
@@ -218,7 +218,9 @@ export function NavigationMenu({
   const Nav = navigationMenu({
     value: valueProp,
     onValueChange,
-    viewport: viewport !== false,
+    // Explicit opt-in only: the default renders no auto-appended slot, so an
+    // explicit NavigationMenuViewport is the single portal target.
+    viewport: viewport === true,
   });
   return (
     <Nav.Root

@@ -40,10 +40,10 @@ interface NavFixture {
   clickTrigger: (get: () => HTMLElement) => Promise<HTMLElement>;
 }
 
-/** Builds a two-trigger bar whose triggers and contents share one signal; the root appends the shared viewport. */
+/** Builds a two-trigger bar whose triggers and contents share one signal; an explicit Viewport part is the sole portal target. */
 function buildNav(variant: ComponentVariant<NavigationMenuVariantProps>): NavFixture {
   const value = signal("");
-  const onValueChange = vi.fn<(value: string) => void>(() => {});
+  const onValueChange = vi.fn<(value: string) => void>((next) => value(next));
   const toggle = (id: string): void => value(value() === id ? "" : id);
   const bar = renderVariant(variant, {
     value: () => value(),
@@ -81,6 +81,9 @@ function buildNav(variant: ComponentVariant<NavigationMenuVariantProps>): NavFix
           }),
         ],
       }),
+      part(variant, "Viewport", {
+        active: () => value() !== "",
+      }),
       part(variant, "Indicator", {
         anchor: () =>
           value() === "reference"
@@ -107,14 +110,15 @@ describe("navigation-menu", () => {
     (variant) => {
       const { bar, learnTrigger } = buildNav(variant);
       expect(bar.getAttribute("data-slot")).toBe("navigation-menu");
-      expect(bar.getAttribute("data-viewport")).toBe("true");
+      expect(bar.getAttribute("data-viewport")).toBe("false");
       expect(bar.querySelector("[data-slot='navigation-menu-list']")).not.toBeNull();
       const trigger = learnTrigger();
       expect(trigger.getAttribute("data-slot")).toBe("navigation-menu-trigger");
       expect(trigger.getAttribute("data-state")).toBe("closed");
       expect(trigger.getAttribute("aria-expanded")).toBe("false");
       expect(trigger.querySelector("svg")).not.toBeNull();
-      expect(bar.querySelector("[data-slot='navigation-menu-viewport']")).not.toBeNull();
+      // The root auto-appends no slot: the fixture's explicit Viewport part is the only one.
+      expect(bar.querySelectorAll("[data-slot='navigation-menu-viewport']")).toHaveLength(1);
     },
   );
 
@@ -132,6 +136,141 @@ describe("navigation-menu", () => {
       expect(viewport.getAttribute("data-state")).toBe("open");
       expect(learnTrigger().getAttribute("data-state")).toBe("open");
       expect(learnTrigger().getAttribute("aria-expanded")).toBe("true");
+    },
+  );
+
+  test.each(navigationMenuVariants)(
+    "$style publishes the opened content's measured size onto the explicit viewport slot",
+    async (variant) => {
+      const width = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "offsetWidth")!;
+      const height = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "offsetHeight")!;
+      Object.defineProperty(HTMLElement.prototype, "offsetWidth", {
+        configurable: true,
+        get: () => 320,
+      });
+      Object.defineProperty(HTMLElement.prototype, "offsetHeight", {
+        configurable: true,
+        get: () => 200,
+      });
+      try {
+        const { bar, learnTrigger, clickTrigger } = buildNav(variant);
+        const content = await clickTrigger(learnTrigger);
+        const viewport = bar.querySelector("[data-slot='navigation-menu-viewport']")!;
+        expect(viewport.contains(content)).toBe(true);
+        expect(
+          (viewport as HTMLElement).style.getPropertyValue(
+            "--radix-navigation-menu-viewport-width",
+          ),
+        ).toBe(`${content.offsetWidth}px`);
+        expect(
+          (viewport as HTMLElement).style.getPropertyValue(
+            "--radix-navigation-menu-viewport-height",
+          ),
+        ).toBe(`${content.offsetHeight}px`);
+      } finally {
+        Object.defineProperty(HTMLElement.prototype, "offsetWidth", width);
+        Object.defineProperty(HTMLElement.prototype, "offsetHeight", height);
+      }
+    },
+  );
+
+  test.each(navigationMenuVariants)(
+    "$style opens the panel on trigger hover without a click",
+    async (variant) => {
+      const { bar, learnTrigger } = buildNav(variant);
+      learnTrigger().dispatchEvent(new Event("pointerenter"));
+      const content = await awaitPortaled("navigation-menu-content");
+      const viewport = bar.querySelector("[data-slot='navigation-menu-viewport']")!;
+      expect(viewport.contains(content)).toBe(true);
+      expect(learnTrigger().getAttribute("data-state")).toBe("open");
+    },
+  );
+
+  test.each(navigationMenuVariants)(
+    "$style a pointerdown outside the bar closes the open panel",
+    async (variant) => {
+      const { bar, learnTrigger, clickTrigger } = buildNav(variant);
+      const content = await clickTrigger(learnTrigger);
+      document.body.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+      expect(
+        bar.querySelector("[data-slot='navigation-menu-viewport']")!.getAttribute("data-state"),
+      ).toBe("closed");
+      content.dispatchEvent(new Event("animationend"));
+      await awaitDetached(content);
+    },
+  );
+
+  test.each(navigationMenuVariants)(
+    "$style a trigger's announcements do not leak into a second bar",
+    async (variant) => {
+      const valueA = signal("");
+      const valueB = signal("");
+      const onValueChangeB = vi.fn<(value: string) => void>(() => {});
+      const barChildren = (value: ReturnType<typeof signal<string>>) => [
+        part(variant, "Item", {
+          children: [
+            part(variant, "Trigger", {
+              value: "learn",
+              active: () => value() === "learn",
+              onActivate: () => value(value() === "learn" ? "" : "learn"),
+              children: "Learn",
+            }),
+            part(variant, "Content", { active: () => value() === "learn", children: ["Panel"] }),
+          ],
+        }),
+      ];
+      renderVariant(variant, {
+        children: [
+          ...barChildren(valueA),
+          part(variant, "Viewport", { active: () => valueA() !== "" }),
+        ],
+      }) as HTMLElement;
+      const barB = renderVariant(variant, {
+        onValueChange: onValueChangeB,
+        children: [
+          ...barChildren(valueB),
+          part(variant, "Viewport", { active: () => valueB() !== "" }),
+        ],
+      }) as HTMLElement;
+      document
+        .querySelector("[data-value='learn']")!
+        .dispatchEvent(new Event("click", { bubbles: true }));
+      expect(valueA()).toBe("learn");
+      expect(valueB()).toBe("");
+      expect(onValueChangeB).not.toHaveBeenCalled();
+      expect(
+        barB.querySelector("[data-slot='navigation-menu-viewport']")!.getAttribute("data-state"),
+      ).toBe("closed");
+    },
+  );
+
+  test.each(navigationMenuVariants)(
+    "$style aligns the viewport wrapper under the hovered trigger, clamped inside the bar",
+    async (variant) => {
+      const width = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "offsetWidth")!;
+      const height = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "offsetHeight")!;
+      Object.defineProperty(HTMLElement.prototype, "offsetWidth", {
+        configurable: true,
+        get: () => 320,
+      });
+      Object.defineProperty(HTMLElement.prototype, "offsetHeight", {
+        configurable: true,
+        get: () => 200,
+      });
+      try {
+        const { bar, learnTrigger, clickTrigger } = buildNav(variant);
+        const wrapper = bar.querySelector("[data-slot='navigation-menu-viewport']")!
+          .parentElement as HTMLElement;
+        pinRect(wrapper, 0, 0, 400, 36);
+        pinRect(learnTrigger(), 0, 40, 120, 36);
+        await clickTrigger(learnTrigger);
+        // Trigger center (100) sits 100px left of the wrapper center (200); the
+        // panel half-width budget (400 - 320) / 2 = 40 clamps the offset.
+        expect(wrapper.style.transform).toBe("translateX(-40px)");
+      } finally {
+        Object.defineProperty(HTMLElement.prototype, "offsetWidth", width);
+        Object.defineProperty(HTMLElement.prototype, "offsetHeight", height);
+      }
     },
   );
 
@@ -262,6 +401,7 @@ describe("navigation-menu", () => {
               part(variant, "Content", { active: () => value() === "learn", children: ["Panel"] }),
             ],
           }),
+          part(variant, "Viewport", { active: () => value() !== "" }),
           part(variant, "Indicator", {}),
         ],
       }) as HTMLElement;
@@ -299,6 +439,7 @@ describe("navigation-menu", () => {
               part(variant, "Content", { active: () => value() === "learn", children: ["Panel"] }),
             ],
           }),
+          part(variant, "Viewport", { active: () => value() !== "" }),
         ],
       }) as HTMLElement;
       const trigger = bar.querySelector("[data-value='learn']") as HTMLElement;

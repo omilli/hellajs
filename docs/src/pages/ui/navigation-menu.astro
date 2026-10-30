@@ -12,15 +12,15 @@ const description = "Interactive Navigation Menu demo running the site's built r
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Navigation Menu</h1>
-  <p>A horizontal navigation surface: triggers open content panels into a shared viewport slot under the bar, an indicator slides under the active trigger, and links carry the active accent styles.</p>
+  <p>A horizontal navigation surface: triggers open content panels into a shared viewport slot under the bar on hover or click, and links carry the active accent styles.</p>
 
   <InstallSection entry="navigation-menu" />
 
   <Component heading="Playground" Demo={<NavigationMenuDemo client:load />} code="NavigationMenuDemo">
-    <p>Click a trigger to open its panel in the shared viewport; the indicator slides under the active trigger; click again to close.</p>
+    <p>Hover or click a trigger to open its panel in the shared viewport; leaving the panel or pressing outside closes it.</p>
   </Component>
   <Component heading="Active links" Demo={<NavigationMenuActiveLinksDemo client:load />} code="NavigationMenuActiveLinksDemo">
-    <p>The active link renders data-active and its accent styles; the indicator and viewport follow the trigger through the same announcement stream.</p>
+    <p>The active link renders data-active and its accent styles; the viewport follows the trigger through the same announcement stream.</p>
   </Component>
 
   <NavigationMenuContent />
