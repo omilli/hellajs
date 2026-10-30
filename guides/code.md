@@ -198,7 +198,7 @@ Enforcement: the `hella/no-iterator-loops` JS-plugin rule (`lint/hellajs.js`, re
 ### Type guards
 
 - In `packages/*/lib`, discrimination uses core's guards — `isString`, `isNumber`, `isBoolean`, `isFunction`, `isObject`, `isPlainObject`, `isNull`, `isFalsy` — via the package's `lib/internal/core.ts` shim (grows only what the package uses). No raw `typeof`-vs-literal comparisons
-- Guards narrow by assignability, not typeof-kind: on typed unions whose function arm has specific params (`T | ((old: T | undefined) => T)`), `isFunction` cannot filter — cast the narrowed arm to its signature. To discriminate a function-vs-spec-object union by shape, use `"handler" in x` (`EventListener` is assignable to `object` and survives `isFunction`'s false branch)
+- Guards narrow by assignability, not typeof-kind: on typed unions whose function arm has specific params (`T | ((old: T | undefined) => T)`), `isFunction` cannot filter — cast each arm to its real signature at the use site: the narrowed arm's call result reads as the predicate's `unknown` return, and the else arm keeps the full union whenever the function arm's generic param blocks the assignability exclusion. To discriminate a function-vs-spec-object union by shape, use `"handler" in x` (`EventListener` is assignable to `object` and survives `isFunction`'s false branch)
 
 Guard choice by raw form:
 
