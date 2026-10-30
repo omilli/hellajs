@@ -1,6 +1,5 @@
-import { signal } from "@hellajs/core";
 import { ForEach } from "@hellajs/dom";
-import { rovingTabIndex } from "@hellajs/headless";
+import { tabs } from "@hellajs/headless";
 import type { HTMLAttributes, HellaChild } from "@hellajs/dom";
 
 interface TabsItem {
@@ -29,6 +28,8 @@ interface TabsTriggerProps extends HTMLAttributes<"button"> {
   class?: string;
   /** The raw TabsItem id - the DOM id is `${TAB_ID}${id}`. */
   id?: string;
+  /** The tab's value key; wins over `id` when both are given. */
+  value?: string;
   children?: HellaChild;
   active?: () => boolean;
   onActivate?: () => void;
@@ -40,6 +41,8 @@ interface TabsContentProps extends HTMLAttributes<"div"> {
   class?: string;
   /** The raw TabsItem id - the DOM id is `${PANEL_ID}${id}`. */
   id?: string;
+  /** The panel's value key; wins over `id` when both are given. */
+  value?: string;
   children?: HellaChild | (() => HellaChild);
   active?: () => boolean;
 }
@@ -188,9 +191,6 @@ css({
   },
 });
 
-const TAB_ID = "hella-tabs-tab-";
-const PANEL_ID = "hella-tabs-panel-";
-
 export function TabsList({
   variant = "default",
   orientation = "horizontal",
@@ -198,81 +198,68 @@ export function TabsList({
   class: cls,
   ...attrs
 }: TabsListProps): JSX.Element {
+  const { List } = tabs({ orientation });
   return (
-    <div
-      role="tablist"
-      data-slot="tabs-list"
-      data-orientation={orientation}
+    <List
       data-variant={variant}
-      aria-orientation={orientation}
       class={
         [list, variants[variant], cls]
       }
       {...attrs}
     >
       {children}
-    </div>
+    </List>
   );
 }
 
 export function TabsTrigger({
   id,
+  value,
   active,
   onActivate,
   orientation = "horizontal",
   listVariant = "default",
-  "on:click": userClick,
   children,
   class: cls,
   ...attrs
 }: TabsTriggerProps): JSX.Element {
+  const { Trigger } = tabs({ orientation });
   return (
-    <button
-      type="button"
-      role="tab"
-      data-slot="tabs-trigger"
-      id={id === undefined ? undefined : `${TAB_ID}${id}`}
-      aria-selected={active?.() ? "true" : "false"}
-      aria-controls={id === undefined ? undefined : `${PANEL_ID}${id}`}
-      data-state={active?.() ? "active" : "inactive"}
-      data-orientation={orientation}
+    <Trigger
+      value={value ?? id}
+      active={active}
+      onActivate={onActivate}
       data-variant={listVariant}
       class={
         [trigger, cls]
       }
-      on:click={function (e) {
-        userClick?.call(this, e);
-        onActivate?.();
-      }}
       {...attrs}
     >
       {children}
-    </button>
+    </Trigger>
   );
 }
 
 export function TabsContent({
   id,
+  value,
   active,
   children,
   class: cls,
   ...attrs
 }: TabsContentProps): JSX.Element {
+  const { Content } = tabs();
   return (
-    <div
-      role="tabpanel"
-      data-slot="tabs-content"
-      id={id === undefined ? undefined : `${PANEL_ID}${id}`}
-      aria-labelledby={id === undefined ? undefined : `${TAB_ID}${id}`}
-      data-state={active?.() ? "active" : "inactive"}
-      hidden={!active?.()}
+    <Content
+      value={value ?? id}
+      active={active}
       class={
         [content, cls]
       }
       {...attrs}
     >
       {children}
-    </div>
+    </Content>
   );
 }
 
@@ -284,27 +271,10 @@ export function Tabs({
   class: cls,
   ...attrs
 }: TabsProps): JSX.Element {
-  const selected = signal(initialId ?? (typeof items === "function" ? items()[0] : items[0])!.id);
-  const wirings: (() => void)[] = [];
-  let tablist: HTMLElement | null = null;
-
-  const roveToSelection = (): void => {
-    if (!tablist) return;
-    const current = `${TAB_ID}${selected()}`;
-    let i = 0;
-    const len = tablist.children.length;
-    while (i < len) {
-      const tab = tablist.children[i] as HTMLElement;
-      tab.tabIndex = tab.id === current ? 0 : -1;
-      i++;
-    }
-  };
-
-  const select = (id: string): void => {
-    if (selected() === id) return;
-    selected(id);
-    roveToSelection();
-  };
+  const { List, Trigger, Content } = tabs({
+    orientation,
+    defaultValue: initialId ?? (typeof items === "function" ? items()[0] : items[0])!.id,
+  });
 
   return (
     <div
@@ -313,63 +283,30 @@ export function Tabs({
       class={
         [base, cls]
       }
-      hook:afterMount={(node) => {
-        if (!(node instanceof HTMLElement)) return;
-        let i = 0;
-        const len = node.children.length;
-        while (i < len) {
-          const child = node.children[i++] as HTMLElement;
-          if (child.getAttribute("role") === "tablist") {
-            tablist = child;
-            break;
-          }
-        }
-        if (!tablist) return;
-        wirings.push(rovingTabIndex(tablist, { orientation }));
-        const onFocusIn = (event: Event) => {
-          const tab = event.target as HTMLElement;
-          if (tab.getAttribute("role") === "tab" && tab.id.startsWith(TAB_ID)) {
-            select(tab.id.slice(TAB_ID.length));
-          }
-        };
-        node.addEventListener("focusin", onFocusIn);
-        wirings.push(() => node.removeEventListener("focusin", onFocusIn));
-        roveToSelection();
-      }}
-      hook:beforeDestroy={() => {
-        while (wirings.length) wirings.pop()!();
-        tablist = null;
-      }}
       {...attrs}
     >
-      <TabsList
-        variant={variant}
-        orientation={orientation}
-        children={
-          <ForEach
-            each={items}
-            use={(item) => (
-              <TabsTrigger
-                id={item.id}
-                active={() => selected() === item.id}
-                onActivate={() => select(item.id)}
-                orientation={orientation}
-                listVariant={variant}
-              >
-                {item.label}
-              </TabsTrigger>
-            )}
-          />
+      <List
+        data-variant={variant}
+        class={
+          [list, variants[variant]]
         }
-      />
-      <ForEach
-        each={items}
-        use={(item) => (
-          <TabsContent id={item.id} active={() => selected() === item.id}>
-            {item.content}
-          </TabsContent>
-        )}
-      />
+      >
+        <ForEach
+          each={items}
+          use={(item) => (
+            <Trigger
+              value={item.id}
+              data-variant={variant}
+              class={
+                [trigger]
+              }
+            >
+              {item.label}
+            </Trigger>
+          )}
+        />
+      </List>
+      <ForEach each={items} use={(item) => <Content value={item.id}>{item.content}</Content>} />
     </div>
   );
 }

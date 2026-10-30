@@ -1,0 +1,98 @@
+# inputOtp
+
+Creates the one-time-code parts in one call: the slot row, its display slots, and the separator. The closure owns the code value; one transparent input overlays the slots and keeps native caret, selection, and paste working while the slots mirror the code.
+
+## Basic Usage
+
+```tsx
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+import { inputOtp } from "@hellajs/headless";
+
+const code = signal("");
+
+const Otp = inputOtp({
+  value: () => code(),
+  onValueChange: (next) => code(next),
+  maxLength: 6,
+});
+
+mount(
+  <Otp.Root>
+    <Otp.Group>
+      <Otp.Slot index={0} />
+      <Otp.Slot index={1} />
+      <Otp.Slot index={2} />
+      <Otp.Separator />
+      <Otp.Slot index={3} />
+      <Otp.Slot index={4} />
+      <Otp.Slot index={5} />
+    </Otp.Group>
+  </Otp.Root>,
+  "#app",
+);
+// Typing fills the slots in order and advances the caret slot by slot;
+// paste fills from the caret and clamps to six characters.
+```
+
+## API
+
+```typescript
+function inputOtp(options?: InputOtpOptions): InputOtpParts
+```
+
+- `options.maxLength`: Number of slots; fixed after mount. Default `6`.
+- `options.value`: The code. A static string seeds the internal state; an accessor makes it controlled, so edits report through `onValueChange` only.
+- `options.onValueChange`: Reports every accepted value change (typing, paste, deletion).
+- `options.onComplete`: Fires once per transition to a full code.
+- `options.pattern`: Optional regex mask; a candidate the pattern rejects is never accepted.
+- `options.autofocus`: Focuses the hidden control input on mount.
+- `options.disabled`: Blocks editing and drops the root's text cursor.
+- **Returns**: The part set, composed as `Otp.Root`-style members.
+
+### Parts
+
+| Part | Renders |
+|---|---|
+| `Root` | The relative root hosting the transparent control input; wires every `Slot`'s character, ring, and caret after mount |
+| `Group` | The slot-grouping container |
+| `Slot` | One display slot keyed by `index`: the root mirrors its character and active/caret state into it |
+| `Separator` | The `role="separator"` divider rendering the default minus icon |
+
+Every part spreads `class` and native attributes onto its element; parts own structure, styling stays in the wrapper. `Root` takes an `inputClass` hook for the control input's hiding and selection styling, and `Slot` takes `caretWrapClass` and `caretClass` hooks for the blinking caret.
+
+### Options
+
+| Option | Type | Default |
+|---|---|---|
+| `maxLength` | `number` | `6` |
+| `value` | `string \| (() => string)` | internal signal |
+| `onValueChange` | `(value: string) => void` | `-` |
+| `onComplete` | `(value: string) => void` | `-` |
+| `pattern` | `string` | `-` |
+| `autofocus` | `boolean` | `-` |
+| `disabled` | `boolean` | `-` |
+
+## Key Concepts
+
+### One Input Behind the Slots
+
+The code lives in a single transparent input overlaid on the slot row, so native caret movement, selection, and autofill keep working. The root maps collapsed carets onto one-slot selections: typing advances the active slot, backspace clears the active slot and retreats, and the slot under the caret carries `data-active` plus a blinking caret bar while it is empty.
+
+### Paste Fills From the Caret
+
+Pasted text merges at the current selection and clamps to `maxLength`. A `pattern` mask tests every candidate: a merged value the pattern rejects is never accepted and the input reverts to the previous code.
+
+### Controlled or Seeded
+
+A static `value` string seeds the internal state. An accessor makes the factory controlled: edits report through `onValueChange` without writing internal state, and accessor changes sync the input and every slot mirror.
+
+## Important Considerations
+
+### Call the Factory in Component Scope
+
+`inputOtp()` creates the state signals that must dispose with the component that owns them. `Root` drains the selection and mirror wiring when it unmounts; a module-level factory call leaks the signals. Call the factory inside the component that renders the parts.
+
+### Slots Wire From the Root
+
+`Root` resolves the `Slot` mirrors by their `data-slot` and `data-index` after mount, so every slot must render inside the root's subtree. A slot outside the root never receives its character, ring, or caret state.

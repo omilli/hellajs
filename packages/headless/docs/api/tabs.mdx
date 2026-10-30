@@ -1,0 +1,87 @@
+# tabs
+
+Creates the tabs parts in one call: a roving tablist, its triggers, and the keyed panels. The closure owns the active tab value; focusing a trigger selects it, and the selection lands the tabindex walk.
+
+## Basic Usage
+
+```tsx
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+import { tabs } from "@hellajs/headless";
+
+const value = signal("account");
+
+const Tabs = tabs({
+  value: () => value(),
+  onValueChange: (next) => value(next),
+});
+
+mount(
+  <div>
+    <Tabs.List>
+      <Tabs.Trigger value="account">Account</Tabs.Trigger>
+      <Tabs.Trigger value="password">Password</Tabs.Trigger>
+    </Tabs.List>
+    <Tabs.Content value="account">Account panel</Tabs.Content>
+    <Tabs.Content value="password">Password panel</Tabs.Content>
+  </div>,
+  "#app",
+);
+// Clicking or focusing a trigger selects it; arrows move focus and
+// selection together with wrap-around, Home and End jump to the ends.
+```
+
+## API
+
+```typescript
+function tabs(options?: TabsOptions): TabsParts
+```
+
+- `options.value`: Controlled active value. When given, the factory never writes its internal signal and `onValueChange` reports the requested selection.
+- `options.defaultValue`: Seeds the uncontrolled active value. Default `""` (the tabindex walk lands the first trigger).
+- `options.orientation`: Scopes the arrow-key axis and renders the orientation attributes; unset means both axes move focus.
+- `options.onValueChange`: Called with every factory-driven selection; re-selecting the active value notifies no one.
+- **Returns**: The part set, composed as `Tabs.List`-style members.
+
+### Parts
+
+| Part | Renders |
+|---|---|
+| `List` | The `role="tablist"` container with `data-orientation` and `aria-orientation`; arms arrow-key roving, lands the tabindex on the selection, and disposes on unmount |
+| `Trigger` | The `role="tab"` button carrying the `hella-tabs-tab-<value>` id, `aria-selected`, `aria-controls`, and `data-state` |
+| `Content` | The `role="tabpanel"` panel for a value: the `hella-tabs-panel-<value>` id, `aria-labelledby` the owning trigger, hidden while inactive |
+
+Every part spreads `class` and native attributes onto its element; parts own structure, styling stays in the wrapper.
+
+### Options
+
+| Option | Type | Default |
+|---|---|---|
+| `value` | `() => string` | internal signal |
+| `defaultValue` | `string` | `""` |
+| `orientation` | `"horizontal" \| "vertical"` | `-` |
+| `onValueChange` | `(value: string) => void` | `-` |
+
+## Key Concepts
+
+### Focus Selects
+
+The tablist runs automatic activation: the arrow keys (and Home/End) move focus among the enabled triggers with wrap-around, and focusing a trigger selects it. Clicking a trigger selects it directly. Disabled triggers drop out of the arrow walk and block clicks.
+
+### Panels Stay Mounted
+
+Every `Content` panel renders once and toggles `hidden` with its `data-state`; inactive panels stay in the DOM, so a getter child keeps re-rendering while hidden.
+
+### Overrides for Manual Composition
+
+`Trigger` takes `active` (a boolean reads statically, an accessor stays reactive) and `onActivate` to compose against external state; `Content` mirrors with `active`. Without overrides, both default from the factory's active value.
+
+## Important Considerations
+
+### Call the Factory in Component Scope
+
+`tabs()` creates the state signal that must dispose with the component that owns it. `List` disposes the roving and focus wiring when it unmounts; a module-level factory call leaks the signal. Call the factory inside the component that renders the parts.
+
+### Ids Are Value-Derived
+
+Trigger and panel DOM ids derive from the value (`hella-tabs-tab-<value>`, `hella-tabs-panel-<value>`), so the aria cycle holds across reorders. Two tab sets reusing the same values share ids; keep values unique per page.

@@ -2851,7 +2851,7 @@ export interface SonnerVariantProps extends HTMLAttributes<"ol"> {
   richColors?: boolean;
 }
 
-/** The compiled module's toast queue API (per-flavor singleton). */
+/** The compiled module's toast queue API — the shared `@hellajs/headless` singleton, re-exported by both flavors. */
 export type SonnerToastApi = typeof SonnerCss.toast;
 
 /** The newest toaster ol portaled into document.body. */
@@ -2862,8 +2862,8 @@ function newestToaster(): Element | null {
 
 /**
  * Every compiled Sonner flavor. `render` is the Toaster export;
- * `toast` is the same compiled module's queue singleton, so each variant
- * drives its own store.
+ * `toast` is the shared headless queue singleton both flavors re-export,
+ * so the two variants drive one store.
  */
 export interface SonnerVariant extends ComponentVariant<SonnerVariantProps> {
   toast: SonnerToastApi;

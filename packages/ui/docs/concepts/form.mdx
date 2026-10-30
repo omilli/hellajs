@@ -1,5 +1,7 @@
 ## API
 
+The controller, per-field signals, validation timing, and submit handling live in the [`createForm()`](/reference/headless/createform) factory from `@hellajs/headless`; the copied file re-exports the factory and wraps the headless parts (`FormItem`, `FormLabel`, `FormControl`, `FormDescription`, `FormMessage`) with the styled classes, so behavior upgrades land through the package while the pasted styles stay yours.
+
 One `createForm` call drives the whole row: field state flows into each part as explicit props, and the message re-renders as validation runs.
 
 `createForm(initial, options)` seeds one writable signal per field and returns the controller that every part reads through explicit props. Validators are per-field functions that receive the field value and the full values snapshot and return the message string, or null when the value is clean. A field without a validator is always clean.

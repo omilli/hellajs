@@ -1,0 +1,88 @@
+# radio group
+
+Creates the radio-group parts in one call: a `role="radiogroup"` container, its `role="radio"` items, and the selection-dot indicator. The closure owns the selection; radios never unset, so activating the active value is a no-op. Arrows move focus and select the landed radio.
+
+## Basic Usage
+
+```tsx
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+import { radioGroup } from "@hellajs/headless";
+
+const value = signal("");
+
+const Radio = radioGroup({
+  value: () => value(),
+  onValueChange: (next) => value(next),
+});
+
+mount(
+  <Radio.Root>
+    <Radio.Item value="a">
+      <Radio.Indicator value="a" />
+    </Radio.Item>
+    <Radio.Item value="b">
+      <Radio.Indicator value="b" />
+    </Radio.Item>
+  </Radio.Root>,
+  "#app",
+);
+// Clicking selects exclusively and reports the value; clicking the
+// active item is a no-op. Arrow keys move focus and select the
+// landed radio, wrapping at both ends.
+```
+
+## API
+
+```typescript
+function radioGroup(options?: RadioGroupOptions): RadioGroupParts
+```
+
+- `options.value`: Controlled selected value. Passing it makes the group controlled; omitting it keeps state internal.
+- `options.orientation`: Renders `aria-orientation` and scopes the arrow-key axis; unset means both axes move focus.
+- `options.name`: Threads onto every rendered item button's `name` attribute.
+- `options.onValueChange`: Called with every factory-driven selection; re-selecting the active value notifies no one.
+- **Returns**: The part set, composed as `Radio.Root`-style members.
+
+### Parts
+
+| Part | Renders |
+|---|---|
+| `Root` | `role="radiogroup"` container arming arrow-key roving (arrows move and select), landing the tabindex walk on the selection, disposed on unmount |
+| `Item` | `role="radio"` button with `aria-checked` and `data-state` (`checked` or `unchecked`), defaulting its state and click action from the group |
+| `Indicator` | The selection-dot span inside `Item`; renders the dot by default and hides it while unchecked |
+
+Every part spreads `class` and native attributes onto its element; parts own structure, styling stays in the wrapper.
+
+### Options
+
+| Option | Type | Default |
+|---|---|---|
+| `value` | `() => string` | internal signal |
+| `orientation` | `"horizontal" \| "vertical"` | both axes |
+| `name` | `string` | `-` |
+| `onValueChange` | `(value: string) => void` | `-` |
+
+## Key Concepts
+
+### Radios Never Unset
+
+Selecting a value replaces the previous one and reports it once; activating the active value notifies no one. There is no deselect path, matching native radio semantics.
+
+### Arrows Move and Select
+
+Arrow keys move focus and select the landed radio through the focus wiring, wrapping at both ends and skipping disabled items. The tabindex walk lands on the selection at mount, so tabbing into the group reaches the checked radio. Hidden native inputs for form submission are not rendered; `name` only labels the buttons.
+
+### Items Default From the Group
+
+An `Item` resolves its checked state and click action from the owning factory, and its `Indicator` resolves the dot by `value`. The `checked` and `onSelect` props override both for manual composition outside a group.
+
+## Important Considerations
+
+### Call the Factory in Component Scope
+
+`radioGroup()` creates a state signal that must dispose with the component that owns it. Mounting the tree unmounts the signal's wiring; module-level calls leak it. Call the factory inside the component that renders the parts.
+
+### Controlled Getters Notify One Direction
+
+`onValueChange` reports selections the factory drives. Changing a controlled `value` signal directly is the controller's own move and notifies no one.

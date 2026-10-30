@@ -1,0 +1,87 @@
+# toggle group
+
+Creates the toggle-group parts in one call: a `role="group"` container and its pressed-state items. Single mode keeps one value active and deselects it on re-click; `multiple` toggles membership independently. The `Root` arms arrow-key roving over the items.
+
+## Basic Usage
+
+```tsx
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+import { toggleGroup } from "@hellajs/headless";
+
+const value = signal("");
+
+const Group = toggleGroup({
+  value: () => value(),
+  onValueChange: (next) => value(next),
+});
+
+mount(
+  <Group.Root>
+    <Group.Item value="bold">Bold</Group.Item>
+    <Group.Item value="italic">Italic</Group.Item>
+  </Group.Root>,
+  "#app",
+);
+// Clicking a single-mode item selects it and reports the value;
+// clicking the active item deselects it and reports "". Arrows
+// move focus and rove tabindex without changing selection.
+```
+
+## API
+
+```typescript
+function toggleGroup(options?: ToggleGroupOptions): ToggleGroupParts
+```
+
+- `options.multiple`: Independent membership toggles when set; single-value exclusion otherwise.
+- `options.value`: Controlled single-mode value. Passing it makes the group controlled; omitting it keeps state internal.
+- `options.values`: Controlled multiple-mode values.
+- `options.defaultValue`: Seeds the uncontrolled single-mode selection.
+- `options.defaultValues`: Seeds the uncontrolled multiple-mode membership.
+- `options.onValueChange`: Single reports the newly active value (`""` when deselected); multiple reports the full active array.
+- **Returns**: The part set, composed as `Group.Root`-style members.
+
+### Parts
+
+| Part | Renders |
+|---|---|
+| `Root` | `role="group"` container arming arrow-key roving over the items, disposed on unmount |
+| `Item` | Pressed-state `button` with `aria-pressed` and `data-state` (`on` or `off`), defaulting its state and click action from the group |
+
+Every part spreads `class` and native attributes onto its element; parts own structure, styling stays in the wrapper.
+
+### Options
+
+| Option | Type | Default |
+|---|---|---|
+| `multiple` | `boolean` | `false` |
+| `value` | `() => string` | internal signal |
+| `values` | `() => string[]` | internal signal |
+| `defaultValue` | `string` | `""` |
+| `defaultValues` | `string[]` | `[]` |
+| `onValueChange` | `(value: string \| string[]) => void` | `-` |
+
+## Key Concepts
+
+### Items Default From the Group
+
+An `Item` resolves its pressed state and click action from the owning factory, so the composed group renders items with only a `value`. The `pressed` and `onSelect` props override both for manual composition outside a group.
+
+### Exclusion Follows the Mode
+
+Single mode reports the newly active value and deselects the active item on re-click, reporting `""`. Multiple mode reports the full active array in activation order; clicking toggles one membership at a time.
+
+### Arrows Move Focus, Clicks Change Selection
+
+Arrow keys (both axes), Home, and End rove focus and tabindex across enabled items without touching the selection. Disabled items drop out of the walk and block clicks.
+
+## Important Considerations
+
+### Call the Factory in Component Scope
+
+`toggleGroup()` creates state signals that must dispose with the component that owns it. Mounting the tree unmounts their wiring; module-level calls leak it. Call the factory inside the component that renders the parts.
+
+### Controlled Getters Notify One Direction
+
+`onValueChange` reports selections the factory drives. Changing a controlled `value` or `values` signal directly is the controller's own move and notifies no one.

@@ -26,6 +26,9 @@ export const list = style("navigation-menu-list", {
 
 export const item = style("navigation-menu-item", {
   position: "relative",
+  "& [data-slot='navigation-menu-content-anchor']": {
+    display: "contents",
+  },
 });
 
 export const trigger = style("navigation-menu-trigger", {
@@ -75,15 +78,14 @@ export const trigger = style("navigation-menu-trigger", {
   "&[data-state='open'] svg": {
     transform: "rotate(180deg)",
   },
-});
-
-export const chevron = style("navigation-menu-chevron", {
-  height: "0.75rem",
-  marginLeft: "0.25rem",
-  position: "relative",
-  top: "1px",
-  transition: "transform 300ms cubic-bezier(0.4, 0, 0.2, 1)",
-  width: "0.75rem",
+  "& [data-slot='navigation-menu-chevron']": {
+    height: "0.75rem",
+    marginLeft: "0.25rem",
+    position: "relative",
+    top: "1px",
+    transition: "transform 300ms cubic-bezier(0.4, 0, 0.2, 1)",
+    width: "0.75rem",
+  },
 });
 
 export const content = style("navigation-menu-content", {
@@ -159,33 +161,28 @@ export const viewportWrapper = style("navigation-menu-viewport-wrapper", {
   position: "absolute",
   top: "100%",
   zIndex: "50",
-});
-
-export const contentAnchor = style("navigation-menu-content-anchor", {
-  display: "contents",
-});
-
-export const viewport = style("navigation-menu-viewport", {
-  backgroundColor: tokens.popover,
-  border: `1px solid ${tokens.border}`,
-  borderRadius: `calc(${tokens.radius} * 0.8)`,
-  boxShadow: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
-  color: tokens.popoverForeground,
-  height: "var(--radix-navigation-menu-viewport-height)",
-  marginTop: "0.375rem",
-  overflow: "hidden",
-  position: "relative",
-  transformOrigin: "top center",
-  width: "100%",
-  "&[data-state='open']": {
-    animation: `${in90} 150ms ease-out both`,
-  },
-  "&[data-state='closed']": {
-    animation: `${out} 150ms ease-in both`,
-  },
-  "@media (min-width: 48rem)": {
-    "&": {
-      width: "var(--radix-navigation-menu-viewport-width)",
+  "& [data-slot='navigation-menu-viewport']": {
+    backgroundColor: tokens.popover,
+    border: `1px solid ${tokens.border}`,
+    borderRadius: `calc(${tokens.radius} * 0.8)`,
+    boxShadow: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
+    color: tokens.popoverForeground,
+    height: "var(--radix-navigation-menu-viewport-height)",
+    marginTop: "0.375rem",
+    overflow: "hidden",
+    position: "relative",
+    transformOrigin: "top center",
+    width: "100%",
+    "&[data-state='open']": {
+      animation: `${in90} 150ms ease-out both`,
+    },
+    "&[data-state='closed']": {
+      animation: `${out} 150ms ease-in both`,
+    },
+    "@media (min-width: 48rem)": {
+      "&": {
+        width: "var(--radix-navigation-menu-viewport-width)",
+      },
     },
   },
 });
@@ -206,15 +203,14 @@ export const indicator = style("navigation-menu-indicator", {
   "&[data-state='hidden']": {
     animation: `${fadeOut} 150ms ease-in both`,
   },
-});
-
-export const diamond = style("navigation-menu-diamond", {
-  background: tokens.border,
-  borderTopLeftRadius: `calc(${tokens.radius} * 0.6)`,
-  boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
-  height: "0.5rem",
-  position: "relative",
-  top: "60%",
-  transform: "rotate(45deg)",
-  width: "0.5rem",
+  "& [data-slot='navigation-menu-diamond']": {
+    background: tokens.border,
+    borderTopLeftRadius: `calc(${tokens.radius} * 0.6)`,
+    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
+    height: "0.5rem",
+    position: "relative",
+    top: "60%",
+    transform: "rotate(45deg)",
+    width: "0.5rem",
+  },
 });

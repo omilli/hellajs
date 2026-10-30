@@ -1,0 +1,79 @@
+# checkbox
+
+Creates the checkbox parts in one call: a `role="checkbox"` button and its indicator. The closure owns the checked and mixed (indeterminate) states; the mixed flag wins for rendering and clears on an uncontrolled toggle.
+
+## Basic Usage
+
+```tsx
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+import { checkbox } from "@hellajs/headless";
+
+const checked = signal(false);
+
+const Check = checkbox({
+  checked: () => checked(),
+  onCheckedChange: (next) => checked(next),
+});
+
+mount(
+  <Check.Root>
+    <Check.Indicator />
+  </Check.Root>,
+  "#app",
+);
+// Clicking cycles unchecked through checked; aria-checked tracks
+// true/false, or mixed while an indeterminate flag holds.
+```
+
+## API
+
+```typescript
+function checkbox(options?: CheckboxOptions): CheckboxParts
+```
+
+- `options.checked`: Controlled checked state. Passing it makes the checkbox controlled; omitting it keeps state internal.
+- `options.indeterminate`: Controlled mixed flag; it wins over `checked` for rendering and clears on an uncontrolled toggle.
+- `options.onCheckedChange`: Called with the requested checked boolean on every factory-driven toggle.
+- **Returns**: The part set, composed as `Check.Root`-style members.
+
+### Parts
+
+| Part | Renders |
+|---|---|
+| `Root` | `role="checkbox"` button with tri-state `aria-checked` (`true`, `false`, `mixed`), `data-state` (`checked`, `unchecked`, `indeterminate`), and disabled gating |
+| `Indicator` | The indicator span inside `Root`; renders the check icon by default and hides it while unchecked |
+
+Every part spreads `class` and native attributes onto its element; parts own structure, styling stays in the wrapper.
+
+### Options
+
+| Option | Type | Default |
+|---|---|---|
+| `checked` | `boolean \| (() => boolean)` | internal signal |
+| `indeterminate` | `boolean \| (() => boolean)` | internal signal |
+| `onCheckedChange` | `(checked: boolean) => void` | `-` |
+
+## Key Concepts
+
+### The Mixed Flag Wins for Rendering
+
+While `indeterminate` resolves true, the box renders `data-state="indeterminate"` and `aria-checked="mixed"` regardless of the checked value. A click still reports the next checked boolean; an uncontrolled mixed flag clears on that click so the box lands checked.
+
+### The Indicator Composes Explicitly
+
+`Indicator` renders inside `Root` where you place it, so the label content stays outside the indicator. It renders the check icon by default; pass children to replace the icon with your own mark.
+
+### Controlled Getters Notify One Direction
+
+`onCheckedChange` reports toggles the factory drives. Changing a controlled `checked` signal directly is the controller's own move and notifies no one.
+
+## Important Considerations
+
+### Call the Factory in Component Scope
+
+`checkbox()` creates state signals that must dispose with the component that owns it. Mounting the tree unmounts their wiring; module-level calls leak it. Call the factory inside the component that renders the parts.
+
+### Keyboard Activation Is Native
+
+The root is a `button`, so Space toggles it without extra key wiring. `disabled` blocks pointer and keyboard activation alike, and `aria-invalid` rides the attribute passthrough for form styling.

@@ -7,8 +7,8 @@ import { assertStructuralParity, classTokens, sonnerVariants } from "./helpers/v
 import type { SonnerVariant } from "./helpers/variants";
 
 beforeEach(async () => {
-  // The store is a per-module singleton: retire every queue entry and let the
-  // 200ms exit splice drain, so each test starts from an empty queue.
+  // Both flavors re-export the shared headless queue: retire every entry and
+  // let the 200ms exit splice drain, so each test starts from an empty stack.
   for (const variant of sonnerVariants) variant.toast.dismiss();
   await delay(null, 280);
   resetTestState();

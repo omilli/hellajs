@@ -19,6 +19,16 @@ export { tooltip, hoverCard } from "./tooltip";
 export { combobox } from "./combobox";
 export { select } from "./select";
 export { command } from "./command";
+export { toggle, checkbox, toggleSwitch, toggleGroup, radioGroup } from "./press";
+export { tabs } from "./tabs";
+export { navigationMenu } from "./navigationMenu";
+export { slider } from "./slider";
+export { toast, Toaster, ToastItem } from "./toast";
+export { calendar } from "./calendar";
+export { inputOtp } from "./inputOtp";
+export { createForm, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "./form";
+export { scrollArea } from "./scrollArea";
+export { messageScroller } from "./messageScroller";
 
 export { resetHeadless } from "./internal/reset";
 

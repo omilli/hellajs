@@ -1,0 +1,76 @@
+# messageScroller
+
+Creates the message-scroller parts in one call: a scrolling viewport whose at-bottom state drives stickiness on new content and the jump-to-bottom button.
+
+## Basic Usage
+
+```tsx
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+import { messageScroller } from "@hellajs/headless";
+
+const atBottom = signal(true);
+
+const Scroller = messageScroller({ atBottom });
+
+mount(
+  <Scroller.Root>
+    <Scroller.Viewport>
+      <Scroller.Content>
+        {messages.map((message) => (
+          <Scroller.Item>{message}</Scroller.Item>
+        ))}
+      </Scroller.Content>
+    </Scroller.Viewport>
+    <Scroller.Button>Jump to bottom</Scroller.Button>
+  </Scroller.Root>,
+  "#app",
+);
+// Scrolling up flips atBottom false; content growth sticks the viewport to the
+// bottom while at-bottom; the button jumps back and flips it true.
+```
+
+## API
+
+```typescript
+function messageScroller(options?: MessageScrollerOptions): MessageScrollerParts
+```
+
+- `options.atBottom`: The shared at-bottom signal; the viewport flips it and the button reads it. The factory owns an internal signal seeded `true` when omitted.
+- `options.scrollToBottom`: Overrides the scroll-to-bottom action used for auto-stick and the jump button.
+- `options.threshold`: Distance in px from the bottom still counted as at-bottom. Default `80`.
+- `options.observe`: Replaces the default `ResizeObserver` content watcher the viewport arms on its content.
+- **Returns**: The part set, composed as `Scroller.Root`-style members.
+
+### Parts
+
+| Part | Renders |
+| --- | --- |
+| `Provider` | A passthrough grouping wrapper kept for upstream parity; holds no state |
+| `Root` | The `data-slot="message-scroller"` relative container |
+| `Viewport` | The `data-slot="message-scroller-viewport"` scrolling viewport: flips at-bottom on scroll, sticks to the bottom on growth while at-bottom, and renders children directly |
+| `Content` | The `data-slot="message-scroller-content"` stack inside the viewport |
+| `Item` | The `data-slot="message-scroller-item"` message row |
+| `Button` | The `data-slot="message-scroller-button"` jump button: `data-active` from the at-bottom state, `data-direction`/`data-variant`/`data-size` tokens, and a click that jumps to the bottom after chaining a user `on:click`; renders the arrow glyph and a screen-reader label when children are omitted |
+
+Every part spreads `class` and native attributes onto its element; parts own structure, styling stays in the wrapper.
+
+## Key Concepts
+
+### At-Bottom Is Shared State
+
+The viewport writes the state (from the scroll position and content growth) and the button reads it (`data-active`) and writes it back (on jump). Pass your own signal through `atBottom` to read or drive the state elsewhere; with the internal signal, the parts still share it through the factory closure.
+
+### Stickiness Follows the At-Bottom State
+
+While at-bottom, content growth scrolls the viewport to the new bottom, routing through `scrollToBottom` when provided. Scrolled away, growth leaves the scroll position alone. The `threshold` sets how close to the bottom still counts as at-bottom.
+
+## Important Considerations
+
+### Call the Factory in Component Scope
+
+`messageScroller()` creates the internal state signal when `atBottom` is omitted. Call the factory inside the component that renders the parts so the signal disposes with it; a module-level call leaks the signal.
+
+### The Button Jump Resolves Its Viewport
+
+Parts composed from one factory call share the viewport the `Viewport` part captured. A `Button` composed without a viewport in its own factory call falls back to the closest `data-slot="message-scroller"` root and scrolls its viewport directly. `direction` drives `data-direction`, the `data-active` polarity, and the default label only; the jump always targets the bottom.

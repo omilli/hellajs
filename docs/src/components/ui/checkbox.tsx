@@ -1,4 +1,4 @@
-import { signal } from "@hellajs/core";
+import { checkbox } from "@hellajs/headless";
 import type { HTMLAttributes } from "@hellajs/dom";
 
 interface CheckboxProps extends HTMLAttributes<"button"> {
@@ -87,65 +87,29 @@ const checkIcon = (): JSX.Element => (
 );
 
 export function Checkbox({
-  checked: checkedProp,
-  indeterminate: indeterminateProp,
+  checked,
+  indeterminate,
   onCheckedChange,
-  id,
   disabled,
-  "on:click": userClick,
   class: cls,
   ...attrs
 }: CheckboxProps): JSX.Element {
-  const checkedAccessor = typeof checkedProp === "function" ? checkedProp : undefined;
-  const indeterminateAccessor =
-    typeof indeterminateProp === "function" ? indeterminateProp : undefined;
-  const internalChecked = signal(typeof checkedProp === "boolean" ? checkedProp : false);
-  const internalIndeterminate = signal(
-    typeof indeterminateProp === "boolean" ? indeterminateProp : false,
-  );
-
-  const checked = (): boolean => (checkedAccessor ? checkedAccessor() : internalChecked());
-  const indeterminate = (): boolean =>
-    indeterminateAccessor ? indeterminateAccessor() : internalIndeterminate();
-  const state = (): "checked" | "unchecked" | "indeterminate" =>
-    indeterminate() ? "indeterminate" : checked() ? "checked" : "unchecked";
-  const ariaChecked = (): "true" | "false" | "mixed" =>
-    indeterminate() ? "mixed" : checked() ? "true" : "false";
-
-  const toggle = (): void => {
-    if (disabled) return;
-    const next = !checked();
-    if (!checkedAccessor) internalChecked(next);
-    if (!indeterminateAccessor) internalIndeterminate(false);
-    onCheckedChange?.(next);
-  };
-
+  const { Root, Indicator } = checkbox({ checked, indeterminate, onCheckedChange });
   return (
-    <button
-      type="button"
-      role="checkbox"
-      data-slot="checkbox"
-      id={id}
-      aria-checked={ariaChecked()}
-      data-state={state()}
-      disabled={disabled ? true : undefined}
+    <Root
+      disabled={disabled}
       class={
         [base, cls]
       }
-      on:click={function (e) {
-        userClick?.call(this, e);
-        toggle();
-      }}
       {...attrs}
     >
-      <span
-        data-slot="checkbox-indicator"
+      <Indicator
         class={
           [indicator]
         }
       >
-        {() => (state() === "unchecked" ? null : checkIcon())}
-      </span>
-    </button>
+        {checkIcon()}
+      </Indicator>
+    </Root>
   );
 }

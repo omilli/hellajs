@@ -1,0 +1,119 @@
+# toast
+
+The module-level toast queue: `toast()` enqueues a card from anywhere in the app, and `Toaster` renders the stack. Timers, the visible cap, hover pausing, and swipe dismissal are built in.
+
+## Basic Usage
+
+```tsx
+import { mount } from "@hellajs/dom";
+import { toast, Toaster } from "@hellajs/headless";
+
+mount(
+  <div>
+    <button
+      on:click={() =>
+        toast("Saved", { description: "Your work is safe", type: "success" })
+      }
+    >
+      Save
+    </button>
+    <Toaster />
+  </div>,
+  "#app",
+);
+// Clicking Save stacks a card at the bottom-right edge; it auto-dismisses
+// after 4 seconds, pauses while hovered, and swipes away past 45% of its width.
+```
+
+## API
+
+```typescript
+function toast(message: string, options?: ToastOptions): ToastHandle
+```
+
+- `message`: The title line the card renders.
+- `options.description`: Secondary line under the message.
+- `options.type`: `success`, `error`, `warning`, or `info`; sets `data-type` on the card. A toast without a type renders `data-type="default"`.
+- `options.action`: `{ label, onclick }` rendered as a button; firing it also dismisses the toast.
+- `options.duration`: Milliseconds before auto-dismiss. Default `4000`; `Infinity` sticks.
+- **Returns**: A `{ id, dismiss() }` handle.
+
+Two members hang off the same callable:
+
+```typescript
+// Sticky loading toast that swaps to the settled flavor and message
+toast.promise<T>(promise: Promise<T>, messages: PromiseMessages<T>): ToastHandle;
+
+// Retires one toast by id, or every toast when called without one
+toast.dismiss(id?: number): void;
+```
+
+`PromiseMessages` takes `loading`, `success`, and `error`; the settle phases accept a plain string or a function of the settled value, and an optional `duration` overrides the settle budget.
+
+### Toaster
+
+```tsx
+function Toaster(props: ToasterProps): JSX.Element
+```
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `position` | `top-left`, `top-center`, `top-right`, `bottom-left`, `bottom-center`, `bottom-right` | `"bottom-right"` |
+| `richColors` | `boolean` | `-` |
+| `children` | `(record: ToastRecord) => HellaChild` | default card |
+| `class`, native attributes | forwarded to the portaled `ol` | `-` |
+
+The stack portals into `document.body` as an `ol` carrying `data-position` and `aria-live="polite"`. `richColors` tints each card per flavor through `data-rich-colors`.
+
+### ToastItem
+
+```tsx
+function ToastItem(props: ToastItemProps): JSX.Element
+```
+
+The behavior-bearing card the wiring targets: a stacked `li` carrying `data-type`, `data-toast-id`, `data-depth`, `data-removed`, and `data-dragging`. `record` is the queue entry from the `Toaster` children function, `richColors` tints the card, and children replace the default content (message, description, action button, close button). Styling stays in the wrapper.
+
+## Key Concepts
+
+### One Queue per App
+
+The queue is a module-level singleton: `toast()` reaches the stack without threading state through the tree, so enqueueing is safe at module scope and inside event handlers alike. Mount one `Toaster` high in the app; every call site that imports the module shares the same queue.
+
+### Auto-Dismiss, Hover Pause, and Swipe
+
+Each card arms a countdown on mount. Hovering freezes it and folds the elapsed time into the remainder; leaving resumes from there, and an exhausted budget fires immediately. A horizontal drag follows the pointer (drags starting on buttons, links, and inputs are ignored), and releasing past 45% of the card width dismisses; under it, the card springs back. Every dismissal path (timeout, swipe, `dismiss()`, action, close) runs the same exit: `data-removed="true"` starts the collapse, and the card unmounts after the 200ms exit budget.
+
+### Stack Limits and Depth
+
+Three toasts stay visible; a fourth retires the oldest immediately. Each card renders its position in the stack as `data-depth` (`0` at the front), so CSS can shrink and shift the cards behind the newest.
+
+### Promise Toasts
+
+`toast.promise` shows a sticky loading card (no countdown), then swaps the flavor and message when the promise settles and arms the normal duration. Dismissing before the settle keeps the toast retired: a late settle never revives it.
+
+### Custom Cards via Children
+
+Pass a render function as the `Toaster` children to replace the default card. Return a `ToastItem` composition so the li keeps `data-toast-id`: the timers, hover pause, and swipe wiring ride that attribute.
+
+```tsx
+import { ToastItem, Toaster } from "@hellajs/headless";
+import type { ToastRecord } from "@hellajs/headless";
+
+<Toaster>
+  {(record: ToastRecord) => (
+    <ToastItem record={record} class="card">
+      <strong>{record.data().message}</strong>
+    </ToastItem>
+  )}
+</Toaster>;
+```
+
+## Important Considerations
+
+### Enqueue Before Mount Is Safe
+
+`toast()` calls made before the `Toaster` mounts hold in the queue and render when the stack mounts. The live wiring attaches when each card appears, so pre-mount enqueues arm their countdowns on render.
+
+### One Toaster per App
+
+The queue renders wherever a `Toaster` is mounted. Mounting a second Toaster renders the same queue twice; keep one mounted per app.

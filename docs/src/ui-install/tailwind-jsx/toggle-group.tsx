@@ -1,6 +1,5 @@
-import { signal } from "@hellajs/core";
 import { ForEach } from "@hellajs/dom";
-import { rovingTabIndex } from "@hellajs/headless";
+import { toggleGroup } from "@hellajs/headless";
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 interface ToggleGroupEntry {
@@ -68,35 +67,27 @@ export function ToggleGroupItem({
   variant = "default",
   size = "default",
   disabled,
-  "on:click": userClick,
   children,
   class: cls,
   ...attrs
 }: ToggleGroupItemProps): JSX.Element {
-  const isPressed = (): boolean => (typeof pressed === "function" ? pressed() : (pressed ?? false));
-
+  const { Item } = toggleGroup();
   return (
-    <button
-      type="button"
-      data-slot="toggle-group-item"
+    <Item
       value={value}
+      pressed={pressed}
+      onSelect={onSelect}
+      disabled={disabled}
       data-variant={variant}
       data-size={size}
       data-spacing="0"
-      aria-pressed={isPressed() ? "true" : "false"}
-      data-state={isPressed() ? "on" : "off"}
-      disabled={disabled ? true : undefined}
       class={
         cn(toggleVariants({ variant, size }), "w-auto min-w-0 shrink-0 px-3 focus:z-10 focus-visible:z-10 data-[spacing=0]:rounded-none data-[spacing=0]:shadow-none data-[spacing=0]:first:rounded-l-md data-[spacing=0]:last:rounded-r-md data-[spacing=0]:data-[variant=outline]:border-l-0 data-[spacing=0]:data-[variant=outline]:first:border-l", cls)
       }
-      on:click={function (e) {
-        userClick?.call(this, e);
-        onSelect?.();
-      }}
       {...attrs}
     >
       {children}
-    </button>
+    </Item>
   );
 }
 
@@ -116,35 +107,17 @@ export function ToggleGroup({
   const pressedValues = (typeof items === "function" ? items() : items)
     .filter((entry) => entry.pressed)
     .map((entry) => entry.value);
-  const internalSingle = signal(pressedValues[0] ?? "");
-  const internalMulti = signal<Set<string>>(new Set(pressedValues));
-  const wirings: (() => void)[] = [];
-
-  const isPressed = (itemValue: string): boolean =>
-    type === "multiple"
-      ? (values !== undefined ? values() : [...internalMulti()]).includes(itemValue)
-      : (value !== undefined ? value() : internalSingle()) === itemValue;
-
-  const toggleItem = (itemValue: string): void => {
-    if (type === "multiple") {
-      const current = values !== undefined ? values() : [...internalMulti()];
-      const next = current.includes(itemValue)
-        ? current.filter((v) => v !== itemValue)
-        : [...current, itemValue];
-      if (values === undefined) internalMulti(new Set(next));
-      onValueChange?.(next);
-      return;
-    }
-    const current = value !== undefined ? value() : internalSingle();
-    const next = current === itemValue ? "" : itemValue;
-    if (value === undefined) internalSingle(next);
-    onValueChange?.(next);
-  };
+  const { Root, Item } = toggleGroup({
+    multiple: type === "multiple",
+    value,
+    values,
+    defaultValue: pressedValues[0] ?? "",
+    defaultValues: pressedValues,
+    onValueChange,
+  });
 
   return (
-    <div
-      role="group"
-      data-slot="toggle-group"
+    <Root
       data-variant={variant}
       data-size={size}
       data-spacing="0"
@@ -152,38 +125,26 @@ export function ToggleGroup({
       class={
         cn("group/toggle-group flex w-fit items-center gap-[--spacing(var(--gap))] rounded-md data-[spacing=default]:data-[variant=outline]:shadow-xs", cls)
       }
-      hook:afterMount={(node) => {
-        if (!(node instanceof HTMLElement)) return;
-        wirings.push(
-          rovingTabIndex(node, {
-            selector: "[data-slot='toggle-group-item']:not(:disabled)",
-          }),
-        );
-      }}
-      hook:beforeDestroy={() => {
-        while (wirings.length) wirings.pop()!();
-      }}
       {...attrs}
     >
       <ForEach
         each={items}
         use={(entry) => (
-          <ToggleGroupItem
+          <Item
             key={keyBy ? entry.value : undefined}
             value={entry.value}
-            pressed={() => isPressed(entry.value)}
-            onSelect={() => {
-              if (entry.disabled) return;
-              toggleItem(entry.value);
-            }}
-            variant={variant}
-            size={size}
             disabled={entry.disabled}
+            data-variant={variant}
+            data-size={size}
+            data-spacing="0"
+            class={
+              cn(toggleVariants({ variant, size }), "w-auto min-w-0 shrink-0 px-3 focus:z-10 focus-visible:z-10 data-[spacing=0]:rounded-none data-[spacing=0]:shadow-none data-[spacing=0]:first:rounded-l-md data-[spacing=0]:last:rounded-r-md data-[spacing=0]:data-[variant=outline]:border-l-0 data-[spacing=0]:data-[variant=outline]:first:border-l")
+            }
           >
             {entry.label}
-          </ToggleGroupItem>
+          </Item>
         )}
       />
-    </div>
+    </Root>
   );
 }

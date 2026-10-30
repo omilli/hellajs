@@ -1,13 +1,11 @@
-import { signal } from "@hellajs/core";
-import type { Signal } from "@hellajs/core";
-import type { HellaChild, HellaChildren } from "@hellajs/dom";
+import { messageScroller } from "@hellajs/headless";
 import type {
-  MessageScrollerProviderProps,
-  MessageScrollerViewportProps,
+  MessageScrollerButtonProps,
   MessageScrollerContentProps,
   MessageScrollerItemProps,
-  MessageScrollerButtonProps,
   MessageScrollerProps,
+  MessageScrollerProviderProps,
+  MessageScrollerViewportProps,
 } from "./message-scroller-types.js";
 // @hella:styles
 declare const base: string;
@@ -17,7 +15,6 @@ declare const buttonVariants: Record<string, string>;
 declare const content: string;
 declare const item: string;
 declare const overlay: string;
-declare const srOnly: string;
 declare const viewport: string;
 // @hella:end
 
@@ -39,64 +36,18 @@ export function MessageScrollerViewport({
   class: cls,
   ...attrs
 }: MessageScrollerViewportProps): JSX.Element {
-  const fallback = signal(true);
-  const teardown: (() => void)[] = [];
-  let el: HTMLElement | undefined;
-
-  const state = (): Signal<boolean> => atBottom ?? fallback;
-
-  const jump = (): void => {
-    if (scrollToBottom) scrollToBottom();
-    else if (el) {
-      el.scrollTop = el.scrollHeight;
-      state()(true);
-    }
-  };
-
-  const sync = (): void => {
-    const node = el;
-    if (!node) return;
-    const distance = node.scrollHeight - node.scrollTop - node.clientHeight;
-    state()(distance <= (threshold ?? 80));
-  };
-
-  const defaultObserve = (target: Element, onGrow: () => void): (() => void) => {
-    if (typeof ResizeObserver === "undefined") return () => undefined;
-    const observer = new ResizeObserver(onGrow);
-    observer.observe(target);
-    return () => observer.disconnect();
-  };
-
-  const onGrow = (): void => {
-    if (state()()) jump();
-    sync();
-  };
-
+  const { Viewport } = messageScroller({ atBottom, scrollToBottom, threshold, observe });
   return (
-    <div
-      data-slot="message-scroller-viewport"
+    <Viewport
       class={
         // @hella:compose
         [viewport, cls]
         // @hella:end
       }
       {...attrs}
-      hook:afterMount={(node) => {
-        if (!(node instanceof HTMLElement)) return;
-        el = node;
-        node.addEventListener("scroll", sync, { passive: true });
-        teardown.push(() => node.removeEventListener("scroll", sync));
-        const inner = node.firstElementChild;
-        if (inner) teardown.push((observe ?? defaultObserve)(inner, onGrow));
-        if (state()()) node.scrollTop = node.scrollHeight;
-      }}
-      hook:beforeDestroy={() => {
-        while (teardown.length) teardown.pop()!();
-        el = undefined;
-      }}
     >
       {children}
-    </div>
+    </Viewport>
   );
 }
 
@@ -105,9 +56,9 @@ export function MessageScrollerContent({
   class: cls,
   ...attrs
 }: MessageScrollerContentProps): JSX.Element {
+  const { Content } = messageScroller();
   return (
-    <div
-      data-slot="message-scroller-content"
+    <Content
       class={
         // @hella:compose
         [content, cls]
@@ -116,7 +67,7 @@ export function MessageScrollerContent({
       {...attrs}
     >
       {children}
-    </div>
+    </Content>
   );
 }
 
@@ -125,9 +76,9 @@ export function MessageScrollerItem({
   class: cls,
   ...attrs
 }: MessageScrollerItemProps): JSX.Element {
+  const { Item } = messageScroller();
   return (
-    <div
-      data-slot="message-scroller-item"
+    <Item
       class={
         // @hella:compose
         [item, cls]
@@ -136,7 +87,7 @@ export function MessageScrollerItem({
       {...attrs}
     >
       {children}
-    </div>
+    </Item>
   );
 }
 
@@ -151,38 +102,13 @@ export function MessageScrollerButton({
   class: cls,
   ...attrs
 }: MessageScrollerButtonProps): JSX.Element {
-  const direction = (): "start" | "end" => dir ?? "end";
-
-  const active = (): "true" | "false" => {
-    const bottom = atBottom?.() ?? true;
-    const isActive = direction() === "end" ? !bottom : bottom;
-    return isActive ? "true" : "false";
-  };
-
-  const click = (event: Event): void => {
-    if (scrollToBottom) {
-      scrollToBottom();
-      atBottom?.(true);
-      return;
-    }
-    if (!(event.target instanceof Element)) return;
-    const viewport = event.target
-      .closest('[data-slot="message-scroller"]')
-      ?.querySelector('[data-slot="message-scroller-viewport"]');
-    if (viewport instanceof HTMLElement) {
-      viewport.scrollTop = viewport.scrollHeight;
-      atBottom?.(true);
-    }
-  };
-
+  const { Button } = messageScroller({ atBottom, scrollToBottom });
   return (
-    <button
-      type="button"
-      data-slot="message-scroller-button"
-      data-direction={direction()}
-      data-variant={variant ?? "secondary"}
-      data-size={size ?? "icon-sm"}
-      data-active={active}
+    <Button
+      direction={dir}
+      variant={variant}
+      size={size}
+      on:click={userClick}
       class={
         // @hella:compose
         [
@@ -194,32 +120,10 @@ export function MessageScrollerButton({
         ]
         // @hella:end
       }
-      on:click={function (e) {
-        userClick?.call(this, e);
-        click(e);
-      }}
       {...attrs}
     >
-      {children ?? (
-        <>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M12 5v14" />
-            <path d="m19 12-7 7-7-7" />
-          </svg>
-          <span class={srOnly}>{direction() === "end" ? "Scroll to end" : "Scroll to start"}</span>
-        </>
-      )}
-    </button>
+      {children}
+    </Button>
   );
 }
 
@@ -238,10 +142,14 @@ export function MessageScroller({
   class: cls,
   ...attrs
 }: MessageScrollerProps): JSX.Element {
-  const bottom = atBottom ?? signal(true);
+  const { Root, Viewport, Content, Button } = messageScroller({
+    atBottom,
+    scrollToBottom,
+    threshold,
+    observe,
+  });
   return (
-    <div
-      data-slot="message-scroller"
+    <Root
       class={
         // @hella:compose
         [base, cls]
@@ -249,23 +157,32 @@ export function MessageScroller({
       }
       {...attrs}
     >
-      <MessageScrollerViewport
-        atBottom={bottom}
-        scrollToBottom={scrollToBottom}
-        threshold={threshold}
-        observe={observe}
+      <Viewport
+        class={
+          // @hella:compose
+          [viewport]
+          // @hella:end
+        }
       >
-        <MessageScrollerContent children={flattenChildren(children)} />
-      </MessageScrollerViewport>
+        <Content
+          class={
+            // @hella:compose
+            [content]
+            // @hella:end
+          }
+        >
+          {children}
+        </Content>
+      </Viewport>
       {showScrollButton !== false && (
-        <MessageScrollerButton atBottom={bottom} scrollToBottom={scrollToBottom} />
+        <Button
+          class={
+            // @hella:compose
+            [buttonBase, buttonVariants.secondary, buttonSizes["icon-sm"], overlay]
+            // @hella:end
+          }
+        />
       )}
-    </div>
+    </Root>
   );
-}
-
-/** Flattens a HellaChildren value into HellaChild[] for explicit children props. */
-function flattenChildren(children: HellaChildren | undefined): HellaChild[] {
-  if (children === undefined) return [];
-  return Array.isArray(children) ? children : [children];
 }

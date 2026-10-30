@@ -1,5 +1,4 @@
-import { effect, signal } from "@hellajs/core";
-import { Portal } from "@hellajs/dom";
+import { navigationMenu } from "@hellajs/headless";
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 interface NavigationMenuListProps extends HTMLAttributes<"ul"> {
@@ -66,42 +65,21 @@ interface NavigationMenuProps extends HTMLAttributes<"div"> {
 }
 import { cn } from "./cn.js";
 
-/** The chevron-down icon (refs/icons/chevron-down.svg), created per call so reactive swaps never share nodes between clones. */
-const chevronIcon = (): JSX.Element => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="2"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    aria-hidden="true"
-    class={
-      cn("relative top-[1px] ml-1 size-3 transition duration-300 group-data-[state=open]:rotate-180")
-    }
-  >
-    <path d="m6 9 6 6 6-6" />
-  </svg>
-);
-
 export function NavigationMenuList({
   children,
   class: cls,
   ...attrs
 }: NavigationMenuListProps): JSX.Element {
+  const { List } = navigationMenu();
   return (
-    <ul
-      data-slot="navigation-menu-list"
+    <List
       class={
         cn("group flex flex-1 list-none items-center justify-center gap-1", cls)
       }
       {...attrs}
     >
       {children}
-    </ul>
+    </List>
   );
 }
 
@@ -110,16 +88,16 @@ export function NavigationMenuItem({
   class: cls,
   ...attrs
 }: NavigationMenuItemProps): JSX.Element {
+  const { Item } = navigationMenu();
   return (
-    <li
-      data-slot="navigation-menu-item"
+    <Item
       class={
-        cn("relative", cls)
+        cn("relative [&_[data-slot=navigation-menu-content-anchor]]:contents", cls)
       }
       {...attrs}
     >
       {children}
-    </li>
+    </Item>
   );
 }
 
@@ -131,30 +109,19 @@ export function NavigationMenuTrigger({
   class: cls,
   ...attrs
 }: NavigationMenuTriggerProps): JSX.Element {
-  const active = (): boolean => activeProp?.() ?? false;
+  const { Trigger } = navigationMenu();
   return (
-    <button
-      type="button"
-      data-slot="navigation-menu-trigger"
-      data-value={value}
-      data-state={active() ? "open" : "closed"}
-      aria-expanded={active() ? "true" : "false"}
+    <Trigger
+      value={value}
+      active={activeProp}
+      onActivate={onActivate}
       class={
-        cn("group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-[color,box-shadow] outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=open]:bg-accent/50 data-[state=open]:text-accent-foreground data-[state=open]:hover:bg-accent data-[state=open]:focus:bg-accent", cls)
+        cn("group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-[color,box-shadow] outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=open]:bg-accent/50 data-[state=open]:text-accent-foreground data-[state=open]:hover:bg-accent data-[state=open]:focus:bg-accent [&_[data-slot=navigation-menu-chevron]]:relative [&_[data-slot=navigation-menu-chevron]]:top-[1px] [&_[data-slot=navigation-menu-chevron]]:ml-1 [&_[data-slot=navigation-menu-chevron]]:size-3 [&_[data-slot=navigation-menu-chevron]]:transition [&_[data-slot=navigation-menu-chevron]]:duration-300 [&[data-state=open]_[data-slot=navigation-menu-chevron]]:rotate-180", cls)
       }
-      on:click={() => {
-        // The announce carries the requested state (computed before the owner
-        // toggle runs), so the root's store mirrors instead of re-toggling.
-        const open = !active();
-        onActivate?.();
-        if (value !== undefined)
-          document.dispatchEvent(new CustomEvent("hella:navigation-menu-activate", { detail: { id: value, open } }));
-      }}
       {...attrs}
     >
       {children}
-      {chevronIcon()}
-    </button>
+    </Trigger>
   );
 }
 
@@ -166,77 +133,19 @@ export function NavigationMenuContent({
   class: cls,
   ...attrs
 }: NavigationMenuContentProps): JSX.Element {
-  const active = (): boolean => activeProp?.() ?? false;
-  const portalTarget = viewportSlot ?? "[data-slot='navigation-menu-viewport']";
-  // `visible` alone gates the render so an open→closed flip never unmounts
-  // before this watcher starts the exit; the panel stays mounted under
-  // data-state="closed" until its animationend (or the copied duration
-  // budget) removes it.
-  const visible = signal(false);
-  let wasOpen = false;
-  let fallback: ReturnType<typeof setTimeout> | undefined;
-  effect(() => {
-    if (active()) {
-      wasOpen = true;
-      if (fallback !== undefined) {
-        clearTimeout(fallback);
-        fallback = undefined;
-      }
-      visible(true);
-    } else if (wasOpen) {
-      wasOpen = false;
-      visible(true);
-      fallback = setTimeout(() => {
-        if (fallback !== undefined) {
-          clearTimeout(fallback);
-          fallback = undefined;
-        }
-        visible(false);
-      }, 250);
-    }
-  });
-  const state = (): "open" | "closed" => (active() ? "open" : "closed");
-  const teardown: (() => void)[] = [];
+  const { Content } = navigationMenu();
   return (
-    <div
-      data-slot="navigation-menu-content-anchor"
+    <Content
+      active={activeProp}
+      viewport={viewportSlot}
+      onExited={onExited}
       class={
-        cn("[display:contents]")
+        cn("top-0 left-0 w-full p-2 pr-2.5 data-[motion=from-end]:slide-in-from-right-52 data-[motion=from-start]:slide-in-from-left-52 data-[motion=to-end]:slide-out-to-right-52 data-[motion=to-start]:slide-out-to-left-52 data-[motion^=from-]:animate-in data-[motion^=from-]:fade-in data-[motion^=to-]:animate-out data-[motion^=to-]:fade-out md:absolute md:w-auto group-data-[viewport=false]/navigation-menu:top-full group-data-[viewport=false]/navigation-menu:mt-1.5 group-data-[viewport=false]/navigation-menu:overflow-hidden group-data-[viewport=false]/navigation-menu:rounded-md group-data-[viewport=false]/navigation-menu:border group-data-[viewport=false]/navigation-menu:bg-popover group-data-[viewport=false]/navigation-menu:text-popover-foreground group-data-[viewport=false]/navigation-menu:shadow group-data-[viewport=false]/navigation-menu:duration-200 **:data-[slot=navigation-menu-link]:focus:ring-0 **:data-[slot=navigation-menu-link]:focus:outline-none group-data-[viewport=false]/navigation-menu:data-[state=closed]:animate-out group-data-[viewport=false]/navigation-menu:data-[state=closed]:fade-out-0 group-data-[viewport=false]/navigation-menu:data-[state=closed]:zoom-out-95 group-data-[viewport=false]/navigation-menu:data-[state=open]:animate-in group-data-[viewport=false]/navigation-menu:data-[state=open]:fade-in-0 group-data-[viewport=false]/navigation-menu:data-[state=open]:zoom-in-95", cls)
       }
+      {...attrs}
     >
-      {() =>
-        visible() && (
-          <Portal to={portalTarget}>
-            <div
-              data-slot="navigation-menu-content"
-              data-state={state()}
-              class={
-                cn("top-0 left-0 w-full p-2 pr-2.5 data-[motion=from-end]:slide-in-from-right-52 data-[motion=from-start]:slide-in-from-left-52 data-[motion=to-end]:slide-out-to-right-52 data-[motion=to-start]:slide-out-to-left-52 data-[motion^=from-]:animate-in data-[motion^=from-]:fade-in data-[motion^=to-]:animate-out data-[motion^=to-]:fade-out md:absolute md:w-auto group-data-[viewport=false]/navigation-menu:top-full group-data-[viewport=false]/navigation-menu:mt-1.5 group-data-[viewport=false]/navigation-menu:overflow-hidden group-data-[viewport=false]/navigation-menu:rounded-md group-data-[viewport=false]/navigation-menu:border group-data-[viewport=false]/navigation-menu:bg-popover group-data-[viewport=false]/navigation-menu:text-popover-foreground group-data-[viewport=false]/navigation-menu:shadow group-data-[viewport=false]/navigation-menu:duration-200 **:data-[slot=navigation-menu-link]:focus:ring-0 **:data-[slot=navigation-menu-link]:focus:outline-none group-data-[viewport=false]/navigation-menu:data-[state=closed]:animate-out group-data-[viewport=false]/navigation-menu:data-[state=closed]:fade-out-0 group-data-[viewport=false]/navigation-menu:data-[state=closed]:zoom-out-95 group-data-[viewport=false]/navigation-menu:data-[state=open]:animate-in group-data-[viewport=false]/navigation-menu:data-[state=open]:fade-in-0 group-data-[viewport=false]/navigation-menu:data-[state=open]:zoom-in-95", cls)
-              }
-              hook:afterMount={(node) => {
-                // The exit's animationend (state already "closed") unmounts the
-                // panel and reports onExited; the entry's animationend is ignored.
-                if (!(node instanceof HTMLElement)) return;
-                const onAnimationEnd = (): void => {
-                  if (!active()) {
-                    visible(false);
-                    onExited?.();
-                  }
-                };
-                node.addEventListener("animationend", onAnimationEnd);
-                teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
-              }}
-              hook:beforeDestroy={() => {
-                while (teardown.length) teardown.pop()!();
-              }}
-              {...attrs}
-            >
-              {children}
-            </div>
-          </Portal>
-        )
-      }
-    </div>
+      {children}
+    </Content>
   );
 }
 
@@ -246,17 +155,17 @@ export function NavigationMenuLink({
   class: cls,
   ...attrs
 }: NavigationMenuLinkProps): JSX.Element {
+  const { Link } = navigationMenu();
   return (
-    <a
-      data-slot="navigation-menu-link"
-      data-active={active ? "true" : undefined}
+    <Link
+      active={active}
       class={
         cn("flex flex-col gap-1 rounded-sm p-2 text-sm transition-all outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 data-[active=true]:bg-accent/50 data-[active=true]:text-accent-foreground data-[active=true]:hover:bg-accent data-[active=true]:focus:bg-accent [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground", cls)
       }
       {...attrs}
     >
       {children}
-    </a>
+    </Link>
   );
 }
 
@@ -266,23 +175,16 @@ export function NavigationMenuViewport({
   class: cls,
   ...attrs
 }: NavigationMenuViewportProps): JSX.Element {
-  const active = (): boolean => activeProp?.() ?? false;
+  const { Viewport } = navigationMenu();
   return (
-    <div
+    <Viewport
+      active={activeProp}
+      id={id}
       class={
-        cn("absolute top-full left-0 isolate z-50 flex justify-center", cls)
+        cn("absolute top-full left-0 isolate z-50 flex justify-center [&_[data-slot=navigation-menu-viewport]]:origin-top-center [&_[data-slot=navigation-menu-viewport]]:relative [&_[data-slot=navigation-menu-viewport]]:mt-1.5 [&_[data-slot=navigation-menu-viewport]]:h-[var(--radix-navigation-menu-viewport-height)] [&_[data-slot=navigation-menu-viewport]]:w-full [&_[data-slot=navigation-menu-viewport]]:overflow-hidden [&_[data-slot=navigation-menu-viewport]]:rounded-md [&_[data-slot=navigation-menu-viewport]]:border [&_[data-slot=navigation-menu-viewport]]:bg-popover [&_[data-slot=navigation-menu-viewport]]:text-popover-foreground [&_[data-slot=navigation-menu-viewport]]:shadow [&[data-state=closed]_[data-slot=navigation-menu-viewport]]:animate-out [&[data-state=closed]_[data-slot=navigation-menu-viewport]]:zoom-out-95 [&[data-state=open]_[data-slot=navigation-menu-viewport]]:animate-in [&[data-state=open]_[data-slot=navigation-menu-viewport]]:zoom-in-90 md:[&_[data-slot=navigation-menu-viewport]]:w-[var(--radix-navigation-menu-viewport-width)]", cls)
       }
       {...attrs}
-    >
-      <div
-        data-slot="navigation-menu-viewport"
-        id={id}
-        data-state={active() ? "open" : "closed"}
-        class={
-          cn("origin-top-center relative mt-1.5 h-[var(--radix-navigation-menu-viewport-height)] w-full overflow-hidden rounded-md border bg-popover text-popover-foreground shadow data-[state=closed]:animate-out data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:zoom-in-90 md:w-[var(--radix-navigation-menu-viewport-width)]")
-        }
-      />
-    </div>
+    />
   );
 }
 
@@ -292,123 +194,40 @@ export function NavigationMenuIndicator({
   class: cls,
   ...attrs
 }: NavigationMenuIndicatorProps): JSX.Element {
-  const activeId = signal("");
-  const visible = (): boolean => activeProp?.() ?? activeId() !== "";
-  const wirings: (() => void)[] = [];
-  let node: HTMLElement | undefined;
-
-  // The trigger to sit under: the manual anchor when given, else the active
-  // trigger found by the announcement stream's id.
-  const resolveTrigger = (): Element | undefined => {
-    if (anchor) return anchor();
-    const id = activeId();
-    return id === ""
-      ? undefined
-      : (document.querySelector(`[data-slot='navigation-menu-trigger'][data-value='${id}']`) ??
-          undefined);
-  };
-
-  // The underline/box position: measured against the root bar, moved with a
-  // 200ms transform transition (upstream approximates its spring the same way).
-  const measure = (): void => {
-    if (!node) return;
-    const anchorEl = resolveTrigger();
-    const root = node.closest("[data-slot='navigation-menu']");
-    if (!anchorEl || !root) return;
-    const t = anchorEl.getBoundingClientRect();
-    const r = root.getBoundingClientRect();
-    node.style.width = `${t.width}px`;
-    node.style.transform = `translateX(${t.left - r.left}px)`;
-  };
-
-  // Re-measure when visibility flips (the trigger just changed), on mount,
-  // and on viewport resizes.
-  effect(() => {
-    visible();
-    measure();
-  });
-
+  const { Indicator } = navigationMenu();
   return (
-    <div
-      data-slot="navigation-menu-indicator"
-      data-state={visible() ? "visible" : "hidden"}
+    <Indicator
+      active={activeProp}
+      anchor={anchor}
       class={
-        cn("top-full z-[1] flex h-1.5 items-end justify-center overflow-hidden data-[state=hidden]:animate-out data-[state=hidden]:fade-out data-[state=visible]:animate-in data-[state=visible]:fade-in transition-[transform,width] duration-200", cls)
+        cn("top-full z-[1] flex h-1.5 items-end justify-center overflow-hidden data-[state=hidden]:animate-out data-[state=hidden]:fade-out data-[state=visible]:animate-in data-[state=visible]:fade-in transition-[transform,width] duration-200 [&_[data-slot=navigation-menu-diamond]]:relative [&_[data-slot=navigation-menu-diamond]]:top-[60%] [&_[data-slot=navigation-menu-diamond]]:h-2 [&_[data-slot=navigation-menu-diamond]]:w-2 [&_[data-slot=navigation-menu-diamond]]:rotate-45 [&_[data-slot=navigation-menu-diamond]]:rounded-tl-sm [&_[data-slot=navigation-menu-diamond]]:bg-border [&_[data-slot=navigation-menu-diamond]]:shadow-md", cls)
       }
-      hook:afterMount={(mounted) => {
-        if (!(mounted instanceof HTMLElement)) return;
-        node = mounted;
-        measure();
-        const onActivate = (event: Event): void => {
-          const detail = (event as CustomEvent).detail;
-          if (typeof detail?.id !== "string" || typeof detail?.open !== "boolean") return;
-          activeId(detail.open ? detail.id : "");
-        };
-        document.addEventListener("hella:navigation-menu-activate", onActivate);
-        wirings.push(() => document.removeEventListener("hella:navigation-menu-activate", onActivate));
-        const onResize = (): void => measure();
-        window.addEventListener("resize", onResize);
-        wirings.push(() => window.removeEventListener("resize", onResize));
-      }}
-      hook:beforeDestroy={() => {
-        while (wirings.length) wirings.pop()!();
-        node = undefined;
-      }}
       {...attrs}
-    >
-      <div
-        class={
-          cn("relative top-[60%] h-2 w-2 rotate-45 rounded-tl-sm bg-border shadow-md")
-        }
-      />
-    </div>
+    />
   );
 }
 
 export function NavigationMenu({
   value: valueProp,
   onValueChange,
-  viewport: viewportProp,
+  viewport,
   children,
   class: cls,
   ...attrs
 }: NavigationMenuProps): JSX.Element {
-  const internal = signal("");
-  const active = (): string => (valueProp !== undefined ? valueProp() : internal());
-  const setActive = (value: string): void => {
-    if (valueProp === undefined) internal(value);
-    onValueChange?.(value);
-  };
-  const wirings: (() => void)[] = [];
-
-  // Mirror trigger announcements into the bar's open-value store; the announce
-  // carries the requested state, so this never re-toggles an owner's write.
-  const onActivate = (event: Event): void => {
-    const detail = (event as CustomEvent).detail;
-    if (typeof detail?.id !== "string" || typeof detail?.open !== "boolean") return;
-    setActive(detail.open ? detail.id : active() === detail.id ? "" : active());
-  };
-
+  const Nav = navigationMenu({
+    value: valueProp,
+    onValueChange,
+    viewport: viewport !== false,
+  });
   return (
-    <div
-      data-slot="navigation-menu"
-      data-viewport={viewportProp === false ? "false" : "true"}
+    <Nav.Root
       class={
         cn("group/navigation-menu relative flex max-w-max flex-1 items-center justify-center", cls)
       }
-      hook:afterMount={() => {
-        document.addEventListener("hella:navigation-menu-activate", onActivate);
-        wirings.push(() => document.removeEventListener("hella:navigation-menu-activate", onActivate));
-      }}
-      hook:beforeDestroy={() => {
-        while (wirings.length) wirings.pop()!();
-      }}
       {...attrs}
     >
       {children}
-      {() =>
-        viewportProp === false ? null : <NavigationMenuViewport active={() => active() !== ""} />
-      }
-    </div>
+    </Nav.Root>
   );
 }

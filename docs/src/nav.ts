@@ -29,6 +29,7 @@ export const navigation: Record<NavSection, NavEntry[]> = {
         "SSR",
         "Hydration",
         "Headless-Behaviors",
+        "Parts",
       ],
     },
     {
@@ -119,6 +120,20 @@ export const navigation: Record<NavSection, NavEntry[]> = {
         "combobox",
         "select",
         "command",
+        "toggle",
+        "checkbox",
+        "toggleSwitch",
+        "toggleGroup",
+        "radioGroup",
+        "tabs",
+        "navigationMenu",
+        "slider",
+        "toast",
+        "calendar",
+        "inputOtp",
+        "createForm",
+        "scrollArea",
+        "messageScroller",
       ]
     },
     {

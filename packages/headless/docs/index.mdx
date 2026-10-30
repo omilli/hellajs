@@ -1,6 +1,6 @@
 ## Headless
 
-Headless wiring for common UI mechanics: trapping focus, Escape and outside dismissal, roving tabindex, anchor positioning, hover intent, menu typeahead, pointer gestures, and layered dismissal. Each behavior is a plain function that takes elements and callbacks and returns a dispose handle; state stays in your signals. The `modal` foundation composes the dialog-family wiring with automatic, node-scoped disposal instead of a dispose handle, and the parts factories (`popover`, `menu`, `menubar`, `tooltip`, `hoverCard`, `combobox`, `select`, `command`) grow a components tier: camelCase factories whose components render structure, never styles.
+Headless wiring for common UI mechanics: trapping focus, Escape and outside dismissal, roving tabindex, anchor positioning, hover intent, menu typeahead, pointer gestures, and layered dismissal. Each behavior is a plain function that takes elements and callbacks and returns a dispose handle; state stays in your signals. The `modal` foundation composes the dialog-family wiring with automatic, node-scoped disposal instead of a dispose handle, and the parts factories (`popover`, `menu`, `menubar`, `tooltip`, `hoverCard`, `combobox`, `select`, `command`, `toggle`, `checkbox`, `toggleSwitch`, `toggleGroup`, `radioGroup`, `tabs`, `navigationMenu`, `slider`, `toast`, `calendar`, `inputOtp`, `createForm`, `scrollArea`, `messageScroller`) grow a components tier: camelCase factories whose components render structure, never styles.
 
 ### Installation
 
@@ -68,7 +68,22 @@ mount(<div>{() => (open() ? <Dialog /> : <p>Nothing open</p>)}</div>, "#app");
 - **[combobox](/reference/headless/combobox)**: Create the combobox parts in one factory call: query input, filtered option panel, and multi-select chips
 - **[select](/reference/headless/select)**: Create the select parts in one factory call: trigger, value label, and the ported roving listbox
 - **[command](/reference/headless/command)**: Create the command palette parts in one factory call: search input, ranked list, and the modal-wired palette dialog
+- **[toggle](/reference/headless/toggle)**: Create the pressed-state toggle button in one factory call with controlled-or-internal state
+- **[checkbox](/reference/headless/checkbox)**: Create the checkbox parts in one factory call: the tri-state button and its indicator
+- **[toggleSwitch](/reference/headless/toggleswitch)**: Create the switch parts in one factory call: the checked-state button and its moving thumb
+- **[toggleGroup](/reference/headless/togglegroup)**: Create the toggle-group parts in one factory call: roving items with single and multiple exclusion
+- **[radioGroup](/reference/headless/radiogroup)**: Create the radio-group parts in one factory call: exclusive selection with move-and-select arrows
+- **[tabs](/reference/headless/tabs)**: Create the tabs parts in one factory call: the roving tablist, its triggers, and the keyed panels
+- **[navigationMenu](/reference/headless/navigationmenu)**: Create the navigation menu parts in one factory call: the announced open-value store, the viewport-shared panels, and the moving indicator
+- **[slider](/reference/headless/slider)**: Create the slider parts in one factory call: the drag-wired root, the measured track, the filled range, and the focusable thumbs
+- **[toast](/reference/headless/toast)**: Enqueue toast cards onto a shared stack from anywhere: timers, hover pause, swipe dismissal, and the portaled Toaster
+- **[calendar](/reference/headless/calendar)**: Create the calendar parts in one factory call: the month view, the selection model, and the day grid with its keyboard
+- **[inputOtp](/reference/headless/inputotp)**: Create the one-time-code parts in one factory call: the slot row, its display slots, and the separator over one transparent input
+- **[createForm](/reference/headless/createform)**: Create a signals-native form controller in one factory call: per-field signals, validation timing, and the field parts that read it through explicit props
+- **[scrollArea](/reference/headless/scrollarea)**: Create the scroll-area parts in one factory call: the native-scroll viewport and the self-measuring scrollbar whose thumb tracks and drags its axis
+- **[messageScroller](/reference/headless/messagescroller)**: Create the message-scroller parts in one factory call: the shared at-bottom state, stickiness on new content, and the jump-to-bottom button
 
 ### Concepts
 
 - **[Headless Behaviors](/learn/concepts/headless-behaviors)**: Focus traps, anchoring, hover intent, typeahead, gestures, layered dismissal, and the parts factories as plain functions
+- **[Headless Parts](/learn/concepts/parts)**: The parts factories as a tier: one call returns the full part set, controlled-or-internal state, and when to drop to the behaviors tier

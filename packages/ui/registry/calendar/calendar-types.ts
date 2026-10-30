@@ -67,28 +67,3 @@ export interface CalendarDayButtonProps extends HTMLAttributes<"button"> {
   today?: boolean;
   class?: string;
 }
-
-export interface CalendarCell {
-  key: string;
-  date: Date;
-  outside: boolean;
-  today: boolean;
-  disabled: boolean;
-}
-
-export interface DayCellProps {
-  cell: CalendarCell;
-  selected: () => boolean;
-  rangeStart: () => boolean;
-  rangeMiddle: () => boolean;
-  rangeEnd: () => boolean;
-  focused: () => boolean;
-  hidden: boolean;
-  /** The ref's `day` class hook, applied to the grid cell. */
-  dayClass?: string;
-  /** The ref's `day_button` class hook, forwarded to the day button. */
-  buttonClass?: string;
-  onSelect: (cell: CalendarCell) => void;
-  onHover: (cell: CalendarCell) => void;
-  onLeave: () => void;
-}

@@ -1,0 +1,103 @@
+# createForm
+
+Creates a signals-native form controller in one call: one writable signal per field, the errors, touched, and dirty state, and the submit path. The form parts read the controller through explicit props, so the wiring stays visible at the composition site.
+
+## Basic Usage
+
+```tsx
+import { mount } from "@hellajs/dom";
+import {
+  createForm,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormDescription,
+  FormMessage,
+} from "@hellajs/headless";
+
+const form = createForm(
+  { email: "" },
+  { validators: { email: (v) => (v.includes("@") ? null : "Invalid email") } },
+);
+const emailInvalid = () => form.errors().email != null;
+const emailErrors = () => (form.errors().email ? [form.errors().email!] : []);
+
+mount(
+  <form onSubmit={form.handleSubmit((values) => console.log(values))}>
+    <FormItem error={emailInvalid}>
+      <FormLabel for="email" error={emailInvalid}>
+        Email
+      </FormLabel>
+      <FormControl invalid={emailInvalid}>
+        <input
+          id="email"
+          value={form.values.email}
+          on:input={(e) => form.setField("email", (e.target as HTMLInputElement).value)}
+          e:blur={() => form.blur("email")}
+        />
+      </FormControl>
+      <FormDescription id="email-note">We only use this for sign-in.</FormDescription>
+      <FormMessage errors={emailErrors} />
+    </FormItem>
+  </form>,
+  "#app",
+);
+// Submitting an invalid email marks the field touched, renders the
+// validation message under role="alert", and skips onValid.
+```
+
+## API
+
+```typescript
+function createForm<T extends object>(initial: T, options?: FormOptions<T>): FormController<T>
+```
+
+- `initial`: The initial field values; the key set is fixed at creation.
+- `options.validators`: Per-field validators receiving the field value and the full values snapshot; return the message string, or null when the value is clean.
+- **Returns**: The controller: per-field signals, error and touched maps, the dirty flag, and the submit path.
+
+### Controller
+
+| Member | Behavior |
+|---|---|
+| `values` | One writable signal per field |
+| `errors` | Current validation messages keyed by field |
+| `touched` | Fields that have blurred or been submitted |
+| `dirty` | True while any field differs from its initial value |
+| `setField(key, value)` | Writes the field, retracks dirty, and revalidates only when the field is already touched |
+| `blur(key)` | Marks the field touched and validates it |
+| `validate()` | Validates every field, writes the error map, and returns true when no messages remain |
+| `reset()` | Restores every field to its initial value and clears errors, touched, and dirty |
+| `handleSubmit(onValid)` | Validates all and marks all touched, preventDefaults the optional event, and calls `onValid(values)` only when clean |
+
+### Parts
+
+| Part | Renders |
+|---|---|
+| `FormItem` | The field's grouping container with `data-error` from the error flag |
+| `FormLabel` | The label with `for`, `data-required`, and the error flag as `data-error` plus `aria-invalid` |
+| `FormControl` | The passthrough wrapper carrying `aria-invalid` and the `describedBy` target |
+| `FormDescription` | The helper text carrying the `id` the control's `describedBy` points at |
+| `FormMessage` | The `role="alert"` message rendering the first error; hidden while the list is empty and no fallback children are given |
+
+Every part spreads `class` and native attributes onto its element; parts own structure, styling stays in the wrapper.
+
+## Key Concepts
+
+### Validation Timing
+
+Validators run on three triggers: `blur` marks the field touched and validates it, `setField` revalidates only fields that are already touched (typing never surfaces errors before the first blur or submit), and `handleSubmit` validates every field and marks them all touched, so a blocked submit reveals every message at once.
+
+### Error Flags Accept Accessors
+
+The parts take their error flags as plain booleans or reactive accessors, so a composed form drives `data-error` and `aria-invalid` live from the controller's signals: derive the flag once (`const emailInvalid = () => form.errors().email != null`) and pass it to every part that mirrors it.
+
+## Important Considerations
+
+### Call createForm in Component Scope
+
+`createForm()` creates the field signals that must dispose with the component that owns them. A module-level call shares one form instance across every render and leaks the signals. Call the factory inside the component that renders the parts.
+
+### Thread the Controller Through Props
+
+There is no context provider: every part names its field's state explicitly, so the label's `for`, the control's `describedBy`, and the message's `errors` accessor each read from the same controller at the composition site.

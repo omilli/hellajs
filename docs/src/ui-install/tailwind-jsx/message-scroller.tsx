@@ -1,6 +1,6 @@
-import { signal } from "@hellajs/core";
+import { messageScroller } from "@hellajs/headless";
 import type { Signal } from "@hellajs/core";
-import type { HellaChild, HellaChildren, HTMLAttributes } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 interface MessageScrollerProviderProps {
   children?: HellaChildren;
@@ -51,9 +51,6 @@ interface MessageScrollerProps extends HTMLAttributes<"div"> {
 }
 import { cn } from "./cn.js";
 
-const viewport =
-  "size-full min-h-0 min-w-0 scroll-fade-b scrollbar-thin scrollbar-gutter-stable overflow-y-auto overscroll-contain contain-content data-autoscrolling:scrollbar-none data-pending-scroll:invisible";
-
 const buttonVariants = {
   default: "bg-primary text-primary-foreground hover:bg-primary/90",
   destructive:
@@ -94,62 +91,16 @@ export function MessageScrollerViewport({
   class: cls,
   ...attrs
 }: MessageScrollerViewportProps): JSX.Element {
-  const fallback = signal(true);
-  const teardown: (() => void)[] = [];
-  let el: HTMLElement | undefined;
-
-  const state = (): Signal<boolean> => atBottom ?? fallback;
-
-  const jump = (): void => {
-    if (scrollToBottom) scrollToBottom();
-    else if (el) {
-      el.scrollTop = el.scrollHeight;
-      state()(true);
-    }
-  };
-
-  const sync = (): void => {
-    const node = el;
-    if (!node) return;
-    const distance = node.scrollHeight - node.scrollTop - node.clientHeight;
-    state()(distance <= (threshold ?? 80));
-  };
-
-  const defaultObserve = (target: Element, onGrow: () => void): (() => void) => {
-    if (typeof ResizeObserver === "undefined") return () => undefined;
-    const observer = new ResizeObserver(onGrow);
-    observer.observe(target);
-    return () => observer.disconnect();
-  };
-
-  const onGrow = (): void => {
-    if (state()()) jump();
-    sync();
-  };
-
+  const { Viewport } = messageScroller({ atBottom, scrollToBottom, threshold, observe });
   return (
-    <div
-      data-slot="message-scroller-viewport"
+    <Viewport
       class={
-        cn(viewport, cls)
+        cn("size-full min-h-0 min-w-0 scroll-fade-b scrollbar-thin scrollbar-gutter-stable overflow-y-auto overscroll-contain contain-content data-autoscrolling:scrollbar-none data-pending-scroll:invisible", cls)
       }
       {...attrs}
-      hook:afterMount={(node) => {
-        if (!(node instanceof HTMLElement)) return;
-        el = node;
-        node.addEventListener("scroll", sync, { passive: true });
-        teardown.push(() => node.removeEventListener("scroll", sync));
-        const inner = node.firstElementChild;
-        if (inner) teardown.push((observe ?? defaultObserve)(inner, onGrow));
-        if (state()()) node.scrollTop = node.scrollHeight;
-      }}
-      hook:beforeDestroy={() => {
-        while (teardown.length) teardown.pop()!();
-        el = undefined;
-      }}
     >
       {children}
-    </div>
+    </Viewport>
   );
 }
 
@@ -158,16 +109,16 @@ export function MessageScrollerContent({
   class: cls,
   ...attrs
 }: MessageScrollerContentProps): JSX.Element {
+  const { Content } = messageScroller();
   return (
-    <div
-      data-slot="message-scroller-content"
+    <Content
       class={
         cn("flex h-max min-h-full flex-col gap-8", cls)
       }
       {...attrs}
     >
       {children}
-    </div>
+    </Content>
   );
 }
 
@@ -176,16 +127,16 @@ export function MessageScrollerItem({
   class: cls,
   ...attrs
 }: MessageScrollerItemProps): JSX.Element {
+  const { Item } = messageScroller();
   return (
-    <div
-      data-slot="message-scroller-item"
+    <Item
       class={
         cn("min-w-0 shrink-0 [contain-intrinsic-size:auto_10rem] [content-visibility:auto]", cls)
       }
       {...attrs}
     >
       {children}
-    </div>
+    </Item>
   );
 }
 
@@ -200,73 +151,26 @@ export function MessageScrollerButton({
   class: cls,
   ...attrs
 }: MessageScrollerButtonProps): JSX.Element {
-  const direction = (): "start" | "end" => dir ?? "end";
-
-  const active = (): "true" | "false" => {
-    const bottom = atBottom?.() ?? true;
-    const isActive = direction() === "end" ? !bottom : bottom;
-    return isActive ? "true" : "false";
-  };
-
-  const click = (event: Event): void => {
-    if (scrollToBottom) {
-      scrollToBottom();
-      atBottom?.(true);
-      return;
-    }
-    if (!(event.target instanceof Element)) return;
-    const viewport = event.target
-      .closest('[data-slot="message-scroller"]')
-      ?.querySelector('[data-slot="message-scroller-viewport"]');
-    if (viewport instanceof HTMLElement) {
-      viewport.scrollTop = viewport.scrollHeight;
-      atBottom?.(true);
-    }
-  };
-
+  const { Button } = messageScroller({ atBottom, scrollToBottom });
   return (
-    <button
-      type="button"
-      data-slot="message-scroller-button"
-      data-direction={direction()}
-      data-variant={variant ?? "secondary"}
-      data-size={size ?? "icon-sm"}
-      data-active={active}
+    <Button
+      direction={dir}
+      variant={variant}
+      size={size}
+      on:click={userClick}
       class={
         cn(
-          "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+          "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_[data-slot='message-scroller-sr']]:sr-only",
           buttonVariants[variant ?? "secondary"],
           buttonSizes[size ?? "icon-sm"],
           "absolute inset-s-1/2 -translate-x-1/2 border-border bg-background text-foreground transition-[translate,scale,opacity] duration-200 hover:bg-muted hover:text-foreground data-[active=false]:pointer-events-none data-[active=false]:scale-95 data-[active=false]:opacity-0 data-[active=false]:duration-400 data-[active=false]:ease-[cubic-bezier(0.7,0,0.84,0)] data-[active=true]:translate-y-0 data-[active=true]:scale-100 data-[active=true]:opacity-100 data-[active=true]:ease-[cubic-bezier(0.23,1,0.32,1)] data-[direction=end]:bottom-4 data-[direction=end]:data-[active=false]:translate-y-full data-[direction=start]:top-4 data-[direction=start]:data-[active=false]:-translate-y-full rtl:translate-x-1/2 data-[direction=start]:[&_svg]:rotate-180",
           cls,
         )
       }
-      on:click={function (e) {
-        userClick?.call(this, e);
-        click(e);
-      }}
       {...attrs}
     >
-      {children ?? (
-        <>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M12 5v14" />
-            <path d="m19 12-7 7-7-7" />
-          </svg>
-          <span class="sr-only">{direction() === "end" ? "Scroll to end" : "Scroll to start"}</span>
-        </>
-      )}
-    </button>
+      {children}
+    </Button>
   );
 }
 
@@ -285,32 +189,39 @@ export function MessageScroller({
   class: cls,
   ...attrs
 }: MessageScrollerProps): JSX.Element {
-  const bottom = atBottom ?? signal(true);
+  const { Root, Viewport, Content, Button } = messageScroller({
+    atBottom,
+    scrollToBottom,
+    threshold,
+    observe,
+  });
   return (
-    <div
-      data-slot="message-scroller"
+    <Root
       class={
         cn("group/message-scroller relative flex size-full min-h-0 flex-col overflow-hidden", cls)
       }
       {...attrs}
     >
-      <MessageScrollerViewport
-        atBottom={bottom}
-        scrollToBottom={scrollToBottom}
-        threshold={threshold}
-        observe={observe}
+      <Viewport
+        class={
+          cn("size-full min-h-0 min-w-0 scroll-fade-b scrollbar-thin scrollbar-gutter-stable overflow-y-auto overscroll-contain contain-content data-autoscrolling:scrollbar-none data-pending-scroll:invisible")
+        }
       >
-        <MessageScrollerContent children={flattenChildren(children)} />
-      </MessageScrollerViewport>
+        <Content
+          class={
+            cn("flex h-max min-h-full flex-col gap-8")
+          }
+        >
+          {children}
+        </Content>
+      </Viewport>
       {showScrollButton !== false && (
-        <MessageScrollerButton atBottom={bottom} scrollToBottom={scrollToBottom} />
+        <Button
+          class={
+            cn("inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_[data-slot='message-scroller-sr']]:sr-only", buttonVariants.secondary, buttonSizes["icon-sm"], "absolute inset-s-1/2 -translate-x-1/2 border-border bg-background text-foreground transition-[translate,scale,opacity] duration-200 hover:bg-muted hover:text-foreground data-[active=false]:pointer-events-none data-[active=false]:scale-95 data-[active=false]:opacity-0 data-[active=false]:duration-400 data-[active=false]:ease-[cubic-bezier(0.7,0,0.84,0)] data-[active=true]:translate-y-0 data-[active=true]:scale-100 data-[active=true]:opacity-100 data-[active=true]:ease-[cubic-bezier(0.23,1,0.32,1)] data-[direction=end]:bottom-4 data-[direction=end]:data-[active=false]:translate-y-full data-[direction=start]:top-4 data-[direction=start]:data-[active=false]:-translate-y-full rtl:translate-x-1/2 data-[direction=start]:[&_svg]:rotate-180")
+          }
+        />
       )}
-    </div>
+    </Root>
   );
-}
-
-/** Flattens a HellaChildren value into HellaChild[] for explicit children props. */
-function flattenChildren(children: HellaChildren | undefined): HellaChild[] {
-  if (children === undefined) return [];
-  return Array.isArray(children) ? children : [children];
 }

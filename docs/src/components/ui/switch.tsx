@@ -1,4 +1,4 @@
-import { signal } from "@hellajs/core";
+import { toggleSwitch } from "@hellajs/headless";
 import type { HTMLAttributes } from "@hellajs/dom";
 
 interface SwitchProps extends HTMLAttributes<"button"> {
@@ -66,49 +66,27 @@ const thumb = style("switch-thumb", {
 });
 
 export function Switch({
-  checked: checkedProp,
+  checked,
   onCheckedChange,
   disabled,
-  "on:click": userClick,
   class: cls,
   ...attrs
 }: SwitchProps): JSX.Element {
-  const checkedAccessor = typeof checkedProp === "function" ? checkedProp : undefined;
-  const internal = signal(typeof checkedProp === "boolean" ? checkedProp : false);
-  const checked = (): boolean => (checkedAccessor ? checkedAccessor() : internal());
-
-  const toggle = (): void => {
-    if (disabled) return;
-    const next = !checked();
-    if (!checkedAccessor) internal(next);
-    onCheckedChange?.(next);
-  };
-
+  const { Root, Indicator } = toggleSwitch({ checked, onCheckedChange });
   return (
-    <button
-      type="button"
-      role="switch"
-      data-slot="switch"
+    <Root
       data-size="default"
-      aria-checked={checked() ? "true" : "false"}
-      data-state={checked() ? "checked" : "unchecked"}
-      disabled={disabled ? true : undefined}
+      disabled={disabled}
       class={
         [base, cls]
       }
-      on:click={function (e) {
-        userClick?.call(this, e);
-        toggle();
-      }}
       {...attrs}
     >
-      <span
-        data-slot="switch-thumb"
-        data-state={checked() ? "checked" : "unchecked"}
+      <Indicator
         class={
           [thumb]
         }
       />
-    </button>
+    </Root>
   );
 }

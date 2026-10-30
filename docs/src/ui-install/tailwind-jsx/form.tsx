@@ -1,34 +1,12 @@
-import { signal } from "@hellajs/core";
-import type { Signal } from "@hellajs/core";
+import {
+  createForm,
+  FormControl as HeadlessFormControl,
+  FormDescription as HeadlessFormDescription,
+  FormItem as HeadlessFormItem,
+  FormLabel as HeadlessFormLabel,
+  FormMessage as HeadlessFormMessage,
+} from "@hellajs/headless";
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
-
-type FormValidator<T> = (value: T[keyof T], values: T) => string | null;
-
-interface FormOptions<T> {
-  /** Per-field validators; a field without one is always clean. */
-  validators?: Partial<Record<keyof T, FormValidator<T>>>;
-}
-
-interface FormController<T extends object> {
-  /** One writable signal per field. */
-  values: { [K in keyof T]: Signal<T[K]> };
-  /** Current validation messages keyed by field. */
-  errors: Signal<Partial<Record<keyof T, string>>>;
-  /** Fields that have blurred or been submitted. */
-  touched: Signal<Partial<Record<keyof T, boolean>>>;
-  /** True while any field differs from its initial value. */
-  dirty: Signal<boolean>;
-  /** Writes the field value, retracks dirty, and revalidates the field when it is already touched. */
-  setField: <K extends keyof T>(key: K, value: T[K]) => void;
-  /** Marks the field touched and validates it. */
-  blur: (key: keyof T) => void;
-  /** Validates every field; returns true when no messages remain. */
-  validate: () => boolean;
-  /** Restores every field to its initial value and clears errors, touched, and dirty. */
-  reset: () => void;
-  /** Validates all and marks all touched; calls onValid with the values only when clean. The optional event is preventDefaulted. */
-  handleSubmit: (onValid: (values: T) => void) => (e?: Event) => void;
-}
 
 interface FormItemProps extends HTMLAttributes<"div"> {
   class?: string;
@@ -66,195 +44,59 @@ interface FormMessageProps extends HTMLAttributes<"p"> {
 }
 import { cn } from "./cn.js";
 
-/** Per-field validator: receives the field value and the full values snapshot, returns the error message or null when the value is clean. */
+export { createForm };
 
-/** Options bag for createForm. */
-
-/** Signals controller createForm returns; the form parts read it through explicit props (no context). */
-
-/** Signals-native form controller replacing react-hook-form's provider: values, errors, touched, and dirty are plain signals, validators run on blur, on setField after touch, and on submit. */
-export function createForm<T extends object>(
-  initial: T,
-  options?: FormOptions<T>,
-): FormController<T> {
-  const keys = Object.keys(initial) as (keyof T)[];
-  const values = {} as { [K in keyof T]: Signal<T[K]> };
-  for (const key of keys) values[key] = signal(initial[key]);
-  const errors = signal<Partial<Record<keyof T, string>>>({});
-  const touched = signal<Partial<Record<keyof T, boolean>>>({});
-  const dirty = signal(false);
-
-  const snapshot = (): T => {
-    const out = {} as T;
-    for (const key of keys) out[key] = values[key]();
-    return out;
-  };
-
-  const syncDirty = (): void => {
-    dirty(keys.some((key) => values[key]() !== initial[key]));
-  };
-
-  const validateField = (key: keyof T): void => {
-    const validator = options?.validators?.[key];
-    const outcome = validator ? validator(values[key](), snapshot()) : null;
-    const next = { ...errors() };
-    if (outcome == null) delete next[key];
-    else next[key] = outcome;
-    errors(next);
-  };
-
-  const setField = <K extends keyof T>(key: K, value: T[K]): void => {
-    values[key](value);
-    syncDirty();
-    if (touched()[key]) validateField(key);
-  };
-
-  const blur = (key: keyof T): void => {
-    touched({ ...touched(), [key]: true });
-    validateField(key);
-  };
-
-  const validate = (): boolean => {
-    const next: Partial<Record<keyof T, string>> = {};
-    const current = snapshot();
-    for (const key of keys) {
-      const validator = options?.validators?.[key];
-      const outcome = validator ? validator(values[key](), current) : null;
-      if (outcome != null) next[key] = outcome;
-    }
-    errors(next);
-    return Object.keys(next).length === 0;
-  };
-
-  const reset = (): void => {
-    for (const key of keys) values[key](initial[key]);
-    errors({});
-    touched({});
-    dirty(false);
-  };
-
-  const handleSubmit =
-    (onValid: (values: T) => void) =>
-    (e?: Event): void => {
-      e?.preventDefault();
-      const clean = validate();
-      const nextTouched = { ...touched() };
-      for (const key of keys) nextTouched[key] = true;
-      touched(nextTouched);
-      if (clean) onValid(snapshot());
-    };
-
-  return { values, errors, touched, dirty, setField, blur, validate, reset, handleSubmit };
-}
-
-export function FormItem({ error, children, class: cls, ...attrs }: FormItemProps): JSX.Element {
-  const hasError = (): boolean => (typeof error === "function" ? error() : error) === true;
+export function FormItem({ class: cls, ...attrs }: FormItemProps): JSX.Element {
   return (
-    <div
-      data-slot="form-item"
-      data-error={hasError() ? "true" : "false"}
+    <HeadlessFormItem
       class={
         cn("grid gap-2", cls)
       }
       {...attrs}
-    >
-      {children}
-    </div>
+    />
   );
 }
 
-export function FormLabel({
-  required,
-  for: htmlFor,
-  error,
-  children,
-  class: cls,
-  ...attrs
-}: FormLabelProps): JSX.Element {
-  const hasError = (): boolean => (typeof error === "function" ? error() : error) === true;
-  const invalid = (): "true" | undefined => (hasError() ? "true" : undefined);
+export function FormLabel({ class: cls, ...attrs }: FormLabelProps): JSX.Element {
   return (
-    <label
-      data-slot="form-label"
-      data-required={required ? "true" : undefined}
-      for={htmlFor}
-      aria-invalid={invalid()}
-      data-error={hasError() ? "true" : "false"}
+    <HeadlessFormLabel
       class={
         cn("flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 data-[error=true]:text-destructive", cls)
       }
       {...attrs}
-    >
-      {children}
-    </label>
+    />
   );
 }
 
-export function FormControl({
-  invalid,
-  describedBy,
-  children,
-  class: cls,
-  ...attrs
-}: FormControlProps): JSX.Element {
-  const isInvalid = (): boolean => (typeof invalid === "function" ? invalid() : invalid) === true;
+export function FormControl({ class: cls, ...attrs }: FormControlProps): JSX.Element {
   return (
-    <div
-      data-slot="form-control"
-      aria-invalid={isInvalid() ? "true" : undefined}
-      aria-describedby={describedBy}
+    <HeadlessFormControl
       class={
         cn(cls)
       }
       {...attrs}
-    >
-      {children}
-    </div>
+    />
   );
 }
 
-export function FormDescription({
-  id,
-  children,
-  class: cls,
-  ...attrs
-}: FormDescriptionProps): JSX.Element {
+export function FormDescription({ class: cls, ...attrs }: FormDescriptionProps): JSX.Element {
   return (
-    <p
-      data-slot="form-description"
-      id={id}
+    <HeadlessFormDescription
       class={
         cn("text-sm text-muted-foreground", cls)
       }
       {...attrs}
-    >
-      {children}
-    </p>
+    />
   );
 }
 
-export function FormMessage({
-  errors,
-  children,
-  class: cls,
-  ...attrs
-}: FormMessageProps): JSX.Element {
-  const messages = (): string[] => (typeof errors === "function" ? errors() : errors) ?? [];
-  const hasContent = (): boolean => messages().length > 0 || children != null;
+export function FormMessage({ class: cls, ...attrs }: FormMessageProps): JSX.Element {
   return (
-    <p
-      role="alert"
-      data-slot="form-message"
-      hidden={() => !hasContent()}
+    <HeadlessFormMessage
       class={
         cn("text-sm text-destructive", cls)
       }
       {...attrs}
-    >
-      {() => {
-        const list = messages();
-        return list.length > 0 ? list[0] : children;
-      }}
-    </p>
+    />
   );
 }

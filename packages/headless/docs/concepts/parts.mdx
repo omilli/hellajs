@@ -1,0 +1,79 @@
+# Headless Parts
+
+Part factories turn headless behavior systems into composed components: one call returns the full part set, and your markup keeps the styling.
+
+## One Call Returns the Parts
+
+Call [`menu`](/reference/headless/menu) and bind the result: the returned object composes as dotted JSX.
+
+```jsx
+import { mount } from "@hellajs/dom";
+import { menu } from "@hellajs/headless";
+
+const save = () => console.log("saved");
+const remove = () => console.log("deleted");
+
+const Menu = menu();
+
+mount(
+  <div>
+    <Menu.Trigger>Actions</Menu.Trigger>
+    <Menu.Content side="bottom" align="start">
+      <Menu.Item onSelect={save} shortcut="⌘S">Save</Menu.Item>
+      <Menu.Separator />
+      <Menu.Item onSelect={remove}>Delete</Menu.Item>
+    </Menu.Content>
+  </div>,
+  "#app",
+);
+// The trigger toggles the open state and carries data-state plus
+// aria-expanded. Content portals to the body, anchors to the trigger,
+// and closes on Escape, an outside press, or an item selection.
+```
+
+The naming convention is camelCase factory, TitleCase binding: `const Menu = menu()` composes as `<Menu.Trigger>`. Every factory follows it: [`popover`](/reference/headless/popover), [`tabs`](/reference/headless/tabs), [`slider`](/reference/headless/slider), [`calendar`](/reference/headless/calendar), and the rest of the reference.
+
+The factory closure owns everything the parts share: the open or selected state, the exit timing, the roving focus, the generated aria ids. A part renders structure, never styles: it carries `data-slot` and `data-state` hooks for your CSS and spreads your `class` and attributes onto its element, so the same parts style identically in a registry paste or your own component tree.
+
+## Controlled or Internal
+
+State is controlled-or-internal, the same contract as the registry's `value`/`onValueChange` pairing. Pass a getter and the factory treats it as the single source of truth: it never writes, and it reports every factory-driven change through the change callback. Omit the getter and the factory keeps its own signal.
+
+```jsx
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+import { tabs } from "@hellajs/headless";
+
+const value = signal("account");
+
+const Tabs = tabs({
+  value: () => value(),
+  onValueChange: (next) => value(next),
+});
+
+mount(
+  <div>
+    <Tabs.List>
+      <Tabs.Trigger value="account">Account</Tabs.Trigger>
+      <Tabs.Trigger value="password">Password</Tabs.Trigger>
+    </Tabs.List>
+    <Tabs.Content value="account">Account panel</Tabs.Content>
+    <Tabs.Content value="password">Password panel</Tabs.Content>
+  </div>,
+  "#app",
+);
+// Clicking or focusing a trigger reports through onValueChange; the
+// controller's write back through the getter is the only state change.
+```
+
+The pairing is uniform across the package: `open`/`onOpenChange` on the layer factories, `value`/`onValueChange` on selection factories, `checked`/`onCheckedChange` on checkbox and switch, `pressed`/`onPressedChange` on toggle. A controlled accessor's external change notifies no one: the render follows the getter, so a re-select of the active value reports nothing. Uncontrolled factories seed through `defaultValue` (or `defaultValues` where the shape is an array), and a part rendered outside the factory's own composition still rides the closure: the trigger toggles the same signal whether it sits in the factory's intended tree or in yours.
+
+## Compose Past the Defaults
+
+Each part takes the override props for its role, so a partially composed tree stays consistent. A [`tabs`](/reference/headless/tabs) trigger accepts `active` and `onActivate` to replace the factory's defaults; a menu checkbox item takes a controlled `checked`; a select's `Content` accepts `side`, `align`, and an `anchor` override. Unspecified behavior falls back to the closure, so you compose only the piece you need to change.
+
+Attribute forwarding is uniform: every part spreads rest attributes onto its root element, and a part that owns a handler chains yours, so an `on:click` on a trigger fires before the internal toggle.
+
+## The Behaviors Tier Below
+
+A factory is the right size when parts coordinate. When a component needs exactly one wiring with no shared state, skip the tier and call the behavior function directly: [`onDrag`](/reference/headless/ondrag) for a resize handle, [`hoverIntent`](/reference/headless/hoverintent) for a hover rail, [`modal`](/reference/headless/modal) to arm a dialog panel. The behaviors return a dispose handle and take plain DOM nodes, so they compose with any renderer. The decision rule and the registry's deliberate raw users are documented in [Headless Behaviors](/learn/concepts/headless-behaviors).

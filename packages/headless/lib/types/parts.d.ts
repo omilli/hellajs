@@ -1,4 +1,5 @@
-import type { HTMLAttributes, HellaChildren, HellaPrimitive } from "@hellajs/dom";
+import type { Signal } from "@hellajs/core";
+import type { HTMLAttributes, HellaChild, HellaChildren, HellaPrimitive } from "@hellajs/dom";
 
 /** Requested popover side. */
 export type AnchorSide = "top" | "bottom" | "left" | "right";
@@ -277,6 +278,99 @@ export interface MenubarParts {
   Bar: (props: MenubarBarProps) => JSX.Element;
   /** Creates one bar menu: full menu part set whose open state announces to the bar (opening one menu closes its siblings, and horizontal arrows hand off between triggers). */
   menu: (options?: MenubarMenuOptions) => MenuParts;
+}
+
+/** Class values follow the element attribute map: primitives or class arrays (composed by the wrapper). */
+export type NavigationMenuClass = HellaPrimitive | (string | null | undefined | boolean)[];
+
+export interface NavigationMenuOptions {
+  /** Controlled id of the open panel (`""` when closed). When given, the factory never writes its internal signal and `onValueChange` reports the requested value. */
+  value?: () => string;
+  /** Called with every store write mirrored from a trigger announcement. */
+  onValueChange?: (value: string) => void;
+  /** Whether the root renders the shared viewport slot as its last child. Default `true`; set `false` to compose a `Viewport` manually. */
+  viewport?: boolean;
+}
+
+export interface NavigationMenuRootProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: NavigationMenuClass;
+}
+
+export interface NavigationMenuListProps extends HTMLAttributes<"ul"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: NavigationMenuClass;
+}
+
+export interface NavigationMenuItemProps extends HTMLAttributes<"li"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: NavigationMenuClass;
+}
+
+export interface NavigationMenuTriggerProps extends HTMLAttributes<"button"> {
+  /** This trigger's id in the root's open-value store; clicks announce it so the root's store and the indicator follow without context. */
+  value?: string;
+  /** Open-state override for manual composition; defaults to the factory's active value for `value`. */
+  active?: () => boolean;
+  /** Called on click before the announcement; defaults to announcement-only activation. */
+  onActivate?: () => void;
+  children?: HellaChildren | HellaChildren[];
+  class?: NavigationMenuClass;
+}
+
+export interface NavigationMenuContentProps extends HTMLAttributes<"div"> {
+  /** The owning item's id in the root's open-value store; keys the factory's visibility. */
+  value?: string;
+  /** Visibility override mirroring the owning `Trigger`'s; defaults to the factory's active value for `value`. */
+  active?: () => boolean;
+  /** Portal target for the shared viewport slot; defaults to the first `[data-slot="navigation-menu-viewport"]` in the document. */
+  viewport?: string;
+  /** Called when the exit animation ends under data-state="closed"; entry animationends are ignored. */
+  onExited?: () => void;
+  children?: HellaChildren | HellaChildren[];
+  class?: NavigationMenuClass;
+}
+
+export interface NavigationMenuLinkProps extends HTMLAttributes<"a"> {
+  /** Renders `data-active="true"` and its accent styles (the ref's data-[active=true] set). */
+  active?: boolean;
+  children?: HellaChildren | HellaChildren[];
+  class?: NavigationMenuClass;
+}
+
+export interface NavigationMenuViewportProps extends HTMLAttributes<"div"> {
+  /** Open-state override for the viewport's enter/exit `data-state`; defaults to the factory's store being non-empty. */
+  active?: () => boolean;
+  class?: NavigationMenuClass;
+}
+
+export interface NavigationMenuIndicatorProps extends HTMLAttributes<"div"> {
+  /** Visible-state override (any panel open); defaults to the factory-announced active trigger. */
+  active?: () => boolean;
+  /** Resolves the trigger the indicator sits under; defaults to the trigger announced by the activation stream. */
+  anchor?: () => Element | undefined;
+  children?: HellaChildren | HellaChildren[];
+  class?: NavigationMenuClass;
+}
+
+/** The part set a `navigationMenu()` factory call returns, composed as `Nav.Root`-style members. */
+export interface NavigationMenuParts {
+  /** The bar root: mirrors trigger announcements into the open-value store and appends the shared viewport slot as its last child (unless `viewport: false`). */
+  Root: (props: NavigationMenuRootProps) => JSX.Element;
+  /** The `ul` list row wrapping the items. */
+  List: (props: NavigationMenuListProps) => JSX.Element;
+  /** The `li` item wrapping a trigger and its content anchor. */
+  Item: (props: NavigationMenuItemProps) => JSX.Element;
+  /** The trigger button: announces its `value` on click (one panel open at a time; a second click closes) and carries `aria-expanded`/`data-state` plus the chevron icon. */
+  Trigger: (props: NavigationMenuTriggerProps) => JSX.Element;
+  /** The panel for a value: portals into the shared viewport slot and exits through `animationend` (or the 250ms budget). */
+  Content: (props: NavigationMenuContentProps) => JSX.Element;
+  /** The leaf `a` link carrying `data-active` for the accent styles. */
+  Link: (props: NavigationMenuLinkProps) => JSX.Element;
+  /** The shared viewport slot whose `data-state` tracks the store; every `Content` portals into it. */
+  Viewport: (props: NavigationMenuViewportProps) => JSX.Element;
+  /** The moving indicator: measures the active trigger against the bar and re-measures on resize. */
+  Indicator: (props: NavigationMenuIndicatorProps) => JSX.Element;
 }
 
 /** Class values follow the element attribute map: primitives or class arrays (composed by the wrapper). */
@@ -777,4 +871,753 @@ export interface SelectParts {
   ScrollUpButton: (props: SelectScrollButtonProps) => JSX.Element;
   /** The listbox's repeat-scroll-down affordance (styled by the content's own scroll wiring). */
   ScrollDownButton: (props: SelectScrollButtonProps) => JSX.Element;
+}
+
+/** Class values follow the element attribute map: primitives or class arrays (composed by the wrapper). */
+export type ToggleClass = HellaPrimitive | (string | null | undefined | boolean)[];
+
+export interface ToggleOptions {
+  /** Controlled pressed state. Passing it makes the toggle controlled; omitting it keeps state internal. */
+  pressed?: boolean | (() => boolean);
+  /** Called with every factory-driven flip; a controlled accessor's external change notifies no one. */
+  onPressedChange?: (pressed: boolean) => void;
+}
+
+export interface ToggleRootProps extends HTMLAttributes<"button"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: ToggleClass;
+}
+
+/** The part set a `toggle()` factory call returns, composed as `Toggle.Root`-style members. */
+export interface ToggleParts {
+  /** The pressed-state button: `aria-pressed`, `data-state`, disabled gating, and the user-click chain. */
+  Root: (props: ToggleRootProps) => JSX.Element;
+}
+
+/** Class values follow the element attribute map: primitives or class arrays (composed by the wrapper). */
+export type CheckboxClass = HellaPrimitive | (string | null | undefined | boolean)[];
+
+export interface CheckboxOptions {
+  /** Controlled checked state. Passing it makes the checkbox controlled; omitting it keeps state internal. */
+  checked?: boolean | (() => boolean);
+  /** Controlled mixed (indeterminate) flag — wins over `checked` for rendering and clears on an uncontrolled toggle. */
+  indeterminate?: boolean | (() => boolean);
+  /** Called with the requested checked boolean on every factory-driven toggle. */
+  onCheckedChange?: (checked: boolean) => void;
+}
+
+export interface CheckboxRootProps extends HTMLAttributes<"button"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: CheckboxClass;
+}
+
+export interface CheckboxIndicatorProps extends HTMLAttributes<"span"> {
+  /** The indicator content; defaults to the check icon. Hidden while unchecked. */
+  children?: HellaChildren | HellaChildren[];
+  class?: CheckboxClass;
+}
+
+/** The part set a `checkbox()` factory call returns, composed as `Check.Root`-style members. */
+export interface CheckboxParts {
+  /** The checked-state button: `role="checkbox"`, tri-state `aria-checked`, `data-state`, disabled gating, and the user-click chain. */
+  Root: (props: CheckboxRootProps) => JSX.Element;
+  /** The indicator span inside `Root`: renders the check icon by default, hidden while unchecked. */
+  Indicator: (props: CheckboxIndicatorProps) => JSX.Element;
+}
+
+/** Class values follow the element attribute map: primitives or class arrays (composed by the wrapper). */
+export type SwitchClass = HellaPrimitive | (string | null | undefined | boolean)[];
+
+export interface SwitchOptions {
+  /** Controlled checked state. Passing it makes the switch controlled; omitting it keeps state internal. */
+  checked?: boolean | (() => boolean);
+  /** Called with every factory-driven flip; a controlled accessor's external change notifies no one. */
+  onCheckedChange?: (checked: boolean) => void;
+}
+
+export interface SwitchRootProps extends HTMLAttributes<"button"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: SwitchClass;
+}
+
+export interface SwitchIndicatorProps extends HTMLAttributes<"span"> {
+  class?: SwitchClass;
+}
+
+/** The part set a `toggleSwitch()` factory call returns, composed as `Switch.Root`-style members. */
+export interface SwitchParts {
+  /** The checked-state button: `role="switch"`, `aria-checked`, `data-state`, disabled gating, and the user-click chain. */
+  Root: (props: SwitchRootProps) => JSX.Element;
+  /** The moving thumb span inside `Root`, tracking `data-state`. */
+  Indicator: (props: SwitchIndicatorProps) => JSX.Element;
+}
+
+/** Class values follow the element attribute map: primitives or class arrays (composed by the wrapper). */
+export type ToggleGroupClass = HellaPrimitive | (string | null | undefined | boolean)[];
+
+export interface ToggleGroupOptions {
+  /** Independent membership toggles when set; single-value exclusion (activating the active value deselects it) otherwise. */
+  multiple?: boolean;
+  /** Controlled single-mode value. */
+  value?: () => string;
+  /** Controlled multiple-mode values. */
+  values?: () => string[];
+  /** Seeds the uncontrolled single-mode selection. Default `""`. */
+  defaultValue?: string;
+  /** Seeds the uncontrolled multiple-mode membership. Default empty. */
+  defaultValues?: string[];
+  /** Single reports the newly active value (`""` when deselected); multiple reports the full active array. */
+  onValueChange?: (value: string | string[]) => void;
+}
+
+export interface ToggleGroupRootProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: ToggleGroupClass;
+}
+
+export interface ToggleGroupItemProps extends HTMLAttributes<"button"> {
+  value?: string;
+  /** Pressed-state override for manual composition; defaults to the factory's group state. A boolean reads statically; an accessor keeps it reactive. */
+  pressed?: boolean | (() => boolean);
+  /** Called on click when enabled; defaults to the factory's exclusion toggle. */
+  onSelect?: () => void;
+  children?: HellaChildren | HellaChildren[];
+  class?: ToggleGroupClass;
+}
+
+/** The part set a `toggleGroup()` factory call returns, composed as `Group.Root`-style members. */
+export interface ToggleGroupParts {
+  /** The `role="group"` container: arms arrow-key roving over the items and disposes it on unmount. */
+  Root: (props: ToggleGroupRootProps) => JSX.Element;
+  /** A pressed-state item button: defaults its state and click action from the group. */
+  Item: (props: ToggleGroupItemProps) => JSX.Element;
+}
+
+/** Class values follow the element attribute map: primitives or class arrays (composed by the wrapper). */
+export type RadioGroupClass = HellaPrimitive | (string | null | undefined | boolean)[];
+
+export interface RadioGroupOptions {
+  /** Controlled selected value. When given, the factory never writes its internal signal and `onValueChange` reports the requested selection. */
+  value?: () => string;
+  /** Renders `aria-orientation` and scopes the arrow-key axis; unset means both axes move focus. */
+  orientation?: "horizontal" | "vertical";
+  /** Threads onto every rendered item button's `name` attribute. */
+  name?: string;
+  /** Called with every factory-driven selection; radios never unset, so re-selecting the active value notifies no one. */
+  onValueChange?: (value: string) => void;
+}
+
+export interface RadioGroupRootProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: RadioGroupClass;
+}
+
+export interface RadioGroupItemProps extends HTMLAttributes<"button"> {
+  value?: string;
+  /** Checked-state override for manual composition; defaults to the factory's group state. A boolean reads statically; an accessor keeps it reactive. */
+  checked?: boolean | (() => boolean);
+  /** Called on click; defaults to the factory's exclusive selection. */
+  onSelect?: () => void;
+  children?: HellaChildren | HellaChildren[];
+  class?: RadioGroupClass;
+}
+
+export interface RadioGroupIndicatorProps extends HTMLAttributes<"span"> {
+  /** The owning item's value, resolving the factory's group state; pair with `checked` when overriding. */
+  value?: string;
+  /** Checked-state override mirroring the owning `Item`'s; defaults to the factory's group state for `value`. */
+  checked?: boolean | (() => boolean);
+  /** The indicator content; defaults to the selection dot. Hidden while unchecked. */
+  children?: HellaChildren | HellaChildren[];
+  class?: RadioGroupClass;
+}
+
+/** The part set a `radioGroup()` factory call returns, composed as `Radio.Root`-style members. */
+export interface RadioGroupParts {
+  /** The `role="radiogroup"` container: arms arrow-key roving (arrows move and select), lands the tabindex on the selection, and disposes on unmount. */
+  Root: (props: RadioGroupRootProps) => JSX.Element;
+  /** A `role="radio"` item button: defaults its state and click action from the group. */
+  Item: (props: RadioGroupItemProps) => JSX.Element;
+  /** The selection-dot span inside `Item`: renders the dot by default, hidden while unchecked. */
+  Indicator: (props: RadioGroupIndicatorProps) => JSX.Element;
+}
+
+/** Class values follow the element attribute map: primitives or class arrays (composed by the wrapper). */
+export type TabsClass = HellaPrimitive | (string | null | undefined | boolean)[];
+
+export interface TabsOptions {
+  /** Controlled active value. When given, the factory never writes its internal signal and `onValueChange` reports the requested selection. */
+  value?: () => string;
+  /** Seeds the uncontrolled active value. Default `""` (the tabindex walk lands the first trigger). */
+  defaultValue?: string;
+  /** Scopes the arrow-key axis and renders the orientation attributes; unset means both axes move focus. */
+  orientation?: "horizontal" | "vertical";
+  /** Called with every factory-driven selection; re-selecting the active value notifies no one. */
+  onValueChange?: (value: string) => void;
+}
+
+export interface TabsListProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: TabsClass;
+}
+
+export interface TabsTriggerProps extends HTMLAttributes<"button"> {
+  /** The tab's value; keys the `hella-tabs-tab-<value>` id and the factory's active state. */
+  value?: string;
+  /** Selected-state override for manual composition; defaults to the factory's active value. A boolean reads statically; an accessor keeps it reactive. */
+  active?: boolean | (() => boolean);
+  /** Called on click when enabled; defaults to the factory's selection. */
+  onActivate?: () => void;
+  children?: HellaChildren | HellaChildren[];
+  class?: TabsClass;
+}
+
+export interface TabsContentProps extends HTMLAttributes<"div"> {
+  /** The panel's value; keys the `hella-tabs-panel-<value>` id and the factory's visibility. */
+  value?: string;
+  /** Visibility override mirroring the owning `Trigger`'s; defaults to the factory's active value for `value`. */
+  active?: boolean | (() => boolean);
+  children?: HellaChildren | HellaChildren[];
+  class?: TabsClass;
+}
+
+/** The part set a `tabs()` factory call returns, composed as `Tabs.List`-style members. */
+export interface TabsParts {
+  /** The `role="tablist"` container: arms arrow-key roving (focusing a trigger selects it), lands the tabindex on the selection, and disposes on unmount. */
+  List: (props: TabsListProps) => JSX.Element;
+  /** A `role="tab"` trigger button: defaults its selected state and click action from the factory. */
+  Trigger: (props: TabsTriggerProps) => JSX.Element;
+  /** The `role="tabpanel"` panel for a value: hidden while inactive, `aria-labelledby` the owning trigger. */
+  Content: (props: TabsContentProps) => JSX.Element;
+}
+
+/** Class values follow the element attribute map: primitives or class arrays (composed by the wrapper). */
+export type SliderClass = HellaPrimitive | (string | null | undefined | boolean)[];
+
+export interface SliderOptions {
+  /** The thumb values. A static array seeds the internal signal; an accessor makes the slider controlled, so writes report through `onValueChange` only. */
+  value?: number[] | (() => number[]);
+  /** Called with every accepted move: drag steps and keyboard steps alike. */
+  onValueChange?: (value: number[]) => void;
+  /** Fired when an interaction ends: drag release and each accepted keyboard change. */
+  onValueCommit?: (value: number[]) => void;
+  /** The range minimum. Default `0`. */
+  min?: number;
+  /** The range maximum. Default `100`. */
+  max?: number;
+  /** The step increment; its decimals set the rounding precision. Default `1`. */
+  step?: number;
+  /** Renders and scopes the axis. Default `"horizontal"`. */
+  orientation?: "horizontal" | "vertical";
+  /** Minimum number of steps enforced between neighboring thumbs. Default `0`. */
+  minStepsBetweenThumbs?: number;
+  /** Blocks drags and keys; renders `data-disabled` on the root and `aria-disabled` + `tabindex="-1"` on thumbs. */
+  disabled?: boolean;
+}
+
+export interface SliderRootProps extends HTMLAttributes<"span"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: SliderClass;
+}
+
+export interface SliderTrackProps extends HTMLAttributes<"span"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: SliderClass;
+}
+
+export interface SliderRangeProps extends HTMLAttributes<"span"> {
+  class?: SliderClass;
+}
+
+export interface SliderThumbProps extends HTMLAttributes<"span"> {
+  /** The thumb's position in the value array. */
+  index: number;
+  class?: SliderClass;
+}
+
+/** The part set a `slider()` factory call returns, composed as `Slider.Root`-style members. */
+export interface SliderParts {
+  /** The slider root: owns the value state and the pointer drag (nearest thumb, stepped track mapping), rendering the range attributes; disposes the drag on unmount. */
+  Root: (props: SliderRootProps) => JSX.Element;
+  /** The rail span the drag geometry measures; `Range` mounts inside it. */
+  Track: (props: SliderTrackProps) => JSX.Element;
+  /** The filled span between the outermost thumb values; its position styles are factory-owned. */
+  Range: (props: SliderRangeProps) => JSX.Element;
+  /** A `role="slider"` thumb: focusable, arrow/Page/Home/End stepping, `aria-valuemin/max/now`, factory-owned position styles. */
+  Thumb: (props: SliderThumbProps) => JSX.Element;
+}
+
+/** Semantic toast flavor; a toast without one renders `data-type="default"` with no icon. */
+export type ToastType = "success" | "error" | "warning" | "info";
+
+/** Everything the toast li renders, including the promise-loading flavor. */
+export type ToastVariant = ToastType | "loading" | "default";
+
+/** Edge the toast stack pins to. */
+export type ToasterPosition =
+  | "top-left"
+  | "top-center"
+  | "top-right"
+  | "bottom-left"
+  | "bottom-center"
+  | "bottom-right";
+
+/** Class values follow the element attribute map: primitives or class arrays (composed by the wrapper). */
+export type ToastClass = HellaPrimitive | (string | null | undefined | boolean)[];
+
+/** Per-toast options: secondary line, a tinted icon flavor, an action button, and the auto-dismiss budget. */
+export interface ToastOptions {
+  description?: string;
+  type?: ToastType;
+  action?: { label: string; onclick: () => void };
+  /** Milliseconds before auto-dismiss; defaults to 4000. Hover pauses the countdown; `Infinity` sticks. */
+  duration?: number;
+}
+
+/** Queue handle returned by every toast call. */
+export interface ToastHandle {
+  id: number;
+  dismiss(): void;
+}
+
+/** One toast's rendered state; `removed` starts the exit collapse. */
+export interface ToastData {
+  id: number;
+  message: string;
+  description?: string;
+  type: ToastVariant;
+  action?: { label: string; onclick: () => void };
+  duration: number;
+  removed: boolean;
+}
+
+/** Queue entry: stable identity for keyed reconciliation plus a signal so in-place updates re-render the li. */
+export interface ToastRecord {
+  id: number;
+  data: Signal<ToastData>;
+}
+
+/** Live countdown per toast: the timeout handle plus the remaining budget when hover has paused it. */
+export interface ToastTimer {
+  timeout?: ReturnType<typeof setTimeout>;
+  remaining: number;
+  startedAt: number;
+}
+
+/** Per-phase messages for `toast.promise`; either phase accepts a plain string or a function of the settled value. */
+export interface PromiseMessages<T> {
+  loading: string;
+  success: string | ((data: T) => string);
+  error: string | ((error: unknown) => string);
+  duration?: number;
+}
+
+/** Toast queue API: `toast(message, options)`, `toast.promise(...)`, and `toast.dismiss(...)`. */
+export interface ToastApi {
+  (message: string, options?: ToastOptions): ToastHandle;
+  /** Sticky loading toast that swaps to the success (or error) flavor and message when the promise settles. */
+  promise<T>(promise: Promise<T>, messages: PromiseMessages<T>): ToastHandle;
+  /** Retires one toast by id, or every toast when called without one. */
+  dismiss(id?: number): void;
+}
+
+/** One stacked toast card: the behavior-bearing `li`; children replace the default semantic content. */
+export interface ToastItemProps extends HTMLAttributes<"li"> {
+  record: ToastRecord;
+  /** Tints the whole card per flavor (sonner's richColors); icons are tinted either way. */
+  richColors?: boolean;
+  children?: HellaChildren | HellaChildren[];
+  class?: ToastClass;
+}
+
+/** The portaled toast stack; children replace the default card with a render function over the queue record. */
+export interface ToasterProps extends HTMLAttributes<"ol"> {
+  position?: ToasterPosition;
+  /** Tints the whole card per flavor (sonner's richColors); icons are tinted either way. */
+  richColors?: boolean;
+  children?: (record: ToastRecord) => HellaChild;
+  class?: ToastClass;
+}
+
+/** Class values follow the element attribute map: primitives or class arrays (composed by the wrapper). */
+export type CalendarClass = HellaPrimitive | (string | null | undefined | boolean)[];
+
+/** Selection mode: one date, a set of dates, or a from/to span. */
+export type CalendarMode = "single" | "multiple" | "range";
+
+/** Range selection shape; `from` without `to` is the dangling first click. */
+export interface CalendarRange {
+  from?: Date;
+  to?: Date;
+}
+
+/** Selected shape per mode: single → `Date`, multiple → `Date[]`, range → `CalendarRange`. */
+export type CalendarSelection = Date | Date[] | CalendarRange | undefined;
+
+/** One grid day: `key` is the stable ISO identity used for focus, selection, and range math. */
+export interface CalendarCell {
+  key: string;
+  date: Date;
+  outside: boolean;
+  today: boolean;
+  disabled: boolean;
+}
+
+export interface CalendarOptions {
+  /** Selection behavior; defaults to `"single"`. */
+  mode?: CalendarMode;
+  /** The selection in the mode's shape: a static value seeds the internal signal; an accessor makes it controlled, so writes report through `onValueChange` only. */
+  value?: CalendarSelection | (() => CalendarSelection);
+  /** Called with every accepted selection (defensive copies, in the mode's shape). */
+  onValueChange?: (value: CalendarSelection) => void;
+  /** Controlled visible-month accessor; when provided it snaps the view back on every change, winning over internal navigation. */
+  month?: () => Date;
+  /** Called with the new anchor after every month navigation — the buttons and spill-causing keys alike. */
+  onMonthChange?: (anchor: Date) => void;
+  /** Initial visible month; defaults to the current month. */
+  defaultMonth?: Date;
+  /** Predicate blocking selection and keyboard activation; outside days are always disabled. */
+  disabled?: (date: Date) => boolean;
+  /** Renders leading/trailing adjacent-month days; defaults to `true`. */
+  showOutsideDays?: boolean;
+  /** Always renders six week rows so month-to-month navigation never resizes the grid. */
+  fixedWeeks?: boolean;
+  /** First day of the week; `0` = Sunday (default) through `6` = Saturday. */
+  weekStartsOn?: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+}
+
+export interface CalendarRootProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: CalendarClass;
+}
+
+export interface CalendarMonthsProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: CalendarClass;
+}
+
+export interface CalendarMonthProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: CalendarClass;
+}
+
+export interface CalendarCaptionProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: CalendarClass;
+}
+
+/** The live caption label: renders the visible month's `"March 2025"` label from the factory's view state. */
+export interface CalendarCaptionLabelProps extends HTMLAttributes<"div"> {
+  class?: CalendarClass;
+}
+
+export interface CalendarNavProps extends HTMLAttributes<"nav"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: CalendarClass;
+}
+
+/** Shared by both navigation buttons: each pages the month one step and renders its `aria-label`; children replace the icon slot. */
+export interface CalendarNavButtonProps extends HTMLAttributes<"button"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: CalendarClass;
+}
+
+/** The full `role="grid"` table rendered from the factory's view model: the weekday header, the week rows, and the day cells with their aria semantics; owns the keyboard model. */
+export interface CalendarGridProps extends HTMLAttributes<"table"> {
+  /** The weekday header row's class hook (the `weekdays` slot); composes with the wrapper's style class. */
+  weekdaysClass?: CalendarClass;
+  /** Each weekday header cell's class hook (the `weekday` slot); composes with the wrapper's style class. */
+  weekdayClass?: CalendarClass;
+  /** Each week row's class hook (the `week` slot); composes with the wrapper's style class. */
+  weekClass?: CalendarClass;
+  /** Each day cell's class hook (the `day` slot); composes with the wrapper's style class. */
+  dayClass?: CalendarClass;
+  /** Each day button's class hook (the `day_button` slot); composes with the wrapper's style class. */
+  dayButtonClass?: CalendarClass;
+  class?: CalendarClass;
+}
+
+/** The manual-composition day part: state flags take plain booleans or reactive accessors, so a composed calendar drives them live while a standalone call passes static values. */
+export interface CalendarDayButtonProps extends HTMLAttributes<"button"> {
+  /** The day this button renders; also emitted as `data-day` (locale string). */
+  day: Date;
+  /** Reactive-capable selected flag; renders `data-selected-single` when the day is selected outside a range span. */
+  selectedSingle?: boolean | (() => boolean);
+  rangeStart?: boolean | (() => boolean);
+  rangeEnd?: boolean | (() => boolean);
+  rangeMiddle?: boolean | (() => boolean);
+  /** Reactive-capable disabled flag; renders `aria-disabled`. */
+  disabled?: boolean | (() => boolean);
+  /** Reactive-capable roving-focus flag; drives `tabindex` 0/-1. */
+  focused?: boolean | (() => boolean);
+  /** Marks the day as today with `aria-current="date"`. */
+  today?: boolean;
+  class?: CalendarClass;
+}
+
+/** The part set a `calendar()` factory call returns, composed as `Cal.Root`-style members. */
+export interface CalendarParts {
+  /** The calendar root container. */
+  Root: (props: CalendarRootProps) => JSX.Element;
+  /** The months wrapper around every rendered month column. */
+  Months: (props: CalendarMonthsProps) => JSX.Element;
+  /** One month column: composes the caption, the nav, and the grid. */
+  Month: (props: CalendarMonthProps) => JSX.Element;
+  /** The caption row wrapping the live month label. */
+  Caption: (props: CalendarCaptionProps) => JSX.Element;
+  /** The `aria-live` caption label rendering the visible month's `"March 2025"` text. */
+  CaptionLabel: (props: CalendarCaptionLabelProps) => JSX.Element;
+  /** The navigation bar wrapping the previous/next buttons. */
+  Nav: (props: CalendarNavProps) => JSX.Element;
+  /** Pages the visible month one step back; children replace the icon slot. */
+  PrevButton: (props: CalendarNavButtonProps) => JSX.Element;
+  /** Pages the visible month one step forward; children replace the icon slot. */
+  NextButton: (props: CalendarNavButtonProps) => JSX.Element;
+  /** The `role="grid"` table rendered from the factory's view model, with the keyboard model wired on it. */
+  Grid: (props: CalendarGridProps) => JSX.Element;
+  /** The manual-composition day button carrying the aria semantics; the grid renders one per cell. */
+  DayButton: (props: CalendarDayButtonProps) => JSX.Element;
+}
+
+/** Class values follow the element attribute map: primitives or class arrays (composed by the wrapper). */
+export type InputOtpClass = HellaPrimitive | (string | null | undefined | boolean)[];
+
+export interface InputOtpOptions {
+  /** Number of slots; fixed after mount. Default `6`. */
+  maxLength?: number;
+  /** The code. A static string seeds the internal state; an accessor makes it controlled, so edits report through `onValueChange` only. */
+  value?: string | (() => string);
+  /** Reports every accepted value change (typing, paste, deletion). */
+  onValueChange?: (value: string) => void;
+  /** Fires once per transition to a full code. */
+  onComplete?: (value: string) => void;
+  /** Optional regex mask; a candidate the pattern rejects is never accepted. */
+  pattern?: string;
+  /** Focuses the hidden control input on mount. */
+  autofocus?: boolean;
+  /** Blocks editing and drops the root's text cursor. */
+  disabled?: boolean;
+}
+
+export interface InputOtpRootProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: InputOtpClass;
+  /** The transparent control input's class; the wrapper composes its hiding and selection styling here. */
+  inputClass?: InputOtpClass;
+}
+
+export interface InputOtpGroupProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: InputOtpClass;
+}
+
+export interface InputOtpSlotProps extends HTMLAttributes<"div"> {
+  /** Slot position this mirror renders; the root wires its character and caret state after mount. */
+  index: number;
+  children?: HellaChildren | HellaChildren[];
+  class?: InputOtpClass;
+  /** The caret box div's class; the root toggles its visibility while the slot is active and empty. */
+  caretWrapClass?: InputOtpClass;
+  /** The blinking caret bar's class inside the caret box. */
+  caretClass?: InputOtpClass;
+}
+
+export interface InputOtpSeparatorProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: InputOtpClass;
+}
+
+/** The part set an `inputOtp()` factory call returns, composed as `Otp.Root`-style members. */
+export interface InputOtpParts {
+  /** The relative root hosting the transparent control input; wires every `Slot`'s character, ring, and caret after mount. */
+  Root: (props: InputOtpRootProps) => JSX.Element;
+  /** The slot-grouping container. */
+  Group: (props: InputOtpGroupProps) => JSX.Element;
+  /** One display slot: the root mirrors its character and active/caret state into it. */
+  Slot: (props: InputOtpSlotProps) => JSX.Element;
+  /** The `role="separator"` divider rendering the default minus icon. */
+  Separator: (props: InputOtpSeparatorProps) => JSX.Element;
+}
+
+/** Per-field validator: receives the field value and the full values snapshot, returns the error message or null when the value is clean. */
+export type FormValidator<T> = (value: T[keyof T], values: T) => string | null;
+
+/** Options bag for createForm. */
+export interface FormOptions<T> {
+  /** Per-field validators; a field without one is always clean. */
+  validators?: Partial<Record<keyof T, FormValidator<T>>>;
+}
+
+/** Signals controller createForm returns; the form parts read it through explicit props (no context). */
+export interface FormController<T extends object> {
+  /** One writable signal per field. */
+  values: { [K in keyof T]: Signal<T[K]> };
+  /** Current validation messages keyed by field. */
+  errors: Signal<Partial<Record<keyof T, string>>>;
+  /** Fields that have blurred or been submitted. */
+  touched: Signal<Partial<Record<keyof T, boolean>>>;
+  /** True while any field differs from its initial value. */
+  dirty: Signal<boolean>;
+  /** Writes the field value, retracks dirty, and revalidates the field when it is already touched. */
+  setField: <K extends keyof T>(key: K, value: T[K]) => void;
+  /** Marks the field touched and validates it. */
+  blur: (key: keyof T) => void;
+  /** Validates every field; returns true when no messages remain. */
+  validate: () => boolean;
+  /** Restores every field to its initial value and clears errors, touched, and dirty. */
+  reset: () => void;
+  /** Validates all and marks all touched; calls onValid with the values only when clean. The optional event is preventDefaulted. */
+  handleSubmit: (onValid: (values: T) => void) => (e?: Event) => void;
+}
+
+/** Class values follow the element attribute map: primitives or class arrays (composed by the wrapper). */
+export type FormClass = HellaPrimitive | (string | null | undefined | boolean)[];
+
+export interface FormItemProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: FormClass;
+  /** Error flag; renders data-error="true"/"false" as the container-level hook for the error state. */
+  error?: boolean | (() => boolean);
+}
+
+export interface FormLabelProps extends HTMLAttributes<"label"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: FormClass;
+  /** Error flag; renders data-error="true"/"false", aria-invalid, and the destructive text hook. */
+  error?: boolean | (() => boolean);
+}
+
+export interface FormControlProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: FormClass;
+  /** Error flag; renders aria-invalid="true" on the passthrough wrapper. */
+  invalid?: boolean | (() => boolean);
+  /** aria-describedby target, typically the FormDescription or FormMessage id. */
+  describedBy?: string;
+}
+
+export interface FormDescriptionProps extends HTMLAttributes<"p"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: FormClass;
+}
+
+export interface FormMessageProps extends HTMLAttributes<"p"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: FormClass;
+  /** Error messages; the first one renders. An accessor re-evaluates as validation runs. */
+  errors?: string[] | (() => string[] | undefined);
+}
+
+/** Injectable content watcher returning its own dispose; defaults to a ResizeObserver on the viewport's content. */
+export type ScrollAreaObserve = (target: Element, onGrow: () => void) => () => void;
+
+/** Class values follow the element attribute map: primitives or class arrays (composed by the wrapper). */
+export type ScrollAreaClass = HellaPrimitive | (string | null | undefined | boolean)[];
+
+export interface ScrollAreaOptions {
+  /** Injectable content watcher forwarded to every `Scrollbar` without its own `observe` prop. */
+  observe?: ScrollAreaObserve;
+}
+
+export interface ScrollAreaRootProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: ScrollAreaClass;
+}
+
+export interface ScrollAreaViewportProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: ScrollAreaClass;
+}
+
+export interface ScrollAreaScrollbarProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: ScrollAreaClass;
+  /** Axis the bar tracks and drags; both orientations may compose into one root. Default `"vertical"`. */
+  orientation?: "vertical" | "horizontal";
+  /** Injectable content watcher replacing the factory's, for a bar composed standalone. */
+  observe?: ScrollAreaObserve;
+}
+
+export interface ScrollAreaThumbProps extends HTMLAttributes<"div"> {
+  class?: ScrollAreaClass;
+}
+
+/** The part set a `scrollArea()` factory call returns, composed as `Area.Root`-style members. */
+export interface ScrollAreaParts {
+  /** The relative root container the scrollbar anchors to. */
+  Root: (props: ScrollAreaRootProps) => JSX.Element;
+  /** The native-scroll viewport; renders its content wrapper around the children. */
+  Viewport: (props: ScrollAreaViewportProps) => JSX.Element;
+  /** The scrollbar: measures the paired viewport, sizes and positions the `Thumb` inside it, and arms the thumb drag. */
+  Scrollbar: (props: ScrollAreaScrollbarProps) => JSX.Element;
+  /** The draggable thumb; its geometry styles are wiring-owned. */
+  Thumb: (props: ScrollAreaThumbProps) => JSX.Element;
+}
+
+/** Injectable content watcher returning its own dispose; defaults to a ResizeObserver on the viewport's content. */
+export type MessageScrollerObserve = (target: Element, onGrow: () => void) => () => void;
+
+/** Class values follow the element attribute map: primitives or class arrays (composed by the wrapper). */
+export type MessageScrollerClass = HellaPrimitive | (string | null | undefined | boolean)[];
+
+export interface MessageScrollerOptions {
+  /** Shared at-bottom state; the viewport flips it and the button reads it. The factory owns an internal signal seeded `true` when omitted. */
+  atBottom?: Signal<boolean>;
+  /** Overrides the scroll-to-bottom action used for auto-stick and the jump button. */
+  scrollToBottom?: () => void;
+  /** Distance in px from the bottom still counted as at-bottom. Default `80`. */
+  threshold?: number;
+  /** Injectable content watcher arming growth tracking on the viewport's content. */
+  observe?: MessageScrollerObserve;
+}
+
+export interface MessageScrollerProviderProps {
+  children?: HellaChildren | HellaChildren[];
+}
+
+export interface MessageScrollerRootProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: MessageScrollerClass;
+}
+
+export interface MessageScrollerViewportProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: MessageScrollerClass;
+}
+
+export interface MessageScrollerContentProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: MessageScrollerClass;
+}
+
+export interface MessageScrollerItemProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: MessageScrollerClass;
+}
+
+export interface MessageScrollerButtonProps extends HTMLAttributes<"button"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: MessageScrollerClass;
+  /** Which end the button jumps to; drives `data-direction`, `data-active`, and the default label. Default `"end"`. */
+  direction?: "start" | "end";
+  /** Button variant token rendered as `data-variant`. Default `"secondary"`. */
+  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+  /** Button size token rendered as `data-size`. Default `"icon-sm"`. */
+  size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
+}
+
+/** The part set a `messageScroller()` factory call returns, composed as `Scroller.Root`-style members. */
+export interface MessageScrollerParts {
+  /** Passthrough grouping wrapper kept for upstream parity; holds no state. */
+  Provider: (props: MessageScrollerProviderProps) => JSX.Element;
+  /** The relative root container. */
+  Root: (props: MessageScrollerRootProps) => JSX.Element;
+  /** The scrolling viewport: flips at-bottom on scroll, sticks on growth while at-bottom, and renders children directly. */
+  Viewport: (props: MessageScrollerViewportProps) => JSX.Element;
+  /** The content stack inside the viewport. */
+  Content: (props: MessageScrollerContentProps) => JSX.Element;
+  /** A message row sized for content-visibility rendering. */
+  Item: (props: MessageScrollerItemProps) => JSX.Element;
+  /** The jump button: `data-active` from at-bottom, click jumps to the bottom after chaining a user `on:click`. */
+  Button: (props: MessageScrollerButtonProps) => JSX.Element;
 }

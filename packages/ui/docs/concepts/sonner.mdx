@@ -1,6 +1,6 @@
 ## API
 
-An opinionated toast queue: `toast()` calls stack as cards on a screen edge, auto-dismiss on a pausable countdown, and swipe away past a distance threshold. The queue lives as a module-level singleton in the copied file - one copy/paste module owns one queue per app. Mount one `<Toaster />` high in the app (it portals the stack into `document.body`), then call `toast()` from anywhere that imports the same copied module.
+An opinionated toast queue: `toast()` calls stack as cards on a screen edge, auto-dismiss on a pausable countdown, and swipe away past a distance threshold. The queue lives in `@hellajs/headless` as a module-level singleton, and the copied file re-exports `toast`, so one app owns one queue no matter how many components import it. Mount one `<Toaster />` high in the app (it portals the stack into `document.body`), then call `toast()` from anywhere that imports the copied file or `@hellajs/headless`.
 
 `toast(message, options)` returns a `{ id, dismiss() }` handle:
 
@@ -38,4 +38,4 @@ Accepts all native `ol` attributes (forwarded to the portaled stack element).
 | Swipe | Horizontal drag follows the pointer (`data-dragging` suspends transitions); release past 45% of the toast width dismisses, under it springs back |
 | Close | An X button appears on hover and on keyboard focus |
 
-Buttons inside a toast (action, close) never start a swipe: the drag ignores pointerdowns on interactive elements, the same rule the drawer uses. The swipe-dismiss physics ride on [`onDrag`](/reference/headless/ondrag) from `@hellajs/headless`. Every card carries `data-type`, `data-depth`, `data-removed`, and `data-dragging`, so user CSS can key off the same state, and the thresholds live as named constants at the top of the copied file.
+Buttons inside a toast (action, close) never start a swipe: the drag ignores pointerdowns on interactive elements, the same rule the drawer uses. The swipe-dismiss physics ride on [`onDrag`](/reference/headless/ondrag), and the queue, timers, and thresholds live in `@hellajs/headless` next to them. Every card carries `data-type`, `data-depth`, `data-removed`, and `data-dragging`, so user CSS can key off the same state.

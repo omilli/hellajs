@@ -1,0 +1,64 @@
+# scrollArea
+
+Creates the scroll-area parts in one call: the native-scroll viewport with its content wrapper, and the wiring-wrapped scrollbar whose thumb sizes and positions itself from the paired viewport.
+
+## Basic Usage
+
+```tsx
+import { mount } from "@hellajs/dom";
+import { scrollArea } from "@hellajs/headless";
+
+const Area = scrollArea();
+
+mount(
+  <Area.Root>
+    <Area.Viewport>
+      {items.map((item) => (
+        <div>{item}</div>
+      ))}
+    </Area.Viewport>
+    <Area.Scrollbar>
+      <Area.Thumb />
+    </Area.Scrollbar>
+  </Area.Root>,
+  "#app",
+);
+// The thumb sizes to the content-to-viewport ratio and tracks the scroll
+// position; dragging it scrolls the viewport.
+```
+
+## API
+
+```typescript
+function scrollArea(options?: ScrollAreaOptions): ScrollAreaParts
+```
+
+- `options.observe`: Replaces the default `ResizeObserver` content watcher the `Scrollbar` arms to re-measure on growth.
+- **Returns**: The part set, composed as `Area.Root`-style members.
+
+### Parts
+
+| Part | Renders |
+| --- | --- |
+| `Root` | The `data-slot="scroll-area"` container the scrollbar anchors to |
+| `Viewport` | The `data-slot="scroll-area-viewport"` native-scroll viewport; renders its content wrapper around the children |
+| `Scrollbar` | The `data-slot="scroll-area-scrollbar"` bar: measures the paired viewport on scroll and growth, sizes and positions the `Thumb` inside it, and arms the thumb drag; takes `orientation` (`"vertical"` by default, `"horizontal"`) and its own `observe` override |
+| `Thumb` | The `data-slot="scroll-area-thumb"` draggable thumb; its geometry styles are wiring-owned |
+
+Every part spreads `class` and native attributes onto its element; parts own structure, styling stays in the wrapper.
+
+## Key Concepts
+
+### One Bar per Axis
+
+Compose one `Scrollbar` per axis into the same root; each measures and drags its own. A `Scrollbar` finds its viewport by walking up to the root and back down, so it composes anywhere inside the root, and a bar without a viewport skips its wiring. Every bar drains its scroll, drag, and watcher wiring when it unmounts.
+
+### The Thumb Drag Maps Through the Track Span
+
+Dragging maps the pointer's travel relative to the track span onto the viewport's scrollable range: `scrollTop` for vertical bars, `scrollLeft` for horizontal bars. Thumb sizes clamp to a 20px minimum on very long content.
+
+## Important Considerations
+
+### Inject the Watcher for Custom Growth Sources
+
+Growth re-measurement rides a `ResizeObserver` on the viewport's content by default. Pass `observe` (a `(target, onGrow) => dispose` function) when growth comes from something a `ResizeObserver` cannot see; the factory-level option forwards to every bar, and a bar-level `observe` overrides it for one axis.

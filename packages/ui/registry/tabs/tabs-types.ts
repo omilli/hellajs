@@ -26,6 +26,8 @@ export interface TabsTriggerProps extends HTMLAttributes<"button"> {
   class?: string;
   /** The raw TabsItem id - the DOM id is `${TAB_ID}${id}`. */
   id?: string;
+  /** The tab's value key; wins over `id` when both are given. */
+  value?: string;
   children?: HellaChild;
   active?: () => boolean;
   onActivate?: () => void;
@@ -37,6 +39,8 @@ export interface TabsContentProps extends HTMLAttributes<"div"> {
   class?: string;
   /** The raw TabsItem id - the DOM id is `${PANEL_ID}${id}`. */
   id?: string;
+  /** The panel's value key; wins over `id` when both are given. */
+  value?: string;
   children?: HellaChild | (() => HellaChild);
   active?: () => boolean;
 }

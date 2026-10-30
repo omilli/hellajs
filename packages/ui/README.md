@@ -65,11 +65,11 @@ npx @hellajs/ui list
 | `--overwrite` | `add` | Replace existing files instead of skipping them. |
 | `--force` | `init` | Rewrite an existing `hella.ui.json` with defaults. |
 
-Copied source imports `@hellajs/core` and `@hellajs/dom` as regular packages; `add` reads your `package.json` and prints an install hint naming exactly what is missing. The `css` style also imports `@hellajs/css`; the `tailwind` style imports `clsx` and `tailwind-merge` for the shared `cn` helper plus `tw-animate-css` for the Dialog's animations.
+Copied source imports `@hellajs/core` and `@hellajs/dom` as regular packages; components with interactive behavior also import `@hellajs/headless` and call its factory once: the pasted file styles the parts the factory returns, so behavior upgrades land through the package while the pasted styles stay yours. `add` reads your `package.json` and prints an install hint naming exactly what is missing. The `css` style also imports `@hellajs/css`; the `tailwind` style imports `clsx` and `tailwind-merge` for the shared `cn` helper plus `tw-animate-css` for the Dialog's animations.
 
 ## Components
 
-Fifty-nine components cover the full shadcn new-york-v4 catalog, chart excepted. Each is styled byte-faithfully: same structure, same variants, same class strings (tailwind style) or their 1:1 style-map translations (css style), same `@theme inline` palette, same enter/exit dialog animations. Dark mode is the `dark` class on `<html>` or any ancestor; dark-only projects copy the dark-default tokens sheet instead through `themeMode: "dark"`.
+Fifty-nine components cover the full shadcn new-york-v4 catalog, chart excepted. Components with interactive behavior are styled wrappers over `@hellajs/headless` factories: the factory owns state, aria, keyboard, and disposal; your copy owns the classes. Three paste-side templates (`drawer`, `sidebar`, `resizable`) wire headless behaviors directly instead; each is one local gesture/positioning wiring with no cross-part state. Each component is styled byte-faithfully: same structure, same variants, same class strings (tailwind style) or their 1:1 style-map translations (css style), same `@theme inline` palette, same enter/exit dialog animations. Dark mode is the `dark` class on `<html>` or any ancestor; dark-only projects copy the dark-default tokens sheet instead through `themeMode: "dark"`.
 
 | Family | Components |
 |---|---|

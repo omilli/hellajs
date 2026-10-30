@@ -97,7 +97,7 @@ Dependency facts come from each package's `package.json` (HellaJS: `packages/ui/
 
 ### HellaJS ui
 
-- Interactive components wire behavior through `hook:` lifecycle attributes in the copied markup: Dialog arms the panel through the headless `modal` foundation in `hook:afterMount` (trap, Escape/outside dismissal, and exit notification, disposed with the node, no cleanup arrays) (`registry/dialog/dialog.tsx`); Tabs attaches `rovingTabIndex` plus a focusin listener the same way (`registry/tabs/tabs.tsx`).
+- Interactive components wire behavior through `hook:` lifecycle attributes and headless factory delegation: Dialog arms the panel through the headless `modal` foundation in `hook:afterMount` (trap, Escape/outside dismissal, and exit notification, disposed with the node, no cleanup arrays) (`registry/dialog/dialog.tsx`); Tabs hands the tablist to the headless `tabs()` factory, whose `List` attaches `rovingTabIndex` plus a focusin listener in `hook:afterMount` and disposes them at unmount (`registry/tabs/tabs.tsx`, `@hellajs/headless` `lib/tabs.tsx`).
 - The behaviors come from `@hellajs/headless`, pure functions over real nodes, and the copied file never queries the DOM (`docs/concepts/dialog.mdx`, "Behaviors, Not Queries").
 - Accessibility attributes are baked into the markup: `role="dialog"`, `aria-modal`, generated `aria-labelledby` ids, `aria-selected`, `aria-controls`, and `hidden` panel toggling (`registry/dialog/dialog.tsx`, `registry/tabs/tabs.tsx`).
 

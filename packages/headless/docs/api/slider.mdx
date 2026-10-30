@@ -1,0 +1,82 @@
+# slider
+
+Creates the slider parts in one call: the drag-wired root, the measured track, the filled range, and the focusable thumbs. The closure owns the thumb values and reports every accepted move.
+
+## Basic Usage
+
+```tsx
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+import { slider } from "@hellajs/headless";
+
+const volume = signal(40);
+
+const Slider = slider({
+  value: () => [volume()],
+  onValueChange: ([next]) => volume(next),
+});
+
+mount(
+  <Slider.Root>
+    <Slider.Track>
+      <Slider.Range />
+    </Slider.Track>
+    <Slider.Thumb index={0} />
+  </Slider.Root>,
+  "#app",
+);
+// Dragging maps the pointer to the nearest thumb's stepped value; arrows
+// step, PageUp and PageDown jump ten steps, Home and End jump to the bounds.
+```
+
+## API
+
+```typescript
+function slider(options?: SliderOptions): SliderParts
+```
+
+- `options.value`: The thumb values. A static array seeds the internal signal; an accessor makes the slider controlled, so writes report through `onValueChange` only.
+- `options.onValueChange`: Called with every accepted move, drag steps and keyboard steps alike.
+- `options.onValueCommit`: Fired when an interaction ends: drag release and each accepted keyboard change.
+- `options.min`: The range minimum. Default `0`.
+- `options.max`: The range maximum. Default `100`.
+- `options.step`: The step increment; its decimals set the rounding precision. Default `1`.
+- `options.orientation`: Renders and scopes the axis. Default `"horizontal"`.
+- `options.minStepsBetweenThumbs`: Minimum number of steps enforced between neighboring thumbs. Default `0`.
+- `options.disabled`: Blocks drags and keys; renders `data-disabled` on the root and `aria-disabled` plus `tabindex="-1"` on thumbs.
+- **Returns**: The part set, composed as `Slider.Root`-style members.
+
+### Parts
+
+| Part | Renders |
+|---|---|
+| `Root` | The `data-slot="slider"` container: arms the pointer drag against the track geometry, renders the `min`/`max`/`step` attributes, and disposes the drag on unmount |
+| `Track` | The `data-slot="slider-track"` rail span the drag geometry measures; mount `Range` inside it |
+| `Range` | The `data-slot="slider-range"` filled span between the outermost thumb values; its position styles are factory-owned |
+| `Thumb` | A `role="slider"` thumb keyed by `index`: focusable, `aria-valuemin`/`aria-valuemax`/`aria-valuenow`/`aria-orientation`, arrow/Page/Home/End stepping, factory-owned position styles |
+
+Every part spreads `class` and native attributes onto its element; parts own structure, styling stays in the wrapper.
+
+## Key Concepts
+
+### Pointer Drag Picks the Nearest Thumb
+
+`pointerdown` maps the track position to a value, picks the nearest thumb, and moves it there; movement keeps mapping while the drag is active, and release fires `onValueCommit`. Values quantize onto the step grid (the step's decimals set the rounding precision) and clamp to `min` and `max`. `minStepsBetweenThumbs` holds each thumb at least that many steps from its neighbors, so a range pair keeps its order when dragged across.
+
+### The Value Array Is the Thumb Count
+
+`Thumb` takes the `index` it tracks in the value array; render one `Thumb` per value. The count is fixed at mount: value updates move the thumbs but never add or remove them. Without `value` the slider seeds the `[min, max]` pair, so a bare slider renders two thumbs.
+
+### Keyboard Stepping Commits
+
+Each thumb is focusable and steps on its own: arrows step, PageUp and PageDown jump ten steps, Home and End jump to the bounds. Every accepted key prevents the default and fires `onValueCommit` alongside `onValueChange`.
+
+## Important Considerations
+
+### Call the Factory in Component Scope
+
+`slider()` creates the state signal that must dispose with the component that owns it. `Root` disposes the drag wiring when it unmounts; a module-level factory call leaks the signal. Call the factory inside the component that renders the parts.
+
+### Controlled Accessors Own the Truth
+
+With a `value` accessor the factory never writes state: drags and keys report through `onValueChange`, and the rendered positions follow the accessor. Write the backing signal from the handler to let a move stick.

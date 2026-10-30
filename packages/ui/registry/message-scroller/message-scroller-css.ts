@@ -58,6 +58,17 @@ export const buttonBase = style("message-scroller-button", {
     height: "1rem",
     width: "1rem",
   },
+  "& [data-slot='message-scroller-sr']": {
+    border: "0",
+    clip: "rect(0, 0, 0, 0)",
+    height: "1px",
+    margin: "-1px",
+    overflow: "hidden",
+    padding: "0",
+    position: "absolute",
+    whiteSpace: "nowrap",
+    width: "1px",
+  },
   "&:focus-visible": {
     borderColor: tokens.ring,
     boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
@@ -244,18 +255,6 @@ export const overlay = style("message-scroller-overlay", {
   "&[data-direction='start'][data-active='false']": {
     translate: "-50% -100%",
   },
-});
-
-export const srOnly = style("message-scroller-sr-only", {
-  border: "0",
-  clip: "rect(0, 0, 0, 0)",
-  height: "1px",
-  margin: "-1px",
-  overflow: "hidden",
-  padding: "0",
-  position: "absolute",
-  whiteSpace: "nowrap",
-  width: "1px",
 });
 
 css({

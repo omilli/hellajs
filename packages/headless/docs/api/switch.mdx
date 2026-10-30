@@ -1,0 +1,75 @@
+# switch
+
+Creates the switch parts in one call: a `role="switch"` button and its moving thumb. The closure owns the checked state; clicks flip it and report through `onCheckedChange`, and Space toggles through native button activation.
+
+## Basic Usage
+
+```tsx
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+import { toggleSwitch } from "@hellajs/headless";
+
+const checked = signal(false);
+
+const Switch = toggleSwitch({
+  checked: () => checked(),
+  onCheckedChange: (next) => checked(next),
+});
+
+mount(
+  <Switch.Root>
+    <Switch.Indicator />
+  </Switch.Root>,
+  "#app",
+);
+// Clicking flips aria-checked and data-state on both the root
+// and the thumb between checked and unchecked.
+```
+
+## API
+
+```typescript
+function toggleSwitch(options?: SwitchOptions): SwitchParts
+```
+
+The factory is named `toggleSwitch` because `switch` is a reserved word and cannot be called bare. The component it builds is the switch.
+
+- `options.checked`: Controlled checked state. Passing it makes the switch controlled; omitting it keeps state internal.
+- `options.onCheckedChange`: Called with every factory-driven flip; a controlled accessor's external change notifies no one.
+- **Returns**: The part set, composed as `Switch.Root`-style members.
+
+### Parts
+
+| Part | Renders |
+|---|---|
+| `Root` | `role="switch"` button with `aria-checked`, `data-state` (`checked` or `unchecked`), and disabled gating |
+| `Indicator` | The thumb span inside `Root`, tracking `data-state` for the translate styling |
+
+Every part spreads `class` and native attributes onto its element; parts own structure, styling stays in the wrapper.
+
+### Options
+
+| Option | Type | Default |
+|---|---|---|
+| `checked` | `boolean \| (() => boolean)` | internal signal |
+| `onCheckedChange` | `(checked: boolean) => void` | `-` |
+
+## Key Concepts
+
+### The Thumb Tracks the Same State
+
+`Indicator` is the moving span the styles translate on `data-state`. It carries no content of its own; place it inside `Root` exactly once.
+
+### Controlled Getters Notify One Direction
+
+`onCheckedChange` reports flips the factory drives. Changing a controlled `checked` signal directly is the controller's own move and notifies no one; the rendered state follows the accessor on the next evaluation.
+
+## Important Considerations
+
+### Call the Factory in Component Scope
+
+`toggleSwitch()` creates a state signal that must dispose with the component that owns it. Mounting the tree unmounts the signal's wiring; module-level calls leak it. Call the factory inside the component that renders the parts.
+
+### Keyboard Activation Is Native
+
+The root is a `button`, so Space toggles it without extra key wiring, and it participates in tab order. `disabled` blocks pointer and keyboard activation alike.

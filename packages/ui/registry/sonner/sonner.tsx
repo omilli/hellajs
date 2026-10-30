@@ -1,20 +1,7 @@
-import { signal } from "@hellajs/core";
-import { $ref, ForEach, Portal } from "@hellajs/dom";
+import { toast, Toaster as HeadlessToaster, ToastItem } from "@hellajs/headless";
 import type { HellaChild } from "@hellajs/dom";
-import { onDrag } from "@hellajs/headless";
-import type {
-  ToastType,
-  ToastVariant,
-  ToastOptions,
-  ToastHandle,
-  ToastData,
-  ToastRecord,
-  ToastTimer,
-  PromiseMessages,
-  ToastApi,
-  ToastItemProps,
-  ToasterProps,
-} from "./sonner-types.js";
+import type { ToastApi, ToastRecord, ToastVariant } from "@hellajs/headless";
+import type { ToasterProps } from "./sonner-types.js";
 
 export type { ToastApi };
 
@@ -29,171 +16,6 @@ declare const item: string;
 declare const title: string;
 declare const toasterPositions: Record<string, string>;
 // @hella:end
-
-/** Semantic toast flavor; a toast without one renders `data-type="default"` with no icon. */
-
-/** Everything the toast li renders, including the promise-loading flavor. */
-
-/** Edge the toast stack pins to. */
-
-/** Per-toast options: secondary line, a tinted icon flavor, an action button, and the auto-dismiss budget. */
-
-/** Queue handle returned by every toast call. */
-
-/** One toast's rendered state; `removed` starts the exit collapse. */
-
-/** Queue entry: stable identity for keyed reconciliation plus a signal so in-place updates re-render the li. */
-
-/** Cap on simultaneously visible toasts; overflow retires the oldest immediately. */
-const VISIBLE_CAP = 3;
-
-/** Milliseconds a removed toast stays mounted for the exit fade before the queue splices it. */
-const EXIT_MS = 200;
-
-/** Auto-dismiss budget when a toast call passes no duration. */
-const DEFAULT_DURATION = 4000;
-
-/** Release fraction of the toast's width past which a horizontal swipe dismisses. */
-const SWIPE_DISMISS_RATIO = 0.45;
-
-// Module-level singleton: the file lands verbatim in user projects, so one
-// copy/paste module carries one queue per app. The instance nonce scopes the
-// per-toast $ref selectors to this copy when several compiled flavors of the
-// same source coexist (a page running css- and tailwind-flavored copies).
-// Nonce prefixing this copy's toast ids and $ref selectors (module-scoped).
-const INSTANCE = "t1";
-
-const toasts = signal<ToastRecord[]>([]);
-let nextId = 0;
-
-/** Live countdown per toast: the timeout handle plus the remaining budget when hover has paused it. */
-
-const timers = new Map<number, ToastTimer>();
-
-function clearToastTimer(id: number): void {
-  const timer = timers.get(id);
-  if (timer?.timeout !== undefined) clearTimeout(timer.timeout);
-  timers.delete(id);
-}
-
-function markRemoved(id: number): void {
-  const record = toasts().find((entry) => entry.id === id);
-  if (record === undefined || record.data().removed) return;
-  clearToastTimer(id);
-  record.data({ ...record.data(), removed: true });
-  setTimeout(() => {
-    toasts(toasts().filter((entry) => entry.id !== id));
-  }, EXIT_MS);
-}
-
-/** Arms a fresh full-budget countdown; `Infinity` durations stick and never arm. */
-function armToastTimer(record: ToastRecord): void {
-  clearToastTimer(record.id);
-  const duration = record.data().duration;
-  if (duration === Infinity || record.data().removed) return;
-  timers.set(record.id, {
-    timeout: setTimeout(() => {
-      clearToastTimer(record.id);
-      markRemoved(record.id);
-    }, duration),
-    remaining: duration,
-    startedAt: Date.now(),
-  });
-}
-
-/** Freezes the live countdown, folding elapsed time into the remaining budget. */
-function pauseToastTimer(id: number): void {
-  const timer = timers.get(id);
-  if (timer === undefined || timer.timeout === undefined) return;
-  clearTimeout(timer.timeout);
-  timer.timeout = undefined;
-  timer.remaining -= Date.now() - timer.startedAt;
-}
-
-/** Restarts the countdown from the paused remainder; an exhausted budget fires immediately. */
-function resumeToastTimer(id: number): void {
-  const timer = timers.get(id);
-  if (timer === undefined || timer.timeout !== undefined) return;
-  timer.startedAt = Date.now();
-  timer.timeout = setTimeout(
-    () => {
-      clearToastTimer(id);
-      markRemoved(id);
-    },
-    Math.max(0, timer.remaining),
-  );
-}
-
-/** Retires every toast beyond the visible cap, oldest first. */
-function enforceCap(): void {
-  const visible = toasts().filter((entry) => !entry.data().removed);
-  for (let i = VISIBLE_CAP; i < visible.length; i++) markRemoved(visible[i]!.id);
-}
-
-function pushToast(init: {
-  message: string;
-  description?: string;
-  type: ToastVariant;
-  action?: ToastOptions["action"];
-  duration: number;
-}): ToastHandle {
-  const id = ++nextId;
-  const record: ToastRecord = { id, data: signal<ToastData>({ id, removed: false, ...init }) };
-  wireToast(record);
-  toasts([record, ...toasts()]);
-  enforceCap();
-  return { id, dismiss: () => markRemoved(id) };
-}
-
-/** Per-phase messages for `toast.promise`; either phase accepts a plain string or a function of the settled value. */
-
-/** Toast queue API: `toast(message, options)`, `toast.promise(...)`, and `toast.dismiss(...)`. */
-
-export const toast: ToastApi = (message: string, options?: ToastOptions): ToastHandle => {
-  return pushToast({
-    message,
-    description: options?.description,
-    type: options?.type ?? "default",
-    action: options?.action,
-    duration: options?.duration ?? DEFAULT_DURATION,
-  });
-};
-
-toast.promise = <T,>(promise: Promise<T>, messages: PromiseMessages<T>): ToastHandle => {
-  const handle = pushToast({ message: messages.loading, type: "loading", duration: Infinity });
-  const settle = (message: string, type: ToastType): void => {
-    const record = toasts().find((entry) => entry.id === handle.id);
-    if (record === undefined || record.data().removed) return;
-    record.data({
-      ...record.data(),
-      message,
-      type,
-      duration: messages.duration ?? DEFAULT_DURATION,
-    });
-    armToastTimer(record);
-  };
-  promise.then(
-    (data) =>
-      settle(
-        typeof messages.success === "function" ? messages.success(data) : messages.success,
-        "success",
-      ),
-    (error: unknown) =>
-      settle(
-        typeof messages.error === "function" ? messages.error(error) : messages.error,
-        "error",
-      ),
-  );
-  return handle;
-};
-
-toast.dismiss = (id?: number): void => {
-  if (id === undefined) {
-    for (const record of [...toasts()]) markRemoved(record.id);
-    return;
-  }
-  markRemoved(id);
-};
 
 /** Lucide path data from refs/icons, keyed by flavor; the loader spins through its `data-type` rule. */
 const ICON_PATHS: Partial<Record<ToastVariant, HellaChild[]>> = {
@@ -213,87 +35,24 @@ const ICON_PATHS: Partial<Record<ToastVariant, HellaChild[]>> = {
 };
 
 /**
- * Wires one record's live-element behavior exactly once, at enqueue time:
- * the toast li slots into the portaled ol after that ol's one-and-only mount
- * walk, and only mount/hydrate roots and Portal insertions deliver hooks —
- * so the wiring rides a $ref, which queues its ops until the li appears,
- * registers them on the element, and drives the mount queue itself.
+ * One queue record as the styled sonner card: icon, content, action, and
+ * close inside the headless-wired li — the queue, timers, and swipe live in
+ * `@hellajs/headless`, so this markup carries styling only.
  */
-function wireToast(record: ToastRecord): void {
-  let dragging = false;
-  let dragOffset = 0;
-  let toastWidth = 0;
-  const teardown: (() => void)[] = [];
-  $ref(`[data-toast-id="${INSTANCE}-${record.id}"]`).hooks({
-    afterMount: (element) => {
-      // The li is an HTML element: direct property access is sound, and the
-      // old instanceof guard's return arm was uncoverable.
-      const node = element as HTMLElement;
-      node.style.setProperty("--toast-height", `${node.offsetHeight}px`);
-      armToastTimer(record);
-      node.addEventListener("pointerenter", () => pauseToastTimer(record.id));
-      node.addEventListener("pointerleave", () => resumeToastTimer(record.id));
-      teardown.push(
-        onDrag(node, {
-          onStart: (event) => {
-            if (record.data().removed) return;
-            const hit = event.target as HTMLElement | null;
-            if (hit?.closest?.("button, a, input, textarea, select, [data-no-drag]")) return;
-            dragging = true;
-            pauseToastTimer(record.id);
-            toastWidth = node.getBoundingClientRect().width;
-            node.setAttribute("data-dragging", "true");
-          },
-          onMove: (delta) => {
-            if (!dragging) return;
-            dragOffset = delta.dx;
-            node.style.transform = `translateX(${dragOffset}px)`;
-          },
-          onEnd: () => {
-            if (!dragging) return;
-            dragging = false;
-            node.removeAttribute("data-dragging");
-            resumeToastTimer(record.id);
-            if (toastWidth > 0 && Math.abs(dragOffset) >= toastWidth * SWIPE_DISMISS_RATIO) {
-              markRemoved(record.id);
-            } else {
-              // Spring back: data-dragging is gone, so the restored transition
-              // animates the cleared transform back to the depth rule's look.
-              node.style.transform = "";
-            }
-            dragOffset = 0;
-          },
-        }),
-      );
-    },
-    beforeDestroy: () => {
-      clearToastTimer(record.id);
-      while (teardown.length) teardown.pop()!();
-    },
-  });
-}
-
-/**
- * One queue entry as a stacked card. All visual state rides on attributes —
- * `data-depth` carries the stack transform, `data-removed` the exit collapse,
- * `data-dragging` the swipe's transition suspension — so the pointer drag can
- * own `style.transform` directly without a reactive style writer clobbering it.
- */
-function ToastItem(props: ToastItemProps): JSX.Element {
-  const data = props.record.data;
-  const depth = (): number =>
-    toasts()
-      .filter((entry) => !entry.data().removed)
-      .findIndex((entry) => entry.id === props.record.id);
+function ToastCard({
+  record,
+  richColors,
+}: {
+  record: ToastRecord;
+  richColors: boolean;
+}): JSX.Element {
+  const data = record.data;
   return (
-    <li
+    <ToastItem
+      record={record}
+      richColors={richColors}
       data-slot="sonner-toast"
       data-sonner-toast="true"
-      data-type={data().type}
-      data-toast-id={`${INSTANCE}-${props.record.id}`}
-      data-depth={depth() >= 0 ? String(depth()) : undefined}
-      data-removed={data().removed ? "true" : undefined}
-      data-rich-colors={props.richColors === true ? "true" : undefined}
       class={
         // @hella:compose
         [item]
@@ -379,7 +138,7 @@ function ToastItem(props: ToastItemProps): JSX.Element {
             }
             on:click={() => {
               action.onclick();
-              markRemoved(data().id);
+              toast.dismiss(data().id);
             }}
           >
             {action.label}
@@ -394,7 +153,7 @@ function ToastItem(props: ToastItemProps): JSX.Element {
           [close]
           // @hella:end
         }
-        on:click={() => markRemoved(data().id)}
+        on:click={() => toast.dismiss(data().id)}
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -413,14 +172,14 @@ function ToastItem(props: ToastItemProps): JSX.Element {
         </svg>
         <span class="sr-only">Close</span>
       </button>
-    </li>
+    </ToastItem>
   );
 }
 
 /**
- * Portals the toast stack into document.body and renders the module queue.
- * The queue is the singleton in this file: mount one Toaster per app and call
- * `toast()` from anywhere that imports the same copied module.
+ * Portals the styled toast stack into document.body over the shared headless
+ * queue: mount one Toaster per app, then call `toast()` from anywhere that
+ * imports this file (the re-export binds the same singleton).
  */
 export function Toaster({
   position = "bottom-right",
@@ -429,26 +188,21 @@ export function Toaster({
   ...attrs
 }: ToasterProps): JSX.Element {
   return (
-    <Portal to="body">
-      <ol
-        data-slot="sonner-toaster"
-        data-sonner-toaster="true"
-        data-position={position}
-        aria-live="polite"
-        class={
-          // @hella:compose
-          [base, toasterPositions[position], cls]
-          // @hella:end
-        }
-        {...attrs}
-      >
-        <ForEach
-          each={toasts}
-          use={(record: ToastRecord) => (
-            <ToastItem record={record} richColors={richColors === true} />
-          )}
-        />
-      </ol>
-    </Portal>
+    <HeadlessToaster
+      position={position}
+      richColors={richColors}
+      data-slot="sonner-toaster"
+      data-sonner-toaster="true"
+      class={
+        // @hella:compose
+        [base, toasterPositions[position], cls]
+        // @hella:end
+      }
+      {...attrs}
+    >
+      {(record: ToastRecord) => <ToastCard record={record} richColors={richColors === true} />}
+    </HeadlessToaster>
   );
 }
+
+export { toast };

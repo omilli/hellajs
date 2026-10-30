@@ -447,10 +447,11 @@
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
-          "deps": ["@hellajs/css"],
+          "deps": ["@hellajs/css", "@hellajs/headless"],
           "registryDependencies": ["theme"]
         },
         "tailwind": {
+          "deps": ["@hellajs/headless"],
           "registryDependencies": ["theme", "cn"]
         }
       }
@@ -474,10 +475,11 @@
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
-          "deps": ["@hellajs/css"],
+          "deps": ["@hellajs/css", "@hellajs/headless"],
           "registryDependencies": ["theme"]
         },
         "tailwind": {
+          "deps": ["@hellajs/headless"],
           "registryDependencies": ["theme", "cn"]
         }
       }
@@ -487,10 +489,11 @@
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
-          "deps": ["@hellajs/css"],
+          "deps": ["@hellajs/css", "@hellajs/headless"],
           "registryDependencies": ["theme"]
         },
         "tailwind": {
+          "deps": ["@hellajs/headless"],
           "registryDependencies": ["theme", "cn"]
         }
       }
@@ -626,10 +629,11 @@
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
-          "deps": ["@hellajs/css"],
+          "deps": ["@hellajs/css", "@hellajs/headless"],
           "registryDependencies": ["theme"]
         },
         "tailwind": {
+          "deps": ["@hellajs/headless"],
           "registryDependencies": ["theme", "cn"]
         }
       }
@@ -764,10 +768,11 @@
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
-          "deps": ["@hellajs/css"],
+          "deps": ["@hellajs/css", "@hellajs/headless"],
           "registryDependencies": ["theme", "button"]
         },
         "tailwind": {
+          "deps": ["@hellajs/headless"],
           "registryDependencies": ["theme", "cn", "button"]
         }
       }
@@ -777,10 +782,11 @@
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
-          "deps": ["@hellajs/css"],
+          "deps": ["@hellajs/css", "@hellajs/headless"],
           "registryDependencies": ["theme"]
         },
         "tailwind": {
+          "deps": ["@hellajs/headless"],
           "registryDependencies": ["theme", "cn"]
         }
       }
@@ -790,10 +796,11 @@
       "deps": ["@hellajs/core", "@hellajs/dom"],
       "styles": {
         "css": {
-          "deps": ["@hellajs/css"],
+          "deps": ["@hellajs/css", "@hellajs/headless"],
           "registryDependencies": ["theme", "label"]
         },
         "tailwind": {
+          "deps": ["@hellajs/headless"],
           "registryDependencies": ["theme", "cn", "label"]
         }
       }

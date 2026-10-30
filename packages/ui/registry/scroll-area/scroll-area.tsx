@@ -1,6 +1,5 @@
-import { signal } from "@hellajs/core";
-import { onDrag } from "@hellajs/headless";
-import type { ScrollBarProps, ScrollAreaProps } from "./scroll-area-types.js";
+import { scrollArea } from "@hellajs/headless";
+import type { ScrollAreaProps, ScrollBarProps } from "./scroll-area-types.js";
 
 // @hella:styles
 declare const base: string;
@@ -9,117 +8,36 @@ declare const thumb: string;
 declare const viewport: string;
 // @hella:end
 
+/**
+ * The scrollbar chrome for one axis: a wiring-wrapped bar whose thumb sizes
+ * and positions itself from the paired viewport, draggable through its track
+ * span. Compose it as a child of `ScrollArea` for a second (horizontal) axis.
+ */
 export function ScrollBar({
-  orientation: orientationProp,
+  orientation,
   observe,
   class: cls,
   ...attrs
 }: ScrollBarProps): JSX.Element {
-  const orientation = (): "vertical" | "horizontal" => orientationProp ?? "vertical";
-  const vertical = (): boolean => orientation() === "vertical";
-
-  const length = signal(0);
-  const position = signal(0);
-
-  let bar: HTMLElement | undefined;
-  let viewportEl: HTMLElement | undefined;
-  const teardown: (() => void)[] = [];
-
-  const defaultObserve = (target: Element, onGrow: () => void): (() => void) => {
-    if (typeof ResizeObserver === "undefined") return () => undefined;
-    const observer = new ResizeObserver(onGrow);
-    observer.observe(target);
-    return () => observer.disconnect();
-  };
-
-  const measure = (): void => {
-    const trackEl = bar;
-    const view = viewportEl;
-    if (!trackEl || !view) return;
-    const track = vertical() ? trackEl.clientHeight : trackEl.clientWidth;
-    const scrollSize = vertical() ? view.scrollHeight : view.scrollWidth;
-    const clientSize = vertical() ? view.clientHeight : view.clientWidth;
-    const maxScroll = scrollSize - clientSize;
-    const ratio = scrollSize > 0 && clientSize > 0 ? Math.min(1, clientSize / scrollSize) : 1;
-    const thumbSize = Math.min(track, Math.max(20, ratio * track));
-    const travel = Math.max(0, track - thumbSize);
-    const at = maxScroll > 0 ? (vertical() ? view.scrollTop : view.scrollLeft) / maxScroll : 0;
-    length(thumbSize);
-    position(Math.min(travel, Math.max(0, at * travel)));
-  };
-
-  const thumbStyle = (): Record<string, string> =>
-    vertical()
-      ? { flex: "none", height: `${length()}px`, transform: `translateY(${position()}px)` }
-      : { flex: "none", width: `${length()}px`, transform: `translateX(${position()}px)` };
-
+  const { Scrollbar, Thumb } = scrollArea({ observe });
   return (
-    <div
-      data-slot="scroll-area-scrollbar"
-      data-orientation={orientation()}
+    <Scrollbar
+      orientation={orientation}
       class={
         // @hella:compose
         [scrollbar, cls]
         // @hella:end
       }
-      hook:afterMount={(node) => {
-        if (!(node instanceof HTMLElement)) return;
-        bar = node;
-        const root = node.closest('[data-slot="scroll-area"]');
-        const view = root?.querySelector<HTMLElement>('[data-slot="scroll-area-viewport"]');
-        if (!view) return;
-        viewportEl = view;
-        view.addEventListener("scroll", measure, { passive: true });
-        teardown.push(() => view.removeEventListener("scroll", measure));
-        const content = view.firstElementChild;
-        if (content) teardown.push((observe ?? defaultObserve)(content, measure));
-        const thumbEl = node.querySelector<HTMLElement>("[data-slot='scroll-area-thumb']");
-        if (thumbEl) {
-          let startScroll = 0;
-          let span = 0;
-          let maxScroll = 0;
-          teardown.push(
-            onDrag(thumbEl, {
-              onStart: () => {
-                const track = vertical() ? node.clientHeight : node.clientWidth;
-                const scrollSize = vertical() ? view.scrollHeight : view.scrollWidth;
-                const clientSize = vertical() ? view.clientHeight : view.clientWidth;
-                maxScroll = Math.max(0, scrollSize - clientSize);
-                span = Math.max(0, track - length());
-                startScroll = vertical() ? view.scrollTop : view.scrollLeft;
-              },
-              onMove: (delta) => {
-                if (maxScroll <= 0 || span <= 0) return;
-                const moved = vertical() ? delta.dy : delta.dx;
-                const next = Math.min(
-                  maxScroll,
-                  Math.max(0, startScroll + (moved / span) * maxScroll),
-                );
-                if (vertical()) view.scrollTop = next;
-                else view.scrollLeft = next;
-              },
-            }),
-          );
-        }
-        measure();
-      }}
-      hook:beforeDestroy={() => {
-        while (teardown.length) teardown.pop()!();
-        bar = undefined;
-        viewportEl = undefined;
-      }}
       {...attrs}
     >
-      <div
-        data-slot="scroll-area-thumb"
-        style={thumbStyle}
+      <Thumb
         class={
           // @hella:compose
           [thumb]
           // @hella:end
         }
       />
-    </div>
+    </Scrollbar>
   );
 }
 
@@ -134,9 +52,9 @@ export function ScrollArea({
   class: cls,
   ...attrs
 }: ScrollAreaProps): JSX.Element {
+  const { Root, Viewport, Scrollbar, Thumb } = scrollArea({ observe });
   return (
-    <div
-      data-slot="scroll-area"
+    <Root
       class={
         // @hella:compose
         [base, cls]
@@ -144,18 +62,25 @@ export function ScrollArea({
       }
       {...attrs}
     >
-      <div
-        data-slot="scroll-area-viewport"
+      <Viewport
         class={
           // @hella:compose
           [viewport]
           // @hella:end
         }
       >
-        <div data-slot="scroll-area-content">{children}</div>
-      </div>
-      <ScrollBar observe={observe} />
+        {children}
+      </Viewport>
+      <Scrollbar>
+        <Thumb
+          class={
+            // @hella:compose
+            [thumb]
+            // @hella:end
+          }
+        />
+      </Scrollbar>
       <div data-slot="scroll-area-corner" />
-    </div>
+    </Root>
   );
 }

@@ -1,0 +1,66 @@
+# toggle
+
+Creates the toggle part in one call: a pressed-state button whose closure owns the pressed state. Clicks flip the state and report through `onPressedChange`; Space and Enter toggle through native button activation.
+
+## Basic Usage
+
+```tsx
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+import { toggle } from "@hellajs/headless";
+
+const pressed = signal(false);
+
+const Toggle = toggle({
+  pressed: () => pressed(),
+  onPressedChange: (next) => pressed(next),
+});
+
+mount(<Toggle.Root>Bold</Toggle.Root>, "#app");
+// Clicking flips aria-pressed and data-state between off and on.
+```
+
+## API
+
+```typescript
+function toggle(options?: ToggleOptions): ToggleParts
+```
+
+- `options.pressed`: Controlled pressed state. Passing it makes the toggle controlled; omitting it keeps state internal.
+- `options.onPressedChange`: Called with every factory-driven flip; a controlled accessor's external change notifies no one.
+- **Returns**: The part set, composed as `Toggle.Root`-style members.
+
+### Parts
+
+| Part | Renders |
+|---|---|
+| `Root` | `button` with `aria-pressed`, `data-state` (`on` or `off`), and disabled gating |
+
+Every part spreads `class` and native attributes onto its element; parts own structure, styling stays in the wrapper.
+
+### Options
+
+| Option | Type | Default |
+|---|---|---|
+| `pressed` | `boolean \| (() => boolean)` | internal signal |
+| `onPressedChange` | `(pressed: boolean) => void` | `-` |
+
+## Key Concepts
+
+### Seeding the Uncontrolled State
+
+A boolean `pressed` seeds the internal signal: the toggle starts pressed and flips off on the first click. Omitting it starts unpressed.
+
+### Controlled Getters Notify One Direction
+
+`onPressedChange` reports flips the factory drives. Changing a controlled `pressed` signal directly is the controller's own move and notifies no one; the rendered state follows the accessor on the next evaluation.
+
+## Important Considerations
+
+### Call the Factory in Component Scope
+
+`toggle()` creates a state signal that must dispose with the component that owns it. Mounting the tree unmounts the signal's wiring; module-level calls leak it. Call the factory inside the component that renders the parts.
+
+### Keyboard Activation Is Native
+
+The root is a `button`, so Space and Enter activate it without extra key wiring, and the button participates in tab order. `disabled` blocks pointer and keyboard activation alike.

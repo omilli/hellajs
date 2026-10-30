@@ -81,6 +81,16 @@ The naming convention is camelCase factory, TitleCase binding: `const Popover = 
 
 State is controlled-or-internal, the same contract as the registry's `value`/`onValueChange`: pass an `open` getter and the factory treats it as the single source of truth, reporting every flip through `onOpenChange`; omit it and the factory keeps its own signal. Parts render structure, never styles: they carry `data-slot` and `data-state` hooks and spread your `class` and attributes, so the styled wrapper stays yours.
 
+## Raw Behaviors: When to Skip the Parts Tier
+
+The parts tier pays for itself when a component coordinates state across parts: an open machine shared by a trigger and content, a selection model behind a list, roving focus over a group. When a component wires exactly one behavior locally and holds no cross-part state, calling the behavior directly is the better contract: fewer factory options, no versioned parts surface, and the wiring reads inline where it runs. The registry keeps three such raw users deliberately:
+
+- `drawer` dismisses from a drag: [`onDrag`](/reference/headless/ondrag) watches the panel edge while [`modal`](/reference/headless/modal) arms the trap and dismissal. One gesture wiring, no shared state.
+- `sidebar` opens its rail on hover and pins popover content to a trigger: [`hoverIntent`](/reference/headless/hoverintent) plus [`anchorPosition`](/reference/headless/anchorposition), each a single local wiring.
+- `resizable` maps pointer drags to pane sizes: [`onDrag`](/reference/headless/ondrag) with the value math living in the component itself.
+
+The decision rule: a local single-behavior wiring with no cross-part state stays raw. Reach for a factory when parts must share state, when dismissal needs layer coordination, or when a keyboard and aria contract would otherwise be reinvented inline.
+
 ## Render Parts on the Server
 
 Parts render on the server. The package publishes a second, server-safe build behind the `ssr` export condition: the same factories and parts, compiled so importing them never touches the DOM. A server build that sets the `ssr` condition resolves that variant, and the client build keeps resolving the regular entry, so the markup the server emits hydrates interactive through the dom build. Astro projects with the HellaJS integration get this with no extra configuration; on other stacks, add `ssr` to your server build's export conditions.

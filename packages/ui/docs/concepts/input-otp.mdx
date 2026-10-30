@@ -1,5 +1,7 @@
 ## API
 
+The slot coordination, caret mapping, paste distribution, and completion reporting live in the [`inputOtp()`](/reference/headless/inputotp) factory from `@hellajs/headless`; the copied file calls the factory once and styles its parts (`Root`, `Group`, `Slot`, `Separator`) through the class hooks (`inputClass` on the root, `caretWrapClass`/`caretClass` on each slot), so behavior upgrades land through the package while the pasted styles stay yours.
+
 You compose the slots yourself: group them, place the separator between groups, and give every slot its zero-based `index`. The root owns the state and wires the slots after mount, so a slot renders whatever its index holds.
 
 ### InputOTP

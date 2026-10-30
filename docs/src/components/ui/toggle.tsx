@@ -1,4 +1,4 @@
-import { signal } from "@hellajs/core";
+import { toggle } from "@hellajs/headless";
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 interface ToggleProps extends HTMLAttributes<"button"> {
@@ -113,44 +113,25 @@ export function toggleVariants(options?: {
 }
 
 export function Toggle({
-  pressed: pressedProp,
+  pressed,
   onPressedChange,
   variant,
   size,
   disabled,
-  "on:click": userClick,
   children,
   class: cls,
   ...attrs
 }: ToggleProps): JSX.Element {
-  const pressedAccessor = typeof pressedProp === "function" ? pressedProp : undefined;
-  const internal = signal(typeof pressedProp === "boolean" ? pressedProp : false);
-  const pressed = (): boolean => (pressedAccessor ? pressedAccessor() : internal());
-
-  const toggle = (): void => {
-    if (disabled) return;
-    const next = !pressed();
-    if (!pressedAccessor) internal(next);
-    onPressedChange?.(next);
-  };
-
+  const { Root } = toggle({ pressed, onPressedChange });
   return (
-    <button
-      type="button"
-      data-slot="toggle"
-      aria-pressed={pressed() ? "true" : "false"}
-      data-state={pressed() ? "on" : "off"}
-      disabled={disabled ? true : undefined}
+    <Root
+      disabled={disabled}
       class={
         [toggleVariants({ variant, size }), cls]
       }
-      on:click={function (e) {
-        userClick?.call(this, e);
-        toggle();
-      }}
       {...attrs}
     >
       {children}
-    </button>
+    </Root>
   );
 }
