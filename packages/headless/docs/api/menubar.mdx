@@ -48,7 +48,7 @@ Omitting `value` keeps the bar's open-menu id internal; `onValueChange` still re
 ## API
 
 ```typescript
-function menubar(options?: MenubarOptions): MenubarParts
+function menubar(options?: MenubarOptions): MenubarComponents
 ```
 
 - `options.value`: Controlled id of the open menu (`""` when closed). When given, the bar never writes its internal signal and `onValueChange` reports every flip.
@@ -67,12 +67,12 @@ function menubar(options?: MenubarOptions): MenubarParts
 ### menu()
 
 ```typescript
-function menu(options?: MenubarMenuOptions): MenuParts
+function menu(options?: MenubarMenuOptions): MenuComponents
 ```
 
 - `options.value`: This menu's id in the bar's open-menu value; a generated id stands in when omitted.
-- `options.open`, `options.onOpenChange`: The same controlled-or-internal open state as [`menu`](/reference/headless/menu).
-- **Returns**: The full menu part set (`Trigger`, `Content`, `Item`, `CheckboxItem`, `RadioGroup`, `RadioItem`, `Label`, `Separator`, `Group`, `Shortcut`, `sub()`).
+- `options.open`, `options.onOpenChange`: The same controlled-or-internal open state as [`menu`](/headless/menu).
+- **Returns**: The full menu component set (`Trigger`, `Content`, `Item`, `CheckboxItem`, `RadioGroup`, `RadioItem`, `Label`, `Separator`, `Group`, `Shortcut`, `sub()`).
 
 ## Key Concepts
 
@@ -86,13 +86,13 @@ Inside an open bar menu, both horizontal arrows hand off to the adjacent trigger
 
 ### Bar Menu Content Defaults
 
-A bar menu's content drops below its trigger with a wider gap (`sideOffset` 8, `alignOffset` -4) and the full part set of [`menu`](/reference/headless/menu), including `sub()` for nested submenus.
+A bar menu's content drops below its trigger with a wider gap (`sideOffset` 8, `alignOffset` -4) and the full component set of [`menu`](/headless/menu), including `sub()` for nested submenus.
 
 ## Important Considerations
 
 ### Call the Factories in Component Scope
 
-`menubar()` and each `Bar.menu()` call start effects that must dispose with the component that owns them. Create the bar and its menus in the component that renders the `Bar`, and keep the `Trigger` and `Content` parts inside the same mounted tree.
+`menubar()` and each `Bar.menu()` call start effects that must dispose with the component that owns them. Create the bar and its menus in the component that renders the `Bar`, and keep the `Trigger` and `Content` components inside the same mounted tree.
 
 ### The Value Is an Id, Not a Selection
 

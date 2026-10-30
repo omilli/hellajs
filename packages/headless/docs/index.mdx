@@ -1,6 +1,6 @@
 ## Headless
 
-Headless wiring for common UI mechanics: trapping focus, Escape and outside dismissal, roving tabindex, anchor positioning, hover intent, menu typeahead, pointer gestures, and layered dismissal. Each behavior is a plain function that takes elements and callbacks and returns a dispose handle; state stays in your signals. The `modal` foundation composes the dialog-family wiring with automatic, node-scoped disposal instead of a dispose handle, and the parts factories (`popover`, `menu`, `menubar`, `tooltip`, `hoverCard`, `combobox`, `select`, `command`, `toggle`, `checkbox`, `toggleSwitch`, `toggleGroup`, `radioGroup`, `tabs`, `navigationMenu`, `slider`, `toast`, `calendar`, `inputOtp`, `createForm`, `scrollArea`, `messageScroller`) grow a components tier: camelCase factories whose components render structure, never styles.
+Headless wiring for common UI mechanics ([install it first](/headless/installation); [styling is bring-your-own](/headless/theming)): trapping focus, Escape and outside dismissal, roving tabindex, anchor positioning, hover intent, menu typeahead, pointer gestures, and layered dismissal. Each util is a plain function that takes elements and callbacks and returns a dispose handle; state stays in your signals. `modal` composes the dialog-family wiring with automatic, node-scoped disposal instead of a dispose handle, and the component factories (`popover`, `menu`, `menubar`, `tooltip`, `hoverCard`, `combobox`, `select`, `command`, `toggle`, `checkbox`, `toggleSwitch`, `toggleGroup`, `radioGroup`, `tabs`, `navigationMenu`, `slider`, `toast`, `calendar`, `inputOtp`, `createForm`, `scrollArea`, `messageScroller`) grow a components tier: camelCase factories whose components render structure, never styles.
 
 ### Installation
 
@@ -13,7 +13,7 @@ npm install @hellajs/core @hellajs/dom @hellajs/headless
 ```jsx
 import { signal } from "@hellajs/core";
 import { mount } from "@hellajs/dom";
-import { trapFocus, onEscape, onOutside } from "@hellajs/headless";
+import { trapFocus, onEscape, onOutside } from "@hellajs/headless/utils";
 
 const open = signal(false);
 const cleanup: (() => void)[] = [];
@@ -45,45 +45,45 @@ mount(<div>{() => (open() ? <Dialog /> : <p>Nothing open</p>)}</div>, "#app");
 
 ### API
 
-- **[trapFocus](/reference/headless/trapfocus)**: Keep Tab navigation inside a container
-- **[onEscape](/reference/headless/onescape)**: Call a handler on Escape at a target
-- **[onOutside](/reference/headless/onoutside)**: Call a handler on clicks outside elements
-- **[rovingTabIndex](/reference/headless/rovingtabindex)**: Arrow-key focus navigation over a group
-- **[anchorPosition](/reference/headless/anchorposition)**: Pin a floating element to an anchor, tracking scroll and resize
-- **[computeAnchorPosition](/reference/headless/computeanchorposition)**: Compute floating placement as pure math
-- **[hoverIntent](/reference/headless/hoverintent)**: Open and close overlays on hover or focus delays
-- **[menuTypeahead](/reference/headless/menutypeahead)**: Select menu items by typing
-- **[onDrag](/reference/headless/ondrag)**: Track pointer drags with total distance from the start
-- **[onSwipe](/reference/headless/onswipe)**: Commit or cancel swipes by distance or speed
-- **[onPinch](/reference/headless/onpinch)**: Track two-finger pinch zoom and pan
-- **[onLongPress](/reference/headless/onlongpress)**: Fire a handler after a press is held
-- **[onDoubleTap](/reference/headless/ondoubletap)**: Detect double taps, optionally reporting single taps
-- **[layerDismissal](/reference/headless/layerdismissal)**: Dismiss stacked overlays one layer at a time
-- **[modal](/reference/headless/modal)**: Arm a modal panel: trap, dismissal, and exit notification with automatic disposal
-- **[popover](/reference/headless/popover)**: Create the six popover parts in one factory call with controlled-or-internal state
-- **[menu](/reference/headless/menu)**: Create the full menu part set in one factory call: trigger, content, selectable rows, and submenus
-- **[menubar](/reference/headless/menubar)**: Create a menu bar whose menus announce to the bar: one open at a time, roving triggers, open-then-move
-- **[tooltip](/reference/headless/tooltip)**: Create the tooltip parts in one factory call: provider slot, hover trigger, and the ported anchored label
-- **[hoverCard](/reference/headless/hovercard)**: Create the hover-card parts in one factory call: hover trigger and the ported keep-open panel
-- **[combobox](/reference/headless/combobox)**: Create the combobox parts in one factory call: query input, filtered option panel, and multi-select chips
-- **[select](/reference/headless/select)**: Create the select parts in one factory call: trigger, value label, and the ported roving listbox
-- **[command](/reference/headless/command)**: Create the command palette parts in one factory call: search input, ranked list, and the modal-wired palette dialog
-- **[toggle](/reference/headless/toggle)**: Create the pressed-state toggle button in one factory call with controlled-or-internal state
-- **[checkbox](/reference/headless/checkbox)**: Create the checkbox parts in one factory call: the tri-state button and its indicator
-- **[toggleSwitch](/reference/headless/toggleswitch)**: Create the switch parts in one factory call: the checked-state button and its moving thumb
-- **[toggleGroup](/reference/headless/togglegroup)**: Create the toggle-group parts in one factory call: roving items with single and multiple exclusion
-- **[radioGroup](/reference/headless/radiogroup)**: Create the radio-group parts in one factory call: exclusive selection with move-and-select arrows
-- **[tabs](/reference/headless/tabs)**: Create the tabs parts in one factory call: the roving tablist, its triggers, and the keyed panels
-- **[navigationMenu](/reference/headless/navigationmenu)**: Create the navigation menu parts in one factory call: the announced open-value store, the viewport-shared panels, and the moving indicator
-- **[slider](/reference/headless/slider)**: Create the slider parts in one factory call: the drag-wired root, the measured track, the filled range, and the focusable thumbs
-- **[toast](/reference/headless/toast)**: Enqueue toast cards onto a shared stack from anywhere: timers, hover pause, swipe dismissal, and the portaled Toaster
-- **[calendar](/reference/headless/calendar)**: Create the calendar parts in one factory call: the month view, the selection model, and the day grid with its keyboard
-- **[inputOtp](/reference/headless/inputotp)**: Create the one-time-code parts in one factory call: the slot row, its display slots, and the separator over one transparent input
-- **[createForm](/reference/headless/createform)**: Create a signals-native form controller in one factory call: per-field signals, validation timing, and the field parts that read it through explicit props
-- **[scrollArea](/reference/headless/scrollarea)**: Create the scroll-area parts in one factory call: the native-scroll viewport and the self-measuring scrollbar whose thumb tracks and drags its axis
-- **[messageScroller](/reference/headless/messagescroller)**: Create the message-scroller parts in one factory call: the shared at-bottom state, stickiness on new content, and the jump-to-bottom button
+- **[trapFocus](/headless/trapfocus)**: Keep Tab navigation inside a container
+- **[onEscape](/headless/onescape)**: Call a handler on Escape at a target
+- **[onOutside](/headless/onoutside)**: Call a handler on clicks outside elements
+- **[rovingTabIndex](/headless/rovingtabindex)**: Arrow-key focus navigation over a group
+- **[anchorPosition](/headless/anchorposition)**: Pin a floating element to an anchor, tracking scroll and resize
+- **[computeAnchorPosition](/headless/computeanchorposition)**: Compute floating placement as pure math
+- **[hoverIntent](/headless/hoverintent)**: Open and close overlays on hover or focus delays
+- **[menuTypeahead](/headless/menutypeahead)**: Select menu items by typing
+- **[onDrag](/headless/ondrag)**: Track pointer drags with total distance from the start
+- **[onSwipe](/headless/onswipe)**: Commit or cancel swipes by distance or speed
+- **[onPinch](/headless/onpinch)**: Track two-finger pinch zoom and pan
+- **[onLongPress](/headless/onlongpress)**: Fire a handler after a press is held
+- **[onDoubleTap](/headless/ondoubletap)**: Detect double taps, optionally reporting single taps
+- **[layerDismissal](/headless/layerdismissal)**: Dismiss stacked overlays one layer at a time
+- **[modal](/headless/modal)**: Arm a modal panel: trap, dismissal, and exit notification with automatic disposal
+- **[popover](/headless/popover)**: Create the six popover components in one factory call with controlled-or-internal state
+- **[menu](/headless/menu)**: Create the full menu component set in one factory call: trigger, content, selectable rows, and submenus
+- **[menubar](/headless/menubar)**: Create a menu bar whose menus announce to the bar: one open at a time, roving triggers, open-then-move
+- **[tooltip](/headless/tooltip)**: Create the tooltip components in one factory call: provider slot, hover trigger, and the ported anchored label
+- **[hoverCard](/headless/hovercard)**: Create the hover-card components in one factory call: hover trigger and the ported keep-open panel
+- **[combobox](/headless/combobox)**: Create the combobox components in one factory call: query input, filtered option panel, and multi-select chips
+- **[select](/headless/select)**: Create the select components in one factory call: trigger, value label, and the ported roving listbox
+- **[command](/headless/command)**: Create the command palette components in one factory call: search input, ranked list, and the modal-wired palette dialog
+- **[toggle](/headless/toggle)**: Create the pressed-state toggle button in one factory call with controlled-or-internal state
+- **[checkbox](/headless/checkbox)**: Create the checkbox components in one factory call: the tri-state button and its indicator
+- **[toggleSwitch](/headless/toggleswitch)**: Create the switch components in one factory call: the checked-state button and its moving thumb
+- **[toggleGroup](/headless/togglegroup)**: Create the toggle-group components in one factory call: roving items with single and multiple exclusion
+- **[radioGroup](/headless/radiogroup)**: Create the radio-group components in one factory call: exclusive selection with move-and-select arrows
+- **[tabs](/headless/tabs)**: Create the tabs components in one factory call: the roving tablist, its triggers, and the keyed panels
+- **[navigationMenu](/headless/navigationmenu)**: Create the navigation menu components in one factory call: the announced open-value store, the viewport-shared panels, and the moving indicator
+- **[slider](/headless/slider)**: Create the slider components in one factory call: the drag-wired root, the measured track, the filled range, and the focusable thumbs
+- **[toast](/headless/toast)**: Enqueue toast cards onto a shared stack from anywhere: timers, hover pause, swipe dismissal, and the portaled Toaster
+- **[calendar](/headless/calendar)**: Create the calendar components in one factory call: the month view, the selection model, and the day grid with its keyboard
+- **[inputOtp](/headless/inputotp)**: Create the one-time-code components in one factory call: the slot row, its display slots, and the separator over one transparent input
+- **[createForm](/headless/createform)**: Create a signals-native form controller in one factory call: per-field signals, validation timing, and the field components that read it through explicit props
+- **[scrollArea](/headless/scrollarea)**: Create the scroll-area components in one factory call: the native-scroll viewport and the self-measuring scrollbar whose thumb tracks and drags its axis
+- **[messageScroller](/headless/messagescroller)**: Create the message-scroller components in one factory call: the shared at-bottom state, stickiness on new content, and the jump-to-bottom button
 
 ### Concepts
 
-- **[Headless Behaviors](/learn/concepts/headless-behaviors)**: Focus traps, anchoring, hover intent, typeahead, gestures, layered dismissal, and the parts factories as plain functions
-- **[Headless Parts](/learn/concepts/parts)**: The parts factories as a tier: one call returns the full part set, controlled-or-internal state, and when to drop to the behaviors tier
+- **[Headless Utils](/learn/concepts/headless-utils)**: Focus traps, anchoring, hover intent, typeahead, gestures, layered dismissal, and the components factories as plain functions
+- **[Headless Components](/learn/concepts/headless-components)**: The components factories as a tier: one call returns the full component set, controlled-or-internal state, and when to drop to the utils tier

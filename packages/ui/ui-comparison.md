@@ -11,7 +11,7 @@ A ground-up comparison based on the actual source code of `@hellajs/ui` v2. Ever
 | Distribution model | CLI copies owned source; the package is the CLI (`lib/main.ts`) | CLI copies owned source from a registry platform | Traditional npm package, imported at runtime | CLI or docs copy of owned source |
 | Importable runtime surface | None; the copied file is the component (`lib/addComponent.ts`) | None for components; Radix primitives install as packages | The library itself is the runtime | None for components; Ark UI + Panda CSS install as packages |
 | Styling approach | Two styles: `@hellajs/css` layered maps or plain Tailwind strings, spliced at copy time (`lib/internal/transform.ts`) | Tailwind v4 + CSS variables | Unstyled, bring your own CSS | Panda CSS recipes |
-| Behavior primitives | `hook:` wiring to `@hellajs/headless` behaviors, no querySelector (`registry/dialog/dialog.tsx`) | Radix UI or Base UI or React Aria (`--base` choice) | Its own headless primitives are the product | Ark UI (headless machines) |
+| Behavior primitives | `hook:` wiring to `@hellajs/headless` utils, no querySelector (`registry/dialog/dialog.tsx`) | Radix UI or Base UI or React Aria (`--base` choice) | Its own headless primitives are the product | Ark UI (headless machines) |
 | Framework | HellaJS source: one JSX canonical per component, compiled by the HellaJS babel plugin (`lib/types.d.ts`) | React primary; other frameworks via ports | React only | React, Vue, Solid via Ark UI |
 | Theming | Split theme: `tokens.ts` (css) or `theme.css` (tailwind), the css sheets plain unlayered output and the tailwind sheet's element reset in tailwind's `base` layer, plus a dark-default `tokens.dark.ts` sheet selected by `themeMode` (`registry/theme/`) | CSS variables + Tailwind theme | None (unstyled) | Panda CSS presets and themes |
 | Catalog | 59 components + theme + cn: full shadcn new-york-v4 parity minus chart (`registry/registry.json`) | 50+ components, blocks, charts | 30+ headless components | 40+ components |
@@ -98,7 +98,7 @@ Dependency facts come from each package's `package.json` (HellaJS: `packages/ui/
 ### HellaJS ui
 
 - Interactive components wire behavior through `hook:` lifecycle attributes and headless factory delegation: Dialog arms the panel through the headless `modal` foundation in `hook:afterMount` (trap, Escape/outside dismissal, and exit notification, disposed with the node, no cleanup arrays) (`registry/dialog/dialog.tsx`); Tabs hands the tablist to the headless `tabs()` factory, whose `List` attaches `rovingTabIndex` plus a focusin listener in `hook:afterMount` and disposes them at unmount (`registry/tabs/tabs.tsx`, `@hellajs/headless` `lib/tabs.tsx`).
-- The behaviors come from `@hellajs/headless`, pure functions over real nodes, and the copied file never queries the DOM (`docs/concepts/dialog.mdx`, "Behaviors, Not Queries").
+- The utils come from `@hellajs/headless`, pure functions over real nodes, and the copied file never queries the DOM (`docs/concepts/dialog.mdx`, "Utils, Not Queries").
 - Accessibility attributes are baked into the markup: `role="dialog"`, `aria-modal`, generated `aria-labelledby` ids, `aria-selected`, `aria-controls`, and `hidden` panel toggling (`registry/dialog/dialog.tsx`, `registry/tabs/tabs.tsx`).
 
 ### shadcn/ui
@@ -114,7 +114,7 @@ Dependency facts come from each package's `package.json` (HellaJS: `packages/ui/
 
 - Ark UI supplies the headless machines (state, keyboard, aria) consumed by every Park UI component; the copied source owns only the styling recipe and the part composition.
 
-**Verdict:** HellaJS ui takes the thinnest accessibility layer of the three: it wires proven headless behaviors only where the component needs them (dialog focus management, tabs roving) and leaves everything else as plain accessible markup. That keeps the copied file free of primitive-package dependencies but gives it a far smaller guarantee surface: no scroll locking, no focus-scope restore beyond the trap's own restore, no composite widget machinery beyond roving tabindex. shadcn/ui, Base UI, and Park UI all delegate to dedicated accessibility engines that have absorbed years of edge cases HellaJS ui's zero-dependency behavior rewrites have not yet encountered.
+**Verdict:** HellaJS ui takes the thinnest accessibility layer of the three: it wires proven headless utils only where the component needs them (dialog focus management, tabs roving) and leaves everything else as plain accessible markup. That keeps the copied file free of primitive-package dependencies but gives it a far smaller guarantee surface: no scroll locking, no focus-scope restore beyond the trap's own restore, no composite widget machinery beyond roving tabindex. shadcn/ui, Base UI, and Park UI all delegate to dedicated accessibility engines that have absorbed years of edge cases HellaJS ui's zero-dependency wirings have not yet encountered.
 
 ---
 
@@ -179,7 +179,7 @@ Compared with the competitors: shadcn/ui's `add` has the same shape but richer o
 
 ## Bottom Line
 
-HellaJS ui applies the shadcn/ui distribution model to HellaJS's framework-neutral source with an unusually small dependency footprint: one canonical file per component, one style module per style, a splice engine that makes both styles two views of one truth, and an override contract (plain cascade precedence, no layers) that removes the class-merging machinery the Tailwind-styled competitors treat as load-bearing. Behavior rides `hook:` attributes to `@hellajs/headless` behaviors instead of a headless component runtime, keeping the copied file self-contained.
+HellaJS ui applies the shadcn/ui distribution model to HellaJS's framework-neutral source with an unusually small dependency footprint: one canonical file per component, one style module per style, a splice engine that makes both styles two views of one truth, and an override contract (plain cascade precedence, no layers) that removes the class-merging machinery the Tailwind-styled competitors treat as load-bearing. Behavior rides `hook:` attributes to `@hellajs/headless` utils instead of a headless component runtime, keeping the copied file self-contained.
 
 What sets HellaJS ui apart, and no single competitor matches all of:
 

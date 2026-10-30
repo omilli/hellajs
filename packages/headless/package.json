@@ -25,6 +25,16 @@
       "ssr": "./dist/ssr/index.js",
       "import": "./dist/index.js"
     },
+    "./utils": {
+      "types": "./dist/utils/index.d.ts",
+      "ssr": "./dist/ssr/utils/index.js",
+      "import": "./dist/utils/index.js"
+    },
+    "./utils/*": {
+      "types": "./dist/utils/*.d.ts",
+      "ssr": "./dist/ssr/utils/*.js",
+      "import": "./dist/utils/*.js"
+    },
     "./*": {
       "types": "./dist/*.d.ts",
       "ssr": "./dist/ssr/*.js",

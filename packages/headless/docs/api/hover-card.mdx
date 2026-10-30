@@ -1,6 +1,6 @@
 # hoverCard
 
-Creates the two hover-card parts in one call: a hover trigger and the ported content panel. The factory closure owns the open state, the 200ms/300ms timings, and the crossing contract - moving the pointer from the trigger into the panel never closes it.
+Creates the two hover-card components in one call: a hover trigger and the ported content panel. The factory closure owns the open state, the 200ms/300ms timings, and the crossing contract - moving the pointer from the trigger into the panel never closes it.
 
 ## Basic Usage
 
@@ -27,23 +27,23 @@ Omitting both timings keeps the defaults, and `Trigger` and `Content` connect th
 ## API
 
 ```typescript
-function hoverCard(options?: HoverCardOptions): HoverCardParts
+function hoverCard(options?: HoverCardOptions): HoverCardComponents
 ```
 
 - `options.open`: Controlled open-state getter. Passing it makes the hover card controlled; omitting it keeps state internal.
 - `options.onOpenChange`: Called on every open-state change, owned hover and dismissal alike.
 - `options.openDelay`: Pointer-hover ms before the content opens. Default `200`.
 - `options.closeDelay`: Pointer-leave ms before the content closes. Default `300`.
-- **Returns**: The part set, composed as `Card.Trigger`-style members.
+- **Returns**: The component set, composed as `Card.Trigger`-style members.
 
-### Parts
+### Components
 
-| Part | Renders |
+| Component | Renders |
 |---|---|
 | `Trigger` | `span` carrying the hover/focus intent wiring and the crossing ownership flags |
 | `Content` | Panel `div` portaled into `document.body`, carrying `data-state`, `data-side`, and `data-align` |
 
-Every part spreads `class` and native attributes onto its element; parts own structure, styling stays in the wrapper.
+Every component spreads `class` and native attributes onto its element; components own structure, styling stays in the wrapper.
 
 ### Content props
 
@@ -64,7 +64,7 @@ Pointer-ownership flags track which region holds the pointer. Entering the conte
 
 ### Anchoring and Dismissal
 
-While open, the panel is positioned against the trigger through [`anchorPosition`](/reference/headless/anchorposition) (fixed coordinates, collision flipping, repositioning on scroll and resize) at a 4px gap, and dismissed through [`layerDismissal`](/reference/headless/layerdismissal): Escape and an outside pointerdown close only the top layer. Focus never moves - the engine refocuses whatever already holds it, so hovering never steals focus from the trigger.
+While open, the panel is positioned against the trigger through [`anchorPosition`](/headless/anchorposition) (fixed coordinates, collision flipping, repositioning on scroll and resize) at a 4px gap, and dismissed through [`layerDismissal`](/headless/layerdismissal): Escape and an outside pointerdown close only the top layer. Focus never moves - the engine refocuses whatever already holds it, so hovering never steals focus from the trigger.
 
 ### The Exit Machine
 

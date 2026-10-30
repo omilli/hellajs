@@ -1,6 +1,6 @@
 import { effect, isFunction, signal } from "@hellajs/core";
 import { ForEach, Portal } from "@hellajs/dom";
-import { menuTypeahead } from "./menuTypeahead";
+import { menuTypeahead } from "./utils/menuTypeahead";
 import { anchoredLayer } from "./internal/anchoredLayer";
 import { moveActive, optionIdOf, selectionActive, typeaheadEntries } from "./internal/listbox";
 import type { ListboxModel } from "./internal/listbox";
@@ -18,10 +18,10 @@ import type {
   ComboboxListProps,
   ComboboxOptions,
   ComboboxPartProps,
-  ComboboxParts,
+  ComboboxComponents,
   ComboboxSeparatorProps,
   ComboboxValueProps,
-} from "./types/parts";
+} from "./types/components";
 
 /** The default case-insensitive substring filter over item labels, shared by the factory's matches and the list's hidden resolution. */
 const matchEntries = (
@@ -171,7 +171,7 @@ let comboboxCount = 0;
  * @param options `items` (array or getter), controlled-or-internal `value` + `onValueChange`, `multiple`, and an optional `filter` replacing the default substring match.
  * @returns The part set plus the composition getters, composed as `Combobox.Input`-style members.
  */
-export function combobox(options: ComboboxOptions = {}): ComboboxParts {
+export function combobox(options: ComboboxOptions = {}): ComboboxComponents {
   const s = comboboxOpenState(options);
   const multiple = options.multiple ?? false;
   const listId = `hella-combobox-list-${++comboboxCount}`;

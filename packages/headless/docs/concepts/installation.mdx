@@ -1,0 +1,67 @@
+# Installation
+
+`@hellajs/headless` installs as an npm package alongside its peers. Build tooling stays whatever your project already uses; the vite and rollup plugins pick the JSX transform up next:
+
+```bash
+npm install @hellajs/core @hellajs/dom @hellajs/headless
+```
+
+Build-tool wiring lives in the [Plugins](/plugins/babel) section, not here.
+
+## Two Import Paths
+
+The package has two entry points, and each maps to one tier:
+
+- **Components** (the factories that render structure) import from the root barrel: `@hellajs/headless`.
+- **Utils** (the plain dispose-handle functions) import from the subpath: `@hellajs/headless/utils`.
+
+A component, straight from the barrel:
+
+```tsx
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+import { popover } from "@hellajs/headless";
+
+const open = signal(false);
+
+const Popover = popover({
+  open: () => open(),
+  onOpenChange: (next) => open(next),
+});
+
+mount(
+  <div>
+    <Popover.Trigger>Settings</Popover.Trigger>
+    <Popover.Content side="bottom">
+      <Popover.Title>Dimensions</Popover.Title>
+      <Popover.Description>Set the layer size.</Popover.Description>
+    </Popover.Content>
+  </div>,
+  "#app",
+);
+```
+
+A util, from its own path:
+
+```tsx
+import { mount } from "@hellajs/dom";
+import { trapFocus } from "@hellajs/headless/utils";
+
+let release: (() => void) | undefined;
+
+const Panel = () => (
+  <div
+    hook:afterMount={(node) => {
+      if (node instanceof HTMLElement) release = trapFocus(node);
+    }}
+    hook:beforeDestroy={() => release?.()}
+  >
+    <input placeholder="First focusable" />
+    <button>Submit</button>
+  </div>
+);
+
+mount(<Panel />, "#app");
+```
+
+Both paths also work per file (`@hellajs/headless/utils/trapFocus`) and every name stays re-exported from the root barrel, so an existing `import { trapFocus } from "@hellajs/headless"` keeps working; the two paths above are the documented forms.

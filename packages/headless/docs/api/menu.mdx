@@ -1,6 +1,6 @@
 # menu
 
-Creates the full menu part set in one call: the trigger, the ported content layer, the selectable and structural rows, and `sub()` for nested submenus. The factory closure owns the open state, the exit timing, and the close-on-select coordination.
+Creates the full menu component set in one call: the trigger, the ported content layer, the selectable and structural rows, and `sub()` for nested submenus. The factory closure owns the open state, the exit timing, and the close-on-select coordination.
 
 ## Basic Usage
 
@@ -42,7 +42,7 @@ mount(
 // it mounted under data-state="closed" until its exit animation ends.
 ```
 
-Omitting `open` keeps the state internal, so the parts work standalone:
+Omitting `open` keeps the state internal, so the components work standalone:
 
 ```tsx
 const Menu = menu();
@@ -52,17 +52,17 @@ const Menu = menu();
 ## API
 
 ```typescript
-function menu(options?: MenuOptions): MenuParts
+function menu(options?: MenuOptions): MenuComponents
 ```
 
 - `options.open`: Controlled open-state getter. Passing it makes the menu controlled; omitting it keeps state internal.
 - `options.onOpenChange`: Called on every open-state change, owned toggle and dismissal alike.
 - `options.trigger`: The trigger model, `"click"` (default) or `"contextmenu"`. The contextmenu mode renders a zone that opens the menu at the pointer through a virtual anchor.
-- **Returns**: The part set, composed as `Menu.Trigger`-style members.
+- **Returns**: The component set, composed as `Menu.Trigger`-style members.
 
-### Parts
+### Components
 
-| Part | Renders |
+| Component | Renders |
 |---|---|
 | `Trigger` | `button` owning the click toggle, `data-state`, `aria-expanded`, `aria-haspopup`, and `aria-controls`; a `span` zone in the contextmenu mode |
 | `Content` | `role="menu"` panel portaled into `document.body`, carrying `data-state`, `data-side`, and `data-align` |
@@ -76,7 +76,7 @@ function menu(options?: MenuOptions): MenuParts
 | `Shortcut` | Trailing `span` for shortcut hints; `Item` renders it automatically from its `shortcut` prop |
 | `sub()` | Factory for a nested submenu: its own open state, anchored to its own trigger |
 
-Every part spreads `class` and native attributes onto its element; parts own structure, styling stays in the wrapper.
+Every component spreads `class` and native attributes onto its element; components own structure, styling stays in the wrapper.
 
 ### Content props
 
@@ -103,11 +103,11 @@ Activating an `Item` calls its `onSelect`, then dispatches the shared selection 
 
 ### The Keyboard Model
 
-While open, the content owns the keyboard: arrows rove the enabled items with wrap-around and Home/End bounds, Enter and Space activate the focused row, Tab closes every layer, and typing runs [`menuTypeahead`](/reference/headless/menutypeahead) against the item labels. ArrowRight enters a submenu from its trigger and flips with the resolved writing direction.
+While open, the content owns the keyboard: arrows rove the enabled items with wrap-around and Home/End bounds, Enter and Space activate the focused row, Tab closes every layer, and typing runs [`menuTypeahead`](/headless/menutypeahead) against the item labels. ArrowRight enters a submenu from its trigger and flips with the resolved writing direction.
 
 ### Submenus
 
-`Menu.sub()` returns the same part set bound to a nested closure: `sub.Trigger` opens on click, on ArrowRight, or after a short hover rest; `sub.Content` anchors to its own trigger, closes on ArrowLeft, and cancels a pending close when the pointer enters it. The submenu rides the same layer stack as its parent, so Escape and outside presses dismiss it first.
+`Menu.sub()` returns the same component set bound to a nested closure: `sub.Trigger` opens on click, on ArrowRight, or after a short hover rest; `sub.Content` anchors to its own trigger, closes on ArrowLeft, and cancels a pending close when the pointer enters it. The submenu rides the same layer stack as its parent, so Escape and outside presses dismiss it first.
 
 ## Important Considerations
 
@@ -117,4 +117,4 @@ While open, the content owns the keyboard: arrows rove the enabled items with wr
 
 ### One Factory Per Menu Instance
 
-Each `menu()` call is one menu: create it in the component that renders the trigger and compose its `Content` inside the same mounted tree. A bar of menus with one-open-at-a-time coordination is [`menubar`](/reference/headless/menubar)'s job, not several loose `menu()` calls.
+Each `menu()` call is one menu: create it in the component that renders the trigger and compose its `Content` inside the same mounted tree. A bar of menus with one-open-at-a-time coordination is [`menubar`](/headless/menubar)'s job, not several loose `menu()` calls.

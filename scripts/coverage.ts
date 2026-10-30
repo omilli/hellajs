@@ -39,6 +39,7 @@ function repoFlags(): string[] {
   return [
     "--coverage.include=packages/*/dist/*.js",
     "--coverage.include=packages/*/dist/internal/*.js",
+    "--coverage.include=packages/*/dist/utils/*.js",
     "--coverage.include=packages/ui/dist/registry/**/*.js",
     "--coverage.include=plugins/**/*.mjs",
     "--coverage.exclude=packages/*/dist/bundle.js",
@@ -65,6 +66,7 @@ function scopeFlags(name: string, kind: "package" | "plugin"): string[] {
   return [
     `--coverage.include=${root}/*.js`,
     `--coverage.include=${root}/internal/*.js`,
+    `--coverage.include=${root}/utils/*.js`,
     `--coverage.exclude=${root}/bundle.js`,
     `--coverage.exclude=${root}/**/*.min.js`,
     ...(name === "ui"

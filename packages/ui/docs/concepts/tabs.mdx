@@ -63,11 +63,11 @@ The panel: `hidden` while inactive, labelled by its tab.
 | `children` | `HellaChild \| (() => HellaChild)` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
-Every part also takes a `class` string, landing last in its style composition.
+Every component also takes a `class` string, landing last in its style composition.
 
 ## Keyboard Interaction
 
-The tablist wires [`rovingTabIndex`](/reference/headless/rovingtabindex) from `@hellajs/headless`: focus and selection travel together (automatic activation, the tab you land on is the tab that opens), one tab carries `tabindex="0"` so Tab moves past the whole tablist instead of walking every item, and clicking a tab selects it too.
+The tablist wires [`rovingTabIndex`](/headless/rovingtabindex) from `@hellajs/headless`: focus and selection travel together (automatic activation, the tab you land on is the tab that opens), one tab carries `tabindex="0"` so Tab moves past the whole tablist instead of walking every item, and clicking a tab selects it too.
 
 | Key | Behavior |
 |---|---|
@@ -77,7 +77,7 @@ The tablist wires [`rovingTabIndex`](/reference/headless/rovingtabindex) from `@
 
 ## Accessibility Wiring
 
-The generated ids link the parts without any querySelector: each tab's `aria-controls` names its panel's `hella-tabs-panel-<id>`, each panel's `aria-labelledby` names its tab back, and `aria-selected` marks the active tab. Inactive panels carry the `hidden` attribute, so they stay out of view and out of the tab order. Selection lives in an internal signal and panel switches are instant; motion composes later through the dom `Transition` primitive without changing the tabs' contract.
+The generated ids link the components without any querySelector: each tab's `aria-controls` names its panel's `hella-tabs-panel-<id>`, each panel's `aria-labelledby` names its tab back, and `aria-selected` marks the active tab. Inactive panels carry the `hidden` attribute, so they stay out of view and out of the tab order. Selection lives in an internal signal and panel switches are instant; motion composes later through the dom `Transition` primitive without changing the tabs' contract.
 
 ## Dynamic items
 

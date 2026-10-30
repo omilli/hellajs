@@ -1,12 +1,12 @@
 import { isFunction, signal } from "@hellajs/core";
-import { rovingTabIndex } from "./rovingTabIndex";
+import { rovingTabIndex } from "./utils/rovingTabIndex";
 import type {
   TabsContentProps,
   TabsListProps,
   TabsOptions,
-  TabsParts,
+  TabsComponents,
   TabsTriggerProps,
-} from "./types/parts";
+} from "./types/components";
 
 /** The trigger id prefix: `hella-tabs-tab-<value>`, mirrored by `aria-controls`. */
 const TAB_ID = "hella-tabs-tab-";
@@ -36,7 +36,7 @@ const PANEL_ID = "hella-tabs-panel-";
  * @param options controlled `value`, `defaultValue` seed, `orientation`, and `onValueChange`; an omitted `value` keeps state internal.
  * @returns The part set, composed as `Tabs.List`-style members.
  */
-export function tabs(options: TabsOptions = {}): TabsParts {
+export function tabs(options: TabsOptions = {}): TabsComponents {
   const value = options.value;
   const onValueChange = options.onValueChange;
   const orientation = options.orientation;

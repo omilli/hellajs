@@ -1,8 +1,8 @@
 ## API
 
-Compose the parts by hand; there is no context object and no schema prop. `Table` renders the overflow container (`data-slot="table-container"`) around the `table` element and takes the user's `class` on the table itself. The parts carry the structural selectors: header rows get bottom borders, the last body row drops its border, and footer rows keep theirs unless last.
+Compose the components by hand; there is no context object and no schema prop. `Table` renders the overflow container (`data-slot="table-container"`) around the `table` element and takes the user's `class` on the table itself. The components carry the structural selectors: header rows get bottom borders, the last body row drops its border, and footer rows keep theirs unless last.
 
-Seven semantic parts wrap the native table elements; each renders its `data-slot` and takes `children`, `class`, and the native attributes of its element, forwarded to the rendered element.
+Seven semantic components wrap the native table elements; each renders its `data-slot` and takes `children`, `class`, and the native attributes of its element, forwarded to the rendered element.
 
 ### Table
 
@@ -79,4 +79,4 @@ The `caption[data-slot="table-caption"]` element.
 | `children` | `HellaChildren` | `-` |
 Accepts all native `caption` attributes (forwarded to the root element).
 
-Every part also takes a `class` string, landing last in its style composition.
+Every component also takes a `class` string, landing last in its style composition.

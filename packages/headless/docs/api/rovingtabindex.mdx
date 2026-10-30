@@ -6,7 +6,7 @@ Arrow-key focus navigation over a group of items: arrows move focus, Home and En
 
 ```jsx
 import { mount } from "@hellajs/dom";
-import { rovingTabIndex } from "@hellajs/headless";
+import { rovingTabIndex } from "@hellajs/headless/utils";
 
 let dispose: (() => void) | undefined;
 
@@ -60,7 +60,7 @@ By default focus wraps past the ends. `loop: false` stops at the first and last 
 
 ```jsx
 import { mount } from "@hellajs/dom";
-import { rovingTabIndex } from "@hellajs/headless";
+import { rovingTabIndex } from "@hellajs/headless/utils";
 
 const Tabs = () => (
   <div
@@ -85,7 +85,7 @@ Items that are not plain focusables (spans carrying click handlers, custom eleme
 
 ```jsx
 import { mount } from "@hellajs/dom";
-import { rovingTabIndex } from "@hellajs/headless";
+import { rovingTabIndex } from "@hellajs/headless/utils";
 
 const Toolbar = () => (
   <div

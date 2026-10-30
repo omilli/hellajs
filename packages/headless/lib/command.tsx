@@ -1,7 +1,7 @@
 import { effect, isFunction, signal } from "@hellajs/core";
 import { Portal } from "@hellajs/dom";
 import type { HellaChild } from "@hellajs/dom";
-import { modal } from "./modal";
+import { modal } from "./utils/modal";
 import { domOptions, optionIdOf } from "./internal/listbox";
 import type {
   CommandDialogProps,
@@ -12,10 +12,10 @@ import type {
   CommandItemProps,
   CommandListProps,
   CommandOptions,
-  CommandParts,
+  CommandComponents,
   CommandSeparatorProps,
   CommandShortcutProps,
-} from "./types/parts";
+} from "./types/components";
 
 const MATCH_BASE = 1000;
 const BOUNDARY_BONUS = 500;
@@ -146,7 +146,7 @@ let commandDialogCount = 0;
  * @param options `items` (array or getter) switching the registration shape, an optional `filter` replacing the default ranking, `loop`, and controlled-or-internal `value` + `onValueChange`.
  * @returns The part set, composed as `Command.Input`-style members.
  */
-export function command(options: CommandOptions = {}): CommandParts {
+export function command(options: CommandOptions = {}): CommandComponents {
   const listId = `hella-command-list-${++commandCount}`;
   const dataMode = options.items !== undefined;
   const loop = options.loop ?? false;

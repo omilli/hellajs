@@ -7,11 +7,11 @@ import type {
   NavigationMenuLinkProps,
   NavigationMenuListProps,
   NavigationMenuOptions,
-  NavigationMenuParts,
+  NavigationMenuComponents,
   NavigationMenuRootProps,
   NavigationMenuTriggerProps,
   NavigationMenuViewportProps,
-} from "./types/parts";
+} from "./types/components";
 
 /** Document-level activation event: triggers carrying a `value` announce clicks so the root's store and its appended viewport follow without context. */
 const ACTIVATE_EVENT = "hella:navigation-menu-activate";
@@ -68,7 +68,7 @@ const chevronDownIcon = (): JSX.Element => (
  * @param options controlled `value`, `onValueChange`, and `viewport` toggle; an omitted `value` keeps state internal.
  * @returns The part set, composed as `Nav.Root`-style members.
  */
-export function navigationMenu(options: NavigationMenuOptions = {}): NavigationMenuParts {
+export function navigationMenu(options: NavigationMenuOptions = {}): NavigationMenuComponents {
   const value = options.value;
   const onValueChange = options.onValueChange;
   const rendersViewport = options.viewport !== false;

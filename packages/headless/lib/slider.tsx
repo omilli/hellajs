@@ -1,13 +1,13 @@
 import { isFunction, signal } from "@hellajs/core";
-import { onDrag } from "./onDrag";
+import { onDrag } from "./utils/onDrag";
 import type {
   SliderOptions,
-  SliderParts,
+  SliderComponents,
   SliderRangeProps,
   SliderRootProps,
   SliderThumbProps,
   SliderTrackProps,
-} from "./types/parts";
+} from "./types/components";
 
 /**
  * Creates the slider part set: `Root` + `Track` + `Range` + `Thumb`. The
@@ -34,7 +34,7 @@ import type {
  * @param options controlled `value`, `min`/`max`/`step` range math, `orientation`, `minStepsBetweenThumbs`, `disabled`, and the change/commit callbacks; an omitted `value` keeps state internal.
  * @returns The part set, composed as `Slider.Root`-style members.
  */
-export function slider(options: SliderOptions = {}): SliderParts {
+export function slider(options: SliderOptions = {}): SliderComponents {
   const value = options.value;
   const onValueChange = options.onValueChange;
   const onValueCommit = options.onValueCommit;

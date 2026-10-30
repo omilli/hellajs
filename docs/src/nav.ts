@@ -1,7 +1,7 @@
 export type NavLeaf = string | { label: string; slug: string };
 export type NavGroup = { [group: string]: NavLeaf[] };
 export type NavEntry = NavLeaf | NavGroup;
-export type NavSection = "learn" | "reference" | "plugins" | "ui";
+export type NavSection = "learn" | "reference" | "plugins" | "headless" | "ui";
 
 export interface NavTreeNode {
   title: string;
@@ -28,8 +28,8 @@ export const navigation: Record<NavSection, NavEntry[]> = {
         "Custom-Elements",
         "SSR",
         "Hydration",
-        "Headless-Behaviors",
-        "Parts",
+        "Headless-Utils",
+        "Headless-Components",
       ],
     },
     {
@@ -96,47 +96,6 @@ export const navigation: Record<NavSection, NavEntry[]> = {
       ]
     },
     {
-      headless: [
-        "trapFocus",
-        "onEscape",
-        "onOutside",
-        "rovingTabIndex",
-        "anchorPosition",
-        "computeAnchorPosition",
-        "hoverIntent",
-        "menuTypeahead",
-        "onDrag",
-        "onSwipe",
-        "onPinch",
-        "onLongPress",
-        "onDoubleTap",
-        "layerDismissal",
-        "modal",
-        "popover",
-        "menu",
-        "menubar",
-        "tooltip",
-        "hoverCard",
-        "combobox",
-        "select",
-        "command",
-        "toggle",
-        "checkbox",
-        "toggleSwitch",
-        "toggleGroup",
-        "radioGroup",
-        "tabs",
-        "navigationMenu",
-        "slider",
-        "toast",
-        "calendar",
-        "inputOtp",
-        "createForm",
-        "scrollArea",
-        "messageScroller",
-      ]
-    },
-    {
       css: [
         "css",
         "style",
@@ -189,6 +148,59 @@ export const navigation: Record<NavSection, NavEntry[]> = {
     "rollup",
     "vite",
     "astro"
+  ],
+  headless: [
+    {
+      Config: [
+        "Installation",
+        "Theming"
+      ]
+    },
+    {
+      Components: [
+        "popover",
+        "menu",
+        "menubar",
+        "tooltip",
+        "hoverCard",
+        "combobox",
+        "select",
+        "command",
+        "toggle",
+        "checkbox",
+        "toggleSwitch",
+        "toggleGroup",
+        "radioGroup",
+        "tabs",
+        "navigationMenu",
+        "slider",
+        "toast",
+        "calendar",
+        "inputOtp",
+        "createForm",
+        "scrollArea",
+        "messageScroller"
+      ]
+    },
+    {
+      Utils: [
+        "trapFocus",
+        "onEscape",
+        "onOutside",
+        "rovingTabIndex",
+        "anchorPosition",
+        "computeAnchorPosition",
+        "hoverIntent",
+        "menuTypeahead",
+        "onDrag",
+        "onSwipe",
+        "onPinch",
+        "onLongPress",
+        "onDoubleTap",
+        "layerDismissal",
+        "modal"
+      ]
+    }
   ],
   ui: [
     {

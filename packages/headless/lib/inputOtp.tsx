@@ -2,11 +2,11 @@ import { effect, isFunction, signal } from "@hellajs/core";
 import type {
   InputOtpGroupProps,
   InputOtpOptions,
-  InputOtpParts,
+  InputOtpComponents,
   InputOtpRootProps,
   InputOtpSeparatorProps,
   InputOtpSlotProps,
-} from "./types/parts";
+} from "./types/components";
 
 /**
  * Creates the input-otp part set: `Root` + `Group` + `Slot` + `Separator`. The closure owns
@@ -34,7 +34,7 @@ import type {
  * `onComplete`, `pattern` mask, `autofocus`, and `disabled`.
  * @returns The part set, composed as `Otp.Root`-style members.
  */
-export function inputOtp(options: InputOtpOptions = {}): InputOtpParts {
+export function inputOtp(options: InputOtpOptions = {}): InputOtpComponents {
   const length = options.maxLength ?? 6;
   const valueProp = options.value;
   const pattern = options.pattern;

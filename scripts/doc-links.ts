@@ -14,7 +14,7 @@ import { logger, packagesDir, pluginsDir, projectRoot } from "./utils/index.ts";
  * public and must not satisfy a doc link.
  *
  * 2. Page-existence check — fail if an internal site URL (any markdown link or `href`
- * under `/learn`, `/ui`, `/reference`, `/plugins`, or the retired `/components` tripwire) resolves to no `.mdx`/`.astro`
+ * under `/learn`, `/ui`, `/headless`, `/reference`, `/plugins`, or the retired `/components` tripwire) resolves to no `.mdx`/`.astro`
  * page under `docs/src/pages/`. Catches link rot the export-name check cannot see: renamed or
  * deleted pages (`/learn/patterns/data` after the file became `resource.mdx`),
  * wrong slugs (`css-vars` vs `cssvars`, `ForEach` vs `foreach`), dropped wrappers
@@ -234,7 +234,8 @@ function extractLinks(content: string): Link[] {
 
 /**
  * Captures the target package name from a doc-link URL. Recognizes
- * `/reference/<pkg>[/<slug>]` and `/@hellajs/<pkg>`; returns `null` for any
+ * `/reference/<pkg>[/<slug>]`, the headless section (`/headless/<slug>` → the
+ * `headless` package), and `/@hellajs/<pkg>`; returns `null` for any
  * other form (relative, external, `/learn/…`).
  * @param url The link target
  * @returns Package name, or `null` if the URL is not a reference link
@@ -242,6 +243,7 @@ function extractLinks(content: string): Link[] {
 function parsePackage(url: string): string | null {
   let m = /^\/reference\/([A-Za-z0-9_-]+)/.exec(url);
   if (m) return m[1]!;
+  if (/^\/headless(?:\/|$)/.test(url)) return "headless";
   m = /^\/@hellajs\/([A-Za-z0-9_-]+)/.exec(url);
   if (m) return m[1]!;
   return null;
@@ -249,15 +251,15 @@ function parsePackage(url: string): string | null {
 
 /**
  * Whether a reference URL is a package-root page (`/reference/<pkg>` with no
- * slug). The display name on a package-root link may be a concept, not an
- * export, so these are skipped.
+ * slug, or the headless section root `/headless`). The display name on a
+ * package-root link may be a concept, not an export, so these are skipped.
  * @param url The link target
  * @param pkg The package captured from the URL
  * @returns True if the URL is the package root (no slug segment)
  */
 function isPackageRootLink(url: string, pkg: string): boolean {
   const pathPart = url.split("#")[0]!.split("?")[0]!;
-  return pathPart === `/reference/${pkg}`;
+  return pathPart === `/reference/${pkg}` || (pkg === "headless" && pathPart === "/headless");
 }
 
 /**
@@ -287,7 +289,7 @@ function urlPath(url: string): string {
 
 /**
  * Whether a URL is an internal docs-site URL (under `/learn`, `/ui`,
- * `/reference`, `/plugins`, or the retired `/components`). The `components`
+ * `/headless`, `/reference`, `/plugins`, or the retired `/components`). The `components`
  * alternative is a tripwire, not a live section: a stale `/components/…` link
  * stays classified internal, resolves to no page, and fails the guard.
  * Relative paths, external URLs, and other roots
@@ -296,7 +298,7 @@ function urlPath(url: string): string {
  * @returns True if the URL targets the docs site
  */
 function isSiteUrl(url: string): boolean {
-  return /^\/(?:learn|ui|reference|plugins|components)(?:\/|$)/.test(urlPath(url));
+  return /^\/(?:learn|ui|headless|reference|plugins|components)(?:\/|$)/.test(urlPath(url));
 }
 
 /**

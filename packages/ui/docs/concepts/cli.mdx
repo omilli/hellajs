@@ -46,12 +46,12 @@ Resolution is recursive: `add button` also copies every entry `button` depends o
 
 ## Style Splicing
 
-The canonical source carries marker regions the CLI consumes at copy time (and strips from the output): exactly one `// @hella:styles` region, where the style module's declarations land, and one `// @hella:compose` region per styled part, holding that part's live class array; multi-part components like Card carry seven. Each region closes with `// @hella:end`. The splice produces a different body per style:
+The canonical source carries marker regions the CLI consumes at copy time (and strips from the output): exactly one `// @hella:styles` region, where the style module's declarations land, and one `// @hella:compose` region per styled component, holding that component's live class array; multi-member components like Card carry seven. Each region closes with `// @hella:end`. The splice produces a different body per style:
 
 - **css** splices [`style`](/reference/css/style) maps into the styles region and keeps every compose array in its `class` attribute; dom joins plain arrays there, and the maps emit as plain unlayered rules.
 - **tailwind** inlines every class string at its use site inside `cn(...)`: compose members, static class attributes, and references from helpers or runtime code, with a non-class constant like an event name inlining the same way at its references. Only keyed variant/size maps stay at the styles region. Every compose array wraps in `cn(...)`, and `import { cn } from "./cn.js";` injects after the last import so the helper import resolves next to the copied file.
 
-Style modules export one lowerCamel binding per styled part that carries classes (`header`, `title`, `close`); a part with no classes gets no binding, and an empty-string export appears only as a css/tailwind style bridge (an empty binding in one style mirrors a live binding in the other). `variants`/`sizes` keyed maps appear only where a component actually has them (Button's variant and size sets, TabsList's pill/line).
+Style modules export one lowerCamel binding per styled component that carries classes (`header`, `title`, `close`); a component with no classes gets no binding, and an empty-string export appears only as a css/tailwind style bridge (an empty binding in one style mirrors a live binding in the other). `variants`/`sizes` keyed maps appear only where a component actually has them (Button's variant and size sets, TabsList's pill/line).
 
 ## Peer Checking
 
@@ -62,7 +62,7 @@ Copied source imports packages as regular dependencies of your project. `add` re
 | Any component, css style | `@hellajs/css` |
 | Any component, tailwind style | `clsx`, `tailwind-merge`, `tw-animate-css` |
 
-Every component entry declares `@hellajs/core` and `@hellajs/dom` as base peers; the components that wire behaviors (menus, popovers, select, combobox, tabs, radio-group, slider, resizable, scroll-area, sonner, sidebar, tooltip, hover-card, drawer, sheet, dialog, alert-dialog, command) also declare `@hellajs/headless`. `add` checks them in your `package.json` alongside the style's extras.
+Every component entry declares `@hellajs/core` and `@hellajs/dom` as base peers; the components that wire headless utils (menus, popovers, select, combobox, tabs, radio-group, slider, resizable, scroll-area, sonner, sidebar, tooltip, hover-card, drawer, sheet, dialog, alert-dialog, command) also declare `@hellajs/headless`. `add` checks them in your `package.json` alongside the style's extras.
 
 ## The cn Helper
 

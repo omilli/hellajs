@@ -1,6 +1,6 @@
 # slider
 
-Creates the slider parts in one call: the drag-wired root, the measured track, the filled range, and the focusable thumbs. The closure owns the thumb values and reports every accepted move.
+Creates the slider components in one call: the drag-wired root, the measured track, the filled range, and the focusable thumbs. The closure owns the thumb values and reports every accepted move.
 
 ## Basic Usage
 
@@ -32,7 +32,7 @@ mount(
 ## API
 
 ```typescript
-function slider(options?: SliderOptions): SliderParts
+function slider(options?: SliderOptions): SliderComponents
 ```
 
 - `options.value`: The thumb values. A static array seeds the internal signal; an accessor makes the slider controlled, so writes report through `onValueChange` only.
@@ -44,18 +44,18 @@ function slider(options?: SliderOptions): SliderParts
 - `options.orientation`: Renders and scopes the axis. Default `"horizontal"`.
 - `options.minStepsBetweenThumbs`: Minimum number of steps enforced between neighboring thumbs. Default `0`.
 - `options.disabled`: Blocks drags and keys; renders `data-disabled` on the root and `aria-disabled` plus `tabindex="-1"` on thumbs.
-- **Returns**: The part set, composed as `Slider.Root`-style members.
+- **Returns**: The component set, composed as `Slider.Root`-style members.
 
-### Parts
+### Components
 
-| Part | Renders |
+| Component | Renders |
 |---|---|
 | `Root` | The `data-slot="slider"` container: arms the pointer drag against the track geometry, renders the `min`/`max`/`step` attributes, and disposes the drag on unmount |
 | `Track` | The `data-slot="slider-track"` rail span the drag geometry measures; mount `Range` inside it |
 | `Range` | The `data-slot="slider-range"` filled span between the outermost thumb values; its position styles are factory-owned |
 | `Thumb` | A `role="slider"` thumb keyed by `index`: focusable, `aria-valuemin`/`aria-valuemax`/`aria-valuenow`/`aria-orientation`, arrow/Page/Home/End stepping, factory-owned position styles |
 
-Every part spreads `class` and native attributes onto its element; parts own structure, styling stays in the wrapper.
+Every component spreads `class` and native attributes onto its element; components own structure, styling stays in the wrapper.
 
 ## Key Concepts
 
@@ -75,7 +75,7 @@ Each thumb is focusable and steps on its own: arrows step, PageUp and PageDown j
 
 ### Call the Factory in Component Scope
 
-`slider()` creates the state signal that must dispose with the component that owns it. `Root` disposes the drag wiring when it unmounts; a module-level factory call leaks the signal. Call the factory inside the component that renders the parts.
+`slider()` creates the state signal that must dispose with the component that owns it. `Root` disposes the drag wiring when it unmounts; a module-level factory call leaks the signal. Call the factory inside the component that renders the components.
 
 ### Controlled Accessors Own the Truth
 

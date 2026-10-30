@@ -4,11 +4,11 @@ import type {
   MessageScrollerContentProps,
   MessageScrollerItemProps,
   MessageScrollerOptions,
-  MessageScrollerParts,
+  MessageScrollerComponents,
   MessageScrollerProviderProps,
   MessageScrollerRootProps,
   MessageScrollerViewportProps,
-} from "./types/parts";
+} from "./types/components";
 
 /**
  * Creates the message-scroller part set: `Provider` + `Root` + `Viewport` +
@@ -34,7 +34,7 @@ import type {
  * @param options controlled `atBottom` signal, the `scrollToBottom` override for the auto-stick and jump actions, the `threshold` distance still counted as at-bottom, and the injected `observe` content watcher.
  * @returns The part set, composed as `Scroller.Root`-style members.
  */
-export function messageScroller(options: MessageScrollerOptions = {}): MessageScrollerParts {
+export function messageScroller(options: MessageScrollerOptions = {}): MessageScrollerComponents {
   const bottom = options.atBottom ?? signal(true);
   const scrollToBottom = options.scrollToBottom;
   const threshold = options.threshold;

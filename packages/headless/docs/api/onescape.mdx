@@ -6,7 +6,7 @@ Call a handler when Escape is pressed on a target.
 
 ```jsx
 import { mount } from "@hellajs/dom";
-import { onEscape } from "@hellajs/headless";
+import { onEscape } from "@hellajs/headless/utils";
 
 let dismiss: (() => void) | undefined;
 
@@ -41,15 +41,15 @@ function onEscape(
 
 ### Escape Only
 
-The handler fires for `key === "Escape"` and nothing else; every other key is ignored without touching default behavior.
+The handler fires for `key === "Escape"` and nothing else; every other key is ignored without touching default util.
 
 ### Pairs with onOutside
 
-Escape covers the keyboard close gesture; [`onOutside`](/reference/headless/onoutside) covers the pointer gesture. A dismissible panel wires both on the same node and disposes both on close:
+Escape covers the keyboard close gesture; [`onOutside`](/headless/onoutside) covers the pointer gesture. A dismissible panel wires both on the same node and disposes both on close:
 
 ```jsx
 import { mount } from "@hellajs/dom";
-import { onEscape, onOutside } from "@hellajs/headless";
+import { onEscape, onOutside } from "@hellajs/headless/utils";
 
 const dismissals: (() => void)[] = [];
 const close = () => {

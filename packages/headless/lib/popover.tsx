@@ -7,9 +7,9 @@ import type {
   PopoverDescriptionProps,
   PopoverOptions,
   PopoverPartProps,
-  PopoverParts,
+  PopoverComponents,
   PopoverTriggerProps,
-} from "./types/parts";
+} from "./types/components";
 
 let popoverCount = 0;
 
@@ -31,7 +31,7 @@ let popoverCount = 0;
  * @param options `open` getter + `onOpenChange` + optional `anchor` override; an omitted `open` keeps state internal.
  * @returns The six part components, composed as `Popover.Trigger`-style members.
  */
-export function popover(options: PopoverOptions = {}): PopoverParts {
+export function popover(options: PopoverOptions = {}): PopoverComponents {
   const open = options.open;
   const onOpenChange = options.onOpenChange;
   const anchorOverride = options.anchor;

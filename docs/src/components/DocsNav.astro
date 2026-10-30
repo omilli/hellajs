@@ -112,6 +112,7 @@ const allDocs = Object.values(
 const getSection = (path: string): NavSection | null => {
   if (path.startsWith("/learn")) return "learn";
   if (path.startsWith("/ui")) return "ui";
+  if (path.startsWith("/headless")) return "headless";
   if (path.startsWith("/reference")) return "reference";
   if (path.startsWith("/plugins")) return "plugins";
   return null;
@@ -165,6 +166,7 @@ const mainNavLinks = [
   { label: "Learn", root: "/learn" },
   { label: "API Reference", root: "/reference" },
   { label: "Plugins", root: "/plugins" },
+  { label: "Headless", root: "/headless" },
   { label: "UI", root: "/ui" },
 ];
 ---

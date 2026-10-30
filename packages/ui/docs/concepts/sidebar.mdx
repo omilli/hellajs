@@ -1,10 +1,10 @@
 ## API
 
-`SidebarProvider` owns the state and hands it to a children function; every other part receives what it needs as explicit props. Hella has no context primitive, so the provider's threaded state object (`open`, `setOpen`, `mobile`, `openMobile`, `setOpenMobile`, `onToggle`) is the single source the parts read.
+`SidebarProvider` owns the state and hands it to a children function; every other component receives what it needs as explicit props. Hella has no context primitive, so the provider's threaded state object (`open`, `setOpen`, `mobile`, `openMobile`, `setOpenMobile`, `onToggle`) is the single source the components read.
 
 The wrapper `div` carries `data-slot="sidebar-wrapper"`, the width variables, and both listeners: a `matchMedia("(max-width: 769px)")` listener that flips the `mobile` state, and a Ctrl/Cmd+B shortcut, which calls `onToggle` (the mobile sheet on mobile, the desktop open state otherwise). `open` is the standard dual-surface pair: pass `open` with `onOpenChange` for a controlled signal, or `defaultOpen` (default `true`) to let the provider own it. Cookie persistence is dropped; persist the signal yourself if you need it.
 
-Twenty-two parts ship beside the `Sidebar` root. Layout: `SidebarHeader`, `SidebarFooter`, `SidebarSeparator`, `SidebarContent`, `SidebarInset` (the `main` that stretches beside the panel). Menu: `SidebarGroup`, `SidebarGroupLabel`, `SidebarGroupAction`, `SidebarGroupContent`, `SidebarMenu`, `SidebarMenuItem`, `SidebarMenuButton` (`variant: "default" | "outline"`, `size: "default" | "sm" | "lg"`, `active`, `tooltip`; renders `type="button"` unless a native `type` rides the attributes), `SidebarMenuAction` (`showOnHover` fades it in on item hover at `md` and up), `SidebarMenuBadge`, `SidebarMenuSkeleton` (`showIcon`), `SidebarMenuSub`, `SidebarMenuSubItem`, `SidebarMenuSubButton` (`size: "sm" | "md"`, `active`, anchor by default). Controls: `SidebarTrigger` (the panel-left icon button), `SidebarRail`. Every part carries its `data-slot` and a `data-sidebar` hook, so user CSS can target either. Every part also accepts all native attributes of its root tag (forwarded to the root element): `SidebarMenuSubButton`'s `href` and `SidebarInput`'s `value`, `placeholder`, and `aria-label` ride the spread, and a user `on:click` on the trigger, rail, or menu buttons fires alongside the owned toggles. `SidebarInput` renders the search input (`h-8`, `bg-background`) with the input entry's class maps inlined.
+Twenty-two components ship beside the `Sidebar` root. Layout: `SidebarHeader`, `SidebarFooter`, `SidebarSeparator`, `SidebarContent`, `SidebarInset` (the `main` that stretches beside the panel). Menu: `SidebarGroup`, `SidebarGroupLabel`, `SidebarGroupAction`, `SidebarGroupContent`, `SidebarMenu`, `SidebarMenuItem`, `SidebarMenuButton` (`variant: "default" | "outline"`, `size: "default" | "sm" | "lg"`, `active`, `tooltip`; renders `type="button"` unless a native `type` rides the attributes), `SidebarMenuAction` (`showOnHover` fades it in on item hover at `md` and up), `SidebarMenuBadge`, `SidebarMenuSkeleton` (`showIcon`), `SidebarMenuSub`, `SidebarMenuSubItem`, `SidebarMenuSubButton` (`size: "sm" | "md"`, `active`, anchor by default). Controls: `SidebarTrigger` (the panel-left icon button), `SidebarRail`. Every component carries its `data-slot` and a `data-sidebar` hook, so user CSS can target either. Every component also accepts all native attributes of its root tag (forwarded to the root element): `SidebarMenuSubButton`'s `href` and `SidebarInput`'s `value`, `placeholder`, and `aria-label` ride the spread, and a user `on:click` on the trigger, rail, or menu buttons fires alongside the owned toggles. `SidebarInput` renders the search input (`h-8`, `bg-background`) with the input entry's class maps inlined.
 
 ### SidebarProvider
 
@@ -52,13 +52,13 @@ Past the `769px` breakpoint the provider's `mobile` state flips true and `Sideba
 
 ## CSS Variables
 
-The parts read four tokens; the first three are yours to set, the last the component generates.
+The components read four tokens; the first three are yours to set, the last the component generates.
 
 | Variable | Value | Set by |
 |---|---|---|
 | `--sidebar-width` | `16rem` (wrapper) / `18rem` (mobile panel), both inline styles | You, on the provider wrapper and mobile panel |
 | `--sidebar-width-icon` | `3rem` (wrapper inline style) | You, on the provider wrapper |
 | `--sidebar`, `--sidebar-foreground`, `--sidebar-primary`, `--sidebar-primary-foreground`, `--sidebar-accent`, `--sidebar-accent-foreground`, `--sidebar-border`, `--sidebar-ring` | the sidebar oklch palette | tailwind: `theme.css` `:root` and `.dark`; css: the sidebar style module's own `vars()` registration (same values), because `tokens.ts` carries no sidebar colors |
-| `--skeleton-width` | random 50% to 90% per `SidebarMenuSkeleton` | The skeleton part's inline style |
+| `--skeleton-width` | random 50% to 90% per `SidebarMenuSkeleton` | The skeleton component's inline style |
 
 Override the widths by editing the inline `style` strings on the wrapper (and the mobile panel); override the palette through the theme entry (tailwind) or the style module's `vars()` call (css).

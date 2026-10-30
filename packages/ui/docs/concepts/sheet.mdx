@@ -4,7 +4,7 @@ A side panel sliding in from one of the four screen edges: the caller owns an `o
 
 Opening portals the overlay and panel into `document.body` under `data-state="open"`; closing keeps the panel mounted under `data-state="closed"` until its exit slide ends, with the dismissal wirings down while it leaves. The panel carries `role="dialog"` with `aria-labelledby` and `aria-describedby` pointing at the generated title and description ids - the wiring screen readers announce.
 
-Nine named parts ship beside the default `Sheet` for custom composition: `SheetTrigger`, `SheetClose`, `SheetPortal`, `SheetOverlay`, `SheetContent`, `SheetHeader`, `SheetFooter`, `SheetTitle`, and `SheetDescription`. State is explicit - portal the overlay and panel yourself and hand both a `state` accessor.
+Nine named components ship beside the default `Sheet` for custom composition: `SheetTrigger`, `SheetClose`, `SheetPortal`, `SheetOverlay`, `SheetContent`, `SheetHeader`, `SheetFooter`, `SheetTitle`, and `SheetDescription`. State is explicit - portal the overlay and panel yourself and hand both a `state` accessor.
 
 ### Sheet
 
@@ -45,7 +45,7 @@ Accepts all native `button` attributes (forwarded to the root element; a user `o
 
 ### SheetPortal
 
-Wraps children in a `Portal to="body"` for compositions that want the named part.
+Wraps children in a `Portal to="body"` for compositions that want the named component.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
@@ -114,7 +114,7 @@ The supporting line: a `p` carrying `data-slot="sheet-description"` whose `id` t
 | `children` | `HellaChildren` | `-` |
 Accepts all native `p` attributes (forwarded to the root element).
 
-Every part also takes a `class` string, landing last in its style composition.
+Every component also takes a `class` string, landing last in its style composition.
 
 ## Sides
 

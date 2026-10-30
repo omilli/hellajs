@@ -1,7 +1,7 @@
 import { effect, signal } from "@hellajs/core";
 import { Portal } from "@hellajs/dom";
 import type { HellaChild, HellaChildren, HTMLAttributes } from "@hellajs/dom";
-import { anchorPosition, hoverIntent, modal } from "@hellajs/headless";
+import { anchorPosition, hoverIntent, modal } from "@hellajs/headless/utils";
 
 /**
  * The state SidebarProvider threads to its children function - hella has no

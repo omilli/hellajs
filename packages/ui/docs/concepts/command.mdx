@@ -1,6 +1,6 @@
 ## API
 
-The default `Command` takes its items as data and renders the search input, the ranked groups, and the keyboard model: the copied file composes the [`command`](/reference/headless/command) parts factory from `@hellajs/headless`, which owns the query signal, ranks matches across labels, values, and keywords, and drives the active item over a flat ranked list. Typing filters; the first match starts active. The named parts compose the same factory for standalone use.
+The default `Command` takes its items as data and renders the search input, the ranked groups, and the keyboard model: the copied file composes the [`command`](/headless/command) components factory from `@hellajs/headless`, which owns the query signal, ranks matches across labels, values, and keywords, and drives the active item over a flat ranked list. Typing filters; the first match starts active. The named components compose the same factory for standalone use.
 
 Items sharing a `group` render under one heading, in the order the groups first appear in the array; items without a `group` render above the groups. Each item renders its `label` and, when present, a right-aligned `CommandShortcut` hint.
 
@@ -119,7 +119,7 @@ The palette wrapped in the dialog surface: the overlay, the portaled panel, the 
 
 Accepts all native `div` attributes (forwarded to the portaled panel element).
 
-Every part also takes a `class` string, landing last in its style composition. The dialog surface rides the factory's `Dialog` part over the headless [`modal`](/reference/headless/modal) foundation: the trap, escape, and outside-press wiring arm against the open state and dispose with the panel, and the panel class styles the overlay, header, close button, and command surface through descendants of the wrapper root. The entry's `dialog` registry dependency exists so standalone dialogs are one `add` away.
+Every component also takes a `class` string, landing last in its style composition. The dialog surface rides the factory's `Dialog` component over the headless [`modal`](/headless/modal) foundation: the trap, escape, and outside-press wiring arm against the open state and dispose with the panel, and the panel class styles the overlay, header, close button, and command surface through descendants of the wrapper root. The entry's `dialog` registry dependency exists so standalone dialogs are one `add` away.
 
 ## Filtering
 

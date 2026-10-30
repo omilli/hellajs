@@ -69,7 +69,7 @@ Copied source imports `@hellajs/core` and `@hellajs/dom` as regular packages; co
 
 ## Components
 
-Fifty-nine components cover the full shadcn new-york-v4 catalog, chart excepted. Components with interactive behavior are styled wrappers over `@hellajs/headless` factories: the factory owns state, aria, keyboard, and disposal; your copy owns the classes. Three paste-side templates (`drawer`, `sidebar`, `resizable`) wire headless behaviors directly instead; each is one local gesture/positioning wiring with no cross-part state. Each component is styled byte-faithfully: same structure, same variants, same class strings (tailwind style) or their 1:1 style-map translations (css style), same `@theme inline` palette, same enter/exit dialog animations. Dark mode is the `dark` class on `<html>` or any ancestor; dark-only projects copy the dark-default tokens sheet instead through `themeMode: "dark"`.
+Fifty-nine components cover the full shadcn new-york-v4 catalog, chart excepted. Components with interactive behavior are styled wrappers over `@hellajs/headless` factories: the factory owns state, aria, keyboard, and disposal; your copy owns the classes. Three paste-side templates (`drawer`, `sidebar`, `resizable`) wire headless utils directly instead; each is one local gesture/positioning wiring with no cross-component state. Each component is styled byte-faithfully: same structure, same variants, same class strings (tailwind style) or their 1:1 style-map translations (css style), same `@theme inline` palette, same enter/exit dialog animations. Dark mode is the `dark` class on `<html>` or any ancestor; dark-only projects copy the dark-default tokens sheet instead through `themeMode: "dark"`.
 
 | Family | Components |
 |---|---|

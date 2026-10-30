@@ -1,6 +1,6 @@
 ## API
 
-Compose the parts by hand; there is no context object and no schema prop.
+Compose the components by hand; there is no context object and no schema prop.
 
 ### Field
 
@@ -70,7 +70,7 @@ Accepts all native `label` attributes (forwarded to the root element).
 
 ### FieldTitle
 
-The label's heading line: a `div` carrying the same `data-slot="field-label"` as `FieldLabel`, which is what lets one disabled-state selector cover both parts.
+The label's heading line: a `div` carrying the same `data-slot="field-label"` as `FieldLabel`, which is what lets one disabled-state selector cover both components.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
@@ -111,4 +111,4 @@ Accepts all native `div` attributes (forwarded to the root element).
 
 A single message renders as text, several render as a deduplicated list, and an empty error renders hidden rather than removed so both formats keep one DOM shape.
 
-Every part also takes a `class` string, landing last in its style composition.
+Every component also takes a `class` string, landing last in its style composition.

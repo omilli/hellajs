@@ -1,6 +1,6 @@
 # checkbox
 
-Creates the checkbox parts in one call: a `role="checkbox"` button and its indicator. The closure owns the checked and mixed (indeterminate) states; the mixed flag wins for rendering and clears on an uncontrolled toggle.
+Creates the checkbox components in one call: a `role="checkbox"` button and its indicator. The closure owns the checked and mixed (indeterminate) states; the mixed flag wins for rendering and clears on an uncontrolled toggle.
 
 ## Basic Usage
 
@@ -29,22 +29,22 @@ mount(
 ## API
 
 ```typescript
-function checkbox(options?: CheckboxOptions): CheckboxParts
+function checkbox(options?: CheckboxOptions): CheckboxComponents
 ```
 
 - `options.checked`: Controlled checked state. Passing it makes the checkbox controlled; omitting it keeps state internal.
 - `options.indeterminate`: Controlled mixed flag; it wins over `checked` for rendering and clears on an uncontrolled toggle.
 - `options.onCheckedChange`: Called with the requested checked boolean on every factory-driven toggle.
-- **Returns**: The part set, composed as `Check.Root`-style members.
+- **Returns**: The component set, composed as `Check.Root`-style members.
 
-### Parts
+### Components
 
-| Part | Renders |
+| Component | Renders |
 |---|---|
 | `Root` | `role="checkbox"` button with tri-state `aria-checked` (`true`, `false`, `mixed`), `data-state` (`checked`, `unchecked`, `indeterminate`), and disabled gating |
 | `Indicator` | The indicator span inside `Root`; renders the check icon by default and hides it while unchecked |
 
-Every part spreads `class` and native attributes onto its element; parts own structure, styling stays in the wrapper.
+Every component spreads `class` and native attributes onto its element; components own structure, styling stays in the wrapper.
 
 ### Options
 
@@ -72,7 +72,7 @@ While `indeterminate` resolves true, the box renders `data-state="indeterminate"
 
 ### Call the Factory in Component Scope
 
-`checkbox()` creates state signals that must dispose with the component that owns it. Mounting the tree unmounts their wiring; module-level calls leak it. Call the factory inside the component that renders the parts.
+`checkbox()` creates state signals that must dispose with the component that owns it. Mounting the tree unmounts their wiring; module-level calls leak it. Call the factory inside the component that renders the components.
 
 ### Keyboard Activation Is Native
 

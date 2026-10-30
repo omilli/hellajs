@@ -1,12 +1,12 @@
-import { onDrag } from "./onDrag";
+import { onDrag } from "./utils/onDrag";
 import type {
   ScrollAreaOptions,
-  ScrollAreaParts,
+  ScrollAreaComponents,
   ScrollAreaRootProps,
   ScrollAreaScrollbarProps,
   ScrollAreaThumbProps,
   ScrollAreaViewportProps,
-} from "./types/parts";
+} from "./types/components";
 
 /**
  * Creates the scroll-area part set: `Root` + `Viewport` + `Scrollbar` + `Thumb`.
@@ -31,7 +31,7 @@ import type {
  * @param options `observe` replaces the default `ResizeObserver` content watcher the `Scrollbar` arms.
  * @returns The part set, composed as `Area.Root`-style members.
  */
-export function scrollArea(options: ScrollAreaOptions = {}): ScrollAreaParts {
+export function scrollArea(options: ScrollAreaOptions = {}): ScrollAreaComponents {
   const watch = options.observe;
 
   const Root = (props: ScrollAreaRootProps): JSX.Element => {

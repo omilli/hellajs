@@ -2,7 +2,7 @@
 
 The default mode is single selection. Click a day (or press Enter on it) and the calendar reports the picked date through `onSelect`. One month renders at a time, with roving keyboard focus over the grid and previous/next month navigation.
 
-The month view, selection model, roving focus, and keyboard live in the [`calendar()`](/reference/headless/calendar) factory from `@hellajs/headless`; the copied file calls the factory once and styles its parts (`Root`, `Months`, `Month`, `Caption`, `CaptionLabel`, `Nav`, `PrevButton`, `NextButton`, `Grid`) with the `classNames` hooks, so behavior upgrades land through the package while the pasted styles stay yours.
+The month view, selection model, roving focus, and keyboard live in the [`calendar()`](/headless/calendar) factory from `@hellajs/headless`; the copied file calls the factory once and styles its components (`Root`, `Months`, `Month`, `Caption`, `CaptionLabel`, `Nav`, `PrevButton`, `NextButton`, `Grid`) with the `classNames` hooks, so behavior upgrades land through the package while the pasted styles stay yours.
 
 ### Calendar
 
@@ -28,7 +28,7 @@ Selection is uncontrolled after mount: `selected` sets the initial state and `on
 
 ### CalendarDayButton
 
-The manual-composition day part is exported for standalone composition. State flags take plain booleans or reactive accessors, so a composed calendar drives them live while a direct call passes static values.
+The manual-composition day component is exported for standalone composition. State flags take plain booleans or reactive accessors, so a composed calendar drives them live while a direct call passes static values.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
@@ -61,7 +61,7 @@ While `from` dangles, hovering a day previews the span: the hovered day renders 
 The port covers the observable surface of a single-month calendar; the intentionally absent pieces match the registry's zero-dependency rule:
 
 - `numberOfMonths` beyond one, `fromDate`/`toDate` navigation bounds, custom `formatters`, week numbers, and the dropdown caption layouts are not implemented; the caption is always the `label` layout.
-- Selection is uncontrolled in the copied component: `selected` seeds the state and `onSelect` reports every change. The headless factory underneath accepts a controlled `value` accessor, so a composed calendar (the factory's parts styled directly) can own its selection.
+- Selection is uncontrolled in the copied component: `selected` seeds the state and `onSelect` reports every change. The headless factory underneath accepts a controlled `value` accessor, so a composed calendar (the factory's components styled directly) can own its selection.
 - All date math runs on local `Date` fields with no timezone conversion, and labels are fixed to `en-US` (`March 2025` captions, `Sun`-style weekday headers) so rendering is deterministic across hosts.
 - The rtl navigation-button selectors are dropped; the copied file emits no `rdp-*` classes for them to target.
 - The outside-day `aria-selected` color rule folds into the base outside color.

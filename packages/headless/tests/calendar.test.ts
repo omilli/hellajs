@@ -4,7 +4,7 @@ import { delay, resetTestState } from "@utils/test-helpers.js";
 import { mount, peekState } from "@hellajs/dom";
 import { calendar } from "@hellajs/headless";
 import { pressKey } from "./helpers";
-import type { CalendarParts } from "@hellajs/headless";
+import type { CalendarComponents } from "@hellajs/headless";
 
 beforeEach(() => {
   resetTestState();
@@ -31,7 +31,7 @@ function mountPart(node: JSX.Element): HTMLElement {
 
 /** Mounts the full composition — Root > Months > Month > Caption/Nav/Grid — and waits for the grid cells. `key` is the ISO day the wait lands on (a day the visible month actually renders). */
 async function mountCalendar(
-  parts: CalendarParts,
+  parts: CalendarComponents,
   options: { key?: string } = {},
 ): Promise<HTMLElement> {
   const navChildren: JSX.Element[] = [parts.PrevButton({}), parts.NextButton({})];

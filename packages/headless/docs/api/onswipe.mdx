@@ -7,7 +7,7 @@ Commit or cancel a swipe on release: a drag far enough or fast enough on one axi
 ```jsx
 import { signal } from "@hellajs/core";
 import { mount } from "@hellajs/dom";
-import { onSwipe } from "@hellajs/headless";
+import { onSwipe } from "@hellajs/headless/utils";
 
 const offset = signal(0);
 let disposeSwipe: (() => void) | undefined;
@@ -89,7 +89,7 @@ The larger of `|dx|` and `|dy|` is the dominant axis, and the sign of that axis'
 
 ### Built on onDrag
 
-`onSwipe` composes [`onDrag`](/reference/headless/ondrag), so the same guards apply: a swipe starts only on a primary-button press, never on a `[disabled]` descendant, and the pointer is captured when the environment provides it. Move deltas are cumulative from the press point, exactly as `onDrag` reports them.
+`onSwipe` composes [`onDrag`](/headless/ondrag), so the same guards apply: a swipe starts only on a primary-button press, never on a `[disabled]` descendant, and the pointer is captured when the environment provides it. Move deltas are cumulative from the press point, exactly as `onDrag` reports them.
 
 ## Important Considerations
 

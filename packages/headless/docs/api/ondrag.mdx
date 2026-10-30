@@ -7,7 +7,7 @@ Track a pointer drag on an element: every move reports the total distance from t
 ```jsx
 import { signal } from "@hellajs/core";
 import { mount } from "@hellajs/dom";
-import { onDrag } from "@hellajs/headless";
+import { onDrag } from "@hellajs/headless/utils";
 
 const offset = signal(0);
 let disposeDrag: (() => void) | undefined;

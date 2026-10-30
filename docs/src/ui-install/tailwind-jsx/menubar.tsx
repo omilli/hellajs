@@ -427,7 +427,7 @@ export function MenubarSubContent({
   const side = sideProp ?? "right";
   const align = alignProp ?? "start";
   // ArrowLeft-exit and pointerenter-cancel are the factory sub wiring's own
-  // behaviors now - consumed here so they never reach the DOM as attributes.
+  // utils now - consumed here so they never reach the DOM as attributes.
   void onArrowLeft;
   void onPointerEnter;
   const { Content } = menu().sub({

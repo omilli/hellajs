@@ -1,5 +1,5 @@
-import { resetHoverIntentState } from "../hoverIntent";
-import { resetLayerStack } from "../layerDismissal";
+import { resetHoverIntentState } from "../utils/hoverIntent";
+import { resetLayerStack } from "../utils/layerDismissal";
 import { resetToastState } from "../toast";
 
 /**

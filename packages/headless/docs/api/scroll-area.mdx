@@ -1,6 +1,6 @@
 # scrollArea
 
-Creates the scroll-area parts in one call: the native-scroll viewport with its content wrapper, and the wiring-wrapped scrollbar whose thumb sizes and positions itself from the paired viewport.
+Creates the scroll-area components in one call: the native-scroll viewport with its content wrapper, and the wiring-wrapped scrollbar whose thumb sizes and positions itself from the paired viewport.
 
 ## Basic Usage
 
@@ -30,22 +30,22 @@ mount(
 ## API
 
 ```typescript
-function scrollArea(options?: ScrollAreaOptions): ScrollAreaParts
+function scrollArea(options?: ScrollAreaOptions): ScrollAreaComponents
 ```
 
 - `options.observe`: Replaces the default `ResizeObserver` content watcher the `Scrollbar` arms to re-measure on growth.
-- **Returns**: The part set, composed as `Area.Root`-style members.
+- **Returns**: The component set, composed as `Area.Root`-style members.
 
-### Parts
+### Components
 
-| Part | Renders |
+| Component | Renders |
 | --- | --- |
 | `Root` | The `data-slot="scroll-area"` container the scrollbar anchors to |
 | `Viewport` | The `data-slot="scroll-area-viewport"` native-scroll viewport; renders its content wrapper around the children |
 | `Scrollbar` | The `data-slot="scroll-area-scrollbar"` bar: measures the paired viewport on scroll and growth, sizes and positions the `Thumb` inside it, and arms the thumb drag; takes `orientation` (`"vertical"` by default, `"horizontal"`) and its own `observe` override |
 | `Thumb` | The `data-slot="scroll-area-thumb"` draggable thumb; its geometry styles are wiring-owned |
 
-Every part spreads `class` and native attributes onto its element; parts own structure, styling stays in the wrapper.
+Every component spreads `class` and native attributes onto its element; components own structure, styling stays in the wrapper.
 
 ## Key Concepts
 

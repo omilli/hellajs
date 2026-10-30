@@ -65,6 +65,7 @@ const SECTION_NAMES: Record<string, string> = {
   learn: "Learn",
   reference: "Reference",
   plugins: "Plugins",
+  headless: "Headless",
   ui: "UI",
 };
 
@@ -73,6 +74,7 @@ const QUICK_LINKS: CommandItemData[] = (
     ["/learn/", "Learn"],
     ["/reference/", "API Reference"],
     ["/plugins/", "Plugins"],
+    ["/headless/", "Headless"],
     ["/ui/", "UI"],
   ] as const
 ).map(([url, label]) => ({

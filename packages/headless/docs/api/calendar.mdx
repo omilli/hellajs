@@ -1,6 +1,6 @@
 # calendar
 
-Creates the calendar parts in one call: the month view, its selection model, and the day grid. The closure owns the visible month, the selection in the mode's shape, the roving focus key, and the range hover preview; `Grid` renders the whole `role="grid"` table from that view model and carries the keyboard model.
+Creates the calendar components in one call: the month view, its selection model, and the day grid. The closure owns the visible month, the selection in the mode's shape, the roving focus key, and the range hover preview; `Grid` renders the whole `role="grid"` table from that view model and carries the keyboard model.
 
 ## Basic Usage
 
@@ -40,10 +40,10 @@ mount(
 ## API
 
 ```typescript
-function calendar(options?: CalendarOptions): CalendarParts
+function calendar(options?: CalendarOptions): CalendarComponents
 ```
 
-- `options.mode`: Selection behavior; defaults to `"single"`.
+- `options.mode`: Selection util; defaults to `"single"`.
 - `options.value`: The selection in the mode's shape: a static value seeds the internal signal; an accessor makes it controlled, so writes report through `onValueChange` only.
 - `options.onValueChange`: Called with every accepted selection (defensive copies, in the mode's shape).
 - `options.month`: Controlled visible-month accessor; when provided it snaps the view back on every change, winning over internal navigation.
@@ -53,11 +53,11 @@ function calendar(options?: CalendarOptions): CalendarParts
 - `options.showOutsideDays`: Renders leading/trailing adjacent-month days; defaults to `true`.
 - `options.fixedWeeks`: Always renders six week rows so month-to-month navigation never resizes the grid.
 - `options.weekStartsOn`: First day of the week; `0` = Sunday (default) through `6` = Saturday.
-- **Returns**: The part set, composed as `Cal.Root`-style members.
+- **Returns**: The component set, composed as `Cal.Root`-style members.
 
-### Parts
+### Components
 
-| Part | Renders |
+| Component | Renders |
 |---|---|
 | `Root` | The calendar root container |
 | `Months` | The months wrapper around every rendered month column |
@@ -69,7 +69,7 @@ function calendar(options?: CalendarOptions): CalendarParts
 | `Grid` | The `role="grid"` table rendered from the view model (weekday header, week rows, day cells with their aria semantics) with the keyboard model wired on it |
 | `DayButton` | The manual-composition day button carrying the aria semantics; the grid renders one per cell |
 
-Every part spreads `class` and native attributes onto its element; parts own structure, styling stays in the wrapper. `Grid` additionally takes the inner class hooks (`weekdaysClass`, `weekdayClass`, `weekClass`, `dayClass`, `dayButtonClass`) for the slots it renders.
+Every component spreads `class` and native attributes onto its element; components own structure, styling stays in the wrapper. `Grid` additionally takes the inner class hooks (`weekdaysClass`, `weekdayClass`, `weekClass`, `dayClass`, `dayButtonClass`) for the slots it renders.
 
 ### Options
 
@@ -108,8 +108,8 @@ Selection and the visible month are each controlled-or-internal: pass an accesso
 
 ### Call the Factory in Component Scope
 
-`calendar()` creates the state signals and effects that must dispose with the component that owns them; a module-level factory call leaks them. Call the factory inside the component that renders the parts.
+`calendar()` creates the state signals and effects that must dispose with the component that owns them; a module-level factory call leaks them. Call the factory inside the component that renders the components.
 
 ### DayButton for Manual Composition
 
-`DayButton` is the manual-composition day part: its state flags (`selectedSingle`, `rangeStart`/`rangeEnd`/`rangeMiddle`, `disabled`, `focused`) take plain booleans or reactive accessors, so a composed calendar drives them live while a standalone call passes static values. The grid renders its own day buttons from the view model; `DayButton` is for compositions that render cells outside `Grid`.
+`DayButton` is the manual-composition day component: its state flags (`selectedSingle`, `rangeStart`/`rangeEnd`/`rangeMiddle`, `disabled`, `focused`) take plain booleans or reactive accessors, so a composed calendar drives them live while a standalone call passes static values. The grid renders its own day buttons from the view model; `DayButton` is for compositions that render cells outside `Grid`.

@@ -7,7 +7,7 @@ Fire a handler after a press is held: drift or early release cancels, and the ha
 ```jsx
 import { signal } from "@hellajs/core";
 import { mount } from "@hellajs/dom";
-import { onLongPress } from "@hellajs/headless";
+import { onLongPress } from "@hellajs/headless/utils";
 
 const at = signal({ x: 0, y: 0 });
 let disposePress: (() => void) | undefined;
@@ -59,7 +59,7 @@ interface LongPressOptions {
 
 ### A Timed Hold, Not a Press State Machine
 
-The wiring is one timer per press: a primary-button `pointerdown` starts it, and on expiry the handler fires once with the originating `pointerdown` event, so context menus can position at the press point. A new press starts a fresh timer; there is no persisted state between presses. CSS `:active` keeps ownership of the immediate pressed look, the same division as every other behavior: this wiring covers only the hold.
+The wiring is one timer per press: a primary-button `pointerdown` starts it, and on expiry the handler fires once with the originating `pointerdown` event, so context menus can position at the press point. A new press starts a fresh timer; there is no persisted state between presses. CSS `:active` keeps ownership of the immediate pressed look, the same division as every other util: this wiring covers only the hold.
 
 ### Drift Tolerance Cancels Strays
 
@@ -73,7 +73,7 @@ The timer starts only on a primary-button press (button `0`) and never when the 
 
 ### No touch-action Requirement
 
-Unlike [`onDrag`](/reference/headless/ondrag), the wiring never moves content, so it needs no `touch-action: none`: a scrolling touch drifts past the tolerance and cancels the press, which is exactly the intended interaction with native scrolling.
+Unlike [`onDrag`](/headless/ondrag), the wiring never moves content, so it needs no `touch-action: none`: a scrolling touch drifts past the tolerance and cancels the press, which is exactly the intended interaction with native scrolling.
 
 ### Input Validation
 

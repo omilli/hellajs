@@ -1,6 +1,6 @@
 # command
 
-Creates the command palette parts in one call: the search input, the ranked list with its groups, and the option rows. The factory closure owns the query, the ranking filter, the active-by-value cursor, and the commit wiring. With `items` the `List` renders the ranked order data-driven; without them the `Item` children you render register in DOM order and the ranked filter hides non-matches in place.
+Creates the command palette components in one call: the search input, the ranked list with its groups, and the option rows. The factory closure owns the query, the ranking filter, the active-by-value cursor, and the commit wiring. With `items` the `List` renders the ranked order data-driven; without them the `Item` children you render register in DOM order and the ranked filter hides non-matches in place.
 
 ## Basic Usage
 
@@ -45,7 +45,7 @@ const Command = command({});
 </Command.List>
 ```
 
-The palette dialog composes the same parts inside a modal-wired panel:
+The palette dialog composes the same components inside a modal-wired panel:
 
 ```tsx
 const open = signal(false);
@@ -61,7 +61,7 @@ const Palette = command({});
 ## API
 
 ```typescript
-function command(options?: CommandOptions): CommandParts
+function command(options?: CommandOptions): CommandComponents
 ```
 
 - `options.items`: The item entries, an array or a getter. A getter keeps the list reactive across appends, removes, and reorders. Passing `items` switches the factory to data-driven rendering.
@@ -69,11 +69,11 @@ function command(options?: CommandOptions): CommandParts
 - `options.loop`: Wraps arrow movement at the edges. The default clamps.
 - `options.value`: Controlled active value. Passing it makes the command controlled; omitting it keeps the cursor internal.
 - `options.onValueChange`: Called with every requested move and selection.
-- **Returns**: The part set, composed as `Command.Input`-style members.
+- **Returns**: The component set, composed as `Command.Input`-style members.
 
-### Parts
+### Components
 
-| Part | Renders |
+| Component | Renders |
 |---|---|
 | `Input` | The search row: icon plus query input carrying the keyboard model |
 | `List` | `role="listbox"` whose option ids derive as `<listId>-opt-<value>`; renders the ranked body when `items` was passed, else its children |
@@ -82,9 +82,9 @@ function command(options?: CommandOptions): CommandParts
 | `Group` | A structural group with its heading row; `hidden` drops the whole group |
 | `Separator` | A structural separator |
 | `Shortcut` | A trailing shortcut hint span |
-| `Dialog` | The palette-in-dialog composition: overlay, portaled `modal()`-wired panel, screen-reader header, close button, and the command surface holding your parts |
+| `Dialog` | The palette-in-dialog composition: overlay, portaled `modal()`-wired panel, screen-reader header, close button, and the command surface holding your components |
 
-Every part spreads `class` and native attributes onto its element; parts own structure, styling stays in the wrapper.
+Every component spreads `class` and native attributes onto its element; components own structure, styling stays in the wrapper.
 
 ### Options
 
@@ -112,7 +112,7 @@ The input keeps focus the whole time. ArrowDown and ArrowUp move the active item
 
 ### The Palette Dialog
 
-`Dialog` renders the overlay, the portaled panel, a screen-reader-only header (wiring `aria-labelledby` and `aria-describedby`), the close button, and the command surface holding your parts. Focus is trapped in the panel, Escape and an outside press call `onClose`, and the exit animation unmounts the surface through the shared [`modal`](/reference/headless/modal) foundation, so closing disarms the wiring immediately and reopening re-arms it.
+`Dialog` renders the overlay, the portaled panel, a screen-reader-only header (wiring `aria-labelledby` and `aria-describedby`), the close button, and the command surface holding your components. Focus is trapped in the panel, Escape and an outside press call `onClose`, and the exit animation unmounts the surface through the shared [`modal`](/headless/modal) util, so closing disarms the wiring immediately and reopening re-arms it.
 
 ## Important Considerations
 

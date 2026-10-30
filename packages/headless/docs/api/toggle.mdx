@@ -1,6 +1,6 @@
 # toggle
 
-Creates the toggle part in one call: a pressed-state button whose closure owns the pressed state. Clicks flip the state and report through `onPressedChange`; Space and Enter toggle through native button activation.
+Creates the toggle component in one call: a pressed-state button whose closure owns the pressed state. Clicks flip the state and report through `onPressedChange`; Space and Enter toggle through native button activation.
 
 ## Basic Usage
 
@@ -23,20 +23,20 @@ mount(<Toggle.Root>Bold</Toggle.Root>, "#app");
 ## API
 
 ```typescript
-function toggle(options?: ToggleOptions): ToggleParts
+function toggle(options?: ToggleOptions): ToggleComponents
 ```
 
 - `options.pressed`: Controlled pressed state. Passing it makes the toggle controlled; omitting it keeps state internal.
 - `options.onPressedChange`: Called with every factory-driven flip; a controlled accessor's external change notifies no one.
-- **Returns**: The part set, composed as `Toggle.Root`-style members.
+- **Returns**: The component set, composed as `Toggle.Root`-style members.
 
-### Parts
+### Components
 
-| Part | Renders |
+| Component | Renders |
 |---|---|
 | `Root` | `button` with `aria-pressed`, `data-state` (`on` or `off`), and disabled gating |
 
-Every part spreads `class` and native attributes onto its element; parts own structure, styling stays in the wrapper.
+Every component spreads `class` and native attributes onto its element; components own structure, styling stays in the wrapper.
 
 ### Options
 
@@ -59,7 +59,7 @@ A boolean `pressed` seeds the internal signal: the toggle starts pressed and fli
 
 ### Call the Factory in Component Scope
 
-`toggle()` creates a state signal that must dispose with the component that owns it. Mounting the tree unmounts the signal's wiring; module-level calls leak it. Call the factory inside the component that renders the parts.
+`toggle()` creates a state signal that must dispose with the component that owns it. Mounting the tree unmounts the signal's wiring; module-level calls leak it. Call the factory inside the component that renders the components.
 
 ### Keyboard Activation Is Native
 

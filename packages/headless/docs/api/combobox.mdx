@@ -1,6 +1,6 @@
 # combobox
 
-Creates the combobox parts in one call: the query input with its addon affordances, the ported anchored option panel, the listbox and option rows, and the multi-select chips. The factory closure owns the query, the selection, the active-by-value highlight, and the generated list id.
+Creates the combobox components in one call: the query input with its addon affordances, the ported anchored option panel, the listbox and option rows, and the multi-select chips. The factory closure owns the query, the selection, the active-by-value highlight, and the generated list id.
 
 ## Basic Usage
 
@@ -47,7 +47,7 @@ Pass `List` the same `items` and it renders the rows for you, keeping every opti
 ## API
 
 ```typescript
-function combobox(options?: ComboboxOptions): ComboboxParts
+function combobox(options?: ComboboxOptions): ComboboxComponents
 ```
 
 - `options.items`: The option entries, an array or a getter. A getter keeps the list reactive across appends, removes, and reorders.
@@ -55,11 +55,11 @@ function combobox(options?: ComboboxOptions): ComboboxParts
 - `options.onValueChange`: Called with every requested selection.
 - `options.multiple`: Multi-select mode: selections toggle into an array, the panel stays open, and the input surface renders chips.
 - `options.filter`: Replaces the default case-insensitive substring match over item labels.
-- **Returns**: The part set plus the `matches`, `open`, and `setOpen` composition getters.
+- **Returns**: The component set plus the `matches`, `open`, and `setOpen` composition getters.
 
-### Parts
+### Components
 
-| Part | Renders |
+| Component | Renders |
 |---|---|
 | `Input` | The query surface: a `role="combobox"` input inside an addon group, or the chips composition under `multiple` |
 | `Content` | Panel portaled into `document.body`, carrying `data-state`, `data-side`, `data-align`, and `data-empty` |
@@ -71,7 +71,7 @@ function combobox(options?: ComboboxOptions): ComboboxParts
 | `Chips`, `Chip`, `ChipsInput` | The multi-select composition: selected-value rows with remove buttons and the query input |
 | `Group`, `Label`, `Separator`, `Collection` | Structural grouping rows |
 
-Every part spreads `class` and native attributes onto its element; parts own structure, styling stays in the wrapper.
+Every component spreads `class` and native attributes onto its element; components own structure, styling stays in the wrapper.
 
 ### Options
 
@@ -87,7 +87,7 @@ Every part spreads `class` and native attributes onto its element; parts own str
 
 ### Controlled or Internal State
 
-Pass `value` and the factory never holds the selection: the getter is the single source of truth and `onValueChange` reports every requested commit. Omit `value` and the factory keeps its own signal, so the parts work standalone. The same contract covers the open state through `open` and `onOpenChange`.
+Pass `value` and the factory never holds the selection: the getter is the single source of truth and `onValueChange` reports every requested commit. Omit `value` and the factory keeps its own signal, so the components work standalone. The same contract covers the open state through `open` and `onOpenChange`.
 
 ### The Query and the matches Getter
 
@@ -109,4 +109,4 @@ Single mode commits close the panel and clear the query; the addon renders a che
 
 ### Anchoring and Dismissal
 
-While open, the content is positioned against the input wrapper through [`anchorPosition`](/reference/headless/anchorposition) (fixed coordinates, matched trigger width, repositioning on scroll and resize) and dismissed through [`layerDismissal`](/reference/headless/layerdismissal): Escape and an outside pointerdown close only the top layer. Focus stays in the input the whole time; the panel never steals it.
+While open, the content is positioned against the input wrapper through [`anchorPosition`](/headless/anchorposition) (fixed coordinates, matched trigger width, repositioning on scroll and resize) and dismissed through [`layerDismissal`](/headless/layerdismissal): Escape and an outside pointerdown close only the top layer. Focus stays in the input the whole time; the panel never steals it.

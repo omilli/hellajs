@@ -4,7 +4,7 @@ The composed root wraps your children in the viewport and content stack and rend
 
 The viewport owns an `atBottom` signal (true on mount). A scroll listener compares `scrollHeight - scrollTop - clientHeight` against `threshold` (default 80px) and flips the signal; a `ResizeObserver` on the content watches growth and scrolls back to the bottom while the state reads true. The jump button renders whenever the state reads false and hides while it reads true, driven by `data-active`.
 
-Hella has no context, so the parts take their state explicitly. Create the signal yourself, hand the same signal to the viewport and the button, and the `MessageScrollerProvider` becomes a plain passthrough kept for API parity. `threshold` widens or tightens the at-bottom band, and `scrollToBottom` overrides the scroll action for both the auto-stick and the button.
+Hella has no context, so the components take their state explicitly. Create the signal yourself, hand the same signal to the viewport and the button, and the `MessageScrollerProvider` becomes a plain passthrough kept for API parity. `threshold` widens or tightens the at-bottom band, and `scrollToBottom` overrides the scroll action for both the auto-stick and the button.
 
 All six exports are named; the composed root wraps the rest, and manual composition hands the same state to the viewport and button explicitly.
 
@@ -80,7 +80,7 @@ A passthrough kept for API parity: renders `children` only; hella has no context
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | `-` |
 
-Every part also takes a `class` string, landing last in its style composition.
+Every component also takes a `class` string, landing last in its style composition.
 
 ## Intentionally Absent
 

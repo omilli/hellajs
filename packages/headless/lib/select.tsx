@@ -1,6 +1,6 @@
 import { effect, isFunction, signal } from "@hellajs/core";
 import { Portal } from "@hellajs/dom";
-import { menuTypeahead } from "./menuTypeahead";
+import { menuTypeahead } from "./utils/menuTypeahead";
 import { anchoredLayer } from "./internal/anchoredLayer";
 import { domOptions, listboxKeydown, selectionActive, typeaheadEntries } from "./internal/listbox";
 import type { ListboxModel } from "./internal/listbox";
@@ -10,11 +10,11 @@ import type {
   SelectLabelProps,
   SelectOptions,
   SelectPartProps,
-  SelectParts,
+  SelectComponents,
   SelectScrollButtonProps,
   SelectTriggerProps,
   SelectValueProps,
-} from "./types/parts";
+} from "./types/components";
 
 /** The check icon (refs/icons/check.svg), created per call so reactive swaps never share nodes between clones. */
 const checkIcon = (): JSX.Element => (
@@ -168,7 +168,7 @@ let selectCount = 0;
  * @param options Controlled-or-internal `value` + `onValueChange`; an omitted `value` keeps the selection internal.
  * @returns The part set, composed as `Select.Trigger`-style members.
  */
-export function select(options: SelectOptions = {}): SelectParts {
+export function select(options: SelectOptions = {}): SelectComponents {
   const s = selectOpenState(options);
   const contentId = `hella-select-content-${++selectCount}`;
   const value = options.value;

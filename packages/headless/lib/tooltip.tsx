@@ -1,18 +1,18 @@
 import { effect, signal } from "@hellajs/core";
 import { Portal } from "@hellajs/dom";
-import { hoverIntent } from "./hoverIntent";
+import { hoverIntent } from "./utils/hoverIntent";
 import { anchoredLayer } from "./internal/anchoredLayer";
 import type {
   HoverCardContentProps,
   HoverCardOptions,
-  HoverCardParts,
+  HoverCardComponents,
   HoverCardTriggerProps,
   TooltipContentProps,
   TooltipOptions,
-  TooltipParts,
+  TooltipComponents,
   TooltipProviderProps,
   TooltipTriggerProps,
-} from "./types/parts";
+} from "./types/components";
 
 /** Open/close state shared by the hover pair: controlled override, exit-holding `visible` gate. */
 function hoverOpenState(options: { open?: () => boolean; onOpenChange?: (open: boolean) => void }) {
@@ -87,7 +87,7 @@ let tooltipCount = 0;
  * @param options `open` getter + `onOpenChange` + the `delay` before opening (default 700).
  * @returns The three part components, composed as `Tip.Trigger`-style members.
  */
-export function tooltip(options: TooltipOptions = {}): TooltipParts {
+export function tooltip(options: TooltipOptions = {}): TooltipComponents {
   const s = hoverOpenState(options);
   const delay = options.delay ?? 700;
   const contentId = `hella-tooltip-content-${++tooltipCount}`;
@@ -213,7 +213,7 @@ export function tooltip(options: TooltipOptions = {}): TooltipParts {
  * @param options `open` getter + `onOpenChange` + the `openDelay` (default 200) and `closeDelay` (default 300) timings.
  * @returns The two part components, composed as `Card.Trigger`-style members.
  */
-export function hoverCard(options: HoverCardOptions = {}): HoverCardParts {
+export function hoverCard(options: HoverCardOptions = {}): HoverCardComponents {
   const s = hoverOpenState(options);
   const openDelay = options.openDelay ?? 200;
   const closeDelay = options.closeDelay ?? 300;

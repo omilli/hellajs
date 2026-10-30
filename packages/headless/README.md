@@ -1,6 +1,6 @@
 # @hellajs/headless
 
-Headless behavior functions for common UI mechanics: focus traps, Escape and outside dismissal, roving tabindex, anchor positioning, hover intent, menu typeahead, pointer gestures, and layered dismissal. Each takes real DOM nodes and returns a dispose handle; state stays in your signals.
+Headless util functions for common UI mechanics: focus traps, Escape and outside dismissal, roving tabindex, anchor positioning, hover intent, menu typeahead, pointer gestures, and layered dismissal. Each takes real DOM nodes and returns a dispose handle; state stays in your signals.
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/headless?color=orange)](https://www.npmjs.com/package/@hellajs/headless)
 ![Gzipped Size](https://img.shields.io/bundlephobia/minzip/@hellajs/headless)
@@ -8,7 +8,7 @@ Headless behavior functions for common UI mechanics: focus traps, Escape and out
 ## Documentation
 
 - **[API Reference](https://hellajs.com/reference#hellajsheadless)**
-- **[Headless Behaviors](https://hellajs.com/learn/concepts/headless-behaviors)**
+- **[Headless Utils](https://hellajs.com/learn/concepts/headless-utils)**
 
 ## Quick Start
 
@@ -39,9 +39,9 @@ function Panel() {
 mount(Panel, '#app');
 ```
 
-## Behaviors
+## Utils
 
-Fourteen headless wiring functions ship flat on the barrel, plus the `modal` foundation for the dialog family. Each behavior takes real DOM nodes and returns a dispose handle; state stays in caller signals.
+Fifteen headless wiring utils ship under `@hellajs/headless/utils` (fourteen dispose-handle functions plus `modal`, which composes the dialog-family wiring with automatic, node-scoped disposal). Each util takes real DOM nodes and returns a dispose handle; state stays in caller signals.
 
 - **trapFocus**: Trap Tab/Shift+Tab inside a container
 - **onEscape**: Call a handler on Escape keydown
@@ -59,7 +59,7 @@ Fourteen headless wiring functions ship flat on the barrel, plus the `modal` fou
 - **layerDismissal**: Dismiss stacked overlays one layer at a time
 - **modal**: Arm a modal panel (trap, dismissal, exit notification) with automatic, node-scoped disposal
 
-See [Headless Behaviors](https://hellajs.com/learn/concepts/headless-behaviors).
+See [Headless Utils](https://hellajs.com/learn/concepts/headless-utils).
 
 ## License
 

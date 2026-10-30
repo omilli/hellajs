@@ -12,11 +12,11 @@ import type {
   CalendarNavButtonProps,
   CalendarNavProps,
   CalendarOptions,
-  CalendarParts,
+  CalendarComponents,
   CalendarRange,
   CalendarRootProps,
   CalendarSelection,
-} from "./types/parts";
+} from "./types/components";
 
 const WEEKDAY_COUNT = 7;
 
@@ -206,7 +206,7 @@ interface DayCellProps {
  * @param options controlled-or-internal selection `value`, `mode`, the month channel (`month`/`onMonthChange`/`defaultMonth`), and the day-model options (`disabled`, `showOutsideDays`, `fixedWeeks`, `weekStartsOn`).
  * @returns The part set, composed as `Cal.Root`-style members.
  */
-export function calendar(options: CalendarOptions = {}): CalendarParts {
+export function calendar(options: CalendarOptions = {}): CalendarComponents {
   const mode = options.mode ?? "single";
   const weekStartsOn = options.weekStartsOn ?? 0;
   const disabled = options.disabled;

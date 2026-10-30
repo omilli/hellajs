@@ -5,7 +5,7 @@ Compute where a floating element should sit against an anchor: pure rect math, n
 ## Basic Usage
 
 ```typescript
-import { computeAnchorPosition } from "@hellajs/headless";
+import { computeAnchorPosition } from "@hellajs/headless/utils";
 
 const result = computeAnchorPosition(
   { top: 100, left: 24, width: 96, height: 32 },
@@ -56,7 +56,7 @@ type Placement =
 
 ### Pure Rect Math, No DOM
 
-The function reads no DOM: plain rect objects in, coordinates out. Test environments with stubbed rects (HappyDOM returns all zeros) and server code can both compute placements. Call it directly to predict where [`anchorPosition`](/reference/headless/anchorposition) will place an overlay.
+The function reads no DOM: plain rect objects in, coordinates out. Test environments with stubbed rects (HappyDOM returns all zeros) and server code can both compute placements. Call it directly to predict where [`anchorPosition`](/headless/anchorposition) will place an overlay.
 
 ### Flip, Then Shift
 

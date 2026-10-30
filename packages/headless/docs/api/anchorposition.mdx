@@ -6,7 +6,7 @@ Pin a floating element to an anchor and keep it placed: it follows the anchor ac
 
 ```jsx
 import { mount } from "@hellajs/dom";
-import { anchorPosition } from "@hellajs/headless";
+import { anchorPosition } from "@hellajs/headless/utils";
 
 let disposeAnchor: (() => void) | undefined;
 
@@ -70,4 +70,4 @@ The listeners sit on `window`, so they outlive the elements. Call the dispose ha
 
 ### All Math Is Pure
 
-The coordinates come from [`computeAnchorPosition`](/reference/headless/computeanchorposition), a pure function over plain rects. Test placement logic without a DOM by calling it directly.
+The coordinates come from [`computeAnchorPosition`](/headless/computeanchorposition), a pure function over plain rects. Test placement logic without a DOM by calling it directly.

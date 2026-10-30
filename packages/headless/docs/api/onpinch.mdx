@@ -6,7 +6,7 @@ Track a two-finger pinch: every move reports zoom scale and pan offset from the 
 
 ```jsx
 import { mount } from "@hellajs/dom";
-import { onPinch } from "@hellajs/headless";
+import { onPinch } from "@hellajs/headless/utils";
 
 let disposePinch: (() => void) | undefined;
 

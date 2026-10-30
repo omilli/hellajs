@@ -1,6 +1,6 @@
 # tabs
 
-Creates the tabs parts in one call: a roving tablist, its triggers, and the keyed panels. The closure owns the active tab value; focusing a trigger selects it, and the selection lands the tabindex walk.
+Creates the tabs components in one call: a roving tablist, its triggers, and the keyed panels. The closure owns the active tab value; focusing a trigger selects it, and the selection lands the tabindex walk.
 
 ## Basic Usage
 
@@ -34,24 +34,24 @@ mount(
 ## API
 
 ```typescript
-function tabs(options?: TabsOptions): TabsParts
+function tabs(options?: TabsOptions): TabsComponents
 ```
 
 - `options.value`: Controlled active value. When given, the factory never writes its internal signal and `onValueChange` reports the requested selection.
 - `options.defaultValue`: Seeds the uncontrolled active value. Default `""` (the tabindex walk lands the first trigger).
 - `options.orientation`: Scopes the arrow-key axis and renders the orientation attributes; unset means both axes move focus.
 - `options.onValueChange`: Called with every factory-driven selection; re-selecting the active value notifies no one.
-- **Returns**: The part set, composed as `Tabs.List`-style members.
+- **Returns**: The component set, composed as `Tabs.List`-style members.
 
-### Parts
+### Components
 
-| Part | Renders |
+| Component | Renders |
 |---|---|
 | `List` | The `role="tablist"` container with `data-orientation` and `aria-orientation`; arms arrow-key roving, lands the tabindex on the selection, and disposes on unmount |
 | `Trigger` | The `role="tab"` button carrying the `hella-tabs-tab-<value>` id, `aria-selected`, `aria-controls`, and `data-state` |
 | `Content` | The `role="tabpanel"` panel for a value: the `hella-tabs-panel-<value>` id, `aria-labelledby` the owning trigger, hidden while inactive |
 
-Every part spreads `class` and native attributes onto its element; parts own structure, styling stays in the wrapper.
+Every component spreads `class` and native attributes onto its element; components own structure, styling stays in the wrapper.
 
 ### Options
 
@@ -80,7 +80,7 @@ Every `Content` panel renders once and toggles `hidden` with its `data-state`; i
 
 ### Call the Factory in Component Scope
 
-`tabs()` creates the state signal that must dispose with the component that owns it. `List` disposes the roving and focus wiring when it unmounts; a module-level factory call leaks the signal. Call the factory inside the component that renders the parts.
+`tabs()` creates the state signal that must dispose with the component that owns it. `List` disposes the roving and focus wiring when it unmounts; a module-level factory call leaks the signal. Call the factory inside the component that renders the components.
 
 ### Ids Are Value-Derived
 

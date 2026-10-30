@@ -7,7 +7,7 @@ Open a surface after a hover or focus delay and close it after a leave delay: th
 ```jsx
 import { signal } from "@hellajs/core";
 import { mount } from "@hellajs/dom";
-import { hoverIntent } from "@hellajs/headless";
+import { hoverIntent } from "@hellajs/headless/utils";
 
 const show = signal(false);
 let disposeIntent: (() => void) | undefined;

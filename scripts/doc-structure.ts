@@ -38,10 +38,11 @@ import { logger, packagesDir, projectRoot } from "./utils/index.ts";
  *    import — quick-start, testing patterns) are exempt from the zero-content
  *    rule but not from the frontmatter rule.
  *
- * 5. Nav/index registration — every page in the `learn`, `reference`, and
- *    `plugins` sections (excluding `index.mdx` enumeration pages) must appear in
- *    `docs/src/nav.ts`
- *    (learn labels lowercase to slugs; reference slugs and plugin names verbatim),
+ * 5. Nav/index registration — every page in the `learn`, `reference`,
+ *    `plugins`, `headless`, and `ui` sections (excluding `index.mdx` enumeration
+ *    pages) must appear in `docs/src/nav.ts`
+ *    (learn labels lowercase to slugs; reference slugs and plugin names verbatim;
+ *    headless/ui slugs flat under the section root),
  *    every nav entry must have a page (no dead entries), and every learn content
  *    page must also appear in its enumeration page (`learn/index.mdx` for
  *    concepts/tutorials, `learn/patterns/index.mdx` for patterns).
@@ -83,7 +84,7 @@ const SECTION_END_RE = /^## /;
 const IMPORT_RE = /^import\s.+/;
 const TAG_RE = /^<[A-Za-z][\w.]*\s[^>]*\/?>$|^<[A-Za-z][\w.]*>.*<\/[A-Za-z][\w.]*>$/;
 const PACKAGE_DOC_IMPORT_RE =
-  /^import\s.+from\s+["']@(core|css|dom|resource|router|store|ssr|ui|examples)\/([^"']+)["']/;
+  /^import\s.+from\s+["']@(core|css|dom|headless|resource|router|store|ssr|ui|examples)\/([^"']+)["']/;
 
 const CHILDREN_UNKNOWN_RE = /children\??:\s*unknown/;
 const INTERNAL_MECHANICS_RE = /<summary>Internal Mechanics<\/summary>/;
@@ -505,7 +506,8 @@ function checkRegistration(): Finding[] {
     return findings;
   }
 
-  // Flatten nav entries, scoped per section: learn labels, reference slugs, plugin names, ui slugs.
+  // Flatten nav entries, scoped per section: learn labels, reference slugs,
+  // plugin names, headless/ui slugs.
   // Anchor at the navigation export: the file header may carry quoted strings
   // that are not nav data (the NavSection type union), and everything before
   // `reference:` would otherwise read as learn slugs.
@@ -513,10 +515,18 @@ function checkRegistration(): Finding[] {
   const navData = navDataIdx === -1 ? nav : nav.slice(navDataIdx);
   const referenceIdx = navData.indexOf("reference:");
   const pluginsIdx = navData.indexOf("plugins:");
+  const headlessIdx = navData.indexOf("headless:");
   const uiIdx = navData.indexOf("ui:");
   const learnSlice = navData.slice(0, referenceIdx === -1 ? undefined : referenceIdx);
   const learnSlugs = new Set<string>();
   for (const m of learnSlice.matchAll(/"([^"]+)"/g)) learnSlugs.add(m[1]!.toLowerCase());
+
+  const headlessSlugs = new Set<string>();
+  if (headlessIdx !== -1) {
+    const headlessEnd = uiIdx === -1 ? undefined : uiIdx;
+    for (const m of navData.slice(headlessIdx, headlessEnd).matchAll(/"([^"]+)"/g))
+      headlessSlugs.add(m[1]!.toLowerCase());
+  }
 
   const uiSlugs = new Set<string>();
   if (uiIdx !== -1) {
@@ -538,9 +548,8 @@ function checkRegistration(): Finding[] {
     }
   }
   if (pluginsIdx !== -1) {
-    for (const slug of navData
-      .slice(pluginsIdx, uiIdx === -1 ? undefined : uiIdx)
-      .matchAll(/"([^"]+)"/g))
+    const pluginsEnd = headlessIdx !== -1 ? headlessIdx : uiIdx !== -1 ? uiIdx : undefined;
+    for (const slug of navData.slice(pluginsIdx, pluginsEnd).matchAll(/"([^"]+)"/g))
       pluginSlugs.add(slug[1]!.toLowerCase());
   }
 
@@ -552,6 +561,7 @@ function checkRegistration(): Finding[] {
     learn: new Set<string>(),
     reference: new Set<string>(),
     plugins: new Set<string>(),
+    headless: new Set<string>(),
     ui: new Set<string>(),
   };
   for (const file of collectFiles(docsPagesDir, [".mdx", ".astro"])) {
@@ -589,6 +599,11 @@ function checkRegistration(): Finding[] {
       if (entry === undefined || !entry.has(slug)) {
         findings.push({ file, message: `page not registered in nav.ts (${rel})` });
       }
+    } else if (section === "headless") {
+      registered.headless.add(rel);
+      if (!headlessSlugs.has(slug.toLowerCase())) {
+        findings.push({ file, message: `page not registered in nav.ts (${rel})` });
+      }
     } else if (section === "ui") {
       registered.ui.add(rel);
       if (!uiSlugs.has(slug.toLowerCase())) {
@@ -623,6 +638,11 @@ function checkRegistration(): Finding[] {
           message: `nav.ts reference entry ${pkg}/${slug} matches no page`,
         });
       }
+    }
+  }
+  for (const slug of headlessSlugs) {
+    if (!registered.headless.has(`headless/${slug}`)) {
+      findings.push({ file: navFile, message: `nav.ts headless entry "${slug}" matches no page` });
     }
   }
   for (const slug of uiSlugs) {

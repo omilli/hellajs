@@ -7,7 +7,7 @@ A drag-dismissable panel mounting on one of the four screen edges: the caller ow
 
 Opening portals the overlay and panel into `document.body` under `data-state="open"`; closing keeps the panel mounted until its exit slide ends, with the dismissal wirings down while it leaves. Escape and outside pointerdown route through the same `onClose`, and the focus trap stays armed the whole time the drawer rests open.
 
-Nine named parts ship beside the default `Drawer` for custom composition: `DrawerTrigger`, `DrawerClose`, `DrawerPortal`, `DrawerOverlay`, `DrawerContent`, `DrawerHeader`, `DrawerFooter`, `DrawerTitle`, and `DrawerDescription`. State is explicit - portal the overlay and panel yourself, hand both a `state` accessor, and share one drag-fraction signal between the overlay and the content so the overlay keeps fading with the drag.
+Nine named components ship beside the default `Drawer` for custom composition: `DrawerTrigger`, `DrawerClose`, `DrawerPortal`, `DrawerOverlay`, `DrawerContent`, `DrawerHeader`, `DrawerFooter`, `DrawerTitle`, and `DrawerDescription`. State is explicit - portal the overlay and panel yourself, hand both a `state` accessor, and share one drag-fraction signal between the overlay and the content so the overlay keeps fading with the drag.
 
 ### Drawer
 
@@ -37,7 +37,7 @@ Accepts all native `button` attributes (forwarded to the root element).
 
 ### DrawerClose
 
-The X button with its `sr-only` "Close" label - the default panel renders no close button of its own, so dragging is the primary dismissal and this part adds an explicit one.
+The X button with its `sr-only` "Close" label - the default panel renders no close button of its own, so dragging is the primary dismissal and this component adds an explicit one.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
@@ -47,7 +47,7 @@ Accepts all native `button` attributes (forwarded to the root element; a user `o
 
 ### DrawerPortal
 
-Wraps children in a `Portal to="body"` for compositions that want the named part.
+Wraps children in a `Portal to="body"` for compositions that want the named component.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
@@ -81,7 +81,7 @@ The `role="dialog"` panel carrying `data-slot="drawer-content"` and the grip han
 | `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element). Pass the wired ids as the panel's `aria-labelledby` and `aria-describedby` attrs - in the composed `Drawer` the root threads them for you.
 
-`fraction` is the shared drag fraction; the overlay fades proportionally when both parts receive the same signal. `onClose` is the dismissal callback - drag release, escape, and outside pointerdown all fire it; `onExited` fires when the exit slide ends.
+`fraction` is the shared drag fraction; the overlay fades proportionally when both components receive the same signal. `onClose` is the dismissal callback - drag release, escape, and outside pointerdown all fire it; `onExited` fires when the exit slide ends.
 
 ### DrawerHeader
 
@@ -121,7 +121,7 @@ The supporting line: a `p` carrying `data-slot="drawer-description"` whose `id` 
 | `children` | `HellaChildren` | `-` |
 Accepts all native `p` attributes (forwarded to the root element).
 
-Every part also takes a `class` string, landing last in its style composition.
+Every component also takes a `class` string, landing last in its style composition.
 
 ## Drag Dismissal
 

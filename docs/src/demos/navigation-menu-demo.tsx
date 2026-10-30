@@ -36,7 +36,7 @@ export function NavigationMenuDemo() {
               {trigger("reference", "Reference", value, toggle)}
               <NavigationMenuContent active={() => value() === "reference"}>
                 <NavigationMenuLink href="#components">Components</NavigationMenuLink>
-                <NavigationMenuLink href="#behaviors">Headless Behaviors</NavigationMenuLink>
+                <NavigationMenuLink href="#utils">Headless Utils</NavigationMenuLink>
               </NavigationMenuContent>
             </NavigationMenuItem>
           </NavigationMenuList>

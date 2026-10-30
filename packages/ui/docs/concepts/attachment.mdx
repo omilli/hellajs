@@ -1,6 +1,6 @@
 ## API
 
-`Attachment` renders `data-state` from its `state` prop: `idle` (dashed border), `uploading`, `processing`, `error` (destructive border and description tint), or `done` (the default). The state drives every descendant condition through attribute selectors, so one prop moves the whole chip. `size` and `orientation` flow to the media and content parts the same way, so the chip rescales as one unit.
+`Attachment` renders `data-state` from its `state` prop: `idle` (dashed border), `uploading`, `processing`, `error` (destructive border and description tint), or `done` (the default). The state drives every descendant condition through attribute selectors, so one prop moves the whole chip. `size` and `orientation` flow to the media and content components the same way, so the chip rescales as one unit.
 
 ### Attachment
 
@@ -100,8 +100,8 @@ The scroll-snapping chip row: a `div` carrying `data-slot="attachment-group"`.
 
 Accepts all native `div` attributes (forwarded to the root element).
 
-Every part also takes a `class` string, landing last in its style composition.
+Every component also takes a `class` string, landing last in its style composition.
 
 ## Composition Notes
 
-A reactive `state` signal animates the whole lifecycle from one value: the inlined spinner and glyph follow the state, so wiring `state` through a signal is the only glue an upload flow needs. The `AttachmentMedia` icon variants (`icon` and `image`) restyle authored children: `image` dims until the state reads `done` or `idle` and object-fits its `img` children square. `AttachmentTrigger` renders the stretch button itself rather than delegating to its children, so there is no slot indirection to replicate; compose the parts directly and pass your own element classes through `class`. The media's error glyph uses the `octagon-x` icon; swap the path data if your project carries its own icon.
+A reactive `state` signal animates the whole lifecycle from one value: the inlined spinner and glyph follow the state, so wiring `state` through a signal is the only glue an upload flow needs. The `AttachmentMedia` icon variants (`icon` and `image`) restyle authored children: `image` dims until the state reads `done` or `idle` and object-fits its `img` children square. `AttachmentTrigger` renders the stretch button itself rather than delegating to its children, so there is no slot indirection to replicate; compose the components directly and pass your own element classes through `class`. The media's error glyph uses the `octagon-x` icon; swap the path data if your project carries its own icon.

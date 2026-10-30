@@ -6,7 +6,7 @@ Call a handler when a pointerdown lands outside the elements you mark as inside.
 
 ```jsx
 import { mount } from "@hellajs/dom";
-import { onOutside } from "@hellajs/headless";
+import { onOutside } from "@hellajs/headless/utils";
 
 let dismiss: (() => void) | undefined;
 
@@ -48,7 +48,7 @@ function onOutside(
 
 ```jsx
 import { mount } from "@hellajs/dom";
-import { onOutside } from "@hellajs/headless";
+import { onOutside } from "@hellajs/headless/utils";
 
 let menuNode: HTMLElement | null = null;
 let dialogNode: HTMLElement | null = null;

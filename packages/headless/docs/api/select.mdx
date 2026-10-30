@@ -1,6 +1,6 @@
 # select
 
-Creates the select parts in one call: the trigger button, the chosen-value label, the ported listbox with its scroll affordances, and the option rows. The factory closure owns the selection, the open state, and the generated content id; options register in DOM order from the `Item` children you render.
+Creates the select components in one call: the trigger button, the chosen-value label, the ported listbox with its scroll affordances, and the option rows. The factory closure owns the selection, the open state, and the generated content id; options register in DOM order from the `Item` children you render.
 
 ## Basic Usage
 
@@ -41,16 +41,16 @@ mount(
 ## API
 
 ```typescript
-function select(options?: SelectOptions): SelectParts
+function select(options?: SelectOptions): SelectComponents
 ```
 
 - `options.value`: Controlled selected value. Passing it makes the select controlled; omitting it keeps selection internal.
 - `options.onValueChange`: Called with every requested selection.
-- **Returns**: The part set, composed as `Select.Trigger`-style members.
+- **Returns**: The component set, composed as `Select.Trigger`-style members.
 
-### Parts
+### Components
 
-| Part | Renders |
+| Component | Renders |
 |---|---|
 | `Trigger` | `button` owning the click and arrow toggles, `data-state`, `data-size`, `aria-haspopup`, `aria-expanded`, `aria-controls`, and the clear affordance |
 | `Value` | The chosen label `span`; shows the placeholder with `data-placeholder` while empty |
@@ -59,7 +59,7 @@ function select(options?: SelectOptions): SelectParts
 | `Group`, `Label`, `Separator` | Structural grouping rows |
 | `ScrollUpButton`, `ScrollDownButton` | The repeat-scroll affordances at the listbox edges |
 
-Every part spreads `class` and native attributes onto its element; parts own structure, styling stays in the wrapper.
+Every component spreads `class` and native attributes onto its element; components own structure, styling stays in the wrapper.
 
 ### Options
 
@@ -84,7 +84,7 @@ Open focus lands on the selected enabled option, else the first, and scrolls it 
 
 ### Anchoring and Scrolling
 
-While open, the content is positioned against the trigger through [`anchorPosition`](/reference/headless/anchorposition) (fixed coordinates, matched trigger width, repositioning on scroll and resize) and dismissed through [`layerDismissal`](/reference/headless/layerdismissal). The scroll buttons repeat-scroll the listbox while hovered and hide at their scroll edges.
+While open, the content is positioned against the trigger through [`anchorPosition`](/headless/anchorposition) (fixed coordinates, matched trigger width, repositioning on scroll and resize) and dismissed through [`layerDismissal`](/headless/layerdismissal). The scroll buttons repeat-scroll the listbox while hovered and hide at their scroll edges.
 
 ## Important Considerations
 

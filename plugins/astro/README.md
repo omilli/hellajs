@@ -47,9 +47,9 @@ The server renders the component to HTML with `<!--[-->…<!--]-->` markers; the
 
 A complete walkthrough lives in the [Astro Islands tutorial](https://hellajs.com/learn/tutorials/astro-islands).
 
-## Headless parts on the server
+## Headless components on the server
 
-The integration adds the bundler-only `ssr` export condition to Astro's server environments (`ssr` and `prerender`), so JSX-bearing `@hellajs/*` packages resolve their server-safe build on the server with no extra configuration: importing them never touches the DOM. The client environments keep the regular entry, so the markup the server emits hydrates interactive through the dom build. Consume the [headless parts](https://hellajs.com/reference/headless/popover) directly in island code:
+The integration adds the bundler-only `ssr` export condition to Astro's server environments (`ssr` and `prerender`), so JSX-bearing `@hellajs/*` packages resolve their server-safe build on the server with no extra configuration: importing them never touches the DOM. The client environments keep the regular entry, so the markup the server emits hydrates interactive through the dom build. Consume the [headless components](https://hellajs.com/headless/popover) directly in island code:
 
 ```tsx
 // src/Popover.tsx

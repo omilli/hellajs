@@ -219,26 +219,26 @@ HellaJS's DOM-tree-walking boundary lookup is unique: errors find their boundary
 | SVG / MathML | Namespaced (`createElementNS`, `foreignObject` resets) (`lib/internal/render.ts`) | Yes | Yes | Yes | Yes | Yes |
 | Context / DI | None: signals + props | `createContext` | `setContext`/`getContext` | Context | provide / inject | DI + inject |
 
-### Headless behavior functions
+### Headless utils
 
-The headless wiring layer ships as its own package, `@hellajs/headless`, fourteen dependency-free functions: `trapFocus`, `onEscape`, `onOutside`, `rovingTabIndex`, `anchorPosition`, `computeAnchorPosition`, `hoverIntent`, `menuTypeahead`, `onDrag`, `onSwipe`, `onPinch`, `onLongPress`, `onDoubleTap`, and `layerDismissal` (each at `packages/headless/lib/<name>.ts`). Nothing behavioral remains in `@hellajs/dom`: its renderer exports are the template/mount/hydrate surface above. The React-ecosystem headless libraries keep the same behaviors internal to their components:
+The headless wiring layer ships as its own package, `@hellajs/headless`, fifteen utils under `@hellajs/headless/utils` (plus the root barrel): `trapFocus`, `onEscape`, `onOutside`, `rovingTabIndex`, `anchorPosition`, `computeAnchorPosition`, `hoverIntent`, `menuTypeahead`, `onDrag`, `onSwipe`, `onPinch`, `onLongPress`, `onDoubleTap`, `layerDismissal`, and `modal` (each at `packages/headless/lib/utils/utils/<name>.ts`). Nothing wiring-shaped remains in `@hellajs/dom`: its renderer exports are the template/mount/hydrate surface above. The React-ecosystem headless libraries keep the same utils internal to their components:
 
-| Behavior | HellaJS headless | Radix Primitives | Base UI | Zag |
+| Util | HellaJS headless | Radix Primitives | Base UI | Zag |
 |---|---|---|---|---|
-| Standalone focus trap | Yes (`packages/headless/lib/trapFocus.ts`) | Internal only (FocusScope) | Internal only | Yes (`@zag-js/focus-trap`) |
-| Standalone outside-press / Escape | Yes (`packages/headless/lib/onOutside.ts`, `packages/headless/lib/onEscape.ts`) | Internal only (DismissableLayer) | Internal only | Yes (`@zag-js/dismissable`) |
-| Standalone roving tabindex | Yes (`packages/headless/lib/rovingTabIndex.ts`) | No public surface | No public surface | No public surface |
-| Focus restore on close | Yes, default on (`packages/headless/lib/trapFocus.ts`) | Yes, `onCloseAutoFocus` customizable | Yes, in components | Yes, `returnFocusOnDeactivate` |
-| Dynamic content re-query | Per keypress / per press (`packages/headless/lib/trapFocus.ts`, `packages/headless/lib/onOutside.ts`) | Via layer composition | Via parts | Via machine events |
-| Orientation / loop control | Both options (`packages/headless/lib/types/behaviors.d.ts`) | Via RovingFocusGroup internals | Per component | Per machine |
-| Home / End jumps | Yes (`lib/rovingTabIndex.ts`) | Yes (in components) | Yes (in components) | Yes (in machines) |
+| Standalone focus trap | Yes (`packages/headless/lib/utils/trapFocus.ts`) | Internal only (FocusScope) | Internal only | Yes (`@zag-js/focus-trap`) |
+| Standalone outside-press / Escape | Yes (`packages/headless/lib/utils/onOutside.ts`, `packages/headless/lib/utils/onEscape.ts`) | Internal only (DismissableLayer) | Internal only | Yes (`@zag-js/dismissable`) |
+| Standalone roving tabindex | Yes (`packages/headless/lib/utils/rovingTabIndex.ts`) | No public surface | No public surface | No public surface |
+| Focus restore on close | Yes, default on (`packages/headless/lib/utils/trapFocus.ts`) | Yes, `onCloseAutoFocus` customizable | Yes, in components | Yes, `returnFocusOnDeactivate` |
+| Dynamic content re-query | Per keypress / per press (`packages/headless/lib/utils/trapFocus.ts`, `packages/headless/lib/utils/onOutside.ts`) | Via layer composition | Via parts | Via machine events |
+| Orientation / loop control | Both options (`packages/headless/lib/utils/types/utils.d.ts`) | Via RovingFocusGroup internals | Per component | Per machine |
+| Home / End jumps | Yes (`packages/headless/lib/utils/rovingTabIndex.ts`) | Yes (in components) | Yes (in components) | Yes (in machines) |
 | Nested traps | No | Yes (FocusScope stacking) | Yes (in components) | Yes (focus-trap utility) |
 | Shadow DOM traversal | No | Yes | Yes | Yes |
 | ARIA attributes provided | No: wiring only | Yes (parts set roles/ids) | Yes | Yes (`connect` getters) |
 | Framework adapters | None needed (plain DOM) | React | React | React, Solid, Vue, Svelte |
 | Works without a framework | Yes | No | No | Partially (utilities, not machines) |
 
-HellaJS is the only entry whose entire behavior surface is the wiring itself: the trap, the dismissal listeners, and the roving group are public functions, not machinery hidden under components. Every call returns a dispose handle that undoes its DOM mutations (`rovingTabIndex` restores original `tabindex` attributes from an init-time snapshot, `trapFocus` refocuses the pre-trap `activeElement`; `packages/headless/lib/rovingTabIndex.ts`, `packages/headless/lib/trapFocus.ts`). The honest gaps: the trap handles only edge wrapping (no nested traps, no shadow DOM traversal), and the default focusable collector excludes `tabindex="-1"` while roving writes `-1` onto inactive items, so tabindex-collected groups need an explicit `selector` (`packages/headless/lib/internal/focusables.ts`, `packages/headless/lib/rovingTabIndex.ts`).
+HellaJS is the only entry whose entire util surface is the wiring itself: the trap, the dismissal listeners, and the roving group are public functions, not machinery hidden under components. Every call returns a dispose handle that undoes its DOM mutations (`rovingTabIndex` restores original `tabindex` attributes from an init-time snapshot, `trapFocus` refocuses the pre-trap `activeElement`; `packages/headless/lib/utils/rovingTabIndex.ts`, `packages/headless/lib/utils/trapFocus.ts`). The honest gaps: the trap handles only edge wrapping (no nested traps, no shadow DOM traversal), and the default focusable collector excludes `tabindex="-1"` while roving writes `-1` onto inactive items, so tabindex-collected groups need an explicit `selector` (`packages/headless/lib/internal/focusables.ts`, `packages/headless/lib/utils/rovingTabIndex.ts`).
 
 ### Notable HellaJS differentiators
 

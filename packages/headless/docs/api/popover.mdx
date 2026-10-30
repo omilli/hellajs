@@ -1,6 +1,6 @@
 # popover
 
-Creates the six popover parts in one call: a toggle trigger, an optional anchor span, the ported content layer, and the structural header, title, and description. The factory closure owns the open state, the exit timing, and the generated content id.
+Creates the six popover components in one call: a toggle trigger, an optional anchor span, the ported content layer, and the structural header, title, and description. The factory closure owns the open state, the exit timing, and the generated content id.
 
 ## Basic Usage
 
@@ -34,7 +34,7 @@ mount(
 // data-state="closed" until its exit animation ends.
 ```
 
-Omitting both `open` and `onOpenChange` keeps the state internal, so the parts work standalone:
+Omitting both `open` and `onOpenChange` keeps the state internal, so the components work standalone:
 
 ```tsx
 const Popover = popover();
@@ -44,17 +44,17 @@ const Popover = popover();
 ## API
 
 ```typescript
-function popover(options?: PopoverOptions): PopoverParts
+function popover(options?: PopoverOptions): PopoverComponents
 ```
 
 - `options.open`: Controlled open-state getter. Passing it makes the popover controlled; omitting it keeps state internal.
 - `options.onOpenChange`: Called on every open-state change, owned toggle and dismissal alike.
 - `options.anchor`: Resolves the positioning anchor; defaults to the `Anchor` node, then the `Trigger` node.
-- **Returns**: The part set, composed as `Popover.Trigger`-style members.
+- **Returns**: The component set, composed as `Popover.Trigger`-style members.
 
-### Parts
+### Components
 
-| Part | Renders |
+| Component | Renders |
 |---|---|
 | `Trigger` | `button` owning the click toggle, `data-state`, `aria-expanded`, `aria-haspopup`, and `aria-controls` |
 | `Anchor` | Bare `span` marking the positioning target when the trigger should not anchor |
@@ -63,7 +63,7 @@ function popover(options?: PopoverOptions): PopoverParts
 | `Title` | Heading `div` carrying `data-slot="popover-title"` |
 | `Description` | Supporting `p` carrying `data-slot="popover-description"` |
 
-Every part spreads `class` and native attributes onto its element; parts own structure, styling stays in the wrapper.
+Every component spreads `class` and native attributes onto its element; components own structure, styling stays in the wrapper.
 
 ### Content props
 
@@ -89,7 +89,7 @@ Flipping to closed starts the exit: the content stays mounted under `data-state=
 
 ### Anchoring and Dismissal
 
-While open, the content is positioned against the anchor through [`anchorPosition`](/reference/headless/anchorposition) (fixed coordinates, collision flipping, repositioning on scroll and resize) and dismissed through [`layerDismissal`](/reference/headless/layerdismissal): Escape and an outside pointerdown close only the top layer, so stacked popovers dismiss one at a time. Focus moves to the content on open; there is no focus trap.
+While open, the content is positioned against the anchor through [`anchorPosition`](/headless/anchorposition) (fixed coordinates, collision flipping, repositioning on scroll and resize) and dismissed through [`layerDismissal`](/headless/layerdismissal): Escape and an outside pointerdown close only the top layer, so stacked popovers dismiss one at a time. Focus moves to the content on open; there is no focus trap.
 
 ## Important Considerations
 

@@ -1,7 +1,7 @@
 import { registry } from "@hellajs/dom";
-import { anchorPosition } from "../anchorPosition";
-import { layerDismissal } from "../layerDismissal";
-import type { AnchorAlign, AnchorSide } from "../types/parts";
+import { anchorPosition } from "../utils/anchorPosition";
+import { layerDismissal } from "../utils/layerDismissal";
+import type { AnchorAlign, AnchorSide } from "../types/components";
 
 /**
  * Options for the anchored-layer engine: the non-modal sibling of `modal` —

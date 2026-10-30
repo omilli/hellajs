@@ -1,7 +1,7 @@
 import { effect, signal } from "@hellajs/core";
 import { Portal, registry } from "@hellajs/dom";
 import type { HellaChild, HellaChildren } from "@hellajs/dom";
-import { modal, onDrag } from "@hellajs/headless";
+import { modal, onDrag } from "@hellajs/headless/utils";
 import type {
   DrawerDirection,
   DrawerOverlayProps,

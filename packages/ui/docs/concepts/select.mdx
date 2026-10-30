@@ -1,10 +1,10 @@
 ## API
 
-The composed `Select` takes its options as data and renders the trigger plus the portaled listbox; the copied file composes the [`select`](/reference/headless/select) parts factory from `@hellajs/headless`, which owns the open state, the positioning, the dismissal, and the listbox keyboard model.
+The composed `Select` takes its options as data and renders the trigger plus the portaled listbox; the copied file composes the [`select`](/headless/select) components factory from `@hellajs/headless`, which owns the open state, the positioning, the dismissal, and the listbox keyboard model.
 
 The select renders only the button and listbox: no hidden native form control, so it submits nothing by itself. Pair it with `native-select` when a form needs a submittable field.
 
-Nine named parts ship beside the default `Select`: `SelectTrigger`, `SelectValue`, `SelectContent`, `SelectGroup`, `SelectItem`, `SelectLabel`, `SelectSeparator`, `SelectScrollUpButton`, and `SelectScrollDownButton`. Manual composition passes state explicitly: hand `SelectContent` a `state` accessor and an `onDismiss` callback (it portals and arms itself), and thread each item its selected state.
+Nine named components ship beside the default `Select`: `SelectTrigger`, `SelectValue`, `SelectContent`, `SelectGroup`, `SelectItem`, `SelectLabel`, `SelectSeparator`, `SelectScrollUpButton`, and `SelectScrollDownButton`. Manual composition passes state explicitly: hand `SelectContent` a `state` accessor and an `onDismiss` callback (it portals and arms itself), and thread each item its selected state.
 
 ### Select
 
@@ -129,15 +129,15 @@ The bottom edge scroll row, rendering a down chevron unless children replace it;
 | `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
-Every part also takes a `class` string, landing last in its style composition.
+Every component also takes a `class` string, landing last in its style composition.
 
 ## Keyboard and Dismissal
 
 The trigger opens on click and on ArrowDown/ArrowUp. Inside the listbox, arrows rove the options with wrap, Home and End jump to the edges, Enter and Space commit the highlighted option, and Tab closes. Typing buffers a typeahead query (reset after 500ms) and highlights the first match: prefix matches win, then a wrapping substring scan. The highlighted option carries `data-highlighted`; the selected option carries `aria-selected="true"`, `data-state="checked"`, and the check icon, and scrolls into view on open.
 
-Dismissal runs through [`layerDismissal`](/reference/headless/layerdismissal): Escape and a pointerdown outside the listbox close it, and focus returns to the trigger. Closing starts the exit - the listbox stays mounted under `data-state="closed"` until its animation ends, with dismissal wiring down while it leaves.
+Dismissal runs through [`layerDismissal`](/headless/layerdismissal): Escape and a pointerdown outside the listbox close it, and focus returns to the trigger. Closing starts the exit - the listbox stays mounted under `data-state="closed"` until its animation ends, with dismissal wiring down while it leaves.
 
-The panel positions itself through [`anchorPosition`](/reference/headless/anchorposition) with `matchAnchorWidth`: the listbox always anchors below the trigger (flipped on viewport collision) and stretches to its width. Scroll buttons render at the listbox edges; they repeat-scroll while hovered and hide at their scroll bounds.
+The panel positions itself through [`anchorPosition`](/headless/anchorposition) with `matchAnchorWidth`: the listbox always anchors below the trigger (flipped on viewport collision) and stretches to its width. Scroll buttons render at the listbox edges; they repeat-scroll while hovered and hide at their scroll bounds.
 
 The clear affordance is pointer-only: it lives inside the trigger button, so it cannot take keyboard focus without nesting interactive content. Keyboard users clear by re-running the composed flow (the empty string is a valid `onValueChange` report) or by pairing with `native-select`.
 

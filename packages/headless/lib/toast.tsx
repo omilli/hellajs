@@ -1,6 +1,6 @@
 import { isFunction, signal } from "@hellajs/core";
 import { ForEach, Portal, $ref } from "@hellajs/dom";
-import { onDrag } from "./onDrag";
+import { onDrag } from "./utils/onDrag";
 import type {
   PromiseMessages,
   ToastApi,
@@ -12,7 +12,7 @@ import type {
   ToastTimer,
   ToastVariant,
   ToasterProps,
-} from "./types/parts";
+} from "./types/components";
 
 /** Cap on simultaneously visible toasts; overflow retires the oldest immediately. */
 const VISIBLE_CAP = 3;

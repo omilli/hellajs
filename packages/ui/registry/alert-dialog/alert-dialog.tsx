@@ -1,7 +1,7 @@
 import { effect, signal } from "@hellajs/core";
 import { Portal } from "@hellajs/dom";
 import type { HellaChild, HellaChildren } from "@hellajs/dom";
-import { modal } from "@hellajs/headless";
+import { modal } from "@hellajs/headless/utils";
 import type {
   AlertDialogOverlayProps,
   AlertDialogPortalProps,

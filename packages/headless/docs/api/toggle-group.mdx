@@ -1,6 +1,6 @@
 # toggle group
 
-Creates the toggle-group parts in one call: a `role="group"` container and its pressed-state items. Single mode keeps one value active and deselects it on re-click; `multiple` toggles membership independently. The `Root` arms arrow-key roving over the items.
+Creates the toggle-group components in one call: a `role="group"` container and its pressed-state items. Single mode keeps one value active and deselects it on re-click; `multiple` toggles membership independently. The `Root` arms arrow-key roving over the items.
 
 ## Basic Usage
 
@@ -31,7 +31,7 @@ mount(
 ## API
 
 ```typescript
-function toggleGroup(options?: ToggleGroupOptions): ToggleGroupParts
+function toggleGroup(options?: ToggleGroupOptions): ToggleGroupComponents
 ```
 
 - `options.multiple`: Independent membership toggles when set; single-value exclusion otherwise.
@@ -40,16 +40,16 @@ function toggleGroup(options?: ToggleGroupOptions): ToggleGroupParts
 - `options.defaultValue`: Seeds the uncontrolled single-mode selection.
 - `options.defaultValues`: Seeds the uncontrolled multiple-mode membership.
 - `options.onValueChange`: Single reports the newly active value (`""` when deselected); multiple reports the full active array.
-- **Returns**: The part set, composed as `Group.Root`-style members.
+- **Returns**: The component set, composed as `Group.Root`-style members.
 
-### Parts
+### Components
 
-| Part | Renders |
+| Component | Renders |
 |---|---|
 | `Root` | `role="group"` container arming arrow-key roving over the items, disposed on unmount |
 | `Item` | Pressed-state `button` with `aria-pressed` and `data-state` (`on` or `off`), defaulting its state and click action from the group |
 
-Every part spreads `class` and native attributes onto its element; parts own structure, styling stays in the wrapper.
+Every component spreads `class` and native attributes onto its element; components own structure, styling stays in the wrapper.
 
 ### Options
 
@@ -80,7 +80,7 @@ Arrow keys (both axes), Home, and End rove focus and tabindex across enabled ite
 
 ### Call the Factory in Component Scope
 
-`toggleGroup()` creates state signals that must dispose with the component that owns it. Mounting the tree unmounts their wiring; module-level calls leak it. Call the factory inside the component that renders the parts.
+`toggleGroup()` creates state signals that must dispose with the component that owns it. Mounting the tree unmounts their wiring; module-level calls leak it. Call the factory inside the component that renders the components.
 
 ### Controlled Getters Notify One Direction
 

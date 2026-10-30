@@ -1,10 +1,10 @@
 ## API
 
-The controller, per-field signals, validation timing, and submit handling live in the [`createForm()`](/reference/headless/createform) factory from `@hellajs/headless`; the copied file re-exports the factory and wraps the headless parts (`FormItem`, `FormLabel`, `FormControl`, `FormDescription`, `FormMessage`) with the styled classes, so behavior upgrades land through the package while the pasted styles stay yours.
+The controller, per-field signals, validation timing, and submit handling live in the [`createForm()`](/headless/createform) factory from `@hellajs/headless`; the copied file re-exports the factory and wraps the headless components (`FormItem`, `FormLabel`, `FormControl`, `FormDescription`, `FormMessage`) with the styled classes, so wiring upgrades land through the package while the pasted styles stay yours.
 
-One `createForm` call drives the whole row: field state flows into each part as explicit props, and the message re-renders as validation runs.
+One `createForm` call drives the whole row: field state flows into each component as explicit props, and the message re-renders as validation runs.
 
-`createForm(initial, options)` seeds one writable signal per field and returns the controller that every part reads through explicit props. Validators are per-field functions that receive the field value and the full values snapshot and return the message string, or null when the value is clean. A field without a validator is always clean.
+`createForm(initial, options)` seeds one writable signal per field and returns the controller that every component reads through explicit props. Validators are per-field functions that receive the field value and the full values snapshot and return the message string, or null when the value is clean. A field without a validator is always clean.
 
 | Call | Validator behavior |
 |------|--------------------|
@@ -71,4 +71,4 @@ The message: renders the first error with `role="alert"` and hides (rather than 
 
 Accepts all native `p` attributes (forwarded to the root element).
 
-Every part also takes a `class` string, landing last in its style composition.
+Every component also takes a `class` string, landing last in its style composition.

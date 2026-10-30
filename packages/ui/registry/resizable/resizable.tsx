@@ -1,5 +1,5 @@
 import { effect, signal } from "@hellajs/core";
-import { onDrag } from "@hellajs/headless";
+import { onDrag } from "@hellajs/headless/utils";
 import type {
   ResizablePanelGroupProps,
   ResizablePanelProps,

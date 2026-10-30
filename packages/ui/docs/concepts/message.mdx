@@ -2,7 +2,7 @@
 
 Pair `MessageContent` with the `bubble` entry's `Bubble` to get the message surface itself; the avatar well takes any small element (an image, an initial).
 
-All six exports are named; each renders its `data-slot`, and the parts coordinate through data attributes rather than context. A footer lifts the avatar 2rem, a ghost-variant bubble (from the bubble entry) removes the header and footer side padding, and end alignment slides every direct content child to the inline end; all three conditions read `data-slot`/`data-align`/`data-variant` ancestors, so the wiring survives re-ordering parts.
+All six exports are named; each renders its `data-slot`, and the components coordinate through data attributes rather than context. A footer lifts the avatar 2rem, a ghost-variant bubble (from the bubble entry) removes the header and footer side padding, and end alignment slides every direct content child to the inline end; all three conditions read `data-slot`/`data-align`/`data-variant` ancestors, so the wiring survives re-ordering components.
 
 ### MessageGroup
 
@@ -23,7 +23,7 @@ The row: a `div` carrying `data-align`, which the descendant conditions read.
 | `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
-`align="end"` flips the row with `flex-row-reverse`, pushes the content column to the inline end, and right-aligns the footer, so sent messages mirror received ones without extra classes on the parts.
+`align="end"` flips the row with `flex-row-reverse`, pushes the content column to the inline end, and right-aligns the footer, so sent messages mirror received ones without extra classes on the components.
 
 ### MessageAvatar
 
@@ -61,4 +61,4 @@ The footer meta row: a `div` carrying `data-slot="message-footer"`, right-aligne
 | `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
-Every part also takes a `class` string, landing last in its style composition.
+Every component also takes a `class` string, landing last in its style composition.

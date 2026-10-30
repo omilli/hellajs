@@ -6,29 +6,29 @@ import {
   flipMulti,
   pressChannel,
 } from "./internal/press";
-import { rovingTabIndex } from "./rovingTabIndex";
+import { rovingTabIndex } from "./utils/rovingTabIndex";
 import type {
   CheckboxIndicatorProps,
   CheckboxOptions,
-  CheckboxParts,
+  CheckboxComponents,
   CheckboxRootProps,
   RadioGroupIndicatorProps,
   RadioGroupItemProps,
   RadioGroupOptions,
-  RadioGroupParts,
+  RadioGroupComponents,
   RadioGroupRootProps,
   SwitchIndicatorProps,
   SwitchOptions,
-  SwitchParts,
+  SwitchComponents,
   SwitchRootProps,
   ToggleGroupItemProps,
   ToggleGroupOptions,
-  ToggleGroupParts,
+  ToggleGroupComponents,
   ToggleGroupRootProps,
   ToggleOptions,
-  ToggleParts,
+  ToggleComponents,
   ToggleRootProps,
-} from "./types/parts";
+} from "./types/components";
 
 /** The check icon (refs/icons/check.svg), created per call so reactive swaps never share nodes between clones. */
 const checkIcon = (): JSX.Element => (
@@ -83,7 +83,7 @@ const circleIcon = (): JSX.Element => (
  * @param options `pressed` accessor + `onPressedChange`; an omitted `pressed` keeps state internal.
  * @returns The part set, composed as `Toggle.Root`-style members.
  */
-export function toggle(options: ToggleOptions = {}): ToggleParts {
+export function toggle(options: ToggleOptions = {}): ToggleComponents {
   const pressed = pressChannel(options.pressed);
   const onPressedChange = options.onPressedChange;
 
@@ -135,7 +135,7 @@ export function toggle(options: ToggleOptions = {}): ToggleParts {
  * @param options `checked`/`indeterminate` accessors + `onCheckedChange`; omitted accessors keep state internal.
  * @returns The part set, composed as `Check.Root`-style members.
  */
-export function checkbox(options: CheckboxOptions = {}): CheckboxParts {
+export function checkbox(options: CheckboxOptions = {}): CheckboxComponents {
   const checked = pressChannel(options.checked);
   const indeterminate = pressChannel(options.indeterminate);
   const onCheckedChange = options.onCheckedChange;
@@ -202,7 +202,7 @@ export function checkbox(options: CheckboxOptions = {}): CheckboxParts {
  * @param options `checked` accessor + `onCheckedChange`; an omitted `checked` keeps state internal.
  * @returns The part set, composed as `Switch.Root`-style members.
  */
-export function toggleSwitch(options: SwitchOptions = {}): SwitchParts {
+export function toggleSwitch(options: SwitchOptions = {}): SwitchComponents {
   const checked = pressChannel(options.checked);
   const onCheckedChange = options.onCheckedChange;
 
@@ -268,7 +268,7 @@ export function toggleSwitch(options: SwitchOptions = {}): SwitchParts {
  * @param options `multiple` mode, controlled `value`/`values`, uncontrolled `defaultValue`/`defaultValues` seeds, and `onValueChange`; omitted control keeps state internal.
  * @returns The part set, composed as `Group.Root`-style members.
  */
-export function toggleGroup(options: ToggleGroupOptions = {}): ToggleGroupParts {
+export function toggleGroup(options: ToggleGroupOptions = {}): ToggleGroupComponents {
   const multiple = options.multiple === true;
   const onValueChange = options.onValueChange;
   const internalSingle = signal(options.defaultValue ?? "");
@@ -384,7 +384,7 @@ export function toggleGroup(options: ToggleGroupOptions = {}): ToggleGroupParts 
  * @param options controlled `value`, `orientation` (renders `aria-orientation` and scopes the arrow axis), `name`, and `onValueChange`; an omitted `value` keeps state internal.
  * @returns The part set, composed as `Radio.Root`-style members.
  */
-export function radioGroup(options: RadioGroupOptions = {}): RadioGroupParts {
+export function radioGroup(options: RadioGroupOptions = {}): RadioGroupComponents {
   const value = options.value;
   const onValueChange = options.onValueChange;
   const internal = signal("");

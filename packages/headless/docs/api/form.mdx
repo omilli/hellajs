@@ -1,6 +1,6 @@
 # createForm
 
-Creates a signals-native form controller in one call: one writable signal per field, the errors, touched, and dirty state, and the submit path. The form parts read the controller through explicit props, so the wiring stays visible at the composition site.
+Creates a signals-native form controller in one call: one writable signal per field, the errors, touched, and dirty state, and the submit path. The form components read the controller through explicit props, so the wiring stays visible at the composition site.
 
 ## Basic Usage
 
@@ -58,7 +58,7 @@ function createForm<T extends object>(initial: T, options?: FormOptions<T>): For
 
 ### Controller
 
-| Member | Behavior |
+| Member | Util |
 |---|---|
 | `values` | One writable signal per field |
 | `errors` | Current validation messages keyed by field |
@@ -70,9 +70,9 @@ function createForm<T extends object>(initial: T, options?: FormOptions<T>): For
 | `reset()` | Restores every field to its initial value and clears errors, touched, and dirty |
 | `handleSubmit(onValid)` | Validates all and marks all touched, preventDefaults the optional event, and calls `onValid(values)` only when clean |
 
-### Parts
+### Components
 
-| Part | Renders |
+| Component | Renders |
 |---|---|
 | `FormItem` | The field's grouping container with `data-error` from the error flag |
 | `FormLabel` | The label with `for`, `data-required`, and the error flag as `data-error` plus `aria-invalid` |
@@ -80,7 +80,7 @@ function createForm<T extends object>(initial: T, options?: FormOptions<T>): For
 | `FormDescription` | The helper text carrying the `id` the control's `describedBy` points at |
 | `FormMessage` | The `role="alert"` message rendering the first error; hidden while the list is empty and no fallback children are given |
 
-Every part spreads `class` and native attributes onto its element; parts own structure, styling stays in the wrapper.
+Every component spreads `class` and native attributes onto its element; components own structure, styling stays in the wrapper.
 
 ## Key Concepts
 
@@ -90,14 +90,14 @@ Validators run on three triggers: `blur` marks the field touched and validates i
 
 ### Error Flags Accept Accessors
 
-The parts take their error flags as plain booleans or reactive accessors, so a composed form drives `data-error` and `aria-invalid` live from the controller's signals: derive the flag once (`const emailInvalid = () => form.errors().email != null`) and pass it to every part that mirrors it.
+The components take their error flags as plain booleans or reactive accessors, so a composed form drives `data-error` and `aria-invalid` live from the controller's signals: derive the flag once (`const emailInvalid = () => form.errors().email != null`) and pass it to every component that mirrors it.
 
 ## Important Considerations
 
 ### Call createForm in Component Scope
 
-`createForm()` creates the field signals that must dispose with the component that owns them. A module-level call shares one form instance across every render and leaks the signals. Call the factory inside the component that renders the parts.
+`createForm()` creates the field signals that must dispose with the component that owns them. A module-level call shares one form instance across every render and leaks the signals. Call the factory inside the component that renders the components.
 
 ### Thread the Controller Through Props
 
-There is no context provider: every part names its field's state explicitly, so the label's `for`, the control's `describedBy`, and the message's `errors` accessor each read from the same controller at the composition site.
+There is no context provider: every component names its field's state explicitly, so the label's `for`, the control's `describedBy`, and the message's `errors` accessor each read from the same controller at the composition site.

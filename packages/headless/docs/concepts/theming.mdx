@@ -1,0 +1,42 @@
+# Theming
+
+Headless renders structure, never styles: there is no theme object, no variant prop, and no CSS shipped from this package. Styling is bring-your-own, and two hooks carry it.
+
+## The Class Hook
+
+Every factory member accepts a `class` string, landed as the member's own class attribute:
+
+```tsx
+import { mount } from "@hellajs/dom";
+import { popover } from "@hellajs/headless";
+
+const Popover = popover();
+
+mount(
+  <div>
+    <Popover.Trigger class="trigger">Settings</Popover.Trigger>
+    <Popover.Content class="panel" side="bottom">
+      <Popover.Title class="panel-title">Dimensions</Popover.Title>
+    </Popover.Content>
+  </div>,
+  "#app",
+);
+```
+
+The `class` prop composes with nothing: the factory sets no classes of its own, so the string you pass is the whole class list. Style those classes with whatever your project uses: plain CSS, [`@hellajs/css`](/reference/css) (`css()` for a class recipe, `style()` for a scoped class), or a utility framework.
+
+## State and Slot Attributes
+
+Structure you did not write still needs selecting: members render `data-state="open"`/`"closed"` on their state-carrying roots and `data-slot="<member>"` names, so styles can target the wiring without extra props:
+
+```css
+.panel[data-state="open"] {
+  animation: fade-in 120ms ease-out;
+}
+
+.panel[data-state="closed"] {
+  animation: fade-out 120ms ease-in;
+}
+```
+
+That is the whole contract. The [ui registry](/ui) is this page at scale: each registry component is a styled wrapper that calls one factory, passes classes through these hooks, and owns nothing else.

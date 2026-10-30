@@ -1,6 +1,6 @@
 # switch
 
-Creates the switch parts in one call: a `role="switch"` button and its moving thumb. The closure owns the checked state; clicks flip it and report through `onCheckedChange`, and Space toggles through native button activation.
+Creates the switch components in one call: a `role="switch"` button and its moving thumb. The closure owns the checked state; clicks flip it and report through `onCheckedChange`, and Space toggles through native button activation.
 
 ## Basic Usage
 
@@ -29,23 +29,23 @@ mount(
 ## API
 
 ```typescript
-function toggleSwitch(options?: SwitchOptions): SwitchParts
+function toggleSwitch(options?: SwitchOptions): SwitchComponents
 ```
 
 The factory is named `toggleSwitch` because `switch` is a reserved word and cannot be called bare. The component it builds is the switch.
 
 - `options.checked`: Controlled checked state. Passing it makes the switch controlled; omitting it keeps state internal.
 - `options.onCheckedChange`: Called with every factory-driven flip; a controlled accessor's external change notifies no one.
-- **Returns**: The part set, composed as `Switch.Root`-style members.
+- **Returns**: The component set, composed as `Switch.Root`-style members.
 
-### Parts
+### Components
 
-| Part | Renders |
+| Component | Renders |
 |---|---|
 | `Root` | `role="switch"` button with `aria-checked`, `data-state` (`checked` or `unchecked`), and disabled gating |
 | `Indicator` | The thumb span inside `Root`, tracking `data-state` for the translate styling |
 
-Every part spreads `class` and native attributes onto its element; parts own structure, styling stays in the wrapper.
+Every component spreads `class` and native attributes onto its element; components own structure, styling stays in the wrapper.
 
 ### Options
 
@@ -68,7 +68,7 @@ Every part spreads `class` and native attributes onto its element; parts own str
 
 ### Call the Factory in Component Scope
 
-`toggleSwitch()` creates a state signal that must dispose with the component that owns it. Mounting the tree unmounts the signal's wiring; module-level calls leak it. Call the factory inside the component that renders the parts.
+`toggleSwitch()` creates a state signal that must dispose with the component that owns it. Mounting the tree unmounts the signal's wiring; module-level calls leak it. Call the factory inside the component that renders the components.
 
 ### Keyboard Activation Is Native
 

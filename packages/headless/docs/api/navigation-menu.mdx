@@ -1,6 +1,6 @@
 # navigationMenu
 
-Creates the navigation menu parts in one call: the bar root, its list of items, the viewport-shared panels, and the moving indicator. The closure owns the open-value store; a value-carrying trigger announces its clicks, the root mirrors the announcement into the store, and the matching panel portals into the shared viewport.
+Creates the navigation menu components in one call: the bar root, its list of items, the viewport-shared panels, and the moving indicator. The closure owns the open-value store; a value-carrying trigger announces its clicks, the root mirrors the announcement into the store, and the matching panel portals into the shared viewport.
 
 ## Basic Usage
 
@@ -44,17 +44,17 @@ mount(
 ## API
 
 ```typescript
-function navigationMenu(options?: NavigationMenuOptions): NavigationMenuParts
+function navigationMenu(options?: NavigationMenuOptions): NavigationMenuComponents
 ```
 
 - `options.value`: Controlled id of the open panel (`""` when closed). When given, the factory never writes its internal signal and `onValueChange` reports the requested value.
 - `options.onValueChange`: Called with every store write mirrored from a trigger announcement.
 - `options.viewport`: Whether the root renders the shared viewport slot as its last child. Default `true`; set `false` to compose a `Viewport` manually.
-- **Returns**: The part set, composed as `Nav.Root`-style members.
+- **Returns**: The component set, composed as `Nav.Root`-style members.
 
-### Parts
+### Components
 
-| Part | Renders |
+| Component | Renders |
 |---|---|
 | `Root` | The bar root (`data-slot="navigation-menu"`) that mirrors trigger announcements into the store and appends the shared viewport slot as its last child |
 | `List` | The `ul` list row (`data-slot="navigation-menu-list"`) wrapping the items |
@@ -65,7 +65,7 @@ function navigationMenu(options?: NavigationMenuOptions): NavigationMenuParts
 | `Viewport` | The shared slot (`data-slot="navigation-menu-viewport"`) whose `data-state` tracks the store; every `Content` portals into it |
 | `Indicator` | The moving underline that measures the active trigger against the bar and translates under it |
 
-Every part spreads `class` and native attributes onto its element; parts own structure, styling stays in the wrapper.
+Every component spreads `class` and native attributes onto its element; components own structure, styling stays in the wrapper.
 
 ### Options
 
@@ -79,7 +79,7 @@ Every part spreads `class` and native attributes onto its element; parts own str
 
 ### One Store, Announced Clicks
 
-The trigger does not write the store: a trigger carrying `value` announces the requested state on the `hella:navigation-menu-activate` document event, and every mounted root mirrors the announcement into its own store. Opening one panel closes the others (one open at a time), and a second click on the open trigger closes the bar. The announcement stream is also what the indicator follows, so parts keep coordinating even when they render in different scopes.
+The trigger does not write the store: a trigger carrying `value` announces the requested state on the `hella:navigation-menu-activate` document event, and every mounted root mirrors the announcement into its own store. Opening one panel closes the others (one open at a time), and a second click on the open trigger closes the bar. The announcement stream is also what the indicator follows, so components keep coordinating even when they render in different scopes.
 
 ### Content Renders Into the Shared Viewport
 
@@ -91,13 +91,13 @@ Closing never unmounts immediately: the panel stays mounted under `data-state="c
 
 ### Overrides for Manual Composition
 
-`Trigger` takes `active` and `onActivate` to compose against external state; `Content` mirrors with `active`; `Viewport` and `Indicator` take `active`, and the `Indicator` takes an `anchor` resolving the trigger to sit under. Without overrides, each part defaults from the factory's store.
+`Trigger` takes `active` and `onActivate` to compose against external state; `Content` mirrors with `active`; `Viewport` and `Indicator` take `active`, and the `Indicator` takes an `anchor` resolving the trigger to sit under. Without overrides, each component defaults from the factory's store.
 
 ## Important Considerations
 
 ### Call the Factory in Component Scope
 
-`navigationMenu()` creates the state signals that must dispose with the component that owns it. `Root` drops its announcement listener and `Indicator` its announcement and resize wiring at unmount; a module-level factory call leaks them. Call the factory inside the component that renders the parts.
+`navigationMenu()` creates the state signals that must dispose with the component that owns it. `Root` drops its announcement listener and `Indicator` its announcement and resize wiring at unmount; a module-level factory call leaks them. Call the factory inside the component that renders the components.
 
 ### Values Are Global Trigger Names
 

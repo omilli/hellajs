@@ -10,7 +10,7 @@ import { cn } from "./cn.js";
 /**
  * Renders a layout-neutral wrapper carrying the dir attribute. Upstream is a
  * context-only provider with no DOM node; hella has no context primitive, and
- * the dom behaviors read `getComputedStyle(anchor).direction`, so the
+ * the dom wiring reads `getComputedStyle(anchor).direction`, so the
  * attribute IS the mechanism. display: contents keeps the wrapper out of
  * layout so compositions render as if the node were not there.
  */

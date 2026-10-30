@@ -4,7 +4,7 @@ Each trigger and content takes its active state as an accessor, and the owner si
 
 Triggers carrying a `value` announce clicks on a document-level event, so the root's store and the appended viewport follow without extra wiring: the store is a mirror, never a second state owner. Rendering the indicator with no `active` or `anchor` props joins the same announcement stream and follows the active trigger automatically.
 
-Seven named parts ship beside the default `NavigationMenu`: `NavigationMenuList`, `NavigationMenuItem`, `NavigationMenuTrigger`, `NavigationMenuContent`, `NavigationMenuLink`, `NavigationMenuViewport`, and `NavigationMenuIndicator`.
+Seven named components ship beside the default `NavigationMenu`: `NavigationMenuList`, `NavigationMenuItem`, `NavigationMenuTrigger`, `NavigationMenuContent`, `NavigationMenuLink`, `NavigationMenuViewport`, and `NavigationMenuIndicator`.
 
 ### NavigationMenu
 
@@ -98,7 +98,7 @@ The underline diamond; measures the active trigger and transitions between posit
 | `anchor` | `() => Element \| undefined` | The announced trigger |
 Accepts all native `div` attributes (forwarded to the root element).
 
-Every part also takes a `class` string, landing last in its style composition.
+Every component also takes a `class` string, landing last in its style composition.
 
 ## Viewport and Indicator
 

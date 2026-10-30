@@ -1,6 +1,6 @@
 import { effect, isBoolean, isFunction, isString, signal } from "@hellajs/core";
 import { ForEach, Portal } from "@hellajs/dom";
-import { menuTypeahead } from "./menuTypeahead";
+import { menuTypeahead } from "./utils/menuTypeahead";
 import { anchoredLayer } from "./internal/anchoredLayer";
 import type {
   MenuCheckboxItemProps,
@@ -10,20 +10,20 @@ import type {
   MenuLabelProps,
   MenuOptions,
   MenuPartProps,
-  MenuParts,
+  MenuComponents,
   MenuRadioGroupProps,
   MenuRadioItemProps,
   MenuShortcutProps,
   MenuSubContentProps,
   MenuSubOptions,
-  MenuSubParts,
+  MenuSubComponents,
   MenuSubTriggerProps,
   MenuTriggerProps,
   MenubarBarProps,
   MenubarMenuOptions,
   MenubarOptions,
-  MenubarParts,
-} from "./types/parts";
+  MenubarComponents,
+} from "./types/components";
 
 /** Document-level activation event: item selection closes every open menu layer (Radix close-on-select). */
 const SELECT_EVENT = "hella:menu-select";
@@ -213,7 +213,7 @@ function menuOpenState(options: { open?: () => boolean; onOpenChange?: (open: bo
 }
 
 /** The presentational and selectable rows, shared verbatim by menus, bar menus, and submenus. Item selection closes every open layer unless the item opts out. */
-function makeItemParts() {
+function makeItemComponents() {
   const Group = (props: MenuPartProps): JSX.Element => {
     const { children, class: cls, ...attrs } = props;
     return (
@@ -389,10 +389,10 @@ function makeItemParts() {
   return { Group, Item, CheckboxItem, RadioGroup, RadioItem, Label, Separator, Shortcut };
 }
 
-type ItemParts = ReturnType<typeof makeItemParts>;
+type ItemComponents = ReturnType<typeof makeItemComponents>;
 
 /** A nested menu factory: its own controlled-or-internal open state, hover-intent trigger, and a content layer anchored to its own trigger on the shared layer stack. */
-function makeSubParts(items: ItemParts, options: MenuSubOptions = {}): MenuSubParts {
+function makeSubComponents(items: ItemComponents, options: MenuSubOptions = {}): MenuSubComponents {
   const s = menuOpenState(options);
   let triggerNode: HTMLElement | undefined;
   let openTimer: ReturnType<typeof setTimeout> | null = null;
@@ -572,10 +572,10 @@ let menuCount = 0;
  * @param options `open` getter + `onOpenChange`, plus the trigger model — `"click"` (default) or `"contextmenu"` for pointer-anchored menus.
  * @returns The part set, composed as `Menu.Trigger`-style members.
  */
-export function menu(options: MenuOptions = {}): MenuParts {
+export function menu(options: MenuOptions = {}): MenuComponents {
   const mode = options.trigger ?? "click";
   const s = menuOpenState(options);
-  const items = makeItemParts();
+  const items = makeItemComponents();
   const contentId = `hella-menu-content-${++menuCount}`;
   let triggerNode: HTMLElement | undefined;
   let anchorNode: HTMLElement | undefined;
@@ -761,7 +761,7 @@ export function menu(options: MenuOptions = {}): MenuParts {
     Trigger: mode === "contextmenu" ? ContextTrigger : Trigger,
     Content,
     ...items,
-    sub: (subOptions?: MenuSubOptions) => makeSubParts(items, subOptions),
+    sub: (subOptions?: MenuSubOptions) => makeSubComponents(items, subOptions),
   };
 }
 
@@ -790,7 +790,7 @@ let menubarMenuCount = 0;
  * @param options `value` getter + `onValueChange`; an omitted `value` keeps the bar's open-menu id internal.
  * @returns The bar root and the coordinated menu factory.
  */
-export function menubar(options: MenubarOptions = {}): MenubarParts {
+export function menubar(options: MenubarOptions = {}): MenubarComponents {
   const value = options.value;
   const internal = signal("");
   const active = (): string => (value !== undefined ? value() : internal());
@@ -862,9 +862,9 @@ export function menubar(options: MenubarOptions = {}): MenubarParts {
     );
   };
 
-  const menu = (menuOptions: MenubarMenuOptions = {}): MenuParts => {
+  const menu = (menuOptions: MenubarMenuOptions = {}): MenuComponents => {
     const s = menuOpenState(menuOptions);
-    const items = makeItemParts();
+    const items = makeItemComponents();
     const menuId = menuOptions.value ?? `hella-menubar-menu-${++menubarMenuCount}`;
     const contentId = `${menuId}-content`;
     let triggerNode: HTMLElement | undefined;
@@ -1036,7 +1036,7 @@ export function menubar(options: MenubarOptions = {}): MenubarParts {
       Trigger,
       Content,
       ...items,
-      sub: (subOptions?: MenuSubOptions) => makeSubParts(items, subOptions),
+      sub: (subOptions?: MenuSubOptions) => makeSubComponents(items, subOptions),
     };
   };
 

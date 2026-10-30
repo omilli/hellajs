@@ -4,9 +4,9 @@ The `Menubar` root renders the `role="menubar"` bar and owns which menu is open:
 
 The bar and its menus coordinate through a document-level announcement: opening a menu announces its id, siblings close on a foreign announcement (the second trigger click closes the first menu), and the bar mirrors the announcement into its value store.
 
-The content anchors against its trigger (bottom, start aligned, 8px gap, -4px cross-axis shift) and dismisses through [`layerDismissal`](/reference/headless/layerdismissal): Escape and an outside pointerdown close the top layer, item activation closes every open layer, and focus returns to the trigger.
+The content anchors against its trigger (bottom, start aligned, 8px gap, -4px cross-axis shift) and dismisses through [`layerDismissal`](/headless/layerdismissal): Escape and an outside pointerdown close the top layer, item activation closes every open layer, and focus returns to the trigger.
 
-Fourteen named parts ship beside the default `Menubar`: `MenubarMenu`, `MenubarTrigger`, `MenubarGroup`, `MenubarContent`, `MenubarItem`, `MenubarCheckboxItem`, `MenubarRadioGroup`, `MenubarRadioItem`, `MenubarLabel`, `MenubarSeparator`, `MenubarShortcut`, `MenubarSub`, `MenubarSubTrigger`, and `MenubarSubContent`. The item parts take the same explicit-state props as their dropdown-menu counterparts: the checkbox item takes a `checked` accessor, the radio group is items-driven, and each sub owns its own open signal with hover-intent timing.
+Fourteen named components ship beside the default `Menubar`: `MenubarMenu`, `MenubarTrigger`, `MenubarGroup`, `MenubarContent`, `MenubarItem`, `MenubarCheckboxItem`, `MenubarRadioGroup`, `MenubarRadioItem`, `MenubarLabel`, `MenubarSeparator`, `MenubarShortcut`, `MenubarSub`, `MenubarSubTrigger`, and `MenubarSubContent`. The item components take the same explicit-state props as their dropdown-menu counterparts: the checkbox item takes a `checked` accessor, the radio group is items-driven, and each sub owns its own open signal with hover-intent timing.
 
 ### Menubar
 
@@ -85,7 +85,7 @@ A `role="menuitem"` row; activation closes every open layer.
 | `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
-A user `on:click` chains with the owned close (it fires before the close-all activation event); `destructive` renders the destructive `data-variant` treatment; `inset` renders `data-inset="true"`; `disabled` renders `data-disabled` plus `aria-disabled` and blocks the user's `on:click` and the close; `shortcut` renders as a trailing shortcut span (`data-slot="menu-shortcut"`, styled by the item's descendant rules); the standalone `MenubarShortcut` part stays available for manual composition.
+A user `on:click` chains with the owned close (it fires before the close-all activation event); `destructive` renders the destructive `data-variant` treatment; `inset` renders `data-inset="true"`; `disabled` renders `data-disabled` plus `aria-disabled` and blocks the user's `on:click` and the close; `shortcut` renders as a trailing shortcut span (`data-slot="menu-shortcut"`, styled by the item's descendant rules); the standalone `MenubarShortcut` component stays available for manual composition.
 
 ### MenubarCheckboxItem
 
@@ -190,7 +190,7 @@ The `role="menu"` sub-surface, anchored against its sub-trigger.
 | `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
-Every part also takes a `class` string, landing last in its style composition. Menus keep their own open state, so a menu also composes standalone through `MenubarMenu` with explicit `open` and `onOpenChange` props, and the item parts wire manually exactly as in the dropdown-menu entry.
+Every component also takes a `class` string, landing last in its style composition. Menus keep their own open state, so a menu also composes standalone through `MenubarMenu` with explicit `open` and `onOpenChange` props, and the item components wire manually exactly as in the dropdown-menu entry.
 
 ## Keyboard Interaction
 

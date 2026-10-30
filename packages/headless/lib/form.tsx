@@ -8,7 +8,7 @@ import type {
   FormLabelProps,
   FormMessageProps,
   FormOptions,
-} from "./types/parts";
+} from "./types/components";
 
 /**
  * Creates a signals-native form controller: one writable signal per field,

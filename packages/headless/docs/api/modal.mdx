@@ -7,7 +7,7 @@ Arm a modal panel in one call: focus trap, Escape and outside dismissal, and the
 ```jsx
 import { signal } from "@hellajs/core";
 import { mount } from "@hellajs/dom";
-import { modal } from "@hellajs/headless";
+import { modal } from "@hellajs/headless/utils";
 
 const open = signal(false);
 
@@ -60,7 +60,7 @@ The arms split by lifetime, which is what makes reopen work without a remount. T
 
 ### Automatic, Node-Scoped Disposal
 
-The wiring registers on the element, not in your code. When the node leaves the DOM, the armed handlers and the exit listener are torn down with it. That is the difference from the dispose-handle behaviors: no `cleanup` array, no `hook:beforeDestroy` drain.
+The wiring registers on the element, not in your code. When the node leaves the DOM, the armed handlers and the exit listener are torn down with it. That is the difference from the dispose-handle utils: no `cleanup` array, no `hook:beforeDestroy` drain.
 
 ### Exit Notification
 

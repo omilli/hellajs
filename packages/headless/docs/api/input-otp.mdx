@@ -1,6 +1,6 @@
 # inputOtp
 
-Creates the one-time-code parts in one call: the slot row, its display slots, and the separator. The closure owns the code value; one transparent input overlays the slots and keeps native caret, selection, and paste working while the slots mirror the code.
+Creates the one-time-code components in one call: the slot row, its display slots, and the separator. The closure owns the code value; one transparent input overlays the slots and keeps native caret, selection, and paste working while the slots mirror the code.
 
 ## Basic Usage
 
@@ -38,7 +38,7 @@ mount(
 ## API
 
 ```typescript
-function inputOtp(options?: InputOtpOptions): InputOtpParts
+function inputOtp(options?: InputOtpOptions): InputOtpComponents
 ```
 
 - `options.maxLength`: Number of slots; fixed after mount. Default `6`.
@@ -48,18 +48,18 @@ function inputOtp(options?: InputOtpOptions): InputOtpParts
 - `options.pattern`: Optional regex mask; a candidate the pattern rejects is never accepted.
 - `options.autofocus`: Focuses the hidden control input on mount.
 - `options.disabled`: Blocks editing and drops the root's text cursor.
-- **Returns**: The part set, composed as `Otp.Root`-style members.
+- **Returns**: The component set, composed as `Otp.Root`-style members.
 
-### Parts
+### Components
 
-| Part | Renders |
+| Component | Renders |
 |---|---|
 | `Root` | The relative root hosting the transparent control input; wires every `Slot`'s character, ring, and caret after mount |
 | `Group` | The slot-grouping container |
 | `Slot` | One display slot keyed by `index`: the root mirrors its character and active/caret state into it |
 | `Separator` | The `role="separator"` divider rendering the default minus icon |
 
-Every part spreads `class` and native attributes onto its element; parts own structure, styling stays in the wrapper. `Root` takes an `inputClass` hook for the control input's hiding and selection styling, and `Slot` takes `caretWrapClass` and `caretClass` hooks for the blinking caret.
+Every component spreads `class` and native attributes onto its element; components own structure, styling stays in the wrapper. `Root` takes an `inputClass` hook for the control input's hiding and selection styling, and `Slot` takes `caretWrapClass` and `caretClass` hooks for the blinking caret.
 
 ### Options
 
@@ -91,7 +91,7 @@ A static `value` string seeds the internal state. An accessor makes the factory 
 
 ### Call the Factory in Component Scope
 
-`inputOtp()` creates the state signals that must dispose with the component that owns them. `Root` drains the selection and mirror wiring when it unmounts; a module-level factory call leaks the signals. Call the factory inside the component that renders the parts.
+`inputOtp()` creates the state signals that must dispose with the component that owns them. `Root` drains the selection and mirror wiring when it unmounts; a module-level factory call leaks the signals. Call the factory inside the component that renders the components.
 
 ### Slots Wire From the Root
 

@@ -29,7 +29,7 @@ Accepts all native `button` attributes (forwarded to the root element).
 
 ### AlertDialogPortal
 
-Wraps children in a `Portal to="body"` for compositions that want the named part.
+Wraps children in a `Portal to="body"` for compositions that want the named component.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
@@ -129,7 +129,7 @@ The dismiss button: a composed Button calling `onClose` when clicked.
 | `children` | `HellaChildren` | `-` |
 Accepts all native `button` attributes (forwarded to the root element; a user `on:click` chains with the owned dismiss).
 
-Every part also takes a `class` string, landing last in its style composition. The header, footer, title, and media parts follow the panel's `data-size`: `"default"` left-aligns the text from wide screens up, `"sm"` keeps everything centered.
+Every component also takes a `class` string, landing last in its style composition. The header, footer, title, and media components follow the panel's `data-size`: `"default"` left-aligns the text from wide screens up, `"sm"` keeps everything centered.
 
 ## No Outside Dismissal
 
