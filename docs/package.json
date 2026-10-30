@@ -14,7 +14,7 @@
     "@iconify-json/ph": "^1.2.2",
     "@iconify-json/simple-icons": "^1.2.67",
     "@iconify/iconify": "^3.1.1",
-    "astro": "7.2.0",
+    "astro": "^7.4.4",
     "astro-icon": "^1.1.5",
     "astro-pagefind": "^2.0.1",
     "typeit": "^8.8.7"
