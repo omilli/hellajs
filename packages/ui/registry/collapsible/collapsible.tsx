@@ -1,4 +1,4 @@
-import { signal } from "@hellajs/core";
+import { collapsible } from "@hellajs/headless";
 import type {
   CollapsibleProps,
   CollapsibleTriggerProps,
@@ -12,7 +12,28 @@ declare const icon: string;
 declare const trigger: string;
 // @hella:end
 
-let collapsibleCount = 0;
+const ChevronIcon = (): JSX.Element => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+    data-slot="collapsible-icon"
+    class={
+      // @hella:compose
+      [icon]
+      // @hella:end
+    }
+  >
+    <path d="m6 9 6 6 6-6" />
+  </svg>
+);
 
 export function CollapsibleTrigger({
   active,
@@ -22,61 +43,35 @@ export function CollapsibleTrigger({
   class: cls,
   ...attrs
 }: CollapsibleTriggerProps): JSX.Element {
+  const { Trigger } = collapsible();
   return (
-    <button
-      type="button"
-      data-slot="collapsible-trigger"
-      aria-expanded={active?.() ? "true" : "false"}
-      data-state={active?.() ? "open" : "closed"}
+    <Trigger
+      active={active}
+      onToggle={onToggle}
       class={
         // @hella:compose
         [trigger, cls]
         // @hella:end
       }
-      on:click={function (e) {
-        userClick?.call(this, e);
-        onToggle?.();
-      }}
+      on:click={userClick}
       {...attrs}
     >
       {children}
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        aria-hidden="true"
-        data-slot="collapsible-icon"
-        class={
-          // @hella:compose
-          [icon]
-          // @hella:end
-        }
-      >
-        <path d="m6 9 6 6 6-6" />
-      </svg>
-    </button>
+      <ChevronIcon />
+    </Trigger>
   );
 }
 
 export function CollapsibleContent({
   active,
-  id,
   children,
   class: cls,
   ...attrs
 }: CollapsibleContentProps): JSX.Element {
+  const { Content } = collapsible();
   return (
-    <div
-      role="region"
-      data-slot="collapsible-content"
-      id={id}
-      data-state={active?.() ? "open" : "closed"}
+    <Content
+      active={active}
       class={
         // @hella:compose
         [content, cls]
@@ -93,7 +88,7 @@ export function CollapsibleContent({
       >
         {children}
       </div>
-    </div>
+    </Content>
   );
 }
 
@@ -106,20 +101,12 @@ export function Collapsible({
   class: cls,
   ...attrs
 }: CollapsibleProps): JSX.Element {
-  const internal = signal(defaultOpen ?? false);
-  const active = (): boolean => (open !== undefined ? open() : internal());
-  const contentId = `hella-collapsible-content-${++collapsibleCount}`;
-
-  const toggle = (): void => {
-    const next = !active();
-    if (open === undefined) internal(next);
-    onOpenChange?.(next);
-  };
+  const { Trigger, Content, isOpen } = collapsible({ open, defaultOpen, onOpenChange });
 
   return (
     <div
       data-slot="collapsible"
-      data-state={active() ? "open" : "closed"}
+      data-state={isOpen() ? "open" : "closed"}
       class={
         // @hella:compose
         [cls]
@@ -127,13 +114,27 @@ export function Collapsible({
       }
       {...attrs}
     >
-      <CollapsibleTrigger
-        active={active}
-        onToggle={toggle}
-        aria-controls={contentId}
-        children={triggerSlot}
-      />
-      <CollapsibleContent id={contentId} active={active} children={contentSlot} />
+      <Trigger
+        class={
+          // @hella:compose
+          [trigger]
+          // @hella:end
+        }
+      >
+        {triggerSlot}
+        <ChevronIcon />
+      </Trigger>
+      <Content>
+        <div
+          class={
+            // @hella:compose
+            [contentInner]
+            // @hella:end
+          }
+        >
+          {contentSlot}
+        </div>
+      </Content>
     </div>
   );
 }

@@ -1,0 +1,99 @@
+# accordion
+
+Creates the accordion components in one call: the roving container, its value-keyed rows, triggers, and regions. The closure owns the open values; single mode keeps at most one item open, and the arrow keys move focus between triggers.
+
+## Basic Usage
+
+```tsx
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+import { accordion } from "@hellajs/headless";
+
+const value = signal("a");
+
+const Acc = accordion({
+  type: "single",
+  collapsible: true,
+  value: () => value(),
+  onValueChange: (next) => value(next),
+});
+
+mount(
+  <Acc.Root>
+    <Acc.Item value="a">
+      <Acc.Trigger value="a">Shipping</Acc.Trigger>
+      <Acc.Content value="a">Ships in two days.</Acc.Content>
+    </Acc.Item>
+    <Acc.Item value="b">
+      <Acc.Trigger value="b">Returns</Acc.Trigger>
+      <Acc.Content value="b">Thirty days, no questions asked.</Acc.Content>
+    </Acc.Item>
+  </Acc.Root>,
+  "#app",
+);
+// Clicking a trigger toggles its section; ArrowDown and ArrowUp move focus
+// between triggers, Home and End jump to the ends. Focus never toggles.
+```
+
+## API
+
+```typescript
+function accordion(options?: AccordionOptions): AccordionComponents
+```
+
+- `options.type`: `"single"` keeps at most one item open (`collapsible` gates the last close); `"multiple"` toggles freely. Default `"single"`.
+- `options.collapsible`: Single mode only: may the last open item close. Default `false`.
+- `options.value`: Controlled open values. When given, the factory never writes its internal set and `onValueChange` reports the requested change; a lone string reads as the one open value.
+- `options.defaultValue`: Seeds the uncontrolled open values; a single string opens that item, a list opens each, and single mode clamps a multi-value seed to the first. Default closed.
+- `options.onValueChange`: Called with every factory-driven change: single mode reports the one open value (`""` when none), multiple mode reports the membership array.
+- **Returns**: The component set, composed as `Acc.Root`-style members.
+
+### Components
+
+| Component | Renders |
+|---|---|
+| `Root` | The container: arms arrow/Home/End roving focus over the trigger buttons (focus never toggles) and drains the wiring at unmount |
+| `Item` | The row wrapper carrying `data-value` and the open `data-state` |
+| `Trigger` | The toggle button carrying the `hella-accordion-trigger-<value>` id, `aria-expanded`, `aria-controls`, and `data-state`; disabled triggers render `aria-disabled` and `disabled`, drop out of the arrow walk, and block clicks |
+| `Content` | The `role="region"` body for a value: the `hella-accordion-content-<value>` id, `aria-labelledby` the owning trigger; stays mounted under `data-state` so CSS animates the collapse |
+| `isOpen` | The open lookup for a value; the reader a composing root mirrors its own state from |
+
+Every component spreads `class` and native attributes onto its element; components own structure, styling stays in the wrapper.
+
+### Options
+
+| Option | Type | Default |
+|---|---|---|
+| `type` | `"single" \| "multiple"` | `"single"` |
+| `collapsible` | `boolean` | `false` |
+| `value` | `() => string \| string[]` | internal set |
+| `defaultValue` | `string \| string[]` | `-` |
+| `onValueChange` | `(value: string \| string[]) => void` | `-` |
+
+## Key Concepts
+
+### Single and Multiple Modes
+
+Single mode keeps at most one item open: opening an item closes the previous one through a single set swap, and without `collapsible` clicking the open item does nothing. With `collapsible`, the open item closes and no item stays open. Multiple mode toggles each item independently and `onValueChange` reports the full membership array.
+
+### The Keyboard Model
+
+`Root` arms roving tabindex over the trigger buttons it finds inside itself: the arrow keys move focus (wrapping at the ends) and Home/End jump to the first or last trigger. Moving focus never toggles an item; activation is a click. Disabled triggers leave the walk and block clicks.
+
+### Content Stays Mounted
+
+Every `Content` region renders once and flips `data-state` between `open` and `closed`; closed regions stay in the DOM so the CSS grid collapse animates. A getter child keeps re-rendering while closed.
+
+### Overrides for Manual Composition
+
+`Trigger` takes `active` (a boolean reads statically, an accessor stays reactive) and `onToggle` to compose against external state; `Item` and `Content` mirror with `active`. Without overrides, all three default from the factory's lookup for their `value`. The `isOpen` member reads the factory state for any value, so a custom root or row can mirror `data-state` without owning the state.
+
+## Important Considerations
+
+### Call the Factory in Component Scope
+
+`accordion()` creates the state signals that must dispose with the component that owns them. `Root` drains the roving wiring when it unmounts; a module-level factory call leaks the signals. Call the factory inside the component that renders the components.
+
+### Ids Are Value-Derived
+
+Trigger and region DOM ids derive from the value (`hella-accordion-trigger-<value>`, `hella-accordion-content-<value>`), so the aria cycle holds across reorders. Two accordions reusing the same values share ids; keep values unique per page.

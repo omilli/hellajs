@@ -1,6 +1,6 @@
 ## Headless
 
-Headless wiring for common UI mechanics ([install it first](/headless/installation); [styling is bring-your-own](/headless/theming)): trapping focus, Escape and outside dismissal, roving tabindex, anchor positioning, hover intent, menu typeahead, pointer gestures, and layered dismissal. Each util is a plain function that takes elements and callbacks and returns a dispose handle; state stays in your signals. `modal` composes the dialog-family wiring with automatic, node-scoped disposal instead of a dispose handle, and the component factories (`popover`, `menu`, `menubar`, `tooltip`, `hoverCard`, `combobox`, `select`, `command`, `toggle`, `checkbox`, `toggleSwitch`, `toggleGroup`, `radioGroup`, `tabs`, `navigationMenu`, `slider`, `toast`, `calendar`, `inputOtp`, `createForm`, `scrollArea`, `messageScroller`) grow a components tier: camelCase factories whose components render structure, never styles.
+Headless wiring for common UI mechanics ([install it first](/headless/installation); [styling is bring-your-own](/headless/theming)): trapping focus, Escape and outside dismissal, roving tabindex, anchor positioning, hover intent, menu typeahead, pointer gestures, and layered dismissal. Each util is a plain function that takes elements and callbacks and returns a dispose handle; state stays in your signals. `modal` composes the dialog-family wiring with automatic, node-scoped disposal instead of a dispose handle, and the component factories (`accordion`, `collapsible`, `avatar`, `popover`, `dialog`, `menu`, `menubar`, `tooltip`, `hoverCard`, `combobox`, `select`, `command`, `toggle`, `checkbox`, `toggleSwitch`, `toggleGroup`, `radioGroup`, `tabs`, `navigationMenu`, `slider`, `toast`, `calendar`, `inputOtp`, `createForm`, `scrollArea`, `messageScroller`) grow a components tier: camelCase factories whose components render structure, never styles.
 
 ### Installation
 
@@ -60,7 +60,11 @@ mount(<div>{() => (open() ? <Dialog /> : <p>Nothing open</p>)}</div>, "#app");
 - **[onDoubleTap](/headless/ondoubletap)**: Detect double taps, optionally reporting single taps
 - **[layerDismissal](/headless/layerdismissal)**: Dismiss stacked overlays one layer at a time
 - **[modal](/headless/modal)**: Arm a modal panel: trap, dismissal, and exit notification with automatic disposal
+- **[accordion](/headless/accordion)**: Create the accordion components in one factory call: the roving container, value-keyed rows, and the keyed regions
+- **[collapsible](/headless/collapsible)**: Create the collapsible components in one factory call: the toggle trigger and its content region
+- **[avatar](/headless/avatar)**: Create the avatar components in one factory call: the container, the portrait image, and the initial fallback over one closure-owned loaded signal
 - **[popover](/headless/popover)**: Create the six popover components in one factory call with controlled-or-internal state
+- **[dialog](/headless/dialog)**: Create the four dialog components in one factory call: the trigger, the structural overlay, and the portaled modal panel with its close button
 - **[menu](/headless/menu)**: Create the full menu component set in one factory call: trigger, content, selectable rows, and submenus
 - **[menubar](/headless/menubar)**: Create a menu bar whose menus announce to the bar: one open at a time, roving triggers, open-then-move
 - **[tooltip](/headless/tooltip)**: Create the tooltip components in one factory call: provider slot, hover trigger, and the ported anchored label

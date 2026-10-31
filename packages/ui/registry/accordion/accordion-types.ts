@@ -32,6 +32,8 @@ export interface AccordionTriggerProps extends HTMLAttributes<"button"> {
   children?: HellaChildren;
   active?: () => boolean;
   onToggle?: () => void;
+  /** The item's value key; derives the `hella-accordion-trigger-<value>` id pair when `id` is not given. */
+  value?: string;
 }
 
 export interface AccordionContentProps extends HTMLAttributes<"div"> {

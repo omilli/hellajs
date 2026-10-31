@@ -151,6 +151,34 @@ describe("avatar", () => {
     },
   );
 
+  test.each(avatarVariants)(
+    "$style renders the composed zero-config avatar and flips on load",
+    (variant) => {
+      const root = renderVariant(variant, {
+        src: "avatar.png",
+        alt: "Avatar of JD",
+        fallback: "JD",
+        children: [],
+      });
+      expect(root.getAttribute("data-slot")).toBe("avatar");
+      const image = root.querySelector('[data-slot="avatar-image"]')!;
+      const fallback = root.querySelector('[data-slot="avatar-fallback"]')!;
+      expect(image.getAttribute("src")).toBe("avatar.png");
+      expect(image.getAttribute("alt")).toBe("Avatar of JD");
+      expect(image.hasAttribute("hidden")).toBe(true);
+      expect(fallback.textContent).toBe("JD");
+      expect(fallback.hasAttribute("hidden")).toBe(false);
+      image.dispatchEvent(new Event("load"));
+      flush();
+      expect(image.hasAttribute("hidden")).toBe(false);
+      expect(fallback.getAttribute("hidden")).toBe("");
+      image.dispatchEvent(new Event("error"));
+      flush();
+      expect(image.hasAttribute("hidden")).toBe(true);
+      expect(fallback.hasAttribute("hidden")).toBe(false);
+    },
+  );
+
   test.each(avatarVariants)("$style renders group and group-count parts", (variant) => {
     const group = renderVariant(
       avatarPartVariants.filter(

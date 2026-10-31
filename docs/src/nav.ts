@@ -158,7 +158,11 @@ export const navigation: Record<NavSection, NavEntry[]> = {
     },
     {
       Components: [
+        "accordion",
+        "collapsible",
+        "avatar",
         "popover",
+        "dialog",
         "menu",
         "menubar",
         "tooltip",

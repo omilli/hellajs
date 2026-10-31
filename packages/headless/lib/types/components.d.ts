@@ -1,6 +1,138 @@
 import type { Signal } from "@hellajs/core";
 import type { HTMLAttributes, HellaChild, HellaChildren, HellaPrimitive } from "@hellajs/dom";
 
+/** Class values follow the element attribute map: primitives or class arrays (composed by the wrapper). */
+export type AccordionClass = HellaPrimitive | (string | null | undefined | boolean)[];
+
+export interface AccordionOptions {
+  /** `single` keeps at most one item open (`collapsible` gates the last close); `multiple` toggles freely. Default `"single"`. */
+  type?: "single" | "multiple";
+  /** Single mode only: may the last open item close. Default `false`. */
+  collapsible?: boolean;
+  /** Controlled open values. When given, the factory never writes its internal set and `onValueChange` reports the requested change; a lone string reads as the one open value. */
+  value?: () => string | string[];
+  /** Seeds the uncontrolled open values; a single string opens that item, a list opens each. Default closed. */
+  defaultValue?: string | string[];
+  /** Called with every factory-driven change: single mode reports the one open value (`""` when none), multiple mode reports the membership array. */
+  onValueChange?: (value: string | string[]) => void;
+}
+
+export interface AccordionRootProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: AccordionClass;
+}
+
+export interface AccordionItemProps extends HTMLAttributes<"div"> {
+  /** The item's value; keys its `data-value` and the factory's open lookup. */
+  value?: string;
+  /** Open-state override for manual composition; defaults to the factory's lookup for `value`. A boolean reads statically; an accessor keeps it reactive. */
+  active?: boolean | (() => boolean);
+  children?: HellaChildren | HellaChildren[];
+  class?: AccordionClass;
+}
+
+export interface AccordionTriggerProps extends HTMLAttributes<"button"> {
+  /** The item's value; keys the `hella-accordion-trigger-<value>` id and the factory's open lookup. */
+  value?: string;
+  /** Open-state override mirroring the owning `Item`'s; defaults to the factory's lookup for `value`. */
+  active?: boolean | (() => boolean);
+  /** Called on click when enabled; defaults to the factory's toggle. */
+  onToggle?: () => void;
+  children?: HellaChildren | HellaChildren[];
+  class?: AccordionClass;
+}
+
+export interface AccordionContentProps extends HTMLAttributes<"div"> {
+  /** The item's value; keys the `hella-accordion-content-<value>` id and the factory's visibility. */
+  value?: string;
+  /** Open-state override mirroring the owning `Trigger`'s; defaults to the factory's lookup for `value`. */
+  active?: boolean | (() => boolean);
+  children?: HellaChildren | HellaChildren[];
+  class?: AccordionClass;
+}
+
+/** The part set an `accordion()` factory call returns, composed as `Accordion.Root`-style members. */
+export interface AccordionComponents {
+  /** The container: arms arrow/Home/End roving focus over the trigger buttons (focus never toggles) and drains the wiring at unmount. */
+  Root: (props: AccordionRootProps) => JSX.Element;
+  /** The row wrapper carrying `data-value` and the open `data-state`. */
+  Item: (props: AccordionItemProps) => JSX.Element;
+  /** The toggle button carrying the value-derived `hella-accordion-trigger-<value>` id, `aria-expanded`/`aria-controls`, and `data-state`; disabled triggers drop out of roving and block clicks. */
+  Trigger: (props: AccordionTriggerProps) => JSX.Element;
+  /** The `role="region"` body for a value: the `hella-accordion-content-<value>` id, `aria-labelledby` the owning trigger; stays mounted under `data-state` (CSS animates the collapse). */
+  Content: (props: AccordionContentProps) => JSX.Element;
+  /** The open lookup for a value — the reader the composing root and wrappers mirror their own state from. */
+  isOpen: (value: string) => boolean;
+}
+
+/** Class values follow the element attribute map: primitives or class arrays (composed by the wrapper). */
+export type CollapsibleClass = HellaPrimitive | (string | null | undefined | boolean)[];
+
+export interface CollapsibleOptions {
+  /** Controlled open state. When given, the factory never writes its internal signal and `onOpenChange` reports the requested flip. */
+  open?: () => boolean;
+  /** Seeds the uncontrolled open state. Default `false`. */
+  defaultOpen?: boolean;
+  /** Called with every factory-driven flip; the controller's write reflects through the `open` accessor. */
+  onOpenChange?: (open: boolean) => void;
+}
+
+export interface CollapsibleTriggerProps extends HTMLAttributes<"button"> {
+  /** Open-state override for manual composition; defaults to the factory's state. A boolean reads statically; an accessor keeps it reactive. */
+  active?: boolean | (() => boolean);
+  /** Called on click; defaults to the factory's toggle. */
+  onToggle?: () => void;
+  children?: HellaChildren | HellaChildren[];
+  class?: CollapsibleClass;
+}
+
+export interface CollapsibleContentProps extends HTMLAttributes<"div"> {
+  /** Open-state override mirroring the owning `Trigger`'s; defaults to the factory's state. */
+  active?: boolean | (() => boolean);
+  children?: HellaChildren | HellaChildren[];
+  class?: CollapsibleClass;
+}
+
+/** The part set a `collapsible()` factory call returns, composed as `Collapsible.Trigger`-style members. */
+export interface CollapsibleComponents {
+  /** The toggle button carrying the generated `hella-collapsible-trigger-<n>` id, `aria-expanded`/`aria-controls`, and `data-state`. */
+  Trigger: (props: CollapsibleTriggerProps) => JSX.Element;
+  /** The `role="region"` body: the generated `hella-collapsible-content-<n>` id, `aria-labelledby` the trigger; stays mounted under `data-state` (CSS animates the collapse). */
+  Content: (props: CollapsibleContentProps) => JSX.Element;
+  /** The open-state reader the composing root mirrors its own `data-state` from. */
+  isOpen: () => boolean;
+}
+
+/** Class values follow the element attribute map: primitives or class arrays (composed by the wrapper). */
+export type AvatarClass = HellaPrimitive | (string | null | undefined | boolean)[];
+
+/** Reserved for future options (a fallback flicker delay); load state is an element-lifecycle fact, not user intent, so it is never controlled. */
+export interface AvatarOptions {}
+
+export interface AvatarRootProps extends HTMLAttributes<"div"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: AvatarClass;
+}
+
+export interface AvatarImageProps extends HTMLAttributes<"img"> {
+  class?: AvatarClass;
+}
+
+export interface AvatarFallbackProps extends HTMLAttributes<"span"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: AvatarClass;
+}
+
+/** The part set an `avatar()` factory call returns, composed as `Avatar.Root`-style members. */
+export interface AvatarComponents {
+  /** The structural container. */
+  Root: (props: AvatarRootProps) => JSX.Element;
+  /** The portrait `img`: hidden until the native `load` event fires; `error` flips it back and the fallback returns. */
+  Image: (props: AvatarImageProps) => JSX.Element;
+  /** The initial `span`: hidden while the closure's loaded signal reads true. */
+  Fallback: (props: AvatarFallbackProps) => JSX.Element;
+}
+
 /** Requested popover side. */
 export type AnchorSide = "top" | "bottom" | "left" | "right";
 
@@ -68,6 +200,59 @@ export interface PopoverComponents {
   Title: (props: PopoverPartProps) => JSX.Element;
   /** A structural description paragraph. */
   Description: (props: PopoverDescriptionProps) => JSX.Element;
+}
+
+/** Class values follow the element attribute map: primitives or class arrays (composed by the wrapper). */
+export type DialogClass = HellaPrimitive | (string | null | undefined | boolean)[];
+
+export interface DialogOptions {
+  /** Controlled open-state getter; passing it makes the dialog controlled, omitting it keeps state internal. Portaled surfaces start closed — no seed option. */
+  open?: () => boolean;
+  /** Called on every open-state change, owned toggle and dismissal alike. */
+  onOpenChange?: (open: boolean) => void;
+  /** Milliseconds before an exit no `animationend` resolves unmounts the held panel. Default 250. */
+  fallbackMs?: number;
+}
+
+export interface DialogTriggerProps extends HTMLAttributes<"button"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: DialogClass;
+}
+
+export interface DialogOverlayProps extends HTMLAttributes<"div"> {
+  class?: DialogClass;
+}
+
+export interface DialogContentProps extends HTMLAttributes<"div"> {
+  /** Arms Escape dismissal while open. Default `true`. */
+  escape?: boolean;
+  /** Arms outside-press dismissal while open. Default `true`. */
+  outside?: boolean;
+  /** Called when the exit animation ends under `data-state="closed"`; entry animationends are ignored. */
+  onExited?: () => void;
+  /** Renders the portaled overlay element, threaded the closure's state getter; defaults to the structural `Overlay`. */
+  overlay?: (state: () => "open" | "closed") => JSX.Element;
+  /** `false` renders the bare panel inline for manual compositions — no gate, no portal, no overlay. Default `true`. */
+  portal?: boolean;
+  children?: HellaChildren | HellaChildren[];
+  class?: DialogClass;
+}
+
+export interface DialogCloseProps extends HTMLAttributes<"button"> {
+  children?: HellaChildren | HellaChildren[];
+  class?: DialogClass;
+}
+
+/** The part set a `dialog()` factory call returns, composed as `Dialog.Trigger`-style members. */
+export interface DialogComponents {
+  /** The toggle button: owns the click toggle, `data-state`, and the trigger aria contract. */
+  Trigger: (props: DialogTriggerProps) => JSX.Element;
+  /** The structural overlay `div`: carries `data-state`; the composed `Content` portals it (or the `overlay` slot's element) as the panel's body sibling. */
+  Overlay: (props: DialogOverlayProps) => JSX.Element;
+  /** The portaled panel: `role="dialog"`, `aria-modal`, generated id; arms the modal engine while open and exits through `animationend` (or the factory's fallback budget). */
+  Content: (props: DialogContentProps) => JSX.Element;
+  /** The close button: owns the click dismissal and `data-state`. */
+  Close: (props: DialogCloseProps) => JSX.Element;
 }
 
 /** Class values follow the element attribute map: primitives or class arrays (composed by the wrapper). */

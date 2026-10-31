@@ -1,7 +1,6 @@
-import { effect, signal } from "@hellajs/core";
+import { dialog } from "@hellajs/headless";
 import { Portal } from "@hellajs/dom";
 import type { HellaChild, HellaChildren, HTMLAttributes } from "@hellajs/dom";
-import { modal } from "@hellajs/headless/utils";
 
 type AlertDialogState = () => "open" | "closed";
 
@@ -106,21 +105,16 @@ const buttonSizes = {
   "icon-lg": "size-10",
 };
 
-/** Accessibility state shared by the animated dialog parts. */
-
-/** Button variant union carried by the Action/Cancel buttons (mirrors the emitted ButtonProps). */
-
-/** Button size union carried by the Action/Cancel buttons (mirrors the emitted ButtonProps). */
-
+/** The screen-covering backdrop; the factory's Overlay with the backdrop style. */
 export function AlertDialogOverlay({
   state,
   class: cls,
   ...attrs
 }: AlertDialogOverlayProps): JSX.Element {
+  const { Overlay } = dialog({ open: () => (state?.() ?? "open") === "open" });
   return (
-    <div
+    <Overlay
       data-slot="alert-dialog-overlay"
-      data-state={state?.()}
       class={
         cn("fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0", cls)
       }
@@ -134,15 +128,15 @@ export function AlertDialogPortal(props: AlertDialogPortalProps): JSX.Element {
   return <Portal to="body">{props.children}</Portal>;
 }
 
-/** The manual trigger button; wire its click to the caller's open signal - hella has no Radix context to do it for you. */
+/** The manual trigger button; the factory's Trigger owning the aria contract over the wrapper's own state. */
 export function AlertDialogTrigger({
   children,
   class: cls,
   ...attrs
 }: AlertDialogTriggerProps): JSX.Element {
+  const { Trigger } = dialog();
   return (
-    <button
-      type="button"
+    <Trigger
       data-slot="alert-dialog-trigger"
       class={
         cn(cls)
@@ -150,7 +144,7 @@ export function AlertDialogTrigger({
       {...attrs}
     >
       {children}
-    </button>
+    </Trigger>
   );
 }
 
@@ -159,7 +153,9 @@ export function AlertDialogTrigger({
  * AlertDialogOverlay sibling - hella has no Radix context, so the
  * portal/overlay pairing is the composer's (the AlertDialog export below
  * shows the wired composition). Unlike DialogContent there is no outside
- * dismissal: Radix's AlertDialog semantics are escape-only by design.
+ * dismissal: Radix's AlertDialog semantics are escape-only by design. The
+ * panel renders inline where placed: the factory's gate and portal belong
+ * to the composed AlertDialog.
  */
 export function AlertDialogContent({
   state,
@@ -171,32 +167,28 @@ export function AlertDialogContent({
   class: cls,
   ...attrs
 }: AlertDialogContentProps): JSX.Element {
+  const { Content } = dialog({
+    open: () => (state?.() ?? "open") === "open",
+    onOpenChange: (next) => {
+      if (!next) onClose?.();
+    },
+  });
   return (
-    <div
+    <Content
+      portal={false}
       data-slot="alert-dialog-content"
-      data-state={state?.()}
-      data-size={size ?? "default"}
       role="alertdialog"
-      aria-modal="true"
+      data-size={size ?? "default"}
+      escape={closeOnEscape}
+      outside={false}
+      onExited={onExited}
       class={
         cn("group/alert-dialog-content fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 data-[size=sm]:max-w-xs data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[size=default]:sm:max-w-lg", cls)
       }
-      hook:afterMount={(node) => {
-        if (!(node instanceof HTMLElement)) return;
-        // A manual composition without a state getter arms permanently and
-        // disposes with the panel.
-        modal(node, {
-          state: state ?? (() => "open"),
-          onClose,
-          escape: closeOnEscape,
-          outside: false,
-          onExited,
-        });
-      }}
       {...attrs}
     >
       {children}
-    </div>
+    </Content>
   );
 }
 
@@ -367,74 +359,43 @@ export function AlertDialog({
 }: AlertDialogProps): JSX.Element {
   const titleId = `hella-alert-dialog-title-${++alertDialogCount}`;
   const descriptionId = `hella-alert-dialog-description-${alertDialogCount}`;
-  // `visible` alone gates the render so an open→closed flip never unmounts
-  // before this watcher starts the exit (reading open() in the template
-  // would flash the subtree away one evaluation early).
-  const visible = signal(false);
-  let wasOpen = false;
-  let fallback: ReturnType<typeof setTimeout> | undefined;
-
-  const finishExit = (): void => {
-    if (fallback !== undefined) {
-      clearTimeout(fallback);
-      fallback = undefined;
-    }
-    visible(false);
-  };
-
-  // Flip to open renders immediately; flip to closed starts the exit - the
-  // panel stays mounted under data-state="closed" until its animationend
-  // (or the copied 200ms duration budget) unmounts it.
-  effect(() => {
-    if (open()) {
-      wasOpen = true;
-      finishExit();
-      visible(true);
-    } else if (wasOpen) {
-      wasOpen = false;
-      visible(true);
-      fallback = setTimeout(finishExit, 250);
-    }
+  const { Content } = dialog({
+    open,
+    onOpenChange: (next) => {
+      if (!next) onClose();
+    },
   });
 
-  const state = (): "open" | "closed" => (open() ? "open" : "closed");
-
   return (
-    <>
-      {() =>
-        visible() && (
-          <Portal to="body">
-            <AlertDialogOverlay state={state} />
-            <AlertDialogContent
-              state={state}
-              size={size}
-              aria-labelledby={titleId}
-              aria-describedby={descriptionText === undefined ? undefined : descriptionId}
-              closeOnEscape={closeOnEscape}
-              onClose={onClose}
-              onExited={finishExit}
-              class={cls}
-              {...attrs}
-              children={
-                [
-                  ...(titleText !== undefined
-                    ? [<AlertDialogTitle id={titleId}>{titleText}</AlertDialogTitle>]
-                    : []),
-                  ...(descriptionText !== undefined
-                    ? [
-                        <AlertDialogDescription id={descriptionId}>
-                          {descriptionText}
-                        </AlertDialogDescription>,
-                      ]
-                    : []),
-                  ...flattenChildren(children),
-                ] as HellaChild[]
-              }
-            />
-          </Portal>
-        )
+    <Content
+      data-slot="alert-dialog-content"
+      role="alertdialog"
+      data-size={size ?? "default"}
+      class={
+        cn("group/alert-dialog-content fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 data-[size=sm]:max-w-xs data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[size=default]:sm:max-w-lg", cls)
       }
-    </>
+      aria-labelledby={titleId}
+      aria-describedby={descriptionText === undefined ? undefined : descriptionId}
+      escape={closeOnEscape}
+      outside={false}
+      overlay={(state) => <AlertDialogOverlay state={state} />}
+      {...attrs}
+      children={
+        [
+          ...(titleText !== undefined
+            ? [<AlertDialogTitle id={titleId}>{titleText}</AlertDialogTitle>]
+            : []),
+          ...(descriptionText !== undefined
+            ? [
+                <AlertDialogDescription id={descriptionId}>
+                  {descriptionText}
+                </AlertDialogDescription>,
+              ]
+            : []),
+          ...flattenChildren(children),
+        ] as HellaChild[]
+      }
+    />
   );
 }
 

@@ -1,5 +1,6 @@
 import { effect, isBoolean, isString, signal } from "@hellajs/core";
 import { Portal } from "@hellajs/dom";
+import { createExitMachine } from "./internal/exitMachine";
 import type {
   NavigationMenuContentProps,
   NavigationMenuIndicatorProps,
@@ -259,34 +260,11 @@ export function navigationMenu(options: NavigationMenuOptions = {}): NavigationM
     const isOpen = (): boolean =>
       active !== undefined ? active() : id !== undefined && current() === id;
     const portalTarget = viewportSlot ?? VIEWPORT_SELECTOR;
-    // `visible` alone gates the render so an open→closed flip never unmounts
-    // before this watcher starts the exit; the panel stays mounted under
-    // data-state="closed" until its animationend (or the copied duration
-    // budget) removes it.
-    const visible = signal(false);
-    let wasOpen = false;
-    let fallback: ReturnType<typeof setTimeout> | undefined;
-    effect(() => {
-      if (isOpen()) {
-        wasOpen = true;
-        if (fallback !== undefined) {
-          clearTimeout(fallback);
-          fallback = undefined;
-        }
-        visible(true);
-      } else if (wasOpen) {
-        wasOpen = false;
-        visible(true);
-        fallback = setTimeout(() => {
-          if (fallback !== undefined) {
-            clearTimeout(fallback);
-            fallback = undefined;
-          }
-          visible(false);
-        }, 250);
-      }
-    });
-    const state = (): "open" | "closed" => (isOpen() ? "open" : "closed");
+    // The shared visible/exit machine: `visible` alone gates the render so an
+    // open→closed flip never unmounts before the exit starts; the panel stays
+    // mounted under data-state="closed" until its animationend (or the
+    // fallback budget) removes it.
+    const { visible, state, finishExit } = createExitMachine(isOpen);
     const teardown: (() => void)[] = [];
     return (
       <div data-slot="navigation-menu-content-anchor">
@@ -303,7 +281,7 @@ export function navigationMenu(options: NavigationMenuOptions = {}): NavigationM
                   if (!(node instanceof HTMLElement)) return;
                   const onAnimationEnd = (): void => {
                     if (!isOpen()) {
-                      visible(false);
+                      finishExit();
                       onExited?.();
                     }
                   };

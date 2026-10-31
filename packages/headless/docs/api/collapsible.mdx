@@ -1,0 +1,77 @@
+# collapsible
+
+Creates the collapsible components in one call: the toggle trigger and its content region. The closure owns the open state, and the region stays mounted under `data-state` so CSS animates the collapse.
+
+## Basic Usage
+
+```tsx
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+import { collapsible } from "@hellajs/headless";
+
+const open = signal(false);
+
+const Col = collapsible({
+  open: () => open(),
+  onOpenChange: (next) => open(next),
+});
+
+mount(
+  <div>
+    <Col.Trigger>More</Col.Trigger>
+    <Col.Content>Details</Col.Content>
+  </div>,
+  "#app",
+);
+// Clicking the trigger reports the flip through onOpenChange; the region's
+// data-state follows the controlled accessor, and CSS animates the collapse.
+```
+
+## API
+
+```typescript
+function collapsible(options?: CollapsibleOptions): CollapsibleComponents
+```
+
+- `options.open`: Controlled open state. When given, the factory never writes its internal signal and `onOpenChange` reports the requested flip.
+- `options.defaultOpen`: Seeds the uncontrolled open state. Default `false`.
+- `options.onOpenChange`: Called with every factory-driven flip; the controller's write reflects through the `open` accessor.
+- **Returns**: The component set, plus the `isOpen` reader.
+
+### Components
+
+| Component | Renders |
+|---|---|
+| `Trigger` | The toggle button carrying the generated `hella-collapsible-trigger-<n>` id, `aria-expanded`, `aria-controls`, and `data-state` |
+| `Content` | The `role="region"` body: the generated `hella-collapsible-content-<n>` id, `aria-labelledby` the trigger; stays mounted under `data-state` so CSS animates the collapse |
+| `isOpen` | The open-state reader a composing root mirrors its own `data-state` from |
+
+Every component spreads `class` and native attributes onto its element; components own structure, styling stays in the wrapper.
+
+### Options
+
+| Option | Type | Default |
+|---|---|---|
+| `open` | `() => boolean` | internal signal |
+| `defaultOpen` | `boolean` | `false` |
+| `onOpenChange` | `(open: boolean) => void` | `-` |
+
+## Key Concepts
+
+### Controlled and Uncontrolled
+
+Without `open`, the factory owns a signal seeded by `defaultOpen` and toggles it on click. Pass `open` and the factory becomes controlled: it reads state from your accessor and turns clicks into `onOpenChange` requests without writing any state, so a parent signal that ignores the request keeps the region closed.
+
+### The Trigger and Region Pair
+
+Each factory call generates a matched id pair: the trigger's `aria-controls` points at the region's id, and the region's `aria-labelledby` names the trigger. `Trigger` chains a user `on:click` before its toggle; `active` and `onToggle` override both the rendered state and the action for manual composition, and `isOpen` exposes the reader for a custom root.
+
+## Important Considerations
+
+### Call the Factory in Component Scope
+
+`collapsible()` creates the state signal that must dispose with the component that owns it. Call the factory inside the component that renders the components; a module-level call leaks the signal.
+
+### The Region Never Unmounts
+
+`Content` renders once and flips `data-state` between `open` and `closed`; the collapse is CSS-driven (a grid row flipping between `0fr` and `1fr`), so a getter child keeps re-rendering while closed.

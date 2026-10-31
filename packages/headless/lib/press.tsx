@@ -6,6 +6,7 @@ import {
   flipMulti,
   pressChannel,
 } from "./internal/press";
+import { landTabindex } from "./internal/tabindexWalk";
 import { rovingTabIndex } from "./utils/rovingTabIndex";
 import type {
   CheckboxIndicatorProps,
@@ -407,12 +408,7 @@ export function radioGroup(options: RadioGroupOptions = {}): RadioGroupComponent
       }
       i++;
     }
-    if (matched === -1) matched = 0;
-    let w = 0;
-    while (w < len) {
-      items[w]!.tabIndex = w === matched ? 0 : -1;
-      w++;
-    }
+    landTabindex(Array.from(items), matched);
   };
 
   const selectValue = (selected: string): void => {

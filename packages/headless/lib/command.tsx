@@ -2,6 +2,7 @@ import { effect, isFunction, signal } from "@hellajs/core";
 import { Portal } from "@hellajs/dom";
 import type { HellaChild } from "@hellajs/dom";
 import { modal } from "./utils/modal";
+import { createExitMachine } from "./internal/exitMachine";
 import { domOptions, optionIdOf } from "./internal/listbox";
 import type {
   CommandDialogProps,
@@ -528,39 +529,15 @@ export function command(options: CommandOptions = {}): CommandComponents {
     } = props;
     const titleId = `hella-command-dialog-title-${++commandDialogCount}`;
     const descriptionId = `hella-command-dialog-description-${commandDialogCount}`;
-    // `visible` alone gates the render so an open→closed flip never unmounts
-    // before this watcher starts the exit (reading open() in the template
-    // would flash the subtree away one evaluation early).
-    const visible = signal(false);
-    let wasOpen = false;
-    let fallback: ReturnType<typeof setTimeout> | undefined;
+    // The shared visible/exit machine: `visible` alone gates the render so an
+    // open→closed flip never unmounts before the exit starts (reading open()
+    // in the template would flash the subtree away one evaluation early).
+    const { visible, state, finishExit } = createExitMachine(open);
 
-    const finishExit = (): void => {
-      if (fallback !== undefined) {
-        clearTimeout(fallback);
-        fallback = undefined;
-      }
-      visible(false);
-    };
-
-    // Flip to open renders immediately; flip to closed starts the exit - the
-    // panel stays mounted under data-state="closed" until its animationend
-    // (or the copied 250ms duration budget) unmounts it. The trap/escape/
+    // The panel stays mounted under data-state="closed" until its animationend
+    // (or the fallback budget) unmounts it. The trap/escape/
     // outside wiring arms through modal() against the state getter, so
     // closing disarms it immediately and reopening re-arms without a remount.
-    effect(() => {
-      if (open()) {
-        wasOpen = true;
-        finishExit();
-        visible(true);
-      } else if (wasOpen) {
-        wasOpen = false;
-        visible(true);
-        fallback = setTimeout(finishExit, 250);
-      }
-    });
-
-    const state = (): "open" | "closed" => (open() ? "open" : "closed");
 
     return (
       <>

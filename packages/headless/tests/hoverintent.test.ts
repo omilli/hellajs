@@ -140,4 +140,73 @@ describe("hoverIntent", () => {
       "[headless] hoverIntent: handlers is required",
     );
   });
+
+  describe("pointerOnly", () => {
+    test("does not open on focus", async () => {
+      const onOpen = vi.fn(() => {});
+      const onClose = vi.fn(() => {});
+      const trigger = document.createElement("button");
+      document.body.append(trigger);
+      const dispose = hoverIntent(trigger, {
+        onOpen,
+        onClose,
+        openDelay: 5,
+        closeDelay: 5,
+        pointerOnly: true,
+      });
+
+      trigger.dispatchEvent(new FocusEvent("focus"));
+      await delay(30);
+      expect(onOpen).not.toHaveBeenCalled();
+      dispose();
+    });
+
+    test("does not close on blur while open", async () => {
+      const onOpen = vi.fn(() => {});
+      const onClose = vi.fn(() => {});
+      const trigger = document.createElement("button");
+      document.body.append(trigger);
+      const dispose = hoverIntent(trigger, {
+        onOpen,
+        onClose,
+        openDelay: 5,
+        closeDelay: 5,
+        pointerOnly: true,
+      });
+
+      pointerEnter(trigger);
+      await delay(30);
+      expect(onOpen).toHaveBeenCalledTimes(1);
+      trigger.dispatchEvent(new FocusEvent("blur"));
+      await delay(30);
+      expect(onClose).not.toHaveBeenCalled();
+      dispose();
+    });
+
+    test("keeps the pointer path identical to the default mode", async () => {
+      const onOpen = vi.fn(() => {});
+      const onClose = vi.fn(() => {});
+      const trigger = document.createElement("button");
+      document.body.append(trigger);
+      const dispose = hoverIntent(trigger, {
+        onOpen,
+        onClose,
+        openDelay: 5,
+        closeDelay: 5,
+        pointerOnly: true,
+      });
+
+      pointerEnter(trigger);
+      await delay(30);
+      expect(onOpen).toHaveBeenCalledTimes(1);
+      pointerLeave(trigger);
+      pointerEnter(trigger);
+      await delay(30);
+      expect(onClose).not.toHaveBeenCalled();
+      pointerLeave(trigger);
+      await delay(30);
+      expect(onClose).toHaveBeenCalledTimes(1);
+      dispose();
+    });
+  });
 });

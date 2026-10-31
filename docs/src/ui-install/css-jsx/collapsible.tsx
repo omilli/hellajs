@@ -1,4 +1,4 @@
-import { signal } from "@hellajs/core";
+import { collapsible } from "@hellajs/headless";
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 interface CollapsibleProps extends HTMLAttributes<"div"> {
@@ -64,7 +64,26 @@ const contentInner = style("collapsible-content-inner", {
   overflow: "hidden",
 });
 
-let collapsibleCount = 0;
+const ChevronIcon = (): JSX.Element => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+    data-slot="collapsible-icon"
+    class={
+      [icon]
+    }
+  >
+    <path d="m6 9 6 6 6-6" />
+  </svg>
+);
 
 export function CollapsibleTrigger({
   active,
@@ -74,57 +93,33 @@ export function CollapsibleTrigger({
   class: cls,
   ...attrs
 }: CollapsibleTriggerProps): JSX.Element {
+  const { Trigger } = collapsible();
   return (
-    <button
-      type="button"
-      data-slot="collapsible-trigger"
-      aria-expanded={active?.() ? "true" : "false"}
-      data-state={active?.() ? "open" : "closed"}
+    <Trigger
+      active={active}
+      onToggle={onToggle}
       class={
         [trigger, cls]
       }
-      on:click={function (e) {
-        userClick?.call(this, e);
-        onToggle?.();
-      }}
+      on:click={userClick}
       {...attrs}
     >
       {children}
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        aria-hidden="true"
-        data-slot="collapsible-icon"
-        class={
-          [icon]
-        }
-      >
-        <path d="m6 9 6 6 6-6" />
-      </svg>
-    </button>
+      <ChevronIcon />
+    </Trigger>
   );
 }
 
 export function CollapsibleContent({
   active,
-  id,
   children,
   class: cls,
   ...attrs
 }: CollapsibleContentProps): JSX.Element {
+  const { Content } = collapsible();
   return (
-    <div
-      role="region"
-      data-slot="collapsible-content"
-      id={id}
-      data-state={active?.() ? "open" : "closed"}
+    <Content
+      active={active}
       class={
         [content, cls]
       }
@@ -137,7 +132,7 @@ export function CollapsibleContent({
       >
         {children}
       </div>
-    </div>
+    </Content>
   );
 }
 
@@ -150,32 +145,34 @@ export function Collapsible({
   class: cls,
   ...attrs
 }: CollapsibleProps): JSX.Element {
-  const internal = signal(defaultOpen ?? false);
-  const active = (): boolean => (open !== undefined ? open() : internal());
-  const contentId = `hella-collapsible-content-${++collapsibleCount}`;
-
-  const toggle = (): void => {
-    const next = !active();
-    if (open === undefined) internal(next);
-    onOpenChange?.(next);
-  };
+  const { Trigger, Content, isOpen } = collapsible({ open, defaultOpen, onOpenChange });
 
   return (
     <div
       data-slot="collapsible"
-      data-state={active() ? "open" : "closed"}
+      data-state={isOpen() ? "open" : "closed"}
       class={
         [cls]
       }
       {...attrs}
     >
-      <CollapsibleTrigger
-        active={active}
-        onToggle={toggle}
-        aria-controls={contentId}
-        children={triggerSlot}
-      />
-      <CollapsibleContent id={contentId} active={active} children={contentSlot} />
+      <Trigger
+        class={
+          [trigger]
+        }
+      >
+        {triggerSlot}
+        <ChevronIcon />
+      </Trigger>
+      <Content>
+        <div
+          class={
+            [contentInner]
+          }
+        >
+          {contentSlot}
+        </div>
+      </Content>
     </div>
   );
 }

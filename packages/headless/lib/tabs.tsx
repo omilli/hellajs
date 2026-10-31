@@ -1,4 +1,5 @@
 import { isFunction, signal } from "@hellajs/core";
+import { landTabindex } from "./internal/tabindexWalk";
 import { rovingTabIndex } from "./utils/rovingTabIndex";
 import type {
   TabsContentProps,
@@ -58,12 +59,7 @@ export function tabs(options: TabsOptions = {}): TabsComponents {
       }
       i++;
     }
-    if (matched === -1) matched = 0;
-    let w = 0;
-    while (w < len) {
-      tabs[w]!.tabIndex = w === matched ? 0 : -1;
-      w++;
-    }
+    landTabindex(Array.from(tabs), matched);
   };
 
   const select = (next: string): void => {

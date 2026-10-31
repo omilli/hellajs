@@ -48,7 +48,7 @@ Accepts all native `div` attributes (forwarded to the desktop panel element).
 
 ## Mobile Behavior
 
-Past the `769px` breakpoint the provider's `mobile` state flips true and `Sidebar` renders the mobile sheet instead of the desktop panel: a portaled overlay plus a `role="dialog"` panel sliding from `side`, with escape, outside-pointerdown, and focus-trap wiring and the same exit hold the sheet entry ships (the panel stays mounted under `data-state="closed"` until its exit animation ends, 350ms fallback). The mechanics are duplicated inline (registry entries are self-contained), so `add sidebar` needs no import from the sheet file. `openMobile`/`setOpenMobile` (threaded from the provider) drive it, and `onToggle` targets it while mobile.
+Past the `769px` breakpoint the provider's `mobile` state flips true and `Sidebar` renders the mobile sheet instead of the desktop panel: a portaled overlay plus a `role="dialog"` panel sliding from `side`, with escape, outside-pointerdown, and focus-trap wiring and the same exit hold the sheet entry ships (the panel stays mounted under `data-state="closed"` until its exit animation ends, 350ms fallback). The sheet mechanics ride the `dialog` factory from `@hellajs/headless`, so `add sidebar` still needs no import from the sheet file. `openMobile`/`setOpenMobile` (threaded from the provider) drive it, and `onToggle` targets it while mobile.
 
 ## CSS Variables
 

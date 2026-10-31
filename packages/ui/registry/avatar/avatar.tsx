@@ -1,4 +1,5 @@
 import { signal } from "@hellajs/core";
+import { avatar } from "@hellajs/headless";
 import type {
   AvatarProps,
   AvatarImageProps,
@@ -17,10 +18,18 @@ declare const groupCount: string;
 declare const image: string;
 // @hella:end
 
-export function Avatar({ size, children, class: cls, ...attrs }: AvatarProps): JSX.Element {
+export function Avatar({
+  src,
+  alt,
+  fallback: fallbackContent,
+  size,
+  children,
+  class: cls,
+  ...attrs
+}: AvatarProps): JSX.Element {
+  const { Root, Image, Fallback } = avatar();
   return (
-    <div
-      data-slot="avatar"
+    <Root
       data-size={size ?? "default"}
       class={
         // @hella:compose
@@ -29,8 +38,30 @@ export function Avatar({ size, children, class: cls, ...attrs }: AvatarProps): J
       }
       {...attrs}
     >
+      {src !== undefined && (
+        <Image
+          src={src}
+          alt={alt}
+          class={
+            // @hella:compose
+            [image]
+            // @hella:end
+          }
+        />
+      )}
+      {fallbackContent !== undefined && (
+        <Fallback
+          class={
+            // @hella:compose
+            [fallback]
+            // @hella:end
+          }
+        >
+          {fallbackContent}
+        </Fallback>
+      )}
       {children}
-    </div>
+    </Root>
   );
 }
 

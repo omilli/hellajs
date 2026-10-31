@@ -1,6 +1,6 @@
-import { signalSet } from "@hellajs/core";
+import { accordion } from "@hellajs/headless";
 import { ForEach } from "@hellajs/dom";
-import type { HellaChildren, HTMLAttributes } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 interface AccordionEntry {
   value: string;
@@ -34,6 +34,8 @@ interface AccordionTriggerProps extends HTMLAttributes<"button"> {
   children?: HellaChildren;
   active?: () => boolean;
   onToggle?: () => void;
+  /** The item's value key; derives the `hella-accordion-trigger-<value>` id pair when `id` is not given. */
+  value?: string;
 }
 
 interface AccordionContentProps extends HTMLAttributes<"div"> {
@@ -124,8 +126,26 @@ const contentInner = style("accordion-content-inner", {
   },
 });
 
-const TRIGGER_ID = "hella-accordion-trigger-";
-const CONTENT_ID = "hella-accordion-content-";
+const ChevronIcon = (): JSX.Element => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+    data-slot="accordion-icon"
+    class={
+      [icon]
+    }
+  >
+    <path d="m6 9 6 6 6-6" />
+  </svg>
+);
 
 export function AccordionItem({
   value,
@@ -134,31 +154,32 @@ export function AccordionItem({
   class: cls,
   ...attrs
 }: AccordionItemProps): JSX.Element {
+  const { Item } = accordion();
   return (
-    <div
-      data-slot="accordion-item"
-      data-value={value}
-      data-state={active?.() ? "open" : "closed"}
+    <Item
+      value={value}
+      active={active}
       class={
         [item, cls]
       }
       {...attrs}
     >
       {children}
-    </div>
+    </Item>
   );
 }
 
 export function AccordionTrigger({
+  value,
   active,
   onToggle,
-  id,
   disabled,
   "on:click": userClick,
   children,
   class: cls,
   ...attrs
 }: AccordionTriggerProps): JSX.Element {
+  const { Trigger } = accordion();
   return (
     <h3
       data-slot="accordion-header"
@@ -166,60 +187,34 @@ export function AccordionTrigger({
         [header]
       }
     >
-      <button
-        type="button"
-        data-slot="accordion-trigger"
-        id={id}
-        aria-expanded={active?.() ? "true" : "false"}
-        aria-disabled={disabled ? "true" : undefined}
-        disabled={disabled ? true : undefined}
-        data-state={active?.() ? "open" : "closed"}
+      <Trigger
+        value={value}
+        active={active}
+        onToggle={onToggle}
+        disabled={disabled}
         class={
           [trigger, cls]
         }
-        on:click={function (e) {
-          userClick?.call(this, e);
-          onToggle?.();
-        }}
+        on:click={userClick}
         {...attrs}
       >
         {children}
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-          data-slot="accordion-icon"
-          class={
-            [icon]
-          }
-        >
-          <path d="m6 9 6 6 6-6" />
-        </svg>
-      </button>
+        <ChevronIcon />
+      </Trigger>
     </h3>
   );
 }
 
 export function AccordionContent({
   active,
-  id,
   children,
   class: cls,
   ...attrs
 }: AccordionContentProps): JSX.Element {
+  const { Content } = accordion();
   return (
-    <div
-      role="region"
-      data-slot="accordion-content"
-      id={id}
-      data-state={active?.() ? "open" : "closed"}
+    <Content
+      active={active}
       class={
         [content, cls]
       }
@@ -233,7 +228,7 @@ export function AccordionContent({
       >
         {children}
       </div>
-    </div>
+    </Content>
   );
 }
 
@@ -246,32 +241,14 @@ export function Accordion({
   class: cls,
   ...attrs
 }: AccordionProps): JSX.Element {
-  const mode = type ?? "single";
-  // A single open string wraps to a one-value list, a list passes through, absent starts closed.
-  const seed = typeof open === "string" ? [open] : (open ?? []);
-  // Single mode keeps at most one value open: a multi-value seed clamps to the first.
-  // signalSet gives each item's isOpen reader its own membership signal, so a toggle
-  // wakes only the affected items' state effects.
-  const openValues = signalSet<string>(mode === "single" ? seed.slice(0, 1) : seed);
-
-  const isOpen = (value: string): boolean => openValues.has(value);
-
-  const toggle = (value: string, disabled?: boolean): void => {
-    if (disabled) return;
-    if (openValues.has(value)) {
-      if (mode === "single" && collapsible !== true) return;
-      openValues.delete(value);
-    } else if (mode === "single") {
-      // The reconcile setter swaps the open item in one pass: closes the previous value, opens this one.
-      openValues(new Set([value]));
-    } else {
-      openValues.add(value);
-    }
-  };
+  const { Root, Item, Trigger, Content, isOpen } = accordion({
+    type,
+    collapsible,
+    defaultValue: open,
+  });
 
   return (
-    <div
-      data-slot="accordion"
+    <Root
       class={
         [cls]
       }
@@ -280,31 +257,48 @@ export function Accordion({
       <ForEach
         each={items}
         use={(entry) => (
-          <AccordionItem
-            key={keyBy ? entry.value : undefined}
+          <Item
             value={entry.value}
-            active={() => isOpen(entry.value)}
-            children={
-              [
-                <AccordionTrigger
-                  id={`${TRIGGER_ID}${entry.value}`}
-                  active={() => isOpen(entry.value)}
-                  onToggle={() => toggle(entry.value, entry.disabled)}
-                  disabled={entry.disabled}
-                  aria-controls={`${CONTENT_ID}${entry.value}`}
-                  children={entry.trigger}
-                />,
-                <AccordionContent
-                  id={`${CONTENT_ID}${entry.value}`}
-                  active={() => isOpen(entry.value)}
-                  aria-labelledby={`${TRIGGER_ID}${entry.value}`}
-                  children={entry.content}
-                />,
-              ] as HellaChildren
+            key={keyBy ? entry.value : undefined}
+            class={
+              [item]
             }
-          />
+          >
+            <h3
+              data-slot="accordion-header"
+              class={
+                [header]
+              }
+            >
+              <Trigger
+                value={entry.value}
+                disabled={entry.disabled}
+                class={
+                  [trigger]
+                }
+              >
+                {entry.trigger}
+                <ChevronIcon />
+              </Trigger>
+            </h3>
+            <Content
+              value={entry.value}
+              class={
+                [content]
+              }
+            >
+              <div
+                data-state={isOpen(entry.value) ? "open" : "closed"}
+                class={
+                  [contentInner]
+                }
+              >
+                {entry.content}
+              </div>
+            </Content>
+          </Item>
         )}
       />
-    </div>
+    </Root>
   );
 }

@@ -1,16 +1,7 @@
-import { signal } from "@hellajs/core";
-
-import { Avatar, AvatarFallback, AvatarGroup, AvatarGroupCount, AvatarImage } from "@components/ui/avatar.js";
+import { Avatar, AvatarFallback, AvatarGroup, AvatarGroupCount } from "@components/ui/avatar.js";
 
 export function AvatarDemo() {
-  const loaded = signal(false);
-
-  return (
-    <Avatar>
-      <AvatarImage src="/missing-avatar.png" alt="Broken image" loaded={loaded} />
-      <AvatarFallback loaded={loaded}>M</AvatarFallback>
-    </Avatar>
-  );
+  return <Avatar src="/missing-avatar.png" alt="Broken image" fallback="M" />;
 }
 
 export function AvatarGroupDemo() {

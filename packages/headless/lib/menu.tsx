@@ -1,7 +1,9 @@
 import { effect, isBoolean, isFunction, isString, signal } from "@hellajs/core";
 import { ForEach, Portal } from "@hellajs/dom";
 import { menuTypeahead } from "./utils/menuTypeahead";
+import { hoverIntent } from "./utils/hoverIntent";
 import { anchoredLayer } from "./internal/anchoredLayer";
+import { createExitMachine } from "./internal/exitMachine";
 import type {
   MenuCheckboxItemProps,
   MenuContentProps,
@@ -176,37 +178,16 @@ function menuOpenState(options: { open?: () => boolean; onOpenChange?: (open: bo
     if (options.open === undefined) internal(next);
     options.onOpenChange?.(next);
   };
-  // `visible` alone gates the render so an open→closed flip never unmounts
-  // before this watcher starts the exit (reading isOpen() in the template
-  // would flash the subtree away one evaluation early).
-  const visible = signal(false);
-  let wasOpen = false;
-  let fallback: ReturnType<typeof setTimeout> | undefined;
-  const finishExit = (): void => {
-    if (fallback !== undefined) {
-      clearTimeout(fallback);
-      fallback = undefined;
-    }
-    visible(false);
-  };
-  // Flip to open renders immediately; flip to closed starts the exit - the
+  // The shared visible/exit machine: `visible` alone gates the render so an
+  // open→closed flip never unmounts before the exit starts (reading isOpen()
+  // in the template would flash the subtree away one evaluation early); the
   // content stays mounted under data-state="closed" until its animationend
-  // (or the copied duration budget) unmounts it.
-  effect(() => {
-    if (isOpen()) {
-      wasOpen = true;
-      finishExit();
-      visible(true);
-    } else if (wasOpen) {
-      wasOpen = false;
-      visible(true);
-      fallback = setTimeout(finishExit, 250);
-    }
-  });
+  // (or the fallback budget) unmounts it.
+  const { visible, state, finishExit } = createExitMachine(isOpen);
   return {
     isOpen,
     setOpen,
-    state: (): "open" | "closed" => (isOpen() ? "open" : "closed"),
+    state,
     visible,
     finishExit,
   };
@@ -395,8 +376,10 @@ type ItemComponents = ReturnType<typeof makeItemComponents>;
 function makeSubComponents(items: ItemComponents, options: MenuSubOptions = {}): MenuSubComponents {
   const s = menuOpenState(options);
   let triggerNode: HTMLElement | undefined;
-  let openTimer: ReturnType<typeof setTimeout> | null = null;
-  let closeTimer: ReturnType<typeof setTimeout> | null = null;
+  // Hovering the portaled content cancels the trigger's scheduled close (the
+  // pointer is in transit). hoverIntent owns the timer, so the cancel rides
+  // the onClose guard — the hover-card ownership-flag pattern.
+  let overContent = false;
 
   // Closing the submenu returns focus to its trigger; the parent's own restore
   // owns the top-level handoff, so a detached trigger is left alone.
@@ -411,6 +394,7 @@ function makeSubComponents(items: ItemComponents, options: MenuSubOptions = {}):
 
   const Trigger = (props: MenuSubTriggerProps): JSX.Element => {
     const { children, class: cls, ...attrs } = props;
+    let disposeIntent: (() => void) | undefined;
     return (
       <div
         role="menuitem"
@@ -424,36 +408,22 @@ function makeSubComponents(items: ItemComponents, options: MenuSubOptions = {}):
         hook:afterMount={(node) => {
           if (!(node instanceof HTMLElement)) return;
           triggerNode = node;
-          // Hover intent: ~100ms rest opens; leaving schedules a close that
-          // entering the submenu content cancels (the pointer is in transit).
-          const enter = (): void => {
-            if (closeTimer !== null) {
-              clearTimeout(closeTimer);
-              closeTimer = null;
-            }
-            if (openTimer !== null) return;
-            openTimer = setTimeout(() => {
-              openTimer = null;
-              s.setOpen(true);
-            }, 100);
-          };
-          const leave = (): void => {
-            if (openTimer !== null) {
-              clearTimeout(openTimer);
-              openTimer = null;
-            }
-            if (closeTimer !== null) return;
-            closeTimer = setTimeout(() => {
-              closeTimer = null;
-              s.setOpen(false);
-            }, 300);
-          };
-          node.addEventListener("pointerenter", enter);
-          node.addEventListener("pointerleave", leave);
+          // Hover intent: ~100ms rest opens; leaving schedules a 300ms close
+          // that entering the submenu content cancels. pointerOnly keeps the
+          // focus leg off — roving focus onto the sub-trigger must not
+          // auto-open (keyboard enters via ArrowRight in menuKeyDown).
+          disposeIntent = hoverIntent(node, {
+            onOpen: () => s.setOpen(true),
+            onClose: () => {
+              if (!overContent) s.setOpen(false);
+            },
+            openDelay: 100,
+            closeDelay: 300,
+            pointerOnly: true,
+          });
         }}
         hook:beforeDestroy={() => {
-          if (openTimer !== null) clearTimeout(openTimer);
-          if (closeTimer !== null) clearTimeout(closeTimer);
+          disposeIntent?.();
         }}
         {...attrs}
       >
@@ -521,16 +491,19 @@ function makeSubComponents(items: ItemComponents, options: MenuSubOptions = {}):
                       const onSelect = (): void => s.setOpen(false);
                       document.addEventListener(SELECT_EVENT, onSelect);
                       push(() => document.removeEventListener(SELECT_EVENT, onSelect));
-                      // Pointer entering the content cancels the trigger's
-                      // pending close (the pointer is in transit).
+                      // Pointer entering/leaving the content maintains the
+                      // keep-open flag the trigger's onClose guard reads
+                      // (the pointer is in transit).
                       const onPointerEnter = (): void => {
-                        if (closeTimer !== null) {
-                          clearTimeout(closeTimer);
-                          closeTimer = null;
-                        }
+                        overContent = true;
+                      };
+                      const onPointerLeave = (): void => {
+                        overContent = false;
                       };
                       node.addEventListener("pointerenter", onPointerEnter);
+                      node.addEventListener("pointerleave", onPointerLeave);
                       push(() => node.removeEventListener("pointerenter", onPointerEnter));
+                      push(() => node.removeEventListener("pointerleave", onPointerLeave));
                     },
                   });
                 }}

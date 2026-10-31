@@ -1,9 +1,9 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { signal } from "@hellajs/core";
-import { resetTestState, setupContainer } from "@utils/test-helpers.js";
+import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components import the bare
 // specifier, so the harness mount shares one dom instance with the components.
-import { mount } from "@hellajs/dom";
+import { mount, peekState } from "@hellajs/dom";
 import {
   accordionPartVariants,
   accordionVariants,
@@ -55,6 +55,20 @@ function openIndexes(states: (HTMLElement | Element)[]): number[] {
     if (el.getAttribute("data-state") === "open") open.push(i);
   });
   return open;
+}
+
+/** Polls (microtask hops) until the observer-driven mount walk has wired the root's afterMount hooks. */
+async function awaitWiring(root: HTMLElement): Promise<void> {
+  for (let i = 0; i < 50; i++) {
+    if (peekState(root)?.isMounted) return;
+    await delay();
+  }
+  expect(peekState(root)?.isMounted).toBe(true);
+}
+
+/** Dispatches a bubbling keydown at a trigger; rovingTabIndex listens on the root ancestor. */
+function press(trigger: HTMLElement, key: string): void {
+  trigger.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
 }
 
 describe("accordion", () => {
@@ -256,6 +270,31 @@ describe("accordion", () => {
     (variant) => {
       const { root } = mountAccordion(variant, { items, keyBy: "value" });
       expect(root.outerHTML).not.toContain("key=");
+    },
+  );
+
+  test.each(accordionVariants)(
+    "$style moves focus between triggers with the arrow keys and Home/End without toggling",
+    async (variant) => {
+      const { root, triggers } = mountAccordion(variant, { items, open: "beta" });
+      await awaitWiring(root);
+      expect(triggers.map((trigger) => trigger.tabIndex)).toEqual([0, -1, -1]);
+      triggers[0]!.focus();
+      press(triggers[0]!, "ArrowDown");
+      expect(document.activeElement).toBe(triggers[1]!);
+      expect(triggers[1]!.getAttribute("data-state")).toBe("open");
+      expect(triggers.map((trigger) => trigger.tabIndex)).toEqual([-1, 0, -1]);
+      press(triggers[1]!, "ArrowDown");
+      expect(document.activeElement).toBe(triggers[2]!);
+      press(triggers[2]!, "ArrowUp");
+      expect(document.activeElement).toBe(triggers[1]!);
+      press(triggers[1]!, "Home");
+      expect(document.activeElement).toBe(triggers[0]!);
+      press(triggers[0]!, "End");
+      expect(document.activeElement).toBe(triggers[2]!);
+      expect(
+        openIndexes(Array.from(root.querySelectorAll("[data-slot='accordion-item']"))),
+      ).toEqual([1]);
     },
   );
 

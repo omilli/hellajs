@@ -1,4 +1,4 @@
-import { signal } from "@hellajs/core";
+import { collapsible } from "@hellajs/headless";
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 interface CollapsibleProps extends HTMLAttributes<"div"> {
@@ -25,7 +25,26 @@ interface CollapsibleContentProps extends HTMLAttributes<"div"> {
 }
 import { cn } from "./cn.js";
 
-let collapsibleCount = 0;
+const ChevronIcon = (): JSX.Element => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+    data-slot="collapsible-icon"
+    class={
+      cn("pointer-events-none size-4 shrink-0 translate-y-0.5 text-muted-foreground transition-transform duration-200")
+    }
+  >
+    <path d="m6 9 6 6 6-6" />
+  </svg>
+);
 
 export function CollapsibleTrigger({
   active,
@@ -35,57 +54,33 @@ export function CollapsibleTrigger({
   class: cls,
   ...attrs
 }: CollapsibleTriggerProps): JSX.Element {
+  const { Trigger } = collapsible();
   return (
-    <button
-      type="button"
-      data-slot="collapsible-trigger"
-      aria-expanded={active?.() ? "true" : "false"}
-      data-state={active?.() ? "open" : "closed"}
+    <Trigger
+      active={active}
+      onToggle={onToggle}
       class={
         cn("inline-flex items-center gap-2 [&[data-state=open]>svg]:rotate-180", cls)
       }
-      on:click={function (e) {
-        userClick?.call(this, e);
-        onToggle?.();
-      }}
+      on:click={userClick}
       {...attrs}
     >
       {children}
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        aria-hidden="true"
-        data-slot="collapsible-icon"
-        class={
-          cn("pointer-events-none size-4 shrink-0 translate-y-0.5 text-muted-foreground transition-transform duration-200")
-        }
-      >
-        <path d="m6 9 6 6 6-6" />
-      </svg>
-    </button>
+      <ChevronIcon />
+    </Trigger>
   );
 }
 
 export function CollapsibleContent({
   active,
-  id,
   children,
   class: cls,
   ...attrs
 }: CollapsibleContentProps): JSX.Element {
+  const { Content } = collapsible();
   return (
-    <div
-      role="region"
-      data-slot="collapsible-content"
-      id={id}
-      data-state={active?.() ? "open" : "closed"}
+    <Content
+      active={active}
       class={
         cn("grid grid-rows-[0fr] opacity-0 transition-all duration-200 data-[state=open]:grid-rows-[1fr] data-[state=open]:opacity-100", cls)
       }
@@ -98,7 +93,7 @@ export function CollapsibleContent({
       >
         {children}
       </div>
-    </div>
+    </Content>
   );
 }
 
@@ -111,32 +106,34 @@ export function Collapsible({
   class: cls,
   ...attrs
 }: CollapsibleProps): JSX.Element {
-  const internal = signal(defaultOpen ?? false);
-  const active = (): boolean => (open !== undefined ? open() : internal());
-  const contentId = `hella-collapsible-content-${++collapsibleCount}`;
-
-  const toggle = (): void => {
-    const next = !active();
-    if (open === undefined) internal(next);
-    onOpenChange?.(next);
-  };
+  const { Trigger, Content, isOpen } = collapsible({ open, defaultOpen, onOpenChange });
 
   return (
     <div
       data-slot="collapsible"
-      data-state={active() ? "open" : "closed"}
+      data-state={isOpen() ? "open" : "closed"}
       class={
         cn(cls)
       }
       {...attrs}
     >
-      <CollapsibleTrigger
-        active={active}
-        onToggle={toggle}
-        aria-controls={contentId}
-        children={triggerSlot}
-      />
-      <CollapsibleContent id={contentId} active={active} children={contentSlot} />
+      <Trigger
+        class={
+          cn("inline-flex items-center gap-2 [&[data-state=open]>svg]:rotate-180")
+        }
+      >
+        {triggerSlot}
+        <ChevronIcon />
+      </Trigger>
+      <Content>
+        <div
+          class={
+            cn("min-h-0 overflow-hidden")
+          }
+        >
+          {contentSlot}
+        </div>
+      </Content>
     </div>
   );
 }

@@ -1,6 +1,6 @@
-import { signalSet } from "@hellajs/core";
+import { accordion } from "@hellajs/headless";
 import { ForEach } from "@hellajs/dom";
-import type { HellaChildren, HTMLAttributes } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 interface AccordionEntry {
   value: string;
@@ -34,6 +34,8 @@ interface AccordionTriggerProps extends HTMLAttributes<"button"> {
   children?: HellaChildren;
   active?: () => boolean;
   onToggle?: () => void;
+  /** The item's value key; derives the `hella-accordion-trigger-<value>` id pair when `id` is not given. */
+  value?: string;
 }
 
 interface AccordionContentProps extends HTMLAttributes<"div"> {
@@ -45,6 +47,27 @@ import { cn } from "./cn.js";
 
 export type { AccordionEntry };
 
+const ChevronIcon = (): JSX.Element => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+    data-slot="accordion-icon"
+    class={
+      cn("pointer-events-none size-4 shrink-0 translate-y-0.5 text-muted-foreground transition-transform duration-200")
+    }
+  >
+    <path d="m6 9 6 6 6-6" />
+  </svg>
+);
+
 export function AccordionItem({
   value,
   active,
@@ -52,31 +75,32 @@ export function AccordionItem({
   class: cls,
   ...attrs
 }: AccordionItemProps): JSX.Element {
+  const { Item } = accordion();
   return (
-    <div
-      data-slot="accordion-item"
-      data-value={value}
-      data-state={active?.() ? "open" : "closed"}
+    <Item
+      value={value}
+      active={active}
       class={
         cn("border-b last:border-b-0", cls)
       }
       {...attrs}
     >
       {children}
-    </div>
+    </Item>
   );
 }
 
 export function AccordionTrigger({
+  value,
   active,
   onToggle,
-  id,
   disabled,
   "on:click": userClick,
   children,
   class: cls,
   ...attrs
 }: AccordionTriggerProps): JSX.Element {
+  const { Trigger } = accordion();
   return (
     <h3
       data-slot="accordion-header"
@@ -84,60 +108,34 @@ export function AccordionTrigger({
         cn("flex")
       }
     >
-      <button
-        type="button"
-        data-slot="accordion-trigger"
-        id={id}
-        aria-expanded={active?.() ? "true" : "false"}
-        aria-disabled={disabled ? "true" : undefined}
-        disabled={disabled ? true : undefined}
-        data-state={active?.() ? "open" : "closed"}
+      <Trigger
+        value={value}
+        active={active}
+        onToggle={onToggle}
+        disabled={disabled}
         class={
           cn("flex flex-1 items-start justify-between gap-4 rounded-md py-4 text-left text-sm font-medium transition-all outline-none hover:underline focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 [&[data-state=open]>svg]:rotate-180", cls)
         }
-        on:click={function (e) {
-          userClick?.call(this, e);
-          onToggle?.();
-        }}
+        on:click={userClick}
         {...attrs}
       >
         {children}
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-          data-slot="accordion-icon"
-          class={
-            cn("pointer-events-none size-4 shrink-0 translate-y-0.5 text-muted-foreground transition-transform duration-200")
-          }
-        >
-          <path d="m6 9 6 6 6-6" />
-        </svg>
-      </button>
+        <ChevronIcon />
+      </Trigger>
     </h3>
   );
 }
 
 export function AccordionContent({
   active,
-  id,
   children,
   class: cls,
   ...attrs
 }: AccordionContentProps): JSX.Element {
+  const { Content } = accordion();
   return (
-    <div
-      role="region"
-      data-slot="accordion-content"
-      id={id}
-      data-state={active?.() ? "open" : "closed"}
+    <Content
+      active={active}
       class={
         cn("grid grid-rows-[0fr] text-sm opacity-0 transition-all duration-200 data-[state=open]:grid-rows-[1fr] data-[state=open]:opacity-100", cls)
       }
@@ -151,7 +149,7 @@ export function AccordionContent({
       >
         {children}
       </div>
-    </div>
+    </Content>
   );
 }
 
@@ -164,32 +162,14 @@ export function Accordion({
   class: cls,
   ...attrs
 }: AccordionProps): JSX.Element {
-  const mode = type ?? "single";
-  // A single open string wraps to a one-value list, a list passes through, absent starts closed.
-  const seed = typeof open === "string" ? [open] : (open ?? []);
-  // Single mode keeps at most one value open: a multi-value seed clamps to the first.
-  // signalSet gives each item's isOpen reader its own membership signal, so a toggle
-  // wakes only the affected items' state effects.
-  const openValues = signalSet<string>(mode === "single" ? seed.slice(0, 1) : seed);
-
-  const isOpen = (value: string): boolean => openValues.has(value);
-
-  const toggle = (value: string, disabled?: boolean): void => {
-    if (disabled) return;
-    if (openValues.has(value)) {
-      if (mode === "single" && collapsible !== true) return;
-      openValues.delete(value);
-    } else if (mode === "single") {
-      // The reconcile setter swaps the open item in one pass: closes the previous value, opens this one.
-      openValues(new Set([value]));
-    } else {
-      openValues.add(value);
-    }
-  };
+  const { Root, Item, Trigger, Content, isOpen } = accordion({
+    type,
+    collapsible,
+    defaultValue: open,
+  });
 
   return (
-    <div
-      data-slot="accordion"
+    <Root
       class={
         cn(cls)
       }
@@ -198,31 +178,48 @@ export function Accordion({
       <ForEach
         each={items}
         use={(entry) => (
-          <AccordionItem
-            key={keyBy ? entry.value : undefined}
+          <Item
             value={entry.value}
-            active={() => isOpen(entry.value)}
-            children={
-              [
-                <AccordionTrigger
-                  id={`${"hella-accordion-trigger-"}${entry.value}`}
-                  active={() => isOpen(entry.value)}
-                  onToggle={() => toggle(entry.value, entry.disabled)}
-                  disabled={entry.disabled}
-                  aria-controls={`${"hella-accordion-content-"}${entry.value}`}
-                  children={entry.trigger}
-                />,
-                <AccordionContent
-                  id={`${"hella-accordion-content-"}${entry.value}`}
-                  active={() => isOpen(entry.value)}
-                  aria-labelledby={`${"hella-accordion-trigger-"}${entry.value}`}
-                  children={entry.content}
-                />,
-              ] as HellaChildren
+            key={keyBy ? entry.value : undefined}
+            class={
+              cn("border-b last:border-b-0")
             }
-          />
+          >
+            <h3
+              data-slot="accordion-header"
+              class={
+                cn("flex")
+              }
+            >
+              <Trigger
+                value={entry.value}
+                disabled={entry.disabled}
+                class={
+                  cn("flex flex-1 items-start justify-between gap-4 rounded-md py-4 text-left text-sm font-medium transition-all outline-none hover:underline focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 [&[data-state=open]>svg]:rotate-180")
+                }
+              >
+                {entry.trigger}
+                <ChevronIcon />
+              </Trigger>
+            </h3>
+            <Content
+              value={entry.value}
+              class={
+                cn("grid grid-rows-[0fr] text-sm opacity-0 transition-all duration-200 data-[state=open]:grid-rows-[1fr] data-[state=open]:opacity-100")
+              }
+            >
+              <div
+                data-state={isOpen(entry.value) ? "open" : "closed"}
+                class={
+                  cn("min-h-0 overflow-hidden pt-0 pb-0 transition-[padding-bottom] duration-200 data-[state=open]:pb-4")
+                }
+              >
+                {entry.content}
+              </div>
+            </Content>
+          </Item>
         )}
       />
-    </div>
+    </Root>
   );
 }

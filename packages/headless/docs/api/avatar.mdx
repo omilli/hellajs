@@ -1,0 +1,57 @@
+# avatar
+
+Creates the avatar components in one call: the container, the portrait image, and the initial fallback. The closure owns the loaded signal, so the pair works zero-config: the image hides itself until it loads, and the fallback hides while it reads true.
+
+## Basic Usage
+
+```tsx
+import { mount } from "@hellajs/dom";
+import { avatar } from "@hellajs/headless";
+
+const Avatar = avatar();
+
+mount(
+  <Avatar.Root>
+    <Avatar.Image src="/me.png" alt="Portrait" />
+    <Avatar.Fallback>M</Avatar.Fallback>
+  </Avatar.Root>,
+  "#app",
+);
+// The fallback shows until the image loads; a broken URL fires error and the
+// image drops back out, returning the fallback. Neither member unmounts.
+```
+
+## API
+
+```typescript
+function avatar(options?: AvatarOptions): AvatarComponents
+```
+
+- `options`: Reserved for future options (a fallback flicker delay). Load state is an element-lifecycle fact, not user intent, so it is never controlled.
+- **Returns**: The component set, composed as `Avatar.Root`-style members.
+
+### Components
+
+| Component | Renders |
+|---|---|
+| `Root` | The structural container carrying `data-slot="avatar"` |
+| `Image` | The portrait `img` carrying `data-slot="avatar-image"`: hidden until the native `load` event fires; `error` flips it back and the fallback returns |
+| `Fallback` | The initial `span` carrying `data-slot="avatar-fallback"`: hidden while the loaded signal reads true |
+
+Every component spreads `class` and native attributes onto its element; components own structure, styling stays in the wrapper.
+
+## Key Concepts
+
+### Load State Is Not User Intent
+
+Open state answers what the user wants; load state answers what the element did, so nothing here is controlled and no option flips the image by hand. Each factory call owns an independent signal, so two avatars never share load state, and the pair still swaps correctly with no configuration at all.
+
+### Both Members Stay Mounted
+
+The swap is attribute-driven, not conditional rendering: `Image` toggles its `hidden` attribute against the signal and `Fallback` toggles its own in step. A URL that loads after an `error` recovers in place, and neither node ever leaves the DOM.
+
+## Important Considerations
+
+### Call the Factory in Component Scope
+
+`avatar()` creates the loaded signal that must dispose with the component that owns it. Call the factory inside the component that renders the components; a module-level call leaks the signal.

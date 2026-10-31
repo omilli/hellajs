@@ -222,6 +222,12 @@ export interface AvatarPartProps extends GlobalHTMLAttributes {
 /** Prop bag for the compiled Avatar root (mirrors the emitted AvatarProps). */
 export interface AvatarVariantProps extends AvatarPartProps {
   size?: "default" | "sm" | "lg";
+  /** Composed path: the portrait source; renders the image part hidden until it loads. */
+  src?: string;
+  /** Composed path: the portrait's alt text. */
+  alt?: string;
+  /** Composed path: the initial; rendered as the fallback part, hidden while the image is loaded. */
+  fallback?: HellaChildren;
 }
 
 /** Prop bag for the compiled AvatarImage part (mirrors the emitted AvatarImageProps). */

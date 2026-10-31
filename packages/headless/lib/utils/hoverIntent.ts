@@ -10,7 +10,8 @@ let lastOpenedAt = -Infinity;
  * the tooltip/hover-card timing contract. `pointerenter` starts the open
  * timer; `pointerleave` cancels it (or schedules the close); a pointerdown
  * outside the target closes immediately. `focus`/`blur` share the same path
- * for keyboard parity.
+ * for keyboard parity; `pointerOnly: true` drops both arms for surfaces where
+ * roving focus must not auto-open (menu sub-triggers).
  *
  * Shares a module-level skip-delay window: an open within the previous 500ms
  * makes the next `onOpen` fire instantly, so moving between adjacent
@@ -34,6 +35,7 @@ export function hoverIntent(target: Element, handlers: HoverIntentOptions): () =
   }
   const openDelay = handlers.openDelay ?? 700;
   const closeDelay = handlers.closeDelay ?? 300;
+  const pointerOnly = handlers.pointerOnly === true;
   let openTimer: ReturnType<typeof setTimeout> | null = null;
   let closeTimer: ReturnType<typeof setTimeout> | null = null;
   let isOpen = false;
@@ -85,16 +87,20 @@ export function hoverIntent(target: Element, handlers: HoverIntentOptions): () =
 
   target.addEventListener("pointerenter", enter);
   target.addEventListener("pointerleave", leave);
-  target.addEventListener("focus", enter);
-  target.addEventListener("blur", leave);
+  if (!pointerOnly) {
+    target.addEventListener("focus", enter);
+    target.addEventListener("blur", leave);
+  }
   document.addEventListener("pointerdown", onDocumentPointerDown, true);
   return () => {
     clearOpen();
     clearClose();
     target.removeEventListener("pointerenter", enter);
     target.removeEventListener("pointerleave", leave);
-    target.removeEventListener("focus", enter);
-    target.removeEventListener("blur", leave);
+    if (!pointerOnly) {
+      target.removeEventListener("focus", enter);
+      target.removeEventListener("blur", leave);
+    }
     document.removeEventListener("pointerdown", onDocumentPointerDown, true);
   };
 }

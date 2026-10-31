@@ -1,4 +1,5 @@
 import { signal } from "@hellajs/core";
+import { avatar } from "@hellajs/headless";
 import type { Signal } from "@hellajs/core";
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
@@ -6,6 +7,12 @@ interface AvatarProps extends HTMLAttributes<"div"> {
   class?: string;
   children?: HellaChildren;
   size?: "default" | "sm" | "lg";
+  /** Composed path: the portrait source; renders the image part hidden until it loads. */
+  src?: string;
+  /** Composed path: the portrait's alt text. */
+  alt?: string;
+  /** Composed path: the initial; rendered as the fallback part, hidden while the image is loaded. */
+  fallback?: HellaChildren;
 }
 
 interface AvatarImageProps extends HTMLAttributes<"img"> {
@@ -162,18 +169,44 @@ const groupCount = style("avatar-group-count", {
   },
 });
 
-export function Avatar({ size, children, class: cls, ...attrs }: AvatarProps): JSX.Element {
+export function Avatar({
+  src,
+  alt,
+  fallback: fallbackContent,
+  size,
+  children,
+  class: cls,
+  ...attrs
+}: AvatarProps): JSX.Element {
+  const { Root, Image, Fallback } = avatar();
   return (
-    <div
-      data-slot="avatar"
+    <Root
       data-size={size ?? "default"}
       class={
         [base, cls]
       }
       {...attrs}
     >
+      {src !== undefined && (
+        <Image
+          src={src}
+          alt={alt}
+          class={
+            [image]
+          }
+        />
+      )}
+      {fallbackContent !== undefined && (
+        <Fallback
+          class={
+            [fallback]
+          }
+        >
+          {fallbackContent}
+        </Fallback>
+      )}
       {children}
-    </div>
+    </Root>
   );
 }
 

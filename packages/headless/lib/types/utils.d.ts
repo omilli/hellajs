@@ -51,6 +51,8 @@ export interface HoverIntentOptions {
   openDelay?: number;
   /** Pointer-leave ms before onClose fires. Default 300. */
   closeDelay?: number;
+  /** Pointer-only mode: skips the focus/blur keyboard-parity arms — for surfaces where roving focus must not auto-open (menu sub-triggers). */
+  pointerOnly?: boolean;
 }
 
 export interface DragHandlers {

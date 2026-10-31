@@ -5,6 +5,12 @@ export interface AvatarProps extends HTMLAttributes<"div"> {
   class?: string;
   children?: HellaChildren;
   size?: "default" | "sm" | "lg";
+  /** Composed path: the portrait source; renders the image part hidden until it loads. */
+  src?: string;
+  /** Composed path: the portrait's alt text. */
+  alt?: string;
+  /** Composed path: the initial; rendered as the fallback part, hidden while the image is loaded. */
+  fallback?: HellaChildren;
 }
 
 export interface AvatarImageProps extends HTMLAttributes<"img"> {

@@ -1,7 +1,8 @@
-import { effect, signal } from "@hellajs/core";
+import { signal } from "@hellajs/core";
 import { Portal } from "@hellajs/dom";
 import type { HellaChild, HellaChildren } from "@hellajs/dom";
-import { anchorPosition, hoverIntent, modal } from "@hellajs/headless/utils";
+import { dialog } from "@hellajs/headless";
+import { anchorPosition, hoverIntent } from "@hellajs/headless/utils";
 import type {
   SidebarProviderProps,
   SidebarProps,
@@ -241,110 +242,64 @@ export function Sidebar({
 }
 
 /**
- * The mobile panel: the ref renders Sidebar inside its Sheet entry; this
- * entry is self-contained, so the sheet mechanics (overlay, slide pair,
- * exit hold) are duplicated inline - the trap/escape/outside wiring rides
- * modal().
+ * The mobile panel: the ref renders Sidebar inside its Sheet entry; the sheet
+ * mechanics (overlay, slide pair, exit hold, trap/escape/outside wiring) ride
+ * the dialog factory's portaled Content.
  */
 function SidebarMobileSheet(props: SidebarMobileSheetProps): JSX.Element {
   const side = props.side;
   const titleId = `hella-sidebar-title-${++sidebarCount}`;
   const descriptionId = `hella-sidebar-description-${sidebarCount}`;
-  // `visible` alone gates the render so an open→closed flip never unmounts
-  // before this watcher starts the exit (reading open() in the template
-  // would flash the subtree away one evaluation early).
-  const visible = signal(false);
-  let wasOpen = false;
-  let fallback: ReturnType<typeof setTimeout> | undefined;
-
-  const finishExit = (): void => {
-    if (fallback !== undefined) {
-      clearTimeout(fallback);
-      fallback = undefined;
-    }
-    visible(false);
-  };
-
-  // Flip to open renders immediately; flip to closed starts the exit - the
-  // panel stays mounted under data-state="closed" until its animationend
-  // (or the copied 350ms budget) unmounts it.
-  effect(() => {
-    if (props.open()) {
-      wasOpen = true;
-      finishExit();
-      visible(true);
-    } else if (wasOpen) {
-      wasOpen = false;
-      visible(true);
-      fallback = setTimeout(finishExit, 350);
-    }
+  const { Content } = dialog({
+    open: props.open,
+    onOpenChange: (next) => {
+      if (!next) props.onClose();
+    },
+    fallbackMs: 350,
   });
 
-  const state = (): "open" | "closed" => (props.open() ? "open" : "closed");
-
   return (
-    <>
-      {() =>
-        visible() && (
-          <Portal to="body">
-            <div
-              data-slot="sidebar-overlay"
-              data-state={state()}
-              class={
-                // @hella:compose
-                [overlay]
-                // @hella:end
-              }
-            />
-            <div
-              data-sidebar="sidebar"
-              data-slot="sidebar"
-              data-mobile="true"
-              data-state={state()}
-              data-side={side}
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby={titleId}
-              aria-describedby={descriptionId}
-              style="--sidebar-width: 18rem"
-              class={
-                // @hella:compose
-                [mobile, mobileSides[side]]
-                // @hella:end
-              }
-              hook:afterMount={(node) => {
-                if (!(node instanceof HTMLElement)) return;
-                // modal() owns the trap/escape/outside arms (re-armed with
-                // the state getter, disposed with the node) and the exit
-                // notify: the exit's animationend (state already "closed")
-                // fires finishExit; the entry's is ignored.
-                modal(node, {
-                  state,
-                  onClose: props.onClose,
-                  onExited: finishExit,
-                });
-              }}
-            >
-              <h2 id={titleId} class="sr-only">
-                Sidebar
-              </h2>
-              <p id={descriptionId} class="sr-only">
-                Displays the mobile sidebar.
-              </p>
-              <div
-                class={
-                  // @hella:compose
-                  [mobileInner]
-                  // @hella:end
-                }
-              >
-                {props.children}
-              </div>
-            </div>
-          </Portal>
-        )
+    <Content
+      data-sidebar="sidebar"
+      data-slot="sidebar"
+      data-mobile="true"
+      data-side={side}
+      aria-labelledby={titleId}
+      aria-describedby={descriptionId}
+      style="--sidebar-width: 18rem"
+      class={
+        // @hella:compose
+        [mobile, mobileSides[side]]
+        // @hella:end
       }
-    </>
+      overlay={(state) => (
+        <div
+          data-slot="sidebar-overlay"
+          data-state={state()}
+          class={
+            // @hella:compose
+            [overlay]
+            // @hella:end
+          }
+        />
+      )}
+    >
+      <h2 id={titleId} class="sr-only">
+        Sidebar
+      </h2>
+      <p id={descriptionId} class="sr-only">
+        Displays the mobile sidebar.
+      </p>
+      <div
+        class={
+          // @hella:compose
+          [mobileInner]
+          // @hella:end
+        }
+      >
+        {props.children}
+      </div>
+    </Content>
   );
 }
 

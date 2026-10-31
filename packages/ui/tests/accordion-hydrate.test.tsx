@@ -22,6 +22,9 @@ import * as cssNs from "@hellajs/css";
 import { ssr } from "@hellajs/ssr";
 import * as AccordionRegistry from "../dist/registry/accordion/css/accordion";
 import { tokens } from "../dist/registry/accordion/css/tokens";
+// The server arm's headless binding: the ssr-condition variant (the ast-compiled build the site's
+// server environments resolve), not the dom build — its factory members return HellaNode for `ssr`.
+import * as headlessNs from "../../headless/dist/ssr/index.js";
 import type { HellaNode, TemplateBuildFn } from "@hellajs/dom";
 
 beforeEach(() => {
@@ -75,6 +78,7 @@ const twoTargetAccordion = async (): Promise<{
       "@hellajs/core": coreNs,
       "@hellajs/dom": domNs,
       "@hellajs/css": cssNs,
+      "@hellajs/headless": headlessNs,
       "./tokens.js": { tokens },
     },
     "__out",

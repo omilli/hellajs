@@ -236,7 +236,7 @@
     },
     "avatar": {
       "files": ["avatar.tsx"],
-      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "deps": ["@hellajs/core", "@hellajs/dom", "@hellajs/headless"],
       "styles": {
         "css": {
           "deps": ["@hellajs/css"],
@@ -418,7 +418,7 @@
     },
     "collapsible": {
       "files": ["collapsible.tsx"],
-      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "deps": ["@hellajs/core", "@hellajs/dom", "@hellajs/headless"],
       "styles": {
         "css": {
           "deps": ["@hellajs/css"],
@@ -431,7 +431,7 @@
     },
     "accordion": {
       "files": ["accordion.tsx"],
-      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "deps": ["@hellajs/core", "@hellajs/dom", "@hellajs/headless"],
       "styles": {
         "css": {
           "deps": ["@hellajs/css"],

@@ -1,7 +1,8 @@
-import { effect, isFunction, signal } from "@hellajs/core";
+import { isFunction, signal } from "@hellajs/core";
 import { ForEach, Portal } from "@hellajs/dom";
 import { menuTypeahead } from "./utils/menuTypeahead";
 import { anchoredLayer } from "./internal/anchoredLayer";
+import { createExitMachine } from "./internal/exitMachine";
 import { moveActive, optionIdOf, selectionActive, typeaheadEntries } from "./internal/listbox";
 import type { ListboxModel } from "./internal/listbox";
 import type {
@@ -104,37 +105,16 @@ function comboboxOpenState(options: {
     if (options.open === undefined) internal(next);
     options.onOpenChange?.(next);
   };
-  // `visible` alone gates the render so an open→closed flip never unmounts
-  // before this watcher starts the exit (reading isOpen() in the template
-  // would flash the subtree away one evaluation early).
-  const visible = signal(false);
-  let wasOpen = false;
-  let fallback: ReturnType<typeof setTimeout> | undefined;
-  const finishExit = (): void => {
-    if (fallback !== undefined) {
-      clearTimeout(fallback);
-      fallback = undefined;
-    }
-    visible(false);
-  };
-  // Flip to open renders immediately; flip to closed starts the exit - the
+  // The shared visible/exit machine: `visible` alone gates the render so an
+  // open→closed flip never unmounts before the exit starts (reading isOpen()
+  // in the template would flash the subtree away one evaluation early); the
   // content stays mounted under data-state="closed" until its animationend
-  // (or the copied duration budget) unmounts it.
-  effect(() => {
-    if (isOpen()) {
-      wasOpen = true;
-      finishExit();
-      visible(true);
-    } else if (wasOpen) {
-      wasOpen = false;
-      visible(true);
-      fallback = setTimeout(finishExit, 250);
-    }
-  });
+  // (or the fallback budget) unmounts it.
+  const { visible, state, finishExit } = createExitMachine(isOpen);
   return {
     isOpen,
     setOpen,
-    state: (): "open" | "closed" => (isOpen() ? "open" : "closed"),
+    state,
     visible,
     finishExit,
   };

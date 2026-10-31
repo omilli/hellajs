@@ -1,17 +1,24 @@
 ## API
 
-The image owns its load state and the fallback reads it through one explicit signal you pass to both components: `AvatarImage` hides its `img` while the signal reads false and flips it on the native `load`/`error` events, and `AvatarFallback` hides while the same signal reads true. Both components stay mounted (the swap is attribute-driven, not conditional rendering), so a broken URL that fires `error` drops the image back out and the initial returns. An `AvatarImage` without a shared signal still hides itself until its own load resolves; pass the signal only when a sibling fallback must react.
+The composed root takes the portrait and the initial as props and works zero-config: it owns the loaded signal internally, so `src` renders the image part hidden until it loads and `fallback` renders the fallback part hidden while it reads true. Both parts stay mounted (the swap is attribute-driven, not conditional rendering), so a broken URL that fires `error` drops the image back out and the initial returns.
 
 ### Avatar
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
+| `src` | `string` | `-` |
+| `alt` | `string` | `-` |
+| `fallback` | `HellaChildren` | `-` |
 | `size` | `"default" \| "sm" \| "lg"` | `"default"` |
 | `class` | `string` | `-` |
 | `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
-`size` sets `data-size` on the root; the fallback and badge read it through group selectors, so one prop rescales the whole stack.
+`size` sets `data-size` on the root; the fallback and badge read it through group selectors, so one prop rescales the whole stack. Omit `src` and `fallback` for a plain composition root, and render the parts yourself when siblings must share one signal explicitly.
+
+## Manual Composition
+
+`AvatarImage` and `AvatarFallback` stay exported: pass one signal to both when the composed root's internal threading is not enough, or mount `AvatarImage` alone and let its private signal drive the swap.
 
 ### AvatarImage
 

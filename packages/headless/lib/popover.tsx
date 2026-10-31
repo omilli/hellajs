@@ -1,6 +1,7 @@
-import { effect, signal } from "@hellajs/core";
+import { signal } from "@hellajs/core";
 import { Portal } from "@hellajs/dom";
 import { anchoredLayer } from "./internal/anchoredLayer";
+import { createExitMachine } from "./internal/exitMachine";
 import type {
   PopoverAnchorProps,
   PopoverContentProps,
@@ -48,37 +49,12 @@ export function popover(options: PopoverOptions = {}): PopoverComponents {
   let anchorNode: Element | undefined;
   const anchorOf = (): Element | undefined => anchorOverride?.() ?? anchorNode ?? triggerNode;
 
-  // `visible` alone gates the render so an open→closed flip never unmounts
-  // before this watcher starts the exit (reading isOpen() in the template
-  // would flash the subtree away one evaluation early).
-  const visible = signal(false);
-  let wasOpen = false;
-  let fallback: ReturnType<typeof setTimeout> | undefined;
-
-  const finishExit = (): void => {
-    if (fallback !== undefined) {
-      clearTimeout(fallback);
-      fallback = undefined;
-    }
-    visible(false);
-  };
-
-  // Flip to open renders immediately; flip to closed starts the exit — the
+  // The shared visible/exit machine: `visible` alone gates the render so an
+  // open→closed flip never unmounts before the exit starts (reading isOpen()
+  // in the template would flash the subtree away one evaluation early); the
   // content stays mounted under data-state="closed" until its animationend
-  // (or the copied duration budget) unmounts it.
-  effect(() => {
-    if (isOpen()) {
-      wasOpen = true;
-      finishExit();
-      visible(true);
-    } else if (wasOpen) {
-      wasOpen = false;
-      visible(true);
-      fallback = setTimeout(finishExit, 250);
-    }
-  });
-
-  const state = (): "open" | "closed" => (isOpen() ? "open" : "closed");
+  // (or the fallback budget) unmounts it.
+  const { visible, state, finishExit } = createExitMachine(isOpen);
 
   const Trigger = (props: PopoverTriggerProps): JSX.Element => {
     const { children, class: cls, "on:click": userClick, ...attrs } = props;

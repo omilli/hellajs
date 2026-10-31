@@ -48,6 +48,7 @@ interface HoverIntentOptions {
   onClose: () => void;
   openDelay?: number;
   closeDelay?: number;
+  pointerOnly?: boolean;
 }
 ```
 
@@ -55,13 +56,14 @@ interface HoverIntentOptions {
 - `handlers`: `onOpen` fires when the open delay elapses; `onClose` fires after the close delay, on an outside pointerdown while open, or on keyboard blur.
 - `openDelay`: Pointer-hover milliseconds before `onOpen` fires. Default `700`.
 - `closeDelay`: Pointer-leave milliseconds before `onClose` fires. Default `300`.
+- `pointerOnly`: Skips the `focus` and `blur` arms so keyboard focus never opens or closes the surface; the pointer and outside-pointerdown wiring stay active. Menu sub-triggers use it: roving focus onto a sub-trigger must not auto-open the submenu (the keyboard opens it with ArrowRight). Default `false`.
 - **Returns**: Dispose handle. Calling it removes all listeners and clears pending timers.
 
 ## Key Concepts
 
 ### Pointer and Keyboard Parity
 
-`pointerenter` and `focus` share the open path; `pointerleave` and `blur` share the close path. A tooltip wired once responds to both mouse hover and keyboard traversal with the same delays.
+`pointerenter` and `focus` share the open path; `pointerleave` and `blur` share the close path. A tooltip wired once responds to both mouse hover and keyboard traversal with the same delays. Pass `pointerOnly: true` to drop both keyboard arms when focus must not drive the surface, as in a menu submenu where roving focus lands on sub-triggers.
 
 ### Outside Pointerdown Closes Immediately
 

@@ -1,0 +1,103 @@
+# dialog
+
+Creates the four dialog components in one call: the toggle trigger, the structural overlay, the portaled modal panel, and the close button. The factory closure owns the open state, the exit timing, and the generated content id; the panel arms the [`modal`](/headless/modal) engine (focus trap, Escape and outside dismissal, exit notification) while open.
+
+## Basic Usage
+
+```tsx
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+import { dialog } from "@hellajs/headless";
+
+const open = signal(false);
+
+const Dialog = dialog({
+  open: () => open(),
+  onOpenChange: (next) => open(next),
+});
+
+mount(
+  <div>
+    <Dialog.Trigger>Open</Dialog.Trigger>
+    <Dialog.Content>
+      <h2 id="dialog-title">Confirm</h2>
+      <p id="dialog-description">Proceed with the action.</p>
+      <Dialog.Close>Close</Dialog.Close>
+    </Dialog.Content>
+  </div>,
+  "#app",
+);
+// The trigger toggles the factory's open state and carries data-state plus
+// aria-expanded. Content portals into document.body with the structural
+// overlay as its body sibling, traps focus while open, and closes on Escape
+// or an outside press; closing keeps it mounted under data-state="closed"
+// until its exit animation ends.
+```
+
+Omitting `open` keeps the state internal, so the components work standalone:
+
+```tsx
+const Dialog = dialog();
+// <Dialog.Trigger> toggles the factory's own signal.
+```
+
+## API
+
+```typescript
+function dialog(options?: DialogOptions): DialogComponents
+```
+
+- `options.open`: Controlled open-state getter. Passing it makes the dialog controlled; omitting it keeps state internal. Portaled surfaces start closed; there is no seed option.
+- `options.onOpenChange`: Called on every open-state change, owned toggle and dismissal alike.
+- `options.fallbackMs`: Milliseconds before an exit no `animationend` resolves unmounts the held panel. Default 250.
+- **Returns**: The component set, composed as `Dialog.Trigger`-style members.
+
+### Components
+
+| Component | Renders |
+|---|---|
+| `Trigger` | `button` owning the click toggle, `data-state`, `aria-expanded`, `aria-haspopup="dialog"`, and `aria-controls` |
+| `Overlay` | Structural `div` carrying `data-state`; the composed `Content` portals it (or the `overlay` slot's element) as the panel's body sibling |
+| `Content` | `role="dialog"` panel with `aria-modal` and the generated id, portaled into `document.body`, carrying `data-state` |
+| `Close` | `button` owning the click dismissal and `data-state` |
+
+Every component spreads `class` and native attributes onto its element; components own structure, styling stays in the wrapper.
+
+### Content props
+
+| Prop | Type | Default |
+|---|---|---|
+| `escape` | `boolean` | `true` |
+| `outside` | `boolean` | `true` |
+| `onExited` | `() => void` | `-` |
+| `overlay` | `(state: () => "open" \| "closed") => JSX.Element` | The structural `Overlay` |
+| `portal` | `boolean` | `true` |
+| `id` | `string` | The generated content id |
+
+`portal: false` renders the bare panel inline for manual compositions: no gate, no portal, no overlay. The panel still arms the modal engine, and `onExited` is the caller's alone. The `overlay` slot receives the closure's `state` getter, so a styled backdrop tracks `data-state` through the same cycle.
+
+## Key Concepts
+
+### Controlled or Internal State
+
+Pass `open` and the factory never holds state: the getter is the single source of truth and `onOpenChange` reports every requested flip. Omit `open` and the factory keeps its own signal; `onOpenChange` still reports, so either shape composes with the registry's `open`/`onClose` contract.
+
+### The Modal Engine and the Exit Machine
+
+While open, the panel is armed through [`modal`](/headless/modal): focus traps inside (Tab wraps, the first focusable child receives focus on open, and focus returns to the pre-open element on close), and Escape or an outside pointerdown asks the factory to close. `escape: false` or `outside: false` holds the panel open against that path and leaves dismissal to your own controls.
+
+Flipping to closed starts the exit: the panel stays mounted under `data-state="closed"` until its `animationend` (or the `fallbackMs` budget when no animation runs) unmounts it. Flipping back to open mid-exit cancels the unmount and re-arms in place. Call the factory in component scope so the machine's effect disposes with the component.
+
+### No Open Seed
+
+There is no `defaultOpen`: portaled surfaces start closed and open only after mount, through interaction or a controller write. This keeps the portal's first effect off the initial mount walk, where a not-yet-attached target would throw.
+
+## Important Considerations
+
+### Call the Factory in Component Scope
+
+`dialog()` starts a state machine whose effect must dispose with the component that owns it. Module-level calls with an internal signal leak that effect; module-level calls are safe only with a controlled `open` getter, where the machine never subscribes to factory state.
+
+### Controlled Getters Notify One Direction
+
+`onOpenChange` reports transitions the factory drives (toggle, dismissal). Changing a controlled `open` signal directly is the controller's own move and notifies no one.

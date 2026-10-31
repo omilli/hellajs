@@ -65,6 +65,10 @@ Every component also takes a `class` string, landing last in its style compositi
 | `type="single" collapsible` | Same swap | Closes the item, leaving none open |
 | `type="multiple"` | Opens it alongside the rest | Closes it |
 
+## Keyboard
+
+The root arms roving focus over the trigger buttons: `ArrowDown` and `ArrowUp` move focus between them (wrapping at the ends), and `Home`/`End` jump to the first or last trigger. Moving focus never toggles an item; activation stays a click. A disabled entry renders `aria-disabled` and `disabled`, drops out of the arrow walk, and blocks clicks.
+
 ## Dynamic items
 
 `items` reads once at mount when passed a plain array; pass a signal accessor and the rows re-render as the array grows, shrinks, or reorders:

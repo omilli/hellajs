@@ -1,8 +1,9 @@
-import { effect, signal } from "@hellajs/core";
+import { signal } from "@hellajs/core";
+import type { Signal } from "@hellajs/core";
+import { dialog } from "@hellajs/headless";
 import { Portal, registry } from "@hellajs/dom";
 import type { HellaChild, HellaChildren, HTMLAttributes } from "@hellajs/dom";
-import { modal, onDrag } from "@hellajs/headless/utils";
-import type { Signal } from "@hellajs/core";
+import { onDrag } from "@hellajs/headless/utils";
 
 type DrawerState = () => "open" | "closed";
 
@@ -242,8 +243,6 @@ const description = style("drawer-description", {
   lineHeight: "1.25rem",
 });
 
-/** Accessibility state shared by the animated drawer parts. */
-
 /** Edge the drawer mounts on; drag dismissal runs along this axis. */
 
 /** Release fraction of the panel's dismissal-axis size beyond which a release dismisses. */
@@ -252,7 +251,7 @@ const DISMISS_DISTANCE = 0.25;
 /** Release velocity (px/s along the dismissal axis) beyond which a release dismisses. */
 const DISMISS_VELOCITY = 500;
 
-/** Body fallback budget for the exit slide (the content transitions out via transform). */
+/** Fallback budget for the exit slide (the content transitions out via transform). */
 const EXIT_FALLBACK_MS = 300;
 
 const AXIS: Record<DrawerDirection, "x" | "y"> = { top: "y", bottom: "y", left: "x", right: "x" };
@@ -271,20 +270,110 @@ function followTransform(direction: DrawerDirection, d: number): string {
   return `translate${axis}(${clamped}px)`;
 }
 
+/**
+ * The drawer's drag seam, wired on the factory's panel node: the enter
+ * slide-in (start off-edge, force the commit, release through the restored
+ * transition), the close-flip slide-out, and the whole-panel drag follow with
+ * its release dismissal. Local single-behavior wiring - the one raw-util
+ * seam this paste keeps. Node-scoped effects, so everything disposes with
+ * the panel.
+ */
+function wireDrawerSeam(
+  node: HTMLElement,
+  opts: {
+    state: () => "open" | "closed";
+    direction: DrawerDirection;
+    fraction?: Signal<number>;
+    onClose?: () => void;
+  },
+): void {
+  const { direction, fraction, onClose } = opts;
+
+  // Enter: start fully off-edge, force the commit, then release - the
+  // content's transform transition carries the slide-in (vaul parity).
+  node.style.transform = EXIT_TRANSFORM[direction];
+  void node.offsetWidth;
+  node.style.transform = "";
+
+  // The close flip slides the panel off-edge through the restored transition
+  // (trap/escape/outside disarm through modal's own re-arm); reopening
+  // re-arms without a remount.
+  registry.addEffect(node, () => {
+    if (opts.state() === "closed") node.style.transform = EXIT_TRANSFORM[direction];
+  });
+
+  let dragging = false;
+  let panelSize = 0;
+  // Signed displacement (px, positive toward dismissal) + timestamp of the
+  // last two drag samples - the release velocity source.
+  let samples: { d: number; t: number }[] = [];
+
+  const releaseVelocity = (): number => {
+    if (samples.length < 2) return 0;
+    const dt = samples[1]!.t - samples[0]!.t;
+    if (dt <= 0) return 0;
+    return ((samples[1]!.d - samples[0]!.d) / dt) * 1000;
+  };
+
+  // Interactive elements opt out so buttons inside the panel stay clickable.
+  registry.addEffect(node, () =>
+    onDrag(node, {
+      onStart: (event) => {
+        if (opts.state() !== "open") return;
+        const hit = event.target as HTMLElement | null;
+        if (hit?.closest?.("button, a, input, textarea, select, [data-no-drag]")) return;
+        dragging = true;
+        const rect = node.getBoundingClientRect();
+        panelSize = AXIS[direction] === "y" ? rect.height : rect.width;
+        samples = [{ d: 0, t: event.timeStamp }];
+        node.setAttribute("data-dragging", "true");
+      },
+      onMove: (delta) => {
+        if (!dragging) return;
+        const d = AXIS[direction] === "y" ? delta.dy : delta.dx;
+        node.style.transform = followTransform(direction, d);
+        fraction?.(panelSize > 0 ? Math.min(1, Math.max(0, d * SIGN[direction]) / panelSize) : 0);
+        samples.push({ d: d * SIGN[direction], t: delta.event.timeStamp });
+        if (samples.length > 2) samples.shift();
+      },
+      onEnd: () => {
+        if (!dragging) return;
+        dragging = false;
+        node.removeAttribute("data-dragging");
+        const displaced = samples[samples.length - 1]?.d ?? 0;
+        const dismiss =
+          (panelSize > 0 && displaced >= panelSize * DISMISS_DISTANCE) ||
+          releaseVelocity() >= DISMISS_VELOCITY;
+        samples = [];
+        fraction?.(0);
+        if (dismiss) {
+          node.style.transform = EXIT_TRANSFORM[direction];
+          onClose?.();
+        } else {
+          // Spring back: data-dragging is gone, so the restored
+          // transition animates the cleared transform to identity.
+          node.style.transform = "";
+        }
+      },
+    }),
+  );
+}
+
+/** The screen-covering backdrop; the factory's Overlay with the drag-fraction fade. */
 export function DrawerOverlay({
   state,
   fraction,
   class: cls,
   ...attrs
 }: DrawerOverlayProps): JSX.Element {
+  const { Overlay } = dialog({ open: () => (state?.() ?? "open") === "open" });
   const overlayStyle = (): Record<string, string> | undefined => {
     const f = fraction?.() ?? 0;
     return f > 0 ? { opacity: String(Math.max(0, 1 - f)) } : undefined;
   };
   return (
-    <div
+    <Overlay
       data-slot="drawer-overlay"
-      data-state={state?.()}
       style={overlayStyle}
       class={
         [base, cls]
@@ -294,6 +383,7 @@ export function DrawerOverlay({
   );
 }
 
+/** The X close button; the factory's Close with the X icon and its sr-only label. */
 export function DrawerClose({
   state,
   onClose,
@@ -301,18 +391,19 @@ export function DrawerClose({
   class: cls,
   ...attrs
 }: DrawerCloseProps): JSX.Element {
+  const { Close } = dialog({
+    open: () => (state?.() ?? "open") === "open",
+    onOpenChange: (next) => {
+      if (!next) onClose?.();
+    },
+  });
   return (
-    <button
-      type="button"
+    <Close
       data-slot="drawer-close"
-      data-state={state?.()}
       class={
         [close, cls]
       }
-      on:click={function (e) {
-        userClick?.call(this, e);
-        onClose?.();
-      }}
+      on:click={userClick}
       {...attrs}
     >
       <svg
@@ -330,7 +421,7 @@ export function DrawerClose({
         <path d="m6 6 12 12" />
       </svg>
       <span class="sr-only">Close</span>
-    </button>
+    </Close>
   );
 }
 
@@ -339,11 +430,11 @@ export function DrawerPortal(props: DrawerPortalProps): JSX.Element {
   return <Portal to="body">{props.children}</Portal>;
 }
 
-/** The manual trigger button; wire its click to the caller's open signal - hella has no Radix context to do it for you. */
+/** The manual trigger button; the factory's Trigger owning the aria contract over the wrapper's own state. */
 export function DrawerTrigger({ children, class: cls, ...attrs }: DrawerTriggerProps): JSX.Element {
+  const { Trigger } = dialog();
   return (
-    <button
-      type="button"
+    <Trigger
       data-slot="drawer-trigger"
       class={
         [cls]
@@ -351,7 +442,7 @@ export function DrawerTrigger({ children, class: cls, ...attrs }: DrawerTriggerP
       {...attrs}
     >
       {children}
-    </button>
+    </Trigger>
   );
 }
 
@@ -362,7 +453,8 @@ export function DrawerTrigger({ children, class: cls, ...attrs }: DrawerTriggerP
  * whole panel drags along its dismissal axis; the pointer-follow is instant
  * (data-dragging suspends the transform transition), and release either
  * dismisses - past 25% of the panel size, or moving faster than 500px/s -
- * or springs back through the restored transition.
+ * or springs back through the restored transition. The panel renders inline
+ * where placed: the factory's gate and portal belong to the composed Drawer.
  */
 export function DrawerContent({
   state,
@@ -376,106 +468,30 @@ export function DrawerContent({
   class: cls,
   ...attrs
 }: DrawerContentProps): JSX.Element {
-  let panel: HTMLElement | undefined;
   const direction = drawerDirection ?? "bottom";
-  let dragging = false;
-  let panelSize = 0;
-  // Signed displacement (px, positive toward dismissal) + timestamp of the
-  // last two drag samples — the release velocity source.
-  let samples: { d: number; t: number }[] = [];
-
-  const startExit = (): void => {
-    if (panel === undefined || !panel.isConnected) return;
-    panel.style.transform = EXIT_TRANSFORM[direction];
-  };
-
-  // The close flip slides the panel off-edge through the restored transition
-  // (trap/escape/outside disarm through modal's own re-arm); reopening
-  // re-arms without a remount.
-  effect(() => {
-    if (state?.() === "closed") startExit();
+  const resolvedState = (): "open" | "closed" => state?.() ?? "open";
+  const { Content } = dialog({
+    open: () => resolvedState() === "open",
+    onOpenChange: (next) => {
+      if (!next) onClose?.();
+    },
+    fallbackMs: EXIT_FALLBACK_MS,
   });
 
-  const releaseVelocity = (): number => {
-    if (samples.length < 2) return 0;
-    const dt = samples[1]!.t - samples[0]!.t;
-    if (dt <= 0) return 0;
-    return ((samples[1]!.d - samples[0]!.d) / dt) * 1000;
-  };
-
   return (
-    <div
+    <Content
+      portal={false}
       data-slot="drawer-content"
-      data-state={state?.()}
       data-vaul-drawer-direction={direction}
-      role="dialog"
-      aria-modal="true"
+      escape={closeOnEscape}
+      outside={closeOnOutside}
+      onExited={onExited}
       class={
         [content, contentDirections[direction], cls]
       }
       hook:afterMount={(node) => {
         if (!(node instanceof HTMLElement)) return;
-        panel = node;
-        // Enter: start fully off-edge, force the commit, then release - the
-        // content's transform transition carries the slide-in (vaul parity).
-        node.style.transform = EXIT_TRANSFORM[direction];
-        void node.offsetWidth;
-        node.style.transform = "";
-        // A manual composition without a state getter arms permanently and
-        // disposes with the panel.
-        modal(node, {
-          state: state ?? (() => "open"),
-          onClose,
-          escape: closeOnEscape,
-          outside: closeOnOutside,
-          onExited,
-        });
-        // Whole-panel drag along the dismissal axis. Interactive elements opt
-        // out so buttons inside the panel stay clickable. Node-registered, so
-        // the wiring disposes when the panel leaves the DOM.
-        registry.addEffect(node, () =>
-          onDrag(node, {
-            onStart: (event) => {
-              if (state?.() !== "open") return;
-              const hit = event.target as HTMLElement | null;
-              if (hit?.closest?.("button, a, input, textarea, select, [data-no-drag]")) return;
-              dragging = true;
-              const rect = node.getBoundingClientRect();
-              panelSize = AXIS[direction] === "y" ? rect.height : rect.width;
-              samples = [{ d: 0, t: event.timeStamp }];
-              node.setAttribute("data-dragging", "true");
-            },
-            onMove: (delta) => {
-              if (!dragging) return;
-              const d = AXIS[direction] === "y" ? delta.dy : delta.dx;
-              node.style.transform = followTransform(direction, d);
-              fraction?.(
-                panelSize > 0 ? Math.min(1, Math.max(0, d * SIGN[direction]) / panelSize) : 0,
-              );
-              samples.push({ d: d * SIGN[direction], t: delta.event.timeStamp });
-              if (samples.length > 2) samples.shift();
-            },
-            onEnd: () => {
-              if (!dragging) return;
-              dragging = false;
-              node.removeAttribute("data-dragging");
-              const displaced = samples[samples.length - 1]?.d ?? 0;
-              const dismiss =
-                (panelSize > 0 && displaced >= panelSize * DISMISS_DISTANCE) ||
-                releaseVelocity() >= DISMISS_VELOCITY;
-              samples = [];
-              fraction?.(0);
-              if (dismiss) {
-                node.style.transform = EXIT_TRANSFORM[direction];
-                onClose?.();
-              } else {
-                // Spring back: data-dragging is gone, so the restored
-                // transition animates the cleared transform to identity.
-                node.style.transform = "";
-              }
-            },
-          }),
-        );
+        wireDrawerSeam(node, { state: resolvedState, direction, fraction, onClose });
       }}
       {...attrs}
     >
@@ -484,7 +500,7 @@ export function DrawerContent({
         class="mx-auto mt-4 hidden h-2 w-[100px] shrink-0 rounded-full bg-muted group-data-[vaul-drawer-direction=bottom]/drawer-content:block"
       />
       {children}
-    </div>
+    </Content>
   );
 }
 
@@ -567,73 +583,52 @@ export function Drawer({
 }: DrawerProps): JSX.Element {
   const titleId = `hella-drawer-title-${++drawerCount}`;
   const descriptionId = `hella-drawer-description-${drawerCount}`;
-  // `visible` alone gates the render so an open→closed flip never unmounts
-  // before this watcher starts the exit (reading open() in the template
-  // would flash the subtree away one evaluation early).
-  const visible = signal(false);
+  const resolvedDirection = direction ?? "bottom";
   const dragFraction = signal(0);
-  let wasOpen = false;
-  let fallback: ReturnType<typeof setTimeout> | undefined;
-
-  const finishExit = (): void => {
-    if (fallback !== undefined) {
-      clearTimeout(fallback);
-      fallback = undefined;
-    }
-    visible(false);
-  };
-
-  // Flip to open renders immediately; flip to closed starts the exit - the
-  // panel stays mounted under data-state="closed" until its transform
-  // transition ends (or the copied fallback budget) unmounts it.
-  effect(() => {
-    if (open()) {
-      wasOpen = true;
-      finishExit();
-      visible(true);
-    } else if (wasOpen) {
-      wasOpen = false;
-      visible(true);
-      fallback = setTimeout(finishExit, EXIT_FALLBACK_MS);
-    }
+  const { Content } = dialog({
+    open,
+    onOpenChange: (next) => {
+      if (!next) onClose();
+    },
+    fallbackMs: EXIT_FALLBACK_MS,
   });
 
-  const state = (): "open" | "closed" => (open() ? "open" : "closed");
-
   return (
-    <>
-      {() =>
-        visible() && (
-          <Portal to="body">
-            <DrawerOverlay state={state} fraction={dragFraction} />
-            <DrawerContent
-              state={state}
-              direction={direction}
-              fraction={dragFraction}
-              aria-labelledby={titleId}
-              aria-describedby={descriptionText === undefined ? undefined : descriptionId}
-              closeOnEscape={closeOnEscape}
-              closeOnOutside={closeOnOutside}
-              onClose={onClose}
-              onExited={finishExit}
-              class={cls}
-              {...attrs}
-              children={
-                [
-                  ...(titleText !== undefined
-                    ? [<DrawerTitle id={titleId}>{titleText}</DrawerTitle>]
-                    : []),
-                  ...(descriptionText !== undefined
-                    ? [<DrawerDescription id={descriptionId}>{descriptionText}</DrawerDescription>]
-                    : []),
-                  ...flattenChildren(children),
-                ] as HellaChild[]
-              }
-            />
-          </Portal>
-        )
+    <Content
+      data-slot="drawer-content"
+      data-vaul-drawer-direction={resolvedDirection}
+      class={
+        [content, contentDirections[resolvedDirection], cls]
       }
-    </>
+      aria-labelledby={titleId}
+      aria-describedby={descriptionText === undefined ? undefined : descriptionId}
+      escape={closeOnEscape}
+      outside={closeOnOutside}
+      overlay={(state) => <DrawerOverlay state={state} fraction={dragFraction} />}
+      hook:afterMount={(node) => {
+        if (!(node instanceof HTMLElement)) return;
+        wireDrawerSeam(node, {
+          state: () => (open() ? "open" : "closed"),
+          direction: resolvedDirection,
+          fraction: dragFraction,
+          onClose,
+        });
+      }}
+      {...attrs}
+      children={
+        [
+          <div
+            data-slot="drawer-handle"
+            class="mx-auto mt-4 hidden h-2 w-[100px] shrink-0 rounded-full bg-muted group-data-[vaul-drawer-direction=bottom]/drawer-content:block"
+          />,
+          ...(titleText !== undefined ? [<DrawerTitle id={titleId}>{titleText}</DrawerTitle>] : []),
+          ...(descriptionText !== undefined
+            ? [<DrawerDescription id={descriptionId}>{descriptionText}</DrawerDescription>]
+            : []),
+          ...flattenChildren(children),
+        ] as HellaChild[]
+      }
+    />
   );
 }
 
