@@ -25,6 +25,38 @@ export function isAgentActive(): boolean {
 }
 
 /**
+ * Pick the unattended answer for one dialog.
+ *
+ * Selects take the option carrying the "(Recommended)" marker (the
+ * `ask_user_question` convention), falling back to the first option;
+ * confirms proceed; free-text dialogs (`input`, `editor`) cannot be
+ * synthesized and cancel.
+ *
+ * @param request A dialog-type `extension_ui_request`.
+ * @returns The payload to answer with.
+ */
+function autoAnswer(request: UiRequest): UiResponsePayload {
+  if (request.method === "select") {
+    const options = request.options ?? [];
+    const value =
+      options.find((option: string): boolean => option.includes("(Recommended)")) ?? options[0];
+    return value === undefined ? { cancelled: true } : { value };
+  }
+  if (request.method === "confirm") {
+    return { confirmed: true };
+  }
+  return { cancelled: true };
+}
+
+/** One-line rendering of an auto-answer for the operator log. */
+function describeAnswer(payload: UiResponsePayload): string {
+  if (payload.value !== undefined) {
+    return `"${payload.value}"`;
+  }
+  return payload.confirmed === true ? "confirmed" : "cancelled";
+}
+
+/**
  * Build the dialog hook that answers via the live instance's respondUi.
  *
  * @param relay The relay rendering the dialog on its surface(s).
@@ -39,6 +71,29 @@ export function dialogHook(relay: Relay, onAsk?: () => void): DialogHook {
     void relay.ask(request).then((response: UiResponsePayload): void => {
       current?.respondUi(request.id, response);
     });
+  };
+}
+
+/**
+ * Build the quiet-mode dialog hook: answer dialogs without an operator.
+ *
+ * Every dialog is auto-answered per {@link autoAnswer} and logged, so an
+ * unattended run still shows what was chosen when it fires a dialog despite
+ * the quiet prompt.
+ *
+ * @param onAsk Optional side effect fired when a dialog arrives.
+ * @returns The hook to pass as {@link DriveOptions.onUiRequest}.
+ */
+export function autoDialogHook(onAsk?: () => void): DialogHook {
+  return (request: UiRequest): void => {
+    if (onAsk !== undefined) {
+      onAsk();
+    }
+    const payload = autoAnswer(request);
+    logger.info(
+      `quiet: auto-answer ${request.method} "${request.title ?? ""}" → ${describeAnswer(payload)}`,
+    );
+    current?.respondUi(request.id, payload);
   };
 }
 

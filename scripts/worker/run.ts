@@ -1,7 +1,13 @@
 import { existsSync } from "node:fs";
 import { basename, join, relative } from "node:path";
 import { logger, projectRoot } from "../utils/index.ts";
-import { dialogHook, driveAgent, installSigint, makeRelay } from "../agent/driver.ts";
+import {
+  autoDialogHook,
+  dialogHook,
+  driveAgent,
+  installSigint,
+  makeRelay,
+} from "../agent/driver.ts";
 import type { Relay } from "../agent/relay.ts";
 import {
   carrierTicked,
@@ -31,6 +37,8 @@ export interface RunSetOptions {
   model?: string;
   thinking?: string;
   mode: WorktreeMode;
+  /** Unattended run: no dialog relay, stalled units auto deliver-incomplete. */
+  quiet: boolean;
 }
 
 /** Terminal outcome of one unit across all its attempts. */
@@ -63,6 +71,7 @@ interface Venue {
  * @param wtSetDir Absolute path to the worktree copy of the set folder.
  * @param slug The target worktree slug.
  * @param continuation True on passes after the first.
+ * @param quiet True for unattended runs (no operator dialogs).
  * @returns The prompt text.
  */
 function buildUnitPrompt(
@@ -70,11 +79,14 @@ function buildUnitPrompt(
   wtSetDir: string,
   slug: string,
   continuation: boolean,
+  quiet: boolean,
 ): string {
   const lines = [
     `/skill:worker Execute the plan unit at ${wtUnitPath}. Set context lives in ${join(wtSetDir, "index.md")} — read it first for shared scope.`,
     `Your target worktree slug is "${slug}": provision it or re-enter the existing one per the Provision step (never a duplicate), then execute every step inside that worktree — ticks land on the worktree copy named above.`,
-    "ask_user_question dialogs are relayed to a human operator at the terminal: use the tool for any load-bearing fork or clarification mid-task; free-text steering may also arrive from the operator.",
+    quiet
+      ? "No operator is present (unattended quiet run): never call ask_user_question — resolve every fork or clarification yourself, taking the option you would have marked recommended (first, smallest safe change). A dialog called anyway is auto-answered by the orchestrator with its recommended or first option, and no free-text steering will arrive."
+      : "ask_user_question dialogs are relayed to a human operator at the terminal: use the tool for any load-bearing fork or clarification mid-task; free-text steering may also arrive from the operator.",
     "If you would hand back to plan (plan gap, invalid premise, blocked on an unticked dep), stop and report exactly that — leave every box unticked. The orchestrator treats an unflipped top marker as failure and asks the operator.",
   ];
   if (continuation) {
@@ -120,9 +132,10 @@ function worktreeTicked(unitPath: string): boolean {
  *
  * @param model Optional model pattern passed to `pi -m` (defaults to `DEFAULT_WORKER_MODEL`).
  * @param thinking Optional thinking level passed to `--thinking`.
+ * @param quiet True to auto-answer dialogs instead of relaying them (quiet self-test).
  * @returns Process exit code.
  */
-export async function runProbe(model?: string, thinking?: string): Promise<number> {
+export async function runProbe(model?: string, thinking?: string, quiet = false): Promise<number> {
   model ??= DEFAULT_WORKER_MODEL;
   const relay = makeRelay();
   relay.start();
@@ -134,16 +147,24 @@ export async function runProbe(model?: string, thinking?: string): Promise<numbe
     model,
     thinking,
     relay,
-    onUiRequest: dialogHook(relay, (): void => {
-      dialogs += 1;
-    }),
+    onUiRequest: quiet
+      ? autoDialogHook((): void => {
+          dialogs += 1;
+        })
+      : dialogHook(relay, (): void => {
+          dialogs += 1;
+        }),
   });
   console.log(`\n${report}`);
   if (dialogs === 0) {
     logger.error("probe failed: no ask_user_question dialog arrived");
     return 1;
   }
-  logger.success("probe complete: dialog relayed and answered, agent settled, report fetched");
+  logger.success(
+    quiet
+      ? "probe complete: dialog auto-answered (recommended/first), agent settled, report fetched"
+      : "probe complete: dialog relayed and answered, agent settled, report fetched",
+  );
   return 0;
 }
 
@@ -155,7 +176,7 @@ export async function runProbe(model?: string, thinking?: string): Promise<numbe
  * input for unit selection) are skipped. An unflipped worktree marker
  * auto-continues with a fresh instance while ticks keep progressing; an
  * attempt with no new ticks reaches the failure gate: retry / deliver-
- * incomplete / abandon / halt. Completed components are left standing on
+ * incomplete / abandon / halt — auto deliver-incomplete in quiet mode. Completed components are left standing on
  * their worktrees — the user reviews and runs `bun merge <set-folder>` (the
  * single human checkpoint); the runner never merges and
  * never asks about merging. Exit code is 0 only when every unit ended done
@@ -190,8 +211,13 @@ export async function runSet(options: RunSetOptions): Promise<number> {
     logger.info(`skip ${skip.unit.name} (${skip.detail})`);
   }
   logger.info(
-    `plan set ${setName} · ${units.length} unit(s) · mode ${options.mode} · ${venues.length} venue(s)`,
+    `plan set ${setName} · ${units.length} unit(s) · mode ${options.mode}${options.quiet ? " · quiet" : ""} · ${venues.length} venue(s)`,
   );
+  if (options.quiet) {
+    logger.info(
+      "quiet mode: dialogs auto-answered (recommended/first option), stalled units auto deliver-incomplete",
+    );
+  }
   const records: UnitRecord[] = [...skips];
   let halted = false;
   for (const venue of venues) {
@@ -407,11 +433,11 @@ async function runUnitWithGate(
     const ticksBefore = worktreeTicks(wtUnitPath);
     const report = await driveAgent({
       sessionName,
-      prompt: buildUnitPrompt(wtUnitPath, wtSetDir, slug, attempt > 1),
+      prompt: buildUnitPrompt(wtUnitPath, wtSetDir, slug, attempt > 1, options.quiet),
       model: options.model,
       thinking: options.thinking,
       relay,
-      onUiRequest: dialogHook(relay),
+      onUiRequest: options.quiet ? autoDialogHook() : dialogHook(relay),
     });
     console.log(`\n── worker report (${unit.name}) ──\n${report}\n`);
     if (worktreeTicked(wtUnitPath)) {
@@ -432,7 +458,15 @@ async function runUnitWithGate(
       );
       continue;
     }
-    const gate = await askGate(relay, unit.name);
+    let gate: "retry" | "deliver" | "abandon" | "halt";
+    if (options.quiet) {
+      logger.warn(
+        `quiet: ${unit.name} stalled with no new ticks — auto deliver-incomplete (later independent units still run)`,
+      );
+      gate = "deliver";
+    } else {
+      gate = await askGate(relay, unit.name);
+    }
     if (gate === "retry") {
       continue;
     }

@@ -7,6 +7,7 @@ import { type WorktreeMode, runProbe, runSet } from "./worker/run.ts";
 /** Parsed CLI configuration. */
 interface PlansArgs {
   probe: boolean;
+  quiet: boolean;
   model?: string;
   thinking?: string;
   mode: WorktreeMode;
@@ -20,10 +21,14 @@ interface PlansArgs {
  * @returns The parsed configuration.
  */
 function parseArgs(argv: string[]): PlansArgs {
-  const args: PlansArgs = { probe: false, mode: "single" };
+  const args: PlansArgs = { probe: false, quiet: false, mode: "single" };
   for (const arg of argv) {
     if (arg === "--probe") {
       args.probe = true;
+      continue;
+    }
+    if (arg === "--quiet") {
+      args.quiet = true;
       continue;
     }
     const equals = arg.indexOf("=");
@@ -61,9 +66,9 @@ function parseArgs(argv: string[]): PlansArgs {
 /** Print the usage line. */
 function printUsage(): void {
   logger.error(
-    "usage: bun worker <set-folder> [--wt=single|split] [--model=<provider/id>] [--thinking=<level>]",
+    "usage: bun worker <set-folder> [--wt=single|split] [--model=<provider/id>] [--thinking=<level>] [--quiet]",
   );
-  logger.error("       bun worker --probe [--model=<provider/id>] [--thinking=<level>]");
+  logger.error("       bun worker --probe [--model=<provider/id>] [--thinking=<level>] [--quiet]");
 }
 
 /** Entry point: parse args, validate, and dispatch to probe or run. */
@@ -71,7 +76,7 @@ async function main(): Promise<void> {
   try {
     const args = parseArgs(process.argv.slice(2));
     if (args.probe) {
-      process.exit(await runProbe(args.model, args.thinking));
+      process.exit(await runProbe(args.model, args.thinking, args.quiet));
     }
     if (args.setFolder === undefined) {
       printUsage();
@@ -79,7 +84,13 @@ async function main(): Promise<void> {
     }
     const setDir = resolveSetFolder(args.setFolder);
     process.exit(
-      await runSet({ setDir, model: args.model, thinking: args.thinking, mode: args.mode }),
+      await runSet({
+        setDir,
+        model: args.model,
+        thinking: args.thinking,
+        mode: args.mode,
+        quiet: args.quiet,
+      }),
     );
   } catch (error) {
     logger.error(`worker failed: ${(error as Error).message}`);
