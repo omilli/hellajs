@@ -3,7 +3,7 @@ import type { Mock } from "vite-plus/test";
 import type { Signal } from "@hellajs/core";
 import { delay, setupContainer } from "@utils/test-helpers.js";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components — and this
-// harness's own babel-transformed JSX mounts — import the bare specifier, so the harness mount
+// harness's own compiler-transformed JSX mounts — import the bare specifier, so the harness mount
 // and a component's Portal must share one dom instance.
 import { mount, peekState } from "@hellajs/dom";
 import { Button as ButtonCssJsx } from "../../dist/registry/button/css/button";

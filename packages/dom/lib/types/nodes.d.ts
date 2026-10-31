@@ -96,8 +96,7 @@ export interface DirectListenerSpec<E extends Event = Event> {
 }
 
 /**
- * Represents a virtual DOM node — the server-target currency: machine-authored by the
- * babel plugin's `"ast"` target for [`@hellajs/ssr`](/@hellajs/ssr)'s pure stringifier.
+ * Represents a virtual DOM node — the server-target currency: machine-authored by the compiler's `"ast"` target for [`@hellajs/ssr`](/@hellajs/ssr)'s pure stringifier.
  * It is NOT a mount/hydrate input on the client: `mount`/`hydrate` accept flagged build
  * fns (`target: "dom"` output), and a hand-built HellaNode input throws the documented
  * rejection.
@@ -116,7 +115,7 @@ export interface HellaNode<T extends HTMLTagName = HTMLTagName> {
   hooks?: ElementHooks;
   /** The children of the node. */
   children?: HellaChild[];
-  /** Template hoisting marker — set by the babel plugin on hoisted fully-static subtrees. Inert client-side metadata (client statics are templates); the server walker reads it to share the subtree by reference across serializations. */
+  /** Template hoisting marker — set by the compiler on hoisted fully-static subtrees. Inert client-side metadata (client statics are templates); the server walker reads it to share the subtree by reference across serializations. */
   static?: true;
   /** Component scope dispose function. */
   componentScope?: () => void;

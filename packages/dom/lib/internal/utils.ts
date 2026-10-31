@@ -8,7 +8,7 @@ import type { TemplateBuildFn } from "../runtime";
  * @internal
  * Checks if a value is a HellaNode (virtual DOM element).
  * Hot-path discriminator: avoids the `isPlainObject` toString/proto cost.
- * HellaNodes are plain object literals produced by the babel plugin / template
+ * HellaNodes are plain object literals produced by the compiler / template
  * parser; DOM Nodes (which expose `tagName`, not `tag`) and primitives are
  * rejected by the `tag` own-property check.
  * @param value The value to check

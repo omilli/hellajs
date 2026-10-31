@@ -52,11 +52,11 @@ describe("compile", () => {
       expect(compiled).not.toMatch(/\binterface\b|\bimport type\b|: ButtonProps|as JSX.Element/);
       expect(compiled).not.toMatch(/\bReact\b|createElement/);
     }
-    const domRuntimeImport = `import { template as _hellaTemplate, mark as _hellaMark, prop as _hellaProp, child as _hellaChild } from "@hellajs/dom/runtime";`;
-    expect(cssJsx).toContain(`import { style } from "@hellajs/css";`);
-    expect(cssJsx).toContain(`import { tokens } from "../../theme/tokens.js";`);
+    const domRuntimeImport = `import {template as _hellaTemplate, mark as _hellaMark, prop as _hellaProp, child as _hellaChild} from "@hellajs/dom/runtime";`;
+    expect(cssJsx).toContain(`import {style} from "@hellajs/css";`);
+    expect(cssJsx).toContain(`import {tokens} from "../../theme/tokens.js";`);
     expect(cssJsx).toContain(domRuntimeImport);
-    expect(tailwindJsx).toContain(`import { cn } from "./cn.js";`);
+    expect(tailwindJsx).toContain(`import {cn} from "./cn.js";`);
     expect(tailwindJsx).toContain(domRuntimeImport);
     expect(readArtifact("cn", "cn.js")).toContain(`import { clsx } from "clsx";`);
   });

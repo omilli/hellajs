@@ -47,7 +47,7 @@ function updatePeerDependencies(
       changed = true;
     }
 
-    // Update regular dependencies (for plugins depending on babel-plugin-hellajs)
+    // Update regular dependencies (for plugins depending on hellajs-compiler)
     if (packageJson.dependencies && packageJson.dependencies[depName]) {
       const oldVersion = packageJson.dependencies[depName];
       const newVersionSpec = `^${newVersion}`;
@@ -105,16 +105,16 @@ async function publish(): Promise<void> {
     }
   }
 
-  if (packageVersions.has("babel-plugin-hellajs")) {
-    const babelVersion = packageVersions.get("babel-plugin-hellajs")!;
-    logger.info(`Updating babel-plugin-hellajs dependencies to v${babelVersion}...`);
+  if (packageVersions.has("hellajs-compiler")) {
+    const compilerVersion = packageVersions.get("hellajs-compiler")!;
+    logger.info(`Updating hellajs-compiler dependencies to v${compilerVersion}...`);
 
     const pluginDepPackages = ["vite-plugin-hellajs", "rollup-plugin-hellajs"];
     for (const pkgName of pluginDepPackages) {
       const pkgPath = getPackagePath(pkgName);
       if (pkgPath) {
         updatePeerDependencies(pkgPath, {
-          "babel-plugin-hellajs": babelVersion,
+          "hellajs-compiler": compilerVersion,
         });
       }
     }

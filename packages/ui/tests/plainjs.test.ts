@@ -4,9 +4,7 @@ import { join } from "node:path";
 import { resetTestState } from "@utils/test-helpers.js";
 import { addComponent, readConfig } from "@hellajs/ui";
 import { Button as ButtonTsJsx } from "../dist/registry/button/css/button";
-import { transformSync } from "@babel/core";
-import babelHellaJS from "babel-plugin-hellajs";
-import presetTypeScript from "@babel/preset-typescript";
+import { transform } from "hellajs-compiler";
 import type { UiLang, UiStyle } from "@hellajs/ui";
 import type { ButtonVariantProps, ComponentVariant } from "./helpers/variants";
 import { renderVariant } from "./helpers/variants";
@@ -106,15 +104,11 @@ describe("plain-js delivery", () => {
     const root = fixture("parity");
     addComponent(["button"], { dir: root, lang: "js" });
     const jsx = readFileSync(join(componentsDir(root), "button.jsx"), "utf8");
-    const compiled = transformSync(jsx, {
-      plugins: [[babelHellaJS, { target: "dom" }]],
+    const compiled = transform(jsx, {
       filename: "button.jsx",
-      ast: false,
-      sourceMaps: false,
-      configFile: false,
-      babelrc: false,
-      parserOpts: { plugins: ["jsx"] },
-    })!.code!;
+      lang: "jsx",
+      target: "dom",
+    })!.code;
     const compiledPath = join(componentsDir(root), "button.compiled.js");
     writeFileSync(compiledPath, compiled);
     const written = (await import(compiledPath)) as {
@@ -125,22 +119,17 @@ describe("plain-js delivery", () => {
     expect(stripped.outerHTML).toBe(tsVariant.outerHTML);
   });
 
-  test("stripped button.jsx compiles through the babel plugin", () => {
-    const root = fixture("babel");
+  test("stripped button.jsx compiles through the engine", () => {
+    const root = fixture("engine");
     addComponent(["button"], { dir: root, lang: "js" });
     const jsx = readFileSync(join(componentsDir(root), "button.jsx"), "utf8");
-    const result = transformSync(jsx, {
-      plugins: [babelHellaJS],
-      presets: [presetTypeScript],
+    const result = transform(jsx, {
       filename: "button.jsx",
-      ast: false,
-      sourceMaps: true,
-      configFile: false,
-      babelrc: false,
-      parserOpts: { plugins: ["jsx"] },
+      lang: "jsx",
+      target: "ast",
     });
     expect(typeof result?.code).toBe("string");
-    expect(result!.code!.length).toBeGreaterThan(0);
+    expect(result!.code.length).toBeGreaterThan(0);
   });
 
   test("lang defaults to ts in readConfig", () => {

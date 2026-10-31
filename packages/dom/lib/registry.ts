@@ -82,7 +82,7 @@ export const registry = {
    * Accumulative: multiple calls stack hooks of the same type and all execute.
    *
    * Feature-gated seam: the default (hooks feature not loaded) is a no-op — `hook:`
-   * JSX loads the feature via the babel plugin, and direct `registry.addHook` callers
+   * JSX loads the feature via the compiler, and direct `registry.addHook` callers
    * need the documented `import "@hellajs/dom/features/hooks"` escape hatch.
    * @param element Target element
    * @param type Hook type (beforeMount, afterMount, etc.)

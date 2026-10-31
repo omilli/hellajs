@@ -72,9 +72,10 @@ export function hoverIntent(target: Element, handlers: HoverIntentOptions): () =
     clearOpen();
     openTimer = setTimeout(open, openDelay);
   };
+  const externallyOpen = (): boolean => handlers.isOpen?.() === true;
   const leave = (): void => {
     clearOpen();
-    if (!isOpen) return;
+    if (!isOpen && !externallyOpen()) return;
     clearClose();
     closeTimer = setTimeout(close, closeDelay);
   };
@@ -82,7 +83,7 @@ export function hoverIntent(target: Element, handlers: HoverIntentOptions): () =
     if (target.contains(event.target as Node | null)) return;
     clearOpen();
     clearClose();
-    if (isOpen) close();
+    if (isOpen || externallyOpen()) close();
   };
 
   target.addEventListener("pointerenter", enter);

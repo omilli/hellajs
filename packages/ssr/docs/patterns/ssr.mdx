@@ -30,7 +30,7 @@ const body = ssr(<App name="World" />);
 // body: "<div><h1>Hello World</h1></div>"
 ```
 
-The babel/vite/rollup plugin must run on the **server** entry; without the compile-time transform JSX is not a `HellaNode` (see [Build Tools Plugins](/plugins)).
+The compiler (via the vite/rollup wrappers) must run on the **server** entry; without the compile-time transform JSX is not a `HellaNode` (see [Build Tools Plugins](/plugins)).
 
 ### Styled output
 

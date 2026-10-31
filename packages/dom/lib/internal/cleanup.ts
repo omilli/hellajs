@@ -19,7 +19,7 @@ export function setCleanedRootMarker(mark: (root: Node) => void): void {
  * Sets a direct (non-delegated) event handler on an element — wraps the handler with
  * error-boundary support and replaces the previous handler for the same event type.
  * The default (direct-events feature not loaded) registers nothing: `e:` JSX loads the
- * feature via the babel plugin, and hand-built `e` buckets need the documented
+ * feature via the compiler, and hand-built `e` buckets need the documented
  * `import "@hellajs/dom/features/direct-events"` escape hatch.
  *
  * Exported `let` is deliberate: the feature swaps the implementation at module init

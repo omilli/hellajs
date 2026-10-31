@@ -71,7 +71,7 @@ The server renders the trigger button and the closed content gate to HTML; the c
 
 ## Imperative client target
 
-The babel plugin's JSX emission has two targets. The default `ast` target produces the HellaNode trees `@hellajs/ssr` serializes; the `target: "dom"` option produces imperative construction calls against `@hellajs/dom/runtime`. The target is wrapper-owned build config (Vite, Rollup, or the astro integration's internal wiring), never a per-file option.
+The compiler's JSX emission has two targets. The default `ast` target produces the HellaNode trees `@hellajs/ssr` serializes; the `target: "dom"` option produces imperative construction calls against `@hellajs/dom/runtime`. The target is wrapper-owned build config (Vite, Rollup, or the astro integration's internal wiring), never a per-file option.
 
 The client entry this integration ships is output-shape-agnostic: every island hydrates through the same `hydrate(() => component(Component, props), el)` call, whichever form the client build compiled to. An ast build walks and wires the server DOM through its `<!--[-->…<!--]-->` markers; a dom build adopts the server output through the construction calls themselves, so the shipped nodes keep their identity and nothing is re-rendered. Island code never changes between the two. See the dom `hydrate` docs (Compiled Imperative Roots) for the adoption contract and its parity requirement.
 

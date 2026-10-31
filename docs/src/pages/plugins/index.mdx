@@ -1,16 +1,16 @@
 ---
 layout: ../../layouts/MainLayout.astro
 title: Build Tools Plugins
-description: Official plugins for integrating HellaJS with popular build tools including Vite, Babel, and Rollup for seamless JSX transformation and development experience.
+description: Official plugins for integrating HellaJS with popular build tools including Vite, Rollup, and Astro for seamless JSX transformation and development experience.
 ---
 
 import Plugins from "../../components/Plugins.astro"
 
 # Build Tool Plugins
 
-Official plugins that transform HellaJS JSX syntax into HellaNode objects at build time. Without a plugin, JSX won't be compiled.
+Official plugins that compile HellaJS JSX at build time. The `hellajs-compiler` engine does the compiling: it emits the HellaNode AST that `@hellajs/ssr` stringifies for server builds, and imperative `@hellajs/dom/runtime` construction for client builds. The Vite and Rollup wrappers drive it per build environment.
 
-All plugins are zero-config: install and add to your build tool. No options to configure.
+Install, add to your build tool, done: the wrappers resolve the emission target automatically. Pass an explicit `target` option to override.
 
 <Plugins/>
 

@@ -410,7 +410,7 @@ Run this when holding a Code file (`.ts`/`.tsx`/`.mjs` under `lib/`, `scripts/`,
 
 ## Config Verification Checklist
 
-Run this when holding a Config file (`tsconfig*.json`, `package.json`, `vite.config.ts`, `lint/*.js`, `.npmrc`, `.nvmrc`, `*.config.{ts,mjs,js}`, `plugins/**/{babel,rollup,vite}/` files). Config answers to different rules than the code beside it.
+Run this when holding a Config file (`tsconfig*.json`, `package.json`, `vite.config.ts`, `lint/*.js`, `.npmrc`, `.nvmrc`, `*.config.{ts,mjs,js}`, `plugins/**/{compiler,rollup,vite}/` files). Config answers to different rules than the code beside it.
 
 **TypeScript configs**
 - [ ] `strict: true` or stronger; nothing weakened
@@ -429,9 +429,9 @@ Run this when holding a Config file (`tsconfig*.json`, `package.json`, `vite.con
 - [ ] `exports` map matches actual `dist/` output
 - [ ] `workspaces` covers `packages/*` and `plugins/*`
 
-**Build plugin configs** (`plugins/{babel,rollup,vite}/`)
+**Build plugin configs** (`plugins/{compiler,rollup,vite}/`)
 - [ ] Exported hook shape matches stated purpose and runtime
-- [ ] Wrapper thinness: rollup/vite forward to the babel plugin, never re-implement
+- [ ] Wrapper thinness: rollup/vite forward to hellajs-compiler, never re-implement
 
 **Toolchain**
 - [ ] `vp run coverage` exits 0 for every touched package

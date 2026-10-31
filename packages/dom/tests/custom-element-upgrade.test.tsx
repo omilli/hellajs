@@ -10,8 +10,7 @@ beforeEach(() => {
   resetTestState();
 });
 
-// No feature import here by design: this file compiles `<my-icon>` through the babel
-// plugin, so the custom-elements side-effect import rides the emission automatically —
+// No feature import here by design: this file compiles `<my-icon>` through the compiler, so the custom-elements side-effect import rides the emission automatically —
 // the clone upgrading at all is the proof (the runtime default never upgrades).
 describe("dom", () => {
   describe("custom-element clone upgrade via compiled emission", () => {

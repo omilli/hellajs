@@ -33,8 +33,7 @@ export const HTML_NS = "http://www.w3.org/1999/xhtml";
  * @internal
  * Creates an element in its authored namespace. The default (namespaces feature not
  * loaded) is HTML-only — every tag creates with `document.createElement`; the
- * namespaces feature (`lib/features/namespaces.ts`, loaded by svg/math JSX via the
- * babel plugin, or by the hydrate entry) installs the SVG/MathML roots and
+ * namespaces feature (`lib/features/namespaces.ts`, loaded by svg/math JSX via the compiler, or by the hydrate entry) installs the SVG/MathML roots and
  * createElementNS inheritance under foreign-namespace parents.
  *
  * Exported `let` is deliberate: the feature swaps the implementation at module init
@@ -123,7 +122,7 @@ interface CloneUpgrading {
  * The template/fragment clone-upgrade pass for defined custom elements. The default (custom-elements
  * feature not loaded) is `undefined` — template builders resolve to a no-upgrade create path, so
  * programs without hyphenated tags neither scan clones nor ship the machinery. The custom-elements
- * feature (`lib/features/custom-elements.ts`, loaded by the babel plugin for hyphenated JSX tag
+ * feature (`lib/features/custom-elements.ts`, loaded by the compiler for hyphenated JSX tag
  * names) registers the parse-time scan + create-time upgrade here.
  *
  * Exported `let` is deliberate: swapped at module init by the feature via

@@ -14,7 +14,7 @@ Jump to the [Complete Code](#complete-code) for the finished application.
 - **[`vars`](/reference/css/vars)** + **[`cssText`](/reference/css/csstext)**: vars registers custom properties and css registers rules (both platforms), and cssText collects them into one `<style>` through `doc()`
 - **[`hydrate`](/reference/dom/hydrate)**: Re-bind the server-rendered tree in place (no flash, no rebuild)
 
-This example runs on [Node](https://nodejs.org) with [Hono](https://hono.dev): `@hono/node-server` serves every request, and an esbuild build step compiles both entries (the client for the browser, the server for node) through `babel-plugin-hellajs`, the same compile pass every HellaJS app uses to turn JSX into [`HellaNode`](/reference/dom/component) objects.
+This example runs on [Node](https://nodejs.org) with [Hono](https://hono.dev): `@hono/node-server` serves every request, and an esbuild build step compiles both entries (the client for the browser, the server for node) through `hellajs-compiler`, the same compile pass every HellaJS app uses to turn JSX into [`HellaNode`](/reference/dom/component) objects.
 
 ## Project Setup
 
@@ -26,7 +26,7 @@ Create a project folder and install the packages. This tutorial requires [Node](
 mkdir ssr-routing && cd ssr-routing
 npm init -y
 npm install @hellajs/core @hellajs/dom @hellajs/router @hellajs/ssr @hellajs/css
-npm install -D hono @hono/node-server esbuild @babel/core @babel/preset-typescript babel-plugin-hellajs
+npm install -D hono @hono/node-server esbuild hellajs-compiler
 ```
 
 ### Configuration
@@ -45,10 +45,9 @@ npm install -D hono @hono/node-server esbuild @babel/core @babel/preset-typescri
     "start": "node build.mjs && node dist/server.mjs"
   },
   "devDependencies": {
-    "@babel/core": "^7.28.6",
-    "@babel/preset-typescript": "^7.28.6",
     "@hono/node-server": "^2.1.3",
     "esbuild": "^0.28.2",
+    "hellajs-compiler": "^0.1.0",
     "hono": "^4.13.12"
   }
 }
@@ -59,30 +58,26 @@ JSX cannot run under raw `node`, so both entries compile up front. Create `build
 ```js
 // build.mjs
 import { build, context } from 'esbuild';
-import { transformAsync } from '@babel/core';
-import babelPluginHellajs from 'babel-plugin-hellajs';
-import presetTypeScript from '@babel/preset-typescript';
+import { transform } from 'hellajs-compiler';
 import { readFile } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 
-const hellajsJsx = {
+const hellajsJsx = (target) => ({
   name: 'hellajs-jsx',
   setup(build) {
     build.onLoad({ filter: /\.tsx$/ }, async (args) => {
       if (args.path.includes('node_modules')) return undefined;
       const source = await readFile(args.path, 'utf8');
-      const result = await transformAsync(source, {
+      const result = transform(source, {
         filename: args.path,
-        plugins: [babelPluginHellajs],
-        presets: [presetTypeScript],
-        sourceType: 'module',
-        babelrc: false,
-        configFile: false,
+        lang: 'tsx',
+        target: target ?? 'ast',
       });
+      if (!result) return undefined; // JSX-free: esbuild's tsx loader handles it natively
       return { contents: result.code, loader: 'js' };
     });
   },
-};
+});
 
 const client = {
   entryPoints: ['src/client.tsx'],
@@ -90,7 +85,7 @@ const client = {
   format: 'esm',
   platform: 'browser',
   outfile: 'dist/client.js',
-  plugins: [hellajsJsx],
+  plugins: [hellajsJsx('dom')], // client: imperative runtime construction (the wrapper default, explicit here; esbuild bridges bypass the wrappers)
 };
 
 const server = {
@@ -100,7 +95,7 @@ const server = {
   platform: 'node',
   outfile: 'dist/server.mjs',
   external: ['@hellajs/*', 'hono', '@hono/node-server'],
-  plugins: [hellajsJsx],
+  plugins: [hellajsJsx()], // server: default-"ast" HellaNode emission for @hellajs/ssr
 };
 
 const watch = process.argv.includes('--watch');
@@ -123,7 +118,7 @@ if (watch) {
 
 **Code Explanation**
 
-- **`hellajsJsx`**: An esbuild plugin whose `onLoad` runs every `.tsx` file through [`transformAsync`](https://babel.dev/docs/babel-core) with `babel-plugin-hellajs`, the compiler that turns JSX into HellaNode objects. `@babel/preset-typescript` strips the TypeScript annotations in the same pass
+- **`hellajsJsx`**: An esbuild plugin whose `onLoad` runs every `.tsx` file through `hellajs-compiler`'s `transform`, the compiler that turns JSX into HellaNode objects for the server and imperative `@hellajs/dom/runtime` construction for the client. TypeScript strips natively in the same pass
 - **`client`**: Bundles `src/client.tsx` for the browser. esbuild resolves the bare `@hellajs/*` specifiers itself and inlines the runtime into `dist/client.js`
 - **`server`**: Bundles `src/server.tsx` for node (`platform: "node"`) but keeps `@hellajs/*` and hono `external`, so the built server resolves them from `node_modules` at runtime and stays current with your installed versions
 - **`--watch`**: Switches both entries to esbuild's incremental `context().watch()` and spawns `node --watch` on the built server, so a source edit rebuilds and restarts in one step

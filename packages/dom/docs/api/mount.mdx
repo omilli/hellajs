@@ -139,7 +139,7 @@ mount(<Timer />);
 
 ### Hand-Built Input Is Rejected
 
-`mount` accepts compiled build functions only; a hand-built tree object throws at mount time. JSX sources go through the [babel plugin](/plugins/babel) automatically. To construct DOM without the compiler, build imperatively via the [runtime](/reference/dom/runtime) module.
+`mount` accepts compiled build functions only; a hand-built tree object throws at mount time. JSX sources go through the [compiler](/plugins/compiler) automatically. To construct DOM without the compiler, build imperatively via the [runtime](/reference/dom/runtime) module.
 
 ### Async Component Errors
 

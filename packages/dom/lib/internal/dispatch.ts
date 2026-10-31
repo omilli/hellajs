@@ -15,7 +15,7 @@ export let resetErrorState: () => void = () => {};
  * @internal
  * Dispatches an error for UI handling. The default is the no-feature path — log and
  * continue without a UI change; the errors feature (`lib/features/errors.ts`, loaded by
- * `lib/error.ts` or `error:` JSX via the babel plugin) installs boundary detection,
+ * `lib/error.ts` or `error:` JSX via the compiler) installs boundary detection,
  * handler iteration, and fallback rendering.
  *
  * Exported `let` is deliberate: the feature swaps the implementation at module init

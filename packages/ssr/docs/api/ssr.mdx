@@ -172,7 +172,7 @@ const page = `<style id="hella-css">${cssText()}</style><div id="app">${body}</d
 
 ### Works with Any HellaNode
 
-`ssr` consumes any `HellaNode` identically, whichever member renders it. The babel/vite/rollup plugin compiles JSX to the AST at build time, so the same component tree serializes on the server and hydrates on the client.
+`ssr` consumes any `HellaNode` identically, whichever member renders it. The compiler (via the vite/rollup wrappers) compiles JSX to the AST at build time, so the same component tree serializes on the server and hydrates on the client.
 
 ```jsx
 import { ssr } from '@hellajs/ssr';

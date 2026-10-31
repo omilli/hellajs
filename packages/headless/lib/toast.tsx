@@ -353,7 +353,7 @@ export function Toaster({
   class: cls,
   ...attrs
 }: ToasterProps): JSX.Element {
-  // Babel compiles a JSX component child to a one-element array; a direct
+  // The compiler compiles a JSX component child to a one-element array; a direct
   // component call passes the render function bare. Normalize to the function.
   const renderCard = isFunction(children)
     ? children

@@ -2,7 +2,7 @@ import Callout from "@components/Callout.astro";
 
 # runtime
 
-The DOM construction functions the babel plugin's imperative target compiles JSX into: templates, props, events, and children wired directly onto elements.
+The DOM construction functions the compiler's `target: "dom"` build compiles JSX into: templates, props, events, and children wired directly onto elements.
 
 <Callout variant="info">This is a compiler contract, stable across semver; generated code imports it from `@hellajs/dom/runtime`. Hand-written apps use JSX templates; hand-author these calls only when building a custom renderer or emits tooling.</Callout>
 

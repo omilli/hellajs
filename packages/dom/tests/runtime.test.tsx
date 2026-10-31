@@ -19,7 +19,7 @@ import "@hellajs/dom/features/hooks";
 import "@hellajs/dom/features/errors";
 import type { ComponentFn, ErrorContext } from "@hellajs/dom";
 
-/** The babel runtime-spread emission shape: every spread key funnels through `prop(anchor, k, source[k])`. */
+/** The compiler runtime-spread emission shape: every spread key funnels through `prop(anchor, k, source[k])`. */
 const applySpread = (el: Element, source: Record<string, unknown>) => {
   Object.keys(source).forEach((k) => prop(el, k, source[k]));
 };

@@ -53,6 +53,8 @@ export interface HoverIntentOptions {
   closeDelay?: number;
   /** Pointer-only mode: skips the focus/blur keyboard-parity arms — for surfaces where roving focus must not auto-open (menu sub-triggers). */
   pointerOnly?: boolean;
+  /** External open-state getter for surfaces that can open without hover (e.g. a click-opened menu sub-trigger): leave and outside-dismiss consult it so the close still schedules. */
+  isOpen?: () => boolean;
 }
 
 export interface DragHandlers {

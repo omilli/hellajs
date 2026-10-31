@@ -151,7 +151,7 @@ function parseBuilder(
     throw new Error(`[dom] template: html must contain a root element, received ${html}`);
   }
   const proto = singleRoot ? content.firstElementChild! : content;
-  // The custom-elements feature (loaded by the babel plugin for hyphenated JSX tag names)
+  // The custom-elements feature (loaded by the compiler for hyphenated JSX tag names)
   // registers the parse-time scan + create-time upgrade; the default resolves every template
   // to a no-upgrade create path — the scan itself is the feature module's internal detail.
   const upgrade = cloneUpgrading?.hasCustomElements(proto)
@@ -218,7 +218,7 @@ function parseBuilder(
  * returned function clones the parsed root element and state-inits it before returning,
  * so wiring calls (`text`, `prop`, `on`, ...) can run in any order against the clone.
  *
- * This is a compiler contract: emitted by the babel plugin's imperative target, stable
+ * This is a compiler contract: emitted by the compiler's imperative target, stable
  * across semver, not a hand-authoring API.
  * @param html The html string; must contain exactly one root element
  * @param ns The parse namespace for foreign-interior content (the compiler emits the
@@ -243,7 +243,7 @@ export function template(html: string, ns?: string): () => Element {
  * {@link template}. Appending the fragment splays its children; the first child is
  * state-initialized as the scope carrier.
  *
- * This is a compiler contract: emitted by the babel plugin's imperative target, stable
+ * This is a compiler contract: emitted by the compiler's imperative target, stable
  * across semver, not a hand-authoring API.
  * @param html The html string; may contain any number of roots
  * @param ns The parse namespace for foreign-interior content (the compiler emits the
@@ -268,7 +268,7 @@ export function fragment(html: string, ns?: string): () => DocumentFragment {
  * consumer (`resolveNode`, `child`, `ForEach`, `component()`), which invoke them and
  * mount the returned root instead of building a reactive region.
  *
- * This is a compiler contract: emitted by the babel plugin's imperative target, stable
+ * This is a compiler contract: emitted by the compiler's imperative target, stable
  * across semver, not a hand-authoring API.
  * @param fn The build function to flag (mutated in place)
  * @param props Reconciliation metadata carried on the fn — `key` is read by `ForEach`
@@ -289,7 +289,7 @@ export function mark(fn: () => Element, props?: Record<string, unknown>): Templa
  * that keeps it in sync — the anchor doubles as the live text node for the region's
  * lifetime.
  *
- * This is a compiler contract: emitted by the babel plugin's imperative target, stable
+ * This is a compiler contract: emitted by the compiler's imperative target, stable
  * across semver, not a hand-authoring API.
  * @param parent The parent element
  * @param value The text value — a primitive or a reactive function resolving to one
@@ -339,7 +339,7 @@ export function text(parent: Element, value: unknown): void {
  * Colon-bearing keys outside the four families (`xlink:href`, `xml:lang`) and
  * colon-free keys keep the branches below verbatim.
  *
- * This is a compiler contract: emitted by the babel plugin's imperative target, stable
+ * This is a compiler contract: emitted by the compiler's imperative target, stable
  * across semver, not a hand-authoring API.
  * @param el The target element
  * @param key The property/attribute key
@@ -393,7 +393,7 @@ export function prop(el: Element, key: string, value: unknown): void {
  * Registers a delegated event handler on `el` (the `on:` prefix machinery — one shared
  * capture-phase body listener per event type).
  *
- * This is a compiler contract: emitted by the babel plugin's imperative target, stable
+ * This is a compiler contract: emitted by the compiler's imperative target, stable
  * across semver, not a hand-authoring API.
  * @param el The target element
  * @param type The event type (e.g. `"click"`)
@@ -408,7 +408,7 @@ export function on(el: Element, type: string, handler: EventListener): void {
  * per-instance listener with error-boundary wrapping and native options forwarding).
  * The direct-events feature must be loaded for the registration to bind.
  *
- * This is a compiler contract: emitted by the babel plugin's imperative target, stable
+ * This is a compiler contract: emitted by the compiler's imperative target, stable
  * across semver, not a hand-authoring API.
  * @param el The target element
  * @param type The event type (e.g. `"focus"`)
@@ -426,7 +426,7 @@ export function direct(
  * Registers a lifecycle hook on `el` (the `hook:` prefix machinery). The hooks feature
  * must be loaded for the registration to bind. Accumulative: hooks of the same type stack.
  *
- * This is a compiler contract: emitted by the babel plugin's imperative target, stable
+ * This is a compiler contract: emitted by the compiler's imperative target, stable
  * across semver, not a hand-authoring API.
  * @param el The target element
  * @param type The hook type (`beforeMount`, `afterMount`, ...)
@@ -455,7 +455,7 @@ export function hook(el: Element, type: HookType, fn: HookFn): void {
  * element's build function as the reset target: when a wiring error dispatches to this
  * boundary, `context.reset()` re-invokes the build for fresh nodes.
  *
- * This is a compiler contract: emitted by the babel plugin's imperative target, stable
+ * This is a compiler contract: emitted by the compiler's imperative target, stable
  * across semver, not a hand-authoring API.
  * @param el The boundary element
  * @param config The error config (`fallback`, `boundary`, `category`)
@@ -477,7 +477,7 @@ export function errorConfig(el: Element, config: ErrorConfig, build: TemplateBui
  * children (an ast-compiled fragment inside a dom-compiled tree) throw the
  * documented rejection. Booleans, null, and undefined render nothing.
  *
- * This is a compiler contract: emitted by the babel plugin's imperative target, stable
+ * This is a compiler contract: emitted by the compiler's imperative target, stable
  * across semver, not a hand-authoring API.
  * @param parent The parent element
  * @param value The child value in any compiled form
@@ -532,7 +532,7 @@ export function child(parent: Element, value: unknown): void {
     // A HellaNode child in a dom-target build is hand-built input — the compiler emits
     // flagged builds; throw so the mistake surfaces at the wiring call, not as a silent no-op.
     throw new Error(
-      "[dom] child: hand-built HellaNode input is not supported — compile via the babel plugin or build imperatively via @hellajs/dom/runtime",
+      "[dom] child: hand-built HellaNode input is not supported — compile via hellajs-compiler or build imperatively via @hellajs/dom/runtime",
     );
   }
   if (value instanceof Node) {

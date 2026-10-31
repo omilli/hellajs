@@ -3,7 +3,7 @@ import viteHellaJS from "../index.mjs";
 import type { ViteHellaJSOptions } from "../index.d.ts";
 
 describe("vite-plugin-hellajs target option", () => {
-  test("forwards target dom to the babel transform", async () => {
+  test("forwards target dom to the engine transform", async () => {
     const plugin = viteHellaJS({ target: "dom" });
     const result = await plugin.transform("const x = <div class={c} />;", "/src/App.tsx");
     expect(result?.code).toContain("@hellajs/dom/runtime");
@@ -40,10 +40,10 @@ describe("vite-plugin-hellajs target option", () => {
     }
   });
 
-  test("rejects invalid targets at construction via the babel validation", () => {
+  test("rejects invalid targets at construction via the engine validation", () => {
     const bad = { target: "bogus" } as unknown as ViteHellaJSOptions;
     expect(() => viteHellaJS(bad)).toThrow(
-      '[babel-plugin-hellajs] invalid target "bogus" — expected "ast" or "dom"',
+      '[hellajs-compiler] invalid target "bogus" — expected "ast" or "dom"',
     );
   });
 });

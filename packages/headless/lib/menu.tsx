@@ -395,6 +395,12 @@ function makeSubComponents(items: ItemComponents, options: MenuSubOptions = {}):
   const Trigger = (props: MenuSubTriggerProps): JSX.Element => {
     const { children, class: cls, ...attrs } = props;
     let disposeIntent: (() => void) | undefined;
+    // Leaving the trigger ends the in-transit grace: the pointer is back on
+    // the trigger, so the content's keep-open flag must not guard a close
+    // armed from here.
+    const onTriggerLeave = (): void => {
+      overContent = false;
+    };
     return (
       <div
         role="menuitem"
@@ -408,6 +414,7 @@ function makeSubComponents(items: ItemComponents, options: MenuSubOptions = {}):
         hook:afterMount={(node) => {
           if (!(node instanceof HTMLElement)) return;
           triggerNode = node;
+          node.addEventListener("pointerleave", onTriggerLeave);
           // Hover intent: ~100ms rest opens; leaving schedules a 300ms close
           // that entering the submenu content cancels. pointerOnly keeps the
           // focus leg off — roving focus onto the sub-trigger must not
@@ -420,10 +427,14 @@ function makeSubComponents(items: ItemComponents, options: MenuSubOptions = {}):
             openDelay: 100,
             closeDelay: 300,
             pointerOnly: true,
+            // A click can open the submenu without hover; leave and
+            // outside-dismiss must still arm the close against real state.
+            isOpen: () => s.isOpen(),
           });
         }}
         hook:beforeDestroy={() => {
           disposeIntent?.();
+          triggerNode?.removeEventListener("pointerleave", onTriggerLeave);
         }}
         {...attrs}
       >

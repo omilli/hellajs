@@ -368,7 +368,7 @@ router({
 
 ### Shared App
 
-One isomorphic module defines the view signal, the route map, and the shell. Each handler is a pure state-setter, the view-signal pattern `() => currentView(...)`. Recipes author JSX; the babel pass compiles the server entry the same way it compiles the client (see [Build Tools Plugins](/plugins)).
+One isomorphic module defines the view signal, the route map, and the shell. Each handler is a pure state-setter, the view-signal pattern `() => currentView(...)`. Recipes author JSX; the compiler compiles the server entry the same way it compiles the client (see [Build Tools Plugins](/plugins)).
 
 ```jsx
 import { signal } from '@hellajs/core';

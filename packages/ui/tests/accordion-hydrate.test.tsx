@@ -1,9 +1,7 @@
 import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { transformSync } from "@babel/core";
-import presetTypeScript from "@babel/preset-typescript";
-import babelHellaJS from "babel-plugin-hellajs";
+import { transform } from "hellajs-compiler";
 import { flush } from "@hellajs/core";
 import {
   compileJsx,
@@ -12,7 +10,7 @@ import {
   setupContainer,
 } from "@utils/test-helpers.js";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components — and this
-// harness's babel-transformed arms — import the bare specifier, so the harness hydrate and the
+// harness's engine-transformed arms — import the bare specifier, so the harness hydrate and the
 // components share one dom instance.
 import { hydrate } from "@hellajs/dom";
 import * as domNs from "@hellajs/dom";
@@ -66,12 +64,10 @@ const twoTargetAccordion = async (): Promise<{
   // as a plain object the fixture binds as the accordion namespace.
   const serverAccordion = runCompiledModule(
     `${
-      transformSync(ACCORDION_SOURCE, {
-        plugins: [[babelHellaJS, { target: "ast" }]],
-        presets: [presetTypeScript],
+      transform(ACCORDION_SOURCE, {
         filename: "accordion.tsx",
-        configFile: false,
-        parserOpts: { plugins: ["jsx"] },
+        lang: "tsx",
+        target: "ast",
       })?.code?.replace(/^export /gm, "") ?? ""
     }\nconst __out = { AccordionItem, AccordionTrigger, AccordionContent, Accordion };`,
     {

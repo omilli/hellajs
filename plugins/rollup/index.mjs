@@ -1,23 +1,25 @@
-import babelHellaJS from "babel-plugin-hellajs";
-import { transformSync } from "@babel/core";
-import presetTypeScript from "@babel/preset-typescript";
+import { transform } from "hellajs-compiler";
 import { readFileSync } from "fs";
 
+/** Source language for the engine, derived from the file extension. */
+const langOf = (id) =>
+  id.endsWith(".tsx") ? "tsx" : id.endsWith(".ts") ? "ts" : id.endsWith(".jsx") ? "jsx" : "js";
+
 /**
- * Rollup wrapper around babel-plugin-hellajs. `{ target }` is forwarded to the
- * babel plugin ("dom" default — imperative `@hellajs/dom/runtime` construction;
+ * Rollup wrapper around hellajs-compiler. `{ target }` is forwarded to the
+ * engine ("dom" default — imperative `@hellajs/dom/runtime` construction;
  * rollup is a client-bundle tool; pass `"ast"` explicitly for a server target);
- * unknown options throw at plugin construction via the babel plugin's validation.
- * @param {import("./index.d.ts").RollupHellaJSOptions} [options] `{ target }` — forwarded to `babelHellaJS`
+ * unknown options throw at plugin construction via the engine's validation.
+ * @param {import("./index.d.ts").RollupHellaJSOptions} [options] `{ target }` — forwarded to the engine
  * @returns {import("./index.d.ts").RollupPlugin} Rollup plugin object
  */
 export default function rollupHellaJS(options) {
   const pluginOptions = options || {};
   const target = pluginOptions.target ?? "dom";
-  // Eager construction validates { target } at wrapper construction — babel would
-  // otherwise first reach the validation at the initial transform. The plugin API's
-  // first positional argument (babel's core module) is unused by the validation.
-  babelHellaJS(undefined, pluginOptions);
+  // Eager construction validates { target } at wrapper construction — the engine
+  // would otherwise first reach the validation at the initial transform. The probe
+  // throws before the JSX sniff, so an empty input only exercises the validation.
+  transform("", { filename: "hellajs-validate.js", target });
   return {
     name: "rollup-plugin-hellajs",
     enforce: "pre",
@@ -30,17 +32,9 @@ export default function rollupHellaJS(options) {
     load(id) {
       if (id.endsWith(".jsx") || id.endsWith(".tsx")) {
         const code = readFileSync(id, "utf8");
-        const result = transformSync(code, {
-          plugins: [[babelHellaJS, { ...pluginOptions, target }]],
-          presets: [presetTypeScript],
-          filename: id,
-          ast: false,
-          sourceMaps: true,
-          configFile: false,
-          babelrc: false,
-          parserOpts: { plugins: ["jsx"] },
-        });
-        return { code: result.code, map: result.map };
+        const result = transform(code, { filename: id, lang: langOf(id), target });
+        if (result) return { code: result.code, map: result.map };
+        return null;
       }
       return null;
     },
@@ -57,19 +51,9 @@ export default function rollupHellaJS(options) {
       // Skip node_modules
       if (id.includes("node_modules")) return null;
 
-      const result = transformSync(code, {
-        plugins: [[babelHellaJS, { ...pluginOptions, target }]],
-        presets: id.endsWith(".tsx") || id.endsWith(".ts") ? [presetTypeScript] : [],
-        filename: id,
-        ast: false,
-        sourceMaps: true,
-        configFile: false,
-        babelrc: false,
-        parserOpts: { plugins: ["jsx"] },
-      });
-      if (typeof result?.code === "string") {
-        return { code: result.code, map: result.map || null };
-      }
+      const result = transform(code, { filename: id, lang: langOf(id), target });
+      if (result) return { code: result.code, map: result.map };
+      // JSX-free file: Rollup's native pass handles it instead (the cheap-skip win).
       return null;
     },
   };

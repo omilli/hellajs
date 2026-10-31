@@ -1,23 +1,24 @@
-import babelHellaJS from "babel-plugin-hellajs";
-import { transformSync } from "@babel/core";
-import presetTypeScript from "@babel/preset-typescript";
+import { transform } from "hellajs-compiler";
+
+/** Source language for the engine, derived from the file extension. */
+const langOf = (id) =>
+  id.endsWith(".tsx") ? "tsx" : id.endsWith(".ts") ? "ts" : id.endsWith(".jsx") ? "jsx" : "js";
 
 /**
- * Vite wrapper around babel-plugin-hellajs. `{ target }` is forwarded to the babel
- * plugin per build environment: an explicit `target` option wins verbatim; otherwise
+ * Vite wrapper around hellajs-compiler. `{ target }` is forwarded to the engine
+ * per build environment: an explicit `target` option wins verbatim; otherwise
  * SSR/server builds emit `"ast"` (byte-identical HellaNode, `@hellajs/ssr`'s currency)
  * and client builds emit `"dom"` (imperative `@hellajs/dom/runtime` construction — the
- * default); unknown options throw at plugin construction via the babel plugin's
- * validation.
- * @param {import("./index.d.ts").ViteHellaJSOptions} [options] `{ target }` — forwarded to `babelHellaJS` unless resolved per environment
+ * default); unknown options throw at plugin construction via the engine's validation.
+ * @param {import("./index.d.ts").ViteHellaJSOptions} [options] `{ target }` — forwarded to the engine unless resolved per environment
  * @returns {import("./index.d.ts").VitePlugin} Vite plugin object
  */
 export default function viteHellaJS(options) {
   const pluginOptions = options || {};
-  // Eager construction validates { target } at wrapper construction — babel would
-  // otherwise first reach the validation at the initial transform. The plugin API's
-  // first positional argument (babel's core module) is unused by the validation.
-  babelHellaJS(undefined, pluginOptions);
+  // Eager construction validates { target } at wrapper construction — the engine
+  // would otherwise first reach the validation at the initial transform. The probe
+  // throws before the JSX sniff, so an empty input only exercises the validation.
+  transform("", { filename: "hellajs-validate.js", target: pluginOptions.target ?? "dom" });
   return {
     name: "vite-plugin-hellajs",
     enforce: "pre",
@@ -46,19 +47,9 @@ export default function viteHellaJS(options) {
       const ssrSuite = process.env.VITEST !== undefined && /[\\/]packages[\\/]ssr[\\/]/.test(id);
       const target = pluginOptions.target ?? (server || ssrSuite ? "ast" : "dom");
 
-      const result = transformSync(code, {
-        plugins: [[babelHellaJS, { ...pluginOptions, target }]],
-        presets: id.endsWith(".tsx") || id.endsWith(".ts") ? [presetTypeScript] : [],
-        filename: id,
-        ast: false,
-        sourceMaps: true,
-        configFile: false,
-        babelrc: false,
-        parserOpts: { plugins: ["jsx"] },
-      });
-      if (typeof result?.code === "string") {
-        return { code: result.code, map: result.map || null };
-      }
+      const result = transform(code, { filename: id, lang: langOf(id), target });
+      if (result) return { code: result.code, map: result.map };
+      // JSX-free file: Vite's native esbuild pass strips TS instead (the cheap-skip win).
       return null;
     },
   };

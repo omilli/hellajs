@@ -1,0 +1,69 @@
+---
+title: Compiler
+description: The HellaJS JSX engine
+layout: ../../layouts/MainLayout.astro
+---
+
+# Compiler
+
+`hellajs-compiler` is the engine that transforms HellaJS JSX syntax into JavaScript objects and function calls that can be rendered by the HellaJS runtime. It is a pure JS pipeline: TypeScript syntax strips natively, the tree parses to estree, and the output prints with a chained source map. You rarely install it directly; the Vite, Rollup, and Astro wrappers drive it per build environment.
+
+## Installation
+
+```bash
+npm install --save-dev hellajs-compiler
+```
+
+## Usage
+
+`transform` compiles one source string. The `target` option selects the emission: client builds emit imperative `@hellajs/dom/runtime` construction (the default), server builds emit HellaNode objects for `@hellajs/ssr`.
+
+```js
+import { transform } from "hellajs-compiler";
+
+const dom = transform('const v = <div class="x">{count()}</div>', {
+  filename: "app.tsx",
+  target: "dom",
+});
+
+const ast = transform('const v = <div class="x">{count()}</div>', {
+  filename: "app.tsx",
+  target: "ast",
+});
+```
+
+JSX-free files return `null`, so build scripts can pass every file through the engine and handle only what compiles.
+
+## Build Target
+
+| Target | Emits | Default |
+|---|---|---|
+| `"dom"` | Imperative `@hellajs/dom/runtime` construction: a cached `template()` const per site plus a `mark()`ed build fn wiring props, handlers, hooks, and children. | Yes |
+| `"ast"` | HellaNode objects, the input format of `@hellajs/ssr`. | |
+
+The two targets share one pipeline: component detection, passthroughs (`ForEach`, `Portal`, `Lazy`), feature syntax (`on:`, `e:`, `hook:`, `error:`), and the dom feature imports are identical; only element emission differs. Output at `"ast"` is byte-compatible with `@hellajs/ssr`'s input; formatting is the printer's own freedom.
+
+Options validate at call time: a non-object value, an unknown key, or an invalid `target` throws a `[hellajs-compiler]` error before any work. `lang` may be passed explicitly (`"js"`, `"jsx"`, `"ts"`, `"tsx"`); otherwise it is inferred from `filename`, and `"ts"`/`"tsx"` inputs strip their type syntax ahead of the walk.
+
+## Wrappers
+
+The `vite-plugin-hellajs` and `rollup-plugin-hellajs` wrappers (and the astro renderer) call this engine for you and resolve `target` per build environment: server environments compile to `"ast"`, client environments to `"dom"`. Install the wrapper for your build tool; direct `transform` use is for custom build scripts, with targets always explicit at the call site.
+
+## TypeScript
+
+Ensure your `tsconfig.json` includes:
+
+```json
+{
+  "compilerOptions": {
+    "jsx": "preserve",
+    "types": ["@hellajs/dom"] // Important
+  }
+}
+```
+
+The engine never lowers JSX itself; it re-emits the JSX it read into runtime calls, so the `preserve` setting only affects your editor and type checker.
+
+## Source Maps
+
+`transform` returns a chained source map: for TypeScript inputs the native strip-stage map composes with the print-stage map; for JavaScript inputs the print map applies alone. Expression-level positions inside JSX resolve to their original line and column, so bundler warnings and editor overlays point at the source you wrote.

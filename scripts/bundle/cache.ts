@@ -25,19 +25,19 @@ export async function calculateFileHash(filePath: string): Promise<string | null
 /**
  * Fingerprint the bundle pipeline's own sources so a pipeline edit invalidates
  * every package cache. The per-package hash set covers only the package's own
- * files; a transform change (babel plugin, bundle scripts) must never leave a
+ * files; a transform change (the compiler, bundle scripts) must never leave a
  * stale `dist/` behind a "valid" cache.
  * @returns sha256 digest over the sorted relative paths + per-file hashes of
  * `scripts/bundle.ts`, `scripts/bundle/**`, `scripts/utils/**`, and
- * `plugins/babel`'s entry + `src/**`.
+ * `plugins/compiler`'s entry + `src/**`.
  */
 export async function calculatePipelineFingerprint(): Promise<string> {
   const files = [
     path.join(projectRoot, "scripts", "bundle.ts"),
     ...(await scanDirRecursive(path.join(projectRoot, "scripts", "bundle"), /\.ts$/)),
     ...(await scanDirRecursive(path.join(projectRoot, "scripts", "utils"), /\.ts$/)),
-    path.join(projectRoot, "plugins", "babel", "index.mjs"),
-    ...(await scanDirRecursive(path.join(projectRoot, "plugins", "babel", "src"), /\.mjs$/)),
+    path.join(projectRoot, "plugins", "compiler", "index.mjs"),
+    ...(await scanDirRecursive(path.join(projectRoot, "plugins", "compiler", "src"), /\.mjs$/)),
   ].sort();
   const entries = await Promise.all(
     files.map(async (file) => {

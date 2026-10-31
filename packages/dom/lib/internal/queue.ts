@@ -31,8 +31,7 @@ let cleanedMarksExist = false;
  * flush — the delivery path for content inserted into a target the scoped observer
  * does not watch (Portal's remote target). The default (hooks feature not loaded)
  * does nothing — no hook was ever registered, so no walk can consume the queue.
- * The hooks feature (`lib/features/hooks.ts`, loaded by `hook:` JSX via the babel
- * plugin) installs the real arm through {@link setMountQueueArm}.
+ * The hooks feature (`lib/features/hooks.ts`, loaded by `hook:` JSX via the compiler) installs the real arm through {@link setMountQueueArm}.
  *
  * Exported `let` is deliberate: the feature swaps the implementation at module init
  * (the `setMountNode` injection pattern) while every importer keeps the live binding.

@@ -70,7 +70,7 @@ export function Transition(props: TransitionProps): JSX.Element {
 
         if (current) return;
 
-        // A single-element children array unwraps to the element (the babel plugin's
+        // A single-element children array unwraps to the element (the compiler's
         // compiled component-children convention) — resolveNode maps
         // arrays to a fragment, and a fragment `current` silently skips every
         // `instanceof Element` branch below (enter/appear classes, leave removal).

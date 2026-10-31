@@ -1,4 +1,4 @@
-// Build glue for JSX everywhere: the same babel-plugin-hellajs pass the test
+// Build glue for JSX everywhere: the same hellajs-compiler pass the test
 // preload uses, applied to both entries. The client bundles for the browser;
 // the server bundles for node (`platform: "node"`), keeping `@hellajs/*` and
 // hono external so they resolve from node_modules at runtime. JSX cannot run
@@ -7,9 +7,7 @@
 //
 // Usage: `node build.mjs` (one-shot) or `node build.mjs --watch`.
 import { build, context } from "esbuild";
-import { transformAsync } from "@babel/core";
-import babelPluginHellajs from "babel-plugin-hellajs";
-import presetTypeScript from "@babel/preset-typescript";
+import { transform } from "hellajs-compiler";
 import { readFile } from "node:fs/promises";
 import { spawn } from "node:child_process";
 
@@ -19,14 +17,12 @@ const hellajsJsx = (target) => ({
     build.onLoad({ filter: /\.tsx$/ }, async (args) => {
       if (args.path.includes("node_modules")) return undefined;
       const source = await readFile(args.path, "utf8");
-      const result = await transformAsync(source, {
+      const result = transform(source, {
         filename: args.path,
-        plugins: [[babelPluginHellajs, target ? { target } : {}]],
-        presets: [presetTypeScript],
-        sourceType: "module",
-        babelrc: false,
-        configFile: false,
+        lang: "tsx",
+        target: target ?? "ast",
       });
+      if (!result) return undefined; // JSX-free: esbuild's tsx loader handles it natively
       return { contents: result.code, loader: "js" };
     });
   },

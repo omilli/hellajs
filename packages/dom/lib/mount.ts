@@ -12,13 +12,13 @@ import { createMountHandle } from "./internal/handle";
  * Accepts flagged build fns (`target: "dom"` compiler output — `component()` results,
  * sync or async). Supports async component functions — the container mounts the resolved
  * build when the Promise settles. Hand-built HellaNode input is rejected: compile via
- * the babel plugin or build imperatively via `@hellajs/dom/runtime`.
+ * the compiler or build imperatively via `@hellajs/dom/runtime`.
  * @param node The flagged build fn to mount (sync or async)
  * @param target CSS selector string, Element, or ShadowRoot to mount into (defaults to "#app")
  * @returns A MountHandle for controlling the mounted tree
  * @throws {Error} When target is a selector string that matches no element in the document.
  * @throws {Error} When `node` resolves to hand-built HellaNode input — `[dom] mount: hand-built
- * HellaNode input is not supported — compile via the babel plugin or build imperatively via
+ * HellaNode input is not supported — compile via hellajs-compiler or build imperatively via
  * @hellajs/dom/runtime`.
  */
 export function mount(
@@ -38,7 +38,7 @@ export function mount(
     // wiring (element roots on their own state; fragment roots on their first child).
     if (!isTemplateBuild(resolvedNode)) {
       throw new Error(
-        "[dom] mount: hand-built HellaNode input is not supported — compile via the babel plugin or build imperatively via @hellajs/dom/runtime",
+        "[dom] mount: hand-built HellaNode input is not supported — compile via hellajs-compiler or build imperatively via @hellajs/dom/runtime",
       );
     }
     pushBuildParent(container);

@@ -120,7 +120,7 @@ function findExportDeclarations(filePath: string): Map<string, number> {
 /**
  * Determines the package or plugin name from an absolute file path.
  * @param filePath Absolute path
- * @returns Package/plugin name (e.g. "dom", "babel") or an empty string
+ * @returns Package/plugin name (e.g. "dom", "compiler") or an empty string
  */
 function getPackageName(filePath: string): string {
   const parts = filePath.split(path.sep);

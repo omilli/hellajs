@@ -35,7 +35,7 @@ Each component copies as one editable `.tsx` file into `componentsDir`: `add but
 | `--style css` (default) | [`style`](/reference/css/style) maps spliced in, class array on the element |
 | `--style tailwind` | utility strings inline at the element, `cn(...)`, keyed maps on top |
 
-Both styles receive the same component behavior; only the class carrier differs. The JSX source compiles through the HellaJS babel plugin, wrapped as [`vite-plugin-hellajs`](/plugins/vite).
+Both styles receive the same component behavior; only the class carrier differs. The JSX source compiles through the HellaJS compiler (`hellajs-compiler`), wrapped as [`vite-plugin-hellajs`](/plugins/vite).
 
 By default the copied files stay TypeScript. `--lang js` strips types at copy time; the flag is documented on the [CLI](/ui/cli) page.
 

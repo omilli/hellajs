@@ -129,7 +129,7 @@ export default function Counter({ initial = 0 }: { initial?: number }) {
 **Code Explanation**
 
 - **[`signal`](/reference/core/signal)`(initial)`**: Holds the count. `initial` arrives as a prop from the `.astro` page
-- **`{count()}`**: The Babel transform wraps child expressions that call signals into reactive thunks, so the button label tracks `count` without manual wiring
+- **`{count()}`**: The compiler wraps child expressions that call signals into reactive thunks, so the button label tracks `count` without manual wiring
 - **`on:click`**: The HellaJS event prefix. Handlers attach through global event delegation after hydration
 - **[`style`](/reference/css/style)`({ ... }, { label: "counter-btn" })`**: Declares the button's class in the module, above the component; `class={counterBtn}` applies the returned name. The label keeps the hashed class readable, and the hash derives from the rule text, so the server and the client always produce the same class name
 

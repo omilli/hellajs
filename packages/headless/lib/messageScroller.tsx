@@ -132,7 +132,7 @@ export function messageScroller(options: MessageScrollerOptions = {}): MessageSc
     } = props;
     const direction = (): "start" | "end" => dir ?? "end";
 
-    // Babel compiles a JSX child expression to a one-element array, so a
+    // The compiler compiles a JSX child expression to a one-element array, so a
     // passthrough child slot arrives as `[undefined]` when the wrapper had no
     // children; unwrap one level before the default-content check.
     const slotted = Array.isArray(children) && children.length === 1 ? children[0] : children;

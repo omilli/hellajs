@@ -35,7 +35,7 @@ setForEachHydrateContextSource(peekHydrateContext);
  * (identity preserved — nothing is cloned), and `text`/`prop`/`on`/`child` wire onto
  * the claimed nodes; every dynamic region is marker-bounded (`<!--[->…<!--]-->`, emitted
  * by `ssr`). A claim with no matching server node, or server DOM no claim consumed,
- * is divergence. Hand-built HellaNode input is rejected: compile via the babel plugin
+ * is divergence. Hand-built HellaNode input is rejected: compile via hellajs-compiler
  * or build imperatively via `@hellajs/dom/runtime`.
  * @param node A flagged build fn — the same tree the server rendered.
  * @param target CSS selector string or Element whose existing children are the server output. Defaults to `"#app"`.
@@ -64,7 +64,7 @@ export function hydrate(
       let roots: Node[];
       if (!isTemplateBuild(resolvedNode)) {
         throw new Error(
-          "[dom] hydrate: hand-built HellaNode input is not supported — compile via the babel plugin or build imperatively via @hellajs/dom/runtime",
+          "[dom] hydrate: hand-built HellaNode input is not supported — compile via hellajs-compiler or build imperatively via @hellajs/dom/runtime",
         );
       }
       // Flagged imperative root: the construction calls ADOPT the server DOM (create-vs-adopt

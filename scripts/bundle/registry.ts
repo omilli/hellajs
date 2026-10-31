@@ -1,8 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { transformSync } from "@babel/core";
-import babelHellaJS from "babel-plugin-hellajs";
-import presetTypeScript from "@babel/preset-typescript";
+import { transform as transformJsx } from "hellajs-compiler";
+import * as esbuild from "esbuild";
 import { applyStyleVariant, inlineTypes } from "../../packages/ui/lib/internal/transform.ts";
 import { ensureDir, execCommand, projectRoot, readJson, scanDirRecursive } from "../utils/index.ts";
 import type { PackageInfo } from "../utils/index.ts";
@@ -34,8 +33,8 @@ interface RegistryManifest {
  * own `.tsx` sources (headless's parts factories), keeping one JSX →
  * imperative-construction compilation across registry and package output.
  * @param code Flavor-resolved registry source text.
- * @param filename Source file name (drives babel's TS/JSX parsing).
- * @param target Babel plugin emission target — `"dom"` (default) lowers
+ * @param filename Source file name (drives the engine's TS/JSX parsing).
+ * @param target Engine emission target — `"dom"` (default) lowers
  * elements to imperative `@hellajs/dom/runtime` construction; `"ast"` lowers
  * them to HellaNode literals (the `@hellajs/ssr` walker's currency) for a
  * package's `dist/ssr` variant.
@@ -46,21 +45,22 @@ export function transformRegistrySource(
   filename: string,
   target: "dom" | "ast" = "dom",
 ): string {
-  const result = transformSync(code, {
+  const result = transformJsx(code, {
     // "dom" is parity with plugins/vite/index.mjs's client default: registry variants
     // compile to imperative @hellajs/dom/runtime construction — the registry's consumers
     // (package tests, docs-ui demos) mount the output client-side, which rejects ast
     // input. The "ast" target serves package ssr variants, never the registry itself.
-    plugins: [[babelHellaJS, { target }]],
-    presets: [presetTypeScript],
     filename,
-    ast: false,
-    sourceMaps: true,
-    configFile: false,
-    babelrc: false,
-    parserOpts: { plugins: ["jsx"] },
+    lang: "tsx",
+    target,
   });
-  if (typeof result?.code !== "string") {
+  // JSX-free source (tokens.ts, cn.ts): the engine returns null and the vite wrapper's
+  // null passthrough hands the file to Vite's native esbuild pass — mirror that here so
+  // plain-TS registry modules still strip their types.
+  if (result === null) {
+    return esbuild.transformSync(code, { loader: "tsx" }).code;
+  }
+  if (typeof result.code !== "string") {
     throw new Error(`[bundle] registry transform produced no code for ${filename}`);
   }
   return result.code;
@@ -69,7 +69,7 @@ export function transformRegistrySource(
 /**
  * Compile one registry source file into its output directory and stage the
  * flavor-resolved source for declaration emission. Plain JS/CSS copies
- * verbatim; TS/TSX runs the babel mirror.
+ * verbatim; TS/TSX runs the engine.
  * @param sourcePath Registry source file path.
  * @param outDir Output directory for the compiled artifact.
  * @param outRoot Registry output root (`dist/registry`).
@@ -223,7 +223,7 @@ async function readTypesModule(
 }
 /**
  * Compile the ui registry into `dist/registry`: canonical component files
- * per format and style (babel mirror of the vite transform), each flavor
+ * per format and style (engine mirror of the vite transform), each flavor
  * resolved by splicing the entry's style module through the same path, plus
  * verbatim theme/cn copies. Declaration files are emitted by tsc over the
  * staged generated sources, so a style module that produces non-compiling

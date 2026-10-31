@@ -35,31 +35,33 @@ export function setupContainer() {
 }
 
 /**
- * Compiles JSX source through the repo's babel plugin (options forwarded — `{ target: "dom"`
- * for the imperative builder). Babel loads lazily so suites that never compile JSX pay nothing.
+ * Compiles JSX source through hellajs-compiler. The harness default is `"ast"` — the
+ * no-option callers are server-currency arms (the engine's `"dom"` default must not flip
+ * them); pass `{ target: "dom" }` for the imperative builder. The engine loads lazily so
+ * suites that never compile JSX pay nothing.
  * @param {string} source JSX source
- * @param {Record<string, unknown>} [options] Plugin options forwarded to `babelHellaJS`
+ * @param {Record<string, unknown>} [options] Engine options (`target` forwarded; `"ast"` default)
  * @returns {Promise<string>} Transformed code
  */
 export async function compileJsx(source, options) {
-  const [{ default: babel }, { default: babelHellaJS }] = await Promise.all([
-    import("@babel/core"),
-    import("babel-plugin-hellajs"),
-  ]);
-  return (
-    babel.transformSync(source, {
-      plugins: options ? [[babelHellaJS, options]] : [[babelHellaJS]],
-      configFile: false,
-    })?.code ?? ""
-  );
+  const { transform } = await import("hellajs-compiler");
+  const result = transform(source, {
+    filename: "compile-jsx-fixture.jsx",
+    lang: "jsx",
+    target: options?.target ?? "ast",
+  });
+  if (result === null) {
+    throw new Error("[test-helpers] compileJsx fixture carried no JSX");
+  }
+  return result.code;
 }
 
 /**
- * Runs a babel-compiled module body in the test environment: strips its ESM import statements,
+ * Runs a compiled module body in the test environment: strips its ESM import statements,
  * binding each imported name from the matching entry in `modules` (specifier → module namespace),
  * then evaluates the body and returns `returnName`. Hydration-parity harnesses use it to execute
  * the same fixture compiled at both plugin targets.
- * @param {string} code Compiled module code (`babel.transformSync(...).code`)
+ * @param {string} code Compiled module code
  * @param {Record<string, unknown>} modules Import specifier → module namespace bindings
  * @param {string} returnName Top-level binding name to return
  * @returns {unknown} The value of `returnName` after the body runs

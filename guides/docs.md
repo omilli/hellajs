@@ -542,7 +542,7 @@ import { signal, computed } from '@hellajs/core';
 
 Five rules for how example code is written:
 
-- **Attribute values written directly**: `class={active() ? "on" : "off"}`, never function-wrapped (verified: `plugins/babel/src/utils/reactive.mjs` `maybeReactive` auto-wraps call-containing expressions and passes top-level functions through — JSX examples never need it).
+- **Attribute values written directly**: `class={active() ? "on" : "off"}`, never function-wrapped (verified: `plugins/compiler/src/utils/reactive.mjs` `maybeReactive` auto-wraps call-containing expressions and passes top-level functions through — JSX examples never need it).
 - **Zero-arg bindings bare**: `checked={enabled}`, `on:click={toggle}`, `data-state="${state}"` — never `checked={() => enabled()}`. Every runtime path calls function values with zero args, so the wrapper is a dead closure. A wrapper earns its tokens only by doing work — consuming a parameter (`oninput={(v) => url(v)}`), preserving a receiver (`() => obj.method()`), or composing (`class=${() => "btn " + variant()}`); mixed-string attribute values substitute statically and keep call syntax (`class="btn ${variant()}"` — the concat stringifies a bare function).
 - **Extracted prop types**: component examples extract multi-prop inline prop types to a named `type` declared above the component; never inline `{ a, children }: { a: string; children?: HellaChildren }`.
 - **`children` typed `HellaChildren`**: imported from `@hellajs/dom`, never a catch-all placeholder (the pre-convention examples lied about the contract).

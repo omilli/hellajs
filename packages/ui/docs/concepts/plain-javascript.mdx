@@ -37,7 +37,7 @@ The strip runs after the style splice, so the copied file still carries its full
 
 ## JSX Projects Without TypeScript
 
-The `.jsx` copies are not browser-ready: HellaJS JSX compiles to vnode calls, not `React.createElement`, so the files need the HellaJS babel plugin, delivered as [`vite-plugin-hellajs`](/plugins/vite):
+The `.jsx` copies are not browser-ready: HellaJS JSX compiles to vnode calls, not `React.createElement`, so the files need the HellaJS compiler, delivered as [`vite-plugin-hellajs`](/plugins/vite):
 
 ```js
 // vite.config.js
@@ -49,7 +49,7 @@ export default defineConfig({
 });
 ```
 
-A generic JSX transpiler is not a substitute: only the HellaJS plugin (or the babel plugin behind it) produces the vnode calls the runtime consumes.
+A generic JSX transpiler is not a substitute: only the HellaJS compiler produces the vnode calls the runtime consumes.
 
 ## Bun and Deno
 

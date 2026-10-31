@@ -60,7 +60,7 @@ export function isValidPackage(packageName: string): boolean {
  * Whether `plugins/<pluginName>/` is a workspace (directory + package.json).
  * The plugin-scope counterpart of `isValidPackage`.
  *
- * @param pluginName Bare plugin directory name (e.g. `babel`).
+ * @param pluginName Bare plugin directory name (e.g. `compiler`).
  * @returns True when the plugin workspace exists.
  */
 export function isValidPlugin(pluginName: string): boolean {

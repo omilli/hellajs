@@ -4,7 +4,7 @@ Write UI as JSX: the compiler wires your signals to the DOM, and updates touch o
 
 ## The Shape of a Template
 
-JSX is the only template syntax. A build-time plugin (`babel-plugin-hellajs`, wired by the Vite, Rollup, and Astro integrations) compiles each component into the structures [`mount`](/reference/dom/mount) consumes. The same rules hold on the server, where [`ssr`](/reference/ssr/ssr) walks the tree to a string.
+JSX is the only template syntax. The build-time compiler (`hellajs-compiler`, wired by the Vite, Rollup, and Astro integrations) compiles each component into the structures [`mount`](/reference/dom/mount) consumes. The same rules hold on the server, where [`ssr`](/reference/ssr/ssr) walks the tree to a string.
 
 ```jsx
 import { mount } from "@hellajs/dom";

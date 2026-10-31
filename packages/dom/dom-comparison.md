@@ -11,7 +11,7 @@ A ground-up comparison based on the actual source code of `@hellajs/dom` v2. Eve
 | Reactive model | Fine-grained signals (`@hellajs/core`) | Fine-grained signals | Runes (signals) | VDOM + hooks | Proxies (`ref`/`reactive`) | Signals, zoneless change detection |
 | Rendering | Direct DOM, surgical | Direct DOM, surgical | Compiled direct DOM | VDOM diff & reconcile | VDOM diff & reconcile | Change detection + template instructions |
 | Virtual DOM | None | None | None | Yes | Yes | Yes (view tree) |
-| Compile step | Mandatory (Babel plugin; JSX → HellaNode at build) | Mandatory for JSX | Mandatory (SFC → JS) | JSX → JS | SFC/template → render fn | Decorators + HTML templates |
+| Compile step | Mandatory (hellajs-compiler; JSX → HellaNode at build) | Mandatory for JSX | Mandatory (SFC → JS) | JSX → JS | SFC/template → render fn | Decorators + HTML templates |
 | Runtime deps | 0 (+ core peer) | 3 | 16 | 0 | 5 | 1 |
 | Templating | JSX | JSX / tagged templates | Svelte SFC | JSX | `<template>` / JSX | HTML templates + TS |
 | Error boundaries | Global `onError` + per-element `error:` config | `ErrorBoundary` component | `<svelte:boundary>` | Class boundaries + root callbacks | `errorCaptured` hook | `ErrorHandler` + zone-less capture |
@@ -27,9 +27,9 @@ HellaJS sits closest to Solid philosophically (signal-driven, no VDOM, surgical 
 
 Rendering is a one-way function from a plain-object AST to the live DOM, with reactivity attached per binding: there is no render loop, no reconciliation pass, and no tree to diff. The mechanism:
 
-- No virtual DOM. The Babel plugin compiles client JSX to imperative `@hellajs/dom/runtime` construction: cached `template()`/`fragment()` clones wired by `text`/`prop`/`on`/`child` calls, so mount executes the compiled calls directly with no intermediate tree and no diffing (`plugins/babel/src/builders/imperative.mjs`, `packages/dom/lib/runtime.ts`). Element creation is namespace-aware: `svg`/`math` roots and their descendants create via `createElementNS`, with `foreignObject` resetting children to HTML (`lib/features/namespaces.ts`, applied in the runtime's parse). The server target still emits the plain-object HellaNode AST that `@hellajs/ssr` stringifies.
+- No virtual DOM. The compiler compiles client JSX to imperative `@hellajs/dom/runtime` construction: cached `template()`/`fragment()` clones wired by `text`/`prop`/`on`/`child` calls, so mount executes the compiled calls directly with no intermediate tree and no diffing (`plugins/compiler/src/builders/imperative.mjs`, `packages/dom/lib/runtime.ts`). Element creation is namespace-aware: `svg`/`math` roots and their descendants create via `createElementNS`, with `foreignObject` resetting children to HTML (`lib/features/namespaces.ts`, applied in the runtime's parse). The server target still emits the plain-object HellaNode AST that `@hellajs/ssr` stringifies.
 - Surgical updates: each reactive binding registers its own effect. A function-valued prop gets one effect wrapping `renderProp` (`lib/internal/render.ts`); a reactive child gets a persistent empty text-node anchor plus a `renderedNodes` array and one effect that clears and re-inserts exactly the nodes it owns (`lib/internal/render.ts`). When a signal changes, only those bindings re-run: no tree walk, no sibling reconciliation.
-- Static-subtree hoisting happens at compile time: the Babel pass folds fully-static subtrees (literal props, no prefixed attributes, no expressions) into the cached template HTML itself, so re-mounting a static branch is one `cloneNode(true)` instead of O(nodes) construction (`plugins/babel/src/builders/imperative.mjs`, `lib/runtime.ts`). Static children of a dynamic parent still hoist individually.
+- Static-subtree hoisting happens at compile time: the compile pass folds fully-static subtrees (literal props, no prefixed attributes, no expressions) into the cached template HTML itself, so re-mounting a static branch is one `cloneNode(true)` instead of O(nodes) construction (`plugins/compiler/src/builders/imperative.mjs`, `lib/runtime.ts`). Static children of a dynamic parent still hoist individually.
 - The client DOM carries no comment markers: list, portal, lazy, transition, suspense, and reactive-child regions all anchor on invisible empty text nodes (`lib/ForEach.ts`, `lib/Portal.ts`, `lib/Lazy.ts`, `lib/Transition.ts`, `lib/internal/render.ts`).
 - Hydration claims server HTML positionally: `@hellajs/ssr` bounds each dynamic region in `<!--[-->…<!--]-->` comment markers, and `hydrate()` re-runs the compiled build with adoption engaged, so the construction calls claim the matching server nodes in place and `replaceChildren` is never called (`lib/hydrate.ts`, `lib/internal/claims.ts`). Claim order equals document order (the compiler's emission guarantee), claim exhaustion is verified, and structural divergence throws instead of guessing; only reactive-value drift degrades, warn-and-rebuild per region (`lib/internal/hydrate.ts`, `lib/internal/claims.ts`). A streamed `<Suspense>` region arrives as a staged `<template>` that an inline `$hs` script swaps in as it lands, with `swapSuspenseStage` as the no-script fallback and an interrupted stream degrading to client-side re-suspension (`lib/internal/hydrate.ts`).
 
@@ -39,7 +39,7 @@ Solid compiles JSX to real DOM node constructors wrapped in fine-grained reactiv
 
 ### Svelte 5
 
-Svelte 5 is the compiler-first counterpoint. Runes (`$state`, `$derived`, `$effect`) compile to fine-grained signals, and the Svelte compiler emits imperative DOM-mutation code; the framework largely disappears at build time (per the Svelte README and docs). HellaJS performs the same style of analysis in its Babel pass (`hoistStaticJSX` in `plugins/babel/src/utils/static.mjs`), which folds fully-static subtrees into shared template HTML, and its default client emission is the same Svelte-style imperative construction (`target: "dom"`); the `"ast"` target remains for the server pipeline.
+Svelte 5 is the compiler-first counterpoint. Runes (`$state`, `$derived`, `$effect`) compile to fine-grained signals, and the Svelte compiler emits imperative DOM-mutation code; the framework largely disappears at build time (per the Svelte README and docs). HellaJS performs the same style of analysis in its compile pass (`hoistStaticJSX` in `plugins/compiler/src/utils/static.mjs`), which folds fully-static subtrees into shared template HTML, and its default client emission is the same Svelte-style imperative construction (`target: "dom"`); the `"ast"` target remains for the server pipeline.
 
 ### React 19 / Vue 3
 
@@ -79,7 +79,7 @@ Reactivity comes from `@hellajs/core`: signals as sources, computeds as transfor
 | Vue | Component + `ref` | Mostly | `markRaw`, `shallowRef` |
 | Angular | Component / signal view | Yes (signals) | `equal` comparator / zone opt-in legacy |
 
-A distinctive HellaJS ergonomic: passing a bare signal reference creates a live binding while calling it (`count()`) produces a one-time static value, because the single discriminator is `isFunction` on the child/prop value (`lib/internal/render.ts`, `lib/internal/utils.ts`). A signal *is* a function, so it binds; a primitive never does. Under the Babel plugin, call-containing expressions are auto-wrapped into thunks, so compiled `{count() * 2}` is reactive without a manual wrapper (per the package's control-flow docs). This is a zero-API way to opt in and out of tracking that no competitor matches so directly.
+A distinctive HellaJS ergonomic: passing a bare signal reference creates a live binding while calling it (`count()`) produces a one-time static value, because the single discriminator is `isFunction` on the child/prop value (`lib/internal/render.ts`, `lib/internal/utils.ts`). A signal *is* a function, so it binds; a primitive never does. Under the compiler, call-containing expressions are auto-wrapped into thunks, so compiled `{count() * 2}` is reactive without a manual wrapper (per the package's control-flow docs). This is a zero-API way to opt in and out of tracking that no competitor matches so directly.
 
 ---
 
@@ -130,7 +130,7 @@ HellaJS delegates every `on:` type uniformly rather than a curated set (verified
 
 ## 7. Component Model & Composition
 
-Components are plain functions returning HellaNodes. There is no class component and no framework-injected props object; the Babel plugin wraps component references in `component()`, which creates a disposal scope for automatic effect cleanup and catches render errors into the error system (`lib/component.ts`).
+Components are plain functions returning HellaNodes. There is no class component and no framework-injected props object; the compiler wraps component references in `component()`, which creates a disposal scope for automatic effect cleanup and catches render errors into the error system (`lib/component.ts`).
 
 ```jsx
 // Plain function; no special API, runs once per mount
@@ -284,7 +284,7 @@ Architecturally, HellaJS dom is a sibling to Solid and a cousin to Svelte, firml
 What sets HellaJS apart (and no single competitor matches all of):
 
 1. **Composable package boundaries**: adopt dom + core, add router/store/css/resource as needed. A library, not a framework.
-2. **Compile-time static folding**: the Babel pass folds fully-static subtrees into the cached template HTML, so re-mounting a static branch is one `cloneNode(true)` (`plugins/babel/src/builders/imperative.mjs`, `lib/runtime.ts`).
+2. **Compile-time static folding**: the compile pass folds fully-static subtrees into the cached template HTML, so re-mounting a static branch is one `cloneNode(true)` (`plugins/compiler/src/builders/imperative.mjs`, `lib/runtime.ts`).
 3. **Marker-based adopt-in-place hydration**: reads `<!--[-->…<!--]-->` regions, adopts server DOM per region, subtree-replaces only mismatches, and degrades gracefully on interrupted streams (`lib/internal/hydrate.ts`).
 4. **Web-Components-first `element()`**: custom elements with Proxy reactive props, synchronous attribute propagation, and opt-in shadow DOM (`lib/element.ts`).
 5. **Reactive external-DOM refs**: `$ref`/`$collection` auto-watch nodes outside the render tree, queueing ops until they exist (`lib/$ref.ts`, `lib/internal/selectors.ts`).

@@ -1,19 +1,34 @@
 import { maybeReactive } from "../utils/reactive.mjs";
+import {
+  booleanLiteral,
+  identifier,
+  objectProperty,
+  spreadElement,
+  stringLiteral,
+} from "../builders/vnode.mjs";
 
 // Shared empty detection result — attribute-free elements trigger no feature imports.
 const NO_FEATURES = { hooks: false, errors: false, direct: false };
+
+/**
+ * True when the attribute key is one of the four routed prefixes.
+ * @param {string} key
+ * @returns {boolean}
+ */
+function isPrefixedKey(key) {
+  return /^(error|hook|e|on):/.test(key);
+}
 
 /**
  * Categorize JSX attributes into five typed arrays, reporting which dom feature
  * modules the attribute syntax needs (hook:/error:/e:/on: in element position route
  * into compiled buckets; the same prefixes in COMPONENT position stay verbatim in
  * the component's props — the component's own emission routes them onto elements).
- * @param {typeof import("@babel/core").types} t
- * @param {import("@babel/core").JSXAttribute[]} attributes
+ * @param {import("estree-jsx").JSXAttribute[]} attributes
  * @param {boolean} isComponent
- * @returns {{ props: import("@babel/core").ObjectProperty[], on: import("@babel/core").ObjectProperty[], hooks: import("@babel/core").ObjectProperty[], e: import("@babel/core").ObjectProperty[], error: import("@babel/core").ObjectProperty[], features: { hooks: boolean, errors: boolean, direct: boolean } }}
+ * @returns {{ props: import("estree").Property[], on: import("estree").Property[], hooks: import("estree").Property[], e: import("estree").Property[], error: import("estree").Property[], features: { hooks: boolean, errors: boolean, direct: boolean } }}
  */
-export function processAttributes(t, attributes, isComponent) {
+export function processAttributes(attributes, isComponent) {
   if (!attributes.length)
     return { props: [], on: [], hooks: [], e: [], error: [], features: NO_FEATURES };
 
@@ -25,9 +40,9 @@ export function processAttributes(t, attributes, isComponent) {
   const features = { hooks: false, errors: false, direct: false };
 
   attributes.forEach((attr) => {
-    if (t.isJSXAttribute(attr)) {
+    if (attr.type === "JSXAttribute") {
       let key;
-      if (t.isJSXIdentifier(attr.name)) {
+      if (attr.name.type === "JSXIdentifier") {
         key = attr.name.name;
       } else {
         // JSXNamespacedName (e.g., xml:lang, xlink:href)
@@ -38,34 +53,34 @@ export function processAttributes(t, attributes, isComponent) {
         attr.value && attr.value.expression !== undefined ? attr.value.expression : attr.value;
 
       if (value === null) {
-        value = t.booleanLiteral(true);
+        value = booleanLiteral(true);
       }
 
       // Component calls keep prefixed keys verbatim in props — the component's own
       // emission routes them onto elements, whose element-position syntax loads the
       // matching features. Bucket arrays stay element-only.
-      if (isComponent && /^(error|hook|e|on):/.test(key)) {
+      if (isComponent && isPrefixedKey(key)) {
         if (key.startsWith("hook:")) features.hooks = true;
         else if (key.startsWith("error:")) features.errors = true;
         else if (key.startsWith("e:")) features.direct = true;
-        props.push(t.objectProperty(t.stringLiteral(key), value));
+        props.push(objectProperty(stringLiteral(key), value));
       } else if (key.startsWith("error:")) {
         features.errors = true;
         const errorKey = key.slice(6);
-        error.push(t.objectProperty(t.identifier(errorKey), value));
+        error.push(objectProperty(identifier(errorKey), value));
       } else if (key.startsWith("hook:")) {
         features.hooks = true;
         const hookName = key.slice(5);
-        hooks.push(t.objectProperty(t.identifier(hookName), value));
+        hooks.push(objectProperty(identifier(hookName), value));
       }
       // e: prefix for direct (non-delegated) event handlers
       else if (key.startsWith("e:")) {
         features.direct = true;
         const eventName = key.slice(2);
-        e.push(t.objectProperty(t.identifier(eventName), value));
+        e.push(objectProperty(identifier(eventName), value));
       } else if (key.startsWith("on:")) {
         const eventName = key.slice(3);
-        on.push(t.objectProperty(t.identifier(eventName), value));
+        on.push(objectProperty(identifier(eventName), value));
       } else {
         // Convert camelCase data/aria to kebab-case
         if (typeof key === "string" && /^(data|aria)[A-Z]/.test(key)) {
@@ -77,20 +92,20 @@ export function processAttributes(t, attributes, isComponent) {
         // tracks them — mirrors the children heuristic. Component props are
         // excluded (a component may treat the value as plain, not a function).
         // Prefixed keys (on:/e:/hook:/error:) are handled above and never reach here.
-        if (!isComponent) value = maybeReactive(t, value);
+        if (!isComponent) value = maybeReactive(value);
 
         const needsQuoting = typeof key === "string" && /[-:]/.test(key);
         props.push(
-          t.objectProperty(
+          objectProperty(
             needsQuoting || (typeof key === "string" && /^data-|^aria-/.test(key))
-              ? t.stringLiteral(key)
-              : t.identifier(key),
+              ? stringLiteral(key)
+              : identifier(key),
             value,
           ),
         );
       }
-    } else if (t.isJSXSpreadAttribute(attr)) {
-      props.push(t.spreadElement(attr.argument));
+    } else if (attr.type === "JSXSpreadAttribute") {
+      props.push(spreadElement(attr.argument));
     }
   });
 

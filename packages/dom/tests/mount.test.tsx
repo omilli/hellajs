@@ -22,7 +22,7 @@ describe("dom", () => {
     });
 
     test("a shared static vnode mounts as a distinct clone per mount", () => {
-      // the shape the babel plugin emits for fully-static subtrees:
+      // the shape the compiler emits for fully-static subtrees:
       // one module-level hoisted object, `static: true`, mounted many times
       const shared = (
         <div id="shared" class="box">

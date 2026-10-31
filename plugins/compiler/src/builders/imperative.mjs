@@ -18,7 +18,28 @@
 import { processAttributes } from "../processors/attributes.mjs";
 import { filterEmptyChildren } from "../processors/children.mjs";
 import { isLiteralValue, tryBuildStaticJSX } from "../utils/static.mjs";
-import { getTagCallee } from "../utils/babel.mjs";
+import {
+  arrowFunctionExpression,
+  blockStatement,
+  booleanLiteral,
+  callExpression,
+  expressionStatement,
+  functionExpression,
+  identifier,
+  isBooleanLiteral,
+  isIdentifier,
+  isObjectProperty,
+  isStringLiteral,
+  memberExpression,
+  numericLiteral,
+  objectExpression,
+  objectProperty,
+  returnStatement,
+  spreadElement,
+  stringLiteral,
+  variableDeclaration,
+  variableDeclarator,
+} from "../builders/vnode.mjs";
 
 // renderProp assigns these keys as element properties (form state, raw html) —
 // folding them into template html would change semantics (live value vs default
@@ -74,42 +95,39 @@ function escapeAttr(value) {
 /**
  * True when the JSX node is a component position (uppercase identifier or member
  * expression) — components keep the shared emission in both targets.
- * @param {typeof import("@babel/core").types} t
- * @param {import("@babel/core").JSXElement} node
+ * @param {import("estree-jsx").JSXElement} node
  * @returns {boolean}
  */
-function isComponentNode(t, node) {
+function isComponentNode(node) {
   const name = node.openingElement.name;
-  return (t.isJSXIdentifier(name) && /^[A-Z]/.test(name.name)) || t.isJSXMemberExpression(name);
+  return (
+    (name.type === "JSXIdentifier" && /^[A-Z]/.test(name.name)) ||
+    name.type === "JSXMemberExpression"
+  );
 }
 
 /**
  * True when a subtree qualifies for template folding: fully static per
  * `tryBuildStaticJSX` AND carrying no property-assigned keys (their renderProp
  * semantics cannot fold into html).
- * @param {typeof import("@babel/core").types} t
- * @param {import("@babel/core").JSXElement | import("@babel/core").JSXFragment} node
+ * @param {import("estree-jsx").JSXElement | import("estree-jsx").JSXFragment} node
  * @returns {boolean}
  */
-function isTemplateEligible(t, node) {
-  const vnode = tryBuildStaticJSX(t, node);
+function isTemplateEligible(node) {
+  const vnode = tryBuildStaticJSX(node);
   if (!vnode) return false;
   let i = 0;
   while (i < vnode.properties.length) {
     const property = vnode.properties[i++];
     if (
-      t.isObjectProperty(property) &&
-      t.isIdentifier(property.key, { name: "props" }) &&
-      t.isObjectExpression(property.value)
+      isObjectProperty(property) &&
+      isIdentifier(property.key, "props") &&
+      property.value.type === "ObjectExpression"
     ) {
       let j = 0;
       while (j < property.value.properties.length) {
         const prop = property.value.properties[j++];
-        if (
-          t.isObjectProperty(prop) &&
-          t.isIdentifier(prop.key) &&
-          PROPERTY_KEYS.has(prop.key.name)
-        ) {
+        if (isObjectProperty(prop) && isIdentifier(prop.key) && PROPERTY_KEYS.has(prop.key.name)) {
           return false;
         }
       }
@@ -123,20 +141,19 @@ function isTemplateEligible(t, node) {
  * site root, then `firstElementChild` for the first element child and
  * `children[n]` for later ones — element indices, since static text never creates
  * elements and dynamic children are omitted from the template.
- * @param {typeof import("@babel/core").types} t
  * @param {number[]} steps Element-child indices from the site root
- * @returns {import("@babel/core").MemberExpression | import("@babel/core").Identifier}
+ * @returns {import("estree").MemberExpression | import("estree").Identifier}
  */
-function anchorExpression(t, steps) {
-  let expr = t.identifier("_hellaRoot");
+function anchorExpression(steps) {
+  let expr = identifier("_hellaRoot");
   let i = 0;
   while (i < steps.length) {
     const index = steps[i++];
     if (index === 0) {
-      expr = t.memberExpression(expr, t.identifier("firstElementChild"));
+      expr = memberExpression(expr, identifier("firstElementChild"));
     } else {
-      expr = t.memberExpression(expr, t.identifier("children"));
-      expr = t.memberExpression(expr, t.numericLiteral(index), true);
+      expr = memberExpression(expr, identifier("children"));
+      expr = memberExpression(expr, numericLiteral(index), true);
     }
   }
   return expr;
@@ -146,45 +163,45 @@ function anchorExpression(t, steps) {
  * Serializes one foldable literal prop: `true` renders a bare attribute, `false` /
  * `null` render nothing (the parser's absence is equivalent to renderProp's
  * removeAttribute), strings and numbers render as quoted values.
- * @param {typeof import("@babel/core").types} t
- * @param {import("@babel/core").ObjectProperty} prop
+ * @param {import("estree").Property} prop
  * @returns {string} Html attribute source (possibly empty)
  */
-function serializeProp(t, prop) {
-  const name = t.isIdentifier(prop.key) ? prop.key.name : prop.key.value;
-  if (t.isBooleanLiteral(prop.value)) return prop.value.value ? ` ${name}` : "";
-  if (t.isNullLiteral(prop.value)) return "";
+function serializeProp(prop) {
+  const name = isIdentifier(prop.key) ? prop.key.name : prop.key.value;
+  if (isBooleanLiteral(prop.value)) return prop.value.value ? ` ${name}` : "";
   return ` ${name}="${escapeAttr(String(prop.value.value))}"`;
 }
 
 /**
  * True when a prop folds into the template html: a plain literal value whose key
  * renders through setAttribute (never the property-assigned keys).
- * @param {typeof import("@babel/core").types} t
- * @param {import("@babel/core").ObjectProperty} prop
+ * @param {import("estree").Property} prop
  * @returns {boolean}
  */
-function isFoldableProp(t, prop) {
-  const key = t.isIdentifier(prop.key) ? prop.key.name : prop.key.value;
-  return isLiteralValue(t, prop.value) && !PROPERTY_KEYS.has(key);
+function isFoldableProp(prop) {
+  const key = isIdentifier(prop.key) ? prop.key.name : prop.key.value;
+  return isLiteralValue(prop.value) && !PROPERTY_KEYS.has(key);
 }
 
 /**
  * Extracts the root element's `key` attribute as mark() reconciliation metadata:
  * renderProp never renders `key`, and ForEach reads it off the flagged fn — folding
  * it into html would mint a real attribute no walker ever created.
- * @param {typeof import("@babel/core").types} t
- * @param {import("@babel/core").JSXElement} node Mutated: the key attribute is spliced out
- * @returns {import("@babel/core").Expression | null} The key value expression
+ * @param {import("estree-jsx").JSXElement} node Mutated: the key attribute is spliced out
+ * @returns {import("estree").Expression | null} The key value expression
  */
-function extractKeyAttr(t, node) {
+function extractKeyAttr(node) {
   const attributes = node.openingElement.attributes;
   let i = 0;
   while (i < attributes.length) {
     const attr = attributes[i++];
-    if (t.isJSXAttribute(attr) && t.isJSXIdentifier(attr.name, { name: "key" })) {
+    if (
+      attr.type === "JSXAttribute" &&
+      attr.name.type === "JSXIdentifier" &&
+      attr.name.name === "key"
+    ) {
       attributes.splice(i - 1, 1);
-      if (!attr.value) return t.booleanLiteral(true);
+      if (!attr.value) return booleanLiteral(true);
       return attr.value.expression !== undefined ? attr.value.expression : attr.value;
     }
   }
@@ -193,13 +210,12 @@ function extractKeyAttr(t, node) {
 
 /**
  * Emits one wiring statement appending to `statements`.
- * @param {typeof import("@babel/core").types} t
- * @param {import("@babel/core").Statement[]} statements Accumulator
- * @param {import("@babel/core").Expression} callee Helper identifier
- * @param {import("@babel/core").Expression[]} args Call arguments
+ * @param {import("estree").Statement[]} statements Accumulator
+ * @param {import("estree").Expression} callee Helper identifier
+ * @param {(import("estree").Expression | import("estree").SpreadElement)[]} args Call arguments
  */
-function pushCall(t, statements, callee, args) {
-  statements.push(t.expressionStatement(t.callExpression(callee, args)));
+function pushCall(statements, callee, args) {
+  statements.push(expressionStatement(callExpression(callee, args)));
 }
 
 /**
@@ -209,29 +225,33 @@ function pushCall(t, statements, callee, args) {
  * up to the first dynamic child — after it, every child emits as a runtime call
  * (static text → `text`, static subtrees → nested sites, expressions →
  * `text`/`child` by whether they contain element JSX).
- * @param {typeof import("@babel/core").types} t
- * @param {import("@babel/core").NodePath} program
- * @param {(name: string) => import("@babel/core").Identifier} helper Records the runtime helper and returns its identifier
- * @param {import("@babel/core").Statement[]} statements Wiring statements accumulator
+ * @param {import("./transform.mjs").TransformContext} ctx
+ * @param {(name: string) => import("estree").Identifier} helper Records the runtime helper and returns its identifier
+ * @param {import("estree").Statement[]} statements Wiring statements accumulator
  * @param {number[]} steps Element-child indices from the site root
- * @param {import("@babel/core").Identifier} buildRef The site build fn's own name — errorConfig's reset slot
- * @param {import("@babel/core").JSXElement | import("@babel/core").JSXFragment} node
- * @param {object} features Feature flags accumulated across the subtree
+ * @param {import("estree").Identifier} buildRef The site build fn's own name — errorConfig's reset slot
+ * @param {import("estree-jsx").JSXElement | import("estree-jsx").JSXFragment} node
+ * @param {{ hooks: boolean, errors: boolean, direct: boolean }} features Feature flags accumulated across the subtree
  * @param {string | undefined} ns Current parse context (`"svg"` / `"math"` once inside
  * foreign ancestry; `foreignObject` resets to undefined) — threaded to nested template
  * sites so each hoisted string parses with its authored namespace
  * @returns {string} The subtree's template html
  */
-function walkNode(t, program, helper, statements, steps, buildRef, node, features, ns) {
-  const isFragment = t.isJSXFragment(node);
+function walkNode(ctx, helper, statements, steps, buildRef, node, features, ns) {
+  const isFragment = node.type === "JSXFragment";
   let tag = null;
   let attrs = { props: [], on: [], hooks: [], e: [], error: [] };
   if (!isFragment) {
-    // Element-position tags must be plain identifiers — getTagCallee throws the
-    // shared "unsupported JSX tag name" error for namespaced names (ast parity).
-    getTagCallee(t, node.openingElement.name);
+    // Element-position tags must be plain identifiers — the shared "unsupported
+    // JSX tag name" error fires for namespaced names (ast parity; member
+    // expressions are components and never reach this walker).
+    if (node.openingElement.name.type !== "JSXIdentifier") {
+      throw new Error(
+        `[hellajs-compiler] unsupported JSX tag name, received ${node.openingElement.name.type}`,
+      );
+    }
     tag = node.openingElement.name.name;
-    attrs = processAttributes(t, node.openingElement.attributes, false);
+    attrs = processAttributes(node.openingElement.attributes, false);
     if (attrs.features.hooks) features.hooks = true;
     if (attrs.features.errors) features.errors = true;
     if (attrs.features.direct) features.direct = true;
@@ -241,45 +261,40 @@ function walkNode(t, program, helper, statements, steps, buildRef, node, feature
   if (tag === "svg" || tag === "math") ns = tag;
   else if (ns !== undefined && tag !== null && tag.toLowerCase() === "foreignobject")
     ns = undefined;
-  const anchor = anchorExpression(t, steps);
+  const anchor = anchorExpression(steps);
 
   let html = isFragment ? "" : `<${tag}`;
   if (!isFragment) {
     let i = 0;
     while (i < attrs.props.length) {
       const prop = attrs.props[i++];
-      if (t.isSpreadElement(prop)) {
+      if (prop.type === "SpreadElement") {
         // Runtime spread: each key routes through prop() so renderProp's per-key
         // dispatch (property keys, falsy removal, reactive values) applies verbatim.
         const source = prop.argument;
-        statements.push(
-          t.expressionStatement(
-            t.callExpression(
-              t.memberExpression(
-                t.callExpression(t.memberExpression(t.identifier("Object"), t.identifier("keys")), [
-                  source,
-                ]),
-                t.identifier("forEach"),
-              ),
-              [
-                t.arrowFunctionExpression(
-                  [t.identifier("k")],
-                  t.callExpression(helper("prop"), [
-                    anchor,
-                    t.identifier("k"),
-                    t.memberExpression(source, t.identifier("k"), true),
-                  ]),
-                ),
-              ],
-            ),
+        pushCall(
+          statements,
+          memberExpression(
+            callExpression(memberExpression(identifier("Object"), identifier("keys")), [source]),
+            identifier("forEach"),
           ),
+          [
+            arrowFunctionExpression(
+              [identifier("k")],
+              callExpression(helper("prop"), [
+                anchor,
+                identifier("k"),
+                memberExpression(source, identifier("k"), true),
+              ]),
+            ),
+          ],
         );
-      } else if (isFoldableProp(t, prop)) {
-        html += serializeProp(t, prop);
+      } else if (isFoldableProp(prop)) {
+        html += serializeProp(prop);
       } else {
-        pushCall(t, statements, helper("prop"), [
+        pushCall(statements, helper("prop"), [
           anchor,
-          t.stringLiteral(t.isIdentifier(prop.key) ? prop.key.name : prop.key.value),
+          stringLiteral(isIdentifier(prop.key) ? prop.key.name : prop.key.value),
           prop.value,
         ]);
       }
@@ -287,56 +302,51 @@ function walkNode(t, program, helper, statements, steps, buildRef, node, feature
     i = 0;
     while (i < attrs.on.length) {
       const prop = attrs.on[i++];
-      pushCall(t, statements, helper("on"), [anchor, t.stringLiteral(prop.key.name), prop.value]);
+      pushCall(statements, helper("on"), [anchor, stringLiteral(prop.key.name), prop.value]);
     }
     i = 0;
     while (i < attrs.e.length) {
       const prop = attrs.e[i++];
-      pushCall(t, statements, helper("direct"), [
-        anchor,
-        t.stringLiteral(prop.key.name),
-        prop.value,
-      ]);
+      pushCall(statements, helper("direct"), [anchor, stringLiteral(prop.key.name), prop.value]);
     }
     i = 0;
     while (i < attrs.hooks.length) {
       const prop = attrs.hooks[i++];
-      pushCall(t, statements, helper("hook"), [anchor, t.stringLiteral(prop.key.name), prop.value]);
+      pushCall(statements, helper("hook"), [anchor, stringLiteral(prop.key.name), prop.value]);
     }
     if (attrs.error.length > 0) {
-      pushCall(t, statements, helper("errorConfig"), [
+      pushCall(statements, helper("errorConfig"), [
         anchor,
-        t.objectExpression(attrs.error),
+        objectExpression(attrs.error),
         buildRef,
       ]);
     }
     html += ">";
   }
 
-  const children = filterEmptyChildren(t, node.children, false);
+  const children = filterEmptyChildren(node.children, false);
   const rawText = tag !== null && RAW_TEXT_TAGS.has(tag);
   let leadingStatic = true;
   let elementIndex = 0;
   let i = 0;
   while (i < children.length) {
     const childNode = children[i++];
-    if (t.isStringLiteral(childNode)) {
+    if (isStringLiteral(childNode)) {
       if (leadingStatic) {
         html += rawText ? childNode.value : escapeText(childNode.value);
       } else {
-        pushCall(t, statements, helper("text"), [anchor, childNode]);
+        pushCall(statements, helper("text"), [anchor, childNode]);
       }
-    } else if (t.isJSXElement(childNode) || t.isJSXFragment(childNode)) {
-      if (t.isJSXElement(childNode) && isComponentNode(t, childNode)) {
+    } else if (childNode.type === "JSXElement" || childNode.type === "JSXFragment") {
+      if (childNode.type === "JSXElement" && isComponentNode(childNode)) {
         leadingStatic = false;
-        pushCall(t, statements, helper("child"), [anchor, childNode]);
-      } else if (leadingStatic && isTemplateEligible(t, childNode)) {
-        html += walkNode(t, program, helper, statements, [], buildRef, childNode, features, ns);
+        pushCall(statements, helper("child"), [anchor, childNode]);
+      } else if (leadingStatic && isTemplateEligible(childNode)) {
+        html += walkNode(ctx, helper, statements, [], buildRef, childNode, features, ns);
         elementIndex++;
       } else if (leadingStatic) {
         html += walkNode(
-          t,
-          program,
+          ctx,
           helper,
           statements,
           [...steps, elementIndex],
@@ -347,22 +357,22 @@ function walkNode(t, program, helper, statements, steps, buildRef, node, feature
         );
         elementIndex++;
       } else {
-        const nested = buildImperativeSite(t, program, childNode, helper, ns);
+        const nested = buildImperativeSite(childNode, ctx, helper, ns);
         if (nested.features.hooks) features.hooks = true;
         if (nested.features.errors) features.errors = true;
         if (nested.features.direct) features.direct = true;
-        pushCall(t, statements, helper("child"), [anchor, nested.call]);
+        pushCall(statements, helper("child"), [anchor, nested.call]);
       }
-    } else if (t.isSpreadElement(childNode)) {
+    } else if (childNode.type === "SpreadElement") {
       leadingStatic = false;
-      pushCall(t, statements, helper("child"), [anchor, childNode.argument]);
+      pushCall(statements, helper("child"), [anchor, childNode.argument]);
     } else {
       // Expression children emit the polymorphic `child` arm: the runtime classifies
       // flagged builds, reactive getters, arrays, and primitives at wiring time (the AST
       // target's `children: [expr]` equivalent). Routing them to `text` would stringify
       // build fns — text() keeps only genuinely-literal string children.
       leadingStatic = false;
-      pushCall(t, statements, helper("child"), [anchor, childNode]);
+      pushCall(statements, helper("child"), [anchor, childNode]);
     }
   }
 
@@ -376,17 +386,16 @@ function walkNode(t, program, helper, statements, steps, buildRef, node, feature
  * build body wires every dynamic site in document order and returns the root. The
  * root `key` attribute (if any) becomes mark() metadata for ForEach. Every element
  * expression is marked — uniform, no position analysis; `mark` is an Object.assign.
- * @param {typeof import("@babel/core").types} t
- * @param {import("@babel/core").NodePath} program
- * @param {import("@babel/core").JSXElement | import("@babel/core").JSXFragment} node
- * @param {(name: string) => import("@babel/core").Identifier} collect Runtime-import collector — records the helper name, returns its identifier
- * @param {string | undefined} ambientNs The parse context at this site's position (undefined at
+ * @param {import("estree-jsx").JSXElement | import("estree-jsx").JSXFragment} node
+ * @param {import("./transform.mjs").TransformContext} ctx
+ * @param {(name: string) => import("estree").Identifier} collect Runtime-import collector — records the helper name, returns its identifier
+ * @param {string  } [ambientNs] The parse context at this site's position (undefined at
  * HTML positions): non-undefined emits the namespace URI as the template/fragment call's second
  * argument so the hoisted string parses with its authored namespace
- * @returns {{ call: import("@babel/core").CallExpression, features: { hooks: boolean, errors: boolean, direct: boolean } }} The `mark(...)` expression replacing the JSX, plus the prefixed-attr features the site's elements carried
+ * @returns {{ call: import("estree").CallExpression, features: { hooks: boolean, errors: boolean, direct: boolean } }} The `mark(...)` expression replacing the JSX, plus the prefixed-attr features the site's elements carried
  */
-export function buildImperativeSite(t, program, node, collect, ambientNs) {
-  const isFragment = t.isJSXFragment(node);
+export function buildImperativeSite(node, ctx, collect, ambientNs) {
+  const isFragment = node.type === "JSXFragment";
   const statements = [];
   const features = { hooks: false, errors: false, direct: false };
   let usesError = false;
@@ -395,34 +404,33 @@ export function buildImperativeSite(t, program, node, collect, ambientNs) {
     return collect(name);
   };
 
-  const key = isFragment ? null : extractKeyAttr(t, node);
+  const key = isFragment ? null : extractKeyAttr(node);
   // errorConfig's reset slot references the build fn by name — a named function
   // expression self-binds, so the reference needs no hoisting or TDZ dance.
-  const buildRef = program.scope.generateUidIdentifier("hellaBuild");
-  const html = walkNode(t, program, helper, statements, [], buildRef, node, features, ambientNs);
+  const buildRef = ctx.generateUid("hellaBuild");
+  const html = walkNode(ctx, helper, statements, [], buildRef, node, features, ambientNs);
 
-  const tplId = program.scope.generateUidIdentifier(isFragment ? "hellaFrag" : "hellaTpl");
-  const tplArgs = [t.stringLiteral(html)];
-  if (ambientNs !== undefined) tplArgs.push(t.stringLiteral(NS_URIS[ambientNs]));
-  program.scope.push({
+  const tplId = ctx.generateUid(isFragment ? "hellaFrag" : "hellaTpl");
+  const tplArgs = [stringLiteral(html)];
+  if (ambientNs !== undefined) tplArgs.push(stringLiteral(NS_URIS[ambientNs]));
+  ctx.hoisted.push({
     id: tplId,
-    init: t.callExpression(helper(isFragment ? "fragment" : "template"), tplArgs),
-    kind: "const",
+    init: callExpression(helper(isFragment ? "fragment" : "template"), tplArgs),
   });
 
-  const body = t.blockStatement([
-    t.variableDeclaration("const", [
-      t.variableDeclarator(t.identifier("_hellaRoot"), t.callExpression(tplId, [])),
+  const body = blockStatement([
+    variableDeclaration("const", [
+      variableDeclarator(identifier("_hellaRoot"), callExpression(tplId, [])),
     ]),
     ...statements,
-    t.returnStatement(t.identifier("_hellaRoot")),
+    returnStatement(identifier("_hellaRoot")),
   ]);
   const buildFn = usesError
-    ? t.functionExpression(buildRef, [], body)
-    : t.arrowFunctionExpression([], body);
+    ? functionExpression(buildRef, [], body)
+    : arrowFunctionExpression([], body);
 
   const markArgs = [buildFn];
-  if (key) markArgs.push(t.objectExpression([t.objectProperty(t.identifier("key"), key)]));
+  if (key) markArgs.push(objectExpression([objectProperty(identifier("key"), key)]));
   if (!key && !isFragment) {
     // Spread-carried reconciliation keys: the AST path carried the whole spread object on
     // the vnode props (ForEach reads props.key); the runtime spread routes each key through
@@ -434,9 +442,9 @@ export function buildImperativeSite(t, program, node, collect, ambientNs) {
     let ai = 0;
     while (ai < attributes.length) {
       const attr = attributes[ai++];
-      if (t.isJSXSpreadAttribute(attr)) spreads.push(t.spreadElement(attr.argument));
+      if (attr.type === "JSXSpreadAttribute") spreads.push(spreadElement(attr.argument));
     }
-    if (spreads.length > 0) markArgs.push(t.objectExpression(spreads));
+    if (spreads.length > 0) markArgs.push(objectExpression(spreads));
   }
-  return { call: t.callExpression(helper("mark"), markArgs), features };
+  return { call: callExpression(helper("mark"), markArgs), features };
 }

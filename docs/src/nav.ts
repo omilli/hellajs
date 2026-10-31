@@ -144,7 +144,7 @@ export const navigation: Record<NavSection, NavEntry[]> = {
     },
   ],
   plugins: [
-    "babel",
+    "compiler",
     "rollup",
     "vite",
     "astro"

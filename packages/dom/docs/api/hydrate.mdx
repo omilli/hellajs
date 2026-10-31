@@ -57,7 +57,7 @@ Unlike [`mount`](/reference/dom/mount), which replaces the container's content a
 
 ### Server HTML Must Match
 
-`hydrate` expects the target's children to be exactly what `ssr` produced from the same tree with the same initial state: signals must initialize to the values the server rendered. When the DOM and the tree disagree, `hydrate` warns and rebuilds just the mismatched subtree; the page still works. Compiled roots (the babel plugin's `target: "dom"` client build) are stricter: a server output that disagrees with the compiled templates throws instead of warning.
+`hydrate` expects the target's children to be exactly what `ssr` produced from the same tree with the same initial state: signals must initialize to the values the server rendered. When the DOM and the tree disagree, `hydrate` warns and rebuilds just the mismatched subtree; the page still works. Compiled roots (the compiler's `target: "dom"` client build) are stricter: a server output that disagrees with the compiled templates throws instead of warning.
 
 ### Server-Rendered Lists
 

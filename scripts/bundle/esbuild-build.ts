@@ -55,7 +55,7 @@ async function getAllSourceModules(packageDir: string): Promise<string[]> {
 
 /**
  * Compile every `.tsx` source under a directory root into a mirrored `.js`
- * tree through the vite-mirror babel pass — JSX must compile to imperative
+ * tree through the vite-mirror compiler pass — JSX must compile to imperative
  * `@hellajs/dom/runtime` construction before esbuild sees it (esbuild's own
  * JSX transform would emit React-semantics calls no HellaJS runtime serves).
  * Plain `.ts` modules copy verbatim so extensionless relative imports resolve
@@ -230,7 +230,7 @@ export async function buildIndividualModules(
 
     await ensureDir(outputDir);
 
-    // `.tsx` modules compile through the vite-mirror babel pass first (JSX →
+    // `.tsx` modules compile through the vite-mirror compiler pass first (JSX →
     // imperative construction); esbuild transpiles the compiled JS. The import
     // fixups below still resolve against the original source directory.
     let esbuildInput = modulePath;

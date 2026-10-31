@@ -252,7 +252,7 @@ describe("dom hydrate <Suspense>", () => {
   });
 
   test("fresh-mount Promise child as a JSX array (children: [fn]) suspends, not stringified", async () => {
-    // babel compiles <Suspense>{() => …}</Suspense> to component(Suspense, { children: [fn] }) — an array.
+    // the compiler compiles <Suspense>{() => …}</Suspense> to component(Suspense, { children: [fn] }) — an array.
     // The fresh-mount branch must unwrap the length-1 array and evaluate the producer, not stringify it.
     const container = setupContainer();
     mount(
