@@ -18,30 +18,12 @@ interface AccordionProps extends HTMLAttributes<"div"> {
   /** `single` keeps at most one item open (`collapsible` gates the last close); `multiple` toggles freely. */
   type?: "single" | "multiple";
   collapsible?: boolean;
-  /** Open values on mount; a single string or a list for `multiple`. */
-  open?: string | string[];
-}
-
-interface AccordionItemProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  value: string;
-  active?: () => boolean;
-}
-
-interface AccordionTriggerProps extends HTMLAttributes<"button"> {
-  class?: string;
-  children?: HellaChildren;
-  active?: () => boolean;
-  onToggle?: () => void;
-  /** The item's value key; derives the `hella-accordion-trigger-<value>` id pair when `id` is not given. */
-  value?: string;
-}
-
-interface AccordionContentProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  active?: () => boolean;
+  /** Seeds the uncontrolled open values; a single string opens that item, a list opens each. */
+  defaultValue?: string | string[];
+  /** Controlled open values. When given, the root never writes its internal state and `onValueChange` reports the requested change; a lone string reads as the one open value. */
+  value?: () => string | string[];
+  /** Called with every root-driven change: single mode reports the one open value (`""` when none), multiple mode reports the membership array. */
+  onValueChange?: (value: string | string[]) => void;
 }
 import { cn } from "./cn.js";
 
@@ -68,104 +50,23 @@ const ChevronIcon = (): JSX.Element => (
   </svg>
 );
 
-export function AccordionItem({
-  value,
-  active,
-  children,
-  class: cls,
-  ...attrs
-}: AccordionItemProps): JSX.Element {
-  const { Item } = accordion();
-  return (
-    <Item
-      value={value}
-      active={active}
-      class={
-        cn("border-b last:border-b-0", cls)
-      }
-      {...attrs}
-    >
-      {children}
-    </Item>
-  );
-}
-
-export function AccordionTrigger({
-  value,
-  active,
-  onToggle,
-  disabled,
-  "on:click": userClick,
-  children,
-  class: cls,
-  ...attrs
-}: AccordionTriggerProps): JSX.Element {
-  const { Trigger } = accordion();
-  return (
-    <h3
-      data-slot="accordion-header"
-      class={
-        cn("flex")
-      }
-    >
-      <Trigger
-        value={value}
-        active={active}
-        onToggle={onToggle}
-        disabled={disabled}
-        class={
-          cn("flex flex-1 items-start justify-between gap-4 rounded-md py-4 text-left text-sm font-medium transition-all outline-none hover:underline focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 [&[data-state=open]>svg]:rotate-180", cls)
-        }
-        on:click={userClick}
-        {...attrs}
-      >
-        {children}
-        <ChevronIcon />
-      </Trigger>
-    </h3>
-  );
-}
-
-export function AccordionContent({
-  active,
-  children,
-  class: cls,
-  ...attrs
-}: AccordionContentProps): JSX.Element {
-  const { Content } = accordion();
-  return (
-    <Content
-      active={active}
-      class={
-        cn("grid grid-rows-[0fr] text-sm opacity-0 transition-all duration-200 data-[state=open]:grid-rows-[1fr] data-[state=open]:opacity-100", cls)
-      }
-      {...attrs}
-    >
-      <div
-        data-state={active?.() ? "open" : "closed"}
-        class={
-          cn("min-h-0 overflow-hidden pt-0 pb-0 transition-[padding-bottom] duration-200 data-[state=open]:pb-4")
-        }
-      >
-        {children}
-      </div>
-    </Content>
-  );
-}
-
 export function Accordion({
   items,
   keyBy,
   type,
   collapsible,
-  open,
+  defaultValue,
+  value,
+  onValueChange,
   class: cls,
   ...attrs
 }: AccordionProps): JSX.Element {
   const { Root, Item, Trigger, Content, isOpen } = accordion({
     type,
     collapsible,
-    defaultValue: open,
+    defaultValue,
+    value,
+    onValueChange,
   });
 
   return (

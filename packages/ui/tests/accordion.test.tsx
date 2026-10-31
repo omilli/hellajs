@@ -5,7 +5,6 @@ import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 // specifier, so the harness mount shares one dom instance with the components.
 import { mount, peekState } from "@hellajs/dom";
 import {
-  accordionPartVariants,
   accordionVariants,
   assertAttrForwarded,
   assertStructuralParity,
@@ -75,7 +74,10 @@ describe("accordion", () => {
   test.each(accordionVariants)(
     "$style opens only the open-seeded items with the id cycle intact",
     (variant) => {
-      const { itemEls, triggers, contents } = mountAccordion(variant, { items, open: "beta" });
+      const { itemEls, triggers, contents } = mountAccordion(variant, {
+        items,
+        defaultValue: "beta",
+      });
       expect(openIndexes(itemEls)).toEqual([1]);
       expect(openIndexes(triggers)).toEqual([1]);
       expect(openIndexes(contents)).toEqual([1]);
@@ -93,7 +95,7 @@ describe("accordion", () => {
   test.each(accordionVariants)(
     "$style clamps a multi-value open seed to the first item in single type",
     (variant) => {
-      const { itemEls } = mountAccordion(variant, { items, open: ["beta", "gamma"] });
+      const { itemEls } = mountAccordion(variant, { items, defaultValue: ["beta", "gamma"] });
       expect(openIndexes(itemEls)).toEqual([1]);
     },
   );
@@ -101,7 +103,7 @@ describe("accordion", () => {
   test.each(accordionVariants)(
     "$style swaps the open item in single type and refuses the last close without collapsible",
     (variant) => {
-      const { itemEls, triggers } = mountAccordion(variant, { items, open: "beta" });
+      const { itemEls, triggers } = mountAccordion(variant, { items, defaultValue: "beta" });
       triggers[2]!.dispatchEvent(new Event("click"));
       expect(openIndexes(itemEls)).toEqual([2]);
       expect(triggers[2]!.getAttribute("aria-expanded")).toBe("true");
@@ -116,7 +118,7 @@ describe("accordion", () => {
     (variant) => {
       const { itemEls, triggers } = mountAccordion(variant, {
         items,
-        open: "beta",
+        defaultValue: "beta",
         collapsible: true,
       });
       expect(openIndexes(itemEls)).toEqual([1]);
@@ -132,7 +134,7 @@ describe("accordion", () => {
       const { itemEls, triggers, contents } = mountAccordion(variant, {
         items,
         type: "multiple",
-        open: ["beta"],
+        defaultValue: ["beta"],
       });
       triggers[0]!.dispatchEvent(new Event("click"));
       triggers[2]!.dispatchEvent(new Event("click"));
@@ -170,7 +172,7 @@ describe("accordion", () => {
   test.each(accordionVariants)(
     "$style keeps closed content mounted under data-state=closed for the grid collapse",
     (variant) => {
-      const { triggers, contents } = mountAccordion(variant, { items, open: "beta" });
+      const { triggers, contents } = mountAccordion(variant, { items, defaultValue: "beta" });
       expect(contents[1]!.getAttribute("data-state")).toBe("open");
       triggers[2]!.dispatchEvent(new Event("click"));
       // The closed pair stays mounted under data-state=closed (grid collapse, no unmount);
@@ -186,7 +188,7 @@ describe("accordion", () => {
   test.each(accordionVariants)(
     "$style mirrors data-state onto the content inner so closed padding floors at zero",
     (variant) => {
-      const { contents } = mountAccordion(variant, { items, open: "beta" });
+      const { contents } = mountAccordion(variant, { items, defaultValue: "beta" });
       // A static padding-bottom on the collapsing grid item floors the 0fr row at its own
       // height, reserving dead space under closed items; the inner mirrors data-state so
       // its padding transitions to 0 instead.
@@ -207,7 +209,7 @@ describe("accordion", () => {
   test.each(accordionVariants)(
     "$style carries per-item data-state and the chevron rotate wiring",
     (variant) => {
-      const { itemEls, triggers } = mountAccordion(variant, { items, open: "alpha" });
+      const { itemEls, triggers } = mountAccordion(variant, { items, defaultValue: "alpha" });
       expect(itemEls.map((item) => item.getAttribute("data-value"))).toEqual([
         "alpha",
         "beta",
@@ -229,7 +231,7 @@ describe("accordion", () => {
     "$style re-renders a signal items list across append, remove, and reorder",
     (variant) => {
       const liveItems = signal<AccordionEntryVariant[]>([...items]);
-      const { root } = mountAccordion(variant, { items: liveItems, open: "beta" });
+      const { root } = mountAccordion(variant, { items: liveItems, defaultValue: "beta" });
       const values = () =>
         Array.from(root.querySelectorAll('[data-slot="accordion-item"]')).map((el) =>
           el.getAttribute("data-value"),
@@ -248,7 +250,11 @@ describe("accordion", () => {
     "$style reuses the open item's node through a reorder when keyBy is value",
     (variant) => {
       const liveItems = signal<AccordionEntryVariant[]>([...items]);
-      const { root } = mountAccordion(variant, { items: liveItems, open: "beta", keyBy: "value" });
+      const { root } = mountAccordion(variant, {
+        items: liveItems,
+        defaultValue: "beta",
+        keyBy: "value",
+      });
       const itemEls = () =>
         Array.from(root.querySelectorAll('[data-slot="accordion-item"]')) as HTMLElement[];
       const betaBefore = itemEls().find((el) => el.getAttribute("data-value") === "beta")!;
@@ -276,7 +282,7 @@ describe("accordion", () => {
   test.each(accordionVariants)(
     "$style moves focus between triggers with the arrow keys and Home/End without toggling",
     async (variant) => {
-      const { root, triggers } = mountAccordion(variant, { items, open: "beta" });
+      const { root, triggers } = mountAccordion(variant, { items, defaultValue: "beta" });
       await awaitWiring(root);
       expect(triggers.map((trigger) => trigger.tabIndex)).toEqual([0, -1, -1]);
       triggers[0]!.focus();
@@ -313,69 +319,54 @@ describe("accordion", () => {
     }
   });
 
-  test("chains a user on:click with the owned toggle on a trigger across both styles", () => {
-    for (const variant of accordionPartVariants.filter(
-      (candidate) => candidate.part === "Trigger",
-    )) {
-      const userClick = vi.fn(() => {});
-      const open = signal(false);
-      const container = setupContainer();
-      const props: Record<string, unknown> = {
-        id: "t1",
-        active: () => open(),
-        onToggle: () => open(!open()),
-        "on:click": userClick,
-        children: "Toggle",
-      };
-      const rendered = variant.render(props as never);
-      mount(rendered, container);
-      const trigger = container.querySelector('[data-slot="accordion-trigger"]')!;
-      trigger.dispatchEvent(new Event("click"));
-      expect(userClick).toHaveBeenCalledTimes(1);
-      expect(open()).toBe(true);
-      expect(trigger.getAttribute("aria-expanded")).toBe("true");
-    }
-  });
+  test.each(accordionVariants)(
+    "$style renders the controlled value and reports clicks without writing internal state",
+    (variant) => {
+      const onValueChange = vi.fn();
+      const { itemEls, triggers } = mountAccordion(variant, {
+        items,
+        value: () => "beta",
+        onValueChange,
+      });
+      expect(openIndexes(itemEls)).toEqual([1]);
+      triggers[2]!.dispatchEvent(new Event("click"));
+      expect(onValueChange).toHaveBeenCalledTimes(1);
+      expect(onValueChange).toHaveBeenCalledWith("gamma");
+      // Controlled: the root never writes its internal set, so beta stays open.
+      expect(openIndexes(itemEls)).toEqual([1]);
+    },
+  );
 
-  test("renders every named part with its data-slot and state across both styles", () => {
-    for (const variant of accordionPartVariants) {
-      const container = setupContainer();
-      const props: Record<string, unknown> = { children: ["Body"] };
-      if (variant.part === "Item") {
-        props.value = "alpha";
-        props.active = () => true;
-      } else if (variant.part === "Trigger") {
-        props.id = "trigger-id";
-        props.active = () => true;
-        props.onToggle = () => {};
-        props["aria-controls"] = "content-id";
-      } else {
-        props.id = "content-id";
-        props["aria-labelledby"] = "trigger-id";
-        props.active = () => false;
-      }
-      const rendered = variant.render(props as never);
-      mount(rendered, container);
-      // AccordionTrigger mounts as its header wrapper; resolve the trigger button inside it.
-      const el =
-        variant.part === "Trigger"
-          ? container.querySelector('[data-slot="accordion-trigger"]')!
-          : container.firstElementChild!;
-      if (variant.part === "Item") {
-        expect(el.getAttribute("data-slot")).toBe("accordion-item");
-        expect(el.getAttribute("data-value")).toBe("alpha");
-        expect(el.getAttribute("data-state")).toBe("open");
-      } else if (variant.part === "Trigger") {
-        expect(el.getAttribute("data-slot")).toBe("accordion-trigger");
-        expect(el.getAttribute("aria-expanded")).toBe("true");
-        expect(el.getAttribute("aria-controls")).toBe("content-id");
-        expect(el.getAttribute("data-state")).toBe("open");
-      } else {
-        expect(el.getAttribute("data-slot")).toBe("accordion-content");
-        expect(el.getAttribute("role")).toBe("region");
-        expect(el.getAttribute("aria-labelledby")).toBe("trigger-id");
-        expect(el.getAttribute("data-state")).toBe("closed");
-      }
-    }
-  });
+  test.each(accordionVariants)(
+    "$style round-trips a controlled signal so the emitted update flips the DOM",
+    (variant) => {
+      const open = signal<string>("beta");
+      const { itemEls, triggers } = mountAccordion(variant, {
+        items,
+        value: () => open(),
+        onValueChange: (v) => open(typeof v === "string" ? v : ""),
+      });
+      expect(openIndexes(itemEls)).toEqual([1]);
+      triggers[2]!.dispatchEvent(new Event("click"));
+      expect(open()).toBe("gamma");
+      expect(openIndexes(itemEls)).toEqual([2]);
+    },
+  );
+
+  test.each(accordionVariants)(
+    "$style reports the membership array in controlled multiple mode",
+    (variant) => {
+      const onValueChange = vi.fn();
+      const { itemEls, triggers } = mountAccordion(variant, {
+        items,
+        type: "multiple",
+        value: () => ["alpha"],
+        onValueChange,
+      });
+      expect(openIndexes(itemEls)).toEqual([0]);
+      triggers[1]!.dispatchEvent(new Event("click"));
+      expect(onValueChange).toHaveBeenCalledTimes(1);
+      expect(onValueChange).toHaveBeenCalledWith(["alpha", "beta"]);
+    },
+  );
 });

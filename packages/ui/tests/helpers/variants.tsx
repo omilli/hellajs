@@ -1364,8 +1364,6 @@ import * as CollapsibleCssJsx from "../../dist/registry/collapsible/css/collapsi
 import * as CollapsibleTailwindJsx from "../../dist/registry/collapsible/tailwind/collapsible";
 import { Accordion as AccordionCssDefault } from "../../dist/registry/accordion/css/accordion";
 import { Accordion as AccordionTailwindDefault } from "../../dist/registry/accordion/tailwind/accordion";
-import * as AccordionCssJsx from "../../dist/registry/accordion/css/accordion";
-import * as AccordionTailwindJsx from "../../dist/registry/accordion/tailwind/accordion";
 import { Checkbox as CheckboxCssJsx } from "../../dist/registry/checkbox/css/checkbox";
 import { Checkbox as CheckboxTailwindJsx } from "../../dist/registry/checkbox/tailwind/checkbox";
 import { RadioGroup as RadioGroupCssDefault } from "../../dist/registry/radio-group/css/radio-group";
@@ -1416,18 +1414,9 @@ export interface AccordionVariantProps extends HTMLAttributes<"div"> {
   keyBy?: "value";
   type?: "single" | "multiple";
   collapsible?: boolean;
-  open?: string | string[];
-}
-
-/** Superset prop bag across Accordion parts (the open contract across the div/button roots). */
-export interface AccordionPartVariantProps extends GlobalHTMLAttributes {
-  class?: string;
-  children?: HellaChildren;
-  value?: string;
-  id?: string;
-  active?: () => boolean;
-  onToggle?: () => void;
-  disabled?: boolean;
+  defaultValue?: string | string[];
+  value?: () => string | string[];
+  onValueChange?: (value: string | string[]) => void;
 }
 
 /**
@@ -1461,20 +1450,6 @@ export const accordionVariants: ComponentVariant<AccordionVariantProps>[] = [
   { style: "css", render: AccordionCssDefault },
   { style: "tailwind", render: AccordionTailwindDefault },
 ];
-
-/** The named Accordion parts (the other Accordion exports). */
-export const ACCORDION_PARTS = ["Item", "Trigger", "Content"] as const;
-
-/**
- * Every compiled Accordion part (AccordionItem, AccordionTrigger, AccordionContent) at both styles.
- */
-export const accordionPartVariants: PartVariant<AccordionPartVariantProps>[] =
-  ACCORDION_PARTS.flatMap((part) =>
-    partVariants(part, "Accordion", [
-      [AccordionCssJsx as unknown as AnyModule, "css"],
-      [AccordionTailwindJsx as unknown as AnyModule, "tailwind"],
-    ]),
-  );
 
 /** Item shape of every compiled RadioGroup variant (mirrors the emitted RadioGroupItem). */
 export interface RadioGroupEntryVariant {

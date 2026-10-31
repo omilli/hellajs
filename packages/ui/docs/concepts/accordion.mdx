@@ -1,6 +1,6 @@
 ## API
 
-The composed root derives each row's trigger/content id pair and threads the open state through the manual components.
+The composed root derives each row's trigger/content id pair and threads the open state through its rows.
 
 ### Accordion
 
@@ -10,13 +10,15 @@ The composed root derives each row's trigger/content id pair and threads the ope
 | `keyBy` | `"value"` | `-` |
 | `type` | `"single" \| "multiple"` | `"single"` |
 | `collapsible` | `boolean` | `-` |
-| `open` | `string \| string[]` | `-` |
+| `defaultValue` | `string \| string[]` | `-` |
+| `value` | `() => string \| string[]` | `-` |
+| `onValueChange` | `(value: string \| string[]) => void` | `-` |
 | `class` | `string` | `-` |
-Accepts all native `div` attributes (forwarded to the root element).
+Accepts all native `div` attributes (forwarded to the root element). `defaultValue` seeds the uncontrolled open values; pass `value` with `onValueChange` to drive the open state from outside instead.
 
 ### AccordionEntry
 
-Each entry is one row; `value` keys its `data-value`, the generated id pair, and the `open` lookup.
+Each entry is one row; `value` keys its `data-value`, the generated id pair, and the open-state lookup.
 
 | Field | Type | Default |
 | ----- | ---- | ------- |
@@ -24,36 +26,6 @@ Each entry is one row; `value` keys its `data-value`, the generated id pair, and
 | `trigger` | `HellaChildren` | `-` |
 | `content` | `HellaChildren` | `-` |
 | `disabled` | `boolean` | `-` |
-
-### AccordionItem
-
-The row wrapper: a `div` carrying the value and open state.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `value` | `string` | `-` |
-| `active` | `() => boolean` | `-` |
-| `children` | `HellaChild[]` | `-` |
-Accepts all native `div` attributes (forwarded to the root element).
-
-### AccordionTrigger
-
-The header row: an `h3` wrapping the toggle button, with the chevron icon appended after the children.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `children` | `HellaChildren` | `-` |
-Accepts all native `button` attributes (forwarded to the root element).
-
-### AccordionContent
-
-The body region: a `role="region"` div whose inner wrapper carries the collapse animation.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `active` | `() => boolean` | `-` |
-| `children` | `HellaChildren` | `-` |
-Accepts all native `div` attributes (forwarded to the root element).
 
 Every component also takes a `class` string, landing last in its style composition.
 
@@ -81,10 +53,35 @@ const sections = signal([
   { value: "a", trigger: "A", content: "A body" },
 ]);
 
-<Accordion items={sections} keyBy="value" type="multiple" open={["a"]} />;
+<Accordion items={sections} keyBy="value" type="multiple" defaultValue={["a"]} />;
 
 // Appends a live row without remounting the existing ones.
 sections([...sections(), { value: "b", trigger: "B", content: "B body" }]);
 ```
 
 By default rows key by array index: a reorder rebuilds them, losing transient state such as focus or an in-flight collapse animation (rendered state like `data-state` re-derives from the root's signal either way). `keyBy="value"` reuses each row's DOM by its entry `value` instead, so nodes move to their new positions intact through reorders and removals. Order always follows the array, never the key history. A row reused under the same `value` keeps its rendered children, so swapping an entry's `trigger` or `content` under a repeated value needs a getter for that content to reach the DOM.
+
+## Controlled
+
+Pass `value` to drive the open state from outside: the root renders exactly the values the accessor reports, never writes its own, and reports each requested change through `onValueChange`. Write the signal back from `onValueChange` and the DOM follows:
+
+```tsx
+import { signal } from "@hellajs/core";
+import { Accordion } from "./components/accordion";
+
+const faq = [
+  { value: "shipping", trigger: "Shipping", content: "2-4 business days" },
+  { value: "billing", trigger: "Billing", content: "Card, PayPal, invoice" },
+];
+
+const open = signal<string>("shipping");
+
+<Accordion
+  type="single"
+  items={faq}
+  value={() => open()}
+  onValueChange={(v) => open(typeof v === "string" ? v : "")}
+/>;
+```
+
+In single mode `onValueChange` reports the one open value (`""` when none is open); in multiple mode it reports the membership array. Without `value`, `defaultValue` keeps seeding the uncontrolled state.

@@ -45,7 +45,9 @@ const items = [
   { value: "billing", trigger: "Billing", content: "Billing body" },
   { value: "disabled-entry", trigger: "Disabled entry", content: "Disabled body", disabled: true },
 ];
-const App = () => <Accordion type="single" collapsible open="shipping" items={items} />;
+const App = () => (
+  <Accordion type="single" collapsible defaultValue="shipping" items={items} />
+);
 const __out = { App };`;
 
 /**
@@ -69,7 +71,7 @@ const twoTargetAccordion = async (): Promise<{
         lang: "tsx",
         target: "ast",
       })?.code?.replace(/^export /gm, "") ?? ""
-    }\nconst __out = { AccordionItem, AccordionTrigger, AccordionContent, Accordion };`,
+    }\nconst __out = { Accordion };`,
     {
       "@hellajs/core": coreNs,
       "@hellajs/dom": domNs,

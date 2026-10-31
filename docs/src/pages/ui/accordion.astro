@@ -4,7 +4,7 @@ import InstallSection from "../../components/InstallSection.astro";
 import AccordionContent from "@ui/concepts/accordion.mdx";
 import Component from "../../components/Component.astro";
 
-import { AccordionDemo, AccordionMultipleDemo, AccordionDisabledDemo, AccordionReactiveDemo, AccordionManualDemo } from "../../demos/accordion-demo";
+import { AccordionDemo, AccordionMultipleDemo, AccordionDisabledDemo, AccordionReactiveDemo, AccordionControlledDemo } from "../../demos/accordion-demo";
 
 const title = "Accordion";
 const description = "Interactive Accordion demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
@@ -25,7 +25,11 @@ const description = "Interactive Accordion demo running the site's built registr
   </Component>
 
   <Component heading="Reactive" Demo={<AccordionReactiveDemo client:load />} code="AccordionReactiveDemo">
-    <p>Reactive</p>
+    <p>A signal accessor keeps the rows live across push and splice.</p>
+  </Component>
+
+  <Component heading="Controlled" Demo={<AccordionControlledDemo client:load />} code="AccordionControlledDemo">
+    <p>The open value lives in a signal outside the accordion; clicks report through onValueChange.</p>
   </Component>
 
   <AccordionContent />

@@ -1,10 +1,4 @@
-import { ForEach } from "@hellajs/dom";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@components/ui/accordion";
+import { Accordion } from "@components/ui/accordion";
 import { signal, signalArray } from "@hellajs/core";
 import { Button } from "@components/ui/button";
 
@@ -22,7 +16,7 @@ export function AccordionDemo() {
     },
   ];
 
-  return <Accordion type="single" collapsible open="shipping" items={faq} />;
+  return <Accordion type="single" collapsible defaultValue="shipping" items={faq} />;
 }
 
 export function AccordionMultipleDemo() {
@@ -60,37 +54,30 @@ export function AccordionDisabledDemo() {
   return <Accordion type="single" items={plans} />;
 }
 
-export function AccordionManualDemo() {
-  const items = signal([
+export function AccordionControlledDemo() {
+  const open = signal<string>("shipping");
+  const faq = [
     {
-      value: "size",
-      trigger: "Size",
-      content: <p>12 x 8 x 3 centimeters.</p>,
+      value: "shipping",
+      trigger: "How fast is shipping?",
+      content: <p>Two business days, everywhere we deliver.</p>,
     },
     {
-      value: "weight",
-      trigger: "Weight",
-      content: <p>240 grams with the cable.</p>,
+      value: "billing",
+      trigger: "When am I billed?",
+      content: <p>Invoices go out on the first of the month.</p>,
     },
-  ]);
+  ];
 
-  return (
-    <Accordion type="single">
-      <ForEach
-        each={items}
-        use={(item: {
-          value: string;
-          trigger: string;
-          content: JSX.Element;
-        }) => (
-          <AccordionItem key={item.value} value={item.value}>
-            <AccordionTrigger>{item.trigger}</AccordionTrigger>
-            <AccordionContent>{item.content}</AccordionContent>
-          </AccordionItem>
-        )}
-      />
-    </Accordion>
-  );
+  return <>
+    <Accordion
+      type="single"
+      items={faq}
+      value={() => open()}
+      onValueChange={(v) => open(typeof v === "string" ? v : "")}
+    />
+    <p class="demo-muted">{() => `Open value: ${open() || "none"}`}</p>
+  </>;
 }
 
 export function AccordionReactiveDemo() {
@@ -114,7 +101,6 @@ export function AccordionReactiveDemo() {
       trigger: `Row ${next}`,
       content: <p>Row {next} content</p>,
     });
-    console.log(items())
   }
 
   const remove = () => {

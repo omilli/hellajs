@@ -1,12 +1,6 @@
 import { accordion } from "@hellajs/headless";
 import { ForEach } from "@hellajs/dom";
-import type {
-  AccordionEntry,
-  AccordionProps,
-  AccordionItemProps,
-  AccordionTriggerProps,
-  AccordionContentProps,
-} from "./accordion-types.js";
+import type { AccordionEntry, AccordionProps } from "./accordion-types.js";
 
 export type { AccordionEntry };
 
@@ -42,114 +36,23 @@ const ChevronIcon = (): JSX.Element => (
   </svg>
 );
 
-export function AccordionItem({
-  value,
-  active,
-  children,
-  class: cls,
-  ...attrs
-}: AccordionItemProps): JSX.Element {
-  const { Item } = accordion();
-  return (
-    <Item
-      value={value}
-      active={active}
-      class={
-        // @hella:compose
-        [item, cls]
-        // @hella:end
-      }
-      {...attrs}
-    >
-      {children}
-    </Item>
-  );
-}
-
-export function AccordionTrigger({
-  value,
-  active,
-  onToggle,
-  disabled,
-  "on:click": userClick,
-  children,
-  class: cls,
-  ...attrs
-}: AccordionTriggerProps): JSX.Element {
-  const { Trigger } = accordion();
-  return (
-    <h3
-      data-slot="accordion-header"
-      class={
-        // @hella:compose
-        [header]
-        // @hella:end
-      }
-    >
-      <Trigger
-        value={value}
-        active={active}
-        onToggle={onToggle}
-        disabled={disabled}
-        class={
-          // @hella:compose
-          [trigger, cls]
-          // @hella:end
-        }
-        on:click={userClick}
-        {...attrs}
-      >
-        {children}
-        <ChevronIcon />
-      </Trigger>
-    </h3>
-  );
-}
-
-export function AccordionContent({
-  active,
-  children,
-  class: cls,
-  ...attrs
-}: AccordionContentProps): JSX.Element {
-  const { Content } = accordion();
-  return (
-    <Content
-      active={active}
-      class={
-        // @hella:compose
-        [content, cls]
-        // @hella:end
-      }
-      {...attrs}
-    >
-      <div
-        data-state={active?.() ? "open" : "closed"}
-        class={
-          // @hella:compose
-          [contentInner]
-          // @hella:end
-        }
-      >
-        {children}
-      </div>
-    </Content>
-  );
-}
-
 export function Accordion({
   items,
   keyBy,
   type,
   collapsible,
-  open,
+  defaultValue,
+  value,
+  onValueChange,
   class: cls,
   ...attrs
 }: AccordionProps): JSX.Element {
   const { Root, Item, Trigger, Content, isOpen } = accordion({
     type,
     collapsible,
-    defaultValue: open,
+    defaultValue,
+    value,
+    onValueChange,
   });
 
   return (

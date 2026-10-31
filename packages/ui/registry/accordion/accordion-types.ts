@@ -16,28 +16,10 @@ export interface AccordionProps extends HTMLAttributes<"div"> {
   /** `single` keeps at most one item open (`collapsible` gates the last close); `multiple` toggles freely. */
   type?: "single" | "multiple";
   collapsible?: boolean;
-  /** Open values on mount; a single string or a list for `multiple`. */
-  open?: string | string[];
-}
-
-export interface AccordionItemProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  value: string;
-  active?: () => boolean;
-}
-
-export interface AccordionTriggerProps extends HTMLAttributes<"button"> {
-  class?: string;
-  children?: HellaChildren;
-  active?: () => boolean;
-  onToggle?: () => void;
-  /** The item's value key; derives the `hella-accordion-trigger-<value>` id pair when `id` is not given. */
-  value?: string;
-}
-
-export interface AccordionContentProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  active?: () => boolean;
+  /** Seeds the uncontrolled open values; a single string opens that item, a list opens each. */
+  defaultValue?: string | string[];
+  /** Controlled open values. When given, the root never writes its internal state and `onValueChange` reports the requested change; a lone string reads as the one open value. */
+  value?: () => string | string[];
+  /** Called with every root-driven change: single mode reports the one open value (`""` when none), multiple mode reports the membership array. */
+  onValueChange?: (value: string | string[]) => void;
 }
