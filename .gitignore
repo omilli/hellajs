@@ -51,4 +51,4 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # plans-runner scratch (verification fixtures)
 .plans-runner/
 # ui package e2e scratch (cli-e2e copies tests/fixtures/empty-app here)
-packages/ui/tests/.tmp/
+packages/ui/tests/cli/.tmp/

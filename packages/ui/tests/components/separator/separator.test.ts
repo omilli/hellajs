@@ -1,0 +1,86 @@
+import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
+import { resetTestState } from "@utils/test-helpers.js";
+import {
+  assertAttrForwarded,
+  assertHandlerForwarded,
+  assertStructuralParity,
+  classTokens,
+  renderVariant,
+} from "../../helpers/variants-core";
+import { separatorVariants } from "./variants";
+import type { SeparatorVariantProps } from "./variants";
+
+/** Verbatim shadcn utility tokens — one data-conditional base serves both orientations. */
+const BASE_TOKENS = [
+  "shrink-0",
+  "bg-border",
+  "data-[orientation=horizontal]:h-px",
+  "data-[orientation=horizontal]:w-full",
+  "data-[orientation=vertical]:h-full",
+  "data-[orientation=vertical]:w-px",
+];
+
+beforeEach(() => {
+  resetTestState();
+});
+
+describe("separator", () => {
+  test.each(separatorVariants)(
+    "$style renders the horizontal default with separator semantics",
+    (variant) => {
+      const separator = renderVariant(variant, { children: variant.child(""), class: "my-sep" });
+      expect(separator.tagName).toBe("DIV");
+      expect(separator.getAttribute("data-slot")).toBe("separator");
+      expect(separator.getAttribute("role")).toBe("separator");
+      expect(separator.getAttribute("data-orientation")).toBe("horizontal");
+      expect(separator.getAttribute("aria-orientation")).toBe("horizontal");
+      const tokens = classTokens(separator);
+      expect(tokens.at(-1)).toBe("my-sep");
+      if (variant.style === "css") {
+        expect(tokens).toHaveLength(2);
+        expect(tokens[0]!.startsWith("separator-")).toBe(true);
+      } else {
+        for (const token of BASE_TOKENS) expect(tokens).toContain(token);
+      }
+    },
+  );
+
+  test.each(separatorVariants)(
+    "$style reflects the vertical orientation on both data attributes",
+    (variant) => {
+      const separator = renderVariant(variant, {
+        children: variant.child(""),
+        orientation: "vertical",
+      });
+      expect(separator.getAttribute("data-orientation")).toBe("vertical");
+      expect(separator.getAttribute("aria-orientation")).toBe("vertical");
+      if (variant.style === "tailwind") {
+        const tokens = classTokens(separator);
+        for (const token of BASE_TOKENS) expect(tokens).toContain(token);
+      }
+    },
+  );
+
+  test("keeps structural parity across both styles", () => {
+    assertStructuralParity(separatorVariants);
+  });
+
+  test("keeps structural parity for the vertical orientation across both styles", () => {
+    assertStructuralParity(separatorVariants, { orientation: "vertical" } as SeparatorVariantProps);
+  });
+
+  test("forwards user attrs onto the root across both styles", () => {
+    assertAttrForwarded(separatorVariants, { title: "Hella" }, "title", "Hella");
+  });
+
+  test("fires a user on:click handler across both styles", () => {
+    const onClick = vi.fn(() => {});
+    assertHandlerForwarded(
+      separatorVariants,
+      { "on:click": onClick },
+      "on:click",
+      "click",
+      onClick,
+    );
+  });
+});

@@ -2,7 +2,7 @@
 title: Import ui registry components from foreign-package tests via a relative dist path
 description: Both bare-subpath forms fail from outside @hellajs/ui — "@hellajs/ui/dist/..." doubles through the exports map and "@hellajs/ui/registry/..." resolves in no condition set — so a cross-package probe imports the compiled component relatively (../../ui/dist/registry/...).
 tags: [ui, imports, exports, subpath, dist, vite, testing]
-confirmed: 2026-10-24
+confirmed: 2026-10-31
 ---
 # Why
 
@@ -24,9 +24,10 @@ file's own bare imports (`@hellajs/dom/runtime`, `@hellajs/css`) resolve through
 
 # Evidence
 
-Source read 2026-10-24: `packages/ui/package.json` exports block (`./*` → `types`/`import` only);
-`packages/ui/tests/plainjs.test.ts` and `packages/ui/tests/helpers/variants.tsx` importing
-registry artifacts via relative `../dist/registry/...` paths. Failure repro: vitest run of a
+Source read 2026-10-31: `packages/ui/package.json` exports block (`./*` → `types`/`import` only);
+`packages/ui/tests/plainjs.test.ts` (relative `../dist/registry/...`) and the colocated
+`packages/ui/tests/components/<name>/variants.ts` slices plus `tests/helpers/variants-core.tsx`
+(relative `../../../dist/registry/...`) importing registry artifacts. Failure repro: vitest run of a
 scratch `packages/dom/tests/probe.test.tsx` importing `@hellajs/ui/dist/registry/alert/css/alert.js`
 then `@hellajs/ui/registry/alert/css/alert.js` — both "Failed to resolve import" from
 vite:import-analysis; the relative `../../ui/dist/registry/alert/css/alert.js` form ran green
