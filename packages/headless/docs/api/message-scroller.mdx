@@ -7,9 +7,10 @@ Creates the message-scroller components in one call: a scrolling viewport whose 
 ```tsx
 import { signal } from "@hellajs/core";
 import { mount } from "@hellajs/dom";
-import { messageScroller } from "@hellajs/headless";
+import { messageScroller, ScrollerRows } from "@hellajs/headless";
 
 const atBottom = signal(true);
+const messages = ["Alpha", "Beta", "Gamma"];
 
 const Scroller = messageScroller({ atBottom });
 
@@ -18,7 +19,7 @@ mount(
     <Scroller.Viewport>
       <Scroller.Content>
         {messages.map((message) => (
-          <Scroller.Item>{message}</Scroller.Item>
+          <ScrollerRows.Item>{message}</ScrollerRows.Item>
         ))}
       </Scroller.Content>
     </Scroller.Viewport>
@@ -40,7 +41,13 @@ function messageScroller(options?: MessageScrollerOptions): MessageScrollerCompo
 - `options.scrollToBottom`: Overrides the scroll-to-bottom action used for auto-stick and the jump button.
 - `options.threshold`: Distance in px from the bottom still counted as at-bottom. Default `80`.
 - `options.observe`: Replaces the default `ResizeObserver` content watcher the viewport arms on its content.
-- **Returns**: The component set, composed as `Scroller.Root`-style members.
+- **Returns**: The stateful part set, composed as `Scroller.Root`-style members.
+
+The message row stands beside the factory, shared by every instance:
+
+```typescript
+const ScrollerRows: ScrollerRows
+```
 
 ### Components
 
@@ -50,8 +57,13 @@ function messageScroller(options?: MessageScrollerOptions): MessageScrollerCompo
 | `Root` | The `data-slot="message-scroller"` relative container |
 | `Viewport` | The `data-slot="message-scroller-viewport"` scrolling viewport: flips at-bottom on scroll, sticks to the bottom on growth while at-bottom, and renders children directly |
 | `Content` | The `data-slot="message-scroller-content"` stack inside the viewport |
-| `Item` | The `data-slot="message-scroller-item"` message row |
 | `Button` | The `data-slot="message-scroller-button"` jump button: `data-active` from the at-bottom state, `data-direction`/`data-variant`/`data-size` tokens, and a click that jumps to the bottom after chaining a user `on:click`; renders the arrow glyph and a screen-reader label when children are omitted |
+
+### ScrollerRows components
+
+| Component | Renders |
+| --- | --- |
+| `Item` | The `data-slot="message-scroller-item"` message row |
 
 Every component spreads `class` and native attributes onto its element; components own structure, styling stays in the wrapper.
 

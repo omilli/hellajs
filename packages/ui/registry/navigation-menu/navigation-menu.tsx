@@ -1,4 +1,4 @@
-import { navigationMenu } from "@hellajs/headless";
+import { navigationMenu, NavRows } from "@hellajs/headless";
 import type {
   NavigationMenuListProps,
   NavigationMenuItemProps,
@@ -26,9 +26,8 @@ export function NavigationMenuList({
   class: cls,
   ...attrs
 }: NavigationMenuListProps): JSX.Element {
-  const { List } = navigationMenu();
   return (
-    <List
+    <NavRows.List
       class={
         // @hella:compose
         [list, cls]
@@ -37,7 +36,7 @@ export function NavigationMenuList({
       {...attrs}
     >
       {children}
-    </List>
+    </NavRows.List>
   );
 }
 
@@ -46,9 +45,8 @@ export function NavigationMenuItem({
   class: cls,
   ...attrs
 }: NavigationMenuItemProps): JSX.Element {
-  const { Item } = navigationMenu();
   return (
-    <Item
+    <NavRows.Item
       class={
         // @hella:compose
         [item, cls]
@@ -57,7 +55,7 @@ export function NavigationMenuItem({
       {...attrs}
     >
       {children}
-    </Item>
+    </NavRows.Item>
   );
 }
 
@@ -119,9 +117,8 @@ export function NavigationMenuLink({
   class: cls,
   ...attrs
 }: NavigationMenuLinkProps): JSX.Element {
-  const { Link } = navigationMenu();
   return (
-    <Link
+    <NavRows.Link
       active={active}
       class={
         // @hella:compose
@@ -131,7 +128,7 @@ export function NavigationMenuLink({
       {...attrs}
     >
       {children}
-    </Link>
+    </NavRows.Link>
   );
 }
 
@@ -162,9 +159,8 @@ export function NavigationMenuIndicator({
   class: cls,
   ...attrs
 }: NavigationMenuIndicatorProps): JSX.Element {
-  const { Indicator } = navigationMenu();
   return (
-    <Indicator
+    <NavRows.Indicator
       active={activeProp}
       anchor={anchor}
       class={

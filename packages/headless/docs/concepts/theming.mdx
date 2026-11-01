@@ -8,7 +8,7 @@ Every factory member accepts a `class` string, landed as the member's own class 
 
 ```tsx
 import { mount } from "@hellajs/dom";
-import { popover } from "@hellajs/headless";
+import { popover, PopoverRows } from "@hellajs/headless";
 
 const Popover = popover();
 
@@ -16,7 +16,7 @@ mount(
   <div>
     <Popover.Trigger class="trigger">Settings</Popover.Trigger>
     <Popover.Content class="panel" side="bottom">
-      <Popover.Title class="panel-title">Dimensions</Popover.Title>
+      <PopoverRows.Title class="panel-title">Dimensions</PopoverRows.Title>
     </Popover.Content>
   </div>,
   "#app",

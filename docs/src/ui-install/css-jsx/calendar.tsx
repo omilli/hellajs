@@ -1,4 +1,4 @@
-import { calendar } from "@hellajs/headless";
+import { calendar, CalendarRows } from "@hellajs/headless";
 import type { HTMLAttributes } from "@hellajs/dom";
 
 type CalendarMode = "single" | "multiple" | "range";
@@ -507,9 +507,8 @@ export function Calendar({
  * calendar drives them live while a standalone call passes static values.
  */
 export function CalendarDayButton({ class: cls, ...attrs }: CalendarDayButtonProps): JSX.Element {
-  const { DayButton } = calendar();
   return (
-    <DayButton
+    <CalendarRows.DayButton
       class={
         [dayButton, cls]
       }

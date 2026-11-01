@@ -1,13 +1,13 @@
 # inputOtp
 
-Creates the one-time-code components in one call: the slot row, its display slots, and the separator. The closure owns the code value; one transparent input overlays the slots and keeps native caret, selection, and paste working while the slots mirror the code.
+Creates the one-time-code root in one call. The closure owns the code value; one transparent input overlays the slots and keeps native caret, selection, and paste working while the slots mirror the code. The display parts (the slot group, the slots, the separator) are the static `OtpRows`.
 
 ## Basic Usage
 
 ```tsx
 import { signal } from "@hellajs/core";
 import { mount } from "@hellajs/dom";
-import { inputOtp } from "@hellajs/headless";
+import { inputOtp, OtpRows } from "@hellajs/headless";
 
 const code = signal("");
 
@@ -19,15 +19,15 @@ const Otp = inputOtp({
 
 mount(
   <Otp.Root>
-    <Otp.Group>
-      <Otp.Slot index={0} />
-      <Otp.Slot index={1} />
-      <Otp.Slot index={2} />
-      <Otp.Separator />
-      <Otp.Slot index={3} />
-      <Otp.Slot index={4} />
-      <Otp.Slot index={5} />
-    </Otp.Group>
+    <OtpRows.Group>
+      <OtpRows.Slot index={0} />
+      <OtpRows.Slot index={1} />
+      <OtpRows.Slot index={2} />
+      <OtpRows.Separator />
+      <OtpRows.Slot index={3} />
+      <OtpRows.Slot index={4} />
+      <OtpRows.Slot index={5} />
+    </OtpRows.Group>
   </Otp.Root>,
   "#app",
 );
@@ -48,13 +48,24 @@ function inputOtp(options?: InputOtpOptions): InputOtpComponents
 - `options.pattern`: Optional regex mask; a candidate the pattern rejects is never accepted.
 - `options.autofocus`: Focuses the hidden control input on mount.
 - `options.disabled`: Blocks editing and drops the root's text cursor.
-- **Returns**: The component set, composed as `Otp.Root`-style members.
+- **Returns**: The stateful root, composed as `Otp.Root`-style members.
+
+The display parts stand beside the factory, shared by every instance:
+
+```typescript
+const OtpRows: OtpRows
+```
 
 ### Components
 
 | Component | Renders |
 |---|---|
 | `Root` | The relative root hosting the transparent control input; wires every `Slot`'s character, ring, and caret after mount |
+
+### OtpRows components
+
+| Component | Renders |
+|---|---|
 | `Group` | The slot-grouping container |
 | `Slot` | One display slot keyed by `index`: the root mirrors its character and active/caret state into it |
 | `Separator` | The `role="separator"` divider rendering the default minus icon |

@@ -1,4 +1,4 @@
-import { inputOtp } from "@hellajs/headless";
+import { inputOtp, OtpRows } from "@hellajs/headless";
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 interface InputOTPProps extends HTMLAttributes<"div"> {
@@ -71,23 +71,21 @@ export function InputOTP({
 }
 
 export function InputOTPGroup({ children, class: cls, ...attrs }: InputOTPGroupProps): JSX.Element {
-  const { Group } = inputOtp();
   return (
-    <Group
+    <OtpRows.Group
       class={
         cn("flex items-center", cls)
       }
       {...attrs}
     >
       {children}
-    </Group>
+    </OtpRows.Group>
   );
 }
 
 export function InputOTPSlot({ index, class: cls, ...attrs }: InputOTPSlotProps): JSX.Element {
-  const { Slot } = inputOtp();
   return (
-    <Slot
+    <OtpRows.Slot
       index={index}
       caretWrapClass={
         cn("pointer-events-none absolute inset-0 flex items-center justify-center")
@@ -104,6 +102,5 @@ export function InputOTPSlot({ index, class: cls, ...attrs }: InputOTPSlotProps)
 }
 
 export function InputOTPSeparator({ class: cls, ...attrs }: InputOTPSeparatorProps): JSX.Element {
-  const { Separator } = inputOtp();
-  return <Separator class={cls} {...attrs} />;
+  return <OtpRows.Separator class={cls} {...attrs} />;
 }

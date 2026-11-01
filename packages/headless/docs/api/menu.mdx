@@ -1,13 +1,13 @@
 # menu
 
-Creates the full menu component set in one call: the trigger, the ported content layer, the selectable and structural rows, and `sub()` for nested submenus. The factory closure owns the open state, the exit timing, and the close-on-select coordination.
+Creates the menu stateful pair in one call: the trigger and the portaled content layer. The factory closure owns the open state, the exit timing, and the close-on-select coordination; the row parts are the static `MenuRows`, and [`menuSub`](#submenus) spins nested submenus.
 
 ## Basic Usage
 
 ```tsx
 import { signal } from "@hellajs/core";
 import { mount } from "@hellajs/dom";
-import { menu } from "@hellajs/headless";
+import { menu, MenuRows } from "@hellajs/headless";
 
 const open = signal(false);
 const grid = signal(true);
@@ -23,10 +23,10 @@ mount(
   <div>
     <Menu.Trigger>Actions</Menu.Trigger>
     <Menu.Content side="bottom" align="start">
-      <Menu.Item onSelect={save} shortcut="⌘S">Save</Menu.Item>
-      <Menu.CheckboxItem checked={grid}>Grid</Menu.CheckboxItem>
-      <Menu.Separator />
-      <Menu.RadioGroup
+      <MenuRows.Item onSelect={save} shortcut="⌘S">Save</MenuRows.Item>
+      <MenuRows.CheckboxItem checked={grid}>Grid</MenuRows.CheckboxItem>
+      <MenuRows.Separator />
+      <MenuRows.RadioGroup
         items={[
           { value: "light", label: "Light" },
           { value: "dark", label: "Dark" },
@@ -58,7 +58,14 @@ function menu(options?: MenuOptions): MenuComponents
 - `options.open`: Controlled open-state getter. Passing it makes the menu controlled; omitting it keeps state internal.
 - `options.onOpenChange`: Called on every open-state change, owned toggle and dismissal alike.
 - `options.trigger`: The trigger model, `"click"` (default) or `"contextmenu"`. The contextmenu mode renders a zone that opens the menu at the pointer through a virtual anchor.
-- **Returns**: The component set, composed as `Menu.Trigger`-style members.
+- **Returns**: The stateful part pair, composed as `Menu.Trigger`-style members.
+
+The rows and submenus stand beside the factory, shared by every instance:
+
+```typescript
+const MenuRows: MenuRows
+function menuSub(options?: MenuSubOptions): MenuSubComponents
+```
 
 ### Components
 
@@ -66,6 +73,11 @@ function menu(options?: MenuOptions): MenuComponents
 |---|---|
 | `Trigger` | `button` owning the click toggle, `data-state`, `aria-expanded`, `aria-haspopup`, and `aria-controls`; a `span` zone in the contextmenu mode |
 | `Content` | `role="menu"` panel portaled into `document.body`, carrying `data-state`, `data-side`, and `data-align` |
+
+### MenuRows components
+
+| Component | Renders |
+|---|---|
 | `Item` | `role="menuitem"` row that closes the menu on select unless `closeOnSelect: false` |
 | `CheckboxItem` | `role="menuitemcheckbox"` row with a check indicator, controlled-or-internal `checked` state |
 | `RadioGroup` | Grouping `div` with controlled-or-internal value state and optional declarative `items` |
@@ -74,7 +86,7 @@ function menu(options?: MenuOptions): MenuComponents
 | `Separator` | `role="separator"` divider |
 | `Group` | Grouping `div` carrying `data-slot="menu-group"` |
 | `Shortcut` | Trailing `span` for shortcut hints; `Item` renders it automatically from its `shortcut` prop |
-| `sub()` | Factory for a nested submenu: its own open state, anchored to its own trigger |
+| `menuSub()` | Factory for a nested submenu: its own open state, anchored to its own trigger |
 
 Every component spreads `class` and native attributes onto its element; components own structure, styling stays in the wrapper.
 
@@ -107,7 +119,7 @@ While open, the content owns the keyboard: arrows rove the enabled items with wr
 
 ### Submenus
 
-`Menu.sub()` returns the same component set bound to a nested closure: `sub.Trigger` opens on click, on ArrowRight, or after a short hover rest; `sub.Content` anchors to its own trigger, closes on ArrowLeft, and cancels a pending close when the pointer enters it. The submenu rides the same layer stack as its parent, so Escape and outside presses dismiss it first.
+`menuSub()` returns the submenu part set bound to its own closure: `sub.Trigger` opens on click, on ArrowRight, or after a short hover rest; `sub.Content` anchors to its own trigger, closes on ArrowLeft, and cancels a pending close when the pointer enters it. The submenu rides the same layer stack as its parent, so Escape and outside presses dismiss it first.
 
 ## Important Considerations
 

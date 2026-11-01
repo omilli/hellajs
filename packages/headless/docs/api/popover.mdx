@@ -1,13 +1,13 @@
 # popover
 
-Creates the six popover components in one call: a toggle trigger, an optional anchor span, the ported content layer, and the structural header, title, and description. The factory closure owns the open state, the exit timing, and the generated content id.
+Creates the popover stateful trio in one call: a toggle trigger, an optional anchor span, and the ported content layer. The factory closure owns the open state, the exit timing, and the generated content id; the structural header, title, and description are the static `PopoverRows`.
 
 ## Basic Usage
 
 ```tsx
 import { signal } from "@hellajs/core";
 import { mount } from "@hellajs/dom";
-import { popover } from "@hellajs/headless";
+import { popover, PopoverRows } from "@hellajs/headless";
 
 const open = signal(false);
 
@@ -20,10 +20,10 @@ mount(
   <div>
     <Popover.Trigger>Settings</Popover.Trigger>
     <Popover.Content side="bottom" align="start" sideOffset={6}>
-      <Popover.Header>
-        <Popover.Title>Dimensions</Popover.Title>
-        <Popover.Description>Set the layer size.</Popover.Description>
-      </Popover.Header>
+      <PopoverRows.Header>
+        <PopoverRows.Title>Dimensions</PopoverRows.Title>
+        <PopoverRows.Description>Set the layer size.</PopoverRows.Description>
+      </PopoverRows.Header>
     </Popover.Content>
   </div>,
   "#app",
@@ -50,7 +50,13 @@ function popover(options?: PopoverOptions): PopoverComponents
 - `options.open`: Controlled open-state getter. Passing it makes the popover controlled; omitting it keeps state internal.
 - `options.onOpenChange`: Called on every open-state change, owned toggle and dismissal alike.
 - `options.anchor`: Resolves the positioning anchor; defaults to the `Anchor` node, then the `Trigger` node.
-- **Returns**: The component set, composed as `Popover.Trigger`-style members.
+- **Returns**: The stateful part trio, composed as `Popover.Trigger`-style members.
+
+The structural parts stand beside the factory, shared by every instance:
+
+```typescript
+const PopoverRows: PopoverRows
+```
 
 ### Components
 
@@ -59,6 +65,11 @@ function popover(options?: PopoverOptions): PopoverComponents
 | `Trigger` | `button` owning the click toggle, `data-state`, `aria-expanded`, `aria-haspopup`, and `aria-controls` |
 | `Anchor` | Bare `span` marking the positioning target when the trigger should not anchor |
 | `Content` | `role="dialog"` panel portaled into `document.body`, carrying `data-state`, `data-side`, and `data-align` |
+
+### PopoverRows components
+
+| Component | Renders |
+|---|---|
 | `Header` | Grouping `div` carrying `data-slot="popover-header"` |
 | `Title` | Heading `div` carrying `data-slot="popover-title"` |
 | `Description` | Supporting `p` carrying `data-slot="popover-description"` |

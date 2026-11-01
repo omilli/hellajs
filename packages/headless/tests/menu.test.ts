@@ -2,7 +2,7 @@ import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
 import { mount, peekState } from "@hellajs/dom";
-import { menu } from "@hellajs/headless";
+import { menu, menuSub, MenuRows } from "@hellajs/headless";
 import { pointerDown, pointerEnter, pointerLeave, pressKey } from "./helpers";
 
 beforeEach(() => {
@@ -62,9 +62,9 @@ describe("menu", () => {
     const parts = menu();
     const content = parts.Content({
       children: [
-        parts.Item({ children: "First" }),
-        parts.Item({ children: "Locked", disabled: true }),
-        parts.Item({ children: "Last", onSelect }),
+        MenuRows.Item({ children: "First" }),
+        MenuRows.Item({ children: "Locked", disabled: true }),
+        MenuRows.Item({ children: "Last", onSelect }),
       ],
     });
     const trigger = mountMenu(parts, content);
@@ -103,9 +103,9 @@ describe("menu", () => {
     const parts = menu();
     const content = parts.Content({
       children: [
-        parts.Item({ children: "Alpha" }),
-        parts.Item({ children: "Beta" }),
-        parts.Item({ children: "Gamma" }),
+        MenuRows.Item({ children: "Alpha" }),
+        MenuRows.Item({ children: "Beta" }),
+        MenuRows.Item({ children: "Gamma" }),
       ],
     });
     const trigger = mountMenu(parts, content);
@@ -121,7 +121,7 @@ describe("menu", () => {
   test("an item with closeOnSelect: false stays open on selection", async () => {
     const parts = menu();
     const content = parts.Content({
-      children: [parts.Item({ children: "Stay", closeOnSelect: false })],
+      children: [MenuRows.Item({ children: "Stay", closeOnSelect: false })],
     });
     const trigger = mountMenu(parts, content);
     trigger.dispatchEvent(new Event("click"));
@@ -140,7 +140,7 @@ describe("menu", () => {
     const parts = menu();
     const controlled = parts.Content({
       children: [
-        parts.CheckboxItem({ children: "Grid", checked: () => checked(), onCheckedChange }),
+        MenuRows.CheckboxItem({ children: "Grid", checked: () => checked(), onCheckedChange }),
       ],
     });
     const trigger = mountMenu(parts, controlled);
@@ -162,7 +162,7 @@ describe("menu", () => {
 
     // Internal: the factory signal flips with the click.
     const internalContent = parts.Content({
-      children: [parts.CheckboxItem({ children: "Grid" })],
+      children: [MenuRows.CheckboxItem({ children: "Grid" })],
     });
     const secondTrigger = mountMenu(parts, internalContent);
     secondTrigger.dispatchEvent(new Event("click"));
@@ -181,7 +181,7 @@ describe("menu", () => {
     const parts = menu();
     const content = parts.Content({
       children: [
-        parts.RadioGroup({
+        MenuRows.RadioGroup({
           value: () => theme(),
           onValueChange,
           items: [{ value: "dark", label: "Dark" }],
@@ -203,7 +203,7 @@ describe("menu", () => {
 
   test("the contextmenu trigger opens at the pointer coordinates and anchors the content there", async () => {
     const parts = menu({ trigger: "contextmenu" });
-    const content = parts.Content({ children: [parts.Item({ children: "Inspect" })] });
+    const content = parts.Content({ children: [MenuRows.Item({ children: "Inspect" })] });
     const container = document.createElement("div");
     document.body.append(container);
     mount(parts.Trigger({ children: [content] }), container);
@@ -236,12 +236,12 @@ describe("menu", () => {
 
   test("a submenu opens by arrow and hover, the parent stays open, and dismissal pops the sub layer first", async () => {
     const parts = menu();
-    const sub = parts.sub();
+    const sub = menuSub();
     const content = parts.Content({
       children: [
         sub.Trigger({ children: "More" }),
-        sub.Content({ children: [parts.Item({ children: "Export" })] }),
-        parts.Item({ children: "Plain" }),
+        sub.Content({ children: [MenuRows.Item({ children: "Export" })] }),
+        MenuRows.Item({ children: "Plain" }),
       ],
     });
     const trigger = mountMenu(parts, content);
@@ -294,11 +294,11 @@ describe("menu", () => {
 
   test("the keyboard model flips its directional arrows with the resolved writing direction", async () => {
     const parts = menu();
-    const sub = parts.sub();
+    const sub = menuSub();
     const content = parts.Content({
       children: [
         sub.Trigger({ children: "More" }),
-        sub.Content({ children: [parts.Item({ children: "Export" })] }),
+        sub.Content({ children: [MenuRows.Item({ children: "Export" })] }),
       ],
     });
     const trigger = mountMenu(parts, content);
@@ -329,7 +329,7 @@ describe("menu", () => {
 
   test("unmounting an open contextmenu drops its virtual anchor", async () => {
     const parts = menu({ trigger: "contextmenu" });
-    const content = parts.Content({ children: [parts.Item({ children: "Inspect" })] });
+    const content = parts.Content({ children: [MenuRows.Item({ children: "Inspect" })] });
     const container = document.createElement("div");
     document.body.append(container);
     const handle = mount(parts.Trigger({ children: [content] }), container);
@@ -348,7 +348,7 @@ describe("menu", () => {
     const open = signal(false);
     const onOpenChange = vi.fn<(open: boolean) => void>(() => {});
     const parts = menu({ open: () => open(), onOpenChange });
-    const content = parts.Content({ children: [parts.Item({ children: "Only" })] });
+    const content = parts.Content({ children: [MenuRows.Item({ children: "Only" })] });
     const trigger = mountMenu(parts, content);
 
     trigger.dispatchEvent(new Event("click"));
@@ -374,7 +374,7 @@ describe("menu", () => {
     const parts = menu({ open: () => open(), onOpenChange });
     const handle = mount(
       parts.Trigger({
-        children: [parts.Content({ children: [parts.Item({ children: "Only" })] })],
+        children: [parts.Content({ children: [MenuRows.Item({ children: "Only" })] })],
       }),
     );
     open(true);

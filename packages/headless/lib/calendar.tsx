@@ -20,6 +20,57 @@ import type {
 
 const WEEKDAY_COUNT = 7;
 
+/**
+ * The static calendar day button: `DayButton`, the manual-composition button
+ * carrying the aria semantics (selected/range/disabled/focused/today flags).
+ * Props-driven per day — the grid renders one per cell — and state-free, so
+ * the registry composes it without spinning a calendar state machine.
+ *
+ * ```tsx
+ * <CalendarRows.DayButton day={date} selectedSingle />
+ * ```
+ */
+export const CalendarRows = {
+  DayButton: (props: CalendarDayButtonProps): JSX.Element => {
+    const {
+      day,
+      selectedSingle,
+      rangeStart,
+      rangeEnd,
+      rangeMiddle,
+      disabled: disabledProp,
+      focused,
+      today,
+      class: cls,
+      ...attrs
+    } = props;
+    const selected = (): boolean => resolveFlag(selectedSingle);
+    return (
+      <button
+        type="button"
+        data-slot="calendar-day-button"
+        data-day={day.toLocaleDateString()}
+        data-selected-single={selected() ? "true" : undefined}
+        data-range-start={resolveFlag(rangeStart) ? "true" : undefined}
+        data-range-end={resolveFlag(rangeEnd) ? "true" : undefined}
+        data-range-middle={resolveFlag(rangeMiddle) ? "true" : undefined}
+        aria-selected={
+          selected() || resolveFlag(rangeStart) || resolveFlag(rangeEnd) || resolveFlag(rangeMiddle)
+            ? "true"
+            : "false"
+        }
+        aria-disabled={resolveFlag(disabledProp) ? "true" : undefined}
+        aria-current={today === true ? "date" : undefined}
+        tabindex={resolveFlag(focused) ? 0 : -1}
+        class={cls}
+        {...attrs}
+      >
+        {day.getDate()}
+      </button>
+    );
+  },
+};
+
 const FIXED_WEEKS = 6;
 
 /** Fixed en-US labels keep caption/weekday text deterministic across hosts; all date math stays in local fields (no timezone conversion). */
@@ -174,8 +225,8 @@ interface DayCellProps {
 }
 
 /**
- * Creates the calendar part set: `Root`, `Months`, `Month`, `Caption`,
- * `CaptionLabel`, `Nav`, `PrevButton`, `NextButton`, `Grid`, and `DayButton`.
+ * Creates the calendar stateful part set: `Root`, `Months`, `Month`,
+ * `Caption`, `CaptionLabel`, `Nav`, `PrevButton`, `NextButton`, and `Grid`.
  * The closure owns the visible month (paged by the nav buttons and spill-causing
  * keys), the selection in the mode's shape — single, multiple, or range — the
  * roving focus key, and the range hover preview, with the whole month grid
@@ -184,7 +235,8 @@ interface DayCellProps {
  * renders the full `role="grid"` table from that view model, wiring the
  * keyboard model on the table: arrows move focus day to day and across month
  * edges, PageUp/PageDown jump a month, Home/End jump the week bounds, and
- * Enter/Space select. Call in component scope so the state signals dispose
+ * Enter/Space select. The manual-composition day button is the static
+ * `CalendarRows.DayButton`. Call in component scope so the state signals dispose
  * with the component.
  *
  * ```tsx
@@ -381,45 +433,6 @@ export function calendar(options: CalendarOptions = {}): CalendarComponents {
     focusDay(nextDate);
   };
 
-  const DayButton = (props: CalendarDayButtonProps): JSX.Element => {
-    const {
-      day,
-      selectedSingle,
-      rangeStart,
-      rangeEnd,
-      rangeMiddle,
-      disabled: disabledProp,
-      focused,
-      today,
-      class: cls,
-      ...attrs
-    } = props;
-    const selected = (): boolean => resolveFlag(selectedSingle);
-    return (
-      <button
-        type="button"
-        data-slot="calendar-day-button"
-        data-day={day.toLocaleDateString()}
-        data-selected-single={selected() ? "true" : undefined}
-        data-range-start={resolveFlag(rangeStart) ? "true" : undefined}
-        data-range-end={resolveFlag(rangeEnd) ? "true" : undefined}
-        data-range-middle={resolveFlag(rangeMiddle) ? "true" : undefined}
-        aria-selected={
-          selected() || resolveFlag(rangeStart) || resolveFlag(rangeEnd) || resolveFlag(rangeMiddle)
-            ? "true"
-            : "false"
-        }
-        aria-disabled={resolveFlag(disabledProp) ? "true" : undefined}
-        aria-current={today === true ? "date" : undefined}
-        tabindex={resolveFlag(focused) ? 0 : -1}
-        class={cls}
-        {...attrs}
-      >
-        {day.getDate()}
-      </button>
-    );
-  };
-
   /** One grid cell: the td carries the today/outside/disabled/range data attributes, the day button the aria semantics. */
   const DayCell = (props: DayCellProps): JSX.Element => {
     const selectedSingle = (): boolean =>
@@ -440,7 +453,7 @@ export function calendar(options: CalendarOptions = {}): CalendarComponents {
         data-range-end={props.rangeEnd() ? "true" : undefined}
         class={props.dayClass}
       >
-        <DayButton
+        <CalendarRows.DayButton
           day={props.cell.date}
           selectedSingle={selectedSingle}
           rangeStart={props.rangeStart}
@@ -623,6 +636,5 @@ export function calendar(options: CalendarOptions = {}): CalendarComponents {
     PrevButton,
     NextButton,
     Grid,
-    DayButton,
   };
 }

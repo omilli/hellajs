@@ -2,7 +2,7 @@ import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
 import { mount, peekState } from "@hellajs/dom";
-import { inputOtp } from "@hellajs/headless";
+import { inputOtp, OtpRows } from "@hellajs/headless";
 
 beforeEach(() => {
   resetTestState();
@@ -46,10 +46,10 @@ async function mountOtp(
   const slots: JSX.Element[] = [];
   let i = 0;
   while (i < count) {
-    slots.push(parts.Slot({ index: i }));
+    slots.push(OtpRows.Slot({ index: i }));
     i++;
   }
-  const root = mountPart(parts.Root({ children: parts.Group({ children: slots }) }));
+  const root = mountPart(parts.Root({ children: OtpRows.Group({ children: slots }) }));
   await awaitWiring(root);
   return { root, input: control(root), slots: slotsOf(root) };
 }

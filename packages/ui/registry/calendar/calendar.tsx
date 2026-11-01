@@ -1,4 +1,4 @@
-import { calendar } from "@hellajs/headless";
+import { calendar, CalendarRows } from "@hellajs/headless";
 import type { CalendarProps, CalendarDayButtonProps } from "./calendar-types.js";
 
 // @hella:styles
@@ -211,9 +211,8 @@ export function Calendar({
  * calendar drives them live while a standalone call passes static values.
  */
 export function CalendarDayButton({ class: cls, ...attrs }: CalendarDayButtonProps): JSX.Element {
-  const { DayButton } = calendar();
   return (
-    <DayButton
+    <CalendarRows.DayButton
       class={
         // @hella:compose
         [dayButton, cls]

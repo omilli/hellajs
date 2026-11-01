@@ -194,6 +194,10 @@ export interface PopoverComponents {
   Anchor: (props: PopoverAnchorProps) => JSX.Element;
   /** The portaled content layer: anchors, arms Escape + stacked dismissal while open, exits through `animationend`. */
   Content: (props: PopoverContentProps) => JSX.Element;
+}
+
+/** The static popover structural parts, shared by every `popover()` instance. */
+export interface PopoverRows {
   /** A structural header group. */
   Header: (props: PopoverPartProps) => JSX.Element;
   /** A structural title heading. */
@@ -382,7 +386,27 @@ export interface MenuSubContentProps extends HTMLAttributes<"div"> {
   class?: MenuClass;
 }
 
-/** The part set a `sub()` call returns: the nested trigger and content own the submenu state; the item parts are the parent menu's. */
+/** The static menu row parts, shared verbatim by `menu()`, `menubar()`'s bar menus, and `menuSub()`. */
+export interface MenuRows {
+  /** A selectable row: closes the menu on select unless `closeOnSelect: false`. */
+  Item: (props: MenuItemProps) => JSX.Element;
+  /** A checkable row: controlled through a `checked` accessor or its own signal; toggling closes the menu. */
+  CheckboxItem: (props: MenuCheckboxItemProps) => JSX.Element;
+  /** Groups radio items with controlled-or-internal value state and optional declarative `items`. */
+  RadioGroup: (props: MenuRadioGroupProps) => JSX.Element;
+  /** A radio row: reports the selection to its owning group or `onSelect`, then closes the menu. */
+  RadioItem: (props: MenuRadioItemProps) => JSX.Element;
+  /** A structural label row. */
+  Label: (props: MenuLabelProps) => JSX.Element;
+  /** A structural separator. */
+  Separator: (props: MenuPartProps) => JSX.Element;
+  /** A structural group. */
+  Group: (props: MenuPartProps) => JSX.Element;
+  /** A trailing shortcut hint span. */
+  Shortcut: (props: MenuShortcutProps) => JSX.Element;
+}
+
+/** The part set a `menuSub()` call returns: the nested trigger and content own the submenu state; the row parts are the static `MenuRows`. */
 export interface MenuSubComponents {
   /** The submenu trigger: hover intent (~100ms rest) opens, leaving closes after ~300ms, click opens. */
   Trigger: (props: MenuSubTriggerProps) => JSX.Element;
@@ -406,30 +430,12 @@ export interface MenuSubComponents {
   Shortcut: (props: MenuShortcutProps) => JSX.Element;
 }
 
-/** The part set a `menu()` factory call returns, composed as `Menu.Trigger`-style members. */
+/** The part set a `menu()` factory call returns, composed as `Menu.Trigger`-style members; the rows are the static `MenuRows` and nested submenus come from `menuSub()`. */
 export interface MenuComponents {
   /** The trigger: a click-toggle button, or — with `trigger: "contextmenu"` — the zone that opens the menu at the pointer. */
   Trigger: (props: MenuTriggerProps) => JSX.Element;
   /** The portaled content layer: anchors to the trigger (or the virtual pointer anchor), arms typeahead, roving arrows, Escape + stacked dismissal while open. */
   Content: (props: MenuContentProps) => JSX.Element;
-  /** A selectable row: closes the menu on select unless `closeOnSelect: false`. */
-  Item: (props: MenuItemProps) => JSX.Element;
-  /** A checkable row: controlled through a `checked` accessor or its own signal; toggling closes the menu. */
-  CheckboxItem: (props: MenuCheckboxItemProps) => JSX.Element;
-  /** Groups radio items with controlled-or-internal value state and optional declarative `items`. */
-  RadioGroup: (props: MenuRadioGroupProps) => JSX.Element;
-  /** A radio row: reports the selection to its owning group or `onSelect`, then closes the menu. */
-  RadioItem: (props: MenuRadioItemProps) => JSX.Element;
-  /** A structural label row. */
-  Label: (props: MenuLabelProps) => JSX.Element;
-  /** A structural separator. */
-  Separator: (props: MenuPartProps) => JSX.Element;
-  /** A structural group. */
-  Group: (props: MenuPartProps) => JSX.Element;
-  /** A trailing shortcut hint span. */
-  Shortcut: (props: MenuShortcutProps) => JSX.Element;
-  /** Creates a nested menu factory: its own controlled-or-internal open state, anchored to its own trigger, riding the same layer stack. */
-  sub: (options?: MenuSubOptions) => MenuSubComponents;
 }
 
 /** Options for a `sub()` call: the submenu's controlled-or-internal open state. */
@@ -538,22 +544,26 @@ export interface NavigationMenuIndicatorProps extends HTMLAttributes<"div"> {
   class?: NavigationMenuClass;
 }
 
-/** The part set a `navigationMenu()` factory call returns, composed as `Nav.Root`-style members. */
+/** The part set a `navigationMenu()` factory call returns, composed as `Nav.Root`-style members; the structural rows are the static `NavRows`. */
 export interface NavigationMenuComponents {
   /** The bar root: mirrors trigger announcements into the open-value store and appends the shared viewport slot as its last child (unless `viewport: false`). */
   Root: (props: NavigationMenuRootProps) => JSX.Element;
-  /** The `ul` list row wrapping the items. */
-  List: (props: NavigationMenuListProps) => JSX.Element;
-  /** The `li` item wrapping a trigger and its content anchor. */
-  Item: (props: NavigationMenuItemProps) => JSX.Element;
   /** The trigger button: announces its `value` on click (one panel open at a time; a second click closes) and carries `aria-expanded`/`data-state` plus the chevron icon. */
   Trigger: (props: NavigationMenuTriggerProps) => JSX.Element;
   /** The panel for a value: portals into the shared viewport slot and exits through `animationend` (or the 250ms budget). */
   Content: (props: NavigationMenuContentProps) => JSX.Element;
-  /** The leaf `a` link carrying `data-active` for the accent styles. */
-  Link: (props: NavigationMenuLinkProps) => JSX.Element;
   /** The shared viewport slot whose `data-state` tracks the store; every `Content` portals into it. */
   Viewport: (props: NavigationMenuViewportProps) => JSX.Element;
+}
+
+/** The static navigation-menu structural rows, shared by every `navigationMenu()` instance. */
+export interface NavRows {
+  /** The `ul` list row wrapping the items. */
+  List: (props: NavigationMenuListProps) => JSX.Element;
+  /** The `li` item wrapping a trigger and its content anchor. */
+  Item: (props: NavigationMenuItemProps) => JSX.Element;
+  /** The leaf `a` link carrying `data-active` for the accent styles. */
+  Link: (props: NavigationMenuLinkProps) => JSX.Element;
   /** The moving indicator: measures the active trigger against the bar and re-measures on resize. */
   Indicator: (props: NavigationMenuIndicatorProps) => JSX.Element;
 }
@@ -1542,7 +1552,7 @@ export interface CalendarDayButtonProps extends HTMLAttributes<"button"> {
   class?: CalendarClass;
 }
 
-/** The part set a `calendar()` factory call returns, composed as `Cal.Root`-style members. */
+/** The part set a `calendar()` factory call returns, composed as `Cal.Root`-style members; the manual-composition day button is the static `CalendarRows.DayButton`. */
 export interface CalendarComponents {
   /** The calendar root container. */
   Root: (props: CalendarRootProps) => JSX.Element;
@@ -1562,6 +1572,10 @@ export interface CalendarComponents {
   NextButton: (props: CalendarNavButtonProps) => JSX.Element;
   /** The `role="grid"` table rendered from the factory's view model, with the keyboard model wired on it. */
   Grid: (props: CalendarGridProps) => JSX.Element;
+}
+
+/** The static calendar day button, shared by every `calendar()` instance. */
+export interface CalendarRows {
   /** The manual-composition day button carrying the aria semantics; the grid renders one per cell. */
   DayButton: (props: CalendarDayButtonProps) => JSX.Element;
 }
@@ -1614,10 +1628,14 @@ export interface InputOtpSeparatorProps extends HTMLAttributes<"div"> {
   class?: InputOtpClass;
 }
 
-/** The part set an `inputOtp()` factory call returns, composed as `Otp.Root`-style members. */
+/** The part set an `inputOtp()` factory call returns, composed as `Otp.Root`-style members; the display parts are the static `OtpRows`. */
 export interface InputOtpComponents {
   /** The relative root hosting the transparent control input; wires every `Slot`'s character, ring, and caret after mount. */
   Root: (props: InputOtpRootProps) => JSX.Element;
+}
+
+/** The static input-otp display parts, shared by every `inputOtp()` instance. */
+export interface OtpRows {
   /** The slot-grouping container. */
   Group: (props: InputOtpGroupProps) => JSX.Element;
   /** One display slot: the root mirrors its character and active/caret state into it. */
@@ -1793,7 +1811,7 @@ export interface MessageScrollerButtonProps extends HTMLAttributes<"button"> {
   size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
 }
 
-/** The part set a `messageScroller()` factory call returns, composed as `Scroller.Root`-style members. */
+/** The part set a `messageScroller()` factory call returns, composed as `Scroller.Root`-style members; the message row is the static `ScrollerRows.Item`. */
 export interface MessageScrollerComponents {
   /** Passthrough grouping wrapper kept for upstream parity; holds no state. */
   Provider: (props: MessageScrollerProviderProps) => JSX.Element;
@@ -1803,8 +1821,12 @@ export interface MessageScrollerComponents {
   Viewport: (props: MessageScrollerViewportProps) => JSX.Element;
   /** The content stack inside the viewport. */
   Content: (props: MessageScrollerContentProps) => JSX.Element;
-  /** A message row sized for content-visibility rendering. */
-  Item: (props: MessageScrollerItemProps) => JSX.Element;
   /** The jump button: `data-active` from at-bottom, click jumps to the bottom after chaining a user `on:click`. */
   Button: (props: MessageScrollerButtonProps) => JSX.Element;
+}
+
+/** The static message-scroller row, shared by every `messageScroller()` instance. */
+export interface ScrollerRows {
+  /** A message row sized for content-visibility rendering. */
+  Item: (props: MessageScrollerItemProps) => JSX.Element;
 }

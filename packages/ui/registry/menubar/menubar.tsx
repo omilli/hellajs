@@ -1,4 +1,4 @@
-import { menu, menubar } from "@hellajs/headless";
+import { menubar, menuSub, MenuRows } from "@hellajs/headless";
 import type {
   MenubarPartProps,
   MenubarItemProps,
@@ -27,9 +27,8 @@ declare const trigger: string;
 // @hella:end
 
 export function MenubarGroup({ children, class: cls, ...attrs }: MenubarPartProps): JSX.Element {
-  const { Group } = menu();
   return (
-    <Group
+    <MenuRows.Group
       data-slot="menubar-group"
       class={
         // @hella:compose
@@ -39,7 +38,7 @@ export function MenubarGroup({ children, class: cls, ...attrs }: MenubarPartProp
       {...attrs}
     >
       {children}
-    </Group>
+    </MenuRows.Group>
   );
 }
 
@@ -52,9 +51,8 @@ export function MenubarItem({
   class: cls,
   ...attrs
 }: MenubarItemProps): JSX.Element {
-  const { Item } = menu();
   return (
-    <Item
+    <MenuRows.Item
       destructive={destructive}
       inset={inset}
       shortcut={shortcutSlot}
@@ -68,7 +66,7 @@ export function MenubarItem({
       {...attrs}
     >
       {children}
-    </Item>
+    </MenuRows.Item>
   );
 }
 
@@ -79,9 +77,8 @@ export function MenubarCheckboxItem({
   class: cls,
   ...attrs
 }: MenubarCheckboxItemProps): JSX.Element {
-  const { CheckboxItem } = menu();
   return (
-    <CheckboxItem
+    <MenuRows.CheckboxItem
       checked={checkedProp}
       onCheckedChange={onCheckedChange}
       data-slot="menubar-checkbox-item"
@@ -93,7 +90,7 @@ export function MenubarCheckboxItem({
       {...attrs}
     >
       {children}
-    </CheckboxItem>
+    </MenuRows.CheckboxItem>
   );
 }
 
@@ -106,9 +103,8 @@ export function MenubarRadioGroup({
   class: cls,
   ...attrs
 }: MenubarRadioGroupProps): JSX.Element {
-  const { RadioGroup } = menu();
   return (
-    <RadioGroup
+    <MenuRows.RadioGroup
       items={items}
       keyBy={keyBy}
       value={valueProp}
@@ -122,7 +118,7 @@ export function MenubarRadioGroup({
       {...attrs}
     >
       {children}
-    </RadioGroup>
+    </MenuRows.RadioGroup>
   );
 }
 
@@ -134,9 +130,8 @@ export function MenubarRadioItem({
   class: cls,
   ...attrs
 }: MenubarRadioItemProps): JSX.Element {
-  const { RadioItem } = menu();
   return (
-    <RadioItem
+    <MenuRows.RadioItem
       value={value}
       checked={checkedProp}
       onSelect={onSelect}
@@ -149,7 +144,7 @@ export function MenubarRadioItem({
       {...attrs}
     >
       {children}
-    </RadioItem>
+    </MenuRows.RadioItem>
   );
 }
 
@@ -159,9 +154,8 @@ export function MenubarLabel({
   class: cls,
   ...attrs
 }: MenubarLabelProps): JSX.Element {
-  const { Label } = menu();
   return (
-    <Label
+    <MenuRows.Label
       inset={inset}
       data-slot="menubar-label"
       class={
@@ -172,14 +166,13 @@ export function MenubarLabel({
       {...attrs}
     >
       {children}
-    </Label>
+    </MenuRows.Label>
   );
 }
 
 export function MenubarSeparator({ class: cls, ...attrs }: MenubarPartProps): JSX.Element {
-  const { Separator } = menu();
   return (
-    <Separator
+    <MenuRows.Separator
       data-slot="menubar-separator"
       class={
         // @hella:compose
@@ -196,9 +189,8 @@ export function MenubarShortcut({
   class: cls,
   ...attrs
 }: MenubarShortcutProps): JSX.Element {
-  const { Shortcut } = menu();
   return (
-    <Shortcut
+    <MenuRows.Shortcut
       data-slot="menubar-shortcut"
       class={
         // @hella:compose
@@ -208,7 +200,7 @@ export function MenubarShortcut({
       {...attrs}
     >
       {children}
-    </Shortcut>
+    </MenuRows.Shortcut>
   );
 }
 
@@ -218,7 +210,7 @@ export function MenubarSub({
   class: cls,
   ...attrs
 }: MenubarSubProps): JSX.Element {
-  const sub = menu().sub();
+  const sub = menuSub();
   return (
     <sub.Trigger
       data-slot="menubar-sub-trigger"

@@ -43,8 +43,122 @@ const chevronDownIcon = (): JSX.Element => (
 );
 
 /**
- * Creates the navigation menu part set: `Root`, `List`, `Item`, `Trigger`,
- * `Content`, `Link`, `Viewport`, `Indicator`. The closure owns the open-value
+ * The static navigation-menu structural rows: `List`, `Item`, `Link`, and
+ * `Indicator`. `Indicator` tracks the active trigger through the shared
+ * announcement stream with its own per-mount signal — no factory state — so
+ * the registry composes all four without spinning a navigation state
+ * machine. The coordinated parts (`Trigger`, `Content`, `Viewport`) stay on
+ * the `navigationMenu()` factory.
+ *
+ * ```tsx
+ * <NavRows.List>
+ *   <NavRows.Item>...</NavRows.Item>
+ * </NavRows.List>
+ * ```
+ */
+export const NavRows = {
+  List: (props: NavigationMenuListProps): JSX.Element => {
+    const { children, class: cls, ...attrs } = props;
+    return (
+      <ul data-slot="navigation-menu-list" class={cls} {...attrs}>
+        {children}
+      </ul>
+    );
+  },
+  Item: (props: NavigationMenuItemProps): JSX.Element => {
+    const { children, class: cls, ...attrs } = props;
+    return (
+      <li data-slot="navigation-menu-item" class={cls} {...attrs}>
+        {children}
+      </li>
+    );
+  },
+  Link: (props: NavigationMenuLinkProps): JSX.Element => {
+    const { active, children, class: cls, ...attrs } = props;
+    return (
+      <a
+        data-slot="navigation-menu-link"
+        data-active={active ? "true" : undefined}
+        class={cls}
+        {...attrs}
+      >
+        {children}
+      </a>
+    );
+  },
+  Indicator: (props: NavigationMenuIndicatorProps): JSX.Element => {
+    const { active, anchor, class: cls, ...attrs } = props;
+    const activeId = signal("");
+    const visible = (): boolean => (active !== undefined ? active() : activeId() !== "");
+    const wirings: (() => void)[] = [];
+    let node: HTMLElement | undefined;
+
+    // The trigger to sit under: the manual anchor when given, else the active
+    // trigger found by the announcement stream's id.
+    const resolveTrigger = (): Element | undefined => {
+      if (anchor) return anchor();
+      const id = activeId();
+      return id === ""
+        ? undefined
+        : (document.querySelector(`[data-slot='navigation-menu-trigger'][data-value='${id}']`) ??
+            undefined);
+    };
+
+    // The underline/box position: measured against the root bar, moved with a
+    // 200ms transform transition (upstream approximates its spring the same way).
+    const measure = (): void => {
+      if (!node) return;
+      const anchorEl = resolveTrigger();
+      const root = node.closest("[data-slot='navigation-menu']");
+      if (!anchorEl || !root) return;
+      const t = anchorEl.getBoundingClientRect();
+      const r = root.getBoundingClientRect();
+      node.style.width = `${t.width}px`;
+      node.style.transform = `translateX(${t.left - r.left}px)`;
+    };
+
+    // Re-measure when visibility flips (the trigger just changed), on mount,
+    // and on viewport resizes.
+    effect(() => {
+      visible();
+      measure();
+    });
+
+    return (
+      <div
+        data-slot="navigation-menu-indicator"
+        data-state={visible() ? "visible" : "hidden"}
+        class={cls}
+        hook:afterMount={(mounted) => {
+          if (!(mounted instanceof HTMLElement)) return;
+          node = mounted;
+          measure();
+          const onActivate = (event: Event): void => {
+            const detail = (event as CustomEvent).detail;
+            if (!isString(detail?.id) || !isBoolean(detail?.open)) return;
+            activeId(detail.open ? detail.id : "");
+          };
+          document.addEventListener(ACTIVATE_EVENT, onActivate);
+          wirings.push(() => document.removeEventListener(ACTIVATE_EVENT, onActivate));
+          const onResize = (): void => measure();
+          window.addEventListener("resize", onResize);
+          wirings.push(() => window.removeEventListener("resize", onResize));
+        }}
+        hook:beforeDestroy={() => {
+          while (wirings.length) wirings.pop()!();
+          node = undefined;
+        }}
+        {...attrs}
+      >
+        <div data-slot="navigation-menu-diamond" />
+      </div>
+    );
+  },
+};
+
+/**
+ * Creates the navigation menu stateful part set: `Root`, `Trigger`,
+ * `Content`, `Viewport`. The closure owns the open-value
  * store — controlled through a `value` accessor when passed, an internal
  * signal when omitted. Value-carrying `Trigger`s
  * announce clicks on a document-level event; `Root` mirrors the announcement
@@ -61,25 +175,25 @@ const chevronDownIcon = (): JSX.Element => (
  * size to that slot through the `--radix-navigation-menu-viewport-width/height`
  * vars the viewport css reads, and aligns the viewport wrapper under its
  * trigger (clamped so the panel stays inside the bar). It exits through `animationend` (or
- * the 250ms budget) after the close flip. `Indicator` tracks the active
- * trigger's position with a measured transform. Call in component scope so
- * the state signals dispose with the component.
+ * the 250ms budget) after the close flip. The structural rows (`List`,
+ * `Item`, `Link`, `Indicator`) are the static `NavRows`. Call in component
+ * scope so the state signals dispose with the component.
  *
  * ```tsx
  * const Nav = navigationMenu({ value, onValueChange });
  *
  * <Nav.Root>
- *   <Nav.List>
- *     <Nav.Item>
+ *   <NavRows.List>
+ *     <NavRows.Item>
  *       <Nav.Trigger value="learn">Learn</Nav.Trigger>
  *       <Nav.Content value="learn">...</Nav.Content>
- *     </Nav.Item>
- *   </Nav.List>
- *   <Nav.Indicator />
+ *     </NavRows.Item>
+ *   </NavRows.List>
+ *   <NavRows.Indicator />
  * </Nav.Root>
  * ```
  * @param options controlled `value`, `onValueChange`, and `viewport` toggle; an omitted `value` keeps state internal.
- * @returns The part set, composed as `Nav.Root`-style members.
+ * @returns The stateful part set, composed as `Nav.Root`-style members.
  */
 export function navigationMenu(options: NavigationMenuOptions = {}): NavigationMenuComponents {
   const value = options.value;
@@ -158,24 +272,6 @@ export function navigationMenu(options: NavigationMenuOptions = {}): NavigationM
         {children}
         {() => (rendersViewport ? <Viewport active={() => current() !== ""} /> : null)}
       </div>
-    );
-  };
-
-  const List = (props: NavigationMenuListProps): JSX.Element => {
-    const { children, class: cls, ...attrs } = props;
-    return (
-      <ul data-slot="navigation-menu-list" class={cls} {...attrs}>
-        {children}
-      </ul>
-    );
-  };
-
-  const Item = (props: NavigationMenuItemProps): JSX.Element => {
-    const { children, class: cls, ...attrs } = props;
-    return (
-      <li data-slot="navigation-menu-item" class={cls} {...attrs}>
-        {children}
-      </li>
     );
   };
 
@@ -361,20 +457,6 @@ export function navigationMenu(options: NavigationMenuOptions = {}): NavigationM
     );
   };
 
-  const Link = (props: NavigationMenuLinkProps): JSX.Element => {
-    const { active, children, class: cls, ...attrs } = props;
-    return (
-      <a
-        data-slot="navigation-menu-link"
-        data-active={active ? "true" : undefined}
-        class={cls}
-        {...attrs}
-      >
-        {children}
-      </a>
-    );
-  };
-
   const Viewport = (props: NavigationMenuViewportProps): JSX.Element => {
     const { active, id, class: cls, ...attrs } = props;
     const isOpen = (): boolean => (active !== undefined ? active() : current() !== "");
@@ -389,74 +471,5 @@ export function navigationMenu(options: NavigationMenuOptions = {}): NavigationM
     );
   };
 
-  const Indicator = (props: NavigationMenuIndicatorProps): JSX.Element => {
-    const { active, anchor, class: cls, ...attrs } = props;
-    const activeId = signal("");
-    const visible = (): boolean => (active !== undefined ? active() : activeId() !== "");
-    const wirings: (() => void)[] = [];
-    let node: HTMLElement | undefined;
-
-    // The trigger to sit under: the manual anchor when given, else the active
-    // trigger found by the announcement stream's id.
-    const resolveTrigger = (): Element | undefined => {
-      if (anchor) return anchor();
-      const id = activeId();
-      return id === ""
-        ? undefined
-        : (document.querySelector(`[data-slot='navigation-menu-trigger'][data-value='${id}']`) ??
-            undefined);
-    };
-
-    // The underline/box position: measured against the root bar, moved with a
-    // 200ms transform transition (upstream approximates its spring the same way).
-    const measure = (): void => {
-      if (!node) return;
-      const anchorEl = resolveTrigger();
-      const root = node.closest("[data-slot='navigation-menu']");
-      if (!anchorEl || !root) return;
-      const t = anchorEl.getBoundingClientRect();
-      const r = root.getBoundingClientRect();
-      node.style.width = `${t.width}px`;
-      node.style.transform = `translateX(${t.left - r.left}px)`;
-    };
-
-    // Re-measure when visibility flips (the trigger just changed), on mount,
-    // and on viewport resizes.
-    effect(() => {
-      visible();
-      measure();
-    });
-
-    return (
-      <div
-        data-slot="navigation-menu-indicator"
-        data-state={visible() ? "visible" : "hidden"}
-        class={cls}
-        hook:afterMount={(mounted) => {
-          if (!(mounted instanceof HTMLElement)) return;
-          node = mounted;
-          measure();
-          const onActivate = (event: Event): void => {
-            const detail = (event as CustomEvent).detail;
-            if (!isString(detail?.id) || !isBoolean(detail?.open)) return;
-            activeId(detail.open ? detail.id : "");
-          };
-          document.addEventListener(ACTIVATE_EVENT, onActivate);
-          wirings.push(() => document.removeEventListener(ACTIVATE_EVENT, onActivate));
-          const onResize = (): void => measure();
-          window.addEventListener("resize", onResize);
-          wirings.push(() => window.removeEventListener("resize", onResize));
-        }}
-        hook:beforeDestroy={() => {
-          while (wirings.length) wirings.pop()!();
-          node = undefined;
-        }}
-        {...attrs}
-      >
-        <div data-slot="navigation-menu-diamond" />
-      </div>
-    );
-  };
-
-  return { Root, List, Item, Trigger, Content, Link, Viewport, Indicator };
+  return { Root, Trigger, Content, Viewport };
 }

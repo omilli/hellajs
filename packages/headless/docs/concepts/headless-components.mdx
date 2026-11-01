@@ -8,7 +8,7 @@ Call [`menu`](/headless/menu) and bind the result: the returned object composes 
 
 ```jsx
 import { mount } from "@hellajs/dom";
-import { menu } from "@hellajs/headless";
+import { menu, MenuRows } from "@hellajs/headless";
 
 const save = () => console.log("saved");
 const remove = () => console.log("deleted");
@@ -19,9 +19,9 @@ mount(
   <div>
     <Menu.Trigger>Actions</Menu.Trigger>
     <Menu.Content side="bottom" align="start">
-      <Menu.Item onSelect={save} shortcut="⌘S">Save</Menu.Item>
-      <Menu.Separator />
-      <Menu.Item onSelect={remove}>Delete</Menu.Item>
+      <MenuRows.Item onSelect={save} shortcut="⌘S">Save</MenuRows.Item>
+      <MenuRows.Separator />
+      <MenuRows.Item onSelect={remove}>Delete</MenuRows.Item>
     </Menu.Content>
   </div>,
   "#app",

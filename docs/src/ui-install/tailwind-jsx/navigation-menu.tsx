@@ -1,4 +1,4 @@
-import { navigationMenu } from "@hellajs/headless";
+import { navigationMenu, NavRows } from "@hellajs/headless";
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 interface NavigationMenuListProps extends HTMLAttributes<"ul"> {
@@ -70,16 +70,15 @@ export function NavigationMenuList({
   class: cls,
   ...attrs
 }: NavigationMenuListProps): JSX.Element {
-  const { List } = navigationMenu();
   return (
-    <List
+    <NavRows.List
       class={
         cn("group flex flex-1 list-none items-center justify-center gap-1", cls)
       }
       {...attrs}
     >
       {children}
-    </List>
+    </NavRows.List>
   );
 }
 
@@ -88,16 +87,15 @@ export function NavigationMenuItem({
   class: cls,
   ...attrs
 }: NavigationMenuItemProps): JSX.Element {
-  const { Item } = navigationMenu();
   return (
-    <Item
+    <NavRows.Item
       class={
         cn("relative [&_[data-slot=navigation-menu-content-anchor]]:contents", cls)
       }
       {...attrs}
     >
       {children}
-    </Item>
+    </NavRows.Item>
   );
 }
 
@@ -155,9 +153,8 @@ export function NavigationMenuLink({
   class: cls,
   ...attrs
 }: NavigationMenuLinkProps): JSX.Element {
-  const { Link } = navigationMenu();
   return (
-    <Link
+    <NavRows.Link
       active={active}
       class={
         cn("flex flex-col gap-1 rounded-sm p-2 text-sm transition-all outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 data-[active=true]:bg-accent/50 data-[active=true]:text-accent-foreground data-[active=true]:hover:bg-accent data-[active=true]:focus:bg-accent [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground", cls)
@@ -165,7 +162,7 @@ export function NavigationMenuLink({
       {...attrs}
     >
       {children}
-    </Link>
+    </NavRows.Link>
   );
 }
 
@@ -194,9 +191,8 @@ export function NavigationMenuIndicator({
   class: cls,
   ...attrs
 }: NavigationMenuIndicatorProps): JSX.Element {
-  const { Indicator } = navigationMenu();
   return (
-    <Indicator
+    <NavRows.Indicator
       active={activeProp}
       anchor={anchor}
       class={

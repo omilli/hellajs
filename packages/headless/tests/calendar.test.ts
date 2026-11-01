@@ -2,7 +2,7 @@ import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { signal } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
 import { mount, peekState } from "@hellajs/dom";
-import { calendar } from "@hellajs/headless";
+import { calendar, CalendarRows } from "@hellajs/headless";
 import { pressKey } from "./helpers";
 import type { CalendarComponents } from "@hellajs/headless";
 
@@ -369,7 +369,7 @@ describe("calendar", () => {
   });
 
   test("the DayButton part renders the manual composition flags", () => {
-    const { DayButton } = calendar();
+    const { DayButton } = CalendarRows;
     const el = mountPart(
       DayButton({ day: new Date(2025, 2, 14), selectedSingle: true, focused: true, today: true }),
     );

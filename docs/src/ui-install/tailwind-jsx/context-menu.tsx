@@ -1,4 +1,4 @@
-import { menu } from "@hellajs/headless";
+import { menu, menuSub, MenuRows } from "@hellajs/headless";
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 interface MenuEntry {
@@ -81,9 +81,8 @@ export function ContextMenuGroup({
   class: cls,
   ...attrs
 }: ContextMenuPartProps): JSX.Element {
-  const { Group } = menu();
   return (
-    <Group
+    <MenuRows.Group
       data-slot="context-menu-group"
       class={
         cn(cls)
@@ -91,7 +90,7 @@ export function ContextMenuGroup({
       {...attrs}
     >
       {children}
-    </Group>
+    </MenuRows.Group>
   );
 }
 
@@ -104,9 +103,8 @@ export function ContextMenuItem({
   class: cls,
   ...attrs
 }: ContextMenuItemProps): JSX.Element {
-  const { Item } = menu();
   return (
-    <Item
+    <MenuRows.Item
       destructive={destructive}
       inset={inset}
       shortcut={shortcutSlot}
@@ -118,7 +116,7 @@ export function ContextMenuItem({
       {...attrs}
     >
       {children}
-    </Item>
+    </MenuRows.Item>
   );
 }
 
@@ -129,9 +127,8 @@ export function ContextMenuCheckboxItem({
   class: cls,
   ...attrs
 }: ContextMenuCheckboxItemProps): JSX.Element {
-  const { CheckboxItem } = menu();
   return (
-    <CheckboxItem
+    <MenuRows.CheckboxItem
       checked={checkedProp}
       onCheckedChange={onCheckedChange}
       data-slot="context-menu-checkbox-item"
@@ -141,7 +138,7 @@ export function ContextMenuCheckboxItem({
       {...attrs}
     >
       {children}
-    </CheckboxItem>
+    </MenuRows.CheckboxItem>
   );
 }
 
@@ -154,9 +151,8 @@ export function ContextMenuRadioGroup({
   class: cls,
   ...attrs
 }: ContextMenuRadioGroupProps): JSX.Element {
-  const { RadioGroup } = menu();
   return (
-    <RadioGroup
+    <MenuRows.RadioGroup
       items={items}
       keyBy={keyBy}
       value={valueProp}
@@ -168,7 +164,7 @@ export function ContextMenuRadioGroup({
       {...attrs}
     >
       {children}
-    </RadioGroup>
+    </MenuRows.RadioGroup>
   );
 }
 
@@ -180,9 +176,8 @@ export function ContextMenuRadioItem({
   class: cls,
   ...attrs
 }: ContextMenuRadioItemProps): JSX.Element {
-  const { RadioItem } = menu();
   return (
-    <RadioItem
+    <MenuRows.RadioItem
       value={value}
       checked={checkedProp}
       onSelect={onSelect}
@@ -193,7 +188,7 @@ export function ContextMenuRadioItem({
       {...attrs}
     >
       {children}
-    </RadioItem>
+    </MenuRows.RadioItem>
   );
 }
 
@@ -203,9 +198,8 @@ export function ContextMenuLabel({
   class: cls,
   ...attrs
 }: ContextMenuLabelProps): JSX.Element {
-  const { Label } = menu();
   return (
-    <Label
+    <MenuRows.Label
       inset={inset}
       data-slot="context-menu-label"
       class={
@@ -214,14 +208,13 @@ export function ContextMenuLabel({
       {...attrs}
     >
       {children}
-    </Label>
+    </MenuRows.Label>
   );
 }
 
 export function ContextMenuSeparator({ class: cls, ...attrs }: ContextMenuPartProps): JSX.Element {
-  const { Separator } = menu();
   return (
-    <Separator
+    <MenuRows.Separator
       data-slot="context-menu-separator"
       class={
         cn("-mx-1 my-1 h-px bg-border", cls)
@@ -236,9 +229,8 @@ export function ContextMenuShortcut({
   class: cls,
   ...attrs
 }: ContextMenuShortcutProps): JSX.Element {
-  const { Shortcut } = menu();
   return (
-    <Shortcut
+    <MenuRows.Shortcut
       data-slot="context-menu-shortcut"
       class={
         cn("ml-auto text-xs tracking-widest text-muted-foreground", cls)
@@ -246,7 +238,7 @@ export function ContextMenuShortcut({
       {...attrs}
     >
       {children}
-    </Shortcut>
+    </MenuRows.Shortcut>
   );
 }
 
@@ -256,7 +248,7 @@ export function ContextMenuSub({
   class: cls,
   ...attrs
 }: ContextMenuSubProps): JSX.Element {
-  const sub = menu().sub();
+  const sub = menuSub();
   return (
     <sub.Trigger
       data-slot="context-menu-sub-trigger"

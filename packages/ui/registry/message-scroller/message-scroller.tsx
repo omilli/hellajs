@@ -1,4 +1,4 @@
-import { messageScroller } from "@hellajs/headless";
+import { messageScroller, ScrollerRows } from "@hellajs/headless";
 import type { MessageScrollerItemProps, MessageScrollerProps } from "./message-scroller-types.js";
 // @hella:styles
 declare const base: string;
@@ -16,9 +16,8 @@ export function MessageScrollerItem({
   class: cls,
   ...attrs
 }: MessageScrollerItemProps): JSX.Element {
-  const { Item } = messageScroller();
   return (
-    <Item
+    <ScrollerRows.Item
       class={
         // @hella:compose
         [item, cls]
@@ -27,7 +26,7 @@ export function MessageScrollerItem({
       {...attrs}
     >
       {children}
-    </Item>
+    </ScrollerRows.Item>
   );
 }
 

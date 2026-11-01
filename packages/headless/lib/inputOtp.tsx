@@ -9,30 +9,86 @@ import type {
 } from "./types/components";
 
 /**
- * Creates the input-otp part set: `Root` + `Group` + `Slot` + `Separator`. The closure owns
+ * The static input-otp display parts: `Group`, `Slot`, `Separator`. State-free
+ * mirrors — the root wires each `Slot`'s character and caret state after
+ * mount — so the registry composes them without spinning an OTP state
+ * machine.
+ *
+ * ```tsx
+ * <OtpRows.Group>
+ *   <OtpRows.Slot index={0} />
+ * </OtpRows.Group>
+ * ```
+ */
+export const OtpRows = {
+  Group: (props: InputOtpGroupProps): JSX.Element => {
+    const { children, class: cls, ...attrs } = props;
+    return (
+      <div data-slot="input-otp-group" class={cls} {...attrs}>
+        {children}
+      </div>
+    );
+  },
+  Slot: (props: InputOtpSlotProps): JSX.Element => {
+    const { index, class: cls, caretWrapClass, caretClass, ...attrs } = props;
+    return (
+      <div data-slot="input-otp-slot" data-index={index} class={cls} {...attrs}>
+        <div class={caretWrapClass} style="display: none">
+          <div class={caretClass} />
+        </div>
+      </div>
+    );
+  },
+  Separator: (props: InputOtpSeparatorProps): JSX.Element => {
+    const { class: cls, ...attrs } = props;
+    return (
+      <div data-slot="input-otp-separator" role="separator" class={cls} {...attrs}>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="lucide lucide-minus"
+          aria-hidden="true"
+        >
+          <path d="M5 12h14" />
+        </svg>
+      </div>
+    );
+  },
+};
+
+/**
+ * Creates the input-otp stateful part set: `Root`. The closure owns
  * the code value — controlled through a `value` accessor when passed, an internal signal when
  * a static string seeds it. One transparent input overlays the slots and holds the whole code,
  * so native caret, selection, and paste keep working; the root remaps the caret onto slot
  * ranges and mirrors each slot's character, active ring, and blinking caret after mount
  * (typing advances the caret slot by slot, backspace clears and retreats, paste fills from the
  * caret, a `pattern` mask rejects non-matching input, and the transition to a full code
- * reports `onComplete` once). `Root` drains the wiring at unmount. Call in component scope so
+ * reports `onComplete` once). `Root` drains the wiring at unmount. The display parts
+ * (`Group`, `Slot`, `Separator`) are the static `OtpRows`. Call in component scope so
  * the state signal disposes with the component.
  *
  * ```tsx
  * const Otp = inputOtp({ value, onValueChange, maxLength: 6 });
  *
  * <Otp.Root>
- *   <Otp.Group>
- *     <Otp.Slot index={0} />
- *     <Otp.Separator />
- *     <Otp.Slot index={1} />
- *   </Otp.Group>
+ *   <OtpRows.Group>
+ *     <OtpRows.Slot index={0} />
+ *     <OtpRows.Separator />
+ *     <OtpRows.Slot index={1} />
+ *   </OtpRows.Group>
  * </Otp.Root>
  * ```
  * @param options Controlled-or-seeded `value`, `maxLength` (default 6), `onValueChange`,
  * `onComplete`, `pattern` mask, `autofocus`, and `disabled`.
- * @returns The part set, composed as `Otp.Root`-style members.
+ * @returns The stateful part set, composed as `Otp.Root`-style members.
  */
 export function inputOtp(options: InputOtpOptions = {}): InputOtpComponents {
   const length = options.maxLength ?? 6;
@@ -243,48 +299,5 @@ export function inputOtp(options: InputOtpOptions = {}): InputOtpComponents {
     );
   };
 
-  const Group = (props: InputOtpGroupProps): JSX.Element => {
-    const { children, class: cls, ...attrs } = props;
-    return (
-      <div data-slot="input-otp-group" class={cls} {...attrs}>
-        {children}
-      </div>
-    );
-  };
-
-  const Slot = (props: InputOtpSlotProps): JSX.Element => {
-    const { index, class: cls, caretWrapClass, caretClass, ...attrs } = props;
-    return (
-      <div data-slot="input-otp-slot" data-index={index} class={cls} {...attrs}>
-        <div class={caretWrapClass} style="display: none">
-          <div class={caretClass} />
-        </div>
-      </div>
-    );
-  };
-
-  const Separator = (props: InputOtpSeparatorProps): JSX.Element => {
-    const { class: cls, ...attrs } = props;
-    return (
-      <div data-slot="input-otp-separator" role="separator" class={cls} {...attrs}>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          class="lucide lucide-minus"
-          aria-hidden="true"
-        >
-          <path d="M5 12h14" />
-        </svg>
-      </div>
-    );
-  };
-
-  return { Root, Group, Slot, Separator };
+  return { Root };
 }

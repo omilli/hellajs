@@ -1,4 +1,4 @@
-import { navigationMenu } from "@hellajs/headless";
+import { navigationMenu, NavRows } from "@hellajs/headless";
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 interface NavigationMenuListProps extends HTMLAttributes<"ul"> {
@@ -290,16 +290,15 @@ export function NavigationMenuList({
   class: cls,
   ...attrs
 }: NavigationMenuListProps): JSX.Element {
-  const { List } = navigationMenu();
   return (
-    <List
+    <NavRows.List
       class={
         [list, cls]
       }
       {...attrs}
     >
       {children}
-    </List>
+    </NavRows.List>
   );
 }
 
@@ -308,16 +307,15 @@ export function NavigationMenuItem({
   class: cls,
   ...attrs
 }: NavigationMenuItemProps): JSX.Element {
-  const { Item } = navigationMenu();
   return (
-    <Item
+    <NavRows.Item
       class={
         [item, cls]
       }
       {...attrs}
     >
       {children}
-    </Item>
+    </NavRows.Item>
   );
 }
 
@@ -375,9 +373,8 @@ export function NavigationMenuLink({
   class: cls,
   ...attrs
 }: NavigationMenuLinkProps): JSX.Element {
-  const { Link } = navigationMenu();
   return (
-    <Link
+    <NavRows.Link
       active={active}
       class={
         [link, cls]
@@ -385,7 +382,7 @@ export function NavigationMenuLink({
       {...attrs}
     >
       {children}
-    </Link>
+    </NavRows.Link>
   );
 }
 
@@ -414,9 +411,8 @@ export function NavigationMenuIndicator({
   class: cls,
   ...attrs
 }: NavigationMenuIndicatorProps): JSX.Element {
-  const { Indicator } = navigationMenu();
   return (
-    <Indicator
+    <NavRows.Indicator
       active={activeProp}
       anchor={anchor}
       class={

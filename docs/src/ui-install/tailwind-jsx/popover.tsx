@@ -1,4 +1,4 @@
-import { popover } from "@hellajs/headless";
+import { popover, PopoverRows } from "@hellajs/headless";
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 interface PopoverPartProps extends HTMLAttributes<"div"> {
@@ -23,30 +23,28 @@ interface PopoverProps extends HTMLAttributes<"button"> {
 import { cn } from "./cn.js";
 
 export function PopoverHeader({ children, class: cls, ...attrs }: PopoverPartProps): JSX.Element {
-  const { Header } = popover();
   return (
-    <Header
+    <PopoverRows.Header
       class={
         cn("flex flex-col gap-1 text-sm", cls)
       }
       {...attrs}
     >
       {children}
-    </Header>
+    </PopoverRows.Header>
   );
 }
 
 export function PopoverTitle({ children, class: cls, ...attrs }: PopoverPartProps): JSX.Element {
-  const { Title } = popover();
   return (
-    <Title
+    <PopoverRows.Title
       class={
         cn("font-medium", cls)
       }
       {...attrs}
     >
       {children}
-    </Title>
+    </PopoverRows.Title>
   );
 }
 
@@ -55,16 +53,15 @@ export function PopoverDescription({
   class: cls,
   ...attrs
 }: PopoverDescriptionProps): JSX.Element {
-  const { Description } = popover();
   return (
-    <Description
+    <PopoverRows.Description
       class={
         cn("text-muted-foreground", cls)
       }
       {...attrs}
     >
       {children}
-    </Description>
+    </PopoverRows.Description>
   );
 }
 

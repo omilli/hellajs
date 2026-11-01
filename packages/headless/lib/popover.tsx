@@ -15,13 +15,50 @@ import type {
 let popoverCount = 0;
 
 /**
- * Creates the popover part set: `Trigger`, `Anchor`, `Content`, `Header`,
- * `Title`, `Description`. The closure owns the open state — controlled
- * through an `open` getter when passed, an internal signal when omitted —
- * the exit machine, and the generated content id. `Content` portals to
- * `document.body`, anchors to the `Anchor` node (then the `Trigger` node),
- * and arms the anchored-layer engine while open. Call in component scope so
- * the state machine's effect disposes with the component.
+ * The static popover structural parts: `Header`, `Title`, `Description`.
+ * State-free, so the registry composes them without spinning a popover
+ * state machine.
+ *
+ * ```tsx
+ * <PopoverRows.Title>Settings</PopoverRows.Title>
+ * ```
+ */
+export const PopoverRows = {
+  Header: (props: PopoverPartProps): JSX.Element => {
+    const { children, class: cls, ...attrs } = props;
+    return (
+      <div data-slot="popover-header" class={cls} {...attrs}>
+        {children}
+      </div>
+    );
+  },
+  Title: (props: PopoverPartProps): JSX.Element => {
+    const { children, class: cls, ...attrs } = props;
+    return (
+      <div data-slot="popover-title" class={cls} {...attrs}>
+        {children}
+      </div>
+    );
+  },
+  Description: (props: PopoverDescriptionProps): JSX.Element => {
+    const { children, class: cls, ...attrs } = props;
+    return (
+      <p data-slot="popover-description" class={cls} {...attrs}>
+        {children}
+      </p>
+    );
+  },
+};
+
+/**
+ * Creates the popover stateful part set: `Trigger`, `Anchor`, `Content`.
+ * The closure owns the open state — controlled through an `open` getter when
+ * passed, an internal signal when omitted — the exit machine, and the
+ * generated content id. `Content` portals to `document.body`, anchors to the
+ * `Anchor` node (then the `Trigger` node), and arms the anchored-layer engine
+ * while open. The structural parts (`Header`, `Title`, `Description`) are the
+ * static `PopoverRows`. Call in component scope so the state machine's
+ * effect disposes with the component.
  *
  * ```tsx
  * const Popover = popover({ open, onOpenChange });
@@ -30,7 +67,7 @@ let popoverCount = 0;
  * <Popover.Content side="bottom">...</Popover.Content>
  * ```
  * @param options `open` getter + `onOpenChange` + optional `anchor` override; an omitted `open` keeps state internal.
- * @returns The six part components, composed as `Popover.Trigger`-style members.
+ * @returns The stateful part components, composed as `Popover.Trigger`-style members.
  */
 export function popover(options: PopoverOptions = {}): PopoverComponents {
   const open = options.open;
@@ -158,32 +195,5 @@ export function popover(options: PopoverOptions = {}): PopoverComponents {
     );
   };
 
-  const Header = (props: PopoverPartProps): JSX.Element => {
-    const { children, class: cls, ...attrs } = props;
-    return (
-      <div data-slot="popover-header" class={cls} {...attrs}>
-        {children}
-      </div>
-    );
-  };
-
-  const Title = (props: PopoverPartProps): JSX.Element => {
-    const { children, class: cls, ...attrs } = props;
-    return (
-      <div data-slot="popover-title" class={cls} {...attrs}>
-        {children}
-      </div>
-    );
-  };
-
-  const Description = (props: PopoverDescriptionProps): JSX.Element => {
-    const { children, class: cls, ...attrs } = props;
-    return (
-      <p data-slot="popover-description" class={cls} {...attrs}>
-        {children}
-      </p>
-    );
-  };
-
-  return { Trigger, Anchor, Content, Header, Title, Description };
+  return { Trigger, Anchor, Content };
 }

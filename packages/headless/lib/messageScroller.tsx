@@ -11,15 +11,36 @@ import type {
 } from "./types/components";
 
 /**
- * Creates the message-scroller part set: `Provider` + `Root` + `Viewport` +
- * `Content` + `Item` + `Button`. The closure owns the at-bottom state —
+ * The static message-scroller row: `Item`, the content-visibility-sized
+ * message row. State-free, so the registry composes it without spinning a
+ * scroller state machine.
+ *
+ * ```tsx
+ * <ScrollerRows.Item>{message}</ScrollerRows.Item>
+ * ```
+ */
+export const ScrollerRows = {
+  Item: (props: MessageScrollerItemProps): JSX.Element => {
+    const { children, class: cls, ...attrs } = props;
+    return (
+      <div data-slot="message-scroller-item" class={cls} {...attrs}>
+        {children}
+      </div>
+    );
+  },
+};
+
+/**
+ * Creates the message-scroller stateful part set: `Provider` + `Root` +
+ * `Viewport` + `Content` + `Button`. The closure owns the at-bottom state —
  * the `atBottom` signal when passed, an internal signal seeded `true` when
  * omitted — and the scroll action: `Viewport` flips the state as the user
  * scrolls, sticks to the bottom on content growth while at-bottom (leaving the
  * position alone when scrolled away), and `Button` reports the state through
  * `data-active` and jumps back to the bottom on click. Compose `Content`
- * inside `Viewport`; compose `Button` beside it. Call in component scope so
- * the internal state signal disposes with the component.
+ * inside `Viewport`; compose `Button` beside it. The message row is the
+ * static `ScrollerRows.Item`. Call in component scope so the internal state
+ * signal disposes with the component.
  *
  * ```tsx
  * const Scroller = messageScroller({ atBottom });
@@ -106,15 +127,6 @@ export function messageScroller(options: MessageScrollerOptions = {}): MessageSc
     const { children, class: cls, ...attrs } = props;
     return (
       <div data-slot="message-scroller-content" class={cls} {...attrs}>
-        {children}
-      </div>
-    );
-  };
-
-  const Item = (props: MessageScrollerItemProps): JSX.Element => {
-    const { children, class: cls, ...attrs } = props;
-    return (
-      <div data-slot="message-scroller-item" class={cls} {...attrs}>
         {children}
       </div>
     );
@@ -212,5 +224,5 @@ export function messageScroller(options: MessageScrollerOptions = {}): MessageSc
     );
   };
 
-  return { Provider, Root, Viewport, Content, Item, Button };
+  return { Provider, Root, Viewport, Content, Button };
 }

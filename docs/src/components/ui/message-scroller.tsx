@@ -1,4 +1,4 @@
-import { messageScroller } from "@hellajs/headless";
+import { messageScroller, ScrollerRows } from "@hellajs/headless";
 import type { Signal } from "@hellajs/core";
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
@@ -296,16 +296,15 @@ export function MessageScrollerItem({
   class: cls,
   ...attrs
 }: MessageScrollerItemProps): JSX.Element {
-  const { Item } = messageScroller();
   return (
-    <Item
+    <ScrollerRows.Item
       class={
         [item, cls]
       }
       {...attrs}
     >
       {children}
-    </Item>
+    </ScrollerRows.Item>
   );
 }
 

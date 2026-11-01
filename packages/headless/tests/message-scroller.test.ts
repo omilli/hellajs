@@ -2,7 +2,7 @@ import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { signal } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
 import { mount, peekState } from "@hellajs/dom";
-import { messageScroller } from "@hellajs/headless";
+import { messageScroller, ScrollerRows } from "@hellajs/headless";
 import type { MessageScrollerOptions } from "@hellajs/headless";
 
 beforeEach(() => {
@@ -224,7 +224,7 @@ describe("message-scroller", () => {
       parts.Root({
         children: [
           parts.Viewport({
-            children: [parts.Content({ children: [parts.Item({ children: ["m1"] })] })],
+            children: [parts.Content({ children: [ScrollerRows.Item({ children: ["m1"] })] })],
           }),
         ],
       }),

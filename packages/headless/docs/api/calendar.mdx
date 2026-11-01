@@ -1,6 +1,6 @@
 # calendar
 
-Creates the calendar components in one call: the month view, its selection model, and the day grid. The closure owns the visible month, the selection in the mode's shape, the roving focus key, and the range hover preview; `Grid` renders the whole `role="grid"` table from that view model and carries the keyboard model.
+Creates the calendar components in one call: the month view, its selection model, and the day grid. The closure owns the visible month, the selection in the mode's shape, the roving focus key, and the range hover preview; `Grid` renders the whole `role="grid"` table from that view model and carries the keyboard model. The manual-composition day button is the static `CalendarRows.DayButton`.
 
 ## Basic Usage
 
@@ -53,7 +53,13 @@ function calendar(options?: CalendarOptions): CalendarComponents
 - `options.showOutsideDays`: Renders leading/trailing adjacent-month days; defaults to `true`.
 - `options.fixedWeeks`: Always renders six week rows so month-to-month navigation never resizes the grid.
 - `options.weekStartsOn`: First day of the week; `0` = Sunday (default) through `6` = Saturday.
-- **Returns**: The component set, composed as `Cal.Root`-style members.
+- **Returns**: The stateful component set, composed as `Cal.Root`-style members.
+
+The day button stands beside the factory, shared by every instance:
+
+```typescript
+const CalendarRows: CalendarRows
+```
 
 ### Components
 
@@ -67,6 +73,11 @@ function calendar(options?: CalendarOptions): CalendarComponents
 | `Nav` | The navigation bar wrapping the previous/next buttons |
 | `PrevButton` / `NextButton` | Buttons that page the month one step, with the `aria-label`s; children replace the icon slot |
 | `Grid` | The `role="grid"` table rendered from the view model (weekday header, week rows, day cells with their aria semantics) with the keyboard model wired on it |
+
+### CalendarRows components
+
+| Component | Renders |
+|---|---|
 | `DayButton` | The manual-composition day button carrying the aria semantics; the grid renders one per cell |
 
 Every component spreads `class` and native attributes onto its element; components own structure, styling stays in the wrapper. `Grid` additionally takes the inner class hooks (`weekdaysClass`, `weekdayClass`, `weekClass`, `dayClass`, `dayButtonClass`) for the slots it renders.
@@ -112,4 +123,4 @@ Selection and the visible month are each controlled-or-internal: pass an accesso
 
 ### DayButton for Manual Composition
 
-`DayButton` is the manual-composition day component: its state flags (`selectedSingle`, `rangeStart`/`rangeEnd`/`rangeMiddle`, `disabled`, `focused`) take plain booleans or reactive accessors, so a composed calendar drives them live while a standalone call passes static values. The grid renders its own day buttons from the view model; `DayButton` is for compositions that render cells outside `Grid`.
+`CalendarRows.DayButton` is the manual-composition day component: its state flags (`selectedSingle`, `rangeStart`/`rangeEnd`/`rangeMiddle`, `disabled`, `focused`) take plain booleans or reactive accessors, so a composed calendar drives them live while a standalone call passes static values. The grid renders its own day buttons from the view model; `DayButton` is for compositions that render cells outside `Grid`.

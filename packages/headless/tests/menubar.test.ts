@@ -2,7 +2,7 @@ import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
 import { mount, peekState } from "@hellajs/dom";
-import { menubar } from "@hellajs/headless";
+import { menubar, menuSub, MenuRows } from "@hellajs/headless";
 import { pointerEnter, pressKey } from "./helpers";
 
 beforeEach(() => {
@@ -43,9 +43,9 @@ function mountBar(options?: Parameters<typeof menubar>[0]): {
     instance.Bar({
       children: [
         file.Trigger({ children: "File" }),
-        file.Content({ children: [file.Item({ children: "Open" })] }),
+        file.Content({ children: [MenuRows.Item({ children: "Open" })] }),
         edit.Trigger({ children: "Edit" }),
-        edit.Content({ children: [edit.Item({ children: "Copy" })] }),
+        edit.Content({ children: [MenuRows.Item({ children: "Copy" })] }),
       ],
     }),
     container,
@@ -131,7 +131,7 @@ describe("menubar", () => {
       instance.Bar({
         children: [
           only.Trigger({ children: "Only" }),
-          only.Content({ children: [only.Item({ children: "Item" })] }),
+          only.Content({ children: [MenuRows.Item({ children: "Item" })] }),
         ],
       }),
       container,
@@ -148,7 +148,7 @@ describe("menubar", () => {
   test("a bar menu exposes the same submenu factory as a plain menu", async () => {
     const instance = menubar();
     const only = instance.menu({ value: "only" });
-    const sub = only.sub();
+    const sub = menuSub();
     const container = document.createElement("div");
     document.body.append(container);
     mount(
@@ -158,7 +158,7 @@ describe("menubar", () => {
           only.Content({
             children: [
               sub.Trigger({ children: "More" }),
-              sub.Content({ children: [only.Item({ children: "Export" })] }),
+              sub.Content({ children: [MenuRows.Item({ children: "Export" })] }),
             ],
           }),
         ],
@@ -186,7 +186,7 @@ describe("menubar", () => {
       instance.Bar({
         children: [
           only.Trigger({ children: "Only" }),
-          only.Content({ children: [only.Item({ children: "Item" })] }),
+          only.Content({ children: [MenuRows.Item({ children: "Item" })] }),
         ],
       }),
       container,

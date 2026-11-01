@@ -370,10 +370,25 @@ function makeItemComponents() {
   return { Group, Item, CheckboxItem, RadioGroup, RadioItem, Label, Separator, Shortcut };
 }
 
-type ItemComponents = ReturnType<typeof makeItemComponents>;
+/**
+ * The static menu row parts shared verbatim by `menu()`, `menubar()`'s bar
+ * menus, and `menuSub()`: the selectable rows (`Item`, `CheckboxItem`,
+ * `RadioGroup`, `RadioItem`) and the structural rows (`Label`, `Separator`,
+ * `Group`, `Shortcut`). Item selection closes every open layer unless the
+ * item opts out. State-free, so the registry composes them without spinning
+ * a menu state machine.
+ *
+ * ```tsx
+ * <MenuRows.Item onSelect={save}>Save</MenuRows.Item>
+ * ```
+ */
+export const MenuRows = makeItemComponents();
 
 /** A nested menu factory: its own controlled-or-internal open state, hover-intent trigger, and a content layer anchored to its own trigger on the shared layer stack. */
-function makeSubComponents(items: ItemComponents, options: MenuSubOptions = {}): MenuSubComponents {
+function makeSubComponents(
+  items: typeof MenuRows,
+  options: MenuSubOptions = {},
+): MenuSubComponents {
   const s = menuOpenState(options);
   let triggerNode: HTMLElement | undefined;
   // Hovering the portaled content cancels the trigger's scheduled close (the
@@ -532,25 +547,46 @@ function makeSubComponents(items: ItemComponents, options: MenuSubOptions = {}):
   return { Trigger, Content, ...items };
 }
 
+/**
+ * Creates the nested submenu part set: `Trigger`, `Content`, plus the static
+ * `MenuRows`. The closure owns the submenu's controlled-or-internal open
+ * state, the hover-intent trigger, and the content layer anchored to its own
+ * trigger on the shared layer stack. Call in component scope so the state
+ * machine's effect disposes with the component.
+ *
+ * ```tsx
+ * const Sub = menuSub();
+ *
+ * <Sub.Trigger>Export</Sub.Trigger>
+ * <Sub.Content>
+ *   <MenuRows.Item onSelect={exportAll}>All</MenuRows.Item>
+ * </Sub.Content>
+ * ```
+ * @param options `open` getter + `onOpenChange`; an omitted `open` keeps state internal.
+ * @returns The submenu part set, composed as `Sub.Trigger`-style members.
+ */
+export function menuSub(options: MenuSubOptions = {}): MenuSubComponents {
+  return makeSubComponents(MenuRows, options);
+}
+
 let menuCount = 0;
 
 /**
- * Creates the menu part set: `Trigger`, `Content`, the selectable rows
- * (`Item`, `CheckboxItem`, `RadioGroup`, `RadioItem`), the structural rows
- * (`Label`, `Separator`, `Group`, `Shortcut`), and `sub()` for nested
- * submenus. The closure owns the open state — controlled through an `open`
- * getter when passed, an internal signal when omitted — the exit machine, and
- * the generated content id. `Content` portals to `document.body`, anchors to
- * the trigger (or the virtual pointer anchor in contextmenu mode), and arms
- * typeahead, roving arrows, and stacked dismissal while open. Call in
- * component scope so the state machine's effect disposes with the component.
+ * Creates the menu stateful part set: `Trigger` and `Content`. The closure
+ * owns the open state — controlled through an `open` getter when passed, an
+ * internal signal when omitted — the exit machine, and the generated content
+ * id. `Content` portals to `document.body`, anchors to the trigger (or the
+ * virtual pointer anchor in contextmenu mode), and arms typeahead, roving
+ * arrows, and stacked dismissal while open. The row parts are the static
+ * `MenuRows`, and nested submenus come from `menuSub()`. Call in component
+ * scope so the state machine's effect disposes with the component.
  *
  * ```tsx
  * const Menu = menu({ onOpenChange });
  *
  * <Menu.Trigger>Actions</Menu.Trigger>
  * <Menu.Content side="bottom">
- *   <Menu.Item onSelect={save}>Save</Menu.Item>
+ *   <MenuRows.Item onSelect={save}>Save</MenuRows.Item>
  * </Menu.Content>
  * ```
  * @param options `open` getter + `onOpenChange`, plus the trigger model — `"click"` (default) or `"contextmenu"` for pointer-anchored menus.
@@ -559,7 +595,6 @@ let menuCount = 0;
 export function menu(options: MenuOptions = {}): MenuComponents {
   const mode = options.trigger ?? "click";
   const s = menuOpenState(options);
-  const items = makeItemComponents();
   const contentId = `hella-menu-content-${++menuCount}`;
   let triggerNode: HTMLElement | undefined;
   let anchorNode: HTMLElement | undefined;
@@ -744,8 +779,6 @@ export function menu(options: MenuOptions = {}): MenuComponents {
   return {
     Trigger: mode === "contextmenu" ? ContextTrigger : Trigger,
     Content,
-    ...items,
-    sub: (subOptions?: MenuSubOptions) => makeSubComponents(items, subOptions),
   };
 }
 
@@ -848,7 +881,6 @@ export function menubar(options: MenubarOptions = {}): MenubarComponents {
 
   const menu = (menuOptions: MenubarMenuOptions = {}): MenuComponents => {
     const s = menuOpenState(menuOptions);
-    const items = makeItemComponents();
     const menuId = menuOptions.value ?? `hella-menubar-menu-${++menubarMenuCount}`;
     const contentId = `${menuId}-content`;
     let triggerNode: HTMLElement | undefined;
@@ -1016,12 +1048,7 @@ export function menubar(options: MenubarOptions = {}): MenubarComponents {
       );
     };
 
-    return {
-      Trigger,
-      Content,
-      ...items,
-      sub: (subOptions?: MenuSubOptions) => makeSubComponents(items, subOptions),
-    };
+    return { Trigger, Content };
   };
 
   return { Bar, menu };

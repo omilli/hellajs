@@ -1,4 +1,4 @@
-import { popover } from "@hellajs/headless";
+import { popover, PopoverRows } from "@hellajs/headless";
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 interface PopoverPartProps extends HTMLAttributes<"div"> {
@@ -130,30 +130,28 @@ const description = style("popover-description", {
 });
 
 export function PopoverHeader({ children, class: cls, ...attrs }: PopoverPartProps): JSX.Element {
-  const { Header } = popover();
   return (
-    <Header
+    <PopoverRows.Header
       class={
         [header, cls]
       }
       {...attrs}
     >
       {children}
-    </Header>
+    </PopoverRows.Header>
   );
 }
 
 export function PopoverTitle({ children, class: cls, ...attrs }: PopoverPartProps): JSX.Element {
-  const { Title } = popover();
   return (
-    <Title
+    <PopoverRows.Title
       class={
         [title, cls]
       }
       {...attrs}
     >
       {children}
-    </Title>
+    </PopoverRows.Title>
   );
 }
 
@@ -162,16 +160,15 @@ export function PopoverDescription({
   class: cls,
   ...attrs
 }: PopoverDescriptionProps): JSX.Element {
-  const { Description } = popover();
   return (
-    <Description
+    <PopoverRows.Description
       class={
         [description, cls]
       }
       {...attrs}
     >
       {children}
-    </Description>
+    </PopoverRows.Description>
   );
 }
 

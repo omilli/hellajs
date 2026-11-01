@@ -1,4 +1,4 @@
-import { menu } from "@hellajs/headless";
+import { menu, menuSub, MenuRows } from "@hellajs/headless";
 import type {
   DropdownMenuPartProps,
   DropdownMenuItemProps,
@@ -29,9 +29,8 @@ export function DropdownMenuGroup({
   class: cls,
   ...attrs
 }: DropdownMenuPartProps): JSX.Element {
-  const { Group } = menu();
   return (
-    <Group
+    <MenuRows.Group
       data-slot="dropdown-menu-group"
       class={
         // @hella:compose
@@ -41,7 +40,7 @@ export function DropdownMenuGroup({
       {...attrs}
     >
       {children}
-    </Group>
+    </MenuRows.Group>
   );
 }
 
@@ -54,9 +53,8 @@ export function DropdownMenuItem({
   class: cls,
   ...attrs
 }: DropdownMenuItemProps): JSX.Element {
-  const { Item } = menu();
   return (
-    <Item
+    <MenuRows.Item
       destructive={destructive}
       inset={inset}
       shortcut={shortcutSlot}
@@ -70,7 +68,7 @@ export function DropdownMenuItem({
       {...attrs}
     >
       {children}
-    </Item>
+    </MenuRows.Item>
   );
 }
 
@@ -81,9 +79,8 @@ export function DropdownMenuCheckboxItem({
   class: cls,
   ...attrs
 }: DropdownMenuCheckboxItemProps): JSX.Element {
-  const { CheckboxItem } = menu();
   return (
-    <CheckboxItem
+    <MenuRows.CheckboxItem
       checked={checkedProp}
       onCheckedChange={onCheckedChange}
       data-slot="dropdown-menu-checkbox-item"
@@ -95,7 +92,7 @@ export function DropdownMenuCheckboxItem({
       {...attrs}
     >
       {children}
-    </CheckboxItem>
+    </MenuRows.CheckboxItem>
   );
 }
 
@@ -108,9 +105,8 @@ export function DropdownMenuRadioGroup({
   class: cls,
   ...attrs
 }: DropdownMenuRadioGroupProps): JSX.Element {
-  const { RadioGroup } = menu();
   return (
-    <RadioGroup
+    <MenuRows.RadioGroup
       items={items}
       keyBy={keyBy}
       value={valueProp}
@@ -124,7 +120,7 @@ export function DropdownMenuRadioGroup({
       {...attrs}
     >
       {children}
-    </RadioGroup>
+    </MenuRows.RadioGroup>
   );
 }
 
@@ -136,9 +132,8 @@ export function DropdownMenuRadioItem({
   class: cls,
   ...attrs
 }: DropdownMenuRadioItemProps): JSX.Element {
-  const { RadioItem } = menu();
   return (
-    <RadioItem
+    <MenuRows.RadioItem
       value={value}
       checked={checkedProp}
       onSelect={onSelect}
@@ -151,7 +146,7 @@ export function DropdownMenuRadioItem({
       {...attrs}
     >
       {children}
-    </RadioItem>
+    </MenuRows.RadioItem>
   );
 }
 
@@ -161,9 +156,8 @@ export function DropdownMenuLabel({
   class: cls,
   ...attrs
 }: DropdownMenuLabelProps): JSX.Element {
-  const { Label } = menu();
   return (
-    <Label
+    <MenuRows.Label
       inset={inset}
       data-slot="dropdown-menu-label"
       class={
@@ -174,7 +168,7 @@ export function DropdownMenuLabel({
       {...attrs}
     >
       {children}
-    </Label>
+    </MenuRows.Label>
   );
 }
 
@@ -182,9 +176,8 @@ export function DropdownMenuSeparator({
   class: cls,
   ...attrs
 }: DropdownMenuPartProps): JSX.Element {
-  const { Separator } = menu();
   return (
-    <Separator
+    <MenuRows.Separator
       data-slot="dropdown-menu-separator"
       class={
         // @hella:compose
@@ -201,9 +194,8 @@ export function DropdownMenuShortcut({
   class: cls,
   ...attrs
 }: DropdownMenuShortcutProps): JSX.Element {
-  const { Shortcut } = menu();
   return (
-    <Shortcut
+    <MenuRows.Shortcut
       data-slot="dropdown-menu-shortcut"
       class={
         // @hella:compose
@@ -213,7 +205,7 @@ export function DropdownMenuShortcut({
       {...attrs}
     >
       {children}
-    </Shortcut>
+    </MenuRows.Shortcut>
   );
 }
 
@@ -223,7 +215,7 @@ export function DropdownMenuSub({
   class: cls,
   ...attrs
 }: DropdownMenuSubProps): JSX.Element {
-  const sub = menu().sub();
+  const sub = menuSub();
   return (
     <sub.Trigger
       data-slot="dropdown-menu-sub-trigger"

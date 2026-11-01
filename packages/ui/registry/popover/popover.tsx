@@ -1,4 +1,4 @@
-import { popover } from "@hellajs/headless";
+import { popover, PopoverRows } from "@hellajs/headless";
 import type { PopoverPartProps, PopoverDescriptionProps, PopoverProps } from "./popover-types.js";
 
 // @hella:styles
@@ -10,9 +10,8 @@ declare const title: string;
 // @hella:end
 
 export function PopoverHeader({ children, class: cls, ...attrs }: PopoverPartProps): JSX.Element {
-  const { Header } = popover();
   return (
-    <Header
+    <PopoverRows.Header
       class={
         // @hella:compose
         [header, cls]
@@ -21,14 +20,13 @@ export function PopoverHeader({ children, class: cls, ...attrs }: PopoverPartPro
       {...attrs}
     >
       {children}
-    </Header>
+    </PopoverRows.Header>
   );
 }
 
 export function PopoverTitle({ children, class: cls, ...attrs }: PopoverPartProps): JSX.Element {
-  const { Title } = popover();
   return (
-    <Title
+    <PopoverRows.Title
       class={
         // @hella:compose
         [title, cls]
@@ -37,7 +35,7 @@ export function PopoverTitle({ children, class: cls, ...attrs }: PopoverPartProp
       {...attrs}
     >
       {children}
-    </Title>
+    </PopoverRows.Title>
   );
 }
 
@@ -46,9 +44,8 @@ export function PopoverDescription({
   class: cls,
   ...attrs
 }: PopoverDescriptionProps): JSX.Element {
-  const { Description } = popover();
   return (
-    <Description
+    <PopoverRows.Description
       class={
         // @hella:compose
         [description, cls]
@@ -57,7 +54,7 @@ export function PopoverDescription({
       {...attrs}
     >
       {children}
-    </Description>
+    </PopoverRows.Description>
   );
 }
 

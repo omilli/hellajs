@@ -7,7 +7,7 @@ Creates a desktop-style menu bar: the `Bar` root plus a `menu()` factory whose m
 ```tsx
 import { signal } from "@hellajs/core";
 import { mount } from "@hellajs/dom";
-import { menubar } from "@hellajs/headless";
+import { menubar, menuSub, MenuRows } from "@hellajs/headless";
 
 const openMenu = signal("");
 
@@ -18,22 +18,22 @@ const Menubar = menubar({
 
 const File = Menubar.menu({ value: "file" });
 const Edit = Menubar.menu({ value: "edit" });
-const Export = File.sub();
+const Export = menuSub();
 
 mount(
   <Menubar.Bar>
     <File.Trigger>File</File.Trigger>
     <File.Content>
-      <File.Item shortcut="⌘O">Open</File.Item>
+      <MenuRows.Item shortcut="⌘O">Open</MenuRows.Item>
       <Export.Trigger>Export</Export.Trigger>
       <Export.Content>
-        <Export.Item>As PDF</Export.Item>
+        <MenuRows.Item>As PDF</MenuRows.Item>
       </Export.Content>
     </File.Content>
     <Edit.Trigger>Edit</Edit.Trigger>
     <Edit.Content>
-      <Edit.Item>Copy</Edit.Item>
-      <Edit.Item>Paste</Edit.Item>
+      <MenuRows.Item>Copy</MenuRows.Item>
+      <MenuRows.Item>Paste</MenuRows.Item>
     </Edit.Content>
   </Menubar.Bar>,
   "#app",
@@ -72,7 +72,7 @@ function menu(options?: MenubarMenuOptions): MenuComponents
 
 - `options.value`: This menu's id in the bar's open-menu value; a generated id stands in when omitted.
 - `options.open`, `options.onOpenChange`: The same controlled-or-internal open state as [`menu`](/headless/menu).
-- **Returns**: The full menu component set (`Trigger`, `Content`, `Item`, `CheckboxItem`, `RadioGroup`, `RadioItem`, `Label`, `Separator`, `Group`, `Shortcut`, `sub()`).
+- **Returns**: The stateful menu pair (`Trigger`, `Content`); the rows come from the static `MenuRows`, and nested submenus from [`menuSub`](/headless/menu).
 
 ## Key Concepts
 
@@ -86,7 +86,7 @@ Inside an open bar menu, both horizontal arrows hand off to the adjacent trigger
 
 ### Bar Menu Content Defaults
 
-A bar menu's content drops below its trigger with a wider gap (`sideOffset` 8, `alignOffset` -4) and the full component set of [`menu`](/headless/menu), including `sub()` for nested submenus.
+A bar menu's content drops below its trigger with a wider gap (`sideOffset` 8, `alignOffset` -4) and the same stateful pair as [`menu`](/headless/menu), with `menuSub()` for nested submenus.
 
 ## Important Considerations
 

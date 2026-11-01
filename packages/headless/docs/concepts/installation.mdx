@@ -20,7 +20,7 @@ A component, straight from the barrel:
 ```tsx
 import { signal } from "@hellajs/core";
 import { mount } from "@hellajs/dom";
-import { popover } from "@hellajs/headless";
+import { popover, PopoverRows } from "@hellajs/headless";
 
 const open = signal(false);
 
@@ -33,8 +33,8 @@ mount(
   <div>
     <Popover.Trigger>Settings</Popover.Trigger>
     <Popover.Content side="bottom">
-      <Popover.Title>Dimensions</Popover.Title>
-      <Popover.Description>Set the layer size.</Popover.Description>
+      <PopoverRows.Title>Dimensions</PopoverRows.Title>
+      <PopoverRows.Description>Set the layer size.</PopoverRows.Description>
     </Popover.Content>
   </div>,
   "#app",

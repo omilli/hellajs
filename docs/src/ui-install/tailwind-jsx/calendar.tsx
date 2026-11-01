@@ -1,4 +1,4 @@
-import { calendar } from "@hellajs/headless";
+import { calendar, CalendarRows } from "@hellajs/headless";
 import type { HTMLAttributes } from "@hellajs/dom";
 
 type CalendarMode = "single" | "multiple" | "range";
@@ -231,9 +231,8 @@ export function Calendar({
  * calendar drives them live while a standalone call passes static values.
  */
 export function CalendarDayButton({ class: cls, ...attrs }: CalendarDayButtonProps): JSX.Element {
-  const { DayButton } = calendar();
   return (
-    <DayButton
+    <CalendarRows.DayButton
       class={
         cn("flex shrink-0 aspect-square size-auto w-full min-w-(--cell-size) flex-col items-center justify-center gap-1 rounded-md text-sm font-normal leading-none whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&>span]:text-xs [&>span]:opacity-70 hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 dark:hover:text-accent-foreground group-data-[focused=true]/day:relative group-data-[focused=true]/day:z-10 group-data-[focused=true]/day:border-ring group-data-[focused=true]/day:ring-[3px] group-data-[focused=true]/day:ring-ring/50 data-[range-end=true]:rounded-md data-[range-end=true]:rounded-r-md data-[range-end=true]:bg-primary data-[range-end=true]:text-primary-foreground data-[range-middle=true]:rounded-none data-[range-middle=true]:bg-accent data-[range-middle=true]:text-accent-foreground data-[range-start=true]:rounded-md data-[range-start=true]:rounded-l-md data-[range-start=true]:bg-primary data-[range-start=true]:text-primary-foreground data-[selected-single=true]:bg-primary data-[selected-single=true]:text-primary-foreground", cls)
       }

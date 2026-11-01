@@ -2,7 +2,7 @@ import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { signal } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
 import { mount, peekState } from "@hellajs/dom";
-import { navigationMenu } from "@hellajs/headless";
+import { navigationMenu, NavRows } from "@hellajs/headless";
 
 beforeEach(() => {
   resetTestState();
@@ -71,15 +71,15 @@ function mountNav(
   mount(
     parts.Root({
       children: [
-        parts.List({
+        NavRows.List({
           children: [
-            parts.Item({
+            NavRows.Item({
               children: [
                 parts.Trigger({ value: "learn", children: "Learn" }),
                 parts.Content({ value: "learn", children: "Learn body" }),
               ],
             }),
-            parts.Item({
+            NavRows.Item({
               children: [
                 parts.Trigger({ value: "reference", children: "Reference" }),
                 parts.Content({ value: "reference", children: "Reference body" }),
@@ -87,7 +87,7 @@ function mountNav(
             }),
           ],
         }),
-        parts.Indicator({}),
+        NavRows.Indicator({}),
       ],
       ...(options ? { viewport: options.viewport } : {}),
     }),
@@ -286,7 +286,7 @@ describe("navigationMenu", () => {
     mount(
       parts.Root({
         children: [
-          parts.Item({
+          NavRows.Item({
             children: [
               parts.Trigger({ value: "learn", children: "Learn" }),
               parts.Content({ value: "learn", onExited, children: "Learn body" }),
@@ -360,7 +360,6 @@ describe("navigationMenu", () => {
   });
 
   test("an anchor override points the indicator at the resolved element", async () => {
-    const parts = navigationMenu();
     const anchor = document.createElement("button");
     anchor.setAttribute("data-slot", "navigation-menu-trigger");
     anchor.setAttribute("data-value", "manual");
@@ -372,7 +371,7 @@ describe("navigationMenu", () => {
     bar.setAttribute("data-slot", "navigation-menu");
     container.append(bar);
     pinRect(bar, 0, 0, 400, 40);
-    mount(parts.Indicator({ anchor: () => anchor }), bar);
+    mount(NavRows.Indicator({ anchor: () => anchor }), bar);
     const indicator = bar.querySelector("[data-slot='navigation-menu-indicator']") as HTMLElement;
     await awaitWiring(indicator);
     expect(indicator.getAttribute("data-state")).toBe("hidden");
@@ -419,7 +418,7 @@ describe("navigationMenu", () => {
     mount(
       parts.Root({
         viewport: false,
-        children: parts.Item({
+        children: NavRows.Item({
           children: [
             parts.Trigger({ value: "learn", children: "Learn" }),
             parts.Content({ value: "learn", viewport: "#manual-viewport", children: "Learn body" }),
@@ -456,14 +455,13 @@ describe("navigationMenu", () => {
   });
 
   test("a link renders data-active and forwards its attributes", () => {
-    const parts = navigationMenu();
     const container = document.createElement("div");
     document.body.append(container);
-    mount(parts.Link({ href: "#docs", active: true, children: "Docs" }), container);
+    mount(NavRows.Link({ href: "#docs", active: true, children: "Docs" }), container);
     const link = container.querySelector("[data-slot='navigation-menu-link']") as HTMLElement;
     expect(link.getAttribute("data-active")).toBe("true");
     expect(link.getAttribute("href")).toBe("#docs");
-    const inactive = parts.Link({ href: "#api", children: "API" });
+    const inactive = NavRows.Link({ href: "#api", children: "API" });
     const scratch = document.createElement("div");
     mount(inactive, scratch);
     expect(
@@ -472,11 +470,10 @@ describe("navigationMenu", () => {
   });
 
   test("list and item render their slots and forward attributes", () => {
-    const parts = navigationMenu();
     const container = document.createElement("div");
     document.body.append(container);
     mount(
-      parts.List({ "aria-label": "site", children: parts.Item({ children: "row" }) }),
+      NavRows.List({ "aria-label": "site", children: NavRows.Item({ children: "row" }) }),
       container,
     );
     const list = container.firstElementChild as HTMLElement;
@@ -524,7 +521,7 @@ describe("navigationMenu", () => {
     const parts = navigationMenu({ onValueChange });
     const container = document.createElement("div");
     document.body.append(container);
-    const handle = mount(parts.Root({ children: parts.Item({ children: "row" }) }), container);
+    const handle = mount(parts.Root({ children: NavRows.Item({ children: "row" }) }), container);
     const root = container.firstElementChild as HTMLElement;
     await awaitWiring(root);
     handle.unmount();
@@ -535,10 +532,9 @@ describe("navigationMenu", () => {
   });
 
   test("unmounting the indicator drops its announcement and resize wiring", async () => {
-    const parts = navigationMenu();
     const container = document.createElement("div");
     document.body.append(container);
-    const handle = mount(parts.Indicator({}), container);
+    const handle = mount(NavRows.Indicator({}), container);
     const indicator = container.firstElementChild as HTMLElement;
     await awaitWiring(indicator);
     handle.unmount();
