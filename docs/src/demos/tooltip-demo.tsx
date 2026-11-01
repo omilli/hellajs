@@ -1,7 +1,5 @@
-import { signal } from "@hellajs/core";
 import { Button } from "@components/ui/button.js";
-import { Tooltip, TooltipContent } from "@components/ui/tooltip.js";
-import { hoverIntent } from "@hellajs/headless/utils";
+import { Tooltip } from "@components/ui/tooltip.js";
 
 export function TooltipDemo() {
   return (
@@ -14,33 +12,6 @@ export function TooltipDemo() {
           <Button variant="outline">Hover: bottom-start</Button>
         </Tooltip>
       </div>
-    </>
-  );
-}
-
-export function TooltipManualDemo() {
-  const open = signal(false);
-  const state = (): "open" | "closed" => (open() ? "open" : "closed");
-  let trigger: Element | undefined;
-
-  return (
-    <>
-      <span
-        aria-describedby="manual-tooltip-content"
-        hook:afterMount={(node: Element) => {
-          trigger = node;
-          hoverIntent(node, {
-            onOpen: () => open(true),
-            onClose: () => open(false),
-            openDelay: 300,
-          });
-        }}
-      >
-        <Button>Hover me</Button>
-      </span>
-      <TooltipContent state={state} id="manual-tooltip-content" anchor={() => trigger}>
-        <p>Wired by hand: state, anchor, and hover timing are all explicit.</p>
-      </TooltipContent>
     </>
   );
 }

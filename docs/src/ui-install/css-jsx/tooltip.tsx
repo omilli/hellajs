@@ -5,32 +5,14 @@ type AnchorSide = "top" | "bottom" | "left" | "right";
 
 type AnchorAlign = "start" | "center" | "end";
 
-interface TooltipProviderProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
-interface TooltipTriggerProps extends HTMLAttributes<"span"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
-interface TooltipContentProps extends HTMLAttributes<"div"> {
-  state?: () => "open" | "closed";
-  side?: AnchorSide;
-  align?: AnchorAlign;
-  /** Resolves the element the content anchors to; positioning is skipped when undefined. */
-  anchor?: () => Element | undefined;
-  /** Called when the exit animation ends under data-state="closed"; entry animationends are ignored. */
-  onExited?: () => void;
-  children?: HellaChildren;
-  class?: string;
-}
-
 interface TooltipProps extends HTMLAttributes<"span"> {
   content: HellaChildren;
   /** Pointer-hover ms before the content opens. Default 700. */
   delayDuration?: number;
+  /** Controlled open-state getter; passing it makes the tooltip controlled, omitting it keeps state internal. */
+  open?: () => boolean;
+  /** Called on every open-state change, owned hover and dismissal alike. */
+  onOpenChange?: (open: boolean) => void;
   side?: AnchorSide;
   align?: AnchorAlign;
   children?: HellaChildren;
@@ -77,89 +59,18 @@ const content = style("tooltip-content", {
   },
 });
 
-/**
- * Passthrough wrapper - upstream config-carrier kept for copy-paste parity.
- * Divergence: delay config is the per-Tooltip `delayDuration` prop here, so
- * the provider carries children only.
- */
-export function TooltipProvider({
-  children,
-  class: cls,
-  ...attrs
-}: TooltipProviderProps): JSX.Element {
-  const { Provider } = tooltip();
-  return (
-    <Provider
-      class={
-        [cls]
-      }
-      {...attrs}
-    >
-      {children}
-    </Provider>
-  );
-}
-
-/** The manual trigger span; the composed Tooltip renders the same shape wired to the open delay. */
-export function TooltipTrigger({
-  children,
-  class: cls,
-  ...attrs
-}: TooltipTriggerProps): JSX.Element {
-  const { Trigger } = tooltip();
-  return (
-    <Trigger
-      class={
-        [cls]
-      }
-      {...attrs}
-    >
-      {children}
-    </Trigger>
-  );
-}
-
-export function TooltipContent({
-  state,
-  id,
-  side,
-  align,
-  anchor,
-  onExited,
-  children,
-  class: cls,
-  ...attrs
-}: TooltipContentProps): JSX.Element {
-  const { Content } = tooltip({
-    open: () => (state?.() ?? "open") === "open",
-  });
-  return (
-    <Content
-      id={id}
-      side={side}
-      align={align}
-      anchor={anchor}
-      onExited={onExited}
-      class={
-        [content, cls]
-      }
-      {...attrs}
-    >
-      {children}
-    </Content>
-  );
-}
-
 export function Tooltip({
   content: contentSlot,
   delayDuration,
+  open,
+  onOpenChange,
   side,
   align,
   children,
   class: cls,
   ...attrs
 }: TooltipProps): JSX.Element {
-  const { Trigger, Content } = tooltip({ delay: delayDuration });
+  const { Trigger, Content } = tooltip({ delay: delayDuration, open, onOpenChange });
   return (
     <Trigger
       class={

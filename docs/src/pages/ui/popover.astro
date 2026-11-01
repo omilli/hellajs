@@ -4,7 +4,7 @@ import InstallSection from "../../components/InstallSection.astro";
 import PopoverContent from "@ui/concepts/popover.mdx";
 import Component from "../../components/Component.astro";
 
-import { PopoverDemo, PopoverManualDemo } from "../../demos/popover-demo";
+import { PopoverDemo } from "../../demos/popover-demo";
 
 const title = "Popover";
 const description = "Interactive Popover demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
@@ -18,9 +18,6 @@ const description = "Interactive Popover demo running the site's built registry 
 
   <Component heading="Playground" Demo={<PopoverDemo client:load />} code="PopoverDemo">
     <p>Clicking toggles a non-modal panel; open both and press Escape to see layered dismissal close one at a time.</p>
-  </Component>
-  <Component heading="Manual parts" Demo={<PopoverManualDemo client:load />} code="PopoverManualDemo">
-    <p>The content part takes the state accessor, the anchor, and the onDismiss callback that layerDismissal fires into.</p>
   </Component>
 
   <PopoverContent />

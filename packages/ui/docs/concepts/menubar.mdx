@@ -6,7 +6,7 @@ The bar and its menus coordinate through a document-level announcement: opening 
 
 The content anchors against its trigger (bottom, start aligned, 8px gap, -4px cross-axis shift) and dismisses through [`layerDismissal`](/headless/layerdismissal): Escape and an outside pointerdown close the top layer, item activation closes every open layer, and focus returns to the trigger.
 
-Fourteen named components ship beside the default `Menubar`: `MenubarMenu`, `MenubarTrigger`, `MenubarGroup`, `MenubarContent`, `MenubarItem`, `MenubarCheckboxItem`, `MenubarRadioGroup`, `MenubarRadioItem`, `MenubarLabel`, `MenubarSeparator`, `MenubarShortcut`, `MenubarSub`, `MenubarSubTrigger`, and `MenubarSubContent`. The item components take the same explicit-state props as their dropdown-menu counterparts: the checkbox item takes a `checked` accessor, the radio group is items-driven, and each sub owns its own open signal with hover-intent timing.
+Ten named components ship beside the default `Menubar`: `MenubarMenu`, `MenubarGroup`, `MenubarItem`, `MenubarCheckboxItem`, `MenubarRadioGroup`, `MenubarRadioItem`, `MenubarLabel`, `MenubarSeparator`, `MenubarShortcut`, and `MenubarSub`. The item components take the same explicit-state props as their dropdown-menu counterparts: the checkbox item takes a `checked` accessor, the radio group is items-driven, and each sub owns its own open signal with hover-intent timing.
 
 ### Menubar
 
@@ -34,35 +34,6 @@ One menu: the trigger button plus its portaled content, named in the bar's store
 Accepts all native `div` attributes (forwarded to the root element).
 
 A controlled `open` accessor supports manual wiring without the bar; `onOpenChange` reports this menu's flips.
-
-### MenubarTrigger
-
-The menu button inside the bar, accent-highlighted while its menu is open.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `children` | `HellaChildren` | `-` |
-Accepts all native `button` attributes (forwarded to the root element).
-
-### MenubarContent
-
-The `role="menu"` surface with the full keyboard model, anchored against its trigger.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `state` | `() => "open" \| "closed"` | `-` |
-| `side` | `"top" \| "bottom" \| "left" \| "right"` | `"bottom"` |
-| `align` | `"start" \| "center" \| "end"` | `"start"` |
-| `sideOffset` | `number` | `8` |
-| `alignOffset` | `number` | `-4` |
-| `anchor` | `() => Element \| undefined` | `-` |
-| `onDismiss` | `() => void` | `-` |
-| `onExited` | `() => void` | `-` |
-| `onArrow` | `(direction: "left" \| "right") => void` | `-` |
-| `children` | `HellaChildren` | `-` |
-Accepts all native `div` attributes (forwarded to the root element).
-
-`state` drives `data-state` and the enter/exit cycle; `closed` tears the wiring down. The anchor resolves to the element the content anchors to; positioning is skipped when undefined. `onDismiss` receives Escape and outside pointerdowns from the top layer, and item selection closes every open layer through it; `onExited` fires when the exit animation ends. Both horizontal arrows hand off to the adjacent bar trigger (open-then-move) as the factory bar-menu wiring's own behavior; the `onArrow` prop stays accepted for manual compatibility.
 
 ### MenubarGroup
 
@@ -160,37 +131,7 @@ A sub-trigger plus its portaled sub-content; open state owned here with hover-in
 | `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
 
-### MenubarSubTrigger
-
-The manual sub-trigger row (chevron, `aria-haspopup`).
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `state` | `() => "open" \| "closed"` | `-` |
-| `onOpen` | `() => void` | `-` |
-| `inset` | `boolean` | `-` |
-| `children` | `HellaChildren` | `-` |
-Accepts all native `div` attributes (forwarded to the root element).
-
-### MenubarSubContent
-
-The `role="menu"` sub-surface, anchored against its sub-trigger.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `state` | `() => "open" \| "closed"` | `-` |
-| `side` | `"top" \| "bottom" \| "left" \| "right"` | `-` |
-| `align` | `"start" \| "center" \| "end"` | `-` |
-| `sideOffset` | `number` | `-` |
-| `anchor` | `() => Element \| undefined` | `-` |
-| `onDismiss` | `() => void` | `-` |
-| `onExited` | `() => void` | `-` |
-| `onArrowLeft` | `() => void` | `-` |
-| `onPointerEnter` | `() => void` | `-` |
-| `children` | `HellaChildren` | `-` |
-Accepts all native `div` attributes (forwarded to the root element).
-
-Every component also takes a `class` string, landing last in its style composition. Menus keep their own open state, so a menu also composes standalone through `MenubarMenu` with explicit `open` and `onOpenChange` props, and the item components wire manually exactly as in the dropdown-menu entry.
+Every component also takes a `class` string, landing last in its style composition. Menus keep their own open state, so a menu also composes standalone through `MenubarMenu` with explicit `open` and `onOpenChange` props.
 
 ## Keyboard Interaction
 

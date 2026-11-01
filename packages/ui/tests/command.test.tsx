@@ -7,13 +7,12 @@ import {
   assertHandlerForwarded,
   assertStructuralParity,
   classTokens,
-  commandPartVariants,
+  commandDialogVariants,
   commandVariants,
   renderVariant,
+  type CommandDialogVariantProps,
   type CommandItemDataVariant,
-  type CommandPartVariantProps,
   type ComponentVariant,
-  type PartVariant,
 } from "./helpers/variants";
 import { awaitDetached, awaitPortaled, newestPortaled, pressKey } from "./helpers/anchored";
 
@@ -21,7 +20,7 @@ beforeEach(() => {
   resetTestState();
 });
 
-/** Mounts a rendered part, wrapping a reactive fn root like the harness does. */
+/** Mounts a rendered variant, wrapping a reactive fn root like the harness does. */
 const mountPart = (rendered: JSX.Element, container: HTMLElement): void => {
   mount(rendered, container);
 };
@@ -437,7 +436,24 @@ describe("command", () => {
     },
   );
 
-  test.each(commandPartVariants.filter((variant) => variant.part === "Dialog"))(
+  test.each(commandDialogVariants)(
+    "$style renders items and filters inside the dialog shell post-mount",
+    async (variant) => {
+      const container = setupContainer();
+      mountPart(variant.render({ open: () => true, onClose: () => {}, items: GROUPED }), container);
+      const panel = await awaitPortaled("dialog-content");
+      expect(items(panel).map((el) => el.getAttribute("data-value"))).toEqual([
+        "apple",
+        "banana",
+        "carrot",
+      ]);
+      type(queryInput(panel), "app");
+      await delay();
+      expect(items(panel).map((el) => el.getAttribute("data-value"))).toEqual(["apple"]);
+    },
+  );
+
+  test.each(commandDialogVariants)(
     "$style renders the palette inside the dialog surface and closes on Escape",
     async (variant) => {
       const open = signal(true);
@@ -445,7 +461,10 @@ describe("command", () => {
         open(false);
       });
       const container = setupContainer();
-      mountPart(variant.render({ open: () => open(), onClose, title: "Palette" }), container);
+      mountPart(
+        variant.render({ open: () => open(), onClose, title: "Palette", items: GROUPED }),
+        container,
+      );
       const panel = await awaitPortaled("dialog-content");
       expect(panel.getAttribute("role")).toBe("dialog");
       expect(panel.getAttribute("aria-modal")).toBe("true");
@@ -460,7 +479,7 @@ describe("command", () => {
     },
   );
 
-  test.each(commandPartVariants.filter((variant) => variant.part === "Dialog"))(
+  test.each(commandDialogVariants)(
     "$style wires sr-only title and description aria",
     async (variant) => {
       const container = setupContainer();
@@ -483,76 +502,24 @@ describe("command", () => {
     },
   );
 
-  test.each(commandPartVariants.filter((variant) => variant.part === "Item"))(
-    "$style item part drives data-selected through the active accessor and blocks disabled clicks",
-    (variant) => {
-      const active = signal(true);
-      const onSelect = vi.fn(() => {});
-      const container = setupContainer();
-      const handle = mount(
-        variant.render({ children: [], value: "a", active: () => active(), onSelect }),
-        container,
-      );
-      const item = container.firstElementChild as HTMLElement;
-      expect(item.getAttribute("aria-selected")).toBe("true");
-      expect(item.getAttribute("data-selected")).toBe("true");
-      active(false);
-      expect(item.getAttribute("aria-selected")).toBe("false");
-      expect(item.getAttribute("data-selected")).toBeNull();
-      item.dispatchEvent(new Event("click", { bubbles: true }));
-      expect(onSelect).toHaveBeenCalledTimes(1);
-      handle.unmount();
-    },
-  );
-
-  test.each(commandPartVariants.filter((variant) => variant.part === "Group"))(
-    "$style group part renders its heading and resolves the hidden accessor",
-    (variant) => {
-      const hidden = signal(true);
-      const container = setupContainer();
-      const handle = mount(
-        variant.render({ children: [], heading: "Fruits", hidden: () => hidden() }),
-        container,
-      );
-      const group = container.firstElementChild as HTMLElement;
-      expect(group.querySelector("[data-slot='command-group-heading']")!.textContent).toBe(
-        "Fruits",
-      );
-      expect(group.hidden).toBe(true);
-      hidden(false);
-      expect(group.hidden).toBe(false);
-      handle.unmount();
-    },
-  );
-
-  test("renders every named part with its data-slot across both styles", () => {
-    for (const variant of commandPartVariants) {
-      if (variant.part === "Dialog") continue;
-      const container = setupContainer();
-      const rendered = variant.render({ children: [] } as unknown as CommandPartVariantProps);
-      mount(rendered, container);
-      const el = container.firstElementChild!;
-      const slot =
-        variant.part === "Input"
-          ? "command-input-wrapper"
-          : `command-${variant.part.toLowerCase()}`;
-      expect(el.getAttribute("data-slot")).toBe(slot);
-    }
-  });
-
   test("keeps structural parity across both styles", () => {
     assertStructuralParity(commandVariants, { items: GROUPED });
   });
 
   test("keeps CommandDialog structural parity across both styles", () => {
-    const suites = (
-      commandPartVariants.filter(
-        (variant) => variant.part === "Dialog",
-      ) as PartVariant<CommandPartVariantProps>[]
-    ).map((variant) => ({ ...variant, root: () => newestPortaled("dialog-content") }));
+    const suites = commandDialogVariants.map((variant) => ({
+      ...variant,
+      root: () => newestPortaled("dialog-content")!,
+    }));
     assertStructuralParity(
-      suites as unknown as ComponentVariant<CommandPartVariantProps>[],
-      { open: () => true, onClose: () => {}, title: "Parity", description: "Parity description" },
+      suites as unknown as ComponentVariant<CommandDialogVariantProps>[],
+      {
+        open: () => true,
+        onClose: () => {},
+        title: "Parity",
+        description: "Parity description",
+        items: GROUPED,
+      },
       ["aria-labelledby", "aria-describedby", "id"],
     );
   });
@@ -588,36 +555,6 @@ describe("command", () => {
       const tokens = classTokens(root);
       expect(tokens.at(-1)).toBe("my-command");
       expect(tokens.length).toBeGreaterThan(1);
-    }
-  });
-
-  test("input part forwards placeholder and id onto the inner input across both styles", () => {
-    for (const variant of commandPartVariants.filter((candidate) => candidate.part === "Input")) {
-      const container = setupContainer();
-      const rendered = variant.render({ placeholder: "Search actions", id: "cmd-input" });
-      mountPart(rendered, container);
-      const input = container.querySelector("input")!;
-      expect(input.getAttribute("placeholder")).toBe("Search actions");
-      expect(input.id).toBe("cmd-input");
-    }
-  });
-
-  test("item part chains a user on:click with the owned select", () => {
-    for (const variant of commandPartVariants.filter((candidate) => candidate.part === "Item")) {
-      const userClick = vi.fn(() => {});
-      const onSelect = vi.fn(() => {});
-      const container = setupContainer();
-      const rendered = variant.render({
-        value: "a",
-        "on:click": userClick,
-        onSelect,
-        children: [],
-      });
-      mountPart(rendered, container);
-      const item = container.querySelector("[data-slot='command-item']") as HTMLElement;
-      item.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-      expect(userClick).toHaveBeenCalledTimes(1);
-      expect(onSelect).toHaveBeenCalledTimes(1);
     }
   });
 });

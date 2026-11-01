@@ -6,13 +6,3 @@ export const content =
 
 export const item =
   "relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 [&_[data-slot=select-item-indicator]]:pointer-events-none [&_[data-slot=select-item-indicator]]:absolute [&_[data-slot=select-item-indicator]]:right-2 [&_[data-slot=select-item-indicator]]:flex [&_[data-slot=select-item-indicator]]:size-3.5 [&_[data-slot=select-item-indicator]]:items-center [&_[data-slot=select-item-indicator]]:justify-center [&_[data-slot=select-check-icon]]:size-4";
-
-export const icon = "size-4";
-
-export const chevron = "size-4 opacity-50";
-
-export const label = "px-2 py-1.5 text-xs text-muted-foreground";
-
-export const separator = "pointer-events-none -mx-1 my-1 h-px bg-border";
-
-export const scrollButton = "flex cursor-default items-center justify-center py-1";

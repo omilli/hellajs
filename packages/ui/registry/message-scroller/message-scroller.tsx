@@ -1,12 +1,5 @@
 import { messageScroller } from "@hellajs/headless";
-import type {
-  MessageScrollerButtonProps,
-  MessageScrollerContentProps,
-  MessageScrollerItemProps,
-  MessageScrollerProps,
-  MessageScrollerProviderProps,
-  MessageScrollerViewportProps,
-} from "./message-scroller-types.js";
+import type { MessageScrollerItemProps, MessageScrollerProps } from "./message-scroller-types.js";
 // @hella:styles
 declare const base: string;
 declare const buttonBase: string;
@@ -17,59 +10,6 @@ declare const item: string;
 declare const overlay: string;
 declare const viewport: string;
 // @hella:end
-
-/**
- * Drop-in composition wrapper kept for API parity with the upstream provider.
- * Hella has no context: state lives on signals the composer owns and passes to
- * the viewport and button explicitly (see MessageScrollerViewport).
- */
-export function MessageScrollerProvider(props: MessageScrollerProviderProps): JSX.Element {
-  return <>{props.children}</>;
-}
-
-export function MessageScrollerViewport({
-  atBottom,
-  scrollToBottom,
-  threshold,
-  observe,
-  children,
-  class: cls,
-  ...attrs
-}: MessageScrollerViewportProps): JSX.Element {
-  const { Viewport } = messageScroller({ atBottom, scrollToBottom, threshold, observe });
-  return (
-    <Viewport
-      class={
-        // @hella:compose
-        [viewport, cls]
-        // @hella:end
-      }
-      {...attrs}
-    >
-      {children}
-    </Viewport>
-  );
-}
-
-export function MessageScrollerContent({
-  children,
-  class: cls,
-  ...attrs
-}: MessageScrollerContentProps): JSX.Element {
-  const { Content } = messageScroller();
-  return (
-    <Content
-      class={
-        // @hella:compose
-        [content, cls]
-        // @hella:end
-      }
-      {...attrs}
-    >
-      {children}
-    </Content>
-  );
-}
 
 export function MessageScrollerItem({
   children,
@@ -88,42 +28,6 @@ export function MessageScrollerItem({
     >
       {children}
     </Item>
-  );
-}
-
-export function MessageScrollerButton({
-  atBottom,
-  scrollToBottom,
-  direction: dir,
-  variant,
-  size,
-  "on:click": userClick,
-  children,
-  class: cls,
-  ...attrs
-}: MessageScrollerButtonProps): JSX.Element {
-  const { Button } = messageScroller({ atBottom, scrollToBottom });
-  return (
-    <Button
-      direction={dir}
-      variant={variant}
-      size={size}
-      on:click={userClick}
-      class={
-        // @hella:compose
-        [
-          buttonBase,
-          buttonVariants[variant ?? "secondary"],
-          buttonSizes[size ?? "icon-sm"],
-          overlay,
-          cls,
-        ]
-        // @hella:end
-      }
-      {...attrs}
-    >
-      {children}
-    </Button>
   );
 }
 

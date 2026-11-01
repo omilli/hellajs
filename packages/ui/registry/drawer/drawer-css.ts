@@ -76,47 +76,6 @@ export const contentDirections = {
   }),
 };
 
-export const close = style("drawer-close", {
-  borderRadius: `calc(${tokens.radius} * 0.2)`,
-  opacity: "0.7",
-  position: "absolute",
-  right: "1rem",
-  top: "1rem",
-  transition: "opacity 150ms cubic-bezier(0.4, 0, 0.2, 1)",
-  "&:hover": {
-    opacity: "1",
-  },
-  "&:focus": {
-    boxShadow: `0 0 0 2px ${tokens.background}, 0 0 0 4px ${tokens.ring}`,
-    outlineStyle: "none",
-  },
-  "&:disabled": {
-    pointerEvents: "none",
-  },
-  "&[data-state='open']": {
-    backgroundColor: tokens.secondary,
-  },
-  "& svg": {
-    flexShrink: "0",
-    pointerEvents: "none",
-  },
-  "& svg:not([class*='size-'])": {
-    height: "1rem",
-    width: "1rem",
-  },
-  "& span": {
-    clip: "rect(0, 0, 0, 0)",
-    borderWidth: "0",
-    height: "1px",
-    margin: "-1px",
-    overflow: "hidden",
-    padding: "0",
-    position: "absolute",
-    whiteSpace: "nowrap",
-    width: "1px",
-  },
-});
-
 css({
   "[data-slot='drawer-content'] [data-slot='drawer-handle']": {
     display: "none",

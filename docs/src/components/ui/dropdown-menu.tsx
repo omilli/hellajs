@@ -1,39 +1,10 @@
 import { menu } from "@hellajs/headless";
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
-type AnchorSide = "top" | "bottom" | "left" | "right";
-
-type AnchorAlign = "start" | "center" | "end";
-
 interface MenuEntry {
   value: string;
   label?: HellaChildren;
   disabled?: boolean;
-}
-
-interface DropdownMenuTriggerProps extends HTMLAttributes<"span"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
-interface DropdownMenuContentProps extends HTMLAttributes<"div"> {
-  state?: () => "open" | "closed";
-  side?: AnchorSide;
-  align?: AnchorAlign;
-  /** Gap between the anchor and the content edge, in px. Default 4. */
-  sideOffset?: number;
-  /** Cross-axis shift applied after positioning, in px. Default 0. */
-  alignOffset?: number;
-  /** Resolves the element the content anchors to; positioning is skipped when undefined. */
-  anchor?: () => Element | undefined;
-  /** When given, Escape and an outside pointerdown dismiss the top layer into this callback, and item selection closes every open layer. */
-  onDismiss?: () => void;
-  /** Called when the exit animation ends under data-state="closed"; entry animationends are ignored. */
-  onExited?: () => void;
-  /** ArrowLeft closes the menu when provided (submenu exit; a top-level menu stays inert). */
-  onArrowLeft?: () => void;
-  children?: HellaChildren;
-  class?: string;
 }
 
 interface DropdownMenuPartProps extends HTMLAttributes<"div"> {
@@ -86,35 +57,6 @@ interface DropdownMenuLabelProps extends HTMLAttributes<"div"> {
 }
 
 interface DropdownMenuShortcutProps extends HTMLAttributes<"span"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
-interface DropdownMenuSubTriggerProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  inset?: boolean;
-  /** Resolves the open state for `aria-expanded`/`data-state`; the composed Sub wires it. */
-  state?: () => "open" | "closed";
-  /** Called on click and hover intent to open the submenu. */
-  onOpen?: () => void;
-  class?: string;
-}
-
-interface DropdownMenuSubContentProps extends HTMLAttributes<"div"> {
-  state?: () => "open" | "closed";
-  side?: AnchorSide;
-  align?: AnchorAlign;
-  sideOffset?: number;
-  /** Resolves the element the content anchors to (the sub-trigger); positioning is skipped when undefined. */
-  anchor?: () => Element | undefined;
-  /** When given, Escape and an outside pointerdown dismiss the top layer into this callback, and item selection closes every open layer. */
-  onDismiss?: () => void;
-  /** Called when the exit animation ends under data-state="closed"; entry animationends are ignored. */
-  onExited?: () => void;
-  /** ArrowLeft closes the submenu. */
-  onArrowLeft?: () => void;
-  /** Pointer entering the content cancels the trigger's pending close. */
-  onPointerEnter?: () => void;
   children?: HellaChildren;
   class?: string;
 }
@@ -510,72 +452,6 @@ const subContent = style("dropdown-menu-sub-content", {
   },
 });
 
-/** The manual trigger button; the composed DropdownMenu renders the same shape wired to toggle + aria state. */
-export function DropdownMenuTrigger({
-  children,
-  class: cls,
-  ...attrs
-}: DropdownMenuTriggerProps): JSX.Element {
-  const { Trigger } = menu();
-  return (
-    <Trigger
-      data-slot="dropdown-menu-trigger"
-      class={
-        [base, cls]
-      }
-      {...attrs}
-    >
-      {children}
-    </Trigger>
-  );
-}
-
-/** The manual content layer; the composed DropdownMenu portals the same wiring under its trigger's state. */
-export function DropdownMenuContent({
-  state,
-  id,
-  side: sideProp,
-  align: alignProp,
-  sideOffset,
-  alignOffset: alignOffsetProp,
-  anchor,
-  onDismiss,
-  onExited,
-  onArrowLeft,
-  children,
-  class: cls,
-  ...attrs
-}: DropdownMenuContentProps): JSX.Element {
-  const side = sideProp ?? "bottom";
-  const align = alignProp ?? "start";
-  const alignOffset = alignOffsetProp ?? 0;
-  const { Content } = menu({
-    open: () => (state?.() ?? "open") === "open",
-    onOpenChange: (next) => {
-      if (!next) onDismiss?.();
-    },
-  });
-  return (
-    <Content
-      id={id}
-      side={side}
-      align={align}
-      sideOffset={sideOffset}
-      alignOffset={alignOffset}
-      anchor={anchor}
-      onArrowLeft={onArrowLeft}
-      onExited={onExited}
-      data-slot="dropdown-menu-content"
-      class={
-        [content, cls]
-      }
-      {...attrs}
-    >
-      {children}
-    </Content>
-  );
-}
-
 export function DropdownMenuGroup({
   children,
   class: cls,
@@ -750,78 +626,6 @@ export function DropdownMenuShortcut({
     >
       {children}
     </Shortcut>
-  );
-}
-
-export function DropdownMenuSubTrigger({
-  inset,
-  state,
-  onOpen,
-  children,
-  class: cls,
-  ...attrs
-}: DropdownMenuSubTriggerProps): JSX.Element {
-  const sub = menu().sub({
-    open: state ? () => state() === "open" : undefined,
-    onOpenChange: (next) => {
-      if (next) onOpen?.();
-    },
-  });
-  return (
-    <sub.Trigger
-      inset={inset}
-      data-slot="dropdown-menu-sub-trigger"
-      class={
-        [subTrigger, cls]
-      }
-      {...attrs}
-    >
-      {children}
-    </sub.Trigger>
-  );
-}
-
-export function DropdownMenuSubContent({
-  state,
-  side: sideProp,
-  align: alignProp,
-  sideOffset,
-  anchor,
-  onDismiss,
-  onExited,
-  onArrowLeft,
-  onPointerEnter,
-  children,
-  class: cls,
-  ...attrs
-}: DropdownMenuSubContentProps): JSX.Element {
-  const side = sideProp ?? "right";
-  const align = alignProp ?? "start";
-  // ArrowLeft-exit and pointerenter-cancel are the factory sub wiring's own
-  // utils now - consumed here so they never reach the DOM as attributes.
-  void onArrowLeft;
-  void onPointerEnter;
-  const { Content } = menu().sub({
-    open: () => (state?.() ?? "open") === "open",
-    onOpenChange: (next) => {
-      if (!next) onDismiss?.();
-    },
-  });
-  return (
-    <Content
-      side={side}
-      align={align}
-      sideOffset={sideOffset}
-      anchor={anchor}
-      onExited={onExited}
-      data-slot="dropdown-menu-sub-content"
-      class={
-        [subContent, cls]
-      }
-      {...attrs}
-    >
-      {children}
-    </Content>
   );
 }
 

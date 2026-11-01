@@ -577,27 +577,6 @@ describe("menubar", () => {
   );
 
   test.each(menubarVariants)(
-    "$style sub-trigger part opens through onOpen from click and hover intent",
-    async (variant) => {
-      const onOpen = vi.fn(() => {});
-      const container = setupContainer();
-      const handle = mount(Part(variant, "SubTrigger")({ children: ["More"], onOpen }), container);
-      const trigger = container.firstElementChild as HTMLElement;
-      trigger.dispatchEvent(new Event("click", { bubbles: true }));
-      expect(onOpen).toHaveBeenCalledTimes(1);
-      pointerEnter(trigger);
-      pointerLeave(trigger);
-      await delay(150);
-      expect(onOpen).toHaveBeenCalledTimes(1);
-      pointerEnter(trigger);
-      await delay(150);
-      expect(onOpen).toHaveBeenCalledTimes(2);
-      pointerLeave(trigger);
-      handle.unmount();
-    },
-  );
-
-  test.each(menubarVariants)(
     "$style closes the submenu after leaving the trigger for the close delay",
     async (variant) => {
       const bar = renderBar(variant, [
@@ -668,16 +647,6 @@ describe("menubar", () => {
     },
   );
 
-  test.each(menubarPartVariants.filter((variant) => variant.part === "Content"))(
-    "$style content part respects a user-supplied id",
-    async (variant) => {
-      const container = setupContainer();
-      mount(variant.render({ id: "custom-menubar-content", children: [] }), container);
-      const content = await awaitPortaled("menubar-content");
-      expect(content.getAttribute("id")).toBe("custom-menubar-content");
-    },
-  );
-
   test("keeps structural parity across both styles", () => {
     assertStructuralParity(menubarVariants, { children: [] });
     assertStructuralParity(
@@ -691,7 +660,7 @@ describe("menubar", () => {
     );
   });
 
-  test("renders every named part with its data-slot across both styles", async () => {
+  test("renders every named part with its data-slot across both styles", () => {
     for (const variant of menubarPartVariants) {
       const container = setupContainer();
       const rendered = variant.render({ children: [] });
@@ -703,17 +672,10 @@ describe("menubar", () => {
             ? "menubar-radio-item"
             : variant.part === "RadioGroup"
               ? "menubar-radio-group"
-              : variant.part === "Sub" || variant.part === "SubTrigger"
+              : variant.part === "Sub"
                 ? "menubar-sub-trigger"
-                : variant.part === "SubContent"
-                  ? "menubar-sub-content"
-                  : `menubar-${variant.part.toLowerCase()}`;
-      // Content and SubContent portal themselves; every other part renders in place.
-      const el =
-        variant.part === "Content" || variant.part === "SubContent"
-          ? await awaitPortaled(slot)
-          : container.firstElementChild!;
-      expect(el.getAttribute("data-slot")).toBe(slot);
+                : `menubar-${variant.part.toLowerCase()}`;
+      expect(container.firstElementChild!.getAttribute("data-slot")).toBe(slot);
     }
   });
 });

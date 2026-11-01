@@ -322,26 +322,6 @@ describe("sheet", () => {
     },
   );
 
-  test.each(sheetPartVariants.filter((entry) => entry.part === "Close"))(
-    "$style Close chains a user on:click with its owned dismiss",
-    (variant) => {
-      const onClose = vi.fn(() => {});
-      const userClick = vi.fn(() => {});
-      const close = renderPart(variant, [], { onClose, "on:click": userClick });
-      close.dispatchEvent(new Event("click"));
-      expect(userClick).toHaveBeenCalledTimes(1);
-      expect(onClose).toHaveBeenCalledTimes(1);
-    },
-  );
-
-  test.each(sheetPartVariants.filter((entry) => entry.part === "Content"))(
-    "$style content part forwards the manual aria wiring attrs",
-    (variant) => {
-      const el = renderPart(variant, [], { "aria-labelledby": "wired-title" });
-      expect(el.getAttribute("aria-labelledby")).toBe("wired-title");
-    },
-  );
-
   test("keeps structural parity across both styles", () => {
     assertStructuralParity(
       sheetVariants,
@@ -352,43 +332,21 @@ describe("sheet", () => {
 
   test("renders every named part with its data-slot across both styles", () => {
     for (const variant of sheetPartVariants) {
-      if (variant.part === "Portal") continue; // portals its children into body — covered by the alert-dialog Portal test
       const el = renderPart(variant);
-      if (variant.part === "Content") {
-        expect(el.getAttribute("data-slot")).toBe("sheet-content");
-        expect(el.getAttribute("role")).toBe("dialog");
-      } else if (variant.part === "Title") {
+      if (variant.part === "Title") {
         expect(el.getAttribute("data-slot")).toBe("sheet-title");
         expect(el.tagName).toBe("H2");
       } else if (variant.part === "Description") {
         expect(el.getAttribute("data-slot")).toBe("sheet-description");
         expect(el.tagName).toBe("P");
-      } else if (variant.part === "Close") {
-        expect(el.getAttribute("data-slot")).toBe("sheet-close");
-        expect(el.tagName).toBe("BUTTON");
-      } else if (variant.part === "Trigger") {
-        expect(el.getAttribute("data-slot")).toBe("sheet-trigger");
-        expect(el.tagName).toBe("BUTTON");
       } else {
         expect(el.getAttribute("data-slot")).toBe(`sheet-${variant.part.toLowerCase()}`);
       }
     }
   });
-
-  test("portals the Portal part's children into document.body", () => {
-    for (const variant of sheetPartVariants) {
-      if (variant.part !== "Portal") continue;
-      renderPart(variant, [<span data-slot="sheet-portal-probe"></span>]);
-      expect(document.querySelector('[data-slot="sheet-portal-probe"]')).not.toBeNull();
-    }
-  });
 });
 
-/**
- * Renders one sheet part and resolves its mounted root. The Portal part
- * resolves to the wrapper (its children land in document.body) — the dedicated
- * Portal test above asserts the portaled child instead.
- */
+/** Renders one sheet part and resolves its mounted root. */
 function renderPart(
   variant: (typeof sheetPartVariants)[number],
   children?: JSX.Element[],
@@ -399,8 +357,6 @@ function renderPart(
     string,
     never
   >);
-  // isDynamic meta results (Portal roots) have no flagged build for mount to root — the
-  // template wrapper dispatches them as a child (child() hands them the parent).
-  mount("isTemplate" in rendered ? rendered : <div>{rendered as never}</div>, container);
+  mount(rendered as never, container);
   return container.firstElementChild!;
 }

@@ -1,48 +1,11 @@
 import { signal } from "@hellajs/core";
 import type { Signal } from "@hellajs/core";
 import { dialog } from "@hellajs/headless";
-import { Portal, registry } from "@hellajs/dom";
+import { registry } from "@hellajs/dom";
 import type { HellaChild, HellaChildren, HTMLAttributes } from "@hellajs/dom";
 import { onDrag } from "@hellajs/headless/utils";
 
-type DrawerState = () => "open" | "closed";
-
 type DrawerDirection = "top" | "right" | "bottom" | "left";
-
-interface DrawerOverlayProps extends HTMLAttributes<"div"> {
-  state?: DrawerState;
-  /** Drag fraction (0..1 toward dismissal) — drives the proportional overlay fade. */
-  fraction?: Signal<number>;
-  class?: string;
-}
-
-interface DrawerCloseProps extends HTMLAttributes<"button"> {
-  state?: DrawerState;
-  onClose?: () => void;
-  class?: string;
-}
-
-interface DrawerPortalProps {
-  children?: HellaChildren;
-}
-
-interface DrawerTriggerProps extends HTMLAttributes<"button"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
-interface DrawerContentProps extends HTMLAttributes<"div"> {
-  state?: DrawerState;
-  direction?: DrawerDirection;
-  /** Shared drag fraction (0..1 toward dismissal); the overlay fades proportionally when both parts receive the same signal. */
-  fraction?: Signal<number>;
-  closeOnEscape?: boolean;
-  closeOnOutside?: boolean;
-  onClose?: () => void;
-  onExited?: () => void;
-  class?: string;
-  children?: HellaChildren;
-}
 
 interface DrawerPartProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
@@ -197,151 +160,6 @@ function wireDrawerSeam(
   );
 }
 
-/** The screen-covering backdrop; the factory's Overlay with the drag-fraction fade. */
-export function DrawerOverlay({
-  state,
-  fraction,
-  class: cls,
-  ...attrs
-}: DrawerOverlayProps): JSX.Element {
-  const { Overlay } = dialog({ open: () => (state?.() ?? "open") === "open" });
-  const overlayStyle = (): Record<string, string> | undefined => {
-    const f = fraction?.() ?? 0;
-    return f > 0 ? { opacity: String(Math.max(0, 1 - f)) } : undefined;
-  };
-  return (
-    <Overlay
-      data-slot="drawer-overlay"
-      style={overlayStyle}
-      class={
-        cn("fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0", cls)
-      }
-      {...attrs}
-    />
-  );
-}
-
-/** The X close button; the factory's Close with the X icon and its sr-only label. */
-export function DrawerClose({
-  state,
-  onClose,
-  "on:click": userClick,
-  class: cls,
-  ...attrs
-}: DrawerCloseProps): JSX.Element {
-  const { Close } = dialog({
-    open: () => (state?.() ?? "open") === "open",
-    onOpenChange: (next) => {
-      if (!next) onClose?.();
-    },
-  });
-  return (
-    <Close
-      data-slot="drawer-close"
-      class={
-        cn("absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-secondary", cls)
-      }
-      on:click={userClick}
-      {...attrs}
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <path d="M18 6 6 18" />
-        <path d="m6 6 12 12" />
-      </svg>
-      <span class="sr-only">Close</span>
-    </Close>
-  );
-}
-
-/** Portals the manual composition's parts into document.body. */
-export function DrawerPortal(props: DrawerPortalProps): JSX.Element {
-  return <Portal to="body">{props.children}</Portal>;
-}
-
-/** The manual trigger button; the factory's Trigger owning the aria contract over the wrapper's own state. */
-export function DrawerTrigger({ children, class: cls, ...attrs }: DrawerTriggerProps): JSX.Element {
-  const { Trigger } = dialog();
-  return (
-    <Trigger
-      data-slot="drawer-trigger"
-      class={
-        cn(cls)
-      }
-      {...attrs}
-    >
-      {children}
-    </Trigger>
-  );
-}
-
-/**
- * The drawer panel. Manual composition portals it alongside a DrawerOverlay
- * sibling - hella has no Radix context, so the portal/overlay pairing is the
- * composer's (the Drawer export below shows the wired composition). The
- * whole panel drags along its dismissal axis; the pointer-follow is instant
- * (data-dragging suspends the transform transition), and release either
- * dismisses - past 25% of the panel size, or moving faster than 500px/s -
- * or springs back through the restored transition. The panel renders inline
- * where placed: the factory's gate and portal belong to the composed Drawer.
- */
-export function DrawerContent({
-  state,
-  direction: drawerDirection,
-  fraction,
-  closeOnEscape,
-  closeOnOutside,
-  onClose,
-  onExited,
-  children,
-  class: cls,
-  ...attrs
-}: DrawerContentProps): JSX.Element {
-  const direction = drawerDirection ?? "bottom";
-  const resolvedState = (): "open" | "closed" => state?.() ?? "open";
-  const { Content } = dialog({
-    open: () => resolvedState() === "open",
-    onOpenChange: (next) => {
-      if (!next) onClose?.();
-    },
-    fallbackMs: EXIT_FALLBACK_MS,
-  });
-
-  return (
-    <Content
-      portal={false}
-      data-slot="drawer-content"
-      data-vaul-drawer-direction={direction}
-      escape={closeOnEscape}
-      outside={closeOnOutside}
-      onExited={onExited}
-      class={
-        cn("group/drawer-content fixed z-50 flex h-auto flex-col p-4 bg-background transition ease-in-out data-[dragging]:transition-none", contentDirections[direction], cls)
-      }
-      hook:afterMount={(node) => {
-        if (!(node instanceof HTMLElement)) return;
-        wireDrawerSeam(node, { state: resolvedState, direction, fraction, onClose });
-      }}
-      {...attrs}
-    >
-      <div
-        data-slot="drawer-handle"
-        class="mx-auto mt-4 hidden h-2 w-[100px] shrink-0 rounded-full bg-muted group-data-[vaul-drawer-direction=bottom]/drawer-content:block"
-      />
-      {children}
-    </Content>
-  );
-}
-
 export function DrawerHeader({ children, class: cls, ...attrs }: DrawerPartProps): JSX.Element {
   return (
     <div
@@ -423,13 +241,18 @@ export function Drawer({
   const descriptionId = `hella-drawer-description-${drawerCount}`;
   const resolvedDirection = direction ?? "bottom";
   const dragFraction = signal(0);
-  const { Content } = dialog({
+  const { Content, Overlay } = dialog({
     open,
     onOpenChange: (next) => {
       if (!next) onClose();
     },
     fallbackMs: EXIT_FALLBACK_MS,
   });
+  // The overlay fades in proportion to the panel's drag displacement.
+  const overlayStyle = (): Record<string, string> | undefined => {
+    const f = dragFraction();
+    return f > 0 ? { opacity: String(Math.max(0, 1 - f)) } : undefined;
+  };
 
   return (
     <Content
@@ -442,7 +265,15 @@ export function Drawer({
       aria-describedby={descriptionText === undefined ? undefined : descriptionId}
       escape={closeOnEscape}
       outside={closeOnOutside}
-      overlay={(state) => <DrawerOverlay state={state} fraction={dragFraction} />}
+      overlay={() => (
+        <Overlay
+          data-slot="drawer-overlay"
+          style={overlayStyle}
+          class={
+            cn("fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0")
+          }
+        />
+      )}
       hook:afterMount={(node) => {
         if (!(node instanceof HTMLElement)) return;
         wireDrawerSeam(node, {

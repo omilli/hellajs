@@ -463,16 +463,6 @@ describe("context-menu", () => {
     },
   );
 
-  test.each(contextMenuPartVariants.filter((variant) => variant.part === "Content"))(
-    "$style content part respects a user-supplied id",
-    async (variant) => {
-      const container = setupContainer();
-      mount(variant.render({ id: "custom-menu", children: [] }), container);
-      const content = await awaitPortaled("context-menu-content");
-      expect(content.getAttribute("id")).toBe("custom-menu");
-    },
-  );
-
   test("keeps structural parity across both styles", () => {
     assertStructuralParity(contextMenuVariants, { content: "Parity" }, ["aria-controls"]);
     assertStructuralParity(
@@ -498,35 +488,10 @@ describe("context-menu", () => {
             ? "context-menu-radio-item"
             : variant.part === "RadioGroup"
               ? "context-menu-radio-group"
-              : variant.part === "Sub" || variant.part === "SubTrigger"
+              : variant.part === "Sub"
                 ? "context-menu-sub-trigger"
-                : variant.part === "SubContent"
-                  ? "context-menu-sub-content"
-                  : `context-menu-${variant.part.toLowerCase()}`;
-      // Content and SubContent portal themselves; every other part renders in place.
-      const el =
-        variant.part === "Content" || variant.part === "SubContent"
-          ? await awaitPortaled(slot)
-          : container.firstElementChild!;
-      expect(el.getAttribute("data-slot")).toBe(slot);
+                : `context-menu-${variant.part.toLowerCase()}`;
+      expect(container.firstElementChild!.getAttribute("data-slot")).toBe(slot);
     }
   });
-
-  test.each(contextMenuPartVariants.filter((variant) => variant.part === "SubTrigger"))(
-    "$style sub-trigger part opens through onOpen from hover intent",
-    async (variant) => {
-      const onOpen = vi.fn(() => {});
-      const container = setupContainer();
-      const handle = mount(variant.render({ children: "Sort By", onOpen }), container);
-      const trigger = container.firstElementChild as HTMLElement;
-      pointerEnter(trigger);
-      pointerLeave(trigger);
-      await delay(150);
-      expect(onOpen).not.toHaveBeenCalled();
-      pointerEnter(trigger);
-      await delay(150);
-      expect(onOpen).toHaveBeenCalledTimes(1);
-      handle.unmount();
-    },
-  );
 });

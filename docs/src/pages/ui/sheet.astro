@@ -4,7 +4,7 @@ import InstallSection from "../../components/InstallSection.astro";
 import SheetContent from "@ui/concepts/sheet.mdx";
 import Component from "../../components/Component.astro";
 
-import { SheetDemo, SheetManualDemo } from "../../demos/sheet-demo";
+import { SheetDemo } from "../../demos/sheet-demo";
 
 const title = "Sheet";
 const description = "Interactive Sheet demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
@@ -18,9 +18,6 @@ const description = "Interactive Sheet demo running the site's built registry so
 
   <Component heading="Playground" Demo={<SheetDemo client:load />} code="SheetDemo">
     <p>Slides in from the right with wired title and description, an X close button, escape and outside dismissal, and a focus trap.</p>
-  </Component>
-  <Component heading="Manual parts" Demo={<SheetManualDemo client:load />} code="SheetManualDemo">
-    <p>The bottom side composed from the exported parts: overlay and panel portaled by hand, both fed the state accessor, the X close calling your onClose.</p>
   </Component>
 
   <SheetContent />

@@ -1,6 +1,6 @@
 import { ForEach } from "@hellajs/dom";
 import { radioGroup } from "@hellajs/headless";
-import type { RadioGroupProps, RadioGroupItemProps } from "./radio-group-types.js";
+import type { RadioGroupProps } from "./radio-group-types.js";
 
 // @hella:styles
 declare const base: string;
@@ -32,45 +32,6 @@ const circleIcon = (): JSX.Element => (
     <circle cx="12" cy="12" r="10" />
   </svg>
 );
-
-export function RadioGroupItem({
-  value,
-  checked,
-  onSelect,
-  disabled,
-  name,
-  class: cls,
-  ...attrs
-}: RadioGroupItemProps): JSX.Element {
-  const { Item, Indicator } = radioGroup();
-  return (
-    <Item
-      value={value}
-      checked={checked}
-      onSelect={onSelect}
-      disabled={disabled}
-      name={name}
-      class={
-        // @hella:compose
-        [item, cls]
-        // @hella:end
-      }
-      {...attrs}
-    >
-      <Indicator
-        value={value}
-        checked={checked}
-        class={
-          // @hella:compose
-          [indicator]
-          // @hella:end
-        }
-      >
-        {circleIcon()}
-      </Indicator>
-    </Item>
-  );
-}
 
 export function RadioGroup({
   items,

@@ -5,11 +5,8 @@ import { mount, peekState } from "@hellajs/dom";
 import {
   assertStructuralParity,
   assertAttrForwarded,
-  comboboxModules,
-  comboboxPartVariants,
   comboboxVariants,
   classTokens,
-  menuModulePart,
   renderVariant,
   type ComboboxEntryVariant,
   type ComponentVariant,
@@ -18,7 +15,6 @@ import {
 import {
   awaitDetached,
   awaitPortaled,
-  pinRect,
   pointerDownOutside,
   pressEscape,
   pressKey,
@@ -468,135 +464,6 @@ describe("combobox", () => {
     assertStructuralParity(comboboxVariants, { items: FRUITS, placeholder: "Parity" });
   });
 
-  test("renders every named part with its data-slot across both styles", async () => {
-    for (const variant of comboboxPartVariants) {
-      const container = setupContainer();
-      const rendered = variant.render({ children: [] });
-      mount(rendered, container);
-      // The content part portals itself; every other part renders in place.
-      const el =
-        variant.part === "Content"
-          ? await awaitPortaled("combobox-content")
-          : container.firstElementChild!;
-      const slot =
-        variant.part === "Input"
-          ? "input-group"
-          : variant.part === "ChipsInput"
-            ? "combobox-chip-input"
-            : `combobox-${variant.part.toLowerCase()}`;
-      expect(el.getAttribute("data-slot")).toBe(slot);
-    }
-  });
-
-  test.each(comboboxPartVariants.filter((variant) => variant.part === "Content"))(
-    "$style content part anchors with matchAnchorWidth, dismisses, and drains wirings on disposal",
-    async (variant) => {
-      const anchor = document.createElement("button");
-      document.body.appendChild(anchor);
-      pinRect(anchor, 100, 50, 200, 20);
-      const onDismiss = vi.fn(() => {});
-      const container = setupContainer();
-      const handle = mount(
-        variant.render({ anchor: () => anchor, side: "bottom", onDismiss, children: [] }),
-        container,
-      );
-      const content = await awaitPortaled("combobox-content");
-      expect(content.style.width).toBe("200px");
-      expect(content.style.left).toBe("50px");
-      expect(content.style.top).toBe("126px");
-      pressEscape();
-      expect(onDismiss).toHaveBeenCalledTimes(1);
-      handle.unmount();
-      expect(content.isConnected).toBe(false);
-    },
-  );
-
-  test.each(comboboxPartVariants.filter((variant) => variant.part === "Input"))(
-    "$style input part threads on:input, on:keydown, and focus restores",
-    (variant) => {
-      const onInput = vi.fn<(value: string) => void>(() => {});
-      const onKeydown = vi.fn<(e: KeyboardEvent) => void>(() => {});
-      const onFocus = vi.fn(() => {});
-      const container = setupContainer();
-      const handle = mount(
-        variant.render({
-          children: [],
-          "on:input": (e: Event) => onInput((e.target as HTMLInputElement).value),
-          "on:keydown": (e: Event) => onKeydown(e as KeyboardEvent),
-          "on:focus": () => onFocus(),
-        }),
-        container,
-      );
-      const root = container.firstElementChild as HTMLElement;
-      const input = root.querySelector("input") as HTMLInputElement;
-      type(input, "ab");
-      expect(onInput).toHaveBeenCalledWith("ab");
-      pressKey(input, "Enter");
-      expect(onKeydown).toHaveBeenCalledTimes(1);
-      input.dispatchEvent(new Event("focus"));
-      expect(onFocus).toHaveBeenCalledTimes(1);
-      handle.unmount();
-    },
-  );
-
-  test.each(comboboxPartVariants.filter((variant) => variant.part === "List"))(
-    "$style list part renders data-driven options with selection and highlight state",
-    (variant) => {
-      const container = setupContainer();
-      const handle = mount(
-        variant.render({
-          id: "list-1",
-          items: FRUITS,
-          query: () => "",
-          selected: (value: string): boolean => value === "blueberry",
-          active: () => "canteloupe",
-          empty: () => false,
-          children: [],
-        }),
-        container,
-      );
-      const list = container.firstElementChild as HTMLElement;
-      expect(list.getAttribute("role")).toBe("listbox");
-      expect(list.getAttribute("data-empty")).toBeNull();
-      const options = [...list.querySelectorAll("[role='option']")] as HTMLElement[];
-      expect(options).toHaveLength(3);
-      expect(options[0]!.id).toBe("list-1-opt-apple");
-      expect(options[1]!.getAttribute("aria-selected")).toBe("true");
-      expect(options[1]!.getAttribute("data-state")).toBe("checked");
-      expect(options[2]!.hasAttribute("data-highlighted")).toBe(true);
-      handle.unmount();
-    },
-  );
-
-  test.each(comboboxPartVariants.filter((variant) => variant.part === "Item"))(
-    "$style item part blocks clicks when disabled and hides through its accessor",
-    (variant) => {
-      const onselect = vi.fn(() => {});
-      const container = setupContainer();
-      const handle = mount(
-        variant.render({ children: [], value: "a", disabled: true, hidden: () => true, onselect }),
-        container,
-      );
-      const item = container.firstElementChild as HTMLElement;
-      expect(item.getAttribute("aria-disabled")).toBe("true");
-      expect(item.style.display).toBe("none");
-      item.dispatchEvent(new Event("click", { bubbles: true }));
-      expect(onselect).not.toHaveBeenCalled();
-      handle.unmount();
-    },
-  );
-
-  test("builds content trees through the shared module table at each style", () => {
-    for (const style of ["css", "tailwind"] as const) {
-      const Item = menuModulePart<{ value?: string; label?: string }>(
-        comboboxModules,
-        { style },
-        "ComboboxItem",
-      );
-      expect(Item({ value: "a", label: "A" })).toBeDefined();
-    }
-  });
-
   test("typing flows through the on:input-routed internal wiring to update the filter", async () => {
     for (const variant of comboboxVariants) {
       const { input, content } = await openCombobox(variant);
@@ -625,37 +492,6 @@ describe("combobox", () => {
       const tokens = classTokens(root);
       expect(tokens.at(-1)).toBe("my-combobox");
       expect(tokens.length).toBeGreaterThan(1);
-    }
-  });
-
-  test("input part forwards placeholder, id, and kebab aria-controls onto the inner input", () => {
-    for (const variant of comboboxPartVariants.filter((candidate) => candidate.part === "Input")) {
-      const container = setupContainer();
-      const rendered = variant.render({
-        placeholder: "Search fruit",
-        id: "fruit-input",
-        "aria-controls": "fruit-list",
-        state: () => "open" as const,
-      });
-      mount(rendered, container);
-      const input = container.querySelector("input")!;
-      expect(input.getAttribute("placeholder")).toBe("Search fruit");
-      expect(input.id).toBe("fruit-input");
-      expect(input.getAttribute("aria-controls")).toBe("fruit-list");
-    }
-  });
-
-  test("manual trigger part spreads a user on:click handler across both styles", () => {
-    for (const variant of comboboxPartVariants.filter(
-      (candidate) => candidate.part === "Trigger",
-    )) {
-      const userClick = vi.fn(() => {});
-      const container = setupContainer();
-      const rendered = variant.render({ "on:click": userClick, children: [] });
-      mount(rendered, container);
-      const trigger = container.querySelector("[data-slot='combobox-trigger']") as HTMLElement;
-      trigger.dispatchEvent(new Event("click", { bubbles: true }));
-      expect(userClick).toHaveBeenCalledTimes(1);
     }
   });
 });

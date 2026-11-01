@@ -4,8 +4,6 @@ A hover-triggered label: the trigger wraps your content, the label portals into 
 
 The composed `Tooltip` wraps its children in the trigger span. Hovering starts the open timer; leaving closes the label immediately; focusing the trigger follows the same path for keyboard users. Adjacent triggers share a 500ms skip window through [`hoverIntent`](/headless/hoverintent): moving from one tooltip straight onto another opens the next one instantly, without paying the delay again - after 500ms without any tooltip open, the full delay applies.
 
-Three named components ship beside the default `Tooltip`: `TooltipTrigger`, `TooltipContent`, and `TooltipProvider`. Each is a thin styled wrapper over the [`tooltip`](/headless/tooltip) factory's component set, so the hover timing, anchoring, dismissal, and exit timing stay in one place. State is still explicit on the manual components: hand `TooltipContent` a `state` accessor, and point its `anchor` at whatever should anchor it; it portals into `document.body` itself.
-
 ### Tooltip
 
 The composed root portals its `content` prop into `document.body` while open.
@@ -14,45 +12,30 @@ The composed root portals its `content` prop into `document.body` while open.
 | ---- | ---- | ------- |
 | `content` | `HellaChildren` | `-` |
 | `delayDuration` | `number` | `700` |
+| `open` | `() => boolean` | `-` |
+| `onOpenChange` | `(open: boolean) => void` | `-` |
 | `side` | `"top" \| "bottom" \| "left" \| "right"` | `"top"` |
 | `align` | `"start" \| "center" \| "end"` | `"center"` |
 | `class` | `string` | `-` |
 | `children` | `HellaChildren` | `-` |
 Accepts all native `span` attributes (forwarded to the root element).
 
-### TooltipTrigger
-
-The manual trigger span; the composed `Tooltip` renders the same shape wired to [`hoverIntent`](/headless/hoverintent) and carries the label's id as its `aria-describedby`.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `children` | `HellaChildren` | `-` |
-Accepts all native `span` attributes (forwarded to the root element).
-
-### TooltipContent
-
-The `role="tooltip"` label carrying `data-slot="tooltip-content"`, wired by the [`tooltip`](/headless/tooltip) factory: positioned against the anchor through [`anchorPosition`](/headless/anchorposition) (fixed coordinates against the trigger, flipping to the opposite side on viewport collision, repositioning on scroll and resize) and dismissed through [`layerDismissal`](/headless/layerdismissal) - Escape and an outside pointerdown close only the top layer. A controlled `state` accessor holds the label open unless the composer reacts.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `state` | `() => "open" \| "closed"` | `-` |
-| `id` | `string` | `-` |
-| `side` | `"top" \| "bottom" \| "left" \| "right"` | `"top"` |
-| `align` | `"start" \| "center" \| "end"` | `"center"` |
-| `anchor` | `() => Element \| undefined` | `-` |
-| `onExited` | `() => void` | `-` |
-| `children` | `HellaChildren` | `-` |
-Accepts all native `div` attributes (forwarded to the root element; a user-supplied `id` wins over the generated one).
-
-`state` drives `data-state` and the enter/exit cycle. The label `id` is what the trigger's `aria-describedby` points at. The anchor resolves to the element the label anchors to; positioning is skipped when undefined. `onExited` fires when the exit animation ends under `data-state="closed"`.
-
-### TooltipProvider
-
-A passthrough wrapper carrying nothing but children. Delay configuration is the per-Tooltip `delayDuration` prop, not a provider setting, and the label carries no arrow glyph - both absences are deliberate.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `children` | `HellaChildren` | `-` |
-Accepts all native `div` attributes (forwarded to the root element).
-
 Every component also takes a `class` string, landing last in its style composition.
+
+## Controlled
+
+Pin or drive the tooltip from outside. Pass `open` and the root renders exactly the state the accessor reports - never writing its own - while hover, focus, and dismissal still report through `onOpenChange`. Write the signal back and the DOM follows; return `true` to pin the label open regardless of the pointer:
+
+```tsx
+import { signal } from "@hellajs/core";
+import { Button } from "./components/button";
+import { Tooltip } from "./components/tooltip";
+
+const shown = signal(false);
+
+<Tooltip content="Save" open={() => shown()} onOpenChange={(v) => shown(v)}>
+  <Button>Save</Button>
+</Tooltip>;
+```
+
+Without `open`, the hover intent owns the state internally and `delayDuration` sets the open delay.

@@ -4,7 +4,7 @@ import InstallSection from "../../components/InstallSection.astro";
 import TabsContent from "@ui/concepts/tabs.mdx";
 import Component from "../../components/Component.astro";
 
-import { TabsDemo, TabsLineDemo } from "../../demos/tabs-demo";
+import { TabsDemo, TabsLineDemo, TabsControlledDemo } from "../../demos/tabs-demo";
 
 const title = "Tabs";
 const description = "Interactive Tabs demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
@@ -19,6 +19,10 @@ const description = "Interactive Tabs demo running the site's built registry sou
   <Component heading="Playground" Demo={<TabsDemo client:load />} code="TabsDemo"/>
   <Component heading="Line variant" Demo={<TabsLineDemo client:load />} code="TabsLineDemo">
     <p>initialId opens the Activity tab; the line variant draws the active underline.</p>
+  </Component>
+
+  <Component heading="Controlled" Demo={<TabsControlledDemo client:load />} code="TabsControlledDemo">
+    <p>The active tab lives in a signal outside the tabs; clicks report through onValueChange.</p>
   </Component>
 
   <TabsContent />

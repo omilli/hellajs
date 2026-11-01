@@ -2,42 +2,9 @@ import { messageScroller } from "@hellajs/headless";
 import type { Signal } from "@hellajs/core";
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
-interface MessageScrollerProviderProps {
-  children?: HellaChildren;
-}
-
-interface MessageScrollerViewportProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  /** Shared at-bottom state; the viewport flips it and owns an internal signal when absent. */
-  atBottom?: Signal<boolean>;
-  /** Overrides the scroll-to-bottom action used for auto-stick and the jump button. */
-  scrollToBottom?: () => void;
-  /** Distance in px from the bottom still counted as at-bottom. */
-  threshold?: number;
-  /** Injectable content watcher returning its own dispose; defaults to a ResizeObserver. */
-  observe?: (target: Element, onGrow: () => void) => () => void;
-}
-
-interface MessageScrollerContentProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-}
-
 interface MessageScrollerItemProps extends HTMLAttributes<"div"> {
   class?: string;
   children?: HellaChildren;
-}
-
-interface MessageScrollerButtonProps extends HTMLAttributes<"button"> {
-  class?: string;
-  children?: HellaChildren;
-  /** Shared at-bottom state driving data-active; the default scroll action writes it back to true. */
-  atBottom?: Signal<boolean>;
-  scrollToBottom?: () => void;
-  direction?: "start" | "end";
-  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
-  size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
 }
 
 interface MessageScrollerProps extends HTMLAttributes<"div"> {
@@ -73,55 +40,6 @@ const buttonSizes = {
   "icon-lg": "size-10",
 };
 
-/**
- * Drop-in composition wrapper kept for API parity with the upstream provider.
- * Hella has no context: state lives on signals the composer owns and passes to
- * the viewport and button explicitly (see MessageScrollerViewport).
- */
-export function MessageScrollerProvider(props: MessageScrollerProviderProps): JSX.Element {
-  return <>{props.children}</>;
-}
-
-export function MessageScrollerViewport({
-  atBottom,
-  scrollToBottom,
-  threshold,
-  observe,
-  children,
-  class: cls,
-  ...attrs
-}: MessageScrollerViewportProps): JSX.Element {
-  const { Viewport } = messageScroller({ atBottom, scrollToBottom, threshold, observe });
-  return (
-    <Viewport
-      class={
-        cn("size-full min-h-0 min-w-0 scroll-fade-b scrollbar-thin scrollbar-gutter-stable overflow-y-auto overscroll-contain contain-content data-autoscrolling:scrollbar-none data-pending-scroll:invisible", cls)
-      }
-      {...attrs}
-    >
-      {children}
-    </Viewport>
-  );
-}
-
-export function MessageScrollerContent({
-  children,
-  class: cls,
-  ...attrs
-}: MessageScrollerContentProps): JSX.Element {
-  const { Content } = messageScroller();
-  return (
-    <Content
-      class={
-        cn("flex h-max min-h-full flex-col gap-8", cls)
-      }
-      {...attrs}
-    >
-      {children}
-    </Content>
-  );
-}
-
 export function MessageScrollerItem({
   children,
   class: cls,
@@ -137,40 +55,6 @@ export function MessageScrollerItem({
     >
       {children}
     </Item>
-  );
-}
-
-export function MessageScrollerButton({
-  atBottom,
-  scrollToBottom,
-  direction: dir,
-  variant,
-  size,
-  "on:click": userClick,
-  children,
-  class: cls,
-  ...attrs
-}: MessageScrollerButtonProps): JSX.Element {
-  const { Button } = messageScroller({ atBottom, scrollToBottom });
-  return (
-    <Button
-      direction={dir}
-      variant={variant}
-      size={size}
-      on:click={userClick}
-      class={
-        cn(
-          "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_[data-slot='message-scroller-sr']]:sr-only",
-          buttonVariants[variant ?? "secondary"],
-          buttonSizes[size ?? "icon-sm"],
-          "absolute inset-s-1/2 -translate-x-1/2 border-border bg-background text-foreground transition-[translate,scale,opacity] duration-200 hover:bg-muted hover:text-foreground data-[active=false]:pointer-events-none data-[active=false]:scale-95 data-[active=false]:opacity-0 data-[active=false]:duration-400 data-[active=false]:ease-[cubic-bezier(0.7,0,0.84,0)] data-[active=true]:translate-y-0 data-[active=true]:scale-100 data-[active=true]:opacity-100 data-[active=true]:ease-[cubic-bezier(0.23,1,0.32,1)] data-[direction=end]:bottom-4 data-[direction=end]:data-[active=false]:translate-y-full data-[direction=start]:top-4 data-[direction=start]:data-[active=false]:-translate-y-full rtl:translate-x-1/2 data-[direction=start]:[&_svg]:rotate-180",
-          cls,
-        )
-      }
-      {...attrs}
-    >
-      {children}
-    </Button>
   );
 }
 

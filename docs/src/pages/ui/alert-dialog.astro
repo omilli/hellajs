@@ -4,7 +4,7 @@ import InstallSection from "../../components/InstallSection.astro";
 import AlertDialogContent from "@ui/concepts/alert-dialog.mdx";
 import Component from "../../components/Component.astro";
 
-import { AlertDialogDemo, AlertDialogManualDemo } from "../../demos/alert-dialog-demo";
+import { AlertDialogDemo } from "../../demos/alert-dialog-demo";
 
 const title = "Alert Dialog";
 const description = "Interactive Alert Dialog demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
@@ -18,9 +18,6 @@ const description = "Interactive Alert Dialog demo running the site's built regi
 
   <Component heading="Playground" Demo={<AlertDialogDemo client:load />} code="AlertDialogDemo">
     <p>Opens a portal-mounted alert dialog with wired title and description, an Action/Cancel footer, and no outside-click dismissal: escape or the buttons are the only ways out.</p>
-  </Component>
-  <Component heading="Manual Parts" Demo={<AlertDialogManualDemo client:load />} code="AlertDialogManualDemo">
-    <p>The same panel composed from the exported parts: overlay and content portaled by hand, both fed the state accessor; the `aria-labelledby` and `aria-describedby` attrs point at the title and description ids you assign.</p>
   </Component>
 
   <AlertDialogContent />

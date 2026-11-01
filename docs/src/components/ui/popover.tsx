@@ -1,38 +1,6 @@
 import { popover } from "@hellajs/headless";
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
-type AnchorSide = "top" | "bottom" | "left" | "right";
-
-type AnchorAlign = "start" | "center" | "end";
-
-interface PopoverAnchorProps extends HTMLAttributes<"span"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
-interface PopoverTriggerProps extends HTMLAttributes<"button"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
-interface PopoverContentProps extends HTMLAttributes<"div"> {
-  state?: () => "open" | "closed";
-  side?: AnchorSide;
-  align?: AnchorAlign;
-  /** Gap between the anchor and the content edge, in px. Default 4. */
-  sideOffset?: number;
-  /** Cross-axis shift applied after positioning, in px. Default 0. */
-  alignOffset?: number;
-  /** Resolves the element the content anchors to; positioning is skipped when undefined. */
-  anchor?: () => Element | undefined;
-  /** When given, Escape and an outside pointerdown dismiss the top layer into this callback. */
-  onDismiss?: () => void;
-  /** Called when the exit animation ends under data-state="closed"; entry animationends are ignored. */
-  onExited?: () => void;
-  children?: HellaChildren;
-  class?: string;
-}
-
 interface PopoverPartProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   class?: string;
@@ -160,80 +128,6 @@ const title = style("popover-title", {
 const description = style("popover-description", {
   color: tokens.mutedForeground,
 });
-
-/** Bare anchor span - the manual composition's positioning target when the trigger should not anchor. */
-export function PopoverAnchor({ children, class: cls, ...attrs }: PopoverAnchorProps): JSX.Element {
-  const { Anchor } = popover();
-  return (
-    <Anchor
-      class={
-        [cls]
-      }
-      {...attrs}
-    >
-      {children}
-    </Anchor>
-  );
-}
-
-/** The manual trigger button; the composed Popover renders the same shape wired to toggle + aria state. */
-export function PopoverTrigger({
-  children,
-  class: cls,
-  ...attrs
-}: PopoverTriggerProps): JSX.Element {
-  const { Trigger } = popover();
-  return (
-    <Trigger
-      class={
-        [base, cls]
-      }
-      {...attrs}
-    >
-      {children}
-    </Trigger>
-  );
-}
-
-/** The manual content layer; the composed Popover portals the same wiring under its trigger's state. */
-export function PopoverContent({
-  state,
-  id,
-  side,
-  align,
-  sideOffset,
-  alignOffset,
-  anchor,
-  onDismiss,
-  onExited,
-  children,
-  class: cls,
-  ...attrs
-}: PopoverContentProps): JSX.Element {
-  const { Content } = popover({
-    open: () => (state?.() ?? "open") === "open",
-    onOpenChange: (next) => {
-      if (!next) onDismiss?.();
-    },
-    anchor,
-  });
-  return (
-    <Content
-      id={id}
-      side={side}
-      align={align}
-      sideOffset={sideOffset}
-      alignOffset={alignOffset}
-      onExited={onExited}
-      class={
-        [content, cls]
-      }
-      {...attrs}
-    >
-      {children}
-    </Content>
-  );
-}
 
 export function PopoverHeader({ children, class: cls, ...attrs }: PopoverPartProps): JSX.Element {
   const { Header } = popover();

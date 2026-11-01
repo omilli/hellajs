@@ -1,11 +1,6 @@
 import { dialog } from "@hellajs/headless";
-import { Portal } from "@hellajs/dom";
 import type { HellaChild, HellaChildren } from "@hellajs/dom";
 import type {
-  AlertDialogOverlayProps,
-  AlertDialogPortalProps,
-  AlertDialogTriggerProps,
-  AlertDialogContentProps,
   AlertDialogPartProps,
   AlertDialogTitleProps,
   AlertDialogDescriptionProps,
@@ -26,99 +21,6 @@ declare const header: string;
 declare const media: string;
 declare const title: string;
 // @hella:end
-
-/** The screen-covering backdrop; the factory's Overlay with the backdrop style. */
-export function AlertDialogOverlay({
-  state,
-  class: cls,
-  ...attrs
-}: AlertDialogOverlayProps): JSX.Element {
-  const { Overlay } = dialog({ open: () => (state?.() ?? "open") === "open" });
-  return (
-    <Overlay
-      data-slot="alert-dialog-overlay"
-      class={
-        // @hella:compose
-        [base, cls]
-        // @hella:end
-      }
-      {...attrs}
-    />
-  );
-}
-
-/** Portals the manual composition's parts into document.body. */
-export function AlertDialogPortal(props: AlertDialogPortalProps): JSX.Element {
-  return <Portal to="body">{props.children}</Portal>;
-}
-
-/** The manual trigger button; the factory's Trigger owning the aria contract over the wrapper's own state. */
-export function AlertDialogTrigger({
-  children,
-  class: cls,
-  ...attrs
-}: AlertDialogTriggerProps): JSX.Element {
-  const { Trigger } = dialog();
-  return (
-    <Trigger
-      data-slot="alert-dialog-trigger"
-      class={
-        // @hella:compose
-        [cls]
-        // @hella:end
-      }
-      {...attrs}
-    >
-      {children}
-    </Trigger>
-  );
-}
-
-/**
- * The alert dialog panel. Manual composition portals it alongside an
- * AlertDialogOverlay sibling - hella has no Radix context, so the
- * portal/overlay pairing is the composer's (the AlertDialog export below
- * shows the wired composition). Unlike DialogContent there is no outside
- * dismissal: Radix's AlertDialog semantics are escape-only by design. The
- * panel renders inline where placed: the factory's gate and portal belong
- * to the composed AlertDialog.
- */
-export function AlertDialogContent({
-  state,
-  size,
-  closeOnEscape,
-  onClose,
-  onExited,
-  children,
-  class: cls,
-  ...attrs
-}: AlertDialogContentProps): JSX.Element {
-  const { Content } = dialog({
-    open: () => (state?.() ?? "open") === "open",
-    onOpenChange: (next) => {
-      if (!next) onClose?.();
-    },
-  });
-  return (
-    <Content
-      portal={false}
-      data-slot="alert-dialog-content"
-      role="alertdialog"
-      data-size={size ?? "default"}
-      escape={closeOnEscape}
-      outside={false}
-      onExited={onExited}
-      class={
-        // @hella:compose
-        [content, cls]
-        // @hella:end
-      }
-      {...attrs}
-    >
-      {children}
-    </Content>
-  );
-}
 
 export function AlertDialogHeader({
   children,
@@ -301,7 +203,7 @@ export function AlertDialog({
 }: AlertDialogProps): JSX.Element {
   const titleId = `hella-alert-dialog-title-${++alertDialogCount}`;
   const descriptionId = `hella-alert-dialog-description-${alertDialogCount}`;
-  const { Content } = dialog({
+  const { Content, Overlay } = dialog({
     open,
     onOpenChange: (next) => {
       if (!next) onClose();
@@ -322,7 +224,16 @@ export function AlertDialog({
       aria-describedby={descriptionText === undefined ? undefined : descriptionId}
       escape={closeOnEscape}
       outside={false}
-      overlay={(state) => <AlertDialogOverlay state={state} />}
+      overlay={() => (
+        <Overlay
+          data-slot="alert-dialog-overlay"
+          class={
+            // @hella:compose
+            [base]
+            // @hella:end
+          }
+        />
+      )}
       {...attrs}
       children={
         [

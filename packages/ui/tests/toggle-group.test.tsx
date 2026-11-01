@@ -9,7 +9,6 @@ import {
   assertHandlerForwarded,
   assertStructuralParity,
   classTokens,
-  toggleGroupPartVariants,
   toggleGroupVariants,
 } from "./helpers/variants";
 import type {
@@ -384,56 +383,5 @@ describe("toggle-group", () => {
       variant: "outline",
       size: "lg",
     });
-  });
-
-  test("renders the manual item part with its joined-segment classes and pressed state across both styles", () => {
-    for (const variant of toggleGroupPartVariants) {
-      const container = setupContainer();
-      const rendered = variant.render({
-        value: "bold",
-        pressed: () => true,
-        variant: "outline",
-        size: "sm",
-        children: "Bold",
-      });
-      mount(rendered, container);
-      const el = container.firstElementChild as HTMLElement;
-      expect(el.getAttribute("data-slot")).toBe("toggle-group-item");
-      expect(el.getAttribute("aria-pressed")).toBe("true");
-      expect(el.getAttribute("data-state")).toBe("on");
-      expect(el.getAttribute("data-variant")).toBe("outline");
-      expect(el.getAttribute("data-size")).toBe("sm");
-      expect(el.getAttribute("data-spacing")).toBe("0");
-      const tokens = classTokens(el);
-      if (variant.style === "tailwind") {
-        expect(tokens).toContain("data-[spacing=0]:rounded-none");
-        expect(tokens).toContain("data-[spacing=0]:data-[variant=outline]:border-l-0");
-      } else {
-        expect(tokens.some((token) => token.startsWith("toggle-group-item"))).toBe(true);
-      }
-    }
-  });
-
-  test("chains a user on:click on the item part with its owned select across both styles", () => {
-    const userClick = vi.fn(function (this: HTMLElement, e: Event) {
-      void e;
-    });
-    const onSelect = vi.fn(() => {});
-    for (const variant of toggleGroupPartVariants) {
-      const container = setupContainer();
-      const rendered = variant.render({
-        value: "bold",
-        onSelect,
-        "on:click": userClick,
-        children: "Bold",
-      });
-      mount(rendered, container);
-      const el = container.firstElementChild as HTMLElement;
-      userClick.mockClear();
-      onSelect.mockClear();
-      el.dispatchEvent(new Event("click"));
-      expect(userClick).toHaveBeenCalledTimes(1);
-      expect(onSelect).toHaveBeenCalledTimes(1);
-    }
   });
 });

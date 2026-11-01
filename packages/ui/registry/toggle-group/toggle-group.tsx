@@ -1,6 +1,6 @@
 import { ForEach } from "@hellajs/dom";
 import { toggleGroup } from "@hellajs/headless";
-import type { ToggleGroupProps, ToggleGroupItemProps } from "./toggle-group-types.js";
+import type { ToggleGroupProps } from "./toggle-group-types.js";
 
 // @hella:styles
 declare const base: string;
@@ -17,39 +17,6 @@ const toggleVariants = (options?: {
   [base, variants[options?.variant ?? "default"], sizes[options?.size ?? "default"]]
     .filter(Boolean)
     .join(" ");
-
-export function ToggleGroupItem({
-  value,
-  pressed,
-  onSelect,
-  variant = "default",
-  size = "default",
-  disabled,
-  children,
-  class: cls,
-  ...attrs
-}: ToggleGroupItemProps): JSX.Element {
-  const { Item } = toggleGroup();
-  return (
-    <Item
-      value={value}
-      pressed={pressed}
-      onSelect={onSelect}
-      disabled={disabled}
-      data-variant={variant}
-      data-size={size}
-      data-spacing="0"
-      class={
-        // @hella:compose
-        [toggleVariants({ variant, size }), item, cls]
-        // @hella:end
-      }
-      {...attrs}
-    >
-      {children}
-    </Item>
-  );
-}
 
 export function ToggleGroup({
   items,

@@ -18,46 +18,6 @@ Accepts all native `div` attributes (forwarded to the root element).
 
 `title` renders as a wired `AlertDialogTitle` (the panel's `aria-labelledby` target) and `description` as a wired `AlertDialogDescription` (the `aria-describedby` target). `"sm"` narrows the panel to 20rem and grids the footer into two columns.
 
-### AlertDialogTrigger
-
-A bare button; wire its click to your own signal write.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `children` | `HellaChildren` | `-` |
-Accepts all native `button` attributes (forwarded to the root element).
-
-### AlertDialogPortal
-
-Wraps children in a `Portal to="body"` for compositions that want the named component.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `children` | `HellaChildren` | `-` |
-
-### AlertDialogOverlay
-
-The screen-covering backdrop `div` carrying `data-slot="alert-dialog-overlay"`.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `state` | `() => "open" \| "closed"` | `-` |
-Accepts all native `div` attributes (forwarded to the root element).
-
-### AlertDialogContent
-
-The `role="alertdialog"` panel carrying `data-slot="alert-dialog-content"`: focus trap plus escape dismissal while open, torn down the moment the exit starts, and no outside dismissal.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `state` | `() => "open" \| "closed"` | `-` |
-| `size` | `"default" \| "sm"` | `"default"` |
-| `closeOnEscape` | `boolean` | `true` |
-| `onClose` | `() => void` | `-` |
-| `onExited` | `() => void` | `-` |
-| `children` | `HellaChildren` | `-` |
-Accepts all native `div` attributes (forwarded to the root element). Pass the wired ids as the panel's `aria-labelledby` and `aria-describedby` attrs - in the composed `AlertDialog` the root threads them for you.
-
 ### AlertDialogHeader
 
 The top grouping `div` carrying `data-slot="alert-dialog-header"`.

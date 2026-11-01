@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
-import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
-import { mount, peekState } from "@hellajs/dom";
+import { delay, resetTestState } from "@utils/test-helpers.js";
+import { peekState } from "@hellajs/dom";
 import {
   assertAttrForwarded,
   assertStructuralParity,
@@ -41,29 +41,6 @@ async function awaitWiring(el: Element): Promise<void> {
 }
 
 describe("message-scroller", () => {
-  test.each(messageScrollerPartVariants.filter((variant) => variant.part === "Provider"))(
-    "$part $style passes children through",
-    (variant) => {
-      const container = setupContainer();
-      mount(<div>{variant.render({ children: ["x"] })}</div>, container);
-      expect(container.textContent).toBe("x");
-    },
-  );
-
-  test.each(messageScrollerPartVariants.filter((variant) => variant.part === "Content"))(
-    "$part $style renders the content stack",
-    (variant) => {
-      const root = renderVariant(variant, { children: ["x"] });
-      expect(root.getAttribute("data-slot")).toBe("message-scroller-content");
-      expect(root.textContent).toBe("x");
-      if (variant.style === "css") {
-        expect(classTokens(root)[0]!.startsWith("message-scroller-content")).toBe(true);
-      } else {
-        expect(classTokens(root)).toContain("gap-8");
-      }
-    },
-  );
-
   test.each(messageScrollerPartVariants.filter((variant) => variant.part === "Item"))(
     "$part $style renders the item row",
     (variant) => {
@@ -75,42 +52,6 @@ describe("message-scroller", () => {
       } else {
         expect(classTokens(root)).toContain("[content-visibility:auto]");
       }
-    },
-  );
-
-  test.each(messageScrollerPartVariants.filter((variant) => variant.part === "Button"))(
-    "$part $style renders the jump button with the arrow glyph",
-    (variant) => {
-      const root = renderVariant(variant, {});
-      expect(root.tagName).toBe("BUTTON");
-      expect(root.getAttribute("data-slot")).toBe("message-scroller-button");
-      expect(root.getAttribute("data-direction")).toBe("end");
-      expect(root.getAttribute("data-variant")).toBe("secondary");
-      expect(root.getAttribute("data-size")).toBe("icon-sm");
-      expect(root.getAttribute("data-active")).toBe("false");
-      expect(root.querySelector("svg path")).not.toBeNull();
-      expect(root.querySelector("span")!.textContent).toBe("Scroll to end");
-      if (variant.style === "css") {
-        const tokens = classTokens(root);
-        expect(tokens.some((token) => token.startsWith("message-scroller-overlay"))).toBe(true);
-        expect(tokens.some((token) => token.startsWith("message-scroller-button-secondary"))).toBe(
-          true,
-        );
-      } else {
-        expect(classTokens(root)).toContain("data-[direction=end]:bottom-4");
-      }
-    },
-  );
-
-  test.each(messageScrollerPartVariants.filter((variant) => variant.part === "Button"))(
-    "$part $style drives data-active from the atBottom state",
-    (variant) => {
-      const atBottom = signal(true);
-      const root = renderVariant(variant, { atBottom });
-      expect(root.getAttribute("data-active")).toBe("false");
-      atBottom(false);
-      flush();
-      expect(root.getAttribute("data-active")).toBe("true");
     },
   );
 
@@ -226,7 +167,7 @@ describe("message-scroller", () => {
   );
 
   test.each(messageScrollerVariants)(
-    "$style derives start-direction activity from the at-bottom state",
+    "$style renders no start-direction button",
     async (variant) => {
       const atBottom = signal(true);
       const root = renderVariant(variant, { atBottom, children: ["m1"] }) as HTMLElement;
@@ -235,16 +176,6 @@ describe("message-scroller", () => {
         '[data-slot="message-scroller-button"][data-direction="start"]',
       );
       expect(start).toBeNull();
-      const button = renderVariant(
-        messageScrollerPartVariants.find((candidate) => candidate.part === "Button")!,
-        { atBottom, direction: "start" },
-      );
-      expect(button.getAttribute("data-direction")).toBe("start");
-      expect(button.getAttribute("data-active")).toBe("true");
-      atBottom(false);
-      flush();
-      expect(button.getAttribute("data-active")).toBe("false");
-      expect(button.querySelector("span")!.textContent).toBe("Scroll to start");
     },
   );
 
@@ -281,31 +212,7 @@ describe("message-scroller", () => {
     }
   });
 
-  test.each(messageScrollerPartVariants.filter((variant) => variant.part === "Button"))(
-    "$part $style chains the user on:click with the owned scroll action",
-    (variant) => {
-      const atBottom = signal(false);
-      const userClick = vi.fn(() => {});
-      const root = renderVariant(variant, {
-        atBottom,
-        scrollToBottom: () => atBottom(true),
-        "on:click": userClick,
-      });
-      root.dispatchEvent(new Event("click"));
-      expect(userClick).toHaveBeenCalledTimes(1);
-      expect(atBottom()).toBe(true);
-    },
-  );
-
   test("both styles agree on tag and attributes", () => {
-    assertStructuralParity(
-      messageScrollerPartVariants.filter((candidate) => candidate.part === "Button"),
-      { atBottom: () => false },
-    );
-    assertStructuralParity(
-      messageScrollerPartVariants.filter((candidate) => candidate.part === "Viewport"),
-      { children: ["x"] },
-    );
     assertStructuralParity(
       messageScrollerPartVariants.filter((candidate) => candidate.part === "Item"),
       { children: ["x"] },

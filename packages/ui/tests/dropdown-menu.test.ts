@@ -660,31 +660,11 @@ describe("dropdown-menu", () => {
     },
   );
 
-  test.each(dropdownMenuPartVariants.filter((variant) => variant.part === "Trigger"))(
-    "$style fires a user on:click handler on the trigger root across both styles",
-    (variant) => {
-      const userClick = vi.fn(() => {});
-      const trigger = renderVariant(variant, { children: "Open", "on:click": userClick });
-      trigger.dispatchEvent(new Event("click"));
-      expect(userClick).toHaveBeenCalledTimes(1);
-    },
-  );
-
   test.each(dropdownMenuVariants)(
     "$style merges a user class into the trigger root's class across both styles",
     (variant) => {
       const trigger = renderVariant(variant, { content: "Inspect", class: "user-class" });
       expect(classTokens(trigger).at(-1)).toBe("user-class");
-    },
-  );
-
-  test.each(dropdownMenuPartVariants.filter((variant) => variant.part === "Content"))(
-    "$style content part respects a user-supplied id",
-    async (variant) => {
-      const container = setupContainer();
-      mount(variant.render({ id: "custom-menu", children: [] }), container);
-      const content = await awaitPortaled("dropdown-menu-content");
-      expect(content.getAttribute("id")).toBe("custom-menu");
     },
   );
 
@@ -713,71 +693,12 @@ describe("dropdown-menu", () => {
             ? "dropdown-menu-radio-item"
             : variant.part === "RadioGroup"
               ? "dropdown-menu-radio-group"
-              : variant.part === "Sub" || variant.part === "SubTrigger"
+              : variant.part === "Sub"
                 ? "dropdown-menu-sub-trigger"
-                : variant.part === "SubContent"
-                  ? "dropdown-menu-sub-content"
-                  : `dropdown-menu-${variant.part.toLowerCase()}`;
-      // Content and SubContent portal themselves; every other part renders in place.
-      const el =
-        variant.part === "Content" || variant.part === "SubContent"
-          ? await awaitPortaled(slot)
-          : container.firstElementChild!;
-      expect(el.getAttribute("data-slot")).toBe(slot);
+                : `dropdown-menu-${variant.part.toLowerCase()}`;
+      expect(container.firstElementChild!.getAttribute("data-slot")).toBe(slot);
     }
   });
-
-  test.each(dropdownMenuPartVariants.filter((variant) => variant.part === "Content"))(
-    "$style content part anchors, takes focus, and drains its wirings on disposal",
-    async (variant) => {
-      const anchor = document.createElement("button");
-      document.body.appendChild(anchor);
-      pinRect(anchor, 100, 50, 200, 20);
-      const onDismiss = vi.fn(() => {});
-      const container = setupContainer();
-      const handle = mount(
-        variant.render({
-          anchor: () => anchor,
-          side: "right",
-          alignOffset: 8,
-          onDismiss,
-          children: [],
-        }),
-        container,
-      );
-      const content = await awaitPortaled("dropdown-menu-content");
-      expect(content.style.left).toBe("254px");
-      expect(content.style.translate).toBe("0 8px");
-      expect(content.getAttribute("data-side")).toBe("right");
-      expect(document.activeElement).toBe(content);
-      pressEscape();
-      expect(onDismiss).toHaveBeenCalledTimes(1);
-      handle.unmount();
-      await awaitDetached(content);
-    },
-  );
-
-  test.each(dropdownMenuPartVariants.filter((variant) => variant.part === "SubTrigger"))(
-    "$style sub-trigger part opens through onOpen from click and hover intent",
-    async (variant) => {
-      const onOpen = vi.fn(() => {});
-      const container = setupContainer();
-      const handle = mount(variant.render({ children: "More", onOpen }), container);
-      const trigger = container.firstElementChild as HTMLElement;
-      trigger.dispatchEvent(new Event("click", { bubbles: true }));
-      expect(onOpen).toHaveBeenCalledTimes(1);
-      // Leaving before the intent delay fires cancels the pending open.
-      pointerEnter(trigger);
-      pointerLeave(trigger);
-      await delay(150);
-      expect(onOpen).toHaveBeenCalledTimes(1);
-      pointerEnter(trigger);
-      await delay(150);
-      expect(onOpen).toHaveBeenCalledTimes(2);
-      pointerLeave(trigger);
-      handle.unmount();
-    },
-  );
 });
 
 /** Counts activatable (non-disabled) menu items inside a rendered menu. */

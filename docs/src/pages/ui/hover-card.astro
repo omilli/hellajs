@@ -4,7 +4,7 @@ import InstallSection from "../../components/InstallSection.astro";
 import HoverCardContent from "@ui/concepts/hover-card.mdx";
 import Component from "../../components/Component.astro";
 
-import { HoverCardDemo, HoverCardManualDemo } from "../../demos/hover-card-demo";
+import { HoverCardDemo } from "../../demos/hover-card-demo";
 
 const title = "Hover Card";
 const description = "Interactive Hover Card demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
@@ -18,9 +18,6 @@ const description = "Interactive Hover Card demo running the site's built regist
 
   <Component heading="Playground" Demo={<HoverCardDemo client:load />} code="HoverCardDemo">
     <p>Hovering opens the anchored preview after a short delay; moving the pointer into the card keeps it open, and focus opens it from the keyboard.</p>
-  </Component>
-  <Component heading="Manual parts" Demo={<HoverCardManualDemo client:load />} code="HoverCardManualDemo">
-    <p>The content's own onOpen re-arms the open state the moment the pointer enters, cancelling the trigger's pending close.</p>
   </Component>
 
   <HoverCardContent />

@@ -7,7 +7,7 @@ A drag-dismissable panel mounting on one of the four screen edges: the caller ow
 
 Opening portals the overlay and panel into `document.body` under `data-state="open"`; closing keeps the panel mounted until its exit slide ends, with the dismissal wirings down while it leaves. Escape and outside pointerdown route through the same `onClose`, and the focus trap stays armed the whole time the drawer rests open.
 
-Nine named components ship beside the default `Drawer` for custom composition: `DrawerTrigger`, `DrawerClose`, `DrawerPortal`, `DrawerOverlay`, `DrawerContent`, `DrawerHeader`, `DrawerFooter`, `DrawerTitle`, and `DrawerDescription`. State is explicit - portal the overlay and panel yourself, hand both a `state` accessor, and share one drag-fraction signal between the overlay and the content so the overlay keeps fading with the drag.
+The composed `Drawer` ships beside four content-vocabulary components: `DrawerHeader`, `DrawerFooter`, `DrawerTitle`, and `DrawerDescription` compose inside the root's children slot.
 
 ### Drawer
 
@@ -25,63 +25,6 @@ Nine named components ship beside the default `Drawer` for custom composition: `
 Accepts all native `div` attributes (forwarded to the root element).
 
 `direction` is the edge the panel mounts on; it sets `data-vaul-drawer-direction` and the dismissal axis. `title` renders as a wired `DrawerTitle` (the panel's `aria-labelledby` target) and `description` as a wired `DrawerDescription` (the `aria-describedby` target).
-
-### DrawerTrigger
-
-A bare button; wire its click to your own signal write.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `children` | `HellaChildren` | `-` |
-Accepts all native `button` attributes (forwarded to the root element).
-
-### DrawerClose
-
-The X button with its `sr-only` "Close" label - the default panel renders no close button of its own, so dragging is the primary dismissal and this component adds an explicit one.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `state` | `() => "open" \| "closed"` | `-` |
-| `onClose` | `() => void` | `-` |
-Accepts all native `button` attributes (forwarded to the root element; a user `on:click` chains with the owned dismiss).
-
-### DrawerPortal
-
-Wraps children in a `Portal to="body"` for compositions that want the named component.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `children` | `HellaChildren` | `-` |
-
-### DrawerOverlay
-
-The screen-covering backdrop `div` carrying `data-slot="drawer-overlay"`.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `state` | `() => "open" \| "closed"` | `-` |
-| `fraction` | `Signal<number>` | `-` |
-Accepts all native `div` attributes (forwarded to the root element).
-
-`state` drives the overlay's `data-state` and its enter/exit fade; `fraction` is the drag fraction (0 to 1 toward dismissal) driving the proportional fade while the panel is dragged.
-
-### DrawerContent
-
-The `role="dialog"` panel carrying `data-slot="drawer-content"` and the grip handle: focus trap plus escape and outside dismissal while open, whole-panel drag along the dismissal axis, torn down the moment the exit starts.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `state` | `() => "open" \| "closed"` | `-` |
-| `direction` | `"top" \| "right" \| "bottom" \| "left"` | `"bottom"` |
-| `fraction` | `Signal<number>` | `-` |
-| `closeOnEscape` | `boolean` | `true` |
-| `closeOnOutside` | `boolean` | `true` |
-| `onClose` | `() => void` | `-` |
-| `onExited` | `() => void` | `-` |
-| `children` | `HellaChildren` | `-` |
-Accepts all native `div` attributes (forwarded to the root element). Pass the wired ids as the panel's `aria-labelledby` and `aria-describedby` attrs - in the composed `Drawer` the root threads them for you.
-
-`fraction` is the shared drag fraction; the overlay fades proportionally when both components receive the same signal. `onClose` is the dismissal callback - drag release, escape, and outside pointerdown all fire it; `onExited` fires when the exit slide ends.
 
 ### DrawerHeader
 

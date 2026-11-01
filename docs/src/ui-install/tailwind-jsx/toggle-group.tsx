@@ -26,17 +26,6 @@ interface ToggleGroupProps extends HTMLAttributes<"div"> {
   variant?: "default" | "outline";
   size?: "default" | "sm" | "lg";
 }
-
-interface ToggleGroupItemProps extends HTMLAttributes<"button"> {
-  class?: string;
-  children?: HellaChildren;
-  value?: string;
-  /** Pressed state. A boolean reads statically; an accessor keeps the manual part reactive. */
-  pressed?: boolean | (() => boolean);
-  onSelect?: () => void;
-  variant?: "default" | "outline";
-  size?: "default" | "sm" | "lg";
-}
 import { cn } from "./cn.js";
 
 const variants = {
@@ -59,37 +48,6 @@ const toggleVariants = (options?: {
   ["group/toggle-group flex w-fit items-center gap-[--spacing(var(--gap))] rounded-md data-[spacing=default]:data-[variant=outline]:shadow-xs", variants[options?.variant ?? "default"], sizes[options?.size ?? "default"]]
     .filter(Boolean)
     .join(" ");
-
-export function ToggleGroupItem({
-  value,
-  pressed,
-  onSelect,
-  variant = "default",
-  size = "default",
-  disabled,
-  children,
-  class: cls,
-  ...attrs
-}: ToggleGroupItemProps): JSX.Element {
-  const { Item } = toggleGroup();
-  return (
-    <Item
-      value={value}
-      pressed={pressed}
-      onSelect={onSelect}
-      disabled={disabled}
-      data-variant={variant}
-      data-size={size}
-      data-spacing="0"
-      class={
-        cn(toggleVariants({ variant, size }), "w-auto min-w-0 shrink-0 px-3 focus:z-10 focus-visible:z-10 data-[spacing=0]:rounded-none data-[spacing=0]:shadow-none data-[spacing=0]:first:rounded-l-md data-[spacing=0]:last:rounded-r-md data-[spacing=0]:data-[variant=outline]:border-l-0 data-[spacing=0]:data-[variant=outline]:first:border-l", cls)
-      }
-      {...attrs}
-    >
-      {children}
-    </Item>
-  );
-}
 
 export function ToggleGroup({
   items,

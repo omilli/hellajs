@@ -8,7 +8,6 @@ import {
   assertAttrForwarded,
   assertStructuralParity,
   classTokens,
-  collapsiblePartVariants,
   collapsibleVariants,
 } from "./helpers/variants";
 import type { CollapsibleVariantProps, ComponentVariant } from "./helpers/variants";
@@ -121,6 +120,13 @@ describe("collapsible", () => {
       expect(content.isConnected).toBe(true);
       expect(content.getAttribute("data-state")).toBe("closed");
       expect(content.querySelector("[data-slot='collapsible-content'] > div")).not.toBeNull();
+      const tokens = classTokens(content);
+      if (variant.style === "tailwind") {
+        expect(tokens).toContain("grid-rows-[0fr]");
+        expect(tokens).toContain("data-[state=open]:grid-rows-[1fr]");
+      } else {
+        expect(tokens.some((token) => token.startsWith("collapsible-content"))).toBe(true);
+      }
     },
   );
 
@@ -178,58 +184,6 @@ describe("collapsible", () => {
         class: "col-root",
       });
       expect(classTokens(root)).toContain("col-root");
-    }
-  });
-
-  test("chains a user on:click with the owned toggle on a trigger across both styles", () => {
-    for (const variant of collapsiblePartVariants.filter(
-      (candidate) => candidate.part === "Trigger",
-    )) {
-      const userClick = vi.fn(() => {});
-      const open = signal(false);
-      const container = setupContainer();
-      const props: Record<string, unknown> = {
-        active: () => open(),
-        onToggle: () => open(!open()),
-        "on:click": userClick,
-        children: "Toggle",
-      };
-      const rendered = variant.render(props as never);
-      mount(rendered, container);
-      const trigger = container.firstElementChild!;
-      trigger.dispatchEvent(new Event("click"));
-      expect(userClick).toHaveBeenCalledTimes(1);
-      expect(open()).toBe(true);
-      expect(trigger.getAttribute("aria-expanded")).toBe("true");
-    }
-  });
-
-  test("renders every named part with its data-slot and state across both styles", () => {
-    for (const variant of collapsiblePartVariants) {
-      const container = setupContainer();
-      const props: Record<string, unknown> = { children: "Body" };
-      if (variant.part === "Trigger") {
-        props.active = () => true;
-        props.onToggle = () => {};
-        props["aria-controls"] = "target-id";
-      } else {
-        props.active = () => false;
-        props.id = "region-id";
-      }
-      const rendered = variant.render(props as never);
-      mount(rendered, container);
-      const el = container.firstElementChild!;
-      if (variant.part === "Trigger") {
-        expect(el.getAttribute("data-slot")).toBe("collapsible-trigger");
-        expect(el.getAttribute("aria-expanded")).toBe("true");
-        expect(el.getAttribute("aria-controls")).toBe("target-id");
-        expect(el.getAttribute("data-state")).toBe("open");
-      } else {
-        expect(el.getAttribute("data-slot")).toBe("collapsible-content");
-        expect(el.getAttribute("role")).toBe("region");
-        expect(el.getAttribute("id")).toBe("region-id");
-        expect(el.getAttribute("data-state")).toBe("closed");
-      }
     }
   });
 });

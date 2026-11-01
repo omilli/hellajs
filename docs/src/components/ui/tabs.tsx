@@ -13,38 +13,12 @@ interface TabsProps extends HTMLAttributes<"div"> {
   /** The rendered tabs. An array reads statically at mount; an accessor keeps the list reactive across appends, removes, and reorders. Items auto-key by `id`, so reorders preserve trigger and panel identity. */
   items: TabsItem[] | (() => TabsItem[]);
   initialId?: string;
+  /** Controlled active tab. When given, the root never writes its internal state and `onValueChange` reports the requested selection. */
+  value?: () => string;
+  /** Called with every root-driven selection; re-selecting the active tab notifies no one. */
+  onValueChange?: (value: string) => void;
   orientation?: "horizontal" | "vertical";
   variant?: "default" | "line";
-}
-
-interface TabsListProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChild | HellaChild[];
-  variant?: "default" | "line";
-  orientation?: "horizontal" | "vertical";
-}
-
-interface TabsTriggerProps extends HTMLAttributes<"button"> {
-  class?: string;
-  /** The raw TabsItem id - the DOM id is `${TAB_ID}${id}`. */
-  id?: string;
-  /** The tab's value key; wins over `id` when both are given. */
-  value?: string;
-  children?: HellaChild;
-  active?: () => boolean;
-  onActivate?: () => void;
-  orientation?: "horizontal" | "vertical";
-  listVariant?: "default" | "line";
-}
-
-interface TabsContentProps extends HTMLAttributes<"div"> {
-  class?: string;
-  /** The raw TabsItem id - the DOM id is `${PANEL_ID}${id}`. */
-  id?: string;
-  /** The panel's value key; wins over `id` when both are given. */
-  value?: string;
-  children?: HellaChild | (() => HellaChild);
-  active?: () => boolean;
 }
 
 export type { TabsItem };
@@ -191,81 +165,11 @@ css({
   },
 });
 
-export function TabsList({
-  variant = "default",
-  orientation = "horizontal",
-  children,
-  class: cls,
-  ...attrs
-}: TabsListProps): JSX.Element {
-  const { List } = tabs({ orientation });
-  return (
-    <List
-      data-variant={variant}
-      class={
-        [list, variants[variant], cls]
-      }
-      {...attrs}
-    >
-      {children}
-    </List>
-  );
-}
-
-export function TabsTrigger({
-  id,
-  value,
-  active,
-  onActivate,
-  orientation = "horizontal",
-  listVariant = "default",
-  children,
-  class: cls,
-  ...attrs
-}: TabsTriggerProps): JSX.Element {
-  const { Trigger } = tabs({ orientation });
-  return (
-    <Trigger
-      value={value ?? id}
-      active={active}
-      onActivate={onActivate}
-      data-variant={listVariant}
-      class={
-        [trigger, cls]
-      }
-      {...attrs}
-    >
-      {children}
-    </Trigger>
-  );
-}
-
-export function TabsContent({
-  id,
-  value,
-  active,
-  children,
-  class: cls,
-  ...attrs
-}: TabsContentProps): JSX.Element {
-  const { Content } = tabs();
-  return (
-    <Content
-      value={value ?? id}
-      active={active}
-      class={
-        [content, cls]
-      }
-      {...attrs}
-    >
-      {children}
-    </Content>
-  );
-}
-
 export function Tabs({
   items,
   initialId,
+  value,
+  onValueChange,
   orientation = "horizontal",
   variant = "default",
   class: cls,
@@ -273,6 +177,8 @@ export function Tabs({
 }: TabsProps): JSX.Element {
   const { List, Trigger, Content } = tabs({
     orientation,
+    value,
+    onValueChange,
     defaultValue: initialId ?? (typeof items === "function" ? items()[0] : items[0])!.id,
   });
 

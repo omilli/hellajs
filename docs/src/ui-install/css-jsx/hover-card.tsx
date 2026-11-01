@@ -1,30 +1,6 @@
 import { hoverCard } from "@hellajs/headless";
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
-type AnchorSide = "top" | "bottom" | "left" | "right";
-
-type AnchorAlign = "start" | "center" | "end";
-
-interface HoverCardTriggerProps extends HTMLAttributes<"span"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
-interface HoverCardContentProps extends HTMLAttributes<"div"> {
-  state?: () => "open" | "closed";
-  side?: AnchorSide;
-  align?: AnchorAlign;
-  /** Resolves the element the content anchors to; positioning is skipped when undefined. */
-  anchor?: () => Element | undefined;
-  /** When both are given, hovering the content re-arms the open state with zero delays (keep-open). */
-  onOpen?: () => void;
-  onClose?: () => void;
-  /** Called when the exit animation ends under data-state="closed"; entry animationends are ignored. */
-  onExited?: () => void;
-  children?: HellaChildren;
-  class?: string;
-}
-
 interface HoverCardProps extends HTMLAttributes<"span"> {
   open?: () => boolean;
   onOpenChange?: (open: boolean) => void;
@@ -73,60 +49,6 @@ const content = style("hover-card-content", {
   },
 });
 
-/** The manual trigger span; the composed HoverCard renders the same shape wired to the hover timings. */
-export function HoverCardTrigger({
-  children,
-  class: cls,
-  ...attrs
-}: HoverCardTriggerProps): JSX.Element {
-  const { Trigger } = hoverCard();
-  return (
-    <Trigger
-      class={
-        [cls]
-      }
-      {...attrs}
-    >
-      {children}
-    </Trigger>
-  );
-}
-
-export function HoverCardContent({
-  state,
-  side,
-  align,
-  anchor,
-  onOpen,
-  onClose,
-  onExited,
-  children,
-  class: cls,
-  ...attrs
-}: HoverCardContentProps): JSX.Element {
-  const { Content } = hoverCard({
-    open: () => (state?.() ?? "open") === "open",
-    onOpenChange: (next) => {
-      if (next) onOpen?.();
-      else onClose?.();
-    },
-  });
-  return (
-    <Content
-      side={side}
-      align={align}
-      anchor={anchor}
-      onExited={onExited}
-      class={
-        [content, cls]
-      }
-      {...attrs}
-    >
-      {children}
-    </Content>
-  );
-}
-
 export function HoverCard({
   open,
   onOpenChange,
@@ -144,7 +66,13 @@ export function HoverCard({
       {...attrs}
     >
       {children}
-      <Content>{contentSlot}</Content>
+      <Content
+        class={
+          [content]
+        }
+      >
+        {contentSlot}
+      </Content>
     </Trigger>
   );
 }

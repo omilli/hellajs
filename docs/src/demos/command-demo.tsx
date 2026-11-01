@@ -1,7 +1,7 @@
 import { signal } from "@hellajs/core";
 
 import { Button } from "@components/ui/button.js";
-import { Command, CommandDialog, CommandInput, CommandList, CommandGroup, CommandItem, CommandShortcut } from "@components/ui/command.js";
+import { Command, CommandDialog } from "@components/ui/command.js";
 
 const commands = [
   { value: "theme-light", label: "Light theme", group: "Theme", shortcut: "⌘1" },
@@ -27,15 +27,16 @@ export function CommandPaletteDemo() {
       <div class="demo-row">
         <Button variant="outline" on:click={() => paletteOpen(true)}>Open palette ⌘K</Button>
       </div>
-      <CommandDialog open={paletteOpen} onClose={closePalette} title="Command Palette" description="Search for a command to run...">
-        <CommandInput placeholder="Type a command or search..." />
-        <CommandList>
-          <CommandGroup heading="Actions">
-            <CommandItem onSelect={closePalette}>Reload theme<CommandShortcut>⌘R</CommandShortcut></CommandItem>
-            <CommandItem onSelect={closePalette}>Open settings<CommandShortcut>⌘S</CommandShortcut></CommandItem>
-          </CommandGroup>
-        </CommandList>
-      </CommandDialog>
+      <CommandDialog
+        open={paletteOpen}
+        onClose={closePalette}
+        title="Command Palette"
+        description="Search for a command to run..."
+        items={[
+          { value: "reload-theme", label: "Reload theme", group: "Actions", shortcut: "⌘R", onSelect: closePalette },
+          { value: "open-settings", label: "Open settings", group: "Actions", shortcut: "⌘S", onSelect: closePalette },
+        ]}
+      />
     </>
   );
 }

@@ -27,17 +27,6 @@ interface ToggleGroupProps extends HTMLAttributes<"div"> {
   size?: "default" | "sm" | "lg";
 }
 
-interface ToggleGroupItemProps extends HTMLAttributes<"button"> {
-  class?: string;
-  children?: HellaChildren;
-  value?: string;
-  /** Pressed state. A boolean reads statically; an accessor keeps the manual part reactive. */
-  pressed?: boolean | (() => boolean);
-  onSelect?: () => void;
-  variant?: "default" | "outline";
-  size?: "default" | "sm" | "lg";
-}
-
 import { style } from "@hellajs/css";
 import { tokens } from "./tokens.js";
 
@@ -120,37 +109,6 @@ const toggleVariants = (options?: {
   [base, variants[options?.variant ?? "default"], sizes[options?.size ?? "default"]]
     .filter(Boolean)
     .join(" ");
-
-export function ToggleGroupItem({
-  value,
-  pressed,
-  onSelect,
-  variant = "default",
-  size = "default",
-  disabled,
-  children,
-  class: cls,
-  ...attrs
-}: ToggleGroupItemProps): JSX.Element {
-  const { Item } = toggleGroup();
-  return (
-    <Item
-      value={value}
-      pressed={pressed}
-      onSelect={onSelect}
-      disabled={disabled}
-      data-variant={variant}
-      data-size={size}
-      data-spacing="0"
-      class={
-        [toggleVariants({ variant, size }), item, cls]
-      }
-      {...attrs}
-    >
-      {children}
-    </Item>
-  );
-}
 
 export function ToggleGroup({
   items,

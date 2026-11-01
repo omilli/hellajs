@@ -15,52 +15,6 @@ export interface RankedItem {
   score: number;
 }
 
-export interface CommandInputProps extends HTMLAttributes<"input"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
-export interface CommandListProps extends HTMLAttributes<"div"> {
-  /** The listbox id; option ids derive as `<id>-opt-<value>`. */
-  id?: string;
-  children?: HellaChildren;
-  class?: string;
-}
-
-export interface CommandEmptyProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
-export interface CommandGroupProps extends HTMLAttributes<"div"> {
-  heading?: string;
-  hidden?: boolean | (() => boolean);
-  children?: HellaChildren;
-  class?: string;
-}
-
-export interface CommandSeparatorProps extends HTMLAttributes<"div"> {
-  class?: string;
-}
-
-export interface CommandItemProps extends HTMLAttributes<"div"> {
-  value?: string;
-  /** The option's stable id; defaults to `<listId>-opt-<value>` from the owning factory. */
-  id?: string;
-  disabled?: boolean;
-  /** Selected state (the ref's data-selected accent); an accessor follows the owning command's active item. */
-  active?: () => boolean;
-  /** Called on click and on Enter when the owning command commits. */
-  onSelect?: () => void;
-  children?: HellaChildren;
-  class?: string;
-}
-
-export interface CommandShortcutProps extends HTMLAttributes<"span"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 export interface CommandProps extends HTMLAttributes<"div"> {
   items?: CommandItemData[] | (() => CommandItemData[]);
   /** Replaces the default scoring filter (earlier matches, word-boundary starts, keyword hits). */
@@ -75,11 +29,9 @@ export interface CommandProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
 }
 
-export interface CommandDialogProps extends HTMLAttributes<"div"> {
+export interface CommandDialogProps extends CommandProps {
   open: () => boolean;
   onClose: () => void;
   title?: string;
   description?: string;
-  class?: string;
-  children?: HellaChildren;
 }

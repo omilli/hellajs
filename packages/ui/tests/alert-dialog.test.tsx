@@ -209,14 +209,6 @@ describe("alert-dialog", () => {
     },
   );
 
-  test.each(alertDialogPartVariants.filter((entry) => entry.part === "Content"))(
-    "$style content part forwards the manual aria wiring attrs",
-    (variant) => {
-      const el = renderPart(variant, [], { "aria-labelledby": "wired-title" });
-      expect(el.getAttribute("aria-labelledby")).toBe("wired-title");
-    },
-  );
-
   test.each(alertDialogVariants)(
     "$style forwards user attrs onto the portaled panel across both styles",
     async (variant) => {
@@ -319,12 +311,8 @@ describe("alert-dialog", () => {
 
   test("renders every named part with its data-slot across both styles", () => {
     for (const variant of alertDialogPartVariants) {
-      if (variant.part === "Portal") continue; // portals its children into body — covered by the dedicated test below
       const el = renderPart(variant);
-      if (variant.part === "Content") {
-        expect(el.getAttribute("data-slot")).toBe("alert-dialog-content");
-        expect(el.getAttribute("role")).toBe("alertdialog");
-      } else if (variant.part === "Title") {
+      if (variant.part === "Title") {
         expect(el.getAttribute("data-slot")).toBe("alert-dialog-title");
         expect(el.tagName).toBe("H2");
       } else if (variant.part === "Description") {
@@ -338,29 +326,14 @@ describe("alert-dialog", () => {
         expect(el.getAttribute("data-slot")).toBe("alert-dialog-cancel");
         expect(el.tagName).toBe("BUTTON");
         expect(el.getAttribute("data-variant")).toBe("outline");
-      } else if (variant.part === "Trigger") {
-        expect(el.getAttribute("data-slot")).toBe("alert-dialog-trigger");
-        expect(el.tagName).toBe("BUTTON");
       } else {
         expect(el.getAttribute("data-slot")).toBe(`alert-dialog-${variant.part.toLowerCase()}`);
       }
     }
   });
-
-  test("portals the Portal part's children into document.body", () => {
-    for (const variant of alertDialogPartVariants) {
-      if (variant.part !== "Portal") continue;
-      renderPart(variant, [<span data-slot="portal-probe"></span>]);
-      expect(document.querySelector('[data-slot="portal-probe"]')).not.toBeNull();
-    }
-  });
 });
 
-/**
- * Renders one alert dialog part and resolves its mounted root. The Portal part
- * resolves to the wrapper (its children land in document.body) — the dedicated
- * Portal test above asserts the portaled child instead.
- */
+/** Renders one alert dialog part and resolves its mounted root. */
 function renderPart(
   variant: (typeof alertDialogPartVariants)[number],
   children?: JSX.Element[],
@@ -371,8 +344,6 @@ function renderPart(
     string,
     never
   >);
-  // isDynamic meta results (Portal roots) have no flagged build for mount to root — the
-  // template wrapper dispatches them as a child (child() hands them the parent).
-  mount("isTemplate" in rendered ? rendered : <div>{rendered as never}</div>, container);
+  mount(rendered as never, container);
   return container.firstElementChild!;
 }

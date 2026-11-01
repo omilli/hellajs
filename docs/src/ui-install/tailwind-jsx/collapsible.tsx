@@ -10,19 +10,6 @@ interface CollapsibleProps extends HTMLAttributes<"div"> {
   trigger: HellaChildren;
   content: HellaChildren;
 }
-
-interface CollapsibleTriggerProps extends HTMLAttributes<"button"> {
-  class?: string;
-  children?: HellaChildren;
-  active?: () => boolean;
-  onToggle?: () => void;
-}
-
-interface CollapsibleContentProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  active?: () => boolean;
-}
 import { cn } from "./cn.js";
 
 const ChevronIcon = (): JSX.Element => (
@@ -45,57 +32,6 @@ const ChevronIcon = (): JSX.Element => (
     <path d="m6 9 6 6 6-6" />
   </svg>
 );
-
-export function CollapsibleTrigger({
-  active,
-  onToggle,
-  "on:click": userClick,
-  children,
-  class: cls,
-  ...attrs
-}: CollapsibleTriggerProps): JSX.Element {
-  const { Trigger } = collapsible();
-  return (
-    <Trigger
-      active={active}
-      onToggle={onToggle}
-      class={
-        cn("inline-flex items-center gap-2 [&[data-state=open]>svg]:rotate-180", cls)
-      }
-      on:click={userClick}
-      {...attrs}
-    >
-      {children}
-      <ChevronIcon />
-    </Trigger>
-  );
-}
-
-export function CollapsibleContent({
-  active,
-  children,
-  class: cls,
-  ...attrs
-}: CollapsibleContentProps): JSX.Element {
-  const { Content } = collapsible();
-  return (
-    <Content
-      active={active}
-      class={
-        cn("grid grid-rows-[0fr] opacity-0 transition-all duration-200 data-[state=open]:grid-rows-[1fr] data-[state=open]:opacity-100", cls)
-      }
-      {...attrs}
-    >
-      <div
-        class={
-          cn("min-h-0 overflow-hidden")
-        }
-      >
-        {children}
-      </div>
-    </Content>
-  );
-}
 
 export function Collapsible({
   open,
@@ -125,7 +61,11 @@ export function Collapsible({
         {triggerSlot}
         <ChevronIcon />
       </Trigger>
-      <Content>
+      <Content
+        class={
+          cn("grid grid-rows-[0fr] opacity-0 transition-all duration-200 data-[state=open]:grid-rows-[1fr] data-[state=open]:opacity-100")
+        }
+      >
         <div
           class={
             cn("min-h-0 overflow-hidden")

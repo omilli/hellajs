@@ -11,19 +11,6 @@ interface CollapsibleProps extends HTMLAttributes<"div"> {
   content: HellaChildren;
 }
 
-interface CollapsibleTriggerProps extends HTMLAttributes<"button"> {
-  class?: string;
-  children?: HellaChildren;
-  active?: () => boolean;
-  onToggle?: () => void;
-}
-
-interface CollapsibleContentProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  active?: () => boolean;
-}
-
 import { style } from "@hellajs/css";
 import { tokens } from "./tokens.js";
 
@@ -85,57 +72,6 @@ const ChevronIcon = (): JSX.Element => (
   </svg>
 );
 
-export function CollapsibleTrigger({
-  active,
-  onToggle,
-  "on:click": userClick,
-  children,
-  class: cls,
-  ...attrs
-}: CollapsibleTriggerProps): JSX.Element {
-  const { Trigger } = collapsible();
-  return (
-    <Trigger
-      active={active}
-      onToggle={onToggle}
-      class={
-        [trigger, cls]
-      }
-      on:click={userClick}
-      {...attrs}
-    >
-      {children}
-      <ChevronIcon />
-    </Trigger>
-  );
-}
-
-export function CollapsibleContent({
-  active,
-  children,
-  class: cls,
-  ...attrs
-}: CollapsibleContentProps): JSX.Element {
-  const { Content } = collapsible();
-  return (
-    <Content
-      active={active}
-      class={
-        [content, cls]
-      }
-      {...attrs}
-    >
-      <div
-        class={
-          [contentInner]
-        }
-      >
-        {children}
-      </div>
-    </Content>
-  );
-}
-
 export function Collapsible({
   open,
   defaultOpen,
@@ -164,7 +100,11 @@ export function Collapsible({
         {triggerSlot}
         <ChevronIcon />
       </Trigger>
-      <Content>
+      <Content
+        class={
+          [content]
+        }
+      >
         <div
           class={
             [contentInner]

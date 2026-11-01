@@ -4,7 +4,7 @@ import InstallSection from "../../components/InstallSection.astro";
 import CollapsibleContent from "@ui/concepts/collapsible.mdx";
 import Component from "../../components/Component.astro";
 
-import { CollapsibleDemo, CollapsibleManualDemo } from "../../demos/collapsible-demo";
+import { CollapsibleDemo } from "../../demos/collapsible-demo";
 
 const title = "Collapsible";
 const description = "Interactive Collapsible demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
@@ -18,9 +18,6 @@ const description = "Interactive Collapsible demo running the site's built regis
 
   <Component heading="Playground" Demo={<CollapsibleDemo client:load />} code="CollapsibleDemo">
     <p>The parent signal is the single source of truth; the region label tracks it.</p>
-  </Component>
-  <Component heading="Manual parts" Demo={<CollapsibleManualDemo client:load />} code="CollapsibleManualDemo">
-    <p>The exported parts take the state explicitly; the composed root derives the region id and threads it for you.</p>
   </Component>
 
   <CollapsibleContent />

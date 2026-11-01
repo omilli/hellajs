@@ -182,7 +182,7 @@ describe("addComponent", () => {
   });
 
   test("css add of multi-part components splices every compose region with zero markers", () => {
-    addComponent(["card", "dialog", "tabs"], { dir: root });
+    addComponent(["card", "dialog"], { dir: root });
     const card = readFileSync(join(componentsDir, "card.tsx"), "utf8");
     expect(card.includes("@hella:")).toBe(false);
     for (const part of ["base", "header", "title", "description", "action", "content", "footer"]) {
@@ -190,33 +190,22 @@ describe("addComponent", () => {
     }
     const dialog = readFileSync(join(componentsDir, "dialog.tsx"), "utf8");
     expect(dialog.includes("@hella:")).toBe(false);
-    for (const part of ["base", "content", "close", "header", "footer", "title", "description"]) {
+    for (const part of ["content", "header", "footer", "title", "description"]) {
       expect(dialog).toContain(`[${part}, cls]`);
     }
-    const tabs = readFileSync(join(componentsDir, "tabs.tsx"), "utf8");
-    expect(tabs.includes("@hella:")).toBe(false);
-    for (const part of ["base", "trigger", "content"]) {
-      expect(tabs).toContain(`[${part}, cls]`);
-    }
-    expect(tabs).toContain("[list, variants[variant], cls]");
+    // The root-owned overlay and close X compose bare (no user class joins them).
+    expect(dialog).toContain("[base]");
+    expect(dialog).toContain("[close]");
   });
 
   test("tailwind add of multi-part components wraps every part in cn with zero markers", () => {
-    addComponent(["card", "tabs"], { dir: root, style: "tailwind" });
+    addComponent(["card"], { dir: root, style: "tailwind" });
     const card = readFileSync(join(componentsDir, "card.tsx"), "utf8");
     expect(card.includes("@hella:")).toBe(false);
     expect(card).toContain(
       'cn("@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-2 px-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6", cls)',
     );
     expect(card).toContain('cn("flex items-center px-6 [.border-t]:pt-6", cls)');
-    const tabs = readFileSync(join(componentsDir, "tabs.tsx"), "utf8");
-    expect(tabs.includes("@hella:")).toBe(false);
-    expect(tabs).toContain(
-      `cn("group/tabs-list inline-flex w-fit items-center justify-center rounded-lg p-[3px] text-muted-foreground group-data-[orientation=horizontal]/tabs:h-9 group-data-[orientation=vertical]/tabs:h-fit group-data-[orientation=vertical]/tabs:flex-col data-[variant=line]:rounded-none", variants[variant], cls)`,
-    );
-    expect(tabs).toContain(
-      `cn("relative inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap text-foreground/60 transition-all group-data-[orientation=vertical]/tabs:w-full group-data-[orientation=vertical]/tabs:justify-start hover:text-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 group-data-[variant=default]/tabs-list:data-[state=active]:shadow-sm group-data-[variant=line]/tabs-list:data-[state=active]:shadow-none dark:text-muted-foreground dark:hover:text-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 group-data-[variant=line]/tabs-list:bg-transparent group-data-[variant=line]/tabs-list:data-[state=active]:bg-transparent dark:group-data-[variant=line]/tabs-list:data-[state=active]:border-transparent dark:group-data-[variant=line]/tabs-list:data-[state=active]:bg-transparent data-[state=active]:bg-background data-[state=active]:text-foreground dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 dark:data-[state=active]:text-foreground after:absolute after:bg-foreground after:opacity-0 after:transition-opacity group-data-[orientation=horizontal]/tabs:after:inset-x-0 group-data-[orientation=horizontal]/tabs:after:bottom-[-5px] group-data-[orientation=horizontal]/tabs:after:h-0.5 group-data-[orientation=vertical]/tabs:after:inset-y-0 group-data-[orientation=vertical]/tabs:after:-right-1 group-data-[orientation=vertical]/tabs:after:w-0.5 group-data-[variant=line]/tabs-list:data-[state=active]:after:opacity-100", cls)`,
-    );
   });
 
   test("unknown component throws naming it", () => {

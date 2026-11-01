@@ -4,7 +4,7 @@ import InstallSection from "../../components/InstallSection.astro";
 import TooltipContent from "@ui/concepts/tooltip.mdx";
 import Component from "../../components/Component.astro";
 
-import { TooltipDemo, TooltipManualDemo } from "../../demos/tooltip-demo";
+import { TooltipDemo } from "../../demos/tooltip-demo";
 
 const title = "Tooltip";
 const description = "Interactive Tooltip demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
@@ -18,9 +18,6 @@ const description = "Interactive Tooltip demo running the site's built registry 
 
   <Component heading="Playground" Demo={<TooltipDemo client:load />} code="TooltipDemo">
     <p>Hovering opens a portal-mounted, anchor-positioned label; moving between the two buttons skips the delay. Focus opens either one from the keyboard.</p>
-  </Component>
-  <Component heading="Manual parts" Demo={<TooltipManualDemo client:load />} code="TooltipManualDemo">
-    <p>No composed root to thread state: hoverIntent drives the signal, the portal mounts the label, and anchorPosition pins it to the trigger.</p>
   </Component>
 
   <TooltipContent />

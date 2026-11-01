@@ -308,26 +308,6 @@ describe("dialog", () => {
     },
   );
 
-  test.each(dialogPartVariants.filter((entry) => entry.part === "Close"))(
-    "$style Close chains a user on:click with its owned dismiss",
-    (variant) => {
-      const onClose = vi.fn(() => {});
-      const userClick = vi.fn(() => {});
-      const close = renderPart(variant, { onClose, "on:click": userClick });
-      close.dispatchEvent(new Event("click"));
-      expect(userClick).toHaveBeenCalledTimes(1);
-      expect(onClose).toHaveBeenCalledTimes(1);
-    },
-  );
-
-  test.each(dialogPartVariants.filter((entry) => entry.part === "Content"))(
-    "$style content part forwards the manual aria wiring attrs",
-    (variant) => {
-      const el = renderPart(variant, { "aria-labelledby": "wired-title" });
-      expect(el.getAttribute("aria-labelledby")).toBe("wired-title");
-    },
-  );
-
   test("keeps structural parity across both styles", () => {
     assertStructuralParity(
       dialogVariants,
@@ -339,18 +319,12 @@ describe("dialog", () => {
   test("renders every named part with its data-slot across both styles", () => {
     for (const variant of dialogPartVariants) {
       const el = renderPart(variant);
-      if (variant.part === "Content") {
-        expect(el.getAttribute("data-slot")).toBe("dialog-content");
-        expect(el.getAttribute("role")).toBe("dialog");
-      } else if (variant.part === "Title") {
+      if (variant.part === "Title") {
         expect(el.getAttribute("data-slot")).toBe("dialog-title");
         expect(el.tagName).toBe("H2");
       } else if (variant.part === "Description") {
         expect(el.getAttribute("data-slot")).toBe("dialog-description");
         expect(el.tagName).toBe("P");
-      } else if (variant.part === "Close") {
-        expect(el.getAttribute("data-slot")).toBe("dialog-close");
-        expect(el.tagName).toBe("BUTTON");
       } else {
         expect(el.getAttribute("data-slot")).toBe(`dialog-${variant.part.toLowerCase()}`);
       }

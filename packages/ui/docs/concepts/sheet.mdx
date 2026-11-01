@@ -4,7 +4,7 @@ A side panel sliding in from one of the four screen edges: the caller owns an `o
 
 Opening portals the overlay and panel into `document.body` under `data-state="open"`; closing keeps the panel mounted under `data-state="closed"` until its exit slide ends, with the dismissal wirings down while it leaves. The panel carries `role="dialog"` with `aria-labelledby` and `aria-describedby` pointing at the generated title and description ids - the wiring screen readers announce.
 
-Nine named components ship beside the default `Sheet` for custom composition: `SheetTrigger`, `SheetClose`, `SheetPortal`, `SheetOverlay`, `SheetContent`, `SheetHeader`, `SheetFooter`, `SheetTitle`, and `SheetDescription`. State is explicit - portal the overlay and panel yourself and hand both a `state` accessor.
+The composed `Sheet` ships beside four content-vocabulary components: `SheetHeader`, `SheetFooter`, `SheetTitle`, and `SheetDescription` compose inside the root's children slot.
 
 ### Sheet
 
@@ -23,58 +23,6 @@ Nine named components ship beside the default `Sheet` for custom composition: `S
 Accepts all native `div` attributes (forwarded to the root element).
 
 `side` is the edge the panel mounts on; it sets `data-side` and the slide variant. `title` renders as a wired `SheetTitle` (the panel's `aria-labelledby` target) and `description` as a wired `SheetDescription` (the `aria-describedby` target).
-
-### SheetTrigger
-
-A bare button; wire its click to your own signal write.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `children` | `HellaChildren` | `-` |
-Accepts all native `button` attributes (forwarded to the root element).
-
-### SheetClose
-
-The X button with its `sr-only` "Close" label; `SheetContent` renders the same shape automatically unless `showCloseButton` is false.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `state` | `() => "open" \| "closed"` | `-` |
-| `onClose` | `() => void` | `-` |
-Accepts all native `button` attributes (forwarded to the root element; a user `on:click` chains with the owned dismiss).
-
-### SheetPortal
-
-Wraps children in a `Portal to="body"` for compositions that want the named component.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `children` | `HellaChildren` | `-` |
-
-### SheetOverlay
-
-The screen-covering backdrop `div` carrying `data-slot="sheet-overlay"`.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `state` | `() => "open" \| "closed"` | `-` |
-Accepts all native `div` attributes (forwarded to the root element).
-
-### SheetContent
-
-The `role="dialog"` panel carrying `data-slot="sheet-content"`: focus trap plus escape and outside dismissal while open, torn down the moment the exit starts.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `state` | `() => "open" \| "closed"` | `-` |
-| `side` | `"top" \| "right" \| "bottom" \| "left"` | `"right"` |
-| `showCloseButton` | `boolean` | `true` |
-| `closeOnEscape` | `boolean` | `true` |
-| `closeOnOutside` | `boolean` | `true` |
-| `onClose` | `() => void` | `-` |
-| `onExited` | `() => void` | `-` |
-| `children` | `HellaChildren` | `-` |
-Accepts all native `div` attributes (forwarded to the root element). Pass the wired ids as the panel's `aria-labelledby` and `aria-describedby` attrs - in the composed `Sheet` the root threads them for you.
 
 ### SheetHeader
 

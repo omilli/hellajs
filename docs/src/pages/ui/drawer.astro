@@ -4,7 +4,7 @@ import InstallSection from "../../components/InstallSection.astro";
 import DrawerContent from "@ui/concepts/drawer.mdx";
 import Component from "../../components/Component.astro";
 
-import { DrawerDemo, DrawerManualDemo } from "../../demos/drawer-demo";
+import { DrawerDemo } from "../../demos/drawer-demo";
 
 const title = "Drawer";
 const description = "Interactive Drawer demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
@@ -18,9 +18,6 @@ const description = "Interactive Drawer demo running the site's built registry s
 
   <Component heading="Playground" Demo={<DrawerDemo client:load />} code="DrawerDemo">
     <p>Slides up from the bottom edge with a grip handle. Drag the panel down: it follows the pointer, the overlay fades with the distance, and release past 25% of the panel height (or a 500px/s flick) dismisses.</p>
-  </Component>
-  <Component heading="Manual parts" Demo={<DrawerManualDemo client:load />} code="DrawerManualDemo">
-    <p>The overlay and panel share one drag-fraction signal, so the overlay keeps fading while you drag; release past 25% of the panel or flick to dismiss.</p>
   </Component>
 
   <DrawerContent />

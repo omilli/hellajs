@@ -77,19 +77,16 @@ describe("compile", () => {
 
   test("emits every named part of the multi-part canonicals with declarations", () => {
     for (const style of ["css", "tailwind"]) {
-      for (const name of ["card", "dialog", "tabs"]) {
+      for (const name of ["card", "dialog"]) {
         expectArtifact(name, style, `${name}.js`);
         expectArtifact(name, style, `${name}.d.ts`);
       }
       expect(readArtifact("card", style, "card.js")).toContain("CardHeader");
       expect(readArtifact("card", style, "card.js")).toContain("CardFooter");
       expect(readArtifact("card", style, "card.d.ts")).toContain("CardAction");
-      expect(readArtifact("dialog", style, "dialog.js")).toContain("DialogOverlay");
-      expect(readArtifact("dialog", style, "dialog.js")).toContain("DialogClose");
+      expect(readArtifact("dialog", style, "dialog.js")).toContain("DialogHeader");
+      expect(readArtifact("dialog", style, "dialog.js")).toContain("DialogFooter");
       expect(readArtifact("dialog", style, "dialog.d.ts")).toContain("DialogTitle");
-      expect(readArtifact("tabs", style, "tabs.js")).toContain("TabsList");
-      expect(readArtifact("tabs", style, "tabs.js")).toContain("TabsTrigger");
-      expect(readArtifact("tabs", style, "tabs.d.ts")).toContain("TabsContent");
     }
   });
 

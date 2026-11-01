@@ -1,7 +1,5 @@
 import { menu } from "@hellajs/headless";
 import type {
-  ContextMenuTriggerProps,
-  ContextMenuContentProps,
   ContextMenuPartProps,
   ContextMenuItemProps,
   ContextMenuCheckboxItemProps,
@@ -9,8 +7,6 @@ import type {
   ContextMenuRadioItemProps,
   ContextMenuLabelProps,
   ContextMenuShortcutProps,
-  ContextMenuSubTriggerProps,
-  ContextMenuSubContentProps,
   ContextMenuSubProps,
   ContextMenuProps,
 } from "./context-menu-types.js";
@@ -26,72 +22,6 @@ declare const shortcut: string;
 declare const subContent: string;
 declare const subTrigger: string;
 // @hella:end
-
-/** The manual trigger zone; the composed ContextMenu renders the same shape wired to the `contextmenu` listener. */
-export function ContextMenuTrigger({
-  children,
-  class: cls,
-  ...attrs
-}: ContextMenuTriggerProps): JSX.Element {
-  const { Trigger } = menu({ trigger: "contextmenu" });
-  return (
-    <Trigger
-      data-slot="context-menu-trigger"
-      class={
-        // @hella:compose
-        [cls]
-        // @hella:end
-      }
-      {...attrs}
-    >
-      {children}
-    </Trigger>
-  );
-}
-
-/** The manual content layer; the composed ContextMenu portals the same wiring under its zone's state. */
-export function ContextMenuContent({
-  state,
-  id,
-  side: sideProp,
-  align: alignProp,
-  anchor,
-  onDismiss,
-  onExited,
-  onArrowLeft,
-  children,
-  class: cls,
-  ...attrs
-}: ContextMenuContentProps): JSX.Element {
-  const side = sideProp ?? "bottom";
-  const align = alignProp ?? "start";
-  const { Content } = menu({
-    trigger: "contextmenu",
-    open: () => (state?.() ?? "open") === "open",
-    onOpenChange: (next) => {
-      if (!next) onDismiss?.();
-    },
-  });
-  return (
-    <Content
-      id={id}
-      side={side}
-      align={align}
-      anchor={anchor}
-      onArrowLeft={onArrowLeft}
-      onExited={onExited}
-      data-slot="context-menu-content"
-      class={
-        // @hella:compose
-        [content, cls]
-        // @hella:end
-      }
-      {...attrs}
-    >
-      {children}
-    </Content>
-  );
-}
 
 export function ContextMenuGroup({
   children,
@@ -280,80 +210,6 @@ export function ContextMenuShortcut({
     >
       {children}
     </Shortcut>
-  );
-}
-
-export function ContextMenuSubTrigger({
-  inset,
-  state,
-  onOpen,
-  children,
-  class: cls,
-  ...attrs
-}: ContextMenuSubTriggerProps): JSX.Element {
-  const sub = menu().sub({
-    open: state ? () => state() === "open" : undefined,
-    onOpenChange: (next) => {
-      if (next) onOpen?.();
-    },
-  });
-  return (
-    <sub.Trigger
-      inset={inset}
-      data-slot="context-menu-sub-trigger"
-      class={
-        // @hella:compose
-        [subTrigger, cls]
-        // @hella:end
-      }
-      {...attrs}
-    >
-      {children}
-    </sub.Trigger>
-  );
-}
-
-export function ContextMenuSubContent({
-  state,
-  side: sideProp,
-  align: alignProp,
-  anchor,
-  onDismiss,
-  onExited,
-  onArrowLeft,
-  onPointerEnter,
-  children,
-  class: cls,
-  ...attrs
-}: ContextMenuSubContentProps): JSX.Element {
-  const side = sideProp ?? "right";
-  const align = alignProp ?? "start";
-  // ArrowLeft-exit and pointerenter-cancel are the factory sub wiring's own
-  // utils now - consumed here so they never reach the DOM as attributes.
-  void onArrowLeft;
-  void onPointerEnter;
-  const { Content } = menu().sub({
-    open: () => (state?.() ?? "open") === "open",
-    onOpenChange: (next) => {
-      if (!next) onDismiss?.();
-    },
-  });
-  return (
-    <Content
-      side={side}
-      align={align}
-      anchor={anchor}
-      onExited={onExited}
-      data-slot="context-menu-sub-content"
-      class={
-        // @hella:compose
-        [subContent, cls]
-        // @hella:end
-      }
-      {...attrs}
-    >
-      {children}
-    </Content>
   );
 }
 

@@ -18,24 +18,4 @@ Accepts all native `div` attributes (forwarded to the root element).
 
 Without `open`, the root owns a signal seeded by `defaultOpen` and toggles it on click. Pass `open` and the root becomes controlled: it reads state from your accessor and turns clicks into `onOpenChange` requests without writing any state, so a parent signal that ignores the request keeps the region open.
 
-### CollapsibleTrigger
-
-The header row: a button whose `active` accessor drives `data-state` and `aria-expanded`, with the chevron icon appended after the children.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `active` | `() => boolean` | `-` |
-| `onToggle` | `() => void` | `-` |
-| `children` | `HellaChildren` | `-` |
-Accepts all native `button` attributes (forwarded to the root element).
-
-### CollapsibleContent
-
-The body region: a `role="region"` div whose grid rows flip between `0fr` and `1fr` on `data-state`, with an inner wrapper carrying the overflow clip.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `children` | `HellaChildren` | `-` |
-Accepts all native `div` attributes (forwarded to the root element).
-
-Every component also takes a `class` string, landing last in its style composition. The composed root is a thin wrapper that derives the region id and threads state, so replacing it with the components loses nothing.
+Every component also takes a `class` string, landing last in its style composition. The root derives the region id and pairs it with the trigger's `aria-controls`, and threads the open state through both slots so the copied file stays a single self-contained component.

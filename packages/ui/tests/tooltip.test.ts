@@ -6,7 +6,6 @@ import {
   assertStructuralParity,
   classTokens,
   renderVariant,
-  tooltipPartVariants,
   tooltipVariants,
 } from "./helpers/variants";
 import type { TooltipVariantProps } from "./helpers/variants";
@@ -180,22 +179,30 @@ describe("tooltip", () => {
     },
   );
 
-  test.each(tooltipPartVariants.filter((variant) => variant.part === "Content"))(
-    "$style content part positions against the anchor and drains its wirings on disposal",
+  test.each(tooltipVariants)(
+    "$style pins the content open when controlled open returns true",
     async (variant) => {
-      const anchor = document.createElement("button");
-      document.body.appendChild(anchor);
-      pinRect(anchor, 100, 50, 200, 20);
-      const container = setupContainer();
-      const handle = mount(
-        variant.render({ anchor: () => anchor, side: "left", children: [] }),
-        container,
-      );
+      renderVariant(variant, { content: "Hi", open: () => true });
       const content = await awaitPortaled("tooltip-content");
-      expect(content.style.left).toBe("50px");
-      expect(content.style.top).toBe("110px");
-      handle.unmount();
-      await awaitDetached(content);
+      expect(content.getAttribute("data-state")).toBe("open");
+      expect(content.textContent).toBe("Hi");
+    },
+  );
+
+  test.each(tooltipVariants)(
+    "$style reports hover through onOpenChange without self-opening in controlled mode",
+    async (variant) => {
+      const onOpenChange = vi.fn<(open: boolean) => void>(() => {});
+      const trigger = renderVariant(variant, {
+        content: "Hi",
+        delayDuration: 5,
+        open: () => false,
+        onOpenChange,
+      });
+      pointerEnter(trigger);
+      await delay(30);
+      expect(onOpenChange).toHaveBeenCalledWith(true);
+      expect(newestPortaled("tooltip-content")).toBeUndefined();
     },
   );
 
@@ -225,40 +232,7 @@ describe("tooltip", () => {
     },
   );
 
-  test.each(tooltipPartVariants.filter((variant) => variant.part === "Content"))(
-    "$style content part respects a user-supplied id",
-    async (variant) => {
-      const container = setupContainer();
-      mount(variant.render({ id: "custom-tooltip", children: [] }), container);
-      const content = await awaitPortaled("tooltip-content");
-      expect(content.getAttribute("id")).toBe("custom-tooltip");
-    },
-  );
-
   test("keeps structural parity across both styles", () => {
     assertStructuralParity(tooltipVariants, { content: "Parity" }, ["aria-describedby"]);
-  });
-
-  test("renders every named part with its data-slot across both styles", async () => {
-    for (const variant of tooltipPartVariants) {
-      const container = setupContainer();
-      const rendered = variant.render({ children: [] });
-      mount(rendered, container);
-      // The content part portals itself; every other part renders in place.
-      const el =
-        variant.part === "Content"
-          ? await awaitPortaled("tooltip-content")
-          : container.firstElementChild!;
-      if (variant.part === "Content") {
-        expect(el.getAttribute("data-slot")).toBe("tooltip-content");
-        expect(el.getAttribute("role")).toBe("tooltip");
-      } else if (variant.part === "Trigger") {
-        expect(el.getAttribute("data-slot")).toBe("tooltip-trigger");
-        expect(el.tagName).toBe("SPAN");
-      } else {
-        expect(el.getAttribute("data-slot")).toBe("tooltip-provider");
-        expect(el.tagName).toBe("DIV");
-      }
-    }
   });
 });

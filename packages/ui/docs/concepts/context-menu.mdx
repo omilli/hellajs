@@ -2,7 +2,7 @@
 
 The composed `ContextMenu` wraps its children in a trigger zone and takes the items through the `content` prop, portaled into `document.body` while open. A `contextmenu` event (right-click, or the long-press equivalent) preventDefaults the browser menu and opens the surface; Escape and an outside press dismiss it.
 
-Thirteen named components ship beside the default `ContextMenu`: `ContextMenuTrigger`, `ContextMenuContent`, `ContextMenuGroup`, `ContextMenuItem`, `ContextMenuCheckboxItem`, `ContextMenuRadioGroup`, `ContextMenuRadioItem`, `ContextMenuLabel`, `ContextMenuSeparator`, `ContextMenuShortcut`, `ContextMenuSub`, `ContextMenuSubTrigger`, and `ContextMenuSubContent`. The content model is the dropdown menu's, duplicated per the registry's self-contained rule; only the trigger differs (a passive zone owning the `contextmenu` listener instead of a Button-wrapped toggle).
+Nine named components ship beside the default `ContextMenu`: `ContextMenuGroup`, `ContextMenuItem`, `ContextMenuCheckboxItem`, `ContextMenuRadioGroup`, `ContextMenuRadioItem`, `ContextMenuLabel`, `ContextMenuSeparator`, `ContextMenuShortcut`, and `ContextMenuSub`. The content model is the dropdown menu's, duplicated per the registry's self-contained rule; only the trigger differs (a passive zone owning the `contextmenu` listener instead of a Button-wrapped toggle).
 
 ### ContextMenu
 
@@ -16,33 +16,6 @@ Thirteen named components ship beside the default `ContextMenu`: `ContextMenuTri
 Accepts all native `span` attributes (forwarded to the root element).
 
 A controlled `open` stops the root from writing its internal signal; `onOpenChange` reports every requested open and close flip.
-
-### ContextMenuTrigger
-
-The manual trigger zone: a passive `span` owning the `contextmenu` listener.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `children` | `HellaChildren` | `-` |
-Accepts all native `span` attributes (forwarded to the root element).
-
-### ContextMenuContent
-
-The `role="menu"` surface with the full keyboard model, anchored at the pointer coordinates.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `state` | `() => "open" \| "closed"` | `-` |
-| `side` | `"top" \| "bottom" \| "left" \| "right"` | `"bottom"` |
-| `align` | `"start" \| "center" \| "end"` | `"start"` |
-| `anchor` | `() => Element \| undefined` | `-` |
-| `onDismiss` | `() => void` | `-` |
-| `onExited` | `() => void` | `-` |
-| `onArrowLeft` | `() => void` | `-` |
-| `children` | `HellaChildren` | `-` |
-Accepts all native `div` attributes (forwarded to the root element).
-
-`state` drives `data-state` and the enter/exit cycle; `closed` tears the wirings down. The anchor resolves to the planted pointer anchor; positioning is skipped when undefined. `onDismiss` receives Escape and outside pointerdowns from the top layer, and item selection closes every open layer through it. `onExited` fires when the exit animation ends; `onArrowLeft` closes the menu when provided (submenu exit; a top-level menu stays inert).
 
 ### ContextMenuGroup
 
@@ -143,39 +116,6 @@ A sub-trigger plus its portaled sub-content; open state owned here. The sub open
 | `content` | `HellaChildren` | `-` |
 | `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
-
-### ContextMenuSubTrigger
-
-The manual sub-trigger row (chevron, `aria-haspopup`).
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `state` | `() => "open" \| "closed"` | `-` |
-| `onOpen` | `() => void` | `-` |
-| `inset` | `boolean` | `-` |
-| `children` | `HellaChildren` | `-` |
-Accepts all native `div` attributes (forwarded to the root element).
-
-`state` drives `aria-expanded` and `data-state`; the composed `ContextMenuSub` wires it. `onOpen` is called on click and hover intent.
-
-### ContextMenuSubContent
-
-The `role="menu"` sub-surface, anchored against its sub-trigger.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `state` | `() => "open" \| "closed"` | `-` |
-| `side` | `"top" \| "bottom" \| "left" \| "right"` | `-` |
-| `align` | `"start" \| "center" \| "end"` | `-` |
-| `anchor` | `() => Element \| undefined` | `-` |
-| `onDismiss` | `() => void` | `-` |
-| `onExited` | `() => void` | `-` |
-| `onArrowLeft` | `() => void` | `-` |
-| `onPointerEnter` | `() => void` | `-` |
-| `children` | `HellaChildren` | `-` |
-Accepts all native `div` attributes (forwarded to the root element).
-
-`onDismiss` closes the sub's own layer; `onExited` fires when the exit animation ends; `onArrowLeft` closes the submenu; `onPointerEnter` cancels the trigger's pending close when the pointer enters the content.
 
 Every component also takes a `class` string, landing last in its style composition.
 

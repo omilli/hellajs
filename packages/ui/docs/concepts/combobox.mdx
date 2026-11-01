@@ -2,7 +2,7 @@
 
 The composed `Combobox` takes its options as data and renders the input shell plus the portaled panel: focusing the input opens the panel, typing filters it. The copied file composes the [`combobox`](/headless/combobox) components factory from `@hellajs/headless`, which owns the query state, the filtering, the positioning, the dismissal, and the typeahead.
 
-The input always shows the query, never the selection: the selected value lives in `onValueChange` (render it through `ComboboxValue` where needed). The combobox submits nothing by itself; pair it with `native-select` (or a hidden input of your own) when a form needs the value.
+The input always shows the query, never the selection: the selected value lives in `onValueChange`, rendered wherever the UI shows the choice. The combobox submits nothing by itself; pair it with `native-select` (or a hidden input of your own) when a form needs the value.
 
 ### Combobox
 
@@ -31,189 +31,6 @@ Each entry in the `items` array is one option.
 
 `value` is the selection identity (reported through `onValueChange`, matched against the controlled `value`, rendered as `data-value`); `label` is the option's text and filter target, falling back to the value when missing; `disabled` entries are skipped by roving and typeahead, unclickable, and rendered with `aria-disabled` plus `data-disabled`.
 
-### ComboboxTrigger
-
-The manual trigger button; the composed root renders its chevron twin inside the input-group addon.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `children` | `HellaChildren` | `-` |
-
-Accepts all native `button` attributes (forwarded to the root element); `on:click` and `disabled` ride the spread.
-
-### ComboboxInput
-
-The input-group shell with the chevron toggle and clear addons, carrying the combobox aria wiring.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `value` | `string \| (() => string)` | `-` |
-| `disabled` | `boolean` | `-` |
-| `state` | `() => "open" \| "closed"` | `-` |
-| `activeDescendant` | `() => string \| undefined` | `-` |
-| `showTrigger` | `boolean` | `-` |
-| `showClear` | `boolean` | `-` |
-| `onToggle` | `() => void` | `-` |
-| `onClear` | `() => void` | `-` |
-
-Accepts all native `input` attributes (forwarded to the inner input element): `placeholder`, `id`, and `aria-controls` ride the spread, and the composed root threads the query updates, keyboard model, and open-on-focus through `on:input`, `on:keydown`, and `on:focus` the same way.
-
-### ComboboxContent
-
-The positioned panel surface.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `state` | `() => "open" \| "closed"` | `-` |
-| `side` | `"top" \| "bottom" \| "left" \| "right"` | `"bottom"` |
-| `align` | `"start" \| "center" \| "end"` | `"start"` |
-| `sideOffset` | `number` | `6` |
-| `anchor` | `() => Element \| undefined` | `-` |
-| `chips` | `boolean` | `-` |
-| `empty` | `() => boolean` | `-` |
-| `onDismiss` | `() => void` | `-` |
-| `onExited` | `() => void` | `-` |
-| `children` | `HellaChildren` | `-` |
-
-Accepts all native `div` attributes (forwarded to the root element).
-
-### ComboboxList
-
-The `role="listbox"` rendering one `ComboboxItem` per entry, hidden in place as the query filters.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `items` | `ComboboxEntry[] \| (() => ComboboxEntry[])` | `-` |
-| `keyBy` | `"value"` | `-` |
-| `query` | `() => string` | `-` |
-| `filter` | `(items, query) => ComboboxEntry[]` | Case-insensitive substring |
-| `selected` | `(value: string) => boolean` | `-` |
-| `active` | `() => string \| undefined` | `-` |
-| `onselect` | `(value: string) => void` | `-` |
-| `empty` | `() => boolean` | `-` |
-| `children` | `HellaChildren` | `-` |
-
-Accepts all native `div` attributes (forwarded to the root element); `id` wires the listbox identity the options' ids and the input's `aria-controls` read.
-
-### ComboboxItem
-
-One `role="option"` row with the check indicator and the highlight ring.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `value` | `string` | `-` |
-| `label` | `string` | `-` |
-| `selected` | `boolean \| (() => boolean)` | `-` |
-| `highlighted` | `boolean \| (() => boolean)` | `-` |
-| `hidden` | `() => boolean` | `-` |
-| `onselect` | `() => void` | `-` |
-| `disabled` | `boolean` | `-` |
-
-Accepts all native `div` attributes (forwarded to the root element); a user `on:click` chains with the owned select, and `id` lands on the row for `aria-activedescendant` targeting.
-
-### ComboboxGroup
-
-A passthrough grouping `div`.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `children` | `HellaChildren` | `-` |
-
-Accepts all native `div` attributes (forwarded to the root element).
-
-### ComboboxLabel
-
-A section label inside a group.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `children` | `HellaChildren` | `-` |
-
-Accepts all native `div` attributes (forwarded to the root element).
-
-### ComboboxCollection
-
-A passthrough wrapper grouping items rendered from external data.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `children` | `HellaChildren` | `-` |
-
-Accepts all native `div` attributes (forwarded to the root element).
-
-### ComboboxEmpty
-
-The zero-match row; the composed root mounts it with its default text.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `children` | `HellaChildren` | `-` |
-
-Accepts all native `div` attributes (forwarded to the root element).
-
-### ComboboxSeparator
-
-A hairline between groups. Accepts all native `div` attributes (forwarded to the root element).
-
-### ComboboxValue
-
-The selected value for compositions that show the selection outside the input.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `value` | `string \| string[] \| (() => string \| string[] \| undefined)` | `-` |
-
-Accepts all native `span` attributes (forwarded to the root element). An array joins with `", "`.
-
-### ComboboxClear
-
-The clear affordance, styled as the input-group's ghost icon-xs button.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `onClear` | `() => void` | `-` |
-
-Accepts all native `button` attributes (forwarded to the root element); a user `on:click` chains with the owned clear.
-
-### ComboboxChips
-
-The multiple-mode chips wrapper; anchors the panel in chips compositions.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `chips` | `() => HellaChildren` | `-` |
-| `disabled` | `boolean` | `-` |
-| `children` | `HellaChildren` | `-` |
-
-Accepts all native `div` attributes (forwarded to the root element).
-
-### ComboboxChip
-
-One selected-value chip with its remove button.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `value` | `string` | `-` |
-| `showRemove` | `boolean` | `true` |
-| `onRemove` | `() => void` | `-` |
-| `children` | `HellaChildren` | `-` |
-| `disabled` | `boolean` | `-` |
-
-Accepts all native `div` attributes (forwarded to the root element).
-
-### ComboboxChipsInput
-
-The chips-mode input: the input-group shell without the toggle and clear addons (the chips wrapper carries them).
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `value` | `string \| (() => string)` | `-` |
-| `disabled` | `boolean` | `-` |
-| `state` | `() => "open" \| "closed"` | `-` |
-| `activeDescendant` | `() => string \| undefined` | `-` |
-
-Accepts all native `input` attributes (forwarded to the root element): `placeholder`, `id`, and `aria-controls` ride the spread, and the composed root threads the query updates and keyboard model through `on:input` and `on:keydown` the same way.
-
 Every component also takes a `class` string, landing last in its style composition.
 
 ## Filtering
@@ -237,7 +54,7 @@ const PrefixPicker = () => (
 
 The input keeps focus the whole time (`role="combobox"`): ArrowDown and ArrowUp move the active option (skipping disabled entries, wrapping at the edges), Enter commits it, and Escape clears the query and then closes. The active option carries `data-highlighted`, and the input's `aria-activedescendant` points at its id. Printable keystrokes also feed a [`menuTypeahead`](/headless/menutypeahead) buffer that walks the visible options, so typing refines the filter and the highlight together.
 
-In single mode, Enter closes the panel and clears the query. In `multiple` mode, Enter toggles the active value in or out of the array and the panel stays open; each selected value renders as a `ComboboxChip` whose remove button toggles it back out. `showClear` adds a clear affordance that wipes the whole selection.
+In single mode, Enter closes the panel and clears the query. In `multiple` mode, Enter toggles the active value in or out of the array and the panel stays open; each selected value renders as a chip whose remove button toggles it back out. `showClear` adds a clear affordance that wipes the whole selection.
 
 Dismissal runs through [`layerDismissal`](/headless/layerdismissal): Escape and a pointerdown outside the wrapper close the top layer. Closing starts the exit - the panel stays mounted under `data-state="closed"` until its animation ends, with dismissal wiring down while it leaves. The panel positions itself through [`anchorPosition`](/headless/anchorposition) with `matchAnchorWidth`, anchored to the input wrapper (the chips wrapper in multiple mode), flipping sides on viewport collision.
 

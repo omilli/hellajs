@@ -11,36 +11,10 @@ export interface TabsProps extends HTMLAttributes<"div"> {
   /** The rendered tabs. An array reads statically at mount; an accessor keeps the list reactive across appends, removes, and reorders. Items auto-key by `id`, so reorders preserve trigger and panel identity. */
   items: TabsItem[] | (() => TabsItem[]);
   initialId?: string;
+  /** Controlled active tab. When given, the root never writes its internal state and `onValueChange` reports the requested selection. */
+  value?: () => string;
+  /** Called with every root-driven selection; re-selecting the active tab notifies no one. */
+  onValueChange?: (value: string) => void;
   orientation?: "horizontal" | "vertical";
   variant?: "default" | "line";
-}
-
-export interface TabsListProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChild | HellaChild[];
-  variant?: "default" | "line";
-  orientation?: "horizontal" | "vertical";
-}
-
-export interface TabsTriggerProps extends HTMLAttributes<"button"> {
-  class?: string;
-  /** The raw TabsItem id - the DOM id is `${TAB_ID}${id}`. */
-  id?: string;
-  /** The tab's value key; wins over `id` when both are given. */
-  value?: string;
-  children?: HellaChild;
-  active?: () => boolean;
-  onActivate?: () => void;
-  orientation?: "horizontal" | "vertical";
-  listVariant?: "default" | "line";
-}
-
-export interface TabsContentProps extends HTMLAttributes<"div"> {
-  class?: string;
-  /** The raw TabsItem id - the DOM id is `${PANEL_ID}${id}`. */
-  id?: string;
-  /** The panel's value key; wins over `id` when both are given. */
-  value?: string;
-  children?: HellaChild | (() => HellaChild);
-  active?: () => boolean;
 }

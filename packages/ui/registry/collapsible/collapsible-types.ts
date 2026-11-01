@@ -9,16 +9,3 @@ export interface CollapsibleProps extends HTMLAttributes<"div"> {
   trigger: HellaChildren;
   content: HellaChildren;
 }
-
-export interface CollapsibleTriggerProps extends HTMLAttributes<"button"> {
-  class?: string;
-  children?: HellaChildren;
-  active?: () => boolean;
-  onToggle?: () => void;
-}
-
-export interface CollapsibleContentProps extends HTMLAttributes<"div"> {
-  class?: string;
-  children?: HellaChildren;
-  active?: () => boolean;
-}

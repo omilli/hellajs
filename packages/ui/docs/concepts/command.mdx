@@ -1,8 +1,8 @@
 ## API
 
-The default `Command` takes its items as data and renders the search input, the ranked groups, and the keyboard model: the copied file composes the [`command`](/headless/command) components factory from `@hellajs/headless`, which owns the query signal, ranks matches across labels, values, and keywords, and drives the active item over a flat ranked list. Typing filters; the first match starts active. The named components compose the same factory for standalone use.
+The default `Command` takes its items as data and renders the search input, the ranked groups, and the keyboard model: the copied file composes the [`command`](/headless/command) components factory from `@hellajs/headless`, which owns the query signal, ranks matches across labels, values, and keywords, and drives the active item over a flat ranked list. Typing filters; the first match starts active.
 
-Items sharing a `group` render under one heading, in the order the groups first appear in the array; items without a `group` render above the groups. Each item renders its `label` and, when present, a right-aligned `CommandShortcut` hint.
+Items sharing a `group` render under one heading, in the order the groups first appear in the array; items without a `group` render above the groups. Each item renders its `label` and, when present, a right-aligned `shortcut` hint.
 
 ### Command
 
@@ -34,83 +34,19 @@ Each entry in the `items` array is one palette row.
 | `disabled` | `boolean` | `-` |
 | `onSelect` | `() => void` | `-` |
 
-`value` is reported through `onValueChange` on Enter and rendered as `data-value`; `label` is the primary scoring target; `group` heads a group in first-appearance order; every matching `keywords` entry adds a fixed scoring bonus; `shortcut` renders through `CommandShortcut`; `disabled` rows are skipped by arrows and never commit; `onSelect` runs when Enter commits the row.
-
-### CommandInput
-
-The search row: the search icon plus the text input. The composed `Command` threads the query updates and the keyboard model through `on:input` and `on:keydown` on the inner input.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `class` | `string` | `-` |
-
-Accepts all native `input` attributes (forwarded to the inner input element): `placeholder`, `id`, `value`, `aria-label`, and friends ride the spread.
-
-### CommandList
-
-The scrolling `role="listbox"` container. The composed `Command` hands the factory its `items` and the list renders the ranked body itself; manual compositions render their rows as children.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `children` | `HellaChildren` | `-` |
-
-Accepts all native `div` attributes (forwarded to the root element).
-
-### CommandEmpty
-
-The zero-match row.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `children` | `HellaChildren` | `-` |
-
-Accepts all native `div` attributes (forwarded to the root element).
-
-### CommandGroup
-
-One group: its heading plus children; `hidden` drops the whole group when every row scored zero.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `heading` | `string` | `-` |
-| `hidden` | `boolean \| (() => boolean)` | `-` |
-
-Accepts all native `div` attributes (forwarded to the root element).
-
-### CommandItem
-
-One `role="option"` row; activation runs `onSelect` on click.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `value` | `string` | `-` |
-| `active` | `() => boolean` | `-` |
-| `onSelect` | `() => void` | `-` |
-| `disabled` | `boolean` | `-` |
-| `children` | `HellaChildren` | `-` |
-
-Accepts all native `div` attributes (forwarded to the root element); a user `on:click` chains with the owned select.
-
-### CommandShortcut
-
-The right-aligned key hint inside a row.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `children` | `HellaChildren` | `-` |
-
-Accepts all native `span` attributes (forwarded to the root element).
-
-### CommandSeparator
-
-A `role="separator"` rule between groups. Accepts all native `div` attributes (forwarded to the root element).
+`value` is reported through `onValueChange` on Enter and rendered as `data-value`; `label` is the primary scoring target; `group` heads a group in first-appearance order; every matching `keywords` entry adds a fixed scoring bonus; `shortcut` renders right-aligned inside its row; `disabled` rows are skipped by arrows and never commit; `onSelect` runs when Enter commits the row.
 
 ### CommandDialog
 
-The palette wrapped in the dialog surface: the overlay, the portaled panel, the focus trap with focus restore, and escape plus outside-press dismissal. The `title` and `description` render inside a screen-reader-only header and wire `aria-labelledby` and `aria-describedby` on the panel.
+The palette wrapped in the dialog surface: the overlay, the portaled panel, the focus trap with focus restore, and escape plus outside-press dismissal. The `title` and `description` render inside a screen-reader-only header and wire `aria-labelledby` and `aria-describedby` on the panel. The dialog forwards the `Command` root's items props, so the ranked surface, the filtering, and the keyboard model work inside the shell identically; when every item filters out the surface shows its "No results found." row.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
+| `items` | `CommandItemData[] \| (() => CommandItemData[])` | `-` |
+| `filter` | `(items, query) => CommandItemData[]` | The scoring filter |
+| `loop` | `boolean` | `false` |
+| `value` | `() => string` | `-` |
+| `onValueChange` | `(value: string) => void` | `-` |
 | `open` | `() => boolean` | `-` |
 | `onClose` | `() => void` | `-` |
 | `title` | `string` | `-` |
@@ -119,7 +55,22 @@ The palette wrapped in the dialog surface: the overlay, the portaled panel, the 
 
 Accepts all native `div` attributes (forwarded to the portaled panel element).
 
-Every component also takes a `class` string, landing last in its style composition. The dialog surface rides the factory's `Dialog` component over the headless [`modal`](/headless/modal) foundation: the trap, escape, and outside-press wiring arm against the open state and dispose with the panel, and the panel class styles the overlay, header, close button, and command surface through descendants of the wrapper root. The entry's `dialog` registry dependency exists so standalone dialogs are one `add` away.
+```jsx
+import { signal } from "@hellajs/core";
+import { CommandDialog } from "./components/command";
+
+const open = signal(false);
+
+<CommandDialog
+  open={open}
+  onClose={() => open(false)}
+  items={[
+    { value: "copy", label: "Copy", group: "Edit", shortcut: "C", onSelect: copy },
+  ]}
+/>;
+```
+
+Both components also take a `class` string, landing last in its style composition. The dialog surface rides the factory's `Dialog` component over the headless [`modal`](/headless/modal) foundation: the trap, escape, and outside-press wiring arm against the open state and dispose with the panel, and the panel class styles the overlay, header, close button, and command surface through descendants of the wrapper root. The entry's `dialog` registry dependency exists so standalone dialogs are one `add` away.
 
 ## Filtering
 

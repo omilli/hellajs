@@ -2,7 +2,7 @@ import { ForEach } from "@hellajs/dom";
 import { radioGroup } from "@hellajs/headless";
 import type { HTMLAttributes } from "@hellajs/dom";
 
-interface RadioGroupItem {
+interface RadioGroupEntry {
   value: string;
   label: string;
   disabled?: boolean;
@@ -11,21 +11,13 @@ interface RadioGroupItem {
 interface RadioGroupProps extends HTMLAttributes<"div"> {
   class?: string;
   /** The rendered options. An array reads statically at mount; an accessor keeps the list reactive across appends, removes, and reorders. */
-  items: RadioGroupItem[] | (() => RadioGroupItem[]);
+  items: RadioGroupEntry[] | (() => RadioGroupEntry[]);
   /** Reuses item DOM through reorders by `value` identity (selection state survives); order always follows the array. */
   keyBy?: "value";
   /** Controlled selected value. When given, the root never writes its internal signal and `onValueChange` reports the requested selection. */
   value?: () => string;
   onValueChange?: (value: string) => void;
   orientation?: "horizontal" | "vertical";
-}
-
-interface RadioGroupItemProps extends HTMLAttributes<"button"> {
-  class?: string;
-  value: string;
-  /** Checked state. A boolean reads statically; an accessor keeps the manual part reactive. */
-  checked?: boolean | (() => boolean);
-  onSelect?: () => void;
 }
 
 import { style } from "@hellajs/css";
@@ -114,41 +106,6 @@ const circleIcon = (): JSX.Element => (
     <circle cx="12" cy="12" r="10" />
   </svg>
 );
-
-export function RadioGroupItem({
-  value,
-  checked,
-  onSelect,
-  disabled,
-  name,
-  class: cls,
-  ...attrs
-}: RadioGroupItemProps): JSX.Element {
-  const { Item, Indicator } = radioGroup();
-  return (
-    <Item
-      value={value}
-      checked={checked}
-      onSelect={onSelect}
-      disabled={disabled}
-      name={name}
-      class={
-        [item, cls]
-      }
-      {...attrs}
-    >
-      <Indicator
-        value={value}
-        checked={checked}
-        class={
-          [indicator]
-        }
-      >
-        {circleIcon()}
-      </Indicator>
-    </Item>
-  );
-}
 
 export function RadioGroup({
   items,

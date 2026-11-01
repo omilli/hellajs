@@ -11,8 +11,8 @@ const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 
 // The headless factory renders the option rows, scroll buttons, viewport, and
 // chevron icons classless; these shared rule blocks restyle them through their
-// data-slots from the wrapper roots (content) and are shared with the
-// manually composed Item part that roots the row rules directly.
+// data-slots from the wrapper roots (content), and the item class the root
+// passes re-roots the row rules directly.
 const itemRules = {
   alignItems: "center",
   borderRadius: `calc(${tokens.radius} * 0.6)`,
@@ -211,32 +211,3 @@ export const content = style("select-content", {
 });
 
 export const item = style("select-item", itemRules);
-
-export const icon = style("select-icon", {
-  height: "1rem",
-  width: "1rem",
-});
-
-export const chevron = style("select-chevron", {
-  height: "1rem",
-  opacity: "0.5",
-  width: "1rem",
-});
-
-export const label = style("select-label", {
-  color: tokens.mutedForeground,
-  fontSize: "0.75rem",
-  lineHeight: "1rem",
-  paddingBlock: "0.375rem",
-  paddingInline: "0.5rem",
-});
-
-export const separator = style("select-separator", {
-  backgroundColor: tokens.border,
-  height: "1px",
-  marginBlock: "0.25rem",
-  marginInline: "-0.25rem",
-  pointerEvents: "none",
-});
-
-export const scrollButton = style("select-scroll-button", scrollButtonRules);

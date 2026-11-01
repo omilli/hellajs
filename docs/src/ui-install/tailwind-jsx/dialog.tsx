@@ -1,30 +1,6 @@
 import { dialog } from "@hellajs/headless";
 import type { HellaChild, HellaChildren, HTMLAttributes } from "@hellajs/dom";
 
-type DialogState = () => "open" | "closed";
-
-interface DialogOverlayProps extends HTMLAttributes<"div"> {
-  state?: DialogState;
-  class?: string;
-}
-
-interface DialogCloseProps extends HTMLAttributes<"button"> {
-  state?: DialogState;
-  onClose?: () => void;
-  class?: string;
-}
-
-interface DialogContentProps extends HTMLAttributes<"div"> {
-  state?: DialogState;
-  showCloseButton?: boolean;
-  closeOnEscape?: boolean;
-  closeOnOutside?: boolean;
-  onClose?: () => void;
-  onExited?: () => void;
-  class?: string;
-  children?: HellaChildren;
-}
-
 interface DialogPartProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   class?: string;
@@ -69,97 +45,6 @@ const CloseIcon = (): JSX.Element => (
     <path d="m6 6 12 12" />
   </svg>
 );
-
-/** The screen-covering backdrop; the factory's Overlay with the backdrop style. */
-export function DialogOverlay({ state, class: cls, ...attrs }: DialogOverlayProps): JSX.Element {
-  const { Overlay } = dialog({ open: () => (state?.() ?? "open") === "open" });
-  return (
-    <Overlay
-      class={
-        cn("fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0", cls)
-      }
-      {...attrs}
-    />
-  );
-}
-
-/** The X close button; the factory's Close with the X icon and its sr-only label. */
-export function DialogClose({
-  state,
-  onClose,
-  "on:click": userClick,
-  class: cls,
-  ...attrs
-}: DialogCloseProps): JSX.Element {
-  const { Close } = dialog({
-    open: () => (state?.() ?? "open") === "open",
-    onOpenChange: (next) => {
-      if (!next) onClose?.();
-    },
-  });
-  return (
-    <Close
-      class={
-        cn("absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", cls)
-      }
-      on:click={userClick}
-      {...attrs}
-    >
-      <CloseIcon />
-      <span class="sr-only">Close</span>
-    </Close>
-  );
-}
-
-/**
- * The dialog panel. Manual composition portals it alongside a DialogOverlay
- * sibling - hella has no Radix context, so the portal/overlay pairing is the
- * composer's (the Dialog export below shows the wired composition). The panel
- * renders inline where placed: the factory's gate and portal belong to the
- * composed Dialog.
- */
-export function DialogContent({
-  state,
-  showCloseButton,
-  closeOnEscape,
-  closeOnOutside,
-  onClose,
-  onExited,
-  children,
-  class: cls,
-  ...attrs
-}: DialogContentProps): JSX.Element {
-  const { Content, Close } = dialog({
-    open: () => (state?.() ?? "open") === "open",
-    onOpenChange: (next) => {
-      if (!next) onClose?.();
-    },
-  });
-  return (
-    <Content
-      portal={false}
-      escape={closeOnEscape}
-      outside={closeOnOutside}
-      onExited={onExited}
-      class={
-        cn("fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg", cls)
-      }
-      {...attrs}
-    >
-      {children}
-      {showCloseButton !== false && (
-        <Close
-          class={
-            cn("absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4")
-          }
-        >
-          <CloseIcon />
-          <span class="sr-only">Close</span>
-        </Close>
-      )}
-    </Content>
-  );
-}
 
 export function DialogHeader({ children, class: cls, ...attrs }: DialogPartProps): JSX.Element {
   return (
@@ -240,7 +125,7 @@ export function Dialog({
 }: DialogProps): JSX.Element {
   const titleId = `hella-dialog-title-${++dialogCount}`;
   const descriptionId = `hella-dialog-description-${dialogCount}`;
-  const { Content, Close } = dialog({
+  const { Content, Close, Overlay } = dialog({
     open,
     onOpenChange: (next) => {
       if (!next) onClose();
@@ -256,7 +141,13 @@ export function Dialog({
       aria-describedby={descriptionText === undefined ? undefined : descriptionId}
       escape={closeOnEscape}
       outside={closeOnOutside}
-      overlay={(state) => <DialogOverlay state={state} />}
+      overlay={() => (
+        <Overlay
+          class={
+            cn("fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0")
+          }
+        />
+      )}
       {...attrs}
       children={
         [

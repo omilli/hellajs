@@ -16,52 +16,6 @@ interface RankedItem {
   score: number;
 }
 
-interface CommandInputProps extends HTMLAttributes<"input"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
-interface CommandListProps extends HTMLAttributes<"div"> {
-  /** The listbox id; option ids derive as `<id>-opt-<value>`. */
-  id?: string;
-  children?: HellaChildren;
-  class?: string;
-}
-
-interface CommandEmptyProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
-interface CommandGroupProps extends HTMLAttributes<"div"> {
-  heading?: string;
-  hidden?: boolean | (() => boolean);
-  children?: HellaChildren;
-  class?: string;
-}
-
-interface CommandSeparatorProps extends HTMLAttributes<"div"> {
-  class?: string;
-}
-
-interface CommandItemProps extends HTMLAttributes<"div"> {
-  value?: string;
-  /** The option's stable id; defaults to `<listId>-opt-<value>` from the owning factory. */
-  id?: string;
-  disabled?: boolean;
-  /** Selected state (the ref's data-selected accent); an accessor follows the owning command's active item. */
-  active?: () => boolean;
-  /** Called on click and on Enter when the owning command commits. */
-  onSelect?: () => void;
-  children?: HellaChildren;
-  class?: string;
-}
-
-interface CommandShortcutProps extends HTMLAttributes<"span"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
 interface CommandProps extends HTMLAttributes<"div"> {
   items?: CommandItemData[] | (() => CommandItemData[]);
   /** Replaces the default scoring filter (earlier matches, word-boundary starts, keyword hits). */
@@ -76,13 +30,11 @@ interface CommandProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
 }
 
-interface CommandDialogProps extends HTMLAttributes<"div"> {
+interface CommandDialogProps extends CommandProps {
   open: () => boolean;
   onClose: () => void;
   title?: string;
   description?: string;
-  class?: string;
-  children?: HellaChildren;
 }
 
 export type { CommandItemData };
@@ -428,138 +380,18 @@ const dialogPanel = style("command-dialog-panel", {
   },
 });
 
-/** The search row; the composed Command threads the query and keyboard model through the factory. */
-export function CommandInput({ children, class: cls, ...attrs }: CommandInputProps): JSX.Element {
-  const { Input } = command();
-  return (
-    <Input
-      class={
-        [inputWrapper, cls]
-      }
-      {...attrs}
-    >
-      {children}
-    </Input>
-  );
-}
-
-/** The scrolling `role="listbox"`; the composed Command hands the factory its items and renders the ranked body. */
-export function CommandList({ id, children, class: cls, ...attrs }: CommandListProps): JSX.Element {
-  const { List } = command();
-  return (
-    <List
-      id={id}
-      class={
-        [list, cls]
-      }
-      {...attrs}
-    >
-      {children}
-    </List>
-  );
-}
-
-export function CommandEmpty({ children, class: cls, ...attrs }: CommandEmptyProps): JSX.Element {
-  const { Empty } = command();
-  return (
-    <Empty
-      class={
-        [empty, cls]
-      }
-      {...attrs}
-    >
-      {children}
-    </Empty>
-  );
-}
-
-export function CommandGroup({
-  heading,
-  hidden,
-  children,
-  class: cls,
-  ...attrs
-}: CommandGroupProps): JSX.Element {
-  const { Group } = command();
-  return (
-    <Group
-      heading={heading}
-      hidden={hidden}
-      class={
-        [group, cls]
-      }
-      {...attrs}
-    >
-      {children}
-    </Group>
-  );
-}
-
-export function CommandSeparator({ class: cls, ...attrs }: CommandSeparatorProps): JSX.Element {
-  const { Separator } = command();
-  return (
-    <Separator
-      class={
-        [separator, cls]
-      }
-      {...attrs}
-    />
-  );
-}
-
-export function CommandItem({
-  value,
-  id,
-  disabled,
-  active,
-  onSelect,
-  children,
-  class: cls,
-  ...attrs
-}: CommandItemProps): JSX.Element {
-  const { Item } = command();
-  return (
-    <Item
-      value={value}
-      id={id}
-      disabled={disabled}
-      active={active}
-      onSelect={onSelect}
-      class={
-        [item, cls]
-      }
-      {...attrs}
-    >
-      {children}
-    </Item>
-  );
-}
-
-export function CommandShortcut({
-  children,
-  class: cls,
-  ...attrs
-}: CommandShortcutProps): JSX.Element {
-  const { Shortcut } = command();
-  return (
-    <Shortcut
-      class={
-        [shortcut, cls]
-      }
-      {...attrs}
-    >
-      {children}
-    </Shortcut>
-  );
-}
-
 /**
  * The palette dialog: the factory's `Dialog` part — overlay, portaled panel
  * with trap/escape/outside arming, screen-reader header, close button, and the
  * command surface — styled through descendants of the one wrapper-root class.
- * Manual parts compose inside through children.
+ * The items schema renders the inner command surface.
  */
 export function CommandDialog({
+  items,
+  filter,
+  loop,
+  value,
+  onValueChange,
   open,
   onClose,
   title: titleText,
@@ -580,7 +412,15 @@ export function CommandDialog({
       }
       {...attrs}
     >
-      {children}
+      <Command
+        items={items}
+        filter={filter}
+        loop={loop}
+        value={value}
+        onValueChange={onValueChange}
+      >
+        {children}
+      </Command>
     </Dialog>
   );
 }

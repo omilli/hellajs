@@ -6,10 +6,7 @@ import {
   assertStructuralParity,
   classTokens,
   renderVariant,
-  selectModules,
-  selectPartVariants,
   selectVariants,
-  menuModulePart,
   type ComponentVariant,
   type SelectEntryVariant,
   type SelectVariantProps,
@@ -411,46 +408,11 @@ describe("select", () => {
     },
   );
 
-  test.each(selectPartVariants.filter((variant) => variant.part === "Trigger"))(
-    "$style overrides a forwarded on:click with the trigger's internal click handler across both styles",
-    (variant) => {
-      const userClick = vi.fn(() => {});
-      const onOpen = vi.fn(() => {});
-      const trigger = renderVariant(variant, { children: "Open", "on:click": userClick, onOpen });
-      trigger.dispatchEvent(new Event("click"));
-      expect(onOpen).toHaveBeenCalledTimes(1);
-      expect(userClick).not.toHaveBeenCalled();
-    },
-  );
-
   test.each(selectVariants)(
     "$style merges a user class into the trigger root's class across both styles",
     (variant) => {
       const trigger = renderVariant(variant, { items: FRUITS, class: "user-class" });
       expect(classTokens(trigger).at(-1)).toBe("user-class");
-    },
-  );
-
-  test.each(selectPartVariants.filter((variant) => variant.part === "Trigger"))(
-    "$style trigger part lands a user aria-controls and re-emits the id",
-    (variant) => {
-      const container = setupContainer();
-      mount(
-        variant.render({ children: [], id: "my-trigger", "aria-controls": "my-listbox" }),
-        container,
-      );
-      const trigger = container.firstElementChild!;
-      expect(trigger.getAttribute("id")).toBe("my-trigger");
-      expect(trigger.getAttribute("aria-controls")).toBe("my-listbox");
-    },
-  );
-
-  test.each(selectPartVariants.filter((variant) => variant.part === "Trigger"))(
-    "$style trigger part leaves aria-controls to the caller when absent",
-    (variant) => {
-      const container = setupContainer();
-      mount(variant.render({ children: [] }), container);
-      expect(container.firstElementChild!.hasAttribute("aria-controls")).toBe(false);
     },
   );
 
@@ -509,102 +471,5 @@ describe("select", () => {
     assertStructuralParity(selectVariants, { items: FRUITS, placeholder: "Parity" }, [
       "aria-controls",
     ]);
-  });
-
-  test("renders every named part with its data-slot across both styles", async () => {
-    for (const variant of selectPartVariants) {
-      const container = setupContainer();
-      const rendered = variant.render({ children: [] });
-      mount(rendered, container);
-      // The content part portals itself; every other part renders in place.
-      const el =
-        variant.part === "Content"
-          ? await awaitPortaled("select-content")
-          : container.firstElementChild!;
-      const slot =
-        variant.part === "ScrollUpButton"
-          ? "select-scroll-up-button"
-          : variant.part === "ScrollDownButton"
-            ? "select-scroll-down-button"
-            : `select-${variant.part.toLowerCase()}`;
-      expect(el.getAttribute("data-slot")).toBe(slot);
-    }
-  });
-
-  test.each(selectPartVariants.filter((variant) => variant.part === "Content"))(
-    "$style content part anchors with matchAnchorWidth, dismisses, and drains wirings on disposal",
-    async (variant) => {
-      const anchor = document.createElement("button");
-      document.body.appendChild(anchor);
-      pinRect(anchor, 100, 50, 200, 20);
-      const onDismiss = vi.fn(() => {});
-      const container = setupContainer();
-      const handle = mount(
-        variant.render({ anchor: () => anchor, side: "bottom", onDismiss, children: [] }),
-        container,
-      );
-      const content = await awaitPortaled("select-content");
-      expect(content.style.width).toBe("200px");
-      expect(content.style.left).toBe("50px");
-      expect(content.style.top).toBe("126px");
-      expect(document.activeElement).toBe(content);
-      pressEscape();
-      expect(onDismiss).toHaveBeenCalledTimes(1);
-      handle.unmount();
-      expect(content.isConnected).toBe(false);
-    },
-  );
-
-  test.each(selectPartVariants.filter((variant) => variant.part === "Trigger"))(
-    "$style trigger part renders the clear affordance only while a value is selected",
-    (variant) => {
-      const onClear = vi.fn(() => {});
-      const container = setupContainer();
-      const handle = mount(
-        variant.render({ children: [], clearable: true, hasValue: () => true, onClear }),
-        container,
-      );
-      const trigger = container.firstElementChild as HTMLElement;
-      const clear = trigger.querySelector("[data-slot='select-clear']")!;
-      expect(clear).not.toBeNull();
-      clear.dispatchEvent(new Event("click", { bubbles: true }));
-      expect(onClear).toHaveBeenCalledTimes(1);
-      handle.unmount();
-      const idle = renderVariant(variant, {
-        children: [],
-        clearable: true,
-        hasValue: () => false,
-        onClear,
-      });
-      expect(idle.querySelector("[data-slot='select-clear']")).toBeNull();
-    },
-  );
-
-  test.each(selectPartVariants.filter((variant) => variant.part === "Trigger"))(
-    "$style trigger part reports opens from click and ArrowDown",
-    (variant) => {
-      const onOpen = vi.fn(() => {});
-      const container = setupContainer();
-      const handle = mount(variant.render({ children: [], onOpen }), container);
-      const trigger = container.firstElementChild as HTMLElement;
-      trigger.dispatchEvent(new Event("click", { bubbles: true }));
-      expect(onOpen).toHaveBeenCalledTimes(1);
-      pressKey(trigger, "ArrowDown");
-      expect(onOpen).toHaveBeenCalledTimes(2);
-      pressKey(trigger, "ArrowLeft");
-      expect(onOpen).toHaveBeenCalledTimes(2);
-      handle.unmount();
-    },
-  );
-
-  test("builds content trees through the shared module table at each style", () => {
-    for (const style of ["css", "tailwind"] as const) {
-      const Item = menuModulePart<{ value?: string; label?: string; selected?: boolean }>(
-        selectModules,
-        { style },
-        "SelectItem",
-      );
-      expect(Item({ value: "a", label: "A" })).toBeDefined();
-    }
   });
 });

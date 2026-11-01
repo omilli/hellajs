@@ -1,34 +1,9 @@
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
-export type AnchorSide = "top" | "bottom" | "left" | "right";
-
-export type AnchorAlign = "start" | "center" | "end";
-
 export interface MenuEntry {
   value: string;
   label?: HellaChildren;
   disabled?: boolean;
-}
-
-export interface ContextMenuTriggerProps extends HTMLAttributes<"span"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
-export interface ContextMenuContentProps extends HTMLAttributes<"div"> {
-  state?: () => "open" | "closed";
-  side?: AnchorSide;
-  align?: AnchorAlign;
-  /** Resolves the element the content anchors to; positioning is skipped when undefined. */
-  anchor?: () => Element | undefined;
-  /** When given, Escape and an outside pointerdown dismiss the top layer into this callback, and item selection closes every open layer. */
-  onDismiss?: () => void;
-  /** Called when the exit animation ends under data-state="closed"; entry animationends are ignored. */
-  onExited?: () => void;
-  /** ArrowLeft closes the menu when provided (submenu exit; a top-level menu stays inert). */
-  onArrowLeft?: () => void;
-  children?: HellaChildren;
-  class?: string;
 }
 
 export interface ContextMenuPartProps extends HTMLAttributes<"div"> {
@@ -81,34 +56,6 @@ export interface ContextMenuLabelProps extends HTMLAttributes<"div"> {
 }
 
 export interface ContextMenuShortcutProps extends HTMLAttributes<"span"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
-export interface ContextMenuSubTriggerProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  inset?: boolean;
-  /** Resolves the open state for `aria-expanded`/`data-state`; the composed Sub wires it. */
-  state?: () => "open" | "closed";
-  /** Called on click and hover intent to open the submenu. */
-  onOpen?: () => void;
-  class?: string;
-}
-
-export interface ContextMenuSubContentProps extends HTMLAttributes<"div"> {
-  state?: () => "open" | "closed";
-  side?: AnchorSide;
-  align?: AnchorAlign;
-  /** Resolves the element the content anchors to (the sub-trigger); positioning is skipped when undefined. */
-  anchor?: () => Element | undefined;
-  /** When given, Escape and an outside pointerdown dismiss the top layer into this callback, and item selection closes every open layer. */
-  onDismiss?: () => void;
-  /** Called when the exit animation ends under data-state="closed"; entry animationends are ignored. */
-  onExited?: () => void;
-  /** ArrowLeft closes the submenu. */
-  onArrowLeft?: () => void;
-  /** Pointer entering the content cancels the trigger's pending close. */
-  onPointerEnter?: () => void;
   children?: HellaChildren;
   class?: string;
 }

@@ -20,8 +20,6 @@ import * as DialogCssJsx from "../../dist/registry/dialog/css/dialog";
 import * as DialogTailwindJsx from "../../dist/registry/dialog/tailwind/dialog";
 import { Tabs as TabsCssDefault } from "../../dist/registry/tabs/css/tabs";
 import { Tabs as TabsTailwindDefault } from "../../dist/registry/tabs/tailwind/tabs";
-import * as TabsCssJsx from "../../dist/registry/tabs/css/tabs";
-import * as TabsTailwindJsx from "../../dist/registry/tabs/tailwind/tabs";
 import { Badge as BadgeCssJsx } from "../../dist/registry/badge/css/badge";
 import { Badge as BadgeTailwindJsx } from "../../dist/registry/badge/tailwind/badge";
 import { Alert as AlertCssDefault } from "../../dist/registry/alert/css/alert";
@@ -96,6 +94,8 @@ export interface TabsVariantProps extends HTMLAttributes<"div"> {
   class?: string;
   items: TabsItem[] | (() => TabsItem[]);
   initialId?: string;
+  value?: () => string;
+  onValueChange?: (value: string) => void;
   orientation?: "horizontal" | "vertical";
   variant?: "default" | "line";
 }
@@ -115,12 +115,6 @@ export interface DialogVariantProps extends HTMLAttributes<"div"> {
 
 /** Superset prop bag across Dialog parts (mirrors the emitted part props). */
 export interface DialogPartVariantProps extends GlobalHTMLAttributes {
-  state?: () => "open" | "closed";
-  showCloseButton?: boolean;
-  closeOnEscape?: boolean;
-  closeOnOutside?: boolean;
-  onClose?: () => void;
-  onExited?: () => void;
   children?: HellaChildren;
   class?: string;
 }
@@ -312,19 +306,8 @@ export const CARD_PARTS = [
   "Footer",
 ] as const;
 
-/** The named Dialog parts (the other Dialog exports). */
-export const DIALOG_PARTS = [
-  "Overlay",
-  "Content",
-  "Header",
-  "Footer",
-  "Title",
-  "Description",
-  "Close",
-] as const;
-
-/** The named Tabs parts (the other Tabs exports). */
-export const TABS_PARTS = ["List", "Trigger", "Content"] as const;
+/** The named Dialog parts (the Header/Footer/Title/Description vocabulary). */
+export const DIALOG_PARTS = ["Header", "Footer", "Title", "Description"] as const;
 
 export type AnyModule = Record<string, (props: never) => JSX.Element>;
 
@@ -362,17 +345,6 @@ export const dialogPartVariants: PartVariant<DialogPartVariantProps>[] = DIALOG_
       [DialogTailwindJsx as unknown as AnyModule, "tailwind"],
     ]),
 );
-
-/**
- * Every compiled Tabs part at both styles.
- */
-export const tabsPartVariants: PartVariant<Record<string, never> & { children?: HellaChildren }>[] =
-  TABS_PARTS.flatMap((part) =>
-    partVariants(part, "Tabs", [
-      [TabsCssJsx as unknown as AnyModule, "css"],
-      [TabsTailwindJsx as unknown as AnyModule, "tailwind"],
-    ]),
-  );
 
 /**
  * Every compiled Dialog variant (the Dialog export) from dist/registry.
@@ -1232,32 +1204,8 @@ export interface MessageScrollerVariantProps extends CardPartProps {
   showScrollButton?: boolean;
 }
 
-/** Prop bag for the compiled MessageScrollerViewport part (mirrors the emitted props). */
-export interface MessageScrollerViewportVariantProps extends MessageScrollerVariantProps {}
-
-/** Prop bag for the compiled MessageScrollerButton part (mirrors the emitted props). */
-export interface MessageScrollerButtonVariantProps extends HTMLAttributes<"button"> {
-  class?: string;
-  children?: HellaChildren;
-  atBottom?: Signal<boolean>;
-  scrollToBottom?: () => void;
-  direction?: "start" | "end";
-  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
-  size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
-}
-
-/** Superset prop bag across MessageScroller parts. */
-export type MessageScrollerPartVariantProps = MessageScrollerVariantProps &
-  MessageScrollerButtonVariantProps;
-
 /** The named MessageScroller parts except the MessageScroller root. */
-export const MESSAGE_SCROLLER_PARTS = [
-  "Provider",
-  "Viewport",
-  "Content",
-  "Item",
-  "Button",
-] as const;
+export const MESSAGE_SCROLLER_PARTS = ["Item"] as const;
 
 /**
  * Every compiled MessageScroller variant (the named MessageScroller export) at both styles.
@@ -1280,9 +1228,9 @@ export const messageScrollerVariants: PartVariant<MessageScrollerVariantProps>[]
 ];
 
 /**
- * Every compiled MessageScroller part (Provider, Viewport, Content, Item, Button) at both styles.
+ * Every compiled MessageScroller part (the Item row) at both styles.
  */
-export const messageScrollerPartVariants: PartVariant<MessageScrollerPartVariantProps>[] =
+export const messageScrollerPartVariants: PartVariant<MessageScrollerVariantProps>[] =
   MESSAGE_SCROLLER_PARTS.flatMap((part) =>
     partVariants(part, "MessageScroller", [
       [MessageScrollerCssJsx as unknown as AnyModule, "css"],
@@ -1360,24 +1308,18 @@ export const attachmentPartVariants: PartVariant<AttachmentPartVariantProps>[] =
 
 import { Collapsible as CollapsibleCssDefault } from "../../dist/registry/collapsible/css/collapsible";
 import { Collapsible as CollapsibleTailwindDefault } from "../../dist/registry/collapsible/tailwind/collapsible";
-import * as CollapsibleCssJsx from "../../dist/registry/collapsible/css/collapsible";
-import * as CollapsibleTailwindJsx from "../../dist/registry/collapsible/tailwind/collapsible";
 import { Accordion as AccordionCssDefault } from "../../dist/registry/accordion/css/accordion";
 import { Accordion as AccordionTailwindDefault } from "../../dist/registry/accordion/tailwind/accordion";
 import { Checkbox as CheckboxCssJsx } from "../../dist/registry/checkbox/css/checkbox";
 import { Checkbox as CheckboxTailwindJsx } from "../../dist/registry/checkbox/tailwind/checkbox";
 import { RadioGroup as RadioGroupCssDefault } from "../../dist/registry/radio-group/css/radio-group";
 import { RadioGroup as RadioGroupTailwindDefault } from "../../dist/registry/radio-group/tailwind/radio-group";
-import * as RadioGroupCssJsx from "../../dist/registry/radio-group/css/radio-group";
-import * as RadioGroupTailwindJsx from "../../dist/registry/radio-group/tailwind/radio-group";
 import { Switch as SwitchCssJsx } from "../../dist/registry/switch/css/switch";
 import { Switch as SwitchTailwindJsx } from "../../dist/registry/switch/tailwind/switch";
 import { Toggle as ToggleCssJsx } from "../../dist/registry/toggle/css/toggle";
 import { Toggle as ToggleTailwindJsx } from "../../dist/registry/toggle/tailwind/toggle";
 import { ToggleGroup as ToggleGroupCssDefault } from "../../dist/registry/toggle-group/css/toggle-group";
 import { ToggleGroup as ToggleGroupTailwindDefault } from "../../dist/registry/toggle-group/tailwind/toggle-group";
-import * as ToggleGroupCssJsx from "../../dist/registry/toggle-group/css/toggle-group";
-import * as ToggleGroupTailwindJsx from "../../dist/registry/toggle-group/tailwind/toggle-group";
 
 /** Prop bag shared by every compiled Collapsible variant (mirrors the emitted CollapsibleProps). */
 export interface CollapsibleVariantProps extends HTMLAttributes<"div"> {
@@ -1388,15 +1330,6 @@ export interface CollapsibleVariantProps extends HTMLAttributes<"div"> {
   onOpenChange?: (open: boolean) => void;
   trigger: HellaChildren;
   content: HellaChildren;
-}
-
-/** Superset prop bag across Collapsible parts (the open contract across the button/div roots). */
-export interface CollapsiblePartVariantProps extends GlobalHTMLAttributes {
-  class?: string;
-  children?: HellaChildren;
-  active?: () => boolean;
-  onToggle?: () => void;
-  id?: string;
 }
 
 /** Item shape of every compiled Accordion variant (mirrors the emitted AccordionEntry). */
@@ -1428,20 +1361,6 @@ export const collapsibleVariants: ComponentVariant<CollapsibleVariantProps>[] = 
   { style: "tailwind", render: CollapsibleTailwindDefault },
 ];
 
-/** The named Collapsible parts (the other Collapsible exports). */
-export const COLLAPSIBLE_PARTS = ["Trigger", "Content"] as const;
-
-/**
- * Every compiled Collapsible part (CollapsibleTrigger, CollapsibleContent) at both styles.
- */
-export const collapsiblePartVariants: PartVariant<CollapsiblePartVariantProps>[] =
-  COLLAPSIBLE_PARTS.flatMap((part) =>
-    partVariants(part, "Collapsible", [
-      [CollapsibleCssJsx as unknown as AnyModule, "css"],
-      [CollapsibleTailwindJsx as unknown as AnyModule, "tailwind"],
-    ]),
-  );
-
 /**
  * Every compiled Accordion variant (the Accordion export) from dist/registry.
  * Accordion takes an items array, so the suites carry no `child` wrapper.
@@ -1451,7 +1370,7 @@ export const accordionVariants: ComponentVariant<AccordionVariantProps>[] = [
   { style: "tailwind", render: AccordionTailwindDefault },
 ];
 
-/** Item shape of every compiled RadioGroup variant (mirrors the emitted RadioGroupItem). */
+/** Item shape of every compiled RadioGroup variant (mirrors the emitted RadioGroupEntry). */
 export interface RadioGroupEntryVariant {
   value: string;
   label: string;
@@ -1531,29 +1450,6 @@ export const radioGroupVariants: ComponentVariant<RadioGroupVariantProps>[] = [
   { style: "tailwind", render: RadioGroupTailwindDefault },
 ];
 
-/** The named RadioGroup parts (the other RadioGroup exports). */
-export const RADIO_GROUP_PARTS = ["Item"] as const;
-
-/** Prop bag shared by every compiled RadioGroup part (mirrors the emitted RadioGroupItemProps). */
-export interface RadioGroupPartVariantProps extends HTMLAttributes<"button"> {
-  class?: string;
-  value: string;
-  checked?: boolean | (() => boolean);
-  onSelect?: () => void;
-  name?: string;
-}
-
-/**
- * Every compiled RadioGroup part (RadioGroupItem) at both styles.
- */
-export const radioGroupPartVariants: PartVariant<RadioGroupPartVariantProps>[] =
-  RADIO_GROUP_PARTS.flatMap((part) =>
-    partVariants(part, "RadioGroup", [
-      [RadioGroupCssJsx as unknown as AnyModule, "css"],
-      [RadioGroupTailwindJsx as unknown as AnyModule, "tailwind"],
-    ]),
-  );
-
 /**
  * Every compiled Switch variant from dist/registry: {css,tailwind}.
  */
@@ -1578,31 +1474,6 @@ export const toggleGroupVariants: ComponentVariant<ToggleGroupVariantProps>[] = 
   { style: "css", render: ToggleGroupCssDefault },
   { style: "tailwind", render: ToggleGroupTailwindDefault },
 ];
-
-/** The named ToggleGroup parts (the other ToggleGroup exports). */
-export const TOGGLE_GROUP_PARTS = ["Item"] as const;
-
-/** Prop bag shared by every compiled ToggleGroup part (mirrors the emitted ToggleGroupItemProps). */
-export interface ToggleGroupPartVariantProps extends HTMLAttributes<"button"> {
-  class?: string;
-  children?: HellaChildren;
-  value?: string;
-  pressed?: boolean | (() => boolean);
-  onSelect?: () => void;
-  variant?: "default" | "outline";
-  size?: "default" | "sm" | "lg";
-}
-
-/**
- * Every compiled ToggleGroup part (ToggleGroupItem) at both styles.
- */
-export const toggleGroupPartVariants: PartVariant<ToggleGroupPartVariantProps>[] =
-  TOGGLE_GROUP_PARTS.flatMap((part) =>
-    partVariants(part, "ToggleGroup", [
-      [ToggleGroupCssJsx as unknown as AnyModule, "css"],
-      [ToggleGroupTailwindJsx as unknown as AnyModule, "tailwind"],
-    ]),
-  );
 
 import { Slider as SliderCssDefault } from "../../dist/registry/slider/css/slider";
 import { Slider as SliderTailwindDefault } from "../../dist/registry/slider/tailwind/slider";
@@ -1686,8 +1557,8 @@ export const resizablePartVariants: PartVariant<ResizablePartVariantProps>[] =
     ]),
   );
 
-import * as TooltipCssJsx from "../../dist/registry/tooltip/css/tooltip";
-import * as TooltipTailwindJsx from "../../dist/registry/tooltip/tailwind/tooltip";
+import { Tooltip as TooltipCssDefault } from "../../dist/registry/tooltip/css/tooltip";
+import { Tooltip as TooltipTailwindDefault } from "../../dist/registry/tooltip/tailwind/tooltip";
 import * as HoverCardCssJsx from "../../dist/registry/hover-card/css/hover-card";
 import * as HoverCardTailwindJsx from "../../dist/registry/hover-card/tailwind/hover-card";
 import * as PopoverCssJsx from "../../dist/registry/popover/css/popover";
@@ -1701,25 +1572,13 @@ export type AnchoredAlign = "start" | "center" | "end";
 export interface TooltipVariantProps extends HTMLAttributes<"span"> {
   content: HellaChildren;
   delayDuration?: number;
+  open?: () => boolean;
+  onOpenChange?: (open: boolean) => void;
   side?: AnchoredSide;
   align?: AnchoredAlign;
   children?: HellaChildren;
   class?: string;
 }
-
-/** Superset prop bag across Tooltip parts (mirrors the emitted part props). */
-export interface TooltipPartVariantProps extends GlobalHTMLAttributes {
-  state?: () => "open" | "closed";
-  side?: AnchoredSide;
-  align?: AnchoredAlign;
-  anchor?: () => Element | undefined;
-  onExited?: () => void;
-  children?: HellaChildren;
-  class?: string;
-}
-
-/** The named Tooltip parts (the other Tooltip exports). */
-export const TOOLTIP_PARTS = ["Provider", "Trigger", "Content"] as const;
 
 /**
  * Every compiled Tooltip variant (the Tooltip export) from dist/registry.
@@ -1727,30 +1586,9 @@ export const TOOLTIP_PARTS = ["Provider", "Trigger", "Content"] as const;
  * the trigger root and resolve content through the helpers/anchored pollers.
  */
 export const tooltipVariants: ComponentVariant<TooltipVariantProps>[] = [
-  {
-    style: "css",
-    render: (TooltipCssJsx as unknown as AnyModule).Tooltip as unknown as (
-      props: TooltipVariantProps,
-    ) => JSX.Element,
-  },
-  {
-    style: "tailwind",
-    render: (TooltipTailwindJsx as unknown as AnyModule).Tooltip as unknown as (
-      props: TooltipVariantProps,
-    ) => JSX.Element,
-  },
+  { style: "css", render: TooltipCssDefault },
+  { style: "tailwind", render: TooltipTailwindDefault },
 ];
-
-/**
- * Every compiled Tooltip part (TooltipProvider, TooltipTrigger, TooltipContent) at both styles.
- */
-export const tooltipPartVariants: PartVariant<TooltipPartVariantProps>[] = TOOLTIP_PARTS.flatMap(
-  (part) =>
-    partVariants(part, "Tooltip", [
-      [TooltipCssJsx as unknown as AnyModule, "css"],
-      [TooltipTailwindJsx as unknown as AnyModule, "tailwind"],
-    ]),
-);
 
 /** Prop bag shared by every compiled HoverCard variant (mirrors the emitted HoverCardProps). */
 export interface HoverCardVariantProps extends HTMLAttributes<"span"> {
@@ -1760,22 +1598,6 @@ export interface HoverCardVariantProps extends HTMLAttributes<"span"> {
   content: HellaChildren;
   class?: string;
 }
-
-/** Superset prop bag across HoverCard parts (mirrors the emitted part props). */
-export interface HoverCardPartVariantProps extends GlobalHTMLAttributes {
-  state?: () => "open" | "closed";
-  side?: AnchoredSide;
-  align?: AnchoredAlign;
-  anchor?: () => Element | undefined;
-  onOpen?: () => void;
-  onClose?: () => void;
-  onExited?: () => void;
-  children?: HellaChildren;
-  class?: string;
-}
-
-/** The named HoverCard parts (the other HoverCard exports). */
-export const HOVER_CARD_PARTS = ["Trigger", "Content"] as const;
 
 /**
  * Every compiled HoverCard variant (the HoverCard export) from dist/registry.
@@ -1797,17 +1619,6 @@ export const hoverCardVariants: ComponentVariant<HoverCardVariantProps>[] = [
   },
 ];
 
-/**
- * Every compiled HoverCard part (HoverCardTrigger, HoverCardContent) at both styles.
- */
-export const hoverCardPartVariants: PartVariant<HoverCardPartVariantProps>[] =
-  HOVER_CARD_PARTS.flatMap((part) =>
-    partVariants(part, "HoverCard", [
-      [HoverCardCssJsx as unknown as AnyModule, "css"],
-      [HoverCardTailwindJsx as unknown as AnyModule, "tailwind"],
-    ]),
-  );
-
 /** Prop bag shared by every compiled Popover variant (mirrors the emitted PopoverProps). */
 export interface PopoverVariantProps extends HTMLAttributes<"button"> {
   open?: () => boolean;
@@ -1818,29 +1629,11 @@ export interface PopoverVariantProps extends HTMLAttributes<"button"> {
   class?: string;
 }
 
-/** Superset prop bag across Popover parts (mirrors the emitted part props). */
-export interface PopoverPartVariantProps extends GlobalHTMLAttributes {
-  state?: () => "open" | "closed";
-  side?: AnchoredSide;
-  align?: AnchoredAlign;
-  sideOffset?: number;
-  alignOffset?: number;
-  anchor?: () => Element | undefined;
-  onDismiss?: () => void;
-  onExited?: () => void;
-  children?: HellaChildren;
-  class?: string;
-}
-
-/** The named Popover parts (the other Popover exports). */
-export const POPOVER_PARTS = [
-  "Anchor",
-  "Trigger",
-  "Content",
-  "Header",
-  "Title",
-  "Description",
-] as const;
+/** Module table backing the composed Popover vocabulary (Header/Title/Description): [style] resolves the compiled namespace, so the composed test renders the content-slot panel in the same style as the root. */
+export const popoverModules: MenuModuleTable = {
+  css: PopoverCssJsx as unknown as AnyModule,
+  tailwind: PopoverTailwindJsx as unknown as AnyModule,
+};
 
 /**
  * Every compiled Popover variant (the Popover export) from dist/registry.
@@ -1861,17 +1654,6 @@ export const popoverVariants: ComponentVariant<PopoverVariantProps>[] = [
     ) => JSX.Element,
   },
 ];
-
-/**
- * Every compiled Popover part (PopoverAnchor…PopoverDescription) at both styles.
- */
-export const popoverPartVariants: PartVariant<PopoverPartVariantProps>[] = POPOVER_PARTS.flatMap(
-  (part) =>
-    partVariants(part, "Popover", [
-      [PopoverCssJsx as unknown as AnyModule, "css"],
-      [PopoverTailwindJsx as unknown as AnyModule, "tailwind"],
-    ]),
-);
 
 import * as DropdownMenuCssJsx from "../../dist/registry/dropdown-menu/css/dropdown-menu";
 import * as DropdownMenuTailwindJsx from "../../dist/registry/dropdown-menu/tailwind/dropdown-menu";
@@ -1911,18 +1693,6 @@ export interface DropdownMenuVariantProps extends HTMLAttributes<"button"> {
 
 /** Superset prop bag across DropdownMenu parts (mirrors the emitted part props). */
 export interface DropdownMenuPartVariantProps extends GlobalHTMLAttributes {
-  state?: () => "open" | "closed";
-  id?: string;
-  side?: AnchoredSide;
-  align?: AnchoredAlign;
-  sideOffset?: number;
-  alignOffset?: number;
-  anchor?: () => Element | undefined;
-  onDismiss?: () => void;
-  onExited?: () => void;
-  onArrowLeft?: () => void;
-  onPointerEnter?: () => void;
-  onOpen?: () => void;
   inset?: boolean;
   destructive?: boolean;
   disabled?: boolean;
@@ -1940,8 +1710,6 @@ export interface DropdownMenuPartVariantProps extends GlobalHTMLAttributes {
 
 /** The named DropdownMenu parts (the other DropdownMenu exports). */
 export const DROPDOWN_MENU_PARTS = [
-  "Trigger",
-  "Content",
   "Group",
   "Item",
   "CheckboxItem",
@@ -1951,8 +1719,6 @@ export const DROPDOWN_MENU_PARTS = [
   "Separator",
   "Shortcut",
   "Sub",
-  "SubTrigger",
-  "SubContent",
 ] as const;
 
 /** Compiled DropdownMenu module table, keyed [style]. */
@@ -1982,7 +1748,7 @@ export const dropdownMenuVariants: ComponentVariant<DropdownMenuVariantProps>[] 
 ];
 
 /**
- * Every compiled DropdownMenu part (DropdownMenuTrigger…DropdownMenuSubContent) at both styles.
+ * Every compiled DropdownMenu part (DropdownMenuGroup…DropdownMenuSub) at both styles.
  */
 export const dropdownMenuPartVariants: PartVariant<DropdownMenuPartVariantProps>[] =
   DROPDOWN_MENU_PARTS.flatMap((part) =>
@@ -2003,16 +1769,6 @@ export interface ContextMenuVariantProps extends HTMLAttributes<"span"> {
 
 /** Superset prop bag across ContextMenu parts (mirrors the emitted part props). */
 export interface ContextMenuPartVariantProps extends GlobalHTMLAttributes {
-  state?: () => "open" | "closed";
-  id?: string;
-  side?: AnchoredSide;
-  align?: AnchoredAlign;
-  anchor?: () => Element | undefined;
-  onDismiss?: () => void;
-  onExited?: () => void;
-  onArrowLeft?: () => void;
-  onPointerEnter?: () => void;
-  onOpen?: () => void;
   inset?: boolean;
   destructive?: boolean;
   disabled?: boolean;
@@ -2030,8 +1786,6 @@ export interface ContextMenuPartVariantProps extends GlobalHTMLAttributes {
 
 /** The named ContextMenu parts (the other ContextMenu exports). */
 export const CONTEXT_MENU_PARTS = [
-  "Trigger",
-  "Content",
   "Group",
   "Item",
   "CheckboxItem",
@@ -2041,8 +1795,6 @@ export const CONTEXT_MENU_PARTS = [
   "Separator",
   "Shortcut",
   "Sub",
-  "SubTrigger",
-  "SubContent",
 ] as const;
 
 /** Compiled ContextMenu module table, keyed [style]. */
@@ -2072,7 +1824,7 @@ export const contextMenuVariants: ComponentVariant<ContextMenuVariantProps>[] = 
 ];
 
 /**
- * Every compiled ContextMenu part (ContextMenuTrigger…ContextMenuSubContent) at both styles.
+ * Every compiled ContextMenu part (ContextMenuGroup…ContextMenuSub) at both styles.
  */
 export const contextMenuPartVariants: PartVariant<ContextMenuPartVariantProps>[] =
   CONTEXT_MENU_PARTS.flatMap((part) =>
@@ -2098,19 +1850,6 @@ export interface MenubarPartVariantProps extends GlobalHTMLAttributes {
   value?: string;
   open?: () => boolean;
   onOpenChange?: (open: boolean) => void;
-  state?: () => "open" | "closed";
-  id?: string;
-  side?: AnchoredSide;
-  align?: AnchoredAlign;
-  sideOffset?: number;
-  alignOffset?: number;
-  anchor?: () => Element | undefined;
-  onDismiss?: () => void;
-  onExited?: () => void;
-  onArrow?: (direction: "left" | "right") => void;
-  onArrowLeft?: () => void;
-  onPointerEnter?: () => void;
-  onOpen?: () => void;
   inset?: boolean;
   destructive?: boolean;
   disabled?: boolean;
@@ -2129,9 +1868,7 @@ export interface MenubarPartVariantProps extends GlobalHTMLAttributes {
 /** The named Menubar parts (the other Menubar exports). */
 export const MENUBAR_PARTS = [
   "Menu",
-  "Trigger",
   "Group",
-  "Content",
   "Item",
   "CheckboxItem",
   "RadioGroup",
@@ -2140,8 +1877,6 @@ export const MENUBAR_PARTS = [
   "Separator",
   "Shortcut",
   "Sub",
-  "SubTrigger",
-  "SubContent",
 ] as const;
 
 /** Compiled Menubar module table, keyed [style]. */
@@ -2171,7 +1906,7 @@ export const menubarVariants: ComponentVariant<MenubarVariantProps>[] = [
 ];
 
 /**
- * Every compiled Menubar part (MenubarMenu…MenubarSubContent) at both styles.
+ * Every compiled Menubar part (MenubarMenu…MenubarSub) at both styles.
  */
 export const menubarPartVariants: PartVariant<MenubarPartVariantProps>[] = MENUBAR_PARTS.flatMap(
   (part) =>
@@ -2321,51 +2056,6 @@ export interface SelectVariantProps extends HTMLAttributes<"button"> {
   class?: string;
 }
 
-/** Superset prop bag across Select parts (mirrors the emitted part props). */
-export interface SelectPartVariantProps extends GlobalHTMLAttributes {
-  id?: string;
-  size?: "sm" | "default";
-  state?: () => "open" | "closed";
-  onOpen?: () => void;
-  clearable?: boolean;
-  onClear?: () => void;
-  hasValue?: () => boolean;
-  disabled?: boolean;
-  placeholder?: string;
-  value?: HellaChildren | (() => HellaChildren | undefined);
-  side?: AnchoredSide;
-  align?: AnchoredAlign;
-  sideOffset?: number;
-  anchor?: () => Element | undefined;
-  onDismiss?: () => void;
-  onExited?: () => void;
-  onClose?: () => void;
-  selected?: boolean | (() => boolean);
-  onselect?: () => void;
-  label?: HellaChildren;
-  children?: HellaChildren;
-  class?: string;
-}
-
-/** The named Select parts (the other Select exports). */
-export const SELECT_PARTS = [
-  "Trigger",
-  "Value",
-  "Content",
-  "Group",
-  "Item",
-  "Label",
-  "Separator",
-  "ScrollUpButton",
-  "ScrollDownButton",
-] as const;
-
-/** Compiled Select module table, keyed [style]. */
-export const selectModules: MenuModuleTable = {
-  css: SelectCssJsx as unknown as AnyModule,
-  tailwind: SelectTailwindJsx as unknown as AnyModule,
-};
-
 /**
  * Every compiled Select variant (the Select export) from dist/registry.
  * Select's content portals into document.body on open, so the suites
@@ -2386,17 +2076,6 @@ export const selectVariants: ComponentVariant<SelectVariantProps>[] = [
   },
 ];
 
-/**
- * Every compiled Select part (SelectTrigger…SelectScrollDownButton) at both styles.
- */
-export const selectPartVariants: PartVariant<SelectPartVariantProps>[] = SELECT_PARTS.flatMap(
-  (part) =>
-    partVariants(part, "Select", [
-      [SelectCssJsx as unknown as AnyModule, "css"],
-      [SelectTailwindJsx as unknown as AnyModule, "tailwind"],
-    ]),
-);
-
 /** Item shape of every compiled Combobox variant (mirrors the emitted ComboboxEntry). */
 export interface ComboboxEntryVariant {
   value: string;
@@ -2415,67 +2094,6 @@ export interface ComboboxVariantProps extends HTMLAttributes<"div"> {
   showClear?: boolean;
   class?: string;
 }
-
-/** Superset prop bag across Combobox parts (mirrors the emitted part props). */
-export interface ComboboxPartVariantProps extends HTMLAttributes<"input"> {
-  value?: string | string[] | (() => string | string[] | undefined);
-  disabled?: boolean;
-  state?: () => "open" | "closed";
-  activeDescendant?: () => string | undefined;
-  showTrigger?: boolean;
-  showClear?: boolean;
-  onToggle?: () => void;
-  onClear?: () => void;
-  hasValue?: () => boolean;
-  wire?: (node: HTMLElement) => () => void;
-  portal?: () => HellaChildren;
-  onRemove?: () => void;
-  showRemove?: boolean;
-  selected?: boolean | (() => boolean) | ((value: string) => boolean);
-  highlighted?: boolean | (() => boolean);
-  hidden?: () => boolean;
-  onselect?: (value?: string) => void;
-  query?: () => string;
-  filter?: (items: ComboboxEntryVariant[], query: string) => ComboboxEntryVariant[];
-  empty?: () => boolean;
-  active?: () => string | undefined;
-  items?: ComboboxEntryVariant[] | (() => ComboboxEntryVariant[]);
-  keyBy?: "value";
-  side?: AnchoredSide;
-  align?: AnchoredAlign;
-  sideOffset?: number;
-  anchor?: () => Element | undefined;
-  chips?: boolean;
-  onDismiss?: () => void;
-  onExited?: () => void;
-  children?: HellaChildren;
-  class?: string;
-}
-
-/** The named Combobox parts (the other Combobox exports). */
-export const COMBOBOX_PARTS = [
-  "Value",
-  "Trigger",
-  "Clear",
-  "Group",
-  "Label",
-  "Collection",
-  "Empty",
-  "Separator",
-  "Item",
-  "List",
-  "Input",
-  "Chips",
-  "Chip",
-  "ChipsInput",
-  "Content",
-] as const;
-
-/** Compiled Combobox module table, keyed [style]. */
-export const comboboxModules: MenuModuleTable = {
-  css: ComboboxCssJsx as unknown as AnyModule,
-  tailwind: ComboboxTailwindJsx as unknown as AnyModule,
-};
 
 /**
  * Every compiled Combobox variant (the Combobox export) from dist/registry.
@@ -2496,17 +2114,6 @@ export const comboboxVariants: ComponentVariant<ComboboxVariantProps>[] = [
     ) => JSX.Element,
   },
 ];
-
-/**
- * Every compiled Combobox part (ComboboxValue…ComboboxContent) at both styles.
- */
-export const comboboxPartVariants: PartVariant<ComboboxPartVariantProps>[] = COMBOBOX_PARTS.flatMap(
-  (part) =>
-    partVariants(part, "Combobox", [
-      [ComboboxCssJsx as unknown as AnyModule, "css"],
-      [ComboboxTailwindJsx as unknown as AnyModule, "tailwind"],
-    ]),
-);
 
 import * as CommandCssJsx from "../../dist/registry/command/css/command";
 import * as CommandTailwindJsx from "../../dist/registry/command/tailwind/command";
@@ -2533,34 +2140,20 @@ export interface CommandVariantProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
 }
 
-/** Superset prop bag across Command parts (mirrors the emitted part props). */
-export interface CommandPartVariantProps extends HTMLAttributes<"div"> {
-  value?: string | (() => string);
-  placeholder?: string;
-  heading?: string;
-  hidden?: boolean | (() => boolean);
-  disabled?: boolean;
-  active?: () => boolean;
-  onSelect?: () => void;
-  children?: HellaChildren;
-  class?: string;
-  open?: () => boolean;
-  onClose?: () => void;
+/** Prop bag shared by every compiled Command dialog variant (mirrors the emitted CommandDialogProps). */
+export interface CommandDialogVariantProps extends HTMLAttributes<"div"> {
+  items?: CommandItemDataVariant[] | (() => CommandItemDataVariant[]);
+  filter?: (items: CommandItemDataVariant[], query: string) => CommandItemDataVariant[];
+  loop?: boolean;
+  value?: () => string;
+  onValueChange?: (value: string) => void;
+  open: () => boolean;
+  onClose: () => void;
   title?: string;
   description?: string;
+  class?: string;
+  children?: HellaChildren;
 }
-
-/** The named Command parts (the other Command exports). */
-export const COMMAND_PARTS = [
-  "Input",
-  "List",
-  "Empty",
-  "Group",
-  "Separator",
-  "Item",
-  "Shortcut",
-  "Dialog",
-] as const;
 
 /**
  * Every compiled Command variant (the Command export) from dist/registry.
@@ -2581,15 +2174,22 @@ export const commandVariants: ComponentVariant<CommandVariantProps>[] = [
 ];
 
 /**
- * Every compiled Command part (CommandInput…CommandDialog) at both styles.
+ * Every compiled Command dialog variant (the CommandDialog export) from dist/registry.
  */
-export const commandPartVariants: PartVariant<CommandPartVariantProps>[] = COMMAND_PARTS.flatMap(
-  (part) =>
-    partVariants(part, "Command", [
-      [CommandCssJsx as unknown as AnyModule, "css"],
-      [CommandTailwindJsx as unknown as AnyModule, "tailwind"],
-    ]),
-);
+export const commandDialogVariants: ComponentVariant<CommandDialogVariantProps>[] = [
+  {
+    style: "css",
+    render: (CommandCssJsx as unknown as AnyModule).CommandDialog as unknown as (
+      props: CommandDialogVariantProps,
+    ) => JSX.Element,
+  },
+  {
+    style: "tailwind",
+    render: (CommandTailwindJsx as unknown as AnyModule).CommandDialog as unknown as (
+      props: CommandDialogVariantProps,
+    ) => JSX.Element,
+  },
+];
 
 import { AlertDialog as AlertDialogCssDefault } from "../../dist/registry/alert-dialog/css/alert-dialog";
 import { AlertDialog as AlertDialogTailwindDefault } from "../../dist/registry/alert-dialog/tailwind/alert-dialog";
@@ -2647,36 +2247,25 @@ export interface DrawerVariantProps extends HTMLAttributes<"div"> {
 export interface AlertDialogPartVariantProps extends GlobalHTMLAttributes {
   children?: HellaChildren;
   class?: string;
-  state?: () => "open" | "closed";
-  size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
   variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
-  closeOnEscape?: boolean;
+  size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
   onClose?: () => void;
-  onExited?: () => void;
 }
 
 /** Superset prop bag across Sheet parts (mirrors the emitted part props). */
-export interface SheetPartVariantProps extends Omit<AlertDialogPartVariantProps, "size"> {
-  side?: "top" | "right" | "bottom" | "left";
-  fraction?: () => number;
-  showCloseButton?: boolean;
-  closeOnOutside?: boolean;
+export interface SheetPartVariantProps extends GlobalHTMLAttributes {
+  children?: HellaChildren;
+  class?: string;
 }
 
 /** Superset prop bag across Drawer parts (mirrors the emitted part props). */
-export interface DrawerPartVariantProps extends Omit<AlertDialogPartVariantProps, "size"> {
-  direction?: "top" | "right" | "bottom" | "left";
-  fraction?: () => number;
-  showCloseButton?: boolean;
-  closeOnOutside?: boolean;
+export interface DrawerPartVariantProps extends GlobalHTMLAttributes {
+  children?: HellaChildren;
+  class?: string;
 }
 
-/** The named AlertDialog parts (the other AlertDialog exports). */
+/** The named AlertDialog parts (the Header/Footer/Title/Description/Media/Action/Cancel vocabulary). */
 export const ALERT_DIALOG_PARTS = [
-  "Trigger",
-  "Portal",
-  "Overlay",
-  "Content",
   "Header",
   "Footer",
   "Title",
@@ -2686,31 +2275,11 @@ export const ALERT_DIALOG_PARTS = [
   "Cancel",
 ] as const;
 
-/** The named Sheet parts (the other Sheet exports). */
-export const SHEET_PARTS = [
-  "Trigger",
-  "Close",
-  "Portal",
-  "Overlay",
-  "Content",
-  "Header",
-  "Footer",
-  "Title",
-  "Description",
-] as const;
+/** The named Sheet parts (the Header/Footer/Title/Description vocabulary). */
+export const SHEET_PARTS = ["Header", "Footer", "Title", "Description"] as const;
 
-/** The named Drawer parts (the other Drawer exports). */
-export const DRAWER_PARTS = [
-  "Trigger",
-  "Close",
-  "Portal",
-  "Overlay",
-  "Content",
-  "Header",
-  "Footer",
-  "Title",
-  "Description",
-] as const;
+/** The named Drawer parts (the Header/Footer/Title/Description vocabulary). */
+export const DRAWER_PARTS = ["Header", "Footer", "Title", "Description"] as const;
 
 /** One compiled AlertDialog flavor (the AlertDialog export). */
 export type AlertDialogVariant = ChildrenVariant<AlertDialogVariantProps>;
@@ -2786,7 +2355,7 @@ export const drawerVariants: ChildrenVariant<DrawerVariantProps>[] = [
 ];
 
 /**
- * Every compiled AlertDialog part (AlertDialogTrigger…AlertDialogCancel) at both styles.
+ * Every compiled AlertDialog part (AlertDialogHeader…AlertDialogCancel) at both styles.
  */
 export const alertDialogPartVariants: PartVariant<AlertDialogPartVariantProps>[] =
   ALERT_DIALOG_PARTS.flatMap((part) =>
@@ -2797,7 +2366,7 @@ export const alertDialogPartVariants: PartVariant<AlertDialogPartVariantProps>[]
   );
 
 /**
- * Every compiled Sheet part (SheetTrigger…SheetDescription) at both styles.
+ * Every compiled Sheet part (SheetHeader…SheetDescription) at both styles.
  */
 export const sheetPartVariants: PartVariant<SheetPartVariantProps>[] = SHEET_PARTS.flatMap((part) =>
   partVariants(part, "Sheet", [
@@ -2807,7 +2376,7 @@ export const sheetPartVariants: PartVariant<SheetPartVariantProps>[] = SHEET_PAR
 );
 
 /**
- * Every compiled Drawer part (DrawerTrigger…DrawerDescription) at both styles.
+ * Every compiled Drawer part (DrawerHeader…DrawerDescription) at both styles.
  */
 export const drawerPartVariants: PartVariant<DrawerPartVariantProps>[] = DRAWER_PARTS.flatMap(
   (part) =>

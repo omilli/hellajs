@@ -4,9 +4,9 @@ The composed root wraps your children in the viewport and content stack and rend
 
 The viewport owns an `atBottom` signal (true on mount). A scroll listener compares `scrollHeight - scrollTop - clientHeight` against `threshold` (default 80px) and flips the signal; a `ResizeObserver` on the content watches growth and scrolls back to the bottom while the state reads true. The jump button renders whenever the state reads false and hides while it reads true, driven by `data-active`.
 
-Hella has no context, so the components take their state explicitly. Create the signal yourself, hand the same signal to the viewport and the button, and the `MessageScrollerProvider` becomes a plain passthrough kept for API parity. `threshold` widens or tightens the at-bottom band, and `scrollToBottom` overrides the scroll action for both the auto-stick and the button.
+Hella has no context, so the root takes its state explicitly: pass your own `atBottom` signal to adopt it, or let the root own one. `threshold` widens or tightens the at-bottom band, and `scrollToBottom` overrides the scroll action for both the auto-stick and the button.
 
-All six exports are named; the composed root wraps the rest, and manual composition hands the same state to the viewport and button explicitly.
+Two exports are named: the composed root and the `MessageScrollerItem` row vocabulary consumed inside its children.
 
 ### MessageScroller
 
@@ -23,30 +23,6 @@ The composed root: it adopts or owns the at-bottom signal, wraps the children in
 
 Accepts all native `div` attributes (forwarded to the root element).
 
-### MessageScrollerViewport
-
-The scroll container: a `div` carrying `data-slot="message-scroller-viewport"` whose passive scroll listener and content watcher drive the shared state.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `atBottom` | `Signal<boolean>` | An internal signal |
-| `threshold` | `number` | `80` |
-| `scrollToBottom` | `() => void` | `-` |
-| `observe` | `(target: Element, onGrow: () => void) => () => void` | A `ResizeObserver` |
-| `children` | `HellaChildren` | `-` |
-
-Accepts all native `div` attributes (forwarded to the root element).
-
-### MessageScrollerContent
-
-The content stack: a `div` carrying `data-slot="message-scroller-content"` that the growth watcher observes.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `children` | `HellaChildren` | `-` |
-
-Accepts all native `div` attributes (forwarded to the root element).
-
 ### MessageScrollerItem
 
 One message row: a `div` carrying `data-slot="message-scroller-item"`.
@@ -57,36 +33,12 @@ One message row: a `div` carrying `data-slot="message-scroller-item"`.
 
 Accepts all native `div` attributes (forwarded to the root element).
 
-### MessageScrollerButton
-
-The jump button: rendered while the shared state reads false and hidden while true through `data-active`; `direction="start"` inverts the visibility semantics for jump-to-start placements.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `atBottom` | `Signal<boolean>` | `-` |
-| `direction` | `"start" \| "end"` | `"end"` |
-| `variant` | Button variant pick | `"secondary"` |
-| `size` | Button size pick | `"icon-sm"` |
-| `scrollToBottom` | `() => void` | `-` |
-| `children` | `HellaChildren` | `-` |
-
-Accepts all native `button` attributes (forwarded to the root element; a user `on:click` chains ahead of the owned scroll action).
-
-### MessageScrollerProvider
-
-A passthrough kept for API parity: renders `children` only; hella has no context, so state lives on signals you own.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `children` | `HellaChildren` | `-` |
-
 Every component also takes a `class` string, landing last in its style composition.
 
 ## Intentionally Absent
 
 Some pieces common to this component family are absent by design; they stay out rather than approximated:
 
-- `MessageScrollerProvider` renders children only; hella has no context, so state lives on signals you own.
 - `MessageScrollerItem` carries no per-item scroll anchor; pinning is viewport-level through the content observer.
 - The `scroll-fade-b`, `scrollbar-*`, and `shimmer`-style tokens that scrollbar and animation plugins would fill stay verbatim in the tailwind flavor but carry no declarations in the vendored theme; the css flavor omits them.
-- The `observe` prop (viewport and root) swaps the content watcher for testing in environments whose `ResizeObserver` never delivers; production code keeps the real observer.
+- The `observe` prop swaps the content watcher for testing in environments whose `ResizeObserver` never delivers; production code keeps the real observer.

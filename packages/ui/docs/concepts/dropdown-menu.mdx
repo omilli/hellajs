@@ -2,7 +2,7 @@
 
 The composed `DropdownMenu` wraps its children in the trigger button (Button-wrapped, the outline variant) and takes the items through the `content` prop, portaled into `document.body` while open. Clicking toggles; ArrowDown opens; the trigger carries `data-state`, `aria-expanded`, and `aria-haspopup="menu"`, and focus returns to it when the menu closes.
 
-Thirteen named components ship beside the default `DropdownMenu`: `DropdownMenuTrigger`, `DropdownMenuContent`, `DropdownMenuGroup`, `DropdownMenuItem`, `DropdownMenuCheckboxItem`, `DropdownMenuRadioGroup`, `DropdownMenuRadioItem`, `DropdownMenuLabel`, `DropdownMenuSeparator`, `DropdownMenuShortcut`, `DropdownMenuSub`, `DropdownMenuSubTrigger`, and `DropdownMenuSubContent`. The components take their state as explicit props: the checkbox item takes a `checked` accessor, the radio group is items-driven, and each sub owns its own open signal.
+Nine named components ship beside the default `DropdownMenu`: `DropdownMenuGroup`, `DropdownMenuItem`, `DropdownMenuCheckboxItem`, `DropdownMenuRadioGroup`, `DropdownMenuRadioItem`, `DropdownMenuLabel`, `DropdownMenuSeparator`, `DropdownMenuShortcut`, and `DropdownMenuSub`. The components take their state as explicit props: the checkbox item takes a `checked` accessor, the radio group is items-driven, and each sub owns its own open signal.
 
 ### DropdownMenu
 
@@ -16,35 +16,6 @@ Thirteen named components ship beside the default `DropdownMenu`: `DropdownMenuT
 Accepts all native `button` attributes (forwarded to the root element).
 
 A controlled `open` stops the root from writing its internal signal; `onOpenChange` reports every requested open and close flip.
-
-### DropdownMenuTrigger
-
-The manual trigger button carrying `aria-haspopup="menu"`.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `children` | `HellaChildren` | `-` |
-Accepts all native `button` attributes (forwarded to the root element).
-
-### DropdownMenuContent
-
-The `role="menu"` surface with the full keyboard model, positioned against its anchor.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `state` | `() => "open" \| "closed"` | `-` |
-| `side` | `"top" \| "bottom" \| "left" \| "right"` | `"bottom"` |
-| `align` | `"start" \| "center" \| "end"` | `"start"` |
-| `sideOffset` | `number` | `4` |
-| `alignOffset` | `number` | `0` |
-| `anchor` | `() => Element \| undefined` | `-` |
-| `onDismiss` | `() => void` | `-` |
-| `onExited` | `() => void` | `-` |
-| `onArrowLeft` | `() => void` | `-` |
-| `children` | `HellaChildren` | `-` |
-Accepts all native `div` attributes (forwarded to the root element).
-
-`state` drives `data-state` and the enter/exit cycle; `closed` tears the wirings down. `sideOffset` is the gap between the anchor and the content edge in px, `alignOffset` the cross-axis shift applied after positioning. The anchor resolves to the element the content anchors to; positioning is skipped when undefined. `onDismiss` receives Escape and outside pointerdowns from the top layer, and item selection closes every open layer through it; `onExited` fires when the exit animation ends; `onArrowLeft` closes the menu when provided (submenu exit; a top-level menu stays inert).
 
 ### DropdownMenuGroup
 
@@ -145,40 +116,6 @@ A sub-trigger plus its portaled sub-content; open state owned here. The sub open
 | `content` | `HellaChildren` | `-` |
 | `children` | `HellaChildren` | `-` |
 Accepts all native `div` attributes (forwarded to the root element).
-
-### DropdownMenuSubTrigger
-
-The manual sub-trigger row (chevron, `aria-haspopup`).
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `state` | `() => "open" \| "closed"` | `-` |
-| `onOpen` | `() => void` | `-` |
-| `inset` | `boolean` | `-` |
-| `children` | `HellaChildren` | `-` |
-Accepts all native `div` attributes (forwarded to the root element).
-
-`state` drives `aria-expanded` and `data-state`; the composed `DropdownMenuSub` wires it. `onOpen` is called on click and hover intent.
-
-### DropdownMenuSubContent
-
-The `role="menu"` sub-surface, anchored against its sub-trigger (right, start aligned, collision flipped).
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `state` | `() => "open" \| "closed"` | `-` |
-| `side` | `"top" \| "bottom" \| "left" \| "right"` | `-` |
-| `align` | `"start" \| "center" \| "end"` | `-` |
-| `sideOffset` | `number` | `-` |
-| `anchor` | `() => Element \| undefined` | `-` |
-| `onDismiss` | `() => void` | `-` |
-| `onExited` | `() => void` | `-` |
-| `onArrowLeft` | `() => void` | `-` |
-| `onPointerEnter` | `() => void` | `-` |
-| `children` | `HellaChildren` | `-` |
-Accepts all native `div` attributes (forwarded to the root element).
-
-`onDismiss` closes the sub's own layer and `onExited` fires when the exit animation ends. ArrowLeft exit and pointerentry close-cancel are the submenu factory's own wiring now; the matching props stay accepted for manual compatibility.
 
 Every component also takes a `class` string, landing last in its style composition.
 

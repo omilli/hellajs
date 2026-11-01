@@ -2,7 +2,7 @@
 
 The composed `Dialog` portals an overlay plus a centered panel into `document.body`: the caller owns an `open` accessor and an `onClose` callback, and the component wires the title, description, X close button, focus trap, and escape/outside dismissal around them.
 
-Seven named components ship beside the default `Dialog` for custom composition: `DialogOverlay`, `DialogContent`, `DialogHeader`, `DialogFooter`, `DialogTitle`, `DialogDescription`, and `DialogClose`. State is explicit - portal the overlay and panel yourself and hand both a `state` accessor.
+The composed `Dialog` ships beside four content-vocabulary components: `DialogHeader`, `DialogFooter`, `DialogTitle`, and `DialogDescription` compose inside the root's children slot.
 
 ### Dialog
 
@@ -20,44 +20,6 @@ Seven named components ship beside the default `Dialog` for custom composition: 
 Accepts all native `div` attributes (forwarded to the root element).
 
 `title` renders as a wired `DialogTitle` (the panel's `aria-labelledby` target) and `description` as a wired `DialogDescription` (the `aria-describedby` target). `showCloseButton` renders the X close button in the panel's top-right corner.
-
-### DialogOverlay
-
-The screen-covering backdrop `div` carrying `data-slot="dialog-overlay"`.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `state` | `() => "open" \| "closed"` | `-` |
-Accepts all native `div` attributes (forwarded to the root element).
-
-`state` drives the overlay's `data-state` and its enter/exit fade.
-
-### DialogClose
-
-The X button carrying `data-slot="dialog-close"` with its `sr-only` "Close" label.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `state` | `() => "open" \| "closed"` | `-` |
-| `onClose` | `() => void` | `-` |
-Accepts all native `button` attributes (forwarded to the root element; a user `on:click` chains with the owned dismiss).
-
-### DialogContent
-
-The `role="dialog"` panel carrying `data-slot="dialog-content"`: focus trap plus escape and outside dismissal while open, torn down the moment the exit starts.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `state` | `() => "open" \| "closed"` | `-` |
-| `showCloseButton` | `boolean` | `true` |
-| `closeOnEscape` | `boolean` | `true` |
-| `closeOnOutside` | `boolean` | `true` |
-| `onClose` | `() => void` | `-` |
-| `onExited` | `() => void` | `-` |
-| `children` | `HellaChildren` | `-` |
-Accepts all native `div` attributes (forwarded to the root element).
-
-`state` drives `data-state` and the enter/exit cycle; `closed` tears the dismissal wirings down. Pass the wired ids as the panel's `aria-labelledby` and `aria-describedby` attrs - in the composed `Dialog` the root threads them for you. `onClose` is the dismissal and close-button callback; `onExited` fires when the exit animation ends under `data-state="closed"`.
 
 ### DialogHeader
 

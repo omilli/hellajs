@@ -6,6 +6,8 @@
 | ---- | ---- | ------- |
 | `items` | `TabsItem[] \| (() => TabsItem[])` | `-` |
 | `initialId` | `string` | The first tab |
+| `value` | `() => string` | `-` |
+| `onValueChange` | `(value: string) => void` | `-` |
 | `orientation` | `"horizontal" \| "vertical"` | `"horizontal"` |
 | `variant` | `"default" \| "line"` | `"default"` |
 | `class` | `string` | `-` |
@@ -25,44 +27,6 @@ Each entry in the `items` array is one tab and its panel.
 
 `id` is the stable identity: it drives selection, the generated `hella-tabs-tab-<id>` and `hella-tabs-panel-<id>` pair, and the `initialId` lookup. Pass `content` a getter reading a signal and the panel re-renders when that signal changes; the tablist is never rebuilt.
 
-### TabsList
-
-The tablist row: a `role="tablist"` div carrying `data-orientation` and `data-variant` for the style module.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `variant` | `"default" \| "line"` | `"default"` |
-| `orientation` | `"horizontal" \| "vertical"` | `"horizontal"` |
-| `children` | `HellaChild \| HellaChild[]` | `-` |
-Accepts all native `div` attributes (forwarded to the root element).
-
-### TabsTrigger
-
-The tab button: the `id` derives the DOM id and the `aria-controls` pointer at the paired panel.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `id` | `string` | `-` |
-| `active` | `() => boolean` | `-` |
-| `onActivate` | `() => void` | `-` |
-| `orientation` | `"horizontal" \| "vertical"` | `"horizontal"` |
-| `listVariant` | `"default" \| "line"` | `"default"` |
-| `children` | `HellaChild` | `-` |
-Accepts all native `button` attributes (forwarded to the root element).
-
-`active` drives `aria-selected` and the button's `data-state` (`active` / `inactive`).
-
-### TabsContent
-
-The panel: `hidden` while inactive, labelled by its tab.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `id` | `string` | `-` |
-| `active` | `() => boolean` | `-` |
-| `children` | `HellaChild \| (() => HellaChild)` | `-` |
-Accepts all native `div` attributes (forwarded to the root element).
-
 Every component also takes a `class` string, landing last in its style composition.
 
 ## Keyboard Interaction
@@ -77,7 +41,7 @@ The tablist wires [`rovingTabIndex`](/headless/rovingtabindex) from `@hellajs/he
 
 ## Accessibility Wiring
 
-The generated ids link the components without any querySelector: each tab's `aria-controls` names its panel's `hella-tabs-panel-<id>`, each panel's `aria-labelledby` names its tab back, and `aria-selected` marks the active tab. Inactive panels carry the `hidden` attribute, so they stay out of view and out of the tab order. Selection lives in an internal signal and panel switches are instant; motion composes later through the dom `Transition` primitive without changing the tabs' contract.
+The generated ids link the components without any querySelector: each tab's `aria-controls` names its panel's `hella-tabs-panel-<id>`, each panel's `aria-labelledby` names its tab back, and `aria-selected` marks the active tab. Inactive panels carry the `hidden` attribute, so they stay out of view and out of the tab order. Uncontrolled selection lives in an internal signal and panel switches are instant; motion composes later through the dom `Transition` primitive without changing the tabs' contract.
 
 ## Dynamic items
 
@@ -99,3 +63,23 @@ pages([...pages(), { id: "c", label: "C", content: "C panel" }]);
 ```
 
 Every entry keys by its `id` automatically: a reorder moves the existing trigger and panel nodes to their new positions, and the selected tab stays selected through it. Order always follows the array. A node reused under the same `id` keeps its rendered children, so a same-`id` entry whose `label` changed does not update the trigger text; keep labels stable per `id`, or put changing text in `content` behind a getter (the panel getter re-evaluates in place).
+
+## Controlled
+
+Pass `value` to drive the active tab from outside: the root renders exactly the tab the accessor reports, never writes its own, and reports each requested selection through `onValueChange`. Write the signal back from `onValueChange` and the DOM follows:
+
+```tsx
+import { signal } from "@hellajs/core";
+import { Tabs } from "./components/tabs";
+
+const settings = [
+  { id: "account", label: "Account", content: "Account panel" },
+  { id: "billing", label: "Billing", content: "Billing panel" },
+];
+
+const active = signal("account");
+
+<Tabs items={settings} value={() => active()} onValueChange={(v) => active(v)} />;
+```
+
+Without `value`, `initialId` keeps seeding the uncontrolled state.

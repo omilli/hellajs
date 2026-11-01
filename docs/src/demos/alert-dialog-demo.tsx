@@ -5,15 +5,8 @@ import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
   AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogMedia,
-  AlertDialogOverlay,
-  AlertDialogTitle,
 } from "@components/ui/alert-dialog.js";
-import { Portal } from "@hellajs/dom";
 
 export function AlertDialogDemo() {
   const open = signal(false);
@@ -27,35 +20,6 @@ export function AlertDialogDemo() {
           <AlertDialogAction variant="destructive" onClose={() => open(false)}>Delete</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialog>
-    </>
-  );
-}
-
-export function AlertDialogManualDemo() {
-  const open = signal(false);
-  const state = (): "open" | "closed" => (open() ? "open" : "closed");
-
-  return (
-    <>
-      <Button variant="outline" on:click={() => open(!open())}>Delete</Button>
-      {() => open() && (
-        <Portal to="body">
-          <AlertDialogOverlay state={state} />
-          <AlertDialogContent state={state} aria-labelledby="alert-manual-title" aria-describedby="alert-manual-description" onClose={() => open(false)}>
-            <AlertDialogHeader>
-              <AlertDialogMedia>
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /><path d="M12 9v4" /><path d="M12 17h.01" /></svg>
-              </AlertDialogMedia>
-              <AlertDialogTitle id="alert-manual-title">Remove this project?</AlertDialogTitle>
-              <AlertDialogDescription id="alert-manual-description">Deployments attached to it stop immediately.</AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClose={() => open(false)}>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClose={() => open(false)}>Continue</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </Portal>
-      )}
     </>
   );
 }

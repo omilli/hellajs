@@ -20,23 +20,6 @@ Accepts all native `div` attributes (forwarded to the root element).
 
 `pressed` in an item seeds the uncontrolled state. Without `value` / `values`, the root owns its state seeded by the items' `pressed` flags: in single mode, clicking the active item deselects it and reports `""`; in multiple mode, clicking toggles membership and reports the full array. Pass an accessor (`value` for single, `values` for multiple) and the group becomes controlled: clicks turn into `onValueChange` requests without writing state, so a parent signal that ignores the request keeps the selection unchanged.
 
-### ToggleGroupItem
-
-One pressed-state button inside the group; it renders the joined-segment classes and the `data-variant` / `data-size` / `data-spacing` attributes the styles key off.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `value` | `string` | `-` |
-| `pressed` | `boolean \| (() => boolean)` | `-` |
-| `onSelect` | `() => void` | `-` |
-| `variant` | `"default" \| "outline"` | `"default"` |
-| `size` | `"default" \| "sm" \| "lg"` | `"default"` |
-| `children` | `HellaChildren` | `-` |
-
-Accepts all native `button` attributes (forwarded to the button element): `disabled` gates the item and the roving walk skips it.
-
-A boolean `pressed` reads statically, an accessor keeps the manual component reactive; it drives `aria-pressed` and `data-state` (`on` / `off`).
-
 Every component also takes a `class` string, landing last in its style composition.
 
 ## Accessibility

@@ -17,21 +17,6 @@ Accepts all native `div` attributes (forwarded to the root element).
 
 Without `value`, the root owns a signal starting with nothing selected and updates it on click. Pass a `value` accessor and the group becomes controlled: clicks turn into `onValueChange` requests without writing state, so a parent signal that ignores the request keeps the selection unchanged. Clicking the active item is a no-op. A native `name` attribute on the root threads onto every item button; hidden native inputs for form submission are not rendered (deferred). `orientation` renders `aria-orientation` and scopes the arrow-key axis; unset means both axes move focus.
 
-### RadioGroupItem
-
-The circle button: a `role="radio"` control whose checked state drives `aria-checked`, `data-state`, and the indicator icon. hella has no context primitive, so state is explicit: selection, keyboard movement, and label pairing are yours to thread.
-
-| Prop | Type | Default |
-| ---- | ---- | ------- |
-| `value` | `string` | `-` |
-| `checked` | `boolean \| (() => boolean)` | `-` |
-| `onSelect` | `() => void` | `-` |
-| `class` | `string` | `-` |
-
-Accepts all native `button` attributes (forwarded to the button element): `disabled` gates the item, `name` threads onto the button.
-
-`value` is the entry's identity, rendered as `data-value` on the button. Form submission wiring remains a caller concern.
-
 Every component also takes a `class` string, landing last in its style composition.
 
 ## Accessibility

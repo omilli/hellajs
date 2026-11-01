@@ -1,39 +1,10 @@
 import { menu, menubar } from "@hellajs/headless";
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
-type AnchorSide = "top" | "bottom" | "left" | "right";
-
-type AnchorAlign = "start" | "center" | "end";
-
 interface MenuEntry {
   value: string;
   label?: HellaChildren;
   disabled?: boolean;
-}
-
-interface MenubarTriggerProps extends HTMLAttributes<"span"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
-interface MenubarContentProps extends HTMLAttributes<"div"> {
-  state?: () => "open" | "closed";
-  side?: AnchorSide;
-  align?: AnchorAlign;
-  /** Gap between the anchor and the content edge, in px. Default 8. */
-  sideOffset?: number;
-  /** Cross-axis shift applied after positioning, in px. Default -4. */
-  alignOffset?: number;
-  /** Resolves the element the content anchors to; positioning is skipped when undefined. */
-  anchor?: () => Element | undefined;
-  /** When given, Escape and an outside pointerdown dismiss the top layer into this callback, and item selection closes every open layer. */
-  onDismiss?: () => void;
-  /** Called when the exit animation ends under data-state="closed"; entry animationends are ignored. */
-  onExited?: () => void;
-  /** Both horizontal arrows report outward (bar open-then-move) when the focused item is not a sub-trigger. */
-  onArrow?: (direction: "left" | "right") => void;
-  children?: HellaChildren;
-  class?: string;
 }
 
 interface MenubarPartProps extends HTMLAttributes<"div"> {
@@ -86,35 +57,6 @@ interface MenubarLabelProps extends HTMLAttributes<"div"> {
 }
 
 interface MenubarShortcutProps extends HTMLAttributes<"span"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
-interface MenubarSubTriggerProps extends HTMLAttributes<"div"> {
-  children?: HellaChildren;
-  inset?: boolean;
-  /** Resolves the open state for `aria-expanded`/`data-state`; the composed Sub wires it. */
-  state?: () => "open" | "closed";
-  /** Called on click and hover intent to open the submenu. */
-  onOpen?: () => void;
-  class?: string;
-}
-
-interface MenubarSubContentProps extends HTMLAttributes<"div"> {
-  state?: () => "open" | "closed";
-  side?: AnchorSide;
-  align?: AnchorAlign;
-  sideOffset?: number;
-  /** Resolves the element the content anchors to (the sub-trigger); positioning is skipped when undefined. */
-  anchor?: () => Element | undefined;
-  /** When given, Escape and an outside pointerdown dismiss the top layer into this callback, and item selection closes every open layer. */
-  onDismiss?: () => void;
-  /** Called when the exit animation ends under data-state="closed"; entry animationends are ignored. */
-  onExited?: () => void;
-  /** ArrowLeft closes the submenu. */
-  onArrowLeft?: () => void;
-  /** Pointer entering the content cancels the trigger's pending close. */
-  onPointerEnter?: () => void;
   children?: HellaChildren;
   class?: string;
 }
@@ -486,74 +428,6 @@ const subContent = style("menubar-sub-content", {
   },
 });
 
-/** The manual trigger button; the composed MenubarMenu renders the same shape wired to toggle + aria state. */
-export function MenubarTrigger({
-  children,
-  class: cls,
-  ...attrs
-}: MenubarTriggerProps): JSX.Element {
-  const { Trigger } = menubar().menu();
-  return (
-    <Trigger
-      data-slot="menubar-trigger"
-      class={
-        [trigger, cls]
-      }
-      {...attrs}
-    >
-      {children}
-    </Trigger>
-  );
-}
-
-/** The manual content layer; the composed MenubarMenu portals the same wiring under its trigger's state. */
-export function MenubarContent({
-  state,
-  id,
-  side: sideProp,
-  align: alignProp,
-  sideOffset,
-  alignOffset: alignOffsetProp,
-  anchor,
-  onDismiss,
-  onExited,
-  onArrow,
-  children,
-  class: cls,
-  ...attrs
-}: MenubarContentProps): JSX.Element {
-  const side = sideProp ?? "bottom";
-  const align = alignProp ?? "start";
-  const alignOffset = alignOffsetProp ?? -4;
-  // Open-then-move is the factory bar-menu wiring's own behavior now -
-  // consumed here so it never reaches the DOM as an attribute.
-  void onArrow;
-  const { Content } = menubar().menu({
-    open: () => (state?.() ?? "open") === "open",
-    onOpenChange: (next) => {
-      if (!next) onDismiss?.();
-    },
-  });
-  return (
-    <Content
-      id={id}
-      side={side}
-      align={align}
-      sideOffset={sideOffset}
-      alignOffset={alignOffset}
-      anchor={anchor}
-      onExited={onExited}
-      data-slot="menubar-content"
-      class={
-        [content, cls]
-      }
-      {...attrs}
-    >
-      {children}
-    </Content>
-  );
-}
-
 export function MenubarGroup({ children, class: cls, ...attrs }: MenubarPartProps): JSX.Element {
   const { Group } = menu();
   return (
@@ -721,78 +595,6 @@ export function MenubarShortcut({
     >
       {children}
     </Shortcut>
-  );
-}
-
-export function MenubarSubTrigger({
-  inset,
-  state,
-  onOpen,
-  children,
-  class: cls,
-  ...attrs
-}: MenubarSubTriggerProps): JSX.Element {
-  const sub = menu().sub({
-    open: state ? () => state() === "open" : undefined,
-    onOpenChange: (next) => {
-      if (next) onOpen?.();
-    },
-  });
-  return (
-    <sub.Trigger
-      inset={inset}
-      data-slot="menubar-sub-trigger"
-      class={
-        [subTrigger, cls]
-      }
-      {...attrs}
-    >
-      {children}
-    </sub.Trigger>
-  );
-}
-
-export function MenubarSubContent({
-  state,
-  side: sideProp,
-  align: alignProp,
-  sideOffset,
-  anchor,
-  onDismiss,
-  onExited,
-  onArrowLeft,
-  onPointerEnter,
-  children,
-  class: cls,
-  ...attrs
-}: MenubarSubContentProps): JSX.Element {
-  const side = sideProp ?? "right";
-  const align = alignProp ?? "start";
-  // ArrowLeft-exit and pointerenter-cancel are the factory sub wiring's own
-  // utils now - consumed here so they never reach the DOM as attributes.
-  void onArrowLeft;
-  void onPointerEnter;
-  const { Content } = menu().sub({
-    open: () => (state?.() ?? "open") === "open",
-    onOpenChange: (next) => {
-      if (!next) onDismiss?.();
-    },
-  });
-  return (
-    <Content
-      side={side}
-      align={align}
-      sideOffset={sideOffset}
-      anchor={anchor}
-      onExited={onExited}
-      data-slot="menubar-sub-content"
-      class={
-        [subContent, cls]
-      }
-      {...attrs}
-    >
-      {children}
-    </Content>
   );
 }
 

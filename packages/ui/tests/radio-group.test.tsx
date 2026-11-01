@@ -9,7 +9,6 @@ import {
   assertHandlerForwarded,
   assertStructuralParity,
   classTokens,
-  radioGroupPartVariants,
   radioGroupVariants,
 } from "./helpers/variants";
 import type {
@@ -295,38 +294,5 @@ describe("radio-group", () => {
   test("keeps structural parity across both styles", () => {
     assertStructuralParity(radioGroupVariants, { items });
     assertStructuralParity(radioGroupVariants, { items, orientation: "vertical", name: "plan" });
-  });
-
-  test("renders the manual item part with its data-slot, state, and reactive icon across both styles", () => {
-    for (const variant of radioGroupPartVariants) {
-      const container = setupContainer();
-      const rendered = variant.render({ value: "solo", checked: () => true, name: "plan" });
-      mount(rendered, container);
-      const el = container.firstElementChild as HTMLElement;
-      expect(el.getAttribute("data-slot")).toBe("radio-group-item");
-      expect(el.getAttribute("role")).toBe("radio");
-      expect(el.getAttribute("aria-checked")).toBe("true");
-      expect(el.getAttribute("data-state")).toBe("checked");
-      expect(el.getAttribute("name")).toBe("plan");
-      expect(el.querySelector("[data-slot='radio-group-indicator'] svg")).not.toBeNull();
-    }
-  });
-
-  test("chains a user on:click on the item part with its owned select across both styles", () => {
-    const userClick = vi.fn(function (this: HTMLElement, e: Event) {
-      void e;
-    });
-    const onSelect = vi.fn(() => {});
-    for (const variant of radioGroupPartVariants) {
-      const container = setupContainer();
-      const rendered = variant.render({ value: "solo", onSelect, "on:click": userClick });
-      mount(rendered, container);
-      const el = container.firstElementChild as HTMLElement;
-      userClick.mockClear();
-      onSelect.mockClear();
-      el.dispatchEvent(new Event("click"));
-      expect(userClick).toHaveBeenCalledTimes(1);
-      expect(onSelect).toHaveBeenCalledTimes(1);
-    }
   });
 });

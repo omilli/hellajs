@@ -1,7 +1,5 @@
 import { menu, menubar } from "@hellajs/headless";
 import type {
-  MenubarTriggerProps,
-  MenubarContentProps,
   MenubarPartProps,
   MenubarItemProps,
   MenubarCheckboxItemProps,
@@ -9,8 +7,6 @@ import type {
   MenubarRadioItemProps,
   MenubarLabelProps,
   MenubarShortcutProps,
-  MenubarSubTriggerProps,
-  MenubarSubContentProps,
   MenubarSubProps,
   MenubarMenuProps,
   MenubarProps,
@@ -29,78 +25,6 @@ declare const subContent: string;
 declare const subTrigger: string;
 declare const trigger: string;
 // @hella:end
-
-/** The manual trigger button; the composed MenubarMenu renders the same shape wired to toggle + aria state. */
-export function MenubarTrigger({
-  children,
-  class: cls,
-  ...attrs
-}: MenubarTriggerProps): JSX.Element {
-  const { Trigger } = menubar().menu();
-  return (
-    <Trigger
-      data-slot="menubar-trigger"
-      class={
-        // @hella:compose
-        [trigger, cls]
-        // @hella:end
-      }
-      {...attrs}
-    >
-      {children}
-    </Trigger>
-  );
-}
-
-/** The manual content layer; the composed MenubarMenu portals the same wiring under its trigger's state. */
-export function MenubarContent({
-  state,
-  id,
-  side: sideProp,
-  align: alignProp,
-  sideOffset,
-  alignOffset: alignOffsetProp,
-  anchor,
-  onDismiss,
-  onExited,
-  onArrow,
-  children,
-  class: cls,
-  ...attrs
-}: MenubarContentProps): JSX.Element {
-  const side = sideProp ?? "bottom";
-  const align = alignProp ?? "start";
-  const alignOffset = alignOffsetProp ?? -4;
-  // Open-then-move is the factory bar-menu wiring's own behavior now -
-  // consumed here so it never reaches the DOM as an attribute.
-  void onArrow;
-  const { Content } = menubar().menu({
-    open: () => (state?.() ?? "open") === "open",
-    onOpenChange: (next) => {
-      if (!next) onDismiss?.();
-    },
-  });
-  return (
-    <Content
-      id={id}
-      side={side}
-      align={align}
-      sideOffset={sideOffset}
-      alignOffset={alignOffset}
-      anchor={anchor}
-      onExited={onExited}
-      data-slot="menubar-content"
-      class={
-        // @hella:compose
-        [content, cls]
-        // @hella:end
-      }
-      {...attrs}
-    >
-      {children}
-    </Content>
-  );
-}
 
 export function MenubarGroup({ children, class: cls, ...attrs }: MenubarPartProps): JSX.Element {
   const { Group } = menu();
@@ -285,82 +209,6 @@ export function MenubarShortcut({
     >
       {children}
     </Shortcut>
-  );
-}
-
-export function MenubarSubTrigger({
-  inset,
-  state,
-  onOpen,
-  children,
-  class: cls,
-  ...attrs
-}: MenubarSubTriggerProps): JSX.Element {
-  const sub = menu().sub({
-    open: state ? () => state() === "open" : undefined,
-    onOpenChange: (next) => {
-      if (next) onOpen?.();
-    },
-  });
-  return (
-    <sub.Trigger
-      inset={inset}
-      data-slot="menubar-sub-trigger"
-      class={
-        // @hella:compose
-        [subTrigger, cls]
-        // @hella:end
-      }
-      {...attrs}
-    >
-      {children}
-    </sub.Trigger>
-  );
-}
-
-export function MenubarSubContent({
-  state,
-  side: sideProp,
-  align: alignProp,
-  sideOffset,
-  anchor,
-  onDismiss,
-  onExited,
-  onArrowLeft,
-  onPointerEnter,
-  children,
-  class: cls,
-  ...attrs
-}: MenubarSubContentProps): JSX.Element {
-  const side = sideProp ?? "right";
-  const align = alignProp ?? "start";
-  // ArrowLeft-exit and pointerenter-cancel are the factory sub wiring's own
-  // utils now - consumed here so they never reach the DOM as attributes.
-  void onArrowLeft;
-  void onPointerEnter;
-  const { Content } = menu().sub({
-    open: () => (state?.() ?? "open") === "open",
-    onOpenChange: (next) => {
-      if (!next) onDismiss?.();
-    },
-  });
-  return (
-    <Content
-      side={side}
-      align={align}
-      sideOffset={sideOffset}
-      anchor={anchor}
-      onExited={onExited}
-      data-slot="menubar-sub-content"
-      class={
-        // @hella:compose
-        [subContent, cls]
-        // @hella:end
-      }
-      {...attrs}
-    >
-      {children}
-    </Content>
   );
 }
 

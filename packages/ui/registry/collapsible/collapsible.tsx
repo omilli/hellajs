@@ -1,9 +1,5 @@
 import { collapsible } from "@hellajs/headless";
-import type {
-  CollapsibleProps,
-  CollapsibleTriggerProps,
-  CollapsibleContentProps,
-} from "./collapsible-types.js";
+import type { CollapsibleProps } from "./collapsible-types.js";
 
 // @hella:styles
 declare const content: string;
@@ -34,63 +30,6 @@ const ChevronIcon = (): JSX.Element => (
     <path d="m6 9 6 6 6-6" />
   </svg>
 );
-
-export function CollapsibleTrigger({
-  active,
-  onToggle,
-  "on:click": userClick,
-  children,
-  class: cls,
-  ...attrs
-}: CollapsibleTriggerProps): JSX.Element {
-  const { Trigger } = collapsible();
-  return (
-    <Trigger
-      active={active}
-      onToggle={onToggle}
-      class={
-        // @hella:compose
-        [trigger, cls]
-        // @hella:end
-      }
-      on:click={userClick}
-      {...attrs}
-    >
-      {children}
-      <ChevronIcon />
-    </Trigger>
-  );
-}
-
-export function CollapsibleContent({
-  active,
-  children,
-  class: cls,
-  ...attrs
-}: CollapsibleContentProps): JSX.Element {
-  const { Content } = collapsible();
-  return (
-    <Content
-      active={active}
-      class={
-        // @hella:compose
-        [content, cls]
-        // @hella:end
-      }
-      {...attrs}
-    >
-      <div
-        class={
-          // @hella:compose
-          [contentInner]
-          // @hella:end
-        }
-      >
-        {children}
-      </div>
-    </Content>
-  );
-}
 
 export function Collapsible({
   open,
@@ -124,7 +63,13 @@ export function Collapsible({
         {triggerSlot}
         <ChevronIcon />
       </Trigger>
-      <Content>
+      <Content
+        class={
+          // @hella:compose
+          [content]
+          // @hella:end
+        }
+      >
         <div
           class={
             // @hella:compose

@@ -24,14 +24,3 @@ export interface ToggleGroupProps extends HTMLAttributes<"div"> {
   variant?: "default" | "outline";
   size?: "default" | "sm" | "lg";
 }
-
-export interface ToggleGroupItemProps extends HTMLAttributes<"button"> {
-  class?: string;
-  children?: HellaChildren;
-  value?: string;
-  /** Pressed state. A boolean reads statically; an accessor keeps the manual part reactive. */
-  pressed?: boolean | (() => boolean);
-  onSelect?: () => void;
-  variant?: "default" | "outline";
-  size?: "default" | "sm" | "lg";
-}

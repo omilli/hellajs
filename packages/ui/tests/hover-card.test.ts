@@ -5,7 +5,6 @@ import { resetHeadless } from "@hellajs/headless";
 import {
   assertStructuralParity,
   classTokens,
-  hoverCardPartVariants,
   hoverCardVariants,
   renderVariant,
 } from "./helpers/variants";
@@ -174,27 +173,17 @@ describe("hover-card", () => {
     },
   );
 
-  test.each(hoverCardPartVariants.filter((variant) => variant.part === "Content"))(
-    "$style content part positions against the anchor and drains its wirings on disposal",
+  test.each(hoverCardVariants)(
+    "$style carries the content class on the open content across both styles",
     async (variant) => {
-      const anchor = document.createElement("button");
-      document.body.appendChild(anchor);
-      pinRect(anchor, 100, 50, 200, 20);
-      const onOpen = vi.fn(() => {});
-      const onClose = vi.fn(() => {});
-      const container = setupContainer();
-      const handle = mount(
-        variant.render({ anchor: () => anchor, side: "right", onOpen, onClose, children: [] }),
-        container,
-      );
-      const content = await awaitPortaled("hover-card-content");
-      expect(content.style.left).toBe("254px");
-      expect(content.style.top).toBe("110px");
-      pointerEnter(content);
-      await delay(10);
-      expect(onOpen).toHaveBeenCalledTimes(1);
-      handle.unmount();
-      await awaitDetached(content);
+      const { content } = await openHoverCard(variant);
+      if (variant.style === "css") {
+        expect(classTokens(content).some((token) => token.startsWith("hover-card-content"))).toBe(
+          true,
+        );
+      } else {
+        expect(classTokens(content)).toContain("bg-popover");
+      }
     },
   );
 
@@ -224,32 +213,7 @@ describe("hover-card", () => {
     },
   );
 
-  test.each(hoverCardPartVariants.filter((variant) => variant.part === "Content"))(
-    "$style content part forwards user attrs",
-    async (variant) => {
-      const container = setupContainer();
-      mount(variant.render({ "aria-label": "panel", children: [] }), container);
-      const content = await awaitPortaled("hover-card-content");
-      expect(content.getAttribute("aria-label")).toBe("panel");
-    },
-  );
-
   test("keeps structural parity across both styles", () => {
     assertStructuralParity(hoverCardVariants, { content: "Parity" });
-  });
-
-  test("renders every named part with its data-slot across both styles", async () => {
-    for (const variant of hoverCardPartVariants) {
-      const container = setupContainer();
-      const rendered = variant.render({ children: [] });
-      mount(rendered, container);
-      // The content part portals itself; every other part renders in place.
-      const el =
-        variant.part === "Content"
-          ? await awaitPortaled("hover-card-content")
-          : container.firstElementChild!;
-      expect(el.getAttribute("data-slot")).toBe(`hover-card-${variant.part.toLowerCase()}`);
-      expect(el.tagName).toBe(variant.part === "Trigger" ? "SPAN" : "DIV");
-    }
   });
 });

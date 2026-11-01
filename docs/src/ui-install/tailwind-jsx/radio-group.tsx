@@ -2,7 +2,7 @@ import { ForEach } from "@hellajs/dom";
 import { radioGroup } from "@hellajs/headless";
 import type { HTMLAttributes } from "@hellajs/dom";
 
-interface RadioGroupItem {
+interface RadioGroupEntry {
   value: string;
   label: string;
   disabled?: boolean;
@@ -11,21 +11,13 @@ interface RadioGroupItem {
 interface RadioGroupProps extends HTMLAttributes<"div"> {
   class?: string;
   /** The rendered options. An array reads statically at mount; an accessor keeps the list reactive across appends, removes, and reorders. */
-  items: RadioGroupItem[] | (() => RadioGroupItem[]);
+  items: RadioGroupEntry[] | (() => RadioGroupEntry[]);
   /** Reuses item DOM through reorders by `value` identity (selection state survives); order always follows the array. */
   keyBy?: "value";
   /** Controlled selected value. When given, the root never writes its internal signal and `onValueChange` reports the requested selection. */
   value?: () => string;
   onValueChange?: (value: string) => void;
   orientation?: "horizontal" | "vertical";
-}
-
-interface RadioGroupItemProps extends HTMLAttributes<"button"> {
-  class?: string;
-  value: string;
-  /** Checked state. A boolean reads statically; an accessor keeps the manual part reactive. */
-  checked?: boolean | (() => boolean);
-  onSelect?: () => void;
 }
 import { cn } from "./cn.js";
 
@@ -49,41 +41,6 @@ const circleIcon = (): JSX.Element => (
     <circle cx="12" cy="12" r="10" />
   </svg>
 );
-
-export function RadioGroupItem({
-  value,
-  checked,
-  onSelect,
-  disabled,
-  name,
-  class: cls,
-  ...attrs
-}: RadioGroupItemProps): JSX.Element {
-  const { Item, Indicator } = radioGroup();
-  return (
-    <Item
-      value={value}
-      checked={checked}
-      onSelect={onSelect}
-      disabled={disabled}
-      name={name}
-      class={
-        cn("aspect-square size-4 shrink-0 rounded-full border border-input text-primary shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40", cls)
-      }
-      {...attrs}
-    >
-      <Indicator
-        value={value}
-        checked={checked}
-        class={
-          cn("relative flex items-center justify-center")
-        }
-      >
-        {circleIcon()}
-      </Indicator>
-    </Item>
-  );
-}
 
 export function RadioGroup({
   items,

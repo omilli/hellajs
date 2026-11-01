@@ -51,7 +51,7 @@ The canonical source carries marker regions the CLI consumes at copy time (and s
 - **css** splices [`style`](/reference/css/style) maps into the styles region and keeps every compose array in its `class` attribute; dom joins plain arrays there, and the maps emit as plain unlayered rules.
 - **tailwind** inlines every class string at its use site inside `cn(...)`: compose members, static class attributes, and references from helpers or runtime code, with a non-class constant like an event name inlining the same way at its references. Only keyed variant/size maps stay at the styles region. Every compose array wraps in `cn(...)`, and `import { cn } from "./cn.js";` injects after the last import so the helper import resolves next to the copied file.
 
-Style modules export one lowerCamel binding per styled component that carries classes (`header`, `title`, `close`); a component with no classes gets no binding, and an empty-string export appears only as a css/tailwind style bridge (an empty binding in one style mirrors a live binding in the other). `variants`/`sizes` keyed maps appear only where a component actually has them (Button's variant and size sets, TabsList's pill/line).
+Style modules export one lowerCamel binding per styled component that carries classes (`header`, `title`, `close`); a component with no classes gets no binding, and an empty-string export appears only as a css/tailwind style bridge (an empty binding in one style mirrors a live binding in the other). `variants`/`sizes` keyed maps appear only where a component actually has them (Button's variant and size sets, the tabs list's pill/line).
 
 ## Peer Checking
 

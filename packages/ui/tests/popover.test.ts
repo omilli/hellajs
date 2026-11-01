@@ -1,12 +1,16 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { mount, peekState } from "@hellajs/dom";
+import type { HellaChildren } from "@hellajs/dom";
 import {
   assertStructuralParity,
   classTokens,
-  popoverPartVariants,
+  menuModulePart,
+  popoverModules,
   popoverVariants,
   renderVariant,
+  type ComponentVariant,
+  type PopoverVariantProps,
 } from "./helpers/variants";
 import {
   awaitDetached,
@@ -28,6 +32,13 @@ async function openPopover(variant: (typeof popoverVariants)[number]) {
   const content = await awaitPortaled("popover-content");
   return { onOpenChange, trigger, content };
 }
+
+/** Builds one Header/Title/Description vocabulary part of the same flavor as the composed root under test. */
+const VocabularyPart = (
+  variant: ComponentVariant<PopoverVariantProps>,
+  name: "Header" | "Title" | "Description",
+  props: { children?: HellaChildren },
+) => menuModulePart<{ children?: HellaChildren }>(popoverModules, variant, `Popover${name}`)(props);
 
 describe("popover", () => {
   test.each(popoverVariants)(
@@ -137,38 +148,6 @@ describe("popover", () => {
     },
   );
 
-  test.each(popoverPartVariants.filter((variant) => variant.part === "Content"))(
-    "$style content part positions with sideOffset and alignOffset, takes focus, and drains its wirings on disposal",
-    async (variant) => {
-      const anchor = document.createElement("button");
-      document.body.appendChild(anchor);
-      pinRect(anchor, 100, 50, 200, 20);
-      const onDismiss = vi.fn(() => {});
-      const container = setupContainer();
-      const handle = mount(
-        variant.render({
-          anchor: () => anchor,
-          side: "top",
-          sideOffset: 6,
-          alignOffset: 8,
-          onDismiss,
-          children: [],
-        }),
-        container,
-      );
-      const content = await awaitPortaled("popover-content");
-      expect(content.style.left).toBe("150px");
-      expect(content.style.top).toBe("94px");
-      expect(content.style.translate).toBe("8px 0");
-      expect(content.getAttribute("data-side")).toBe("top");
-      expect(document.activeElement).toBe(content);
-      pressEscape();
-      expect(onDismiss).toHaveBeenCalledTimes(1);
-      handle.unmount();
-      await awaitDetached(content);
-    },
-  );
-
   test.each(popoverVariants)(
     "$style forwards user attrs onto the trigger root across both styles",
     (variant) => {
@@ -227,42 +206,27 @@ describe("popover", () => {
     },
   );
 
-  test.each(popoverPartVariants.filter((variant) => variant.part === "Content"))(
-    "$style content part respects a user-supplied id",
+  test.each(popoverVariants)(
+    "$style renders the header/title/description vocabulary inside the content slot",
     async (variant) => {
-      const container = setupContainer();
-      mount(variant.render({ id: "custom-popover", children: [] }), container);
+      const trigger = renderVariant(variant, {
+        content: VocabularyPart(variant, "Header", {
+          children: [
+            VocabularyPart(variant, "Title", { children: "Dimensions" }),
+            VocabularyPart(variant, "Description", { children: "Set the width and height." }),
+          ],
+        }),
+      });
+      trigger.dispatchEvent(new Event("click"));
       const content = await awaitPortaled("popover-content");
-      expect(content.getAttribute("id")).toBe("custom-popover");
+      const header = content.querySelector('[data-slot="popover-header"]');
+      expect(header).not.toBeNull();
+      expect(header!.querySelector('[data-slot="popover-title"]')?.tagName).toBe("DIV");
+      expect(header!.querySelector('[data-slot="popover-description"]')?.tagName).toBe("P");
     },
   );
 
   test("keeps structural parity across both styles", () => {
     assertStructuralParity(popoverVariants, { content: "Parity" }, ["aria-controls"]);
-  });
-
-  test("renders every named part with its data-slot across both styles", async () => {
-    for (const variant of popoverPartVariants) {
-      const container = setupContainer();
-      const rendered = variant.render({ children: [] });
-      mount(rendered, container);
-      // The content part portals itself; every other part renders in place.
-      const el =
-        variant.part === "Content"
-          ? await awaitPortaled("popover-content")
-          : container.firstElementChild!;
-      if (variant.part === "Title") {
-        expect(el.getAttribute("data-slot")).toBe("popover-title");
-        expect(el.tagName).toBe("DIV");
-      } else if (variant.part === "Description") {
-        expect(el.getAttribute("data-slot")).toBe("popover-description");
-        expect(el.tagName).toBe("P");
-      } else if (variant.part === "Trigger") {
-        expect(el.getAttribute("data-slot")).toBe("popover-trigger");
-        expect(el.tagName).toBe("BUTTON");
-      } else {
-        expect(el.getAttribute("data-slot")).toBe(`popover-${variant.part.toLowerCase()}`);
-      }
-    }
   });
 });

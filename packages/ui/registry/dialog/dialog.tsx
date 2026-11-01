@@ -1,9 +1,6 @@
 import { dialog } from "@hellajs/headless";
 import type { HellaChild, HellaChildren } from "@hellajs/dom";
 import type {
-  DialogOverlayProps,
-  DialogCloseProps,
-  DialogContentProps,
   DialogPartProps,
   DialogTitleProps,
   DialogDescriptionProps,
@@ -36,105 +33,6 @@ const CloseIcon = (): JSX.Element => (
     <path d="m6 6 12 12" />
   </svg>
 );
-
-/** The screen-covering backdrop; the factory's Overlay with the backdrop style. */
-export function DialogOverlay({ state, class: cls, ...attrs }: DialogOverlayProps): JSX.Element {
-  const { Overlay } = dialog({ open: () => (state?.() ?? "open") === "open" });
-  return (
-    <Overlay
-      class={
-        // @hella:compose
-        [base, cls]
-        // @hella:end
-      }
-      {...attrs}
-    />
-  );
-}
-
-/** The X close button; the factory's Close with the X icon and its sr-only label. */
-export function DialogClose({
-  state,
-  onClose,
-  "on:click": userClick,
-  class: cls,
-  ...attrs
-}: DialogCloseProps): JSX.Element {
-  const { Close } = dialog({
-    open: () => (state?.() ?? "open") === "open",
-    onOpenChange: (next) => {
-      if (!next) onClose?.();
-    },
-  });
-  return (
-    <Close
-      class={
-        // @hella:compose
-        [close, cls]
-        // @hella:end
-      }
-      on:click={userClick}
-      {...attrs}
-    >
-      <CloseIcon />
-      <span class="sr-only">Close</span>
-    </Close>
-  );
-}
-
-/**
- * The dialog panel. Manual composition portals it alongside a DialogOverlay
- * sibling - hella has no Radix context, so the portal/overlay pairing is the
- * composer's (the Dialog export below shows the wired composition). The panel
- * renders inline where placed: the factory's gate and portal belong to the
- * composed Dialog.
- */
-export function DialogContent({
-  state,
-  showCloseButton,
-  closeOnEscape,
-  closeOnOutside,
-  onClose,
-  onExited,
-  children,
-  class: cls,
-  ...attrs
-}: DialogContentProps): JSX.Element {
-  const { Content, Close } = dialog({
-    open: () => (state?.() ?? "open") === "open",
-    onOpenChange: (next) => {
-      if (!next) onClose?.();
-    },
-  });
-  return (
-    <Content
-      portal={false}
-      escape={closeOnEscape}
-      outside={closeOnOutside}
-      onExited={onExited}
-      class={
-        // @hella:compose
-        [content, cls]
-        // @hella:end
-      }
-      {...attrs}
-    >
-      {children}
-      {showCloseButton !== false && (
-        <Close
-          class={
-            // @hella:compose
-            [close]
-            // @hella:end
-          }
-        >
-          <CloseIcon />
-          <span class="sr-only">Close</span>
-        </Close>
-      )}
-    </Content>
-  );
-}
 
 export function DialogHeader({ children, class: cls, ...attrs }: DialogPartProps): JSX.Element {
   return (
@@ -223,7 +121,7 @@ export function Dialog({
 }: DialogProps): JSX.Element {
   const titleId = `hella-dialog-title-${++dialogCount}`;
   const descriptionId = `hella-dialog-description-${dialogCount}`;
-  const { Content, Close } = dialog({
+  const { Content, Close, Overlay } = dialog({
     open,
     onOpenChange: (next) => {
       if (!next) onClose();
@@ -241,7 +139,15 @@ export function Dialog({
       aria-describedby={descriptionText === undefined ? undefined : descriptionId}
       escape={closeOnEscape}
       outside={closeOnOutside}
-      overlay={(state) => <DialogOverlay state={state} />}
+      overlay={() => (
+        <Overlay
+          class={
+            // @hella:compose
+            [base]
+            // @hella:end
+          }
+        />
+      )}
       {...attrs}
       children={
         [

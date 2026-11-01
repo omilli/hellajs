@@ -1,5 +1,6 @@
 
 import { Tabs } from "@components/ui/tabs.js";
+import { signal } from "@hellajs/core";
 
 const account = [
   { id: "account", label: "Account", content: [<p>Change your name, email, and profile details.</p>] },
@@ -24,6 +25,21 @@ export function TabsLineDemo() {
   return (
     <>
       <Tabs items={line} variant="line" initialId="activity" />
+    </>
+  );
+}
+
+export function TabsControlledDemo() {
+  const active = signal("notifications");
+
+  return (
+    <>
+      <Tabs
+        items={account}
+        value={() => active()}
+        onValueChange={(v) => active(v)}
+      />
+      <p class="demo-muted">{() => `Active tab: ${active()}`}</p>
     </>
   );
 }

@@ -1,42 +1,7 @@
 import { dialog } from "@hellajs/headless";
-import { Portal } from "@hellajs/dom";
 import type { HellaChild, HellaChildren, HTMLAttributes } from "@hellajs/dom";
 
-type SheetState = () => "open" | "closed";
-
 type SheetSide = "top" | "right" | "bottom" | "left";
-
-interface SheetOverlayProps extends HTMLAttributes<"div"> {
-  state?: SheetState;
-  class?: string;
-}
-
-interface SheetCloseProps extends HTMLAttributes<"button"> {
-  state?: SheetState;
-  onClose?: () => void;
-  class?: string;
-}
-
-interface SheetPortalProps {
-  children?: HellaChildren;
-}
-
-interface SheetTriggerProps extends HTMLAttributes<"button"> {
-  children?: HellaChildren;
-  class?: string;
-}
-
-interface SheetContentProps extends HTMLAttributes<"div"> {
-  state?: SheetState;
-  side?: SheetSide;
-  showCloseButton?: boolean;
-  closeOnEscape?: boolean;
-  closeOnOutside?: boolean;
-  onClose?: () => void;
-  onExited?: () => void;
-  class?: string;
-  children?: HellaChildren;
-}
 
 interface SheetPartProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
@@ -97,130 +62,6 @@ const CloseIcon = (): JSX.Element => (
     <path d="m6 6 12 12" />
   </svg>
 );
-
-/** The screen-covering backdrop; the factory's Overlay with the backdrop style. */
-export function SheetOverlay({ state, class: cls, ...attrs }: SheetOverlayProps): JSX.Element {
-  const { Overlay } = dialog({ open: () => (state?.() ?? "open") === "open" });
-  return (
-    <Overlay
-      data-slot="sheet-overlay"
-      class={
-        cn("fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0", cls)
-      }
-      {...attrs}
-    />
-  );
-}
-
-/** The X close button; the factory's Close with the X icon and its sr-only label. */
-export function SheetClose({
-  state,
-  onClose,
-  "on:click": userClick,
-  class: cls,
-  ...attrs
-}: SheetCloseProps): JSX.Element {
-  const { Close } = dialog({
-    open: () => (state?.() ?? "open") === "open",
-    onOpenChange: (next) => {
-      if (!next) onClose?.();
-    },
-  });
-  return (
-    <Close
-      data-slot="sheet-close"
-      class={
-        cn("absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-secondary", cls)
-      }
-      on:click={userClick}
-      {...attrs}
-    >
-      <CloseIcon />
-      <span class="sr-only">Close</span>
-    </Close>
-  );
-}
-
-/** Portals the manual composition's parts into document.body. */
-export function SheetPortal(props: SheetPortalProps): JSX.Element {
-  return <Portal to="body">{props.children}</Portal>;
-}
-
-/** The manual trigger button; the factory's Trigger owning the aria contract over the wrapper's own state. */
-export function SheetTrigger({ children, class: cls, ...attrs }: SheetTriggerProps): JSX.Element {
-  const { Trigger } = dialog();
-  return (
-    <Trigger
-      data-slot="sheet-trigger"
-      class={
-        cn(cls)
-      }
-      {...attrs}
-    >
-      {children}
-    </Trigger>
-  );
-}
-
-/**
- * The sheet panel. Manual composition portals it alongside a SheetOverlay
- * sibling - hella has no Radix context, so the portal/overlay pairing is the
- * composer's (the Sheet export below shows the wired composition). The
- * Title/Description parts carry the required aria wiring: pass their
- * generated ids as the panel's `aria-labelledby`/`aria-describedby` attrs
- * even in manual compositions, screen readers announce nothing without them.
- * The panel renders inline where placed: the factory's gate and portal
- * belong to the composed Sheet.
- */
-export function SheetContent({
-  state,
-  side,
-  showCloseButton,
-  closeOnEscape,
-  closeOnOutside,
-  onClose,
-  onExited,
-  children,
-  class: cls,
-  ...attrs
-}: SheetContentProps): JSX.Element {
-  const resolvedSide = side ?? "right";
-  const { Content, Close } = dialog({
-    open: () => (state?.() ?? "open") === "open",
-    onOpenChange: (next) => {
-      if (!next) onClose?.();
-    },
-    fallbackMs: EXIT_FALLBACK_MS,
-  });
-
-  return (
-    <Content
-      portal={false}
-      data-slot="sheet-content"
-      data-side={resolvedSide}
-      escape={closeOnEscape}
-      outside={closeOnOutside}
-      onExited={onExited}
-      class={
-        cn("fixed z-50 flex flex-col gap-4 p-4 bg-background shadow-lg transition ease-in-out data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:animate-in data-[state=open]:duration-500", contentSides[resolvedSide], cls)
-      }
-      {...attrs}
-    >
-      {children}
-      {showCloseButton !== false && (
-        <Close
-          data-slot="sheet-close"
-          class={
-            cn("absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-secondary")
-          }
-        >
-          <CloseIcon />
-          <span class="sr-only">Close</span>
-        </Close>
-      )}
-    </Content>
-  );
-}
 
 export function SheetHeader({ children, class: cls, ...attrs }: SheetPartProps): JSX.Element {
   return (
@@ -303,7 +144,7 @@ export function Sheet({
   const titleId = `hella-sheet-title-${++sheetCount}`;
   const descriptionId = `hella-sheet-description-${sheetCount}`;
   const resolvedSide = side ?? "right";
-  const { Content, Close } = dialog({
+  const { Content, Close, Overlay } = dialog({
     open,
     onOpenChange: (next) => {
       if (!next) onClose();
@@ -322,7 +163,14 @@ export function Sheet({
       aria-describedby={descriptionText === undefined ? undefined : descriptionId}
       escape={closeOnEscape}
       outside={closeOnOutside}
-      overlay={(state) => <SheetOverlay state={state} />}
+      overlay={() => (
+        <Overlay
+          data-slot="sheet-overlay"
+          class={
+            cn("fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0")
+          }
+        />
+      )}
       {...attrs}
       children={
         [

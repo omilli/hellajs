@@ -30,16 +30,16 @@
  * this island); the adoptable head tags (see MainLayout) carry the same
  * rules and hydration claims them against this registration, so nothing
  * duplicates. This module owns the palette width (.site-search-command
- * below) — the dialog panel shrink-wraps its content, so the command root
- * carries the width.
+ * below) — the class rides the dialog wrapper and the descendant selector
+ * sizes the command root inside the panel.
  */
 import { effect, signal } from "@hellajs/core";
 import { css } from "@hellajs/css";
-import { Command, CommandDialog } from "@components/ui/command.js";
+import { CommandDialog } from "@components/ui/command.js";
 import type { CommandItemData } from "@components/ui/command.js";
 
 css({
-  ".site-search-command": {
+  ".site-search-command [data-slot='command']": {
     width: "min(40rem, calc(100vw - 2rem))",
   },
 });
@@ -218,9 +218,13 @@ export default function SearchPalette() {
         document.addEventListener("click", onDocClick);
       }}
     >
-      <CommandDialog open={open} onClose={() => open(false)}>
-        <Command filter={filter} items={QUICK_LINKS} class="site-search-command" />
-      </CommandDialog>
+      <CommandDialog
+        open={open}
+        onClose={() => open(false)}
+        class="site-search-command"
+        items={QUICK_LINKS}
+        filter={filter}
+      />
     </div>
   );
 }

@@ -8,7 +8,6 @@ import {
   assertAttrForwarded,
   assertStructuralParity,
   classTokens,
-  tabsPartVariants,
   tabsVariants,
 } from "./helpers/variants";
 import type { TabsItem, TabsVariant, TabsVariantProps } from "./helpers/variants";
@@ -294,55 +293,47 @@ describe("tabs", () => {
     }
   });
 
-  test("chains a user on:click with the owned activate on a trigger across both styles", () => {
-    for (const variant of tabsPartVariants.filter((candidate) => candidate.part === "Trigger")) {
-      const userClick = vi.fn(() => {});
-      const selected = signal(false);
-      const container = setupContainer();
-      const props: Record<string, unknown> = {
-        id: "alpha",
-        active: () => selected(),
-        onActivate: () => selected(!selected()),
-        "on:click": userClick,
-        children: "Label",
-      };
-      const rendered = variant.render(props as never);
-      mount(rendered, container);
-      const tab = container.firstElementChild!;
-      tab.dispatchEvent(new Event("click"));
-      expect(userClick).toHaveBeenCalledTimes(1);
-      expect(selected()).toBe(true);
-      expect(tab.getAttribute("aria-selected")).toBe("true");
-    }
-  });
+  test.each(tabsVariants)(
+    "$style renders the controlled value and reports clicks without writing internal state",
+    async (variant) => {
+      const onValueChange = vi.fn();
+      const { root, tabs, panels } = mountTabs(variant, {
+        items,
+        value: () => "beta",
+        onValueChange,
+      });
+      await awaitWiring(root);
+      expect(tabs.map((tab) => tab.getAttribute("aria-selected"))).toEqual([
+        "false",
+        "true",
+        "false",
+      ]);
+      tabs[0]!.dispatchEvent(new Event("click"));
+      expect(onValueChange).toHaveBeenCalledTimes(1);
+      expect(onValueChange).toHaveBeenCalledWith("alpha");
+      // Controlled: the root never writes its internal state, so beta stays active.
+      expect(tabs[0]!.getAttribute("aria-selected")).toBe("false");
+      expect(panels[0]!.hasAttribute("hidden")).toBe(true);
+      expect(panels[1]!.hasAttribute("hidden")).toBe(false);
+    },
+  );
 
-  test("renders every named part with its role and data-slot across both styles", () => {
-    for (const variant of tabsPartVariants) {
-      const el = renderPart(variant);
-      if (variant.part === "List") {
-        expect(el.getAttribute("role")).toBe("tablist");
-        expect(el.getAttribute("data-slot")).toBe("tabs-list");
-      } else if (variant.part === "Trigger") {
-        expect(el.getAttribute("role")).toBe("tab");
-        expect(el.getAttribute("data-slot")).toBe("tabs-trigger");
-        expect(el.getAttribute("data-state")).toBe("inactive");
-      } else {
-        expect(el.getAttribute("role")).toBe("tabpanel");
-        expect(el.getAttribute("data-slot")).toBe("tabs-content");
-      }
-    }
-  });
+  test.each(tabsVariants)(
+    "$style round-trips a controlled signal so the emitted update flips the panel",
+    async (variant) => {
+      const active = signal("beta");
+      const { root, tabs, panels } = mountTabs(variant, {
+        items,
+        value: () => active(),
+        onValueChange: (v) => active(v),
+      });
+      await awaitWiring(root);
+      expect(panels[1]!.hasAttribute("hidden")).toBe(false);
+      tabs[2]!.dispatchEvent(new Event("click"));
+      expect(active()).toBe("gamma");
+      expect(tabs[2]!.getAttribute("aria-selected")).toBe("true");
+      expect(panels[2]!.hasAttribute("hidden")).toBe(false);
+      expect(panels[1]!.hasAttribute("hidden")).toBe(true);
+    },
+  );
 });
-
-/** Renders one tabs part and resolves its mounted root. */
-function renderPart(variant: (typeof tabsPartVariants)[number]): Element {
-  const container = setupContainer();
-  const props: Record<string, unknown> = { children: [] };
-  if (variant.part === "Trigger") {
-    props.active = () => false;
-    props.children = "Label";
-  }
-  const rendered = variant.render(props as never);
-  mount(rendered as never, container);
-  return container.firstElementChild!;
-}
