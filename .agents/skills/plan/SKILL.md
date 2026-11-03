@@ -48,7 +48,7 @@ Derive each artifact from the project's own rules (guides, lint, config conventi
 - **State-wiring deltas** — when a delta attaches state (scope, dispose fn, handler, cleanup) to a DOM node, name the carrier's two properties, verified against the owning code: cleanup eligibility (the removal walk actually discovers state on that node kind) and lifetime (the carrier outlives the code being written). Both live outside the delta's own lines; a green typecheck says nothing about them.
 - **Behavioral scenarios** (if tests in scope) — one behavior per scenario, phrased as one test, so `worker` transcribes without re-deciding structure.
 - **Doc updates** (if docs in scope) — owning file/section + the content extending it.
-- **DoD** — binary items, exhaustive mirror of the contract: every Files entry, scenario, doc update, and delta line → a DoD item. Nothing goes unchecked. Plus one unconditional gate item on every unit: `vp run lint` exits 0 — coverage runs no lint (§Testing), and a lint-red unit is never done no matter what its DoD otherwise says.
+- **DoD** — binary items, exhaustive mirror of the contract: every Files entry, scenario, doc update, and delta line → a DoD item. When the Gap names a measurable outcome (a call count, a banned pattern, a construct that must not remain), one DoD item probes the landed result for that outcome — per-file deltas alone can pass green while the stated condition still stands. Nothing goes unchecked. Plus one unconditional gate item on every unit: `vp run lint` exits 0 — coverage runs no lint (§Testing), and a lint-red unit is never done no matter what its DoD otherwise says.
 
 **The DoD trap list** (root AGENTS.md §Core rules points here; this is the authoritative enumeration):
 
