@@ -1,42 +1,4 @@
-# select
-
 Creates the select components in one call: the trigger button, the chosen-value label, the ported listbox with its scroll affordances, and the option rows. The factory closure owns the selection, the open state, and the generated content id; options register in DOM order from the `Item` children you render.
-
-## Basic Usage
-
-```tsx
-import { signal } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
-import { select } from "@hellajs/headless";
-
-const value = signal("");
-
-const Select = select({
-  value: () => value(),
-  onValueChange: (next) => value(next),
-});
-
-mount(
-  <div>
-    <Select.Trigger>
-      <Select.Value placeholder="Choose…" />
-    </Select.Trigger>
-    <Select.Content side="bottom">
-      <Select.Item value="a">Option A</Select.Item>
-      <Select.Item value="b">Option B</Select.Item>
-      <Select.Group>
-        <Select.Label>More</Select.Label>
-        <Select.Item value="c">Option C</Select.Item>
-      </Select.Group>
-    </Select.Content>
-  </div>,
-  "#app",
-);
-// Clicking the trigger (or pressing ArrowDown/ArrowUp on it) opens the
-// listbox. Arrows and Home/End rove the options, Enter and Space commit and
-// close, Tab closes without committing, and closing returns focus to the
-// trigger.
-```
 
 ## API
 

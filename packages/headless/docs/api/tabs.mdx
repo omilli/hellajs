@@ -1,35 +1,4 @@
-# tabs
-
 Creates the tabs components in one call: a roving tablist, its triggers, and the keyed panels. The closure owns the active tab value; focusing a trigger selects it, and the selection lands the tabindex walk.
-
-## Basic Usage
-
-```tsx
-import { signal } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
-import { tabs } from "@hellajs/headless";
-
-const value = signal("account");
-
-const Tabs = tabs({
-  value: () => value(),
-  onValueChange: (next) => value(next),
-});
-
-mount(
-  <div>
-    <Tabs.List>
-      <Tabs.Trigger value="account">Account</Tabs.Trigger>
-      <Tabs.Trigger value="password">Password</Tabs.Trigger>
-    </Tabs.List>
-    <Tabs.Content value="account">Account panel</Tabs.Content>
-    <Tabs.Content value="password">Password panel</Tabs.Content>
-  </div>,
-  "#app",
-);
-// Clicking or focusing a trigger selects it; arrows move focus and
-// selection together with wrap-around, Home and End jump to the ends.
-```
 
 ## API
 

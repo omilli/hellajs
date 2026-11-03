@@ -1,41 +1,4 @@
-# calendar
-
 Creates the calendar components in one call: the month view, its selection model, and the day grid. The closure owns the visible month, the selection in the mode's shape, the roving focus key, and the range hover preview; `Grid` renders the whole `role="grid"` table from that view model and carries the keyboard model. The manual-composition day button is the static `CalendarRows.DayButton`.
-
-## Basic Usage
-
-```tsx
-import { signal } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
-import { calendar } from "@hellajs/headless";
-
-const picked = signal<Date | undefined>(undefined);
-
-const Cal = calendar({
-  defaultMonth: new Date(2025, 2, 1),
-  onValueChange: (next) => picked(next as Date),
-});
-
-mount(
-  <Cal.Root>
-    <Cal.Months>
-      <Cal.Month>
-        <Cal.Caption>
-          <Cal.CaptionLabel />
-        </Cal.Caption>
-        <Cal.Nav>
-          <Cal.PrevButton>{"<"}</Cal.PrevButton>
-          <Cal.NextButton>{">"}</Cal.NextButton>
-        </Cal.Nav>
-        <Cal.Grid />
-      </Cal.Month>
-    </Cal.Months>
-  </Cal.Root>,
-  "#app",
-);
-// Clicking a day reports it through onValueChange; the nav buttons page
-// the month, and the grid roves focus with the arrow keys.
-```
 
 ## API
 

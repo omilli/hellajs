@@ -1,39 +1,4 @@
-# modal
-
 Arm a modal panel in one call: focus trap, Escape and outside dismissal, and the exit hook the panel unmounts through, all disposed with the node.
-
-## Basic Usage
-
-```jsx
-import { signal } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
-import { modal } from "@hellajs/headless/utils";
-
-const open = signal(false);
-
-const Panel = () => (
-  <div
-    role="dialog"
-    aria-modal="true"
-    hook:afterMount={(node) => {
-      if (node instanceof HTMLElement) {
-        modal(node, {
-          state: () => (open() ? "open" : "closed"),
-          onClose: () => open(false),
-          onExited: () => showPanel(false),
-        });
-      }
-    }}
-  >
-    <button on:click={() => open(false)}>Close</button>
-  </div>
-);
-
-mount(<Panel />, "#app");
-// Flipping open() arms the trap, Escape, and outside dismissal; flipping it
-// back disarms them. When the panel's exit animation ends, onExited fires so
-// you can unmount. Removing the panel disposes everything.
-```
 
 ## API
 
@@ -73,6 +38,11 @@ The wiring registers on the element, not in your code. When the node leaves the 
 Escape and outside dismissal fire `onClose`, so without one there is nothing to call: with `escape` and `outside` at their defaults and no `onClose` passed, both arms stay off and only the focus trap arms. This mirrors the optional-handler semantics of `onEscape` and `onOutside`, and nothing throws.
 
 ```typescript
+import { modal } from "@hellajs/headless/utils";
+
+const node = document.createElement("div");
+const state = () => "open" as const;
+
 // Only the focus trap arms; Escape and outside clicks stay inert
 modal(node, { state });
 ```

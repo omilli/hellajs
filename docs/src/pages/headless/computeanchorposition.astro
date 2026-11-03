@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { ComputeAnchorPositionDemo } from "../../demos/headless/computeanchorposition-demo";
+import ComputeanchorpositionContent from "@headless/api/computeanchorposition.mdx";
+
+const title = "computeAnchorPosition";
+const description = "Computes fixed-position coordinates for a floating rect against an anchor rect: pure math with no DOM access.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>computeAnchorPosition</h1>
+  <DemoFrame code="ComputeAnchorPositionDemo">
+    <ComputeAnchorPositionDemo client:load />
+  </DemoFrame>
+  <ComputeanchorpositionContent />
+</MainLayout>

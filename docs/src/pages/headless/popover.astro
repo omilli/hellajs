@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { PopoverDemo } from "../../demos/headless/popover-demo";
+import PopoverContent from "@headless/api/popover.mdx";
+
+const title = "popover";
+const description = "Creates the six popover parts in one factory call: toggle trigger, portaled anchored content, and the structural header, title, and description.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>popover</h1>
+  <DemoFrame code="PopoverDemo">
+    <PopoverDemo client:load />
+  </DemoFrame>
+  <PopoverContent />
+</MainLayout>

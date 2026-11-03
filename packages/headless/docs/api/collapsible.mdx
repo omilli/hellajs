@@ -1,31 +1,4 @@
-# collapsible
-
 Creates the collapsible components in one call: the toggle trigger and its content region. The closure owns the open state, and the region stays mounted under `data-state` so CSS animates the collapse.
-
-## Basic Usage
-
-```tsx
-import { signal } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
-import { collapsible } from "@hellajs/headless";
-
-const open = signal(false);
-
-const Col = collapsible({
-  open: () => open(),
-  onOpenChange: (next) => open(next),
-});
-
-mount(
-  <div>
-    <Col.Trigger>More</Col.Trigger>
-    <Col.Content>Details</Col.Content>
-  </div>,
-  "#app",
-);
-// Clicking the trigger reports the flip through onOpenChange; the region's
-// data-state follows the controlled accessor, and CSS animates the collapse.
-```
 
 ## API
 

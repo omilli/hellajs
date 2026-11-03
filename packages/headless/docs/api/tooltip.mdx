@@ -1,29 +1,4 @@
-# tooltip
-
 Creates the three tooltip components in one call: a provider grouping slot, a hover trigger, and the ported content label. The factory closure owns the open state, the open-delay timing through the shared skip-delay clock, and the generated content id.
-
-## Basic Usage
-
-```tsx
-import { mount } from "@hellajs/dom";
-import { tooltip } from "@hellajs/headless";
-
-const Tip = tooltip({ delay: 300 });
-
-mount(
-  <div>
-    <Tip.Trigger>Hover me</Tip.Trigger>
-    <Tip.Content side="top">Tooltip text</Tip.Content>
-  </div>,
-  "#app",
-);
-// Hovering the trigger opens the label after the delay; leaving closes it
-// immediately (pass `closeDelay` to restore a grace window). The label portals
-// into document.body, anchors to the trigger, and closes on pointer leave,
-// Escape, or an outside press.
-```
-
-`Trigger` and `Content` connect through the factory closure, so they compose as siblings or nest the content inside the trigger. Omitting `delay` keeps the 700ms default.
 
 ## API
 

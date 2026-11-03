@@ -1,30 +1,4 @@
-# checkbox
-
 Creates the checkbox components in one call: a `role="checkbox"` button and its indicator. The closure owns the checked and mixed (indeterminate) states; the mixed flag wins for rendering and clears on an uncontrolled toggle.
-
-## Basic Usage
-
-```tsx
-import { signal } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
-import { checkbox } from "@hellajs/headless";
-
-const checked = signal(false);
-
-const Check = checkbox({
-  checked: () => checked(),
-  onCheckedChange: (next) => checked(next),
-});
-
-mount(
-  <Check.Root>
-    <Check.Indicator />
-  </Check.Root>,
-  "#app",
-);
-// Clicking cycles unchecked through checked; aria-checked tracks
-// true/false, or mixed while an indeterminate flag holds.
-```
 
 ## API
 

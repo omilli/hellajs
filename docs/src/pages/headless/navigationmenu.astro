@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { NavigationMenuDemo } from "../../demos/headless/navigationmenu-demo";
+import NavigationMenuContent from "@headless/api/navigation-menu.mdx";
+
+const title = "navigationMenu";
+const description = "Creates the navigation menu parts in one factory call: the announced open-value store, the viewport-shared panels, and the moving indicator.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>navigationMenu</h1>
+  <DemoFrame code="NavigationMenuDemo">
+    <NavigationMenuDemo client:load />
+  </DemoFrame>
+  <NavigationMenuContent />
+</MainLayout>

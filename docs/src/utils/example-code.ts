@@ -6,24 +6,33 @@ import { demoCode } from "./demo-code";
  * glob: CodeExample is a server component, so resolution happens at build
  * time and no demo source ships to the client.
  */
-const rawDemos = import.meta.glob("../demos/*-demo.tsx", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
+const rawDemos = import.meta.glob(
+  ["../demos/*-demo.tsx", "../demos/headless/*-demo.tsx"],
+  { query: "?raw", import: "default", eager: true },
+) as Record<string, string>;
 
 const sources: Record<string, string> = {};
 for (const [path, raw] of Object.entries(rawDemos)) {
   const stem = path.split("/").pop() ?? path;
-  sources[stem.replace(/-demo\.tsx$/, "")] = raw;
+  const name = stem.replace(/-demo\.tsx$/, "");
+  // Headless demo modules key under "headless/<name>": their slugs collide
+  // with ui demo names (both sections have an accordion demo), so the bare
+  // stem cannot disambiguate.
+  sources[path.includes("/headless/") ? `headless/${name}` : name] = raw;
 }
 
 /**
  * Slices one top-level `export function <Name>` block out of a demo
- * module's raw source — the View Code surface for the ui pages'
- * CodeExample cards. Unlike demoCode (caller supplies the raw source),
- * the module is resolved by demo name: each ui page's last URL segment
- * names both the page and its demo module (ui/button → button-demo.tsx).
+ * module's raw source — the View Code surface for the ui and headless
+ * pages' CodeExample cards. Unlike demoCode (caller supplies the raw source),
+ * the module is resolved by demo name: each page's URL names both the page
+ * and its demo module (ui/button → demos/button-demo.tsx,
+ * headless/accordion → demos/headless/accordion-demo.tsx).
  * Loud by construction — an unknown demo name or export name throws at
  * build time rather than rendering an empty card. A `;` trailing the
  * body's closing brace is kept when the source has one.
- * @param demo Demo module name (the page URL segment, e.g. "button")
+ * @param demo Demo module name (the page URL segment, e.g. "button";
+ * headless pages pass "headless/<slug>")
  * @param exportName Function name of the export to slice
  * @returns The sliced source text
  */

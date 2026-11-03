@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { ToggleSwitchDemo } from "../../demos/headless/toggleswitch-demo";
+import SwitchContent from "@headless/api/switch.mdx";
+
+const title = "toggleSwitch";
+const description = "Creates the switch parts in one factory call: the checked-state button and its moving thumb.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>toggleSwitch</h1>
+  <DemoFrame code="ToggleSwitchDemo">
+    <ToggleSwitchDemo client:load />
+  </DemoFrame>
+  <SwitchContent />
+</MainLayout>

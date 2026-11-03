@@ -1,49 +1,4 @@
-# menubar
-
 Creates a desktop-style menu bar: the `Bar` root plus a `menu()` factory whose menus announce to the bar, so opening one closes its siblings and the horizontal arrows hand off between triggers.
-
-## Basic Usage
-
-```tsx
-import { signal } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
-import { menubar, menuSub, MenuRows } from "@hellajs/headless";
-
-const openMenu = signal("");
-
-const Menubar = menubar({
-  value: () => openMenu(),
-  onValueChange: (next) => openMenu(next),
-});
-
-const File = Menubar.menu({ value: "file" });
-const Edit = Menubar.menu({ value: "edit" });
-const Export = menuSub();
-
-mount(
-  <Menubar.Bar>
-    <File.Trigger>File</File.Trigger>
-    <File.Content>
-      <MenuRows.Item shortcut="⌘O">Open</MenuRows.Item>
-      <Export.Trigger>Export</Export.Trigger>
-      <Export.Content>
-        <MenuRows.Item>As PDF</MenuRows.Item>
-      </Export.Content>
-    </File.Content>
-    <Edit.Trigger>Edit</Edit.Trigger>
-    <Edit.Content>
-      <MenuRows.Item>Copy</MenuRows.Item>
-      <MenuRows.Item>Paste</MenuRows.Item>
-    </Edit.Content>
-  </Menubar.Bar>,
-  "#app",
-);
-// Clicking File opens its menu and mirrors "file" into the bar's value.
-// Clicking Edit then closes File: each menu announces its flips, the bar
-// mirrors the open id, and siblings close on a foreign announcement.
-```
-
-Omitting `value` keeps the bar's open-menu id internal; `onValueChange` still reports every flip.
 
 ## API
 

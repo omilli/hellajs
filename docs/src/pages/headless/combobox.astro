@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { ComboboxDemo } from "../../demos/headless/combobox-demo";
+import ComboboxContent from "@headless/api/combobox.mdx";
+
+const title = "combobox";
+const description = "Creates the combobox parts in one factory call: the query input, the ported anchored option panel, listbox and option rows, and the multi-select chips.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>combobox</h1>
+  <DemoFrame code="ComboboxDemo">
+    <ComboboxDemo client:load />
+  </DemoFrame>
+  <ComboboxContent />
+</MainLayout>

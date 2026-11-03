@@ -1,45 +1,4 @@
-# navigationMenu
-
 Creates the navigation menu stateful parts in one call: the bar root, the viewport-shared panels, and the trigger coordination. The closure owns the open-value store; a value-carrying trigger announces its clicks and hover-opens, the bar containing the trigger mirrors the announcement into the store, and the matching panel portals into the shared viewport. The structural rows (list, item, link, and the moving indicator) are the static `NavRows`.
-
-## Basic Usage
-
-```tsx
-import { signal } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
-import { navigationMenu, NavRows } from "@hellajs/headless";
-
-const value = signal("");
-
-const Nav = navigationMenu({
-  value: () => value(),
-  onValueChange: (next) => value(next),
-});
-
-mount(
-  <Nav.Root>
-    <NavRows.List>
-      <NavRows.Item>
-        <Nav.Trigger value="learn">Learn</Nav.Trigger>
-        <Nav.Content value="learn">
-          <NavRows.Link href="#learn">Intro</NavRows.Link>
-        </Nav.Content>
-      </NavRows.Item>
-      <NavRows.Item>
-        <Nav.Trigger value="reference">Reference</Nav.Trigger>
-        <Nav.Content value="reference">
-          <NavRows.Link href="#reference">API</NavRows.Link>
-        </Nav.Content>
-      </NavRows.Item>
-    </NavRows.List>
-    <NavRows.Indicator />
-  </Nav.Root>,
-  "#app",
-);
-// Hovering or clicking a trigger opens its panel in the shared viewport;
-// another trigger swaps the panel, clicking the open trigger or leaving the
-// open panel closes it, and the indicator slides under the active trigger.
-```
 
 ## API
 

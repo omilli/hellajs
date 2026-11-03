@@ -1,48 +1,4 @@
-# combobox
-
 Creates the combobox components in one call: the query input with its addon affordances, the ported anchored option panel, the listbox and option rows, and the multi-select chips. The factory closure owns the query, the selection, the active-by-value highlight, and the generated list id.
-
-## Basic Usage
-
-```tsx
-import { signal } from "@hellajs/core";
-import { ForEach, mount } from "@hellajs/dom";
-import { combobox } from "@hellajs/headless";
-
-const items = [
-  { value: "apple", label: "Apple" },
-  { value: "blueberry", label: "Blueberry" },
-  { value: "canteloupe", label: "Canteloupe" },
-];
-
-const Combobox = combobox({ items });
-
-mount(
-  <div>
-    <Combobox.Input placeholder="Search…" />
-    <Combobox.Content side="bottom" align="start">
-      <Combobox.List>
-        <ForEach each={Combobox.matches} keyBy="value">
-          {(entry) => (
-            <Combobox.Item value={entry.value}>{entry.label ?? entry.value}</Combobox.Item>
-          )}
-        </ForEach>
-      </Combobox.List>
-      <Combobox.Empty>No items found.</Combobox.Empty>
-    </Combobox.Content>
-  </div>,
-  "#app",
-);
-// Focusing the input opens the panel; typing filters the matches getter.
-// Arrows rove the enabled options with wrap-around, Enter commits and closes,
-// and Escape clears the query and then closes.
-```
-
-Pass `List` the same `items` and it renders the rows for you, keeping every option mounted while the query hides non-matches:
-
-```tsx
-<Combobox.List items={items} keyBy="value" />
-```
 
 ## API
 

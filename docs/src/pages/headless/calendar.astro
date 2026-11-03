@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { CalendarDemo } from "../../demos/headless/calendar-demo";
+import CalendarContent from "@headless/api/calendar.mdx";
+
+const title = "calendar";
+const description = "Creates the calendar parts in one factory call: the month view, the selection model, and the day grid with its keyboard.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>calendar</h1>
+  <DemoFrame code="CalendarDemo">
+    <CalendarDemo client:load />
+  </DemoFrame>
+  <CalendarContent />
+</MainLayout>

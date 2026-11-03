@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { MessageScrollerDemo } from "../../demos/headless/messagescroller-demo";
+import MessageScrollerContent from "@headless/api/message-scroller.mdx";
+
+const title = "messageScroller";
+const description = "Creates the message-scroller parts in one factory call: the shared at-bottom state, stickiness on new content, and the jump-to-bottom button.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>messageScroller</h1>
+  <DemoFrame code="MessageScrollerDemo">
+    <MessageScrollerDemo client:load />
+  </DemoFrame>
+  <MessageScrollerContent />
+</MainLayout>

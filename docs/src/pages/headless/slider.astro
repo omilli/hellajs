@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { SliderDemo } from "../../demos/headless/slider-demo";
+import SliderContent from "@headless/api/slider.mdx";
+
+const title = "slider";
+const description = "Creates the slider parts in one factory call: the drag-wired root, the measured track, the filled range, and the focusable thumbs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>slider</h1>
+  <DemoFrame code="SliderDemo">
+    <SliderDemo client:load />
+  </DemoFrame>
+  <SliderContent />
+</MainLayout>

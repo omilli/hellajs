@@ -1,45 +1,4 @@
-# dialog
-
 Creates the four dialog components in one call: the toggle trigger, the structural overlay, the portaled modal panel, and the close button. The factory closure owns the open state, the exit timing, and the generated content id; the panel arms the [`modal`](/headless/modal) engine (focus trap, Escape and outside dismissal, exit notification) while open.
-
-## Basic Usage
-
-```tsx
-import { signal } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
-import { dialog } from "@hellajs/headless";
-
-const open = signal(false);
-
-const Dialog = dialog({
-  open: () => open(),
-  onOpenChange: (next) => open(next),
-});
-
-mount(
-  <div>
-    <Dialog.Trigger>Open</Dialog.Trigger>
-    <Dialog.Content>
-      <h2 id="dialog-title">Confirm</h2>
-      <p id="dialog-description">Proceed with the action.</p>
-      <Dialog.Close>Close</Dialog.Close>
-    </Dialog.Content>
-  </div>,
-  "#app",
-);
-// The trigger toggles the factory's open state and carries data-state plus
-// aria-expanded. Content portals into document.body with the structural
-// overlay as its body sibling, traps focus while open, and closes on Escape
-// or an outside press; closing keeps it mounted under data-state="closed"
-// until its exit animation ends.
-```
-
-Omitting `open` keeps the state internal, so the components work standalone:
-
-```tsx
-const Dialog = dialog();
-// <Dialog.Trigger> toggles the factory's own signal.
-```
 
 ## API
 

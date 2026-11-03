@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { MenubarDemo } from "../../demos/headless/menubar-demo";
+import MenubarContent from "@headless/api/menubar.mdx";
+
+const title = "menubar";
+const description = "Creates a menu bar whose menus announce to the bar: one open at a time, roving triggers, and open-then-move handoffs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>menubar</h1>
+  <DemoFrame code="MenubarDemo">
+    <MenubarDemo client:load />
+  </DemoFrame>
+  <MenubarContent />
+</MainLayout>

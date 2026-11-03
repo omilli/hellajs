@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { OnDragDemo } from "../../demos/headless/ondrag-demo";
+import OndragContent from "@headless/api/ondrag.mdx";
+
+const title = "onDrag";
+const description = "Tracks a pointer drag on an element and reports cumulative deltas from the drag start.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>onDrag</h1>
+  <DemoFrame code="OnDragDemo">
+    <OnDragDemo client:load />
+  </DemoFrame>
+  <OndragContent />
+</MainLayout>

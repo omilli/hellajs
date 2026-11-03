@@ -1,0 +1,58 @@
+---
+import { css } from "@hellajs/css";
+import { tokens } from "../styles/tokens";
+import CodeExample from "./CodeExample.astro";
+
+// Headless demo frame: the same rule bodies as `Component.astro`'s frame, so
+// css() dedupes both registrations to one hashed class set. No registry
+// tokens sheet here - headless demos bring their own `style()` rules; the
+// site tokens carry the palette.
+css({
+  ".demo-frame":{
+    backgroundColor: tokens.background,
+    border: `1px solid ${tokens.border}`,
+    borderRadius: tokens.radius,
+    color: tokens.foreground,
+    marginBlock: "1.25rem",
+    padding: "2rem",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  ".demo-stack": {
+    alignItems: "center",
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
+  },
+  ".demo-wide": {
+    alignItems: "center",
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
+    width: "100%",
+  },
+  ".demo-row": {
+    alignItems: "center",
+    display: "flex",
+    gap: "0.5rem",
+    justifyContent: "center",
+    flexWrap: "wrap"
+  },
+  ".demo-muted": {
+    color: tokens.mutedForeground,
+    fontSize: "0.875rem",
+    margin: 0
+  }
+})
+
+const { type = "stack", code = "" } = Astro.props;
+---
+<!-- `not-prose`: opts the island out of the layout's prose typography - prose.ts excludes .not-prose subtrees (preflight supplies the zeroed base, demo styles own everything else). -->
+<div class="demo-frame dark not-prose">
+  <div class={`demo-${type}`}>
+    <slot />
+  </div>
+</div>
+
+{code && <CodeExample code={code} />}

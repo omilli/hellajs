@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { ModalDemo } from "../../demos/headless/modal-demo";
+import ModalContent from "@headless/api/modal.mdx";
+
+const title = "modal";
+const description = "Arms a modal panel in one call: focus trap, dismissal, and exit notification with automatic, node-scoped disposal.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>modal</h1>
+  <DemoFrame code="ModalDemo">
+    <ModalDemo client:load />
+  </DemoFrame>
+  <ModalContent />
+</MainLayout>

@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { ToggleGroupDemo } from "../../demos/headless/togglegroup-demo";
+import ToggleGroupContent from "@headless/api/toggle-group.mdx";
+
+const title = "toggleGroup";
+const description = "Creates the toggle-group parts in one factory call: roving items with single and multiple exclusion.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>toggleGroup</h1>
+  <DemoFrame code="ToggleGroupDemo">
+    <ToggleGroupDemo client:load />
+  </DemoFrame>
+  <ToggleGroupContent />
+</MainLayout>

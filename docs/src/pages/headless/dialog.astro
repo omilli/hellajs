@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { DialogDemo } from "../../demos/headless/dialog-demo";
+import DialogContent from "@headless/api/dialog.mdx";
+
+const title = "dialog";
+const description = "Creates the four dialog parts in one factory call: toggle trigger, structural overlay, portaled modal panel, and close button.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>dialog</h1>
+  <DemoFrame code="DialogDemo">
+    <DialogDemo client:load />
+  </DemoFrame>
+  <DialogContent />
+</MainLayout>

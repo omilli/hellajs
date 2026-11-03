@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { LayerDismissalDemo } from "../../demos/headless/layerdismissal-demo";
+import LayerdismissalContent from "@headless/api/layerdismissal.mdx";
+
+const title = "layerDismissal";
+const description = "Dismisses stacked overlays one layer at a time: Escape and outside pointerdowns fire a layer's handler only while it is top of the shared stack.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>layerDismissal</h1>
+  <DemoFrame code="LayerDismissalDemo">
+    <LayerDismissalDemo client:load />
+  </DemoFrame>
+  <LayerdismissalContent />
+</MainLayout>

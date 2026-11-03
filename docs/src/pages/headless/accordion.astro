@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { AccordionDemo } from "../../demos/headless/accordion-demo";
+import AccordionContent from "@headless/api/accordion.mdx";
+
+const title = "accordion";
+const description = "Creates the accordion components in one factory call: the roving container, value-keyed rows, triggers, and the keyed regions.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>accordion</h1>
+  <DemoFrame code="AccordionDemo">
+    <AccordionDemo client:load />
+  </DemoFrame>
+  <AccordionContent />
+</MainLayout>

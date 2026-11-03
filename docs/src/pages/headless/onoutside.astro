@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { OnOutsideDemo } from "../../demos/headless/onoutside-demo";
+import OnoutsideContent from "@headless/api/onoutside.mdx";
+
+const title = "onOutside";
+const description = "Calls a handler when a document pointerdown lands outside every node a getter resolves.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>onOutside</h1>
+  <DemoFrame code="OnOutsideDemo">
+    <OnOutsideDemo client:load />
+  </DemoFrame>
+  <OnoutsideContent />
+</MainLayout>

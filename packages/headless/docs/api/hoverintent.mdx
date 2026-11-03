@@ -1,37 +1,4 @@
-# hoverIntent
-
 Open a surface after a hover or focus delay and close it after a leave delay: the tooltip and hover-card timing contract.
-
-## Basic Usage
-
-```jsx
-import { signal } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
-import { hoverIntent } from "@hellajs/headless/utils";
-
-const show = signal(false);
-let disposeIntent: (() => void) | undefined;
-
-const Avatar = () => (
-  <img
-    src="/avatar.png"
-    alt="Profile"
-    hook:afterMount={(node) => {
-      if (!(node instanceof HTMLElement)) return;
-      disposeIntent = hoverIntent(node, {
-        openDelay: 200,
-        closeDelay: 150,
-        onOpen: () => show(true),
-        onClose: () => show(false)
-      });
-    }}
-    hook:beforeDestroy={() => disposeIntent?.()}
-  />
-);
-
-mount(<Avatar />, "#app");
-// Hovering or focusing the avatar sets show(true) after 200ms
-```
 
 ## API
 

@@ -1,35 +1,4 @@
-# onPinch
-
 Track a two-finger pinch: every move reports zoom scale and pan offset from the gesture's start, and your code owns the transform.
-
-## Basic Usage
-
-```jsx
-import { mount } from "@hellajs/dom";
-import { onPinch } from "@hellajs/headless/utils";
-
-let disposePinch: (() => void) | undefined;
-
-const Image = () => (
-  <img
-    src="photo.jpg"
-    style="touch-action: none"
-    hook:afterMount={(node) => {
-      if (!(node instanceof HTMLElement)) return;
-      disposePinch = onPinch(node, {
-        onMove: ({ scale, dx, dy }) => {
-          node.style.transform = `translate(${dx}px, ${dy}px) scale(${scale})`;
-        },
-        onEnd: () => console.log("pinch ended")
-      });
-    }}
-    hook:beforeDestroy={() => disposePinch?.()}
-  />
-);
-
-mount(<Image />, "#app");
-// Spreading two fingers scales the image; moving the pair translates it
-```
 
 ## API
 

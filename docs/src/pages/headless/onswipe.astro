@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { OnSwipeDemo } from "../../demos/headless/onswipe-demo";
+import OnswipeContent from "@headless/api/onswipe.mdx";
+
+const title = "onSwipe";
+const description = "Tracks a pointer swipe on an element and commits or cancels the gesture on release by distance and velocity.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>onSwipe</h1>
+  <DemoFrame code="OnSwipeDemo">
+    <OnSwipeDemo client:load />
+  </DemoFrame>
+  <OnswipeContent />
+</MainLayout>

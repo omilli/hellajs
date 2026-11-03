@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { HoverCardDemo } from "../../demos/headless/hovercard-demo";
+import HoverCardContent from "@headless/api/hover-card.mdx";
+
+const title = "hoverCard";
+const description = "Creates the hover-card parts in one factory call: hover trigger and the ported panel that stays open while the pointer crosses into it.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>hoverCard</h1>
+  <DemoFrame code="HoverCardDemo">
+    <HoverCardDemo client:load />
+  </DemoFrame>
+  <HoverCardContent />
+</MainLayout>

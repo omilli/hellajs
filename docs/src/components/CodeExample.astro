@@ -22,6 +22,10 @@ css({
       color: tokens.mutedForeground,
       cursor: "pointer",
       userSelect: "none",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: "0.75rem",
     },
     "&[open] summary": {
       borderBottom: `1px solid ${tokens.border}`
@@ -34,18 +38,52 @@ css({
       overflowX: "auto",
       fontSize: "0.8125rem",
       lineHeight: 1.5
-    }
+    },
+    ".code-copy": {
+      background: "transparent",
+      border: `1px solid ${tokens.border}`,
+      borderRadius: `calc(${tokens.radius} * 0.6)`,
+      color: tokens.mutedForeground,
+      cursor: "pointer",
+      fontSize: "0.75rem",
+      padding: "0.125rem 0.5rem",
+    },
   }
 })
 
 const { code } = Astro.props;
-// The page's last URL segment names both the page and its demo module
-// (ui/button → demos/button-demo.tsx); exampleCode throws loudly on a
-// mismatch instead of rendering an empty card.
-const demo = Astro.url.pathname.split("/").filter(Boolean).pop() ?? "";
+// The page's URL names both the page and its demo module (ui/button →
+// demos/button-demo.tsx, headless/accordion → demos/headless/
+// accordion-demo.tsx — headless slugs collide with ui demo names, so they
+// namespace under "headless/"); exampleCode throws loudly on a mismatch
+// instead of rendering an empty card.
+const segments = Astro.url.pathname.split("/").filter(Boolean);
+const last = segments.at(-1) ?? "";
+const demo = segments[0] === "headless" ? `headless/${last}` : last;
 ---
 
 <details class="view-code">
-  <summary>View Code</summary>
+  <summary>View Code<button type="button" class="code-copy" data-code-copy>Copy</button></summary>
   <div><Code code={exampleCode(demo, code)} lang={"tsx"} /></div>
 </details>
+
+<script>
+  // Astro dedupes this module script per page, so one listener set wires
+  // every [data-code-copy] button on the document (InstallSection's copy
+  // uses the same clipboard pattern).
+  document.querySelectorAll("[data-code-copy]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      // The button rides the <summary>: stop the click from toggling the
+      // disclosure while copying.
+      event.preventDefault();
+      event.stopPropagation();
+      const code = button.closest("details")?.querySelector("pre")?.textContent ?? "";
+      navigator.clipboard.writeText(code).then(() => {
+        button.textContent = "Copied";
+        window.setTimeout(() => {
+          button.textContent = "Copy";
+        }, 1500);
+      });
+    });
+  });
+</script>

@@ -1,35 +1,4 @@
-# messageScroller
-
 Creates the message-scroller components in one call: a scrolling viewport whose at-bottom state drives stickiness on new content and the jump-to-bottom button.
-
-## Basic Usage
-
-```tsx
-import { signal } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
-import { messageScroller, ScrollerRows } from "@hellajs/headless";
-
-const atBottom = signal(true);
-const messages = ["Alpha", "Beta", "Gamma"];
-
-const Scroller = messageScroller({ atBottom });
-
-mount(
-  <Scroller.Root>
-    <Scroller.Viewport>
-      <Scroller.Content>
-        {messages.map((message) => (
-          <ScrollerRows.Item>{message}</ScrollerRows.Item>
-        ))}
-      </Scroller.Content>
-    </Scroller.Viewport>
-    <Scroller.Button>Jump to bottom</Scroller.Button>
-  </Scroller.Root>,
-  "#app",
-);
-// Scrolling up flips atBottom false; content growth sticks the viewport to the
-// bottom while at-bottom; the button jumps back and flips it true.
-```
 
 ## API
 

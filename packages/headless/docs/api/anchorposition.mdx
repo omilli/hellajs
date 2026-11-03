@@ -1,37 +1,4 @@
-# anchorPosition
-
 Pin a floating element to an anchor and keep it placed: it follows the anchor across scroll and resize, flips when it would overflow the viewport, and clamps inside it.
-
-## Basic Usage
-
-```jsx
-import { mount } from "@hellajs/dom";
-import { anchorPosition } from "@hellajs/headless/utils";
-
-let disposeAnchor: (() => void) | undefined;
-
-const Picker = () => (
-  <span>
-    <button
-      hook:afterMount={(node) => {
-        if (!(node instanceof HTMLElement)) return;
-        const panel = node.nextElementSibling as HTMLElement;
-        disposeAnchor = anchorPosition(node, panel, {
-          placement: "bottom-start",
-          matchAnchorWidth: true
-        });
-      }}
-      hook:beforeDestroy={() => disposeAnchor?.()}
-    >
-      Options
-    </button>
-    <div class="menu-panel">Menu content</div>
-  </span>
-);
-
-mount(<Picker />, "#app");
-// The panel sits below the button at the start edge and tracks it on scroll
-```
 
 ## API
 

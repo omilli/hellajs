@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { InputOtpDemo } from "../../demos/headless/inputotp-demo";
+import InputOtpContent from "@headless/api/input-otp.mdx";
+
+const title = "inputOtp";
+const description = "Creates the one-time-code parts in one factory call: the slot row, its display slots, and the separator over one transparent input.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>inputOtp</h1>
+  <DemoFrame code="InputOtpDemo">
+    <InputOtpDemo client:load />
+  </DemoFrame>
+  <InputOtpContent />
+</MainLayout>

@@ -1,33 +1,4 @@
-# rovingTabIndex
-
 Arrow-key focus navigation over a group of items: arrows move focus, Home and End jump to the ends, and the single tab stop roves with focus.
-
-## Basic Usage
-
-```jsx
-import { mount } from "@hellajs/dom";
-import { rovingTabIndex } from "@hellajs/headless/utils";
-
-let dispose: (() => void) | undefined;
-
-const Tabs = () => (
-  <div
-    role="tablist"
-    hook:afterMount={(node) => {
-      if (node instanceof HTMLElement) dispose = rovingTabIndex(node);
-    }}
-    hook:beforeDestroy={() => dispose?.()}
-  >
-    <button role="tab">One</button>
-    <button role="tab">Two</button>
-    <button role="tab">Three</button>
-  </div>
-);
-
-mount(<Tabs />, "#app");
-// Arrow keys move focus between tabs; tabindex roves (0 on the focused tab,
-// -1 on the rest); on unmount the original tabindex attributes are restored
-```
 
 ## API
 

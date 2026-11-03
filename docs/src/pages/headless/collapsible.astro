@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { CollapsibleDemo } from "../../demos/headless/collapsible-demo";
+import CollapsibleContent from "@headless/api/collapsible.mdx";
+
+const title = "collapsible";
+const description = "Creates the collapsible components in one factory call: the toggle trigger and its content region.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>collapsible</h1>
+  <DemoFrame code="CollapsibleDemo">
+    <CollapsibleDemo client:load />
+  </DemoFrame>
+  <CollapsibleContent />
+</MainLayout>

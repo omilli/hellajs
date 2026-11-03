@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { TabsDemo } from "../../demos/headless/tabs-demo";
+import TabsContent from "@headless/api/tabs.mdx";
+
+const title = "tabs";
+const description = "Creates the tabs parts in one factory call: the roving tablist, its triggers, and the keyed panels.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>tabs</h1>
+  <DemoFrame code="TabsDemo">
+    <TabsDemo client:load />
+  </DemoFrame>
+  <TabsContent />
+</MainLayout>

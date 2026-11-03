@@ -1,37 +1,4 @@
-# onDoubleTap
-
 Detect a double tap: the second tap within a window fires once, and a lone tap can report itself when you opt in.
-
-## Basic Usage
-
-```jsx
-import { signal } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
-import { onDoubleTap } from "@hellajs/headless/utils";
-
-const zoomed = signal(false);
-const toggleZoom = (event: PointerEvent) => zoomed(!zoomed());
-const selectAt = (event: PointerEvent) => console.log("select at", event.clientX, event.clientY);
-let disposeTaps: (() => void) | undefined;
-
-const Photo = () => (
-  <img
-    src="/photo.jpg"
-    alt="Gallery"
-    hook:afterMount={(node) => {
-      if (!(node instanceof HTMLElement)) return;
-      disposeTaps = onDoubleTap(node, {
-        onDoubleTap: (event) => toggleZoom(event),
-        onSingleTap: (event) => selectAt(event)
-      });
-    }}
-    hook:beforeDestroy={() => disposeTaps?.()}
-  />
-);
-
-mount(<Photo />, "#app");
-// A second tap within 250ms toggles the zoom; a lone tap logs the selection point
-```
 
 ## API
 

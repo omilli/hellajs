@@ -1,31 +1,4 @@
-# layerDismissal
-
 Dismiss stacked overlays one at a time: Escape or an outside click closes only the top layer, so a gesture never collapses a whole stack.
-
-## Basic Usage
-
-```jsx
-import { mount } from "@hellajs/dom";
-import { layerDismissal } from "@hellajs/headless/utils";
-
-let disposeLayer: (() => void) | undefined;
-
-const Menu = () => (
-  <nav
-    hook:afterMount={(node) => {
-      if (!(node instanceof HTMLElement)) return;
-      disposeLayer = layerDismissal(() => [node], () => node.remove());
-    }}
-    hook:beforeDestroy={() => disposeLayer?.()}
-  >
-    <button>File</button>
-    <button>Edit</button>
-  </nav>
-);
-
-mount(<Menu />, "#app");
-// Escape or an outside click removes the menu while it is topmost
-```
 
 ## API
 

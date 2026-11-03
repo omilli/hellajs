@@ -1,39 +1,4 @@
-# menuTypeahead
-
 Let menu users type to select: keystrokes buffer into a search and the first matching item is picked.
-
-## Basic Usage
-
-```jsx
-import { mount } from "@hellajs/dom";
-import { menuTypeahead } from "@hellajs/headless/utils";
-
-let disposeTypeahead: (() => void) | undefined;
-
-const collectItems = (menu: HTMLElement) =>
-  Array.from(menu.querySelectorAll<HTMLElement>("[data-menu-item]")).map((node) => ({
-    node,
-    text: node.textContent ?? ""
-  }));
-
-const Menu = () => (
-  <div
-    role="menu"
-    hook:afterMount={(node) => {
-      if (!(node instanceof HTMLElement)) return;
-      disposeTypeahead = menuTypeahead(node, () => collectItems(node), (item) => item.node.focus());
-    }}
-    hook:beforeDestroy={() => disposeTypeahead?.()}
-  >
-    <button role="menuitem" data-menu-item>Duplicate</button>
-    <button role="menuitem" data-menu-item>Rename</button>
-    <button role="menuitem" data-menu-item>Delete</button>
-  </div>
-);
-
-mount(<Menu />, "#app");
-// Typing "re" selects Rename
-```
 
 ## API
 

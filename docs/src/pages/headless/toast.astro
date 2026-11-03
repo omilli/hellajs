@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { ToastDemo } from "../../demos/headless/toast-demo";
+import ToastContent from "@headless/api/toast.mdx";
+
+const title = "toast";
+const description = "The module-level toast queue: enqueue cards from anywhere, render the stack with the portaled Toaster.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>toast</h1>
+  <DemoFrame code="ToastDemo">
+    <ToastDemo client:load />
+  </DemoFrame>
+  <ToastContent />
+</MainLayout>

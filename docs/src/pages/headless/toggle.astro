@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { ToggleDemo } from "../../demos/headless/toggle-demo";
+import ToggleContent from "@headless/api/toggle.mdx";
+
+const title = "toggle";
+const description = "Creates the pressed-state toggle button in one factory call with controlled-or-internal state.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>toggle</h1>
+  <DemoFrame code="ToggleDemo">
+    <ToggleDemo client:load />
+  </DemoFrame>
+  <ToggleContent />
+</MainLayout>

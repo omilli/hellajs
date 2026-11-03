@@ -1,31 +1,4 @@
-# scrollArea
-
 Creates the scroll-area components in one call: the native-scroll viewport with its content wrapper, and the wiring-wrapped scrollbar whose thumb sizes and positions itself from the paired viewport.
-
-## Basic Usage
-
-```tsx
-import { mount } from "@hellajs/dom";
-import { scrollArea } from "@hellajs/headless";
-
-const Area = scrollArea();
-
-mount(
-  <Area.Root>
-    <Area.Viewport>
-      {items.map((item) => (
-        <div>{item}</div>
-      ))}
-    </Area.Viewport>
-    <Area.Scrollbar>
-      <Area.Thumb />
-    </Area.Scrollbar>
-  </Area.Root>,
-  "#app",
-);
-// The thumb sizes to the content-to-viewport ratio and tracks the scroll
-// position; dragging it scrolls the viewport.
-```
 
 ## API
 

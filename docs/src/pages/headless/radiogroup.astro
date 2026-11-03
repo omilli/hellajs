@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { RadioGroupDemo } from "../../demos/headless/radiogroup-demo";
+import RadioGroupContent from "@headless/api/radio-group.mdx";
+
+const title = "radioGroup";
+const description = "Creates the radio-group parts in one factory call: exclusive selection with move-and-select arrows.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>radioGroup</h1>
+  <DemoFrame code="RadioGroupDemo">
+    <RadioGroupDemo client:load />
+  </DemoFrame>
+  <RadioGroupContent />
+</MainLayout>

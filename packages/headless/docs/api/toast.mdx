@@ -1,29 +1,4 @@
-# toast
-
 The module-level toast queue: `toast()` enqueues a card from anywhere in the app, and `Toaster` renders the stack. Timers, the visible cap, hover pausing, and swipe dismissal are built in.
-
-## Basic Usage
-
-```tsx
-import { mount } from "@hellajs/dom";
-import { toast, Toaster } from "@hellajs/headless";
-
-mount(
-  <div>
-    <button
-      on:click={() =>
-        toast("Saved", { description: "Your work is safe", type: "success" })
-      }
-    >
-      Save
-    </button>
-    <Toaster />
-  </div>,
-  "#app",
-);
-// Clicking Save stacks a card at the bottom-right edge; it auto-dismisses
-// after 4 seconds, pauses while hovered, and swipes away past 45% of its width.
-```
 
 ## API
 

@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { OnPinchDemo } from "../../demos/headless/onpinch-demo";
+import OnpinchContent from "@headless/api/onpinch.mdx";
+
+const title = "onPinch";
+const description = "Tracks a two-pointer pinch on an element and reports scale and translation deltas.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>onPinch</h1>
+  <DemoFrame code="OnPinchDemo">
+    <OnPinchDemo client:load />
+  </DemoFrame>
+  <OnpinchContent />
+</MainLayout>

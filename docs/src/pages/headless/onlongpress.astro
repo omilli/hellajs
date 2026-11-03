@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { OnLongPressDemo } from "../../demos/headless/onlongpress-demo";
+import OnlongpressContent from "@headless/api/onlongpress.mdx";
+
+const title = "onLongPress";
+const description = "Fires a handler after a timed press with drift tolerance.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>onLongPress</h1>
+  <DemoFrame code="OnLongPressDemo">
+    <OnLongPressDemo client:load />
+  </DemoFrame>
+  <OnlongpressContent />
+</MainLayout>

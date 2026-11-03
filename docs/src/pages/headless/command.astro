@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { CommandDemo } from "../../demos/headless/command-demo";
+import CommandContent from "@headless/api/command.mdx";
+
+const title = "command";
+const description = "Creates the command palette parts in one factory call: the search input, the ranked list, and the modal-wired palette dialog.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>command</h1>
+  <DemoFrame code="CommandDemo">
+    <CommandDemo client:load />
+  </DemoFrame>
+  <CommandContent />
+</MainLayout>

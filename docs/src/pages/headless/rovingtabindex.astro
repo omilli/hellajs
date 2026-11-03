@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { RovingTabIndexDemo } from "../../demos/headless/rovingtabindex-demo";
+import RovingtabindexContent from "@headless/api/rovingtabindex.mdx";
+
+const title = "rovingTabIndex";
+const description = "Implements the roving tabindex pattern over a container's items: arrow keys move focus along the active orientation, Home and End jump to the ends, and `tabindex` roves with focus.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>rovingTabIndex</h1>
+  <DemoFrame code="RovingTabIndexDemo">
+    <RovingTabIndexDemo client:load />
+  </DemoFrame>
+  <RovingtabindexContent />
+</MainLayout>

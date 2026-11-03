@@ -1,6 +1,6 @@
 ---
-title: "doc-snippets strict tier is red on base: 19 pre-existing diagnostics in 6 headless docs pages"
-description: "As of 2026-10-31 `vp run doc-snippets` exits 1 repo-wide from 19 strict-tier TS diagnostics in 6 unmodified packages/headless/docs/api/*.mdx pages; a page-scoped pass means zero log lines for your page's emitted file, not a green tool exit."
+title: "doc-snippets strict tier is red on base: 6 pre-existing diagnostics in the headless toast page"
+description: "As of 2026-01-29 `vp run doc-snippets` exits 1 repo-wide from 6 strict-tier TS parse diagnostics in the unmodified `packages/headless/docs/api/toast.mdx` promise-overload fence; a page-scoped pass means zero log lines for your page's emitted file, not a green tool exit."
 tags: [doc-snippets, docs, verification, triage, headless, strict-tier]
 confirmed: 2026-10-31
 ---

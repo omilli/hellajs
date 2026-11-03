@@ -1,31 +1,4 @@
-# trapFocus
-
 Keep Tab navigation inside a container: focus wraps from the last focusable to the first (and back) until you release the trap.
-
-## Basic Usage
-
-```jsx
-import { mount } from "@hellajs/dom";
-import { trapFocus } from "@hellajs/headless/utils";
-
-let release: (() => void) | undefined;
-
-const Panel = () => (
-  <div
-    hook:afterMount={(node) => {
-      if (node instanceof HTMLElement) release = trapFocus(node);
-    }}
-    hook:beforeDestroy={() => release?.()}
-  >
-    <input placeholder="First focusable" />
-    <button>Submit</button>
-  </div>
-);
-
-mount(<Panel />, "#app");
-// While the panel is open, Tab wraps inside it; on unmount,
-// Tab moves freely and focus returns to the pre-trap element
-```
 
 ## API
 

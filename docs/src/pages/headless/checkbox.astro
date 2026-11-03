@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { CheckboxDemo } from "../../demos/headless/checkbox-demo";
+import CheckboxContent from "@headless/api/checkbox.mdx";
+
+const title = "checkbox";
+const description = "Creates the checkbox parts in one factory call: the tri-state button and its indicator.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>checkbox</h1>
+  <DemoFrame code="CheckboxDemo">
+    <CheckboxDemo client:load />
+  </DemoFrame>
+  <CheckboxContent />
+</MainLayout>

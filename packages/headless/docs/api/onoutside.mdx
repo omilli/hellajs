@@ -1,31 +1,4 @@
-# onOutside
-
 Call a handler when a pointerdown lands outside the elements you mark as inside.
-
-## Basic Usage
-
-```jsx
-import { mount } from "@hellajs/dom";
-import { onOutside } from "@hellajs/headless/utils";
-
-let dismiss: (() => void) | undefined;
-
-const Menu = () => (
-  <nav
-    hook:afterMount={(node) => {
-      if (!(node instanceof HTMLElement)) return;
-      // The getter re-resolves per event, so the target stays current
-      dismiss = onOutside(() => [node], () => node.remove());
-    }}
-    hook:beforeDestroy={() => dismiss?.()}
-  >
-    <button>Menu</button>
-  </nav>
-);
-
-mount(<Menu />, "#app");
-// Clicking anywhere outside the menu removes it
-```
 
 ## API
 

@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { MenuTypeaheadDemo } from "../../demos/headless/menutypeahead-demo";
+import MenutypeaheadContent from "@headless/api/menutypeahead.mdx";
+
+const title = "menuTypeahead";
+const description = "Wireable typeahead search for menu items: printable keystrokes buffer into a query and the first matching item is selected.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>menuTypeahead</h1>
+  <DemoFrame code="MenuTypeaheadDemo">
+    <MenuTypeaheadDemo client:load />
+  </DemoFrame>
+  <MenutypeaheadContent />
+</MainLayout>

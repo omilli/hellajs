@@ -1,35 +1,4 @@
-# onDrag
-
 Track a pointer drag on an element: every move reports the total distance from the press point, and your code owns what the numbers mean.
-
-## Basic Usage
-
-```jsx
-import { signal } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
-import { onDrag } from "@hellajs/headless/utils";
-
-const offset = signal(0);
-let disposeDrag: (() => void) | undefined;
-
-const Thumb = () => (
-  <div
-    class="thumb"
-    style="touch-action: none"
-    hook:afterMount={(node) => {
-      if (!(node instanceof HTMLElement)) return;
-      disposeDrag = onDrag(node, {
-        onMove: ({ dx }) => offset(dx),
-        onEnd: () => console.log("drag ended at", offset())
-      });
-    }}
-    hook:beforeDestroy={() => disposeDrag?.()}
-  />
-);
-
-mount(<Thumb />, "#app");
-// Dragging the thumb reports cumulative distance from the press point
-```
 
 ## API
 

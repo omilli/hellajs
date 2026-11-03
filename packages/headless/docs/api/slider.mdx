@@ -1,33 +1,4 @@
-# slider
-
 Creates the slider components in one call: the drag-wired root, the measured track, the filled range, and the focusable thumbs. The closure owns the thumb values and reports every accepted move.
-
-## Basic Usage
-
-```tsx
-import { signal } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
-import { slider } from "@hellajs/headless";
-
-const volume = signal(40);
-
-const Slider = slider({
-  value: () => [volume()],
-  onValueChange: ([next]) => volume(next),
-});
-
-mount(
-  <Slider.Root>
-    <Slider.Track>
-      <Slider.Range />
-    </Slider.Track>
-    <Slider.Thumb index={0} />
-  </Slider.Root>,
-  "#app",
-);
-// Dragging maps the pointer to the nearest thumb's stepped value; arrows
-// step, PageUp and PageDown jump ten steps, Home and End jump to the bounds.
-```
 
 ## API
 

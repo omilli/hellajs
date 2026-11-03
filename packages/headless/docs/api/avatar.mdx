@@ -1,25 +1,4 @@
-# avatar
-
 Creates the avatar components in one call: the container, the portrait image, and the initial fallback. The closure owns the loaded signal, so the pair works zero-config: the image hides itself until it loads, and the fallback hides while it reads true.
-
-## Basic Usage
-
-```tsx
-import { mount } from "@hellajs/dom";
-import { avatar } from "@hellajs/headless";
-
-const Avatar = avatar();
-
-mount(
-  <Avatar.Root>
-    <Avatar.Image src="/me.png" alt="Portrait" />
-    <Avatar.Fallback>M</Avatar.Fallback>
-  </Avatar.Root>,
-  "#app",
-);
-// The fallback shows until the image loads; a broken URL fires error and the
-// image drops back out, returning the fallback. Neither member unmounts.
-```
 
 ## API
 

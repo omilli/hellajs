@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { TrapFocusDemo } from "../../demos/headless/trapfocus-demo";
+import TrapfocusContent from "@headless/api/trapfocus.mdx";
+
+const title = "trapFocus";
+const description = "Traps Tab and Shift+Tab navigation inside a container, wrapping focus at the edges.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>trapFocus</h1>
+  <DemoFrame code="TrapFocusDemo">
+    <TrapFocusDemo client:load />
+  </DemoFrame>
+  <TrapfocusContent />
+</MainLayout>

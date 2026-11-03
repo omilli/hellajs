@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { HoverIntentDemo } from "../../demos/headless/hoverintent-demo";
+import HoverintentContent from "@headless/api/hoverintent.mdx";
+
+const title = "hoverIntent";
+const description = "Opens after a pointer or focus hover delay and closes after a leave delay.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>hoverIntent</h1>
+  <DemoFrame code="HoverIntentDemo">
+    <HoverIntentDemo client:load />
+  </DemoFrame>
+  <HoverintentContent />
+</MainLayout>

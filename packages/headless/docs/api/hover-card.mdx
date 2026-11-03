@@ -1,28 +1,4 @@
-# hoverCard
-
 Creates the two hover-card components in one call: a hover trigger and the ported content panel. The factory closure owns the open state, the 200ms/300ms timings, and the crossing contract - moving the pointer from the trigger into the panel never closes it.
-
-## Basic Usage
-
-```tsx
-import { mount } from "@hellajs/dom";
-import { hoverCard } from "@hellajs/headless";
-
-const Card = hoverCard({ openDelay: 200, closeDelay: 300 });
-
-mount(
-  <div>
-    <Card.Trigger>@hellajs</Card.Trigger>
-    <Card.Content side="bottom">Profile details</Card.Content>
-  </div>,
-  "#app",
-);
-// Hovering the trigger opens the panel after the open delay. Moving into the
-// panel keeps it open; leaving both closes it after the close delay. Escape
-// and an outside press close it too.
-```
-
-Omitting both timings keeps the defaults, and `Trigger` and `Content` connect through the factory closure, so they compose as siblings or nest the content inside the trigger.
 
 ## API
 

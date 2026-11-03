@@ -1,35 +1,4 @@
-# onLongPress
-
 Fire a handler after a press is held: drift or early release cancels, and the handler gets the press point.
-
-## Basic Usage
-
-```jsx
-import { signal } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
-import { onLongPress } from "@hellajs/headless/utils";
-
-const at = signal({ x: 0, y: 0 });
-let disposePress: (() => void) | undefined;
-
-const Tile = () => (
-  <div
-    class="tile"
-    hook:afterMount={(node) => {
-      if (!(node instanceof HTMLElement)) return;
-      disposePress = onLongPress(node, (event) => {
-        at({ x: event.clientX, y: event.clientY });
-      }, {
-        duration: 400
-      });
-    }}
-    hook:beforeDestroy={() => disposePress?.()}
-  />
-);
-
-mount(<Tile />, "#app");
-// Holding the tile for 400ms reports the press point; a drift past 8px or an early release cancels
-```
 
 ## API
 

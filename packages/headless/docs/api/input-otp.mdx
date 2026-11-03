@@ -1,39 +1,4 @@
-# inputOtp
-
 Creates the one-time-code root in one call. The closure owns the code value; one transparent input overlays the slots and keeps native caret, selection, and paste working while the slots mirror the code. The display parts (the slot group, the slots, the separator) are the static `OtpRows`.
-
-## Basic Usage
-
-```tsx
-import { signal } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
-import { inputOtp, OtpRows } from "@hellajs/headless";
-
-const code = signal("");
-
-const Otp = inputOtp({
-  value: () => code(),
-  onValueChange: (next) => code(next),
-  maxLength: 6,
-});
-
-mount(
-  <Otp.Root>
-    <OtpRows.Group>
-      <OtpRows.Slot index={0} />
-      <OtpRows.Slot index={1} />
-      <OtpRows.Slot index={2} />
-      <OtpRows.Separator />
-      <OtpRows.Slot index={3} />
-      <OtpRows.Slot index={4} />
-      <OtpRows.Slot index={5} />
-    </OtpRows.Group>
-  </Otp.Root>,
-  "#app",
-);
-// Typing fills the slots in order and advances the caret slot by slot;
-// paste fills from the caret and clamps to six characters.
-```
 
 ## API
 

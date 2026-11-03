@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { OnDoubleTapDemo } from "../../demos/headless/ondoubletap-demo";
+import OndoubletapContent from "@headless/api/ondoubletap.mdx";
+
+const title = "onDoubleTap";
+const description = "Fires on a second tap within a window, with an opt-in delayed single tap.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>onDoubleTap</h1>
+  <DemoFrame code="OnDoubleTapDemo">
+    <OnDoubleTapDemo client:load />
+  </DemoFrame>
+  <OndoubletapContent />
+</MainLayout>

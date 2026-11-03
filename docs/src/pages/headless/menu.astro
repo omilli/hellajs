@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { MenuDemo } from "../../demos/headless/menu-demo";
+import MenuContent from "@headless/api/menu.mdx";
+
+const title = "menu";
+const description = "Creates the full menu part set in one factory call: trigger, portaled anchored content, selectable and structural rows, and nested submenus.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>menu</h1>
+  <DemoFrame code="MenuDemo">
+    <MenuDemo client:load />
+  </DemoFrame>
+  <MenuContent />
+</MainLayout>

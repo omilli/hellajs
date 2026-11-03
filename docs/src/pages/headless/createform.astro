@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { CreateFormDemo } from "../../demos/headless/createform-demo";
+import FormContent from "@headless/api/form.mdx";
+
+const title = "createForm";
+const description = "Creates a signals-native form controller in one call: one writable signal per field, the errors, touched, and dirty state, and the submit path.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>createForm</h1>
+  <DemoFrame code="CreateFormDemo">
+    <CreateFormDemo client:load />
+  </DemoFrame>
+  <FormContent />
+</MainLayout>

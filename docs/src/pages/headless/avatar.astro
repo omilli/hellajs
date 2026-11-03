@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { AvatarDemo } from "../../demos/headless/avatar-demo";
+import AvatarContent from "@headless/api/avatar.mdx";
+
+const title = "avatar";
+const description = "Creates the avatar components in one factory call: the container, the portrait image, and the initial fallback over one closure-owned loaded signal.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>avatar</h1>
+  <DemoFrame code="AvatarDemo">
+    <AvatarDemo client:load />
+  </DemoFrame>
+  <AvatarContent />
+</MainLayout>

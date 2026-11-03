@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { AnchorPositionDemo } from "../../demos/headless/anchorposition-demo";
+import AnchorpositionContent from "@headless/api/anchorposition.mdx";
+
+const title = "anchorPosition";
+const description = "Positions an element as a fixed overlay anchored to another element and keeps it placed across scroll and resize.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>anchorPosition</h1>
+  <DemoFrame code="AnchorPositionDemo">
+    <AnchorPositionDemo client:load />
+  </DemoFrame>
+  <AnchorpositionContent />
+</MainLayout>

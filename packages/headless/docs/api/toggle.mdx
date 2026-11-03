@@ -1,24 +1,4 @@
-# toggle
-
 Creates the toggle component in one call: a pressed-state button whose closure owns the pressed state. Clicks flip the state and report through `onPressedChange`; Space and Enter toggle through native button activation.
-
-## Basic Usage
-
-```tsx
-import { signal } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
-import { toggle } from "@hellajs/headless";
-
-const pressed = signal(false);
-
-const Toggle = toggle({
-  pressed: () => pressed(),
-  onPressedChange: (next) => pressed(next),
-});
-
-mount(<Toggle.Root>Bold</Toggle.Root>, "#app");
-// Clicking flips aria-pressed and data-state between off and on.
-```
 
 ## API
 

@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { ScrollAreaDemo } from "../../demos/headless/scrollarea-demo";
+import ScrollAreaContent from "@headless/api/scroll-area.mdx";
+
+const title = "scrollArea";
+const description = "Creates the scroll-area parts in one factory call: the native-scroll viewport and the self-measuring scrollbar whose thumb tracks and drags its axis.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>scrollArea</h1>
+  <DemoFrame code="ScrollAreaDemo">
+    <ScrollAreaDemo client:load />
+  </DemoFrame>
+  <ScrollAreaContent />
+</MainLayout>

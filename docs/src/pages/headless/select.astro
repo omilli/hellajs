@@ -1,0 +1,17 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DemoFrame from "../../components/DemoFrame.astro";
+import { SelectDemo } from "../../demos/headless/select-demo";
+import SelectContent from "@headless/api/select.mdx";
+
+const title = "select";
+const description = "Creates the select parts in one factory call: the trigger, the chosen-value label, and the ported listbox with its scroll affordances.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <h1>select</h1>
+  <DemoFrame code="SelectDemo">
+    <SelectDemo client:load />
+  </DemoFrame>
+  <SelectContent />
+</MainLayout>

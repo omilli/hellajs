@@ -1,36 +1,4 @@
-# radio group
-
 Creates the radio-group components in one call: a `role="radiogroup"` container, its `role="radio"` items, and the selection-dot indicator. The closure owns the selection; radios never unset, so activating the active value is a no-op. Arrows move focus and select the landed radio.
-
-## Basic Usage
-
-```tsx
-import { signal } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
-import { radioGroup } from "@hellajs/headless";
-
-const value = signal("");
-
-const Radio = radioGroup({
-  value: () => value(),
-  onValueChange: (next) => value(next),
-});
-
-mount(
-  <Radio.Root>
-    <Radio.Item value="a">
-      <Radio.Indicator value="a" />
-    </Radio.Item>
-    <Radio.Item value="b">
-      <Radio.Indicator value="b" />
-    </Radio.Item>
-  </Radio.Root>,
-  "#app",
-);
-// Clicking selects exclusively and reports the value; clicking the
-// active item is a no-op. Arrow keys move focus and select the
-// landed radio, wrapping at both ends.
-```
 
 ## API
 

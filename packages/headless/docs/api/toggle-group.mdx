@@ -1,32 +1,4 @@
-# toggle group
-
 Creates the toggle-group components in one call: a `role="group"` container and its pressed-state items. Single mode keeps one value active and deselects it on re-click; `multiple` toggles membership independently. The `Root` arms arrow-key roving over the items.
-
-## Basic Usage
-
-```tsx
-import { signal } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
-import { toggleGroup } from "@hellajs/headless";
-
-const value = signal("");
-
-const Group = toggleGroup({
-  value: () => value(),
-  onValueChange: (next) => value(next),
-});
-
-mount(
-  <Group.Root>
-    <Group.Item value="bold">Bold</Group.Item>
-    <Group.Item value="italic">Italic</Group.Item>
-  </Group.Root>,
-  "#app",
-);
-// Clicking a single-mode item selects it and reports the value;
-// clicking the active item deselects it and reports "". Arrows
-// move focus and rove tabindex without changing selection.
-```
 
 ## API
 
