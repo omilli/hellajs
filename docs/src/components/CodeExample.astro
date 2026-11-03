@@ -2,6 +2,7 @@
 import { css } from "@hellajs/css";
 import { tokens } from "../styles/tokens";
 import { Code } from "astro:components";
+import { Icon } from "astro-icon/components";
 import { exampleCode } from "../utils/example-code";
 
 interface Props {
@@ -9,44 +10,96 @@ interface Props {
   code: string;
 }
 
+// github-dark's canvas: shiki inlines this on the pre, so the fade gradient
+// must reuse the same literal to blend in. theme="github-dark" pins it
+// (matches InstallSection's Code blocks).
+const codeBg = "#24292e";
+
 css({
   ".view-code": {
     marginTop: "0.5rem",
+    position: "relative",
     border: `1px solid ${tokens.border}`,
     borderRadius: tokens.radius,
     overflow: "hidden",
-    "summary": {
-      padding: "0.5rem 0.875rem",
-      fontSize: "0.8125rem",
-      fontWeight: 500,
-      color: tokens.mutedForeground,
-      cursor: "pointer",
-      userSelect: "none",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: "0.75rem",
-    },
-    "&[open] summary": {
-      borderBottom: `1px solid ${tokens.border}`
+    ".code-scroll": {
+      // Collapsed preview: ~5 crisp lines, the rest behind the fade.
+      // .is-open lifts the cap; .is-fit (JS-measured, source fits the cap)
+      // drops the fade/toggle chrome and restores the tight padding.
+      maxHeight: "10.5rem",
+      overflow: "hidden",
+      position: "relative",
     },
     "pre.astro-code": {
-      padding: "1rem",
+      // Bottom padding leaves a lane for the floating toggle so expanded
+      // code never sits under it (shadcn's expand-button pattern).
+      padding: "1rem 1rem 3.5rem",
       border: 0,
       borderRadius: 0,
       margin: 0,
       overflowX: "auto",
       fontSize: "0.8125rem",
-      lineHeight: 1.5
+      lineHeight: 1.5,
     },
-    ".code-copy": {
-      background: "transparent",
+    ".code-fade": {
+      position: "absolute",
+      inset: "auto 0 0 0",
+      height: "4rem",
+      background: `linear-gradient(to bottom, transparent, ${codeBg})`,
+      pointerEvents: "none",
+    },
+    // Shared floating-chip chrome, solid like InstallSection's .install-copy
+    // (base50 over the code canvas, near-white text). Every part of the
+    // comma group carries & so the whole group stays card-scoped: css()
+    // replaces each & with the parent selector but prefix-concatenates a
+    // bare group key, leaking every part after the first out of scope. No
+    // nested & keys under the group, though — & substitution is literal, so
+    // a comma parent never distributes across them (a nested &:hover would
+    // apply unconditionally to every part but the last); state keys like
+    // &:hover belong inside the per-element rules below.
+    "& .code-copy, & .code-toggle": {
+      position: "absolute",
+      display: "inline-flex",
+      alignItems: "center",
+      gap: "0.375rem",
+      backgroundColor: tokens.base50,
       border: `1px solid ${tokens.border}`,
       borderRadius: `calc(${tokens.radius} * 0.6)`,
-      color: tokens.mutedForeground,
+      color: tokens.foreground,
       cursor: "pointer",
+      fontFamily: tokens.fontSans,
       fontSize: "0.75rem",
-      padding: "0.125rem 0.5rem",
+      fontWeight: 500,
+      padding: "0.3rem 0.625rem",
+    },
+    ".code-copy": {
+      top: "0.5rem",
+      right: "0.5rem",
+      "&:hover": { color: tokens.primary },
+      ".copy-done": { display: "none" },
+      "&.is-copied": {
+        ".copy-idle": { display: "none" },
+        ".copy-done": { display: "inline-flex" },
+      },
+    },
+    ".code-toggle": {
+      bottom: "0.75rem",
+      left: "50%",
+      transform: "translateX(-50%)",
+      "&:hover": { color: tokens.primary },
+      "& svg": { transition: "transform 150ms ease" },
+    },
+    // Card state blocks: .is-open expands, .is-fit short-circuits the
+    // collapse chrome for sources that fit the cap.
+    "&.is-open": {
+      ".code-scroll": { maxHeight: "none" },
+      ".code-fade": { display: "none" },
+      ".code-toggle svg": { transform: "rotate(180deg)" },
+    },
+    "&.is-fit": {
+      "pre.astro-code": { paddingBottom: "1rem" },
+      ".code-fade": { display: "none" },
+      ".code-toggle": { display: "none" },
     },
   }
 })
@@ -60,30 +113,76 @@ const { code } = Astro.props;
 const segments = Astro.url.pathname.split("/").filter(Boolean);
 const last = segments.at(-1) ?? "";
 const demo = segments[0] === "headless" ? `headless/${last}` : last;
+const scrollId = `code-scroll-${crypto.randomUUID().slice(0, 8)}`;
 ---
 
-<details class="view-code">
-  <summary>View Code<button type="button" class="code-copy" data-code-copy>Copy</button></summary>
-  <div><Code code={exampleCode(demo, code)} lang={"tsx"} /></div>
-</details>
+<div class="view-code" data-code-card>
+  <div class="code-scroll" id={scrollId} data-code-scroll>
+    <Code code={exampleCode(demo, code)} lang={"tsx"} theme="github-dark" />
+    <div class="code-fade" aria-hidden="true"></div>
+  </div>
+  <button type="button" class="code-copy" data-code-copy aria-label="Copy code">
+    <span class="copy-idle"><Icon name="ph:copy-simple" width={15} height={15} /></span>
+    <span class="copy-done"><Icon name="ph:check" width={15} height={15} /></span>
+  </button>
+  <button
+    type="button"
+    class="code-toggle"
+    data-code-toggle
+    aria-expanded="false"
+    aria-controls={scrollId}
+  >
+    <span data-toggle-label>View Code</span>
+    <Icon name="ph:caret-down" width={14} height={14} />
+  </button>
+</div>
 
 <script>
   // Astro dedupes this module script per page, so one listener set wires
-  // every [data-code-copy] button on the document (InstallSection's copy
-  // uses the same clipboard pattern).
-  document.querySelectorAll("[data-code-copy]").forEach((button) => {
-    button.addEventListener("click", (event) => {
-      // The button rides the <summary>: stop the click from toggling the
-      // disclosure while copying.
-      event.preventDefault();
-      event.stopPropagation();
-      const code = button.closest("details")?.querySelector("pre")?.textContent ?? "";
+  // every [data-code-card] on the document (ui pages stack several). Same
+  // readyState dance as InstallSection.
+  function wireCodeCard(card: Element): void {
+    const scroll = card.querySelector<HTMLElement>("[data-code-scroll]");
+    const toggle = card.querySelector<HTMLButtonElement>(
+      "[data-code-toggle]",
+    );
+    const label = toggle?.querySelector<HTMLElement>("[data-toggle-label]");
+    const copy = card.querySelector<HTMLButtonElement>("[data-code-copy]");
+
+    // Source fits inside the collapsed cap: nothing is clipped, so the fade
+    // and the toggle button would be pure noise. clientHeight is the cap
+    // (overflow hidden); scrollHeight is the content. The monospace stack
+    // is system fonts, so this measurement cannot go stale after load.
+    if (scroll && scroll.scrollHeight <= scroll.clientHeight + 1) {
+      card.classList.add("is-fit");
+    }
+
+    toggle?.addEventListener("click", () => {
+      const open = card.classList.toggle("is-open");
+      toggle.setAttribute("aria-expanded", String(open));
+      if (label) {
+        label.textContent = open ? "Hide Code" : "View Code";
+      }
+    });
+
+    copy?.addEventListener("click", () => {
+      const code = card.querySelector("pre")?.textContent ?? "";
       navigator.clipboard.writeText(code).then(() => {
-        button.textContent = "Copied";
+        copy.classList.add("is-copied");
         window.setTimeout(() => {
-          button.textContent = "Copy";
+          copy.classList.remove("is-copied");
         }, 1500);
       });
     });
-  });
+  }
+
+  const init = () => {
+    document.querySelectorAll("[data-code-card]").forEach(wireCodeCard);
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
 </script>
