@@ -1,8 +1,10 @@
 # Server-Side Rendering
 
-Render HellaNode templates to HTML strings on the server, then enhance them on the client. `@hellajs/ssr` is a pure stringifier; see [`ssr`](/reference/ssr/ssr).
+Render HellaNode templates to HTML strings on the server, then enhance them on the client.
 
 ## The String-Renderer Model
+
+`@hellajs/ssr` is a pure stringifier; see [`ssr`](/reference/ssr/ssr).
 
 `ssr` walks a [`HellaNode`](/reference/dom) AST and emits an HTML string. It mirrors the attribute rules of dom's internal `renderProp` (the reconciliation `key` prop omitted, falsy attributes omitted, boolean attributes bare, arrays space-joined) and escapes interpolated text and attribute values. Static template text is emitted raw; resolved interpolation values are escaped. Every dynamic region (a reactive child, a [`raw`](/reference/dom/raw) child, a control-flow component, or a nested fragment) is wrapped in `<!--[-->…<!--]-->` markers that [`hydrate`](/reference/dom/hydrate) reads; static elements and text are unwrapped (matched by position), keeping the payload minimal.
 

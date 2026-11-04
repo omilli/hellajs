@@ -1,33 +1,10 @@
 # doc
 
-Assemble a rendered body and an optional head into a complete HTML document: a pure builder with zero server-runtime coupling. One overload pair, discriminated by the `body` type: a `string` body returns a string document; a `ReadableStream<string>` body returns a streaming document.
-
-## API
-
-```typescript
-// String body (from ssr / ssr.async): returns the complete document string
-function doc(options: DocOptions & { body: string }): string
-
-// ReadableStream body (from ssr.stream): streaming document, shell first, closing tags last
-function doc(options: DocOptions & { body: ReadableStream<string> }): ReadableStream<string>
-```
-
-- `options`: Document assembly options.
-  - `body` (`string | ReadableStream<string>`): Already-rendered HTML: the string output of [`ssr`](/reference/ssr/ssr)/[`ssr.async`](/reference/ssr/ssr#async), or the `ReadableStream` from [`ssr.stream`](/reference/ssr/ssr#stream). Placed verbatim; **not** re-escaped. The mode is inferred from the body's type: nothing is collected unless you pass a string.
-  - `mount?` (`string`): Mount-point selector wrapping the body, the same string [`hydrate`](/reference/dom/hydrate) targets on the client (`'#app'`, `'main#app'`, `'.wrap.x'`). One optional tag (defaults to `div`), at most one `#id`, any number of `.class` tokens (space-joined, in order). Anything else throws. Works in both modes.
-  - `head?` (`HeadOptions`): Document head contents. Fields emit in declaration order: `title`, `meta`, `links`, `styles`, `scripts`, then `raw`.
-    - `title?` (`string`): Document title: text-escaped (`& < > "`).
-    - `meta?` (`MetaTag[]`): `<meta>` tags; each renders void (no closing tag). `MetaTag` is an attribute map, e.g. `{ charset: "utf-8" }` or `{ name: "viewport", content: "width=device-width" }`.
-    - `links?` (`LinkTag[]`): `<link>` tags; each renders void. `LinkTag` is an attribute map, e.g. `{ rel: "stylesheet", href: "/a.css" }`.
-    - `styles?` (`string[]`): CSS text blocks, joined (no separator) into a single `<style>`; not re-escaped.
-    - `scripts?` (`ScriptTag[]`): `<script>` tags: `{ src }` renders external, `{ content }` renders inline (not escaped); when both are set, `content` wins and `src` is dropped. `ScriptTag` also takes `type`, `async`, and `defer`.
-    - `raw?` (`string`): Raw HTML appended verbatim to the head (escape hatch).
-  - `lang?` (`string`): Value for `<html lang="…">`; the attribute is omitted when unset.
-  - `data?` (`unknown`): Server-side data serialized into the page: `JSON.stringify` output with every `<` escaped (`\u003c`), emitted as `<script type="application/json" id="hella-data">…</script>` after the mount wrapper, before `</body>`, in both modes. Omitted emits nothing.
-- **Returns** (string body): A full HTML document string: `<!DOCTYPE html><html[ lang="…"]><head>…</head><body>[mount]…[mount][data]</body></html>`.
-- **Returns** (stream body): A `ReadableStream<string>` of the full document: shell first, body chunks as they arrive, closing tags last.
+Assemble a rendered body and an optional head into a complete HTML document: a pure builder with zero server-runtime coupling.
 
 ## Basic Usage
+
+One overload pair, discriminated by the `body` type: a `string` body returns a string document; a `ReadableStream<string>` body returns a streaming document.
 
 Render a template with [`ssr`](/reference/ssr/ssr), collect the CSS text from [`@hellajs/css`](/reference/css) via [`cssText`](/reference/css/csstext), and assemble both into a document. `mount` emits the wrapper `hydrate` targets.
 
@@ -53,10 +30,12 @@ const page = doc({
 
 Pass an [`ssr.stream`](/reference/ssr/ssr#stream) body and the same options produce a streaming document: the client receives the shell immediately and each chunk as it renders, nothing collected.
 
-```js
+```jsx
 import { createServer } from 'node:http';
 import { Readable } from 'node:stream';
 import { ssr, doc } from '@hellajs/ssr';
+
+const App = () => <div><h1>Dashboard</h1></div>;
 
 const page = doc({
   lang: 'en',
@@ -73,6 +52,31 @@ createServer((req, res) => {
   Readable.fromWeb(page.pipeThrough(new TextEncoderStream())).pipe(res);
 }).listen(3000);
 ```
+
+## API
+
+```typescript
+// String body (from ssr / ssr.async): returns the complete document string
+function doc(options: DocOptions & { body: string }): string
+
+// ReadableStream body (from ssr.stream): streaming document, shell first, closing tags last
+function doc(options: DocOptions & { body: ReadableStream<string> }): ReadableStream<string>
+```
+
+- `options`: Document assembly options.
+  - `body` (`string | ReadableStream<string>`): Already-rendered HTML: the string output of [`ssr`](/reference/ssr/ssr)/[`ssr.async`](/reference/ssr/ssr#async), or the `ReadableStream` from [`ssr.stream`](/reference/ssr/ssr#stream). Placed verbatim; **not** re-escaped. The mode is inferred from the body's type: nothing is collected unless you pass a string.
+  - `mount?` (`string`): Mount-point selector wrapping the body, the same string [`hydrate`](/reference/dom/hydrate) targets on the client (`'#app'`, `'main#app'`, `'.wrap.x'`). One optional tag (defaults to `div`), at most one `#id`, any number of `.class` tokens (space-joined, in order). Anything else throws. Works in both modes.
+  - `head?` (`HeadOptions`): Document head contents. Fields emit in declaration order: `title`, `meta`, `links`, `styles`, `scripts`, then `raw`.
+    - `title?` (`string`): Document title: text-escaped (`& < > "`).
+    - `meta?` (`MetaTag[]`): `<meta>` tags; each renders void (no closing tag). `MetaTag` is an attribute map, e.g. `{ charset: "utf-8" }` or `{ name: "viewport", content: "width=device-width" }`.
+    - `links?` (`LinkTag[]`): `<link>` tags; each renders void. `LinkTag` is an attribute map, e.g. `{ rel: "stylesheet", href: "/a.css" }`.
+    - `styles?` (`string[]`): CSS text blocks, joined (no separator) into a single `<style>`; not re-escaped.
+    - `scripts?` (`ScriptTag[]`): `<script>` tags: `{ src }` renders external, `{ content }` renders inline (not escaped); when both are set, `content` wins and `src` is dropped. `ScriptTag` also takes `type`, `async`, and `defer`.
+    - `raw?` (`string`): Raw HTML appended verbatim to the head (escape hatch).
+  - `lang?` (`string`): Value for `<html lang="…">`; the attribute is omitted when unset.
+  - `data?` (`unknown`): Server-side data serialized into the page: `JSON.stringify` output with every `<` escaped (`\u003c`), emitted as `<script type="application/json" id="hella-data">…</script>` after the mount wrapper, before `</body>`, in both modes. Omitted emits nothing.
+- **Returns** (string body): A full HTML document string: `<!DOCTYPE html><html[ lang="…"]><head>…</head><body>[mount]…[mount][data]</body></html>`.
+- **Returns** (stream body): A `ReadableStream<string>` of the full document: shell first, body chunks as they arrive, closing tags last.
 
 ## Key Concepts
 

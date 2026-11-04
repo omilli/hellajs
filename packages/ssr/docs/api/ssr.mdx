@@ -1,6 +1,42 @@
 # ssr
 
-Serialize a HellaNode AST into an HTML string: a pure stringifier with zero runtime dependencies. A callable namespace: `ssr(node)` walks synchronously, `ssr.async(node)` awaits every Promise in the tree, `ssr.stream(node)` flushes progressively, and `ssr.head()` creates a head collection bag every member accepts.
+Serialize a HellaNode AST into an HTML string: a pure stringifier with zero runtime dependencies.
+
+## Basic Usage
+
+A callable namespace: `ssr(node)` walks synchronously, `ssr.async(node)` awaits every Promise in the tree, `ssr.stream(node)` flushes progressively, and `ssr.head()` creates a head collection bag every member accepts.
+
+Render a template to a string and assemble it into a full document. No DOM is required, so `ssr` runs in any server runtime (Bun, Node, Deno, workers).
+
+```jsx
+import { ssr } from '@hellajs/ssr';
+
+const page = (title: string) => (
+  <section>
+    <h1>{title}</h1>
+    <p>Welcome.</p>
+  </section>
+);
+
+const body = ssr(page('Hello'));
+// body: "<section><h1>Hello</h1><p>Welcome.</p></section>"
+```
+
+### Styled output
+
+[`@hellajs/css`](/reference/css) registers styles on both platforms: [`style`](/reference/css/style) returns its class and [`vars`](/reference/css/vars) its `var()` proxy on the server too. Collect the generated text with [`cssText`](/reference/css/csstext) and place it in a `<style>` tag carrying the `hella-css` id, so client hydration adopts the element instead of duplicating its rules. `ssr` never imports `@hellajs/css`; the caller assembles both.
+
+```jsx
+import { style, cssText } from '@hellajs/css';
+import { ssr } from '@hellajs/ssr';
+
+const btn = style({ color: 'red' }, { label: 'btn' });
+// btn === "btn-…"; the class, never text, on the server too
+// `cssText()` holds ".btn-…{color:red}"; on client and server alike
+
+const body = ssr(<button class={btn}>Click</button>);
+const page = `<style id="hella-css">${cssText()}</style><div id="app">${body}</div>`;
+```
 
 ## API
 
@@ -133,40 +169,6 @@ Collection rules:
 - `<style>`: its children's resolved text concatenates and appends to `head.styles` unescaped (CSS text, not HTML; a `>` selector survives).
 - Only text children hoist for `<title>`/`<style>`: a tag with any other child (an element) stays rendered in the body; nothing is silently dropped.
 - Non-head elements are untouched, and a walk with no `head` option renders head-eligible elements inline; byte-identical to before the option existed.
-
-## Basic Usage
-
-Render a template to a string and assemble it into a full document. No DOM is required, so `ssr` runs in any server runtime (Bun, Node, Deno, workers).
-
-```jsx
-import { ssr } from '@hellajs/ssr';
-
-const page = (title: string) => (
-  <section>
-    <h1>{title}</h1>
-    <p>Welcome.</p>
-  </section>
-);
-
-const body = ssr(page('Hello'));
-// body: "<section><h1>Hello</h1><p>Welcome.</p></section>"
-```
-
-### Styled output
-
-[`@hellajs/css`](/reference/css) registers styles on both platforms: [`style`](/reference/css/style) returns its class and [`vars`](/reference/css/vars) its `var()` proxy on the server too. Collect the generated text with [`cssText`](/reference/css/csstext) and place it in a `<style>` tag carrying the `hella-css` id, so client hydration adopts the element instead of duplicating its rules. `ssr` never imports `@hellajs/css`; the caller assembles both.
-
-```jsx
-import { style, cssText } from '@hellajs/css';
-import { ssr } from '@hellajs/ssr';
-
-const btn = style({ color: 'red' }, { label: 'btn' });
-// btn === "btn-…"; the class, never text, on the server too
-// `cssText()` holds ".btn-…{color:red}"; on client and server alike
-
-const body = ssr(<button class={btn}>Click</button>);
-const page = `<style id="hella-css">${cssText()}</style><div id="app">${body}</div>`;
-```
 
 ## Key Concepts
 
