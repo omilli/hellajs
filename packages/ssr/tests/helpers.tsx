@@ -86,6 +86,16 @@ export const parityCases: { name: string; node: HellaNode }[] = [
       </div>
     ),
   },
+  {
+    // Hand-built: JSX element position routes the four prefixes into dom's event buckets — a
+    // component-position spread carries them verbatim onto element props, where they must be skipped.
+    name: "prefixed props keys skipped (handlers never resolved)",
+    node: {
+      tag: "button",
+      props: { "on:click": () => {}, "e:input": () => {}, disabled: true },
+      children: [],
+    } as unknown as HellaNode,
+  },
 ];
 
 /** Attribute-serialization parity cases — exercise the `serializeProp` branches (void / boolean / array / falsy). */

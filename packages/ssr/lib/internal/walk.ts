@@ -1,5 +1,5 @@
 import type { HellaNode, HellaChild, SsrMeta } from "@hellajs/dom";
-import { serializeProp, escapeHtml, VOID } from "./serialize";
+import { serializeProp, escapeHtml, VOID, isPrefixedProp } from "./serialize";
 import { resolveAsync, resolveAsyncDeep } from "./resolve";
 import { hoistHeadAsync } from "./head";
 import type { HeadOptions } from "../types";
@@ -219,11 +219,14 @@ export async function* ssrNodeGen(
     const len = keys.length;
     while (i < len) {
       const key = keys[i]!;
+      if (isPrefixedProp(key)) {
+        i++;
+        continue;
+      }
       open += serializeProp(key, await resolveAsync((node.props as Record<string, unknown>)[key]));
       i++;
     }
   }
-  // on:/e:/hooks/error: are DOM/runtime-only — not emitted
   if (VOID.has(tag as string)) {
     yield `${open}>`;
     return;

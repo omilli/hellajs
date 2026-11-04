@@ -12,11 +12,11 @@ import type { StreamOptions } from "./types";
  * fallback+sentinel range with the staged `<template>`'s content **wrapped in an extra `<!--[->…<!--]-&gt;` pair**,
  * and removes the template. The wrapper is required: hydrate's `hydrateDynamic` eats the region's outer marker
  * pair via `consumeRegion`, so the inner pair left by the wrapper becomes the resolved getter's reactive-region
- * markers — matching what β's `swapSuspenseStage` returns (marker-including childNodes), so hydrate adopts the
+ * markers — matching what dom's `swapSuspenseStage` returns (marker-including childNodes), so hydrate adopts the
  * resolved content without re-evaluating the getter (which would stringify its Promise → `[object Promise]`).
  * Mirrors dom's `swapSuspenseStage` (the no-script/HappyDOM fallback); parity enforced by `tests/ssr-suspense.test.ts`.
  * `@hellajs/ssr` cannot import `@hellajs/dom` at runtime (zero-runtime invariant), so this ships as an inline
- * string — memory 014 clears inline scripts against that invariant.
+ * string.
  */
 const HS_SWAP_SCRIPT = `function $hs(id){
   var t=document.getElementById(id);if(!t)return;

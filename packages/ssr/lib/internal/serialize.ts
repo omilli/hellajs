@@ -53,6 +53,20 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 
 /**
  * @internal
+ * True for the four dom-routed prop-key prefixes (`on:`/`e:`/`hook:`/`error:`) — DOM/runtime-only
+ * (routed to live buckets at mount), never emitted into HTML by any walker.
+ */
+export function isPrefixedProp(key: string): boolean {
+  return (
+    key.startsWith("on:") ||
+    key.startsWith("e:") ||
+    key.startsWith("hook:") ||
+    key.startsWith("error:")
+  );
+}
+
+/**
+ * @internal
  * Serializes a property/attribute to its HTML string form, mirroring dom's `renderProp` rules.
  *
  * `renderProp`'s DIRECT_PROPS special-case (value/checked/selected/innerHTML → set the DOM IDL

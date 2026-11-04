@@ -317,6 +317,49 @@ describe("ssr", () => {
     }
   });
 
+  test("warns once and still renders an empty ForEach region for a Promise-valued each under sync ssr", () => {
+    // Sync cannot await `each` — renders empty as today; the warn names the fix.
+    const suppressed = suppressConsole();
+    try {
+      const node = (
+        <ul>
+          <ForEach
+            each={() => Promise.resolve([1, 2]) as unknown as number[]}
+            use={(n: number) => <li>{n}</li>}
+          ></ForEach>
+        </ul>
+      );
+      expect(ssr(node)).toBe("<ul><!--[--><!--]--></ul>");
+      expect(suppressed.warns).toHaveLength(1);
+      expect(suppressed.warns[0]).toEqual([
+        "[ssr] Promise value under sync ssr - use ssr.async or ssr.stream, got [object Promise] emitted",
+      ]);
+    } finally {
+      suppressed.restore();
+    }
+  });
+
+  test("warns once and still renders the children for a Promise-valued Transition show under sync ssr", () => {
+    // Sync cannot await `show` — a Promise is truthy, so children are emitted as today; the warn names the fix.
+    const suppressed = suppressConsole();
+    try {
+      const node = (
+        <div>
+          <Transition show={() => Promise.resolve(false) as unknown as boolean}>
+            {<p>on</p>}
+          </Transition>
+        </div>
+      );
+      expect(ssr(node)).toBe("<div><!--[--><p>on</p><!--]--></div>");
+      expect(suppressed.warns).toHaveLength(1);
+      expect(suppressed.warns[0]).toEqual([
+        "[ssr] Promise value under sync ssr - use ssr.async or ssr.stream, got [object Promise] emitted",
+      ]);
+    } finally {
+      suppressed.restore();
+    }
+  });
+
   test("renders nothing for a static boolean true child", () => {
     expect(ssr(<div>{true}</div>)).toBe("<div></div>");
   });

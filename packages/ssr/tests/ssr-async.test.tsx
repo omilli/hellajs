@@ -4,7 +4,7 @@ import { suppressConsole } from "@utils/test-helpers.js";
 import { ForEach, Transition, Portal, Lazy } from "@hellajs/dom";
 import { ssr } from "@hellajs/ssr";
 import type { HellaNode } from "@hellajs/dom";
-import { parityCases, attributeCases, unknownKindNode, headParityCases } from "./helpers";
+import { collect, parityCases, attributeCases, unknownKindNode, headParityCases } from "./helpers";
 
 describe("ssr.async", () => {
   test("resolves a static node to the same HTML as ssr", async () => {
@@ -156,6 +156,22 @@ describe("ssr.async", () => {
 
   test("serializes static props (covers the props loop)", async () => {
     expect(await ssr.async(<div class={"card"}>x</div>)).toBe('<div class="card">x</div>');
+  });
+
+  test("skips dom-routed prefixed prop keys — handler never resolved", async () => {
+    // Component-forwarded prefixed props ("on:click" via a {...props} spread) are DOM/runtime-only:
+    // the async walker must skip the key before resolving, never calling the handler server-side.
+    const handler = vi.fn(() => "EMITTED");
+    const node = {
+      tag: "button",
+      props: { "on:click": handler, disabled: true },
+      children: [],
+    } as unknown as HellaNode;
+    const sync = ssr(node);
+    expect(sync).toBe("<button disabled></button>");
+    expect(await ssr.async(node)).toBe(sync);
+    expect(await collect(ssr.stream(node))).toBe(sync);
+    expect(handler).toHaveBeenCalledTimes(0);
   });
 
   test("renders nothing for a static boolean true child (covers the fallback)", async () => {

@@ -1,17 +1,11 @@
+import type { DynamicFn } from "./walk";
+
 /**
  * @internal
  * Resolves a value by calling it if it is a function (signal/getter).
  */
 export function resolveValue(value: unknown): unknown {
   return typeof value === "function" ? (value as () => unknown)() : value;
-}
-
-/**
- * @internal
- * Structural shape of an isDynamic component function — mirrors dom's `RenderFn` without a runtime import.
- */
-interface DynamicFn {
-  isDynamic?: true;
 }
 
 /**

@@ -52,29 +52,6 @@ function parseMount(mount: string): { open: string; close: string } {
 }
 
 /**
- * Serializes `doc({ data })` into the payload script the client reads back — `JSON.stringify` with
- * every `<` escaped to `\u003c` so `</script>` and `<!--` cannot break out of the element (the
- * standard JSON-embedding defense). Computed at the call site in BOTH modes so an unserializable
- * value throws before any document is returned or streamed.
- * @param data The value to serialize. `undefined` (omitted `data`) emits nothing.
- * @returns The `<script type="application/json" id="hella-data">` element, or `""`.
- * @throws {Error} When `data` is not JSON-serializable (a circular structure throws; a lone
- * function or symbol stringifies to `undefined`).
- */
-function buildDataScript(data: unknown): string {
-  if (data === undefined) return "";
-  try {
-    const payload = JSON.stringify(data);
-    if (payload !== undefined) {
-      return `<script type="application/json" id="hella-data">${payload.replace(/</g, "\\u003c")}</script>`;
-    }
-  } catch {
-    // fall through to the wrapped throw — circular references and BigInt land here
-  }
-  throw new Error("[ssr] doc: data must be JSON-serializable");
-}
-
-/**
  * Assembles a rendered body and an optional head into a complete HTML document string.
  *
  * A pure string builder with zero server-runtime coupling — no Request/Response, no host API —
@@ -110,7 +87,18 @@ export function doc(options: DocOptions): string | ReadableStream<string> {
     throw new Error(`[ssr] doc: body is required, received ${options?.body}`);
   }
   const mount = options.mount !== undefined ? parseMount(options.mount) : undefined;
-  const data = buildDataScript(options.data);
+  // `data` serializes in BOTH modes up front so an unserializable value throws before any document is returned or streamed
+  let data = "";
+  if (options.data !== undefined) {
+    let payload: string | undefined;
+    try {
+      payload = JSON.stringify(options.data);
+    } catch {
+      // fall through to the wrapped throw — circular references and BigInt land here
+    }
+    if (payload === undefined) throw new Error("[ssr] doc: data must be JSON-serializable");
+    data = `<script type="application/json" id="hella-data">${payload.replace(/</g, "\\u003c")}</script>`;
+  }
   if (typeof options.body === "string") {
     return `<!DOCTYPE html><html${serializeProp("lang", options.lang)}><head>${buildHead(options.head)}</head><body>${mount !== undefined ? mount.open : ""}${options.body}${mount !== undefined ? mount.close : ""}${data}</body></html>`;
   }

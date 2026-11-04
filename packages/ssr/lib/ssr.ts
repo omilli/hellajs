@@ -1,5 +1,5 @@
 import type { HellaNode, HellaChild, SsrMeta } from "@hellajs/dom";
-import { serializeProp, escapeHtml, VOID } from "./internal/serialize";
+import { serializeProp, escapeHtml, VOID, isPrefixedProp } from "./internal/serialize";
 import { resolveValue, resolveDeep, isPromise, SYNC_PROMISE_WARN } from "./internal/resolve";
 import { assertNode } from "./internal/assert";
 import { hoistHead } from "./internal/head";
@@ -15,7 +15,9 @@ function renderDynamic(meta: SsrMeta, options?: SsrOptions): string {
   const props = meta.props as Record<string, unknown>;
   switch (meta.kind) {
     case "forEach": {
-      const arr = (resolveValue(props.each) as unknown[]) ?? [];
+      const each = resolveValue(props.each);
+      if (isPromise(each)) console.warn(SYNC_PROMISE_WARN); // sync cannot await each — renders empty as today
+      const arr = (each as unknown[]) ?? [];
       const use = props.use as (item: unknown, index: number) => HellaChild;
       let out = "";
       let i = 0;
@@ -26,8 +28,11 @@ function renderDynamic(meta: SsrMeta, options?: SsrOptions): string {
       }
       return out;
     }
-    case "transition":
-      return resolveValue(props.show) ? walkChild(props.children as HellaChild, options) : "";
+    case "transition": {
+      const show = resolveValue(props.show);
+      if (isPromise(show)) console.warn(SYNC_PROMISE_WARN); // sync cannot await show — a Promise is truthy, children emitted as today
+      return show ? walkChild(props.children as HellaChild, options) : "";
+    }
     case "portal":
       return "";
     case "lazy":
@@ -79,7 +84,7 @@ function walkChild(child: HellaChild, options?: SsrOptions): string {
         typeof resolved === "object" &&
         (resolved as HellaNode).tag !== undefined
       ) {
-        body = ssr(resolved as HellaNode, options);
+        body = ssrImpl(resolved as HellaNode, options); // pre-classified node — skips the public entry's root guard
       } else {
         if (isPromise(resolved)) console.warn(SYNC_PROMISE_WARN); // sync cannot await a resolved Promise — [object Promise] emitted as today
         body = escapeHtml(
@@ -95,7 +100,7 @@ function walkChild(child: HellaChild, options?: SsrOptions): string {
   if (typeof child === "object" && (child as HellaNode).tag !== undefined) {
     const node = child as HellaNode;
     if (node.tag === "$") return MARK_OPEN + walkChildren(node.children, options) + MARK_CLOSE; // fragment — extent marker
-    return ssr(node, options); // element — bounded, no marker
+    return ssrImpl(node, options); // element — bounded, no marker; pre-classified, so it skips the public entry's root guard
   }
   return ""; // true / DOM Node / unknown — nothing in v1
 }
@@ -185,15 +190,16 @@ interface SsrFn {
  * response; `ssr.head()` creates the head collection bag any member accepts as `{ head }`. Each member's
  * full contract lives on `SsrFn`.
  */
-export const ssr: SsrFn = Object.assign(ssrImpl, {
-  async: ssrAsync,
-  stream: ssrStream,
-  head: ssrHead,
-});
+export const ssr: SsrFn = Object.assign(
+  (node: HellaNode, options?: SsrOptions): string => {
+    assertNode(node, "ssr"); // validated once at the public entry
+    return ssrImpl(node, options);
+  },
+  { async: ssrAsync, stream: ssrStream, head: ssrHead },
+);
 
 /** Sync walk — the base call target of the `ssr` namespace (see `SsrFn` for the public contract). */
 function ssrImpl(node: HellaNode, options?: SsrOptions): string {
-  assertNode(node, "ssr");
   const tag = node.tag;
   if (tag === "$") return walkChildren(node.children, options); // fragment — concatenate, no markers
   if (options?.head !== undefined && hoistHead(node, options.head)) return ""; // head-eligible element collected into the bag — omitted from the body
@@ -204,14 +210,7 @@ function ssrImpl(node: HellaNode, options?: SsrOptions): string {
     const len = keys.length;
     while (i < len) {
       const key = keys[i]!;
-      // Prefixed props keys ("on:click" forwarded through a component) are
-      // DOM/runtime-only — routed to live buckets at mount, never emitted.
-      if (
-        key.startsWith("on:") ||
-        key.startsWith("e:") ||
-        key.startsWith("hook:") ||
-        key.startsWith("error:")
-      ) {
+      if (isPrefixedProp(key)) {
         i++;
         continue;
       }
