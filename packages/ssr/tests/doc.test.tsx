@@ -37,6 +37,13 @@ function payloadOf(page: string): string {
   return page.slice(page.indexOf(open) + open.length, page.indexOf("</script></body>"));
 }
 
+/** Builds a self-referencing object — JSON.stringify throws on it. */
+function circular(): Record<string, unknown> {
+  const obj: Record<string, unknown> = {};
+  obj.self = obj;
+  return obj;
+}
+
 describe("doc", () => {
   test("emits a stable skeleton with an empty head for a minimal body", () => {
     expect(doc({ body: "X" })).toBe("<!DOCTYPE html><html><head></head><body>X</body></html>");
@@ -170,11 +177,11 @@ describe("doc", () => {
     );
   });
 
-  test("throws when the options object is missing or null", () => {
-    expect(() => doc(undefined as unknown as DocOptions & { body: string })).toThrow(
-      /^\[ssr\] doc: body is required, received undefined$/,
-    );
-    expect(() => doc(null as unknown as DocOptions & { body: string })).toThrow(
+  test.each([
+    { label: "undefined", options: undefined },
+    { label: "null", options: null },
+  ])("throws when the options object is $label", ({ options }) => {
+    expect(() => doc(options as unknown as DocOptions & { body: string })).toThrow(
       /^\[ssr\] doc: body is required, received undefined$/,
     );
   });
@@ -346,16 +353,14 @@ describe("doc", () => {
     expect(JSON.parse(payloadOf(page))).toEqual({ s: hostile });
   });
 
-  test("throws the wrapped error for data JSON.stringify cannot serialize", () => {
-    const circular: Record<string, unknown> = {};
-    circular.self = circular;
-    expect(() => doc({ body: "X", data: circular })).toThrow(
+  test.each([
+    { label: "circular data", make: () => circular() },
+    { label: "function data", make: () => () => 1 },
+  ])("throws the wrapped error for data JSON.stringify cannot serialize ($label)", ({ make }) => {
+    expect(() => doc({ body: "X", data: make() })).toThrow(
       "[ssr] doc: data must be JSON-serializable",
     );
-    expect(() => doc({ body: streamOf("X"), data: circular })).toThrow(
-      "[ssr] doc: data must be JSON-serializable",
-    );
-    expect(() => doc({ body: "X", data: () => 1 })).toThrow(
+    expect(() => doc({ body: streamOf("X"), data: make() })).toThrow(
       "[ssr] doc: data must be JSON-serializable",
     );
   });

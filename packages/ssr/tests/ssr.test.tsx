@@ -133,6 +133,18 @@ describe("ssr", () => {
     expect(ssr(node)).toBe("<div><!--[--><!--]--></div>");
   });
 
+  test("emits an empty marker region for a direct-call single-child Portal", () => {
+    const node = (
+      <div>
+        {component(Portal as unknown as (props: Record<string, unknown>) => HellaNode, {
+          to: "#x",
+          children: <p>p</p>,
+        })}
+      </div>
+    );
+    expect(ssr(node)).toBe("<div><!--[--><!--]--></div>");
+  });
+
   test("renders Lazy loading fallback in a marker region without awaiting the loader", () => {
     const loader = vi.fn(async () => <div></div>);
     const node = (

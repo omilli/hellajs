@@ -4,16 +4,16 @@ import { setupContainer, resetTestState } from "@utils/test-helpers.js";
 import { Suspense, component, hydrate } from "@hellajs/dom";
 import { ssr } from "@hellajs/ssr";
 import type { HellaNode, TemplateBuildFn } from "@hellajs/dom";
-import { collect, twoTargetStreamed } from "./helpers";
+import { collect, extractSwapIds, twoTargetStreamed } from "./helpers";
 
 beforeEach(() => resetTestState());
 
-/** Extracts `<Suspense>` swap ids from streamed HTML: sentinel-comment ids (nodeValue) and `<template>` ids. */
-function extractSwapIds(out: string): { sentinels: string[]; templates: string[] } {
-  return {
-    sentinels: [...out.matchAll(/<!--(hs\d+)-->/g)].map((m) => m[1]!),
-    templates: [...out.matchAll(/<template id="(hs\d+)">/g)].map((m) => m[1]!),
-  };
+/** Extracts the swap id + evaluated `$hs` bootstrap from streamed HTML (ids are global-counter — extracted, never hardcoded). */
+function swapRuntime(html: string): { id: string; $hs: (id: string) => void } {
+  const id = html.match(/<!--(hs\d+)-->/)![1]!;
+  const boot = html.match(/<script>(function \$hs[\s\S]*?)<\/script>/)![1]!;
+  const $hs = new Function(boot + "; return $hs")() as (id: string) => void;
+  return { id, $hs };
 }
 
 describe("ssr <Suspense>", () => {
@@ -151,11 +151,9 @@ describe("ssr <Suspense>", () => {
       </div>
     );
     const out = await collect(ssr.stream(node));
-    const id = out.match(/<!--(hs\d+)-->/)![1]!; // actual sentinel id (monotonic counter — never hardcode)
-    const boot = out.match(/<script>(function \$hs[\s\S]*?)<\/script>/)![1]!;
+    const { id, $hs } = swapRuntime(out);
     const container = setupContainer();
     container.innerHTML = out; // HappyDOM parses; inline scripts do NOT execute
-    const $hs = new Function(boot + "; return $hs")() as (id: string) => void;
     expect(container.querySelector("template")).not.toBeNull(); // template present before the swap
     $hs(id);
     expect(container.querySelector("template")).toBeNull(); // template consumed
@@ -173,11 +171,9 @@ describe("ssr <Suspense>", () => {
       </div>
     );
     const out = await collect(ssr.stream(node));
-    const id = out.match(/<!--(hs\d+)-->/)![1]!;
-    const boot = out.match(/<script>(function \$hs[\s\S]*?)<\/script>/)![1]!;
+    const { id, $hs } = swapRuntime(out);
     const container = setupContainer();
     container.innerHTML = out;
-    const $hs = new Function(boot + "; return $hs")() as (id: string) => void;
     $hs(id);
     expect(container.querySelector("template")).toBeNull();
     expect(container.textContent).toContain("resolved");
@@ -197,10 +193,7 @@ describe("ssr <Suspense>", () => {
       );
       const __out = { App };
     `);
-    const html = container.innerHTML;
-    const id = html.match(/<!--(hs\d+)-->/)![1]!;
-    const boot = html.match(/<script>(function \$hs[\s\S]*?)<\/script>/)![1]!;
-    const $hs = new Function(boot + "; return $hs")() as (id: string) => void;
+    const { id, $hs } = swapRuntime(container.innerHTML);
     $hs(id); // simulate the browser running the inline swap script on arrival
     hydrate(client.App as TemplateBuildFn, container); // then the client entry hydrates
     flush();

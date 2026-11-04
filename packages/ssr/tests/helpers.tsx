@@ -1,7 +1,11 @@
 import { signal } from "@hellajs/core";
-import { ForEach, Transition, component } from "@hellajs/dom";
-import type { HellaNode } from "@hellajs/dom";
+import * as coreNs from "@hellajs/core";
+import { compileJsx, runCompiledModule, setupContainer } from "@utils/test-helpers.js";
+import { ForEach, Transition, component, raw } from "@hellajs/dom";
+import * as domNs from "@hellajs/dom";
+import * as domRuntimeNs from "@hellajs/dom/runtime";
 import { ssr } from "@hellajs/ssr";
+import type { HellaNode } from "@hellajs/dom";
 import type { HeadOptions } from "@hellajs/ssr";
 
 /** Collects all chunks from a ReadableStream<string> into a single string. */
@@ -14,6 +18,14 @@ export async function collect(stream: ReadableStream<string>): Promise<string> {
     chunk = await reader.read();
   }
   return out;
+}
+
+/** Extracts `<Suspense>` swap ids from streamed HTML: sentinel-comment ids (nodeValue) and `<template>` ids. */
+export function extractSwapIds(out: string): { sentinels: string[]; templates: string[] } {
+  return {
+    sentinels: [...out.matchAll(/<!--(hs\d+)-->/g)].map((m) => m[1]!),
+    templates: [...out.matchAll(/<template id="(hs\d+)">/g)].map((m) => m[1]!),
+  };
 }
 
 /** An isDynamic function carrying no `ssr` meta — every walker must render it as an empty marker region. */
@@ -50,6 +62,10 @@ export const parityCases: { name: string; node: HellaNode }[] = [
   {
     name: "reactive child resolving to an element",
     node: <div>{signal(<b></b>)}</div>,
+  },
+  {
+    name: "reactive child resolving to raw HTML",
+    node: <div>{signal(raw("<b>r</b>"))}</div>,
   },
   {
     name: "reactive getter returning an array of nodes",
@@ -157,16 +173,28 @@ export function unknownKindNode(): HellaNode {
   return <div>{fn}</div>;
 }
 
-import { compileJsx, runCompiledModule, setupContainer } from "@utils/test-helpers.js";
-import * as coreNs from "@hellajs/core";
-import * as domNs from "@hellajs/dom";
-import * as domRuntimeNs from "@hellajs/dom/runtime";
-
 /** Module bindings for the in-test compiler: the real core/dom namespaces, so stripped bare imports bind. */
 const TWO_TARGET_MODULES = {
   "@hellajs/core": coreNs,
   "@hellajs/dom": domNs,
   "@hellajs/dom/runtime": domRuntimeNs,
+};
+
+/** Compiles one app source at both plugin targets and returns both arms' exports (see twoTarget). */
+const compileArms = async (
+  source: string,
+): Promise<[Record<string, unknown>, Record<string, unknown>]> => {
+  const serverOut = runCompiledModule(
+    await compileJsx(source),
+    { ...TWO_TARGET_MODULES, __HELLA_ARM: "server" },
+    "__out",
+  ) as Record<string, unknown>;
+  const client = runCompiledModule(
+    await compileJsx(source, { target: "dom" }),
+    { ...TWO_TARGET_MODULES, __HELLA_ARM: "client" },
+    "__out",
+  ) as Record<string, unknown>;
+  return [serverOut, client];
 };
 
 /**
@@ -180,16 +208,7 @@ const TWO_TARGET_MODULES = {
 export const twoTarget = async (
   source: string,
 ): Promise<{ container: Element; client: Record<string, unknown> }> => {
-  const serverOut = runCompiledModule(
-    await compileJsx(source),
-    { ...TWO_TARGET_MODULES, __HELLA_ARM: "server" },
-    "__out",
-  ) as Record<string, unknown>;
-  const client = runCompiledModule(
-    await compileJsx(source, { target: "dom" }),
-    { ...TWO_TARGET_MODULES, __HELLA_ARM: "client" },
-    "__out",
-  ) as Record<string, unknown>;
+  const [serverOut, client] = await compileArms(source);
   const container = setupContainer();
   container.innerHTML = ssr((serverOut.App as () => unknown)() as never);
   return { container, client };
@@ -199,25 +218,9 @@ export const twoTarget = async (
 export const twoTargetStreamed = async (
   source: string,
 ): Promise<{ container: Element; client: Record<string, unknown> }> => {
-  const serverOut = runCompiledModule(
-    await compileJsx(source),
-    { ...TWO_TARGET_MODULES, __HELLA_ARM: "server" },
-    "__out",
-  ) as Record<string, unknown>;
-  const client = runCompiledModule(
-    await compileJsx(source, { target: "dom" }),
-    { ...TWO_TARGET_MODULES, __HELLA_ARM: "client" },
-    "__out",
-  ) as Record<string, unknown>;
+  const [serverOut, client] = await compileArms(source);
   const container = setupContainer();
-  const reader = ssr.stream((serverOut.App as () => unknown)() as never).getReader();
-  let html = "";
-  for (;;) {
-    const chunk = await reader.read();
-    if (chunk.done) break;
-    html += chunk.value;
-  }
-  container.innerHTML = html;
+  container.innerHTML = await collect(ssr.stream((serverOut.App as () => unknown)() as never));
   return { container, client };
 };
 
@@ -225,16 +228,7 @@ export const twoTargetStreamed = async (
 export const twoTargetAsync = async (
   source: string,
 ): Promise<{ container: Element; client: Record<string, unknown> }> => {
-  const serverOut = runCompiledModule(
-    await compileJsx(source),
-    { ...TWO_TARGET_MODULES, __HELLA_ARM: "server" },
-    "__out",
-  ) as Record<string, unknown>;
-  const client = runCompiledModule(
-    await compileJsx(source, { target: "dom" }),
-    { ...TWO_TARGET_MODULES, __HELLA_ARM: "client" },
-    "__out",
-  ) as Record<string, unknown>;
+  const [serverOut, client] = await compileArms(source);
   const container = setupContainer();
   container.innerHTML = await ssr.async((serverOut.App as () => unknown)() as never);
   return { container, client };

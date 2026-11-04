@@ -1,4 +1,5 @@
 import { describe, test, expect } from "vite-plus/test";
+import { signal } from "@hellajs/core";
 import { raw } from "@hellajs/dom";
 import { ssr } from "@hellajs/ssr";
 
@@ -7,6 +8,10 @@ describe("ssr raw child", () => {
     expect(ssr(<main>{raw("<h1>Hi</h1><p>slot</p>")}</main>)).toBe(
       "<main><!--[--><h1>Hi</h1><p>slot</p><!--]--></main>",
     );
+  });
+
+  test("emits a reactive child resolving to raw HTML verbatim inside markers", () => {
+    expect(ssr(<div>{signal(raw("<b>x</b>"))}</div>)).toBe("<div><!--[--><b>x</b><!--]--></div>");
   });
 
   test("does not escape raw HTML (< and > survive, unlike a resolved string child)", () => {
