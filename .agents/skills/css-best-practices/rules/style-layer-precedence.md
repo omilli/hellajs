@@ -28,7 +28,9 @@ const cta = style(
   {
     padding: "0.5rem",
   },
-  { layer: "components" },
+  {
+    layer: "components",
+  },
 );
 ```
 
@@ -51,7 +53,9 @@ const cta = style(
   {
     padding: "0.5rem",
   },
-  { layer: "components" },
+  {
+    layer: "components",
+  },
 );
 ```
 

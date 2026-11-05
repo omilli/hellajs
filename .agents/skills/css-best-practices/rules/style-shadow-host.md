@@ -14,13 +14,18 @@ The `host` option redirects the generated `<style>` elements into any parent nod
 ```ts
 import { style } from "@hellajs/css";
 
-const root = document.createElement("my-card").attachShadow({ mode: "open" });
+const root = document.createElement("my-card").attachShadow({
+  mode: "open",
+});
 
 // No host: the rules land in document.head, outside the shadow root,
 // and the component's inner tree never sees them under encapsulation
-const card = style("card", {
-  color: "#111827",
-});
+const card = style(
+  "card",
+  {
+    color: "#111827",
+  },
+);
 ```
 
 **Correct (what is right):**
@@ -28,7 +33,9 @@ const card = style("card", {
 ```ts
 import { css, style } from "@hellajs/css";
 
-const root = document.createElement("my-card").attachShadow({ mode: "open" });
+const root = document.createElement("my-card").attachShadow({
+  mode: "open",
+});
 
 // Sheets are created inside the host, not document.head
 const card = style(
@@ -36,7 +43,9 @@ const card = style(
   {
     color: "#111827",
   },
-  { host: root },
+  {
+    host: root,
+  },
 );
 
 css(
@@ -45,7 +54,9 @@ css(
       boxSizing: "border-box",
     },
   },
-  { host: root },
+  {
+    host: root,
+  },
 );
 ```
 

@@ -30,11 +30,11 @@ import { css } from "@hellajs/css";
 
 css({
   ".pin": {
-    top: "50%", // strings carry their own units
-    zIndex: 100, // unitless allowlist stays raw
-    gap: 4, // numbers append px
-    transition: ["opacity 0.2s ease", "transform 0.2s ease"], // arrays join with commas
-    content: "open", // content strings auto-quote
+    top: "50%",  // strings carry their own units
+    zIndex: 100,  // unitless allowlist stays raw
+    gap: 4,  // numbers append px
+    transition: ["opacity 0.2s ease", "transform 0.2s ease"],  // arrays join with commas
+    content: "open",  // content strings auto-quote
   },
 });
 ```

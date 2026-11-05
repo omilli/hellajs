@@ -31,23 +31,25 @@ Best practices for @hellajs/css, the type-safe CSS-in-JS package: scoped style()
   - 2.3 Mirror css options exactly in removeCss (`css-remove-mirror`)
   - 2.4 Reset each side with its own reset function (`css-reset-isolation`)
   - 2.5 Numbers mean px, so pass other units in strings (`css-value-semantics`)
-- 3. Reactive CSS variables
-  - 3.1 One reactive vars object per scope (`vars-one-object-one-scope`)
-  - 3.2 Remove reactive vars by reference, static by structure (`vars-remove-refcount`)
-  - 3.3 Scope, prefix, and name vars through the options (`vars-scope-options`)
-  - 3.4 Pair hosted vars with scoped :host in shadow roots (`vars-shadow-root`)
-  - 3.5 Consume the vars proxy; the sheet is what updates (`vars-token-proxy`)
-- 4. Keyframe animations
-  - 4.1 Remove keyframes by definition object, order never matters (`kf-canonical-removal`)
-  - 4.2 Use the keyframes return value in animation properties (`kf-use-returned-name`)
-- 5. Variant recipes and class composition
-  - 5.1 Re-resolve recipes at the call site for reactivity (`recipe-caller-reactivity`)
-  - 5.2 Join class fragments with cx (`recipe-cx-join`)
-  - 5.3 Declare responsive breakpoints in cva media config (`recipe-responsive-media`)
-  - 5.4 Define variants as maps and validate by resolution (`recipe-variant-maps`)
-- 6. Server rendering and hydration
-  - 6.1 Ship the style tag with its sheet id (`ssrcss-adoption-id`)
-  - 6.2 Embed cssText in every server response (`ssrcss-collect-csstext`)
+- 3. Styling object authoring
+  - 3.1 Break every styling object across lines, single-property objects included (`format-multiline-objects`)
+- 4. Reactive CSS variables
+  - 4.1 One reactive vars object per scope (`vars-one-object-one-scope`)
+  - 4.2 Remove reactive vars by reference, static by structure (`vars-remove-refcount`)
+  - 4.3 Scope, prefix, and name vars through the options (`vars-scope-options`)
+  - 4.4 Pair hosted vars with scoped :host in shadow roots (`vars-shadow-root`)
+  - 4.5 Consume the vars proxy; the sheet is what updates (`vars-token-proxy`)
+- 5. Keyframe animations
+  - 5.1 Remove keyframes by definition object, order never matters (`kf-canonical-removal`)
+  - 5.2 Use the keyframes return value in animation properties (`kf-use-returned-name`)
+- 6. Variant recipes and class composition
+  - 6.1 Re-resolve recipes at the call site for reactivity (`recipe-caller-reactivity`)
+  - 6.2 Join class fragments with cx (`recipe-cx-join`)
+  - 6.3 Declare responsive breakpoints in cva media config (`recipe-responsive-media`)
+  - 6.4 Define variants as maps and validate by resolution (`recipe-variant-maps`)
+- 7. Server rendering and hydration
+  - 7.1 Ship the style tag with its sheet id (`ssrcss-adoption-id`)
+  - 7.2 Embed cssText in every server response (`ssrcss-collect-csstext`)
 
 ## 1. Scoped styles
 
@@ -79,13 +81,16 @@ import { style } from "@hellajs/css";
 
 // Scoped, content-hashed, removable as a unit; "card-{hash}" is
 // identical on client and server
-const card = style("card", {
-  padding: "1rem",
-  borderRadius: "0.5rem",
-  "&:hover": {
-    background: "#f9fafb",
+const card = style(
+  "card",
+  {
+    padding: "1rem",
+    borderRadius: "0.5rem",
+    "&:hover": {
+      background: "#f9fafb",
+    },
   },
-});
+);
 ```
 
 Nested keys compose under the generated class: `&` refers to the class at every occurrence, plain keys become descendants, and conditional at-rules (`@media`, `@container`, `@supports`) inherit it. The options-bag form with a `label` key is equivalent to the positional label.
@@ -131,9 +136,12 @@ const base = {
 };
 
 // One merged class: override wins, nested objects merge, arrays replace
-const dense = style(base, {
-  padding: "0.5rem",
-});
+const dense = style(
+  base,
+  {
+    padding: "0.5rem",
+  },
+);
 ```
 
 A second plain object reads as an options bag only when every own key is `label`, `layer`, or `host` and no third argument is present; anything else is the override. A positional string first argument is a label, never a base.
@@ -155,9 +163,12 @@ import { style } from "@hellajs/css";
 const theme = signal("light");
 
 // Throws: function values are not supported in css objects
-const button = style("theme-btn", {
-  background: () => (theme() === "dark" ? "#374151" : "#3b82f6"),
-});
+const button = style(
+  "theme-btn",
+  {
+    background: () => (theme() === "dark" ? "#374151" : "#3b82f6"),
+  },
+);
 ```
 
 **Correct (what is right):**
@@ -172,9 +183,12 @@ const themeVars = vars({
   background: () => (theme() === "dark" ? "#374151" : "#3b82f6"),
 });
 
-const button = style("theme-btn", {
-  background: themeVars.background,
-});
+const button = style(
+  "theme-btn",
+  {
+    background: themeVars.background,
+  },
+);
 ```
 
 Reference: `packages/css/lib/css.ts process` and `packages/css/docs/concepts/styling.mdx`
@@ -204,7 +218,9 @@ const cta = style(
   {
     padding: "0.5rem",
   },
-  { layer: "components" },
+  {
+    layer: "components",
+  },
 );
 ```
 
@@ -227,7 +243,9 @@ const cta = style(
   {
     padding: "0.5rem",
   },
-  { layer: "components" },
+  {
+    layer: "components",
+  },
 );
 ```
 
@@ -248,7 +266,13 @@ const card = {
   padding: "1rem",
 };
 
-style("card", card, { layer: "components" });
+style(
+  "card",
+  card,
+  {
+    layer: "components",
+  },
+);
 
 // Missing the layer: derives unlayered text, finds no registration, no-ops
 removeStyle("card", card);
@@ -263,10 +287,22 @@ const card = {
   padding: "1rem",
 };
 
-style("card", card, { layer: "components" });
+style(
+  "card",
+  card,
+  {
+    layer: "components",
+  },
+);
 
 // Same label form, same options: decrements the count, drops at zero
-removeStyle("card", card, { layer: "components" });
+removeStyle(
+  "card",
+  card,
+  {
+    layer: "components",
+  },
+);
 ```
 
 A registration kept for the whole page lifetime (module scope) needs no removal at all; pair registration and removal only for dynamically created styles.
@@ -284,13 +320,18 @@ The `host` option redirects the generated `<style>` elements into any parent nod
 ```ts
 import { style } from "@hellajs/css";
 
-const root = document.createElement("my-card").attachShadow({ mode: "open" });
+const root = document.createElement("my-card").attachShadow({
+  mode: "open",
+});
 
 // No host: the rules land in document.head, outside the shadow root,
 // and the component's inner tree never sees them under encapsulation
-const card = style("card", {
-  color: "#111827",
-});
+const card = style(
+  "card",
+  {
+    color: "#111827",
+  },
+);
 ```
 
 **Correct (what is right):**
@@ -298,7 +339,9 @@ const card = style("card", {
 ```ts
 import { css, style } from "@hellajs/css";
 
-const root = document.createElement("my-card").attachShadow({ mode: "open" });
+const root = document.createElement("my-card").attachShadow({
+  mode: "open",
+});
 
 // Sheets are created inside the host, not document.head
 const card = style(
@@ -306,7 +349,9 @@ const card = style(
   {
     color: "#111827",
   },
-  { host: root },
+  {
+    host: root,
+  },
 );
 
 css(
@@ -315,7 +360,9 @@ css(
       boxSizing: "border-box",
     },
   },
-  { host: root },
+  {
+    host: root,
+  },
 );
 ```
 
@@ -335,15 +382,18 @@ At-rules split in two. Conditional ones (`@media`, `@container`, `@supports`, `@
 ```ts
 import { style } from "@hellajs/css";
 
-const card = style("card", {
-  padding: "1rem",
-  // Definitional at-rules never pick up the class: this @font-face
+const card = style(
+  "card",
+  {
+    padding: "1rem",
+    // Definitional at-rules never pick up the class: this @font-face
   // registers globally despite sitting under .card-{hash}
   "@font-face": {
-    fontFamily: "Inter",
-    src: "url('/fonts/inter.woff2')",
+      fontFamily: "Inter",
+      src: "url('/fonts/inter.woff2')",
+    },
   },
-});
+);
 ```
 
 **Correct (what is right):**
@@ -352,12 +402,15 @@ const card = style("card", {
 import { css, style } from "@hellajs/css";
 
 // Conditional at-rules inherit the class scope
-const card = style("card", {
-  padding: "1rem",
-  "@media (min-width: 768px)": {
-    padding: "1.5rem",
+const card = style(
+  "card",
+  {
+    padding: "1rem",
+    "@media (min-width: 768px)": {
+      padding: "1.5rem",
+    },
   },
-});
+);
 
 // Definitional at-rules belong at the global level
 css({
@@ -425,9 +478,16 @@ const reset = {
   },
 };
 
-const root = document.createElement("my-card").attachShadow({ mode: "open" });
+const root = document.createElement("my-card").attachShadow({
+  mode: "open",
+});
 
-css(reset, { host: root });
+css(
+  reset,
+  {
+    host: root,
+  },
+);
 
 // No host: decrements the document-head registration that does not
 // exist, and the hosted rules leak
@@ -445,12 +505,24 @@ const reset = {
   },
 };
 
-const root = document.createElement("my-card").attachShadow({ mode: "open" });
+const root = document.createElement("my-card").attachShadow({
+  mode: "open",
+});
 
-css(reset, { host: root });
+css(
+  reset,
+  {
+    host: root,
+  },
+);
 
 // Same object, same host: decrements the hosted registration exactly
-removeCss(reset, { host: root });
+removeCss(
+  reset,
+  {
+    host: root,
+  },
+);
 ```
 
 Reference: `packages/css/lib/removeCss.ts` and `packages/css/lib/internal/injection.ts deregisterText`
@@ -471,7 +543,9 @@ css({
     margin: 0,
   },
 });
-vars({ bg: "#ffffff" });
+vars({
+  bg: "#ffffff",
+});
 
 // Wrong half: the vars registration survives with its sheet rule
 resetCss();
@@ -487,7 +561,9 @@ css({
     margin: 0,
   },
 });
-vars({ bg: "#ffffff" });
+vars({
+  bg: "#ffffff",
+});
 
 // Each reset clears its own side; both together restore initial state
 resetCss();
@@ -525,11 +601,11 @@ import { css } from "@hellajs/css";
 
 css({
   ".pin": {
-    top: "50%", // strings carry their own units
-    zIndex: 100, // unitless allowlist stays raw
-    gap: 4, // numbers append px
-    transition: ["opacity 0.2s ease", "transform 0.2s ease"], // arrays join with commas
-    content: "open", // content strings auto-quote
+    top: "50%",  // strings carry their own units
+    zIndex: 100,  // unitless allowlist stays raw
+    gap: 4,  // numbers append px
+    transition: ["opacity 0.2s ease", "transform 0.2s ease"],  // arrays join with commas
+    content: "open",  // content strings auto-quote
   },
 });
 ```
@@ -537,9 +613,122 @@ css({
 Reference: `packages/css/lib/css.ts UNITLESS_PROPERTIES` and `packages/css/docs/api/css.mdx`
 
 
-## 3. Reactive CSS variables
+## 3. Styling object authoring
 
-### 3.1 One reactive vars object per scope
+### 3.1 Break every styling object across lines, single-property objects included
+
+**Impact: LOW** - single-line object props bury selectors and variant selections inside dense one-liners, so reading a recipe means parsing nested braces and every edit reflows a whole line instead of touching one
+
+Every object literal in styling code breaks across lines, one property per line, at every nesting depth: the `css()` / `style()` / `keyframes()` object and its nested selector blocks, `cva()` configs and their variant maps and selections, `vars()` token objects, and the options bags (`{ label }`, `{ host, scoped }`). Single-property objects are included. When a call takes several arguments and any of them is an object literal, each argument goes on its own line. Type literals (`{ title: string }` prop annotations, `type X = { … }` declarations) and comments showing output shapes are not object literals; they stay compact.
+
+**Incorrect (what is wrong):**
+
+```ts
+import { cva, style } from "@hellajs/css";
+
+// Variant selections buried in one-liners; reading means parsing nested braces
+const button = cva({
+  base: {
+    borderRadius: "0.5rem",
+    cursor: "pointer",
+  },
+  variants: {
+    size: {
+      sm: {
+        padding: "0.25rem 0.5rem",
+      },
+      lg: {
+        padding: "0.75rem 1.5rem",
+      },
+    },
+  },
+});
+
+// Options bags and single-property objects too
+const card = style(
+  {
+    padding: "1rem",
+  },
+  {
+    label: "card",
+  },
+);
+```
+
+**Correct (what is right):**
+
+```ts
+import { cva, style } from "@hellajs/css";
+
+const button = cva({
+  base: {
+    borderRadius: "0.5rem",
+    cursor: "pointer",
+  },
+  variants: {
+    size: {
+      sm: {
+        padding: "0.25rem 0.5rem",
+      },
+      lg: {
+        padding: "0.75rem 1.5rem",
+      },
+    },
+  },
+});
+
+// One argument per line once any argument is an object literal
+const card = style(
+  {
+    padding: "1rem",
+  },
+  {
+    label: "card",
+  },
+);
+```
+
+**Incorrect (what is wrong):**
+
+```ts
+import { vars } from "@hellajs/css";
+
+// Token objects and scoped options collapsed onto one line
+const theme = vars(
+  {
+    colors: {
+      primary: "#3b82f6",
+    },
+  },
+  {
+    scoped: ".card",
+  },
+);
+```
+
+**Correct (what is right):**
+
+```ts
+import { vars } from "@hellajs/css";
+
+const theme = vars(
+  {
+    colors: {
+      primary: "#3b82f6",
+    },
+  },
+  {
+    scoped: ".card",
+  },
+);
+```
+
+Reference: `guides/docs.md` and `packages/css/docs/api/cva.mdx`
+
+
+## 4. Reactive CSS variables
+
+### 4.1 One reactive vars object per scope
 
 **Impact: MEDIUM** - re-registering the same reactive object with different options throws before any rule is written, failing the second call site at runtime
 
@@ -554,10 +743,20 @@ import { vars } from "@hellajs/css";
 const accent = signal("#3b82f6");
 const tokens = { accent };
 
-vars(tokens, { scoped: ".panel" });
+vars(
+  tokens,
+  {
+    scoped: ".panel",
+  },
+);
 
 // Throws: the same object reference re-registered with new options
-vars(tokens, { scoped: ".sidebar" });
+vars(
+  tokens,
+  {
+    scoped: ".sidebar",
+  },
+);
 ```
 
 **Correct (what is right):**
@@ -571,13 +770,23 @@ const panelTokens = { accent };
 const sidebarTokens = { accent };
 
 // One object per scope: distinct references register independently
-vars(panelTokens, { scoped: ".panel" });
-vars(sidebarTokens, { scoped: ".sidebar" });
+vars(
+  panelTokens,
+  {
+    scoped: ".panel",
+  },
+);
+vars(
+  sidebarTokens,
+  {
+    scoped: ".sidebar",
+  },
+);
 ```
 
 Reference: `packages/css/lib/vars.ts` and `packages/css/tests/vars-media.test.ts`
 
-### 3.2 Remove reactive vars by reference, static by structure
+### 4.2 Remove reactive vars by reference, static by structure
 
 **Impact: HIGH** - passing a structural copy to removeVars misses the reference-keyed reactive entry and silently no-ops, leaving the effect running and the declarations in the sheet
 
@@ -618,7 +827,7 @@ Multiple `vars()` calls sharing one scope bucket merge their keys; a matching `r
 
 Reference: `packages/css/lib/removeVars.ts` and `packages/css/tests/vars-remove.test.ts`
 
-### 3.3 Scope, prefix, and name vars through the options
+### 4.3 Scope, prefix, and name vars through the options
 
 **Impact: MEDIUM** - hand-flattened kebab names and trailing-hyphen prefixes double-hyphen the emitted custom properties, and the default scope ships tokens on :root when a narrower scope was meant
 
@@ -634,7 +843,9 @@ vars(
   {
     accent: "#3b82f6",
   },
-  { prefix: "brand-" },
+  {
+    prefix: "brand-",
+  },
 );
 ```
 
@@ -658,7 +869,7 @@ vars(
 
 Reference: `packages/css/lib/internal/vars.ts resolveVarsOptions` and `packages/css/lib/internal/vars.ts kebabVarName` and `packages/css/docs/api/vars.mdx`
 
-### 3.4 Pair hosted vars with scoped :host in shadow roots
+### 4.4 Pair hosted vars with scoped :host in shadow roots
 
 **Impact: CRITICAL** - a hosted vars registration still defaults to the :root scope, which matches nothing inside a shadow root, so every consumer of those tokens silently styles with no value
 
@@ -669,7 +880,9 @@ The `host` option moves the vars sheet into the shadow root, but the scope selec
 ```ts
 import { vars } from "@hellajs/css";
 
-const root = document.createElement("my-card").attachShadow({ mode: "open" });
+const root = document.createElement("my-card").attachShadow({
+  mode: "open",
+});
 
 // :root matches nothing inside a shadow root: the tokens are
 // registered but never apply, and consumers get no value
@@ -677,7 +890,9 @@ vars(
   {
     accent: "#3b82f6",
   },
-  { host: root },
+  {
+    host: root,
+  },
 );
 ```
 
@@ -686,13 +901,18 @@ vars(
 ```ts
 import { style, vars } from "@hellajs/css";
 
-const root = document.createElement("my-card").attachShadow({ mode: "open" });
+const root = document.createElement("my-card").attachShadow({
+  mode: "open",
+});
 
 const theme = vars(
   {
     accent: "#3b82f6",
   },
-  { host: root, scoped: ":host" },
+  {
+    host: root,
+    scoped: ":host",
+  },
 );
 
 const card = style(
@@ -700,13 +920,15 @@ const card = style(
   {
     color: theme.accent,
   },
-  { host: root },
+  {
+    host: root,
+  },
 );
 ```
 
 Reference: `packages/css/lib/internal/vars.ts resolveVarsOptions` and `packages/css/docs/concepts/styling.mdx`
 
-### 3.5 Consume the vars proxy; the sheet is what updates
+### 4.5 Consume the vars proxy; the sheet is what updates
 
 **Impact: HIGH** - the returned proxy never mutates and re-calling vars on every change only churns registrations, while the actual update path is the effect writing the sheet when signals change
 
@@ -719,7 +941,9 @@ import { signal } from "@hellajs/core";
 import { vars } from "@hellajs/css";
 
 const scale = signal(1);
-const tokens = vars({ scale: () => scale() });
+const tokens = vars({
+  scale: () => scale(),
+});
 
 scale(1.5);
 
@@ -736,11 +960,16 @@ import { signal } from "@hellajs/core";
 import { style, vars } from "@hellajs/css";
 
 const scale = signal(1);
-const tokens = vars({ scale: () => scale() });
-
-const box = style("box", {
-  transform: `scale(${tokens.scale})`,
+const tokens = vars({
+  scale: () => scale(),
 });
+
+const box = style(
+  "box",
+  {
+    transform: `scale(${tokens.scale})`,
+  },
+);
 
 // The effect rewrites --scale in the sheet; box rules never rebuild
 scale(1.5);
@@ -749,9 +978,9 @@ scale(1.5);
 Reference: `packages/css/lib/vars.ts` and `packages/css/docs/api/vars.mdx`
 
 
-## 4. Keyframe animations
+## 5. Keyframe animations
 
-### 4.1 Remove keyframes by definition object, order never matters
+### 5.1 Remove keyframes by definition object, order never matters
 
 **Impact: LOW** - removeKeyframes takes the step object, not the returned name, and matches by canonicalized content, so a name-based removal attempt throws while an equivalent object in any key order removes exactly
 
@@ -763,8 +992,12 @@ Reference: `packages/css/lib/vars.ts` and `packages/css/docs/api/vars.mdx`
 import { keyframes, removeKeyframes } from "@hellajs/css";
 
 const spin = keyframes({
-  from: { transform: "rotate(0deg)" },
-  to: { transform: "rotate(360deg)" },
+  from: {
+    transform: "rotate(0deg)",
+  },
+  to: {
+    transform: "rotate(360deg)",
+  },
 });
 
 // Throws: removeKeyframes takes the definition object, not the name
@@ -777,20 +1010,28 @@ removeKeyframes(spin);
 import { keyframes, removeKeyframes } from "@hellajs/css";
 
 const spin = keyframes({
-  from: { transform: "rotate(0deg)" },
-  to: { transform: "rotate(360deg)" },
+  from: {
+    transform: "rotate(0deg)",
+  },
+  to: {
+    transform: "rotate(360deg)",
+  },
 });
 
 // Key order never matters: a structurally equal object matches
 removeKeyframes({
-  to: { transform: "rotate(360deg)" },
-  from: { transform: "rotate(0deg)" },
+  to: {
+    transform: "rotate(360deg)",
+  },
+  from: {
+    transform: "rotate(0deg)",
+  },
 });
 ```
 
 Reference: `packages/css/lib/keyframes.ts keyframesRule` and `packages/css/lib/removeKeyframes.ts`
 
-### 4.2 Use the keyframes return value in animation properties
+### 5.2 Use the keyframes return value in animation properties
 
 **Impact: HIGH** - the rule registers under a generated kf-hash name, so referencing a hand-assumed name leaves the animation pointing at nothing and it never runs
 
@@ -802,15 +1043,22 @@ Reference: `packages/css/lib/keyframes.ts keyframesRule` and `packages/css/lib/r
 import { keyframes, style } from "@hellajs/css";
 
 const spin = keyframes({
-  from: { transform: "rotate(0deg)" },
-  to: { transform: "rotate(360deg)" },
+  from: {
+    transform: "rotate(0deg)",
+  },
+  to: {
+    transform: "rotate(360deg)",
+  },
 });
 
 // The registered name is "kf-{hash}", not "spin": the animation
 // matches nothing and never runs
-const spinner = style("spinner", {
-  animation: "spin 0.8s linear infinite",
-});
+const spinner = style(
+  "spinner",
+  {
+    animation: "spin 0.8s linear infinite",
+  },
+);
 ```
 
 **Correct (what is right):**
@@ -819,23 +1067,30 @@ const spinner = style("spinner", {
 import { keyframes, style } from "@hellajs/css";
 
 const spin = keyframes({
-  from: { transform: "rotate(0deg)" },
-  to: { transform: "rotate(360deg)" },
+  from: {
+    transform: "rotate(0deg)",
+  },
+  to: {
+    transform: "rotate(360deg)",
+  },
 });
 
-const spinner = style("spinner", {
-  width: "2rem",
-  height: "2rem",
-  animation: `${spin} 0.8s linear infinite`,
-});
+const spinner = style(
+  "spinner",
+  {
+    width: "2rem",
+    height: "2rem",
+    animation: `${spin} 0.8s linear infinite`,
+  },
+);
 ```
 
 Reference: `packages/css/lib/keyframes.ts` and `packages/css/docs/api/keyframes.mdx`
 
 
-## 5. Variant recipes and class composition
+## 6. Variant recipes and class composition
 
-### 5.1 Re-resolve recipes at the call site for reactivity
+### 6.1 Re-resolve recipes at the call site for reactivity
 
 **Impact: CRITICAL** - variant classes are static once resolved, so computing the class string once freezes the variant for the component's lifetime and signal changes never restyle
 
@@ -851,14 +1106,20 @@ const size = signal<"sm" | "lg">("sm");
 const button = cva({
   variants: {
     size: {
-      sm: { padding: "0.25rem 0.5rem" },
-      lg: { padding: "0.75rem 1.5rem" },
+      sm: {
+        padding: "0.25rem 0.5rem",
+      },
+      lg: {
+        padding: "0.75rem 1.5rem",
+      },
     },
   },
 });
 
 // Resolved once: the class is frozen at the initial signal value
-const cls = button({ size: size() });
+const cls = button({
+  size: size(),
+});
 
 <button class={cls}>Save</button>;
 ```
@@ -873,19 +1134,25 @@ const size = signal<"sm" | "lg">("sm");
 const button = cva({
   variants: {
     size: {
-      sm: { padding: "0.25rem 0.5rem" },
-      lg: { padding: "0.75rem 1.5rem" },
+      sm: {
+        padding: "0.25rem 0.5rem",
+      },
+      lg: {
+        padding: "0.75rem 1.5rem",
+      },
     },
   },
 });
 
 // Re-resolved inside a function class binding on every signal change
-<button class={() => button({ size: size() })}>Save</button>;
+<button class={() => button({
+  size: size(),
+})}>Save</button>;
 ```
 
 Reference: `packages/css/docs/api/cva.mdx` and `packages/css/docs/concepts/styling.mdx`
 
-### 5.2 Join class fragments with cx
+### 6.2 Join class fragments with cx
 
 **Impact: LOW** - hand-rolled joins stringify false and leave stray whitespace, while cx drops falsy fragments and never produces leading or trailing spaces
 
@@ -913,7 +1180,7 @@ cx("card", isActive && "card-active");
 
 Reference: `packages/css/lib/cx.ts` and `packages/css/docs/api/cx.mdx`
 
-### 5.3 Declare responsive breakpoints in cva media config
+### 6.3 Declare responsive breakpoints in cva media config
 
 **Impact: MEDIUM** - a responsive selection naming a breakpoint absent from the media config throws at resolution, so the missing declaration surfaces as a render-time failure
 
@@ -927,15 +1194,24 @@ import { cva } from "@hellajs/css";
 const layout = cva({
   variants: {
     density: {
-      tight: { gap: "0.5rem" },
-      roomy: { gap: "1.5rem" },
+      tight: {
+        gap: "0.5rem",
+      },
+      roomy: {
+        gap: "1.5rem",
+      },
     },
   },
 });
 
 // Throws at resolution: "md" is absent from the media config
 // (there is none)
-layout({ density: { initial: "tight", md: "roomy" } });
+layout({
+  density: {
+    initial: "tight",
+    md: "roomy",
+  },
+});
 ```
 
 **Correct (what is right):**
@@ -943,25 +1219,36 @@ layout({ density: { initial: "tight", md: "roomy" } });
 ```ts
 import { cva } from "@hellajs/css";
 
-const MEDIA = { md: "(min-width: 768px)" };
+const MEDIA = {
+  md: "(min-width: 768px)",
+};
 
 const layout = cva({
   media: MEDIA,
   variants: {
     density: {
-      tight: { gap: "0.5rem" },
-      roomy: { gap: "1.5rem" },
+      tight: {
+        gap: "0.5rem",
+      },
+      roomy: {
+        gap: "1.5rem",
+      },
     },
   },
 });
 
 // Emits the tight class un-wrapped plus the roomy class under @media
-layout({ density: { initial: "tight", md: "roomy" } });
+layout({
+  density: {
+    initial: "tight",
+    md: "roomy",
+  },
+});
 ```
 
 Reference: `packages/css/lib/cva.ts` and `packages/css/tests/cva-responsive.test.ts`
 
-### 5.4 Define variants as maps and validate by resolution
+### 6.4 Define variants as maps and validate by resolution
 
 **Impact: MEDIUM** - config validation is lazy, so a mistyped variant value sails through creation and throws at first render instead, where it is far harder to trace
 
@@ -975,7 +1262,9 @@ import { cva } from "@hellajs/css";
 const button = cva({
   variants: {
     size: {
-      sm: { padding: "0.25rem 0.5rem" },
+      sm: {
+        padding: "0.25rem 0.5rem",
+      },
     },
   },
 });
@@ -983,7 +1272,9 @@ const button = cva({
 // Creation threw nothing; this throws at first resolution:
 // unknown value "large" for variant "size". The mistake was in the
 // config, but it surfaces here
-button({ size: "large" });
+button({
+  size: "large",
+});
 ```
 
 **Correct (what is right):**
@@ -998,12 +1289,20 @@ const button = cva({
   },
   variants: {
     size: {
-      sm: { padding: "0.25rem 0.5rem" },
-      lg: { padding: "0.75rem 1.5rem" },
+      sm: {
+        padding: "0.25rem 0.5rem",
+      },
+      lg: {
+        padding: "0.75rem 1.5rem",
+      },
     },
     tone: {
-      primary: { background: "#3b82f6" },
-      danger: { background: "#dc2626" },
+      primary: {
+        background: "#3b82f6",
+      },
+      danger: {
+        background: "#dc2626",
+      },
     },
   },
   defaultVariants: {
@@ -1013,21 +1312,25 @@ const button = cva({
     {
       size: "lg",
       tone: "danger",
-      css: { fontWeight: 700 },
+      css: {
+        fontWeight: 700,
+      },
     },
   ],
 });
 
 // Unselected variants generate no CSS; the default fills size
-button({ tone: "danger" });
+button({
+  tone: "danger",
+});
 ```
 
 Reference: `packages/css/lib/cva.ts` and `packages/css/docs/api/cva.mdx`
 
 
-## 6. Server rendering and hydration
+## 7. Server rendering and hydration
 
-### 6.1 Ship the style tag with its sheet id
+### 7.1 Ship the style tag with its sheet id
 
 **Impact: HIGH** - an id-less style embed forces hydration to create a second element and duplicate every delivered rule, doubling the sheet the page carries
 
@@ -1058,7 +1361,9 @@ css({
     margin: 0,
   },
 });
-vars({ bg: "#ffffff" });
+vars({
+  bg: "#ffffff",
+});
 
 // Two-tag delivery: each half embeds into the tag carrying its sheet id
 const cssTag = `<style id="hella-css">${cssText.css()}</style>`;
@@ -1069,7 +1374,7 @@ A single `<style id="hella-css">${cssText()}</style>` embed carries both halves 
 
 Reference: `packages/css/lib/internal/sheet.ts adoptElementRules` and `packages/css/docs/concepts/styling.mdx`
 
-### 6.2 Embed cssText in every server response
+### 7.2 Embed cssText in every server response
 
 **Impact: CRITICAL** - on the server every creator registers state-only, so a response without a cssText embed ships an unstyled page no matter how many styles the code registered
 
@@ -1085,9 +1390,12 @@ css({
     margin: 0,
   },
 });
-const card = style("card", {
-  padding: "1rem",
-});
+const card = style(
+  "card",
+  {
+    padding: "1rem",
+  },
+);
 
 // Registrations are state-only on the server: without a cssText()
 // embed the page ships with no styles at all
@@ -1099,16 +1407,21 @@ const page = `<!DOCTYPE html><html><head></head><body><div class="${card}"></div
 ```ts
 import { css, cssText, style, vars } from "@hellajs/css";
 
-const tokens = vars({ bg: "#ffffff" });
+const tokens = vars({
+  bg: "#ffffff",
+});
 css({
   body: {
     margin: 0,
     backgroundColor: tokens.bg,
   },
 });
-const card = style("card", {
-  padding: "1rem",
-});
+const card = style(
+  "card",
+  {
+    padding: "1rem",
+  },
+);
 
 // One embed per response: css side in registration order, then vars
 const page = `<!DOCTYPE html><html><head><style id="hella-css">${cssText()}</style></head><body><div class="${card}"></div></body></html>`;

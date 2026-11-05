@@ -15,8 +15,12 @@ tags: keyframes, removeKeyframes, removal
 import { keyframes, removeKeyframes } from "@hellajs/css";
 
 const spin = keyframes({
-  from: { transform: "rotate(0deg)" },
-  to: { transform: "rotate(360deg)" },
+  from: {
+    transform: "rotate(0deg)",
+  },
+  to: {
+    transform: "rotate(360deg)",
+  },
 });
 
 // Throws: removeKeyframes takes the definition object, not the name
@@ -29,14 +33,22 @@ removeKeyframes(spin);
 import { keyframes, removeKeyframes } from "@hellajs/css";
 
 const spin = keyframes({
-  from: { transform: "rotate(0deg)" },
-  to: { transform: "rotate(360deg)" },
+  from: {
+    transform: "rotate(0deg)",
+  },
+  to: {
+    transform: "rotate(360deg)",
+  },
 });
 
 // Key order never matters: a structurally equal object matches
 removeKeyframes({
-  to: { transform: "rotate(360deg)" },
-  from: { transform: "rotate(0deg)" },
+  to: {
+    transform: "rotate(360deg)",
+  },
+  from: {
+    transform: "rotate(0deg)",
+  },
 });
 ```
 

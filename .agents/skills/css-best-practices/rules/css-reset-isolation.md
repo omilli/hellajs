@@ -19,7 +19,9 @@ css({
     margin: 0,
   },
 });
-vars({ bg: "#ffffff" });
+vars({
+  bg: "#ffffff",
+});
 
 // Wrong half: the vars registration survives with its sheet rule
 resetCss();
@@ -35,7 +37,9 @@ css({
     margin: 0,
   },
 });
-vars({ bg: "#ffffff" });
+vars({
+  bg: "#ffffff",
+});
 
 // Each reset clears its own side; both together restore initial state
 resetCss();

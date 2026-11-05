@@ -34,7 +34,9 @@ css({
     margin: 0,
   },
 });
-vars({ bg: "#ffffff" });
+vars({
+  bg: "#ffffff",
+});
 
 // Two-tag delivery: each half embeds into the tag carrying its sheet id
 const cssTag = `<style id="hella-css">${cssText.css()}</style>`;

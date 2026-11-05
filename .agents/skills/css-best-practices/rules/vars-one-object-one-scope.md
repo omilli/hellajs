@@ -18,10 +18,20 @@ import { vars } from "@hellajs/css";
 const accent = signal("#3b82f6");
 const tokens = { accent };
 
-vars(tokens, { scoped: ".panel" });
+vars(
+  tokens,
+  {
+    scoped: ".panel",
+  },
+);
 
 // Throws: the same object reference re-registered with new options
-vars(tokens, { scoped: ".sidebar" });
+vars(
+  tokens,
+  {
+    scoped: ".sidebar",
+  },
+);
 ```
 
 **Correct (what is right):**
@@ -35,8 +45,18 @@ const panelTokens = { accent };
 const sidebarTokens = { accent };
 
 // One object per scope: distinct references register independently
-vars(panelTokens, { scoped: ".panel" });
-vars(sidebarTokens, { scoped: ".sidebar" });
+vars(
+  panelTokens,
+  {
+    scoped: ".panel",
+  },
+);
+vars(
+  sidebarTokens,
+  {
+    scoped: ".sidebar",
+  },
+);
 ```
 
 Reference: `packages/css/lib/vars.ts` and `packages/css/tests/vars-media.test.ts`

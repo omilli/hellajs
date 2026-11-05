@@ -17,15 +17,24 @@ import { cva } from "@hellajs/css";
 const layout = cva({
   variants: {
     density: {
-      tight: { gap: "0.5rem" },
-      roomy: { gap: "1.5rem" },
+      tight: {
+        gap: "0.5rem",
+      },
+      roomy: {
+        gap: "1.5rem",
+      },
     },
   },
 });
 
 // Throws at resolution: "md" is absent from the media config
 // (there is none)
-layout({ density: { initial: "tight", md: "roomy" } });
+layout({
+  density: {
+    initial: "tight",
+    md: "roomy",
+  },
+});
 ```
 
 **Correct (what is right):**
@@ -33,20 +42,31 @@ layout({ density: { initial: "tight", md: "roomy" } });
 ```ts
 import { cva } from "@hellajs/css";
 
-const MEDIA = { md: "(min-width: 768px)" };
+const MEDIA = {
+  md: "(min-width: 768px)",
+};
 
 const layout = cva({
   media: MEDIA,
   variants: {
     density: {
-      tight: { gap: "0.5rem" },
-      roomy: { gap: "1.5rem" },
+      tight: {
+        gap: "0.5rem",
+      },
+      roomy: {
+        gap: "1.5rem",
+      },
     },
   },
 });
 
 // Emits the tight class un-wrapped plus the roomy class under @media
-layout({ density: { initial: "tight", md: "roomy" } });
+layout({
+  density: {
+    initial: "tight",
+    md: "roomy",
+  },
+});
 ```
 
 Reference: `packages/css/lib/cva.ts` and `packages/css/tests/cva-responsive.test.ts`

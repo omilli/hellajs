@@ -2,6 +2,39 @@
 
 Creates a scoped style from a declarations-first object and returns a content-hashed class name, the same string on client and server.
 
+## Basic Usage
+
+```jsx
+import { style } from '@hellajs/css';
+
+const card = style(
+  'card',
+  {
+    padding: '1rem',
+    borderRadius: '8px',
+    backgroundColor: '#f8f9fa',
+    // Nested selectors and pseudo-states compose under the class
+  'h2': {
+      marginTop: 0,
+    },
+    '&:hover': {
+      backgroundColor: '#e9ecef',
+    },
+    // Responsive design inherits the class
+  '@media (max-width: 768px)': {
+      padding: '0.5rem',
+    },
+  },
+);
+// "card-cqknezd"; client AND server. style({ ... }, { label: 'card' }) is the equivalent bag form
+
+const Card = ({ title }: { title: string }) => (
+  <div class={card}>
+    <h2>{title}</h2>
+  </div>
+);
+```
+
 ## API
 
 ```typescript
@@ -24,32 +57,6 @@ function style(base: StyleObject, override: StyleObject, options?: StyleOptions)
   - `host`: Node the `<style>` element is created in; e.g. a `ShadowRoot` for web components. Defaults to `document.head`
 - **Returns**: The class name (`{label}-{hash}` / a bare letter-only hash) for `class` attributes
 
-## Basic Usage
-
-```jsx
-import { style } from '@hellajs/css';
-
-const card = style('card', {
-  padding: '1rem',
-  borderRadius: '8px',
-  backgroundColor: '#f8f9fa',
-
-  // Nested selectors and pseudo-states compose under the class
-  'h2': { marginTop: 0 },
-  '&:hover': { backgroundColor: '#e9ecef' },
-
-  // Responsive design inherits the class
-  '@media (max-width: 768px)': { padding: '0.5rem' }
-});
-// "card-cqknezd"; client AND server. style({ ... }, { label: 'card' }) is the equivalent bag form
-
-const Card = ({ title }: { title: string }) => (
-  <div class={card}>
-    <h2>{title}</h2>
-  </div>
-);
-```
-
 ## Key Concepts
 
 ### Content-Hashed Identity
@@ -59,8 +66,22 @@ The class name is derived from the object's content: the same object always prod
 ```jsx
 import { style } from '@hellajs/css';
 
-const card = style({ color: 'red' }, { label: 'card' });
-const again = style({ color: 'red' }, { label: 'card' });
+const card = style(
+  {
+    color: 'red',
+  },
+  {
+    label: 'card',
+  },
+);
+const again = style(
+  {
+    color: 'red',
+  },
+  {
+    label: 'card',
+  },
+);
 // card === again; identical content, identical class
 ```
 
@@ -73,7 +94,14 @@ On the client the rules are injected into the CSSOM. On the server the registrat
 ```jsx
 import { style, cssText } from '@hellajs/css';
 
-const card = style({ background: 'white' }, { label: 'card' });
+const card = style(
+  {
+    background: 'white',
+  },
+  {
+    label: 'card',
+  },
+);
 // card === "card-…" on the server too
 
 const head = `<style>${cssText()}</style>`;
@@ -86,21 +114,32 @@ An object base deep-merges two style objects into one class; class strings join 
 ```jsx
 import { style, cx } from '@hellajs/css';
 
-const card = style('card', {
-  padding: '1rem'
-});
+const card = style(
+  'card',
+  {
+    padding: '1rem',
+  },
+);
 
 // Object base: deep-merge into ONE class; override wins,
 // nested objects merge, arrays replace
-const compact = style({ padding: '1rem', margin: '1rem' }, { padding: '0.5rem' });
+const compact = style(
+  {
+    padding: '1rem',
+    margin: '1rem',
+  },
+  {
+    padding: '0.5rem',
+  },
+);
 // one class, { padding: '0.5rem', margin: '1rem' }
 
 // Class strings join through cx; each style keeps its own rule
 const alert = cx(
   card,
   style({
-    color: 'red'
-  })
+    color: 'red',
+  }),
 );
 // "card-bcgbryh mgmyaqx"
 ```
@@ -111,6 +150,8 @@ The former class-string argument (`style(card, { … })`) is removed: a string f
 
 Nested objects compose against the class exactly as they do under [`css`](/reference/css/css) with a `name`: `&` refers to the generated class (every occurrence), plain keys become descendants, conditional at-rules (`@media`, `@container`, `@supports`, `@starting-style`) inherit the class, and definitional at-rules (`@keyframes`, `@font-face`, `@layer`) stay global.
 
+One consequence of the literal composition: a comma group must carry `&` in every part, or every part after the first escapes the class scope. `'h1, h2': { … }` under the class compiles to `.{class} h1,h2`, leaving the `h2` rule global; write `'& h1, & h2'` so both parts stay scoped. See [`css`: Comma Groups Need `&` in Every Part](/reference/css/css#comma-groups-need--in-every-part).
+
 ## Important Considerations
 
 ### Same Object, Different Labels
@@ -120,8 +161,22 @@ The hash covers the object only, never the label: the same object with different
 ```jsx
 import { style } from '@hellajs/css';
 
-const primary = style({ color: 'blue' }, { label: 'primary' });
-const info = style({ color: 'blue' }, { label: 'info' });
+const primary = style(
+  {
+    color: 'blue',
+  },
+  {
+    label: 'primary',
+  },
+);
+const info = style(
+  {
+    color: 'blue',
+  },
+  {
+    label: 'info',
+  },
+);
 // Two classes, two identical rules; use one label per distinct style
 ```
 
@@ -138,7 +193,14 @@ try {
 } catch {}
 
 // ✅ Resolve conditions outside the object
-const btn = style({ padding: '0.5rem' }, { label: 'btn' });
+const btn = style(
+  {
+    padding: '0.5rem',
+  },
+  {
+    label: 'btn',
+  },
+);
 // then pick classes: class={big() ? btn : compactBtn}
 ```
 

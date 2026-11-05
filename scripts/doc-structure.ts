@@ -91,9 +91,116 @@ const INTERNAL_MECHANICS_RE = /<summary>Internal Mechanics<\/summary>/;
 const ALERT_ICON_SPAN_RE = /<span>(⚠️|ℹ️)<\/span>/;
 const BLOCKQUOTE_WARN_RE = /^> ⚠️/;
 const JSX_FENCE_RE = /^```(jsx|tsx)\b/;
+const CODE_FENCE_RE = /^```(?:typescript|javascript|ts|tsx|js|jsx)\b/;
 const WRAPPED_ATTR_RE = /(class|style|title|href|id)=\{\(\) =>/;
 const INLINE_CSS_OBJECT_RE = /(css|style)\(\{[^}\n]*\}\)/;
+const STYLING_CALL_ARGS_RE =
+  /\b(?:css|style|cva|vars|keyframes|cx|removeCss|removeStyle|removeVars|removeKeyframes)\([^()\n]*,[^()\n]*\{/;
+const OBJECT_ARGS_SHARE_LINE_RE = /\},\s*\{/;
 const TABLE_DELIM_RE = /^\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)+\|?$/;
+
+/** Mask line-comment interiors (outside quotes) so detectors read code only. */
+function maskLineComment(line: string): string {
+  const chars = line.split("");
+  let quote: string | null = null;
+  let i = 0;
+  while (i < chars.length) {
+    const c = chars[i]!;
+    if (quote) {
+      if (c === "\\") {
+        i += 2;
+        continue;
+      }
+      if (c === quote) quote = null;
+    } else if (c === '"' || c === "'" || c === "`") {
+      quote = c;
+    } else if (c === "/" && chars[i + 1] === "/") {
+      while (i < chars.length && chars[i] !== "\n") {
+        chars[i] = " ";
+        i++;
+      }
+      continue;
+    }
+    i++;
+  }
+  return chars.join("");
+}
+
+function splitTopLevel(s: string, sep: string): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let quote: string | null = null;
+  let start = 0;
+  let i = 0;
+  while (i < s.length) {
+    const c = s[i]!;
+    if (quote) {
+      if (c === "\\") {
+        i += 2;
+        continue;
+      }
+      if (c === quote) quote = null;
+    } else if (c === '"' || c === "'" || c === "`") {
+      quote = c;
+    } else if (c === "{" || c === "(" || c === "[") depth++;
+    else if (c === "}" || c === ")" || c === "]") depth--;
+    else if (c === sep && depth === 0) {
+      parts.push(s.slice(start, i));
+      start = i + 1;
+    }
+    i++;
+  }
+  parts.push(s.slice(start));
+  return parts;
+}
+
+const OBJ_MEMBER_RE = /^\s*(?:'[^']*'|"[^"]*"|[\w$]+)\s*:/;
+const OBJ_OPT_MEMBER_RE = /^\s*(?:'[^']*'|"[^"]*"|[\w$]+)\s*\?\s*:/;
+const TYPE_VALUE_GUARD_RE =
+  /^\s*(?:string|number|boolean|void|any|unknown|never|symbol|object|bigint|null|undefined)\b/;
+
+/** Object-literal shape: colon members with value-looking members; type literals
+ * (optional keys, bare type-keyword values, `;` separators) and shorthand-only
+ * destructuring are not object literals. */
+function isObjectLiteralLike(inner: string): boolean {
+  if (inner.includes(";") && !inner.includes(",")) return false;
+  let hasColon = false;
+  for (const member of splitTopLevel(inner, ",")) {
+    const m = member.trim();
+    if (!m) continue;
+    if (m.startsWith("...")) return true;
+    if (OBJ_OPT_MEMBER_RE.test(m)) return false;
+    const km = OBJ_MEMBER_RE.exec(m);
+    if (!km) continue;
+    hasColon = true;
+    if (TYPE_VALUE_GUARD_RE.test(m.slice(km[0].length))) return false;
+  }
+  return hasColon;
+}
+
+/** Any brace group opening and closing on this line with object-literal shape. */
+function hasSingleLineObject(code: string): boolean {
+  const stack: number[] = [];
+  let quote: string | null = null;
+  for (let i = 0; i < code.length; i++) {
+    const c = code[i]!;
+    if (quote) {
+      if (c === "\\") {
+        i++;
+        continue;
+      }
+      if (c === quote) quote = null;
+    } else if (c === '"' || c === "'" || c === "`") {
+      quote = c;
+    } else if (c === "{") {
+      stack.push(i);
+    } else if (c === "}" && stack.length) {
+      const open = stack.pop()!;
+      if (isObjectLiteralLike(code.slice(open + 1, i))) return true;
+    }
+  }
+  return false;
+}
 
 /**
  * Counts the cells in a table row: trims, strips one leading and one trailing
@@ -664,8 +771,12 @@ function checkRegistration(): Finding[] {
  * Mechanics details blocks are gone, alert callouts carry no icon spans and no
  * blockquote warning markers, jsx/tsx fences carry no function-wrapped
  * `class`/`style`/`title`/`href`/`id` attributes, and `css()`/`style()` object
- * arguments are always multiline. JSX is the only example syntax; the rule
- * stays audit-enforced. Each finding names its construct.
+ * arguments are always multiline. For `packages/css/docs` fences, every object
+ * literal breaks across lines (one property per line, single-property objects
+ * included; type literals, destructuring, and comment interiors exempt) and
+ * styling-call arguments sit one per line once any argument is an object —
+ * other packages are pending the batched migration. JSX is the only example
+ * syntax; the rule stays audit-enforced. Each finding names its construct.
  * @param corpus Every mdx file in scope
  * @returns Findings (one per offending line)
  */
@@ -675,10 +786,13 @@ function checkExampleConventions(corpus: string[]): Finding[] {
     const content = readFileOrNull(file);
     if (content === null) continue;
     let inJsxFence = false;
+    let inCodeFence = false;
+    const cssDocsScope = file.replace(/\\/g, "/").includes("packages/css/docs/");
     for (const [idx, line] of content.split("\n").entries()) {
       const lineNo = idx + 1;
       if (FENCE_RE.test(line)) {
         inJsxFence = JSX_FENCE_RE.test(line);
+        inCodeFence = CODE_FENCE_RE.test(line);
         continue;
       }
       if (CHILDREN_UNKNOWN_RE.test(line)) {
@@ -716,6 +830,20 @@ function checkExampleConventions(corpus: string[]): Finding[] {
           file,
           message: `line ${lineNo}: single-line css()/style() object argument — break it across lines`,
         });
+      }
+      if (inCodeFence && cssDocsScope) {
+        const code = maskLineComment(line);
+        if (hasSingleLineObject(code)) {
+          findings.push({
+            file,
+            message: `line ${lineNo}: single-line object literal — break it across lines, one property per line (single-property objects included)`,
+          });
+        } else if (STYLING_CALL_ARGS_RE.test(code) || OBJECT_ARGS_SHARE_LINE_RE.test(code)) {
+          findings.push({
+            file,
+            message: `line ${lineNo}: styling call arguments share a line — put each argument on its own line when any argument is an object`,
+          });
+        }
       }
     }
   }

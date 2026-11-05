@@ -19,7 +19,9 @@ vars(
   {
     accent: "#3b82f6",
   },
-  { prefix: "brand-" },
+  {
+    prefix: "brand-",
+  },
 );
 ```
 

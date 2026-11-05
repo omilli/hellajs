@@ -2,6 +2,38 @@
 
 Removes a style created by [`style`](/reference/css/style) and decrements its reference count for memory management. Registration state decrements on both platforms; the CSSOM rules drop at zero references.
 
+## Basic Usage
+
+```jsx
+import { style, removeStyle } from '@hellajs/css';
+
+const buttonStyle = style(
+  {
+    background: 'blue',
+    color: 'white',
+    padding: '0.5rem 1rem',
+  },
+  {
+    label: 'btn',
+  },
+);
+
+// Use the style...
+<button class={buttonStyle}>Click me</button>
+
+// Later, remove it when no longer needed
+removeStyle(
+  {
+    background: 'blue',
+    color: 'white',
+    padding: '0.5rem 1rem',
+  },
+  {
+    label: 'btn',
+  },
+);
+```
+
 ## API
 
 ```typescript
@@ -23,28 +55,6 @@ function removeStyle(base: StyleObject, override: StyleObject, options?: StyleOp
   - `host`: Parent node the style was injected into; a removal without the same `host` targets a different entry
 - **Returns**: `void`
 
-## Basic Usage
-
-```jsx
-import { style, removeStyle } from '@hellajs/css';
-
-const buttonStyle = style({
-  background: 'blue',
-  color: 'white',
-  padding: '0.5rem 1rem'
-}, { label: 'btn' });
-
-// Use the style...
-<button class={buttonStyle}>Click me</button>
-
-// Later, remove it when no longer needed
-removeStyle({
-  background: 'blue',
-  color: 'white',
-  padding: '0.5rem 1rem'
-}, { label: 'btn' });
-```
-
 ## Key Concepts
 
 ### Reference Counting
@@ -56,7 +66,10 @@ removeStyle({
 ```jsx
 import { style, removeStyle } from '@hellajs/css';
 
-const sharedStyle = { display: 'flex', alignItems: 'center' };
+const sharedStyle = {
+  display: 'flex',
+  alignItems: 'center',
+};
 
 const classA = style(sharedStyle); // refCount = 1
 const classB = style(sharedStyle); // refCount = 2, same class
@@ -77,14 +90,30 @@ Structurally identical objects re-derive the same class and text; no cached refe
 
 ```jsx
 // ✅ Works; structurally identical objects match
-style({ color: 'red' }, { label: 'x' });
-removeStyle({ color: 'red' }, { label: 'x' });
+style(
+  {
+    color: 'red',
+  },
+  {
+    label: 'x',
+  },
+);
+removeStyle(
+  {
+    color: 'red',
+  },
+  {
+    label: 'x',
+  },
+);
 
 // ❌ Won't match; different content
 style({
   color: 'red',
 });
-removeStyle({ color: 'blue' }); // no-op, never registered
+removeStyle({
+  color: 'blue',
+}); // no-op, never registered
 ```
 
 ### Function Values Throw

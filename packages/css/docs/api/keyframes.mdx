@@ -2,6 +2,36 @@
 
 Creates a `@keyframes` rule from a step-keyed object and returns its content-hashed animation name, the same string on client and server.
 
+## Basic Usage
+
+```typescript
+import { keyframes, style } from '@hellajs/css';
+
+const spin = keyframes({
+  from: {
+    transform: 'rotate(0deg)',
+  },
+  to: {
+    transform: 'rotate(360deg)',
+  },
+});
+
+// spin === 'kf-uwtnhf'; compose it into any animation declaration
+const loader = style({
+  animation: `${spin} 1s linear infinite`,
+});
+
+// Generated:
+// @keyframes kf-uwtnhf {
+//   from {
+//     transform: rotate(0deg);
+//   }
+//   to {
+//     transform: rotate(360deg);
+//   }
+// }
+```
+
 ## API
 
 ```typescript
@@ -18,30 +48,6 @@ type KeyframesObject = Record<string, StyleObject>;
 
 - **`KeyframesObject`**: Step keys mapped to style objects of declarations. Keys serialize as the step selectors: `from`, `to`, `50%`, or any percentage stop
 
-## Basic Usage
-
-```typescript
-import { keyframes, style } from '@hellajs/css';
-
-const spin = keyframes({
-  from: { transform: 'rotate(0deg)' },
-  to: { transform: 'rotate(360deg)' }
-});
-
-// spin === 'kf-uwtnhf'; compose it into any animation declaration
-const loader = style({ animation: `${spin} 1s linear infinite` });
-
-// Generated:
-// @keyframes kf-uwtnhf {
-//   from {
-//     transform: rotate(0deg);
-//   }
-//   to {
-//     transform: rotate(360deg);
-//   }
-// }
-```
-
 ## Key Concepts
 
 ### Hashed Names Are Collision-Free
@@ -52,13 +58,21 @@ The name is derived from the object's content (`kf-` + hash), never hand-authore
 import { keyframes } from '@hellajs/css';
 
 const fadeIn = keyframes({
-  from: { opacity: '0' },
-  to: { opacity: '1' }
+  from: {
+    opacity: '0',
+  },
+  to: {
+    opacity: '1',
+  },
 });
 
 const fadeInAgain = keyframes({
-  to: { opacity: '1' },      // key order is irrelevant; content is the identity
-  from: { opacity: '0' }
+  to: {
+    opacity: '1',
+  },  // key order is irrelevant; content is the identity
+  from: {
+    opacity: '0',
+  },
 });
 
 // fadeInAgain === fadeIn; one rule in the stylesheet, refCount 2
@@ -72,22 +86,28 @@ Registration runs without a DOM: on the client the rule is injected into the CSS
 import { keyframes, cssText } from '@hellajs/css';
 
 const bounce = keyframes({
-  '0%': { translateY: '0' },
-  '50%': { translateY: '-10px' },
-  '100%': { translateY: '0' }
+  '0%': {
+    transform: 'translateY(0)',
+  },
+  '50%': {
+    transform: 'translateY(-10px)',
+  },
+  '100%': {
+    transform: 'translateY(0)',
+  },
 });
 
 // Client: rule injected into the hella-css sheet
 // Server: cssText() carries:
 // @keyframes kf-… {
 //   0% {
-//     translateY: 0;
+//     transform: translateY(0);
 //   }
 //   50% {
-//     translateY: -10px;
+//     transform: translateY(-10px);
 //   }
 //   100% {
-//     translateY: 0;
+//     transform: translateY(0);
 //   }
 // }
 ```
@@ -100,19 +120,21 @@ The name is a plain string: interpolate it into `animation` shorthands or `anima
 import { css, keyframes, style } from '@hellajs/css';
 
 const pulse = keyframes({
-  '50%': { scale: '1.05' }
+  '50%': {
+    scale: '1.05',
+  },
 });
 
 const dot = style({
   animation: `${pulse} 2s ease-in-out infinite`,
-  borderRadius: '50%'
+  borderRadius: '50%',
 });
 
 css({
   '.spinner': {
     animationName: pulse,
-    animationDuration: '0.8s'
-  }
+    animationDuration: '0.8s',
+  },
 });
 ```
 
@@ -124,9 +146,15 @@ Step keys serialize verbatim; use `from` / `to` or any percentage stop, and mix 
 import { keyframes } from '@hellajs/css';
 
 const progress = keyframes({
-  from: { width: '0%' },
-  '50%': { width: '60%' },
-  to: { width: '100%' }
+  from: {
+    width: '0%',
+  },
+  '50%': {
+    width: '60%',
+  },
+  to: {
+    width: '100%',
+  },
 });
 
 // Generated:
@@ -151,11 +179,24 @@ Value semantics match [`css`](/reference/css/css) exactly; a function passed as 
 
 ```typescript
 // ❌ Throws; keyframes evaluate values eagerly
-keyframes({ from: { opacity: () => baseOpacity() } });
+keyframes({
+  from: {
+    opacity: () => baseOpacity(),
+  },
+});
 
 // ✅ Static steps, dynamic duration
-const fade = keyframes({ from: { opacity: '0' }, to: { opacity: '1' } });
-style({ animation: `${fade} ${duration()}s ease` });
+const fade = keyframes({
+  from: {
+    opacity: '0',
+  },
+  to: {
+    opacity: '1',
+  },
+});
+style({
+  animation: `${fade} ${duration()}s ease`,
+});
 ```
 
 ### Keyframes Stay Global

@@ -13,21 +13,23 @@ import { style } from '@hellajs/css';
 const Counter = () => {
   const count = signal(0);
 
-  const buttonStyle = style('btn', {
-    padding: '0.75rem 1.5rem',
-    border: 'none',
-    borderRadius: '0.5rem',
-    background: '#3b82f6',
-    color: 'white',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-
-    '&:hover': {
-      background: '#2563eb',
-      transform: 'translateY(-1px)'
-    }
-  });
+  const buttonStyle = style(
+    'btn',
+    {
+      padding: '0.75rem 1.5rem',
+      border: 'none',
+      borderRadius: '0.5rem',
+      background: '#3b82f6',
+      color: 'white',
+      fontWeight: '600',
+      cursor: 'pointer',
+      transition: 'all 0.2s ease',
+      '&:hover': {
+        background: '#2563eb',
+        transform: 'translateY(-1px)',
+      },
+    },
+  );
   // "btn-nficjjz"; identical on client and server
   // style({ ... }, { label: 'btn' }) is the equivalent bag form
 
@@ -51,21 +53,29 @@ A second object argument composes: an object base deep-merges with the override 
 ```jsx
 import { style, cx } from '@hellajs/css';
 
-const card = style('card', {
-  padding: '1rem',
-  borderRadius: '0.5rem'
-});
+const card = style(
+  'card',
+  {
+    padding: '1rem',
+    borderRadius: '0.5rem',
+  },
+);
 const alert = cx(
   card,
   style({
-    border: '1px solid red'
-  })
+    border: '1px solid red',
+  }),
 );
 // "card-drokihk …"; the second class carries only the added declarations
 
 const denseCard = style(
-  { padding: '1rem', borderRadius: '0.5rem' },
-  { padding: '0.5rem' }
+  {
+    padding: '1rem',
+    borderRadius: '0.5rem',
+  },
+  {
+    padding: '0.5rem',
+  },
 );
 // One merged class; "jptpugw" with the override's padding
 ```
@@ -78,8 +88,13 @@ const denseCard = style(
 import { css } from '@hellajs/css';
 
 css({
-  body: { margin: 0, fontFamily: 'system-ui, sans-serif' },
-  '*': { boxSizing: 'border-box' }
+  body: {
+    margin: 0,
+    fontFamily: 'system-ui, sans-serif',
+  },
+  '*': {
+    boxSizing: 'border-box',
+  },
 });
 ```
 
@@ -92,22 +107,57 @@ All CSS `@` rules are supported (`@media`, `@keyframes`, `@font-face`, `@contain
 ```jsx
 import { cva } from '@hellajs/css';
 
-const MEDIA = { md: '(min-width: 768px)' };
+const MEDIA = {
+  md: '(min-width: 768px)',
+};
 
 const button = cva({
-  base: { borderRadius: '0.5rem', cursor: 'pointer' },
+  base: {
+    borderRadius: '0.5rem',
+    cursor: 'pointer',
+  },
   media: MEDIA,
   variants: {
-    size: { sm: { padding: '0.25rem 0.5rem' }, lg: { padding: '0.75rem 1.5rem' } },
-    tone: { primary: { background: '#3b82f6' }, danger: { background: '#dc2626' } }
+    size: {
+      sm: {
+        padding: '0.25rem 0.5rem',
+      },
+      lg: {
+        padding: '0.75rem 1.5rem',
+      },
+    },
+    tone: {
+      primary: {
+        background: '#3b82f6',
+      },
+      danger: {
+        background: '#dc2626',
+      },
+    },
   },
-  defaultVariants: { size: 'sm' },
+  defaultVariants: {
+    size: 'sm',
+  },
   compoundVariants: [
-    { size: 'lg', tone: 'danger', css: { fontWeight: 700 } }
-  ]
+    {
+      size: 'lg',
+      tone: 'danger',
+      css: {
+        fontWeight: 700,
+      },
+    },
+  ],
 });
 
-<button class={button({ tone: 'danger', size: { initial: 'sm', md: 'lg' } })}>
+<button
+  class={button({
+    tone: 'danger',
+    size: {
+      initial: 'sm',
+      md: 'lg',
+    },
+  })}
+>
   Delete
 </button>
 ```
@@ -127,18 +177,21 @@ const theme = signal('light');
 const themeVars = vars({
   button: {
     background: () => theme() === 'dark' ? '#374151' : '#3b82f6',
-    color: '#ffffff'
-  }
+    color: '#ffffff',
+  },
 });
 
-const buttonStyle = style('theme-btn', {
-  padding: '0.75rem 1.5rem',
-  border: 'none',
-  borderRadius: '0.5rem',
-  background: themeVars.button.background,
-  color: themeVars.button.color,
-  cursor: 'pointer'
-});
+const buttonStyle = style(
+  'theme-btn',
+  {
+    padding: '0.75rem 1.5rem',
+    border: 'none',
+    borderRadius: '0.5rem',
+    background: themeVars.button.background,
+    color: themeVars.button.color,
+    cursor: 'pointer',
+  },
+);
 
 <button
   class={buttonStyle}
@@ -158,18 +211,25 @@ Property values in `style()` and `css()` objects are static; function values thr
 import { keyframes, style } from '@hellajs/css';
 
 const spin = keyframes({
-  from: { transform: 'rotate(0deg)' },
-  to: { transform: 'rotate(360deg)' }
+  from: {
+    transform: 'rotate(0deg)',
+  },
+  to: {
+    transform: 'rotate(360deg)',
+  },
 });
 
-const spinner = style('spinner', {
-  width: '2rem',
-  height: '2rem',
-  border: '3px solid #e5e7eb',
-  borderTopColor: '#3b82f6',
-  borderRadius: '50%',
-  animation: `${spin} 0.8s linear infinite`
-});
+const spinner = style(
+  'spinner',
+  {
+    width: '2rem',
+    height: '2rem',
+    border: '3px solid #e5e7eb',
+    borderTopColor: '#3b82f6',
+    borderRadius: '50%',
+    animation: `${spin} 0.8s linear infinite`,
+  },
+);
 ```
 
 ## Server Rendering
@@ -179,9 +239,21 @@ Every creator registers its rules on both platforms and returns the same value e
 ```typescript
 import { css, cssText, style, vars } from '@hellajs/css';
 
-const tokens = vars({ bg: '#ffffff' });
-css({ body: { margin: 0, backgroundColor: tokens.bg } });
-const card = style('card', { padding: '1rem' });
+const tokens = vars({
+  bg: '#ffffff',
+});
+css({
+  body: {
+    margin: 0,
+    backgroundColor: tokens.bg,
+  },
+});
+const card = style(
+  'card',
+  {
+    padding: '1rem',
+  },
+);
 
 // In the response handler; one embed per response
 const page = `<!DOCTYPE html><html><head><style id="hella-css">${cssText()}</style></head><body>…</body></html>`;
@@ -194,7 +266,11 @@ const page = `<!DOCTYPE html><html><head><style id="hella-css">${cssText()}</sty
 The `class` attribute accepts a function or an array: both recalculate when signals change, and falsy entries drop out. This is how hashed classes compose at runtime, alongside [`cx`](/reference/css/cx) and variant recipes.
 
 ```jsx
-const TodoItem = ({ todo }: { todo: () => { done: boolean; text: string; priority: string; editing: boolean } }) => {
+type Todo = { done: boolean; text: string; priority: string; editing: boolean };
+
+const TodoItem = ({ todo }: {
+  todo: () => Todo,
+}) => {
   return (
     <div class={[
       'todo-item',
@@ -216,12 +292,30 @@ The `host` option on [`style`](/reference/css/style), [`css`](/reference/css/css
 import { css, style, vars } from '@hellajs/css';
 
 const hostElement = document.createElement('my-card');
-const root = hostElement.attachShadow({ mode: 'open' });
+const root = hostElement.attachShadow({
+  mode: 'open',
+});
 
 // Shadow roots don't match :root; scope vars to the host element
-const theme = vars({ accent: '#3b82f6' }, { host: root, scoped: ':host' });
+const theme = vars(
+  {
+    accent: '#3b82f6',
+  },
+  {
+    host: root,
+    scoped: ':host',
+  },
+);
 
-const card = style('card', { color: theme.accent }, { host: root });
+const card = style(
+  'card',
+  {
+    color: theme.accent,
+  },
+  {
+    host: root,
+  },
+);
 // <style> created inside the shadow root, not document.head
 ```
 

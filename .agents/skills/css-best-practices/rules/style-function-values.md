@@ -18,9 +18,12 @@ import { style } from "@hellajs/css";
 const theme = signal("light");
 
 // Throws: function values are not supported in css objects
-const button = style("theme-btn", {
-  background: () => (theme() === "dark" ? "#374151" : "#3b82f6"),
-});
+const button = style(
+  "theme-btn",
+  {
+    background: () => (theme() === "dark" ? "#374151" : "#3b82f6"),
+  },
+);
 ```
 
 **Correct (what is right):**
@@ -35,9 +38,12 @@ const themeVars = vars({
   background: () => (theme() === "dark" ? "#374151" : "#3b82f6"),
 });
 
-const button = style("theme-btn", {
-  background: themeVars.background,
-});
+const button = style(
+  "theme-btn",
+  {
+    background: themeVars.background,
+  },
+);
 ```
 
 Reference: `packages/css/lib/css.ts process` and `packages/css/docs/concepts/styling.mdx`

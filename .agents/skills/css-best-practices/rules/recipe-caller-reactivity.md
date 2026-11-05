@@ -19,14 +19,20 @@ const size = signal<"sm" | "lg">("sm");
 const button = cva({
   variants: {
     size: {
-      sm: { padding: "0.25rem 0.5rem" },
-      lg: { padding: "0.75rem 1.5rem" },
+      sm: {
+        padding: "0.25rem 0.5rem",
+      },
+      lg: {
+        padding: "0.75rem 1.5rem",
+      },
     },
   },
 });
 
 // Resolved once: the class is frozen at the initial signal value
-const cls = button({ size: size() });
+const cls = button({
+  size: size(),
+});
 
 <button class={cls}>Save</button>;
 ```
@@ -41,14 +47,20 @@ const size = signal<"sm" | "lg">("sm");
 const button = cva({
   variants: {
     size: {
-      sm: { padding: "0.25rem 0.5rem" },
-      lg: { padding: "0.75rem 1.5rem" },
+      sm: {
+        padding: "0.25rem 0.5rem",
+      },
+      lg: {
+        padding: "0.75rem 1.5rem",
+      },
     },
   },
 });
 
 // Re-resolved inside a function class binding on every signal change
-<button class={() => button({ size: size() })}>Save</button>;
+<button class={() => button({
+  size: size(),
+})}>Save</button>;
 ```
 
 Reference: `packages/css/docs/api/cva.mdx` and `packages/css/docs/concepts/styling.mdx`

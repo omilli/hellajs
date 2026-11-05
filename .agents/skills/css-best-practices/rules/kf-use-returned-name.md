@@ -15,15 +15,22 @@ tags: keyframes, animation, hashing
 import { keyframes, style } from "@hellajs/css";
 
 const spin = keyframes({
-  from: { transform: "rotate(0deg)" },
-  to: { transform: "rotate(360deg)" },
+  from: {
+    transform: "rotate(0deg)",
+  },
+  to: {
+    transform: "rotate(360deg)",
+  },
 });
 
 // The registered name is "kf-{hash}", not "spin": the animation
 // matches nothing and never runs
-const spinner = style("spinner", {
-  animation: "spin 0.8s linear infinite",
-});
+const spinner = style(
+  "spinner",
+  {
+    animation: "spin 0.8s linear infinite",
+  },
+);
 ```
 
 **Correct (what is right):**
@@ -32,15 +39,22 @@ const spinner = style("spinner", {
 import { keyframes, style } from "@hellajs/css";
 
 const spin = keyframes({
-  from: { transform: "rotate(0deg)" },
-  to: { transform: "rotate(360deg)" },
+  from: {
+    transform: "rotate(0deg)",
+  },
+  to: {
+    transform: "rotate(360deg)",
+  },
 });
 
-const spinner = style("spinner", {
-  width: "2rem",
-  height: "2rem",
-  animation: `${spin} 0.8s linear infinite`,
-});
+const spinner = style(
+  "spinner",
+  {
+    width: "2rem",
+    height: "2rem",
+    animation: `${spin} 0.8s linear infinite`,
+  },
+);
 ```
 
 Reference: `packages/css/lib/keyframes.ts` and `packages/css/docs/api/keyframes.mdx`

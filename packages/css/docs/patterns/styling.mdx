@@ -9,23 +9,59 @@ Use [`cva`](/reference/css/cva) to drive conditional classes from typed variant 
 ```jsx
 import { cx, cva } from '@hellajs/css';
 
-const MEDIA = { md: '(min-width: 768px)' };
+const MEDIA = {
+  md: '(min-width: 768px)',
+};
 
 const button = cva({
-  base: { borderRadius: '0.5rem', cursor: 'pointer' },
+  base: {
+    borderRadius: '0.5rem',
+    cursor: 'pointer',
+  },
   media: MEDIA,
   variants: {
-    size: { sm: { padding: '0.25rem 0.5rem' }, lg: { padding: '0.75rem 1.5rem' } },
-    tone: { primary: { background: 'blue' }, danger: { background: 'red' } }
+    size: {
+      sm: {
+        padding: '0.25rem 0.5rem',
+      },
+      lg: {
+        padding: '0.75rem 1.5rem',
+      },
+    },
+    tone: {
+      primary: {
+        background: 'blue',
+      },
+      danger: {
+        background: 'red',
+      },
+    },
   },
-  defaultVariants: { size: 'sm' },
+  defaultVariants: {
+    size: 'sm',
+  },
   compoundVariants: [
-    { size: 'lg', tone: 'danger', css: { fontWeight: 700 } }
-  ]
+    {
+      size: 'lg',
+      tone: 'danger',
+      css: {
+        fontWeight: 700,
+      },
+    },
+  ],
 });
 
 // Responsive: sm below 768px, lg from md up; pure CSS, no listeners
-<button class={cx(button({ tone: 'danger', size: { initial: 'sm', md: 'lg' } }), 'w-full')}>Delete</button>
+<button class={cx(
+  button({
+    tone: 'danger',
+    size: {
+      initial: 'sm',
+      md: 'lg',
+    },
+  }),
+  'w-full',
+)}>Delete</button>
 ```
 
 ### Scoped Component Styles
@@ -35,15 +71,23 @@ Use [`style`](/reference/css/style) to create isolated styles with nested select
 ```jsx
 import { style } from '@hellajs/css';
 
-const card = style({
-  padding: '1rem',
-  borderRadius: '0.5rem',
-  backgroundColor: '#fff',
-  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-
-  'h2': { margin: '0 0 0.5rem 0' },
-  '&:hover': { boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }
-}, { label: 'card' });
+const card = style(
+  {
+    padding: '1rem',
+    borderRadius: '0.5rem',
+    backgroundColor: '#fff',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+    'h2': {
+      margin: '0 0 0.5rem 0',
+    },
+    '&:hover': {
+      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+    },
+  },
+  {
+    label: 'card',
+  },
+);
 
 <div class={card}>
   <h2>Title</h2>
@@ -62,15 +106,20 @@ import { style, vars } from '@hellajs/css';
 const theme = signal('light');
 const tokens = vars({
   bg: () => theme() === 'dark' ? '#1a1a1a' : '#ffffff',
-  text: () => theme() === 'dark' ? '#e0e0e0' : '#333333'
+  text: () => theme() === 'dark' ? '#e0e0e0' : '#333333',
 });
 
-const box = style({
-  background: tokens.bg,
-  color: tokens.text,
-  padding: '1rem',
-  borderRadius: '0.5rem'
-}, { label: 'box' });
+const box = style(
+  {
+    background: tokens.bg,
+    color: tokens.text,
+    padding: '1rem',
+    borderRadius: '0.5rem',
+  },
+  {
+    label: 'box',
+  },
+);
 
 <div class={box}>
   <button on:click={() => theme(theme() === 'dark' ? 'light' : 'dark')}>
@@ -90,12 +139,20 @@ import { vars } from '@hellajs/css';
 const mode = signal('light');
 
 // Light values by default on :root
-vars({ bg: '#ffffff', text: '#111827' });
+vars({
+  bg: '#ffffff',
+  text: '#111827',
+});
 
 // Dark values win under [data-theme="dark"]
 vars(
-  { bg: '#1a1a1a', text: '#e5e7eb' },
-  { scoped: '[data-theme="dark"]' }
+  {
+    bg: '#1a1a1a',
+    text: '#e5e7eb',
+  },
+  {
+    scoped: '[data-theme="dark"]',
+  },
 );
 
 // Flip the root attribute; every var() consumer follows
@@ -112,13 +169,18 @@ import { vars } from '@hellajs/css';
 // Light values by default
 vars({
   bg: '#ffffff',
-  text: '#111827'
+  text: '#111827',
 });
 
 // Dark values when the OS prefers dark; pure CSS, no JS state
 vars(
-  { bg: '#1a1a1a', text: '#e5e7eb' },
-  { media: '(prefers-color-scheme: dark)' }
+  {
+    bg: '#1a1a1a',
+    text: '#e5e7eb',
+  },
+  {
+    media: '(prefers-color-scheme: dark)',
+  },
 );
 ```
 
@@ -129,18 +191,22 @@ Use `@media` queries inside [`style`](/reference/css/style); the condition inher
 ```jsx
 import { style } from '@hellajs/css';
 
-const grid = style({
-  display: 'grid',
-  gridTemplateColumns: '1fr',
-  gap: '1rem',
-
-  '@media (min-width: 768px)': {
-    gridTemplateColumns: '1fr 1fr'
+const grid = style(
+  {
+    display: 'grid',
+    gridTemplateColumns: '1fr',
+    gap: '1rem',
+    '@media (min-width: 768px)': {
+      gridTemplateColumns: '1fr 1fr',
+    },
+    '@media (min-width: 1024px)': {
+      gridTemplateColumns: '1fr 1fr 1fr',
+    },
   },
-  '@media (min-width: 1024px)': {
-    gridTemplateColumns: '1fr 1fr 1fr'
-  }
-}, { label: 'grid' });
+  {
+    label: 'grid',
+  },
+);
 ```
 
 ### Keyframe Animations
@@ -151,18 +217,27 @@ Use [`keyframes`](/reference/css/keyframes) for animation definitions; the retur
 import { keyframes, style } from '@hellajs/css';
 
 const spin = keyframes({
-  from: { transform: 'rotate(0deg)' },
-  to: { transform: 'rotate(360deg)' }
+  from: {
+    transform: 'rotate(0deg)',
+  },
+  to: {
+    transform: 'rotate(360deg)',
+  },
 });
 
-const spinner = style({
-  width: '2rem',
-  height: '2rem',
-  border: '3px solid #e5e7eb',
-  borderTopColor: '#3b82f6',
-  borderRadius: '50%',
-  animation: `${spin} 0.8s linear infinite`
-}, { label: 'spinner' });
+const spinner = style(
+  {
+    width: '2rem',
+    height: '2rem',
+    border: '3px solid #e5e7eb',
+    borderTopColor: '#3b82f6',
+    borderRadius: '50%',
+    animation: `${spin} 0.8s linear infinite`,
+  },
+  {
+    label: 'spinner',
+  },
+);
 ```
 
 ### Conditional Styles
@@ -174,12 +249,17 @@ import { style } from '@hellajs/css';
 
 const isActive = true;
 
-const button = style({
-  padding: '0.5rem 1rem',
-  background: '#3b82f6',
-  color: 'white',
-  border: isActive ? '2px solid #1d4ed8' : undefined
-}, { label: 'button' });
+const button = style(
+  {
+    padding: '0.5rem 1rem',
+    background: '#3b82f6',
+    color: 'white',
+    border: isActive ? '2px solid #1d4ed8' : undefined,
+  },
+  {
+    label: 'button',
+  },
+);
 ```
 
 For classes that change at runtime, resolve a [`cva`](/reference/css/cva) recipe per render (`class={button({ size: size() })}`), and for style values that react to signals, use [`vars`](/reference/css/vars).
@@ -191,10 +271,22 @@ Use [`removeStyle`](/reference/css/removestyle) to clean up styles when they are
 ```jsx
 import { removeStyle, style } from '@hellajs/css';
 
-const styles = { color: 'red' };
-const className = style(styles, { label: 'test' });
+const styles = {
+  color: 'red',
+};
+const className = style(
+  styles,
+  {
+    label: 'test',
+  },
+);
 
-removeStyle(styles, { label: 'test' });
+removeStyle(
+  styles,
+  {
+    label: 'test',
+  },
+);
 ```
 
 ### CSS Variable Cleanup
@@ -206,7 +298,9 @@ import { signal } from '@hellajs/core';
 import { removeVars, vars } from '@hellajs/css';
 
 const color = signal('red');
-const tokens = { primary: color };
+const tokens = {
+  primary: color,
+};
 
 vars(tokens);  // refCount = 1
 removeVars(tokens);  // refCount = 0, effect disposed, vars removed
@@ -222,12 +316,27 @@ Every creator registers on both platforms; on the server, collect everything reg
 import { css, cssText, style, vars } from '@hellajs/css';
 
 // Module scope; registers on the server too
-const tokens = vars({ accent: '#3b82f6' });
-css({ body: { margin: 0 } });
-const card = style({ padding: '1rem', color: tokens.accent }, { label: 'card' });
+const tokens = vars({
+  accent: '#3b82f6',
+});
+css({
+  body: {
+    margin: 0,
+  },
+});
+const card = style(
+  {
+    padding: '1rem',
+    color: tokens.accent,
+  },
+  {
+    label: 'card',
+  },
+);
 
-// Per response; one embed collects the css, style, and vars rules
-const page = `<!DOCTYPE html><html><head><style>${cssText()}</style></head><body>…</body></html>`;
+// Per response; one embed collects the css, style, and vars rules.
+// The id lets hydration adopt the delivered rules instead of duplicating them
+const page = `<!DOCTYPE html><html><head><style id="hella-css">${cssText()}</style></head><body>…</body></html>`;
 ```
 
-`cssText()` peeks, never drains; repeated calls return the same string, and the client re-registers the same rules on hydration.
+`cssText()` peeks, never drains; repeated calls return the same string. To mirror the client's two-element split, embed `cssText.css()` and `cssText.vars()` into their own `hella-css` / `hella-vars` tags instead ([cssText](/reference/css/csstext)).

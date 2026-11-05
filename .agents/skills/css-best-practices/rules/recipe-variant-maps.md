@@ -17,7 +17,9 @@ import { cva } from "@hellajs/css";
 const button = cva({
   variants: {
     size: {
-      sm: { padding: "0.25rem 0.5rem" },
+      sm: {
+        padding: "0.25rem 0.5rem",
+      },
     },
   },
 });
@@ -25,7 +27,9 @@ const button = cva({
 // Creation threw nothing; this throws at first resolution:
 // unknown value "large" for variant "size". The mistake was in the
 // config, but it surfaces here
-button({ size: "large" });
+button({
+  size: "large",
+});
 ```
 
 **Correct (what is right):**
@@ -40,12 +44,20 @@ const button = cva({
   },
   variants: {
     size: {
-      sm: { padding: "0.25rem 0.5rem" },
-      lg: { padding: "0.75rem 1.5rem" },
+      sm: {
+        padding: "0.25rem 0.5rem",
+      },
+      lg: {
+        padding: "0.75rem 1.5rem",
+      },
     },
     tone: {
-      primary: { background: "#3b82f6" },
-      danger: { background: "#dc2626" },
+      primary: {
+        background: "#3b82f6",
+      },
+      danger: {
+        background: "#dc2626",
+      },
     },
   },
   defaultVariants: {
@@ -55,13 +67,17 @@ const button = cva({
     {
       size: "lg",
       tone: "danger",
-      css: { fontWeight: 700 },
+      css: {
+        fontWeight: 700,
+      },
     },
   ],
 });
 
 // Unselected variants generate no CSS; the default fills size
-button({ tone: "danger" });
+button({
+  tone: "danger",
+});
 ```
 
 Reference: `packages/css/lib/cva.ts` and `packages/css/docs/api/cva.mdx`

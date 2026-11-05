@@ -2,6 +2,31 @@
 
 Removes a `@keyframes` rule created by `keyframes()` and decrements its reference count for memory management.
 
+## Basic Usage
+
+```typescript
+import { keyframes, removeKeyframes } from '@hellajs/css';
+
+const spin = keyframes({
+  from: {
+    transform: 'rotate(0deg)',
+  },
+  to: {
+    transform: 'rotate(360deg)',
+  },
+});
+
+// Later, remove when no longer needed
+removeKeyframes({
+  from: {
+    transform: 'rotate(0deg)',
+  },
+  to: {
+    transform: 'rotate(360deg)',
+  },
+});
+```
+
 ## API
 
 ```typescript
@@ -9,23 +34,6 @@ function removeKeyframes(obj: KeyframesObject): void
 ```
 - `obj`: Keyframes object to remove (structurally identical objects match, same reference not required)
 - **Returns**: `void`
-
-## Basic Usage
-
-```typescript
-import { keyframes, removeKeyframes } from '@hellajs/css';
-
-const spin = keyframes({
-  from: { transform: 'rotate(0deg)' },
-  to: { transform: 'rotate(360deg)' }
-});
-
-// Later, remove when no longer needed
-removeKeyframes({
-  from: { transform: 'rotate(0deg)' },
-  to: { transform: 'rotate(360deg)' }
-});
-```
 
 ## Key Concepts
 
@@ -36,7 +44,14 @@ removeKeyframes({
 ```typescript
 import { keyframes, removeKeyframes } from '@hellajs/css';
 
-const steps = { from: { opacity: '0' }, to: { opacity: '1' } };
+const steps = {
+  from: {
+    opacity: '0',
+  },
+  to: {
+    opacity: '1',
+  },
+};
 
 keyframes(steps);  // refCount = 1
 keyframes(steps);  // refCount = 2; same name, one rule

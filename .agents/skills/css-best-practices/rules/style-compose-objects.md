@@ -42,9 +42,12 @@ const base = {
 };
 
 // One merged class: override wins, nested objects merge, arrays replace
-const dense = style(base, {
-  padding: "0.5rem",
-});
+const dense = style(
+  base,
+  {
+    padding: "0.5rem",
+  },
+);
 ```
 
 A second plain object reads as an options bag only when every own key is `label`, `layer`, or `host` and no third argument is present; anything else is the override. A positional string first argument is a label, never a base.

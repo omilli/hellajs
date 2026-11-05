@@ -1,24 +1,22 @@
 # resetVars
 
-Clears all CSS variables, caches, and reactive effects, resetting the CSS variables system to initial state.
-
-## API
-
-```typescript
-function resetVars(): void
-```
-- **Returns**: `void`
+Clears all CSS variables, caches, and reactive effects, resetting the CSS variables system to its initial state.
 
 ## Basic Usage
-
 
 ```jsx
 import { vars, resetVars } from '@hellajs/css';
 
 // Create some CSS variables
 const theme = vars({
-  colors: { primary: '#3b82f6', secondary: '#64748b' },
-  spacing: { base: '1rem', large: '2rem' }
+  colors: {
+    primary: '#3b82f6',
+    secondary: '#64748b',
+  },
+  spacing: {
+    base: '1rem',
+    large: '2rem',
+  },
 });
 
 // Later, reset everything
@@ -28,34 +26,37 @@ resetVars();
 // All reactive effects are disposed
 ```
 
+## API
+
+```typescript
+function resetVars(): void
+```
+- **Returns**: `void`
+
 ## Key Concepts
 
-### Complete System Reset
+### What the Reset Covers
 
-The `resetVars` function provides complete cleanup of the CSS variables system:
-
-- **CSS Variables**: Clears all CSS custom properties from the `hella-vars` style element
-- **Cache Cleanup**: Clears all cached variable objects and hash mappings
-- **Reactive Effects**: Disposes all active reactive effects created by `vars`
-- **Memory Management**: Frees all internal references and prevents memory leaks
-
-### Testing Scenarios
+`resetVars()` disposes every reactive effect [`vars`](/reference/css/vars) created, clears the vars registries and the static cache, and resets the `hella-vars` style element. The reset is vars-side only: css-side registrations ([`css`](/reference/css/css), [`style`](/reference/css/style), [`keyframes`](/reference/css/keyframes)) are untouched; call [`resetCss`](/reference/css/resetcss) for those.
 
 ```jsx
 import { vars, resetVars } from '@hellajs/css';
 
-// Clean slate before creating variables
-resetVars();
-
 const theme = vars({
-  colors: { primary: '#ff0000' }
+  colors: {
+    primary: '#ff0000',
+  },
 });
 
-// theme.colors.primary === 'var(--colors-primary)'
-// document.getElementById('hella-vars')?.sheet?.cssRules[0]?.cssText includes '--colors-primary: #ff0000'
+resetVars();
+
+// theme.colors.primary === 'var(--colors-primary)' still; a var() reference is a
+// plain string, but its --colors-primary declaration is gone from the sheet
 ```
 
 ### Reactive Effects Cleanup
+
+Disposing the effects stops stylesheet updates; the signals themselves keep their values and listeners:
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -67,8 +68,8 @@ const isDark = signal(false);
 const theme = vars({
   colors: {
     primary: primaryColor,
-    background: () => isDark() ? '#1a1a1a' : '#ffffff'
-  }
+    background: () => isDark() ? '#1a1a1a' : '#ffffff',
+  },
 });
 
 resetVars();
@@ -77,20 +78,30 @@ primaryColor('#ff0000'); // No CSS update after reset
 isDark(true);           // No CSS update after reset
 ```
 
-### Integration with resetCss
+### Testing Scenarios
 
 ```jsx
-import { resetCss, resetVars } from '@hellajs/css';
+import { vars, resetVars } from '@hellajs/css';
 
-// Complete CSS system reset
-const resetAllCSS = () => {
-  resetCss();   // Clear CSS rules and styles
-  resetVars();  // Clear CSS variables and effects
-};
+// Clean slate before creating variables
+resetVars();
+
+const theme = vars({
+  colors: {
+    primary: '#ff0000',
+  },
+});
+
+// theme.colors.primary === 'var(--colors-primary)'
+// document.getElementById('hella-vars')?.sheet?.cssRules[0]?.cssText includes '--colors-primary: #ff0000'
 ```
+
+## Important Considerations
+
+### Use Cases
+
+Reach for `resetVars()` when every vars registration should go at once: between test runs, or when tearing down an app instance that owned its theme. For removing one registration while the rest live on, use [`removeVars`](/reference/css/removevars) (reactive entries dispose their effect at zero references). For a complete reset of both sides, pair it with [`resetCss`](/reference/css/resetcss).
 
 ### Safety
 
-- **Non-destructive** - Only affects HellaJS CSS variables
-- **Signal preservation** - Does not affect original signals, only CSS effects
-- **Isolation** - Does not impact other CSS systems or frameworks
+Only HellaJS CSS variables are affected: the reset never touches external stylesheets, and the signals feeding reactive vars keep working for every other consumer; only the CSS effects are disposed.

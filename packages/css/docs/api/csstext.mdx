@@ -2,6 +2,46 @@
 
 Collects the CSS text registered by [`css`](/reference/css/css), [`style`](/reference/css/style), [`keyframes`](/reference/css/keyframes), and [`vars`](/reference/css/vars) calls on the default host. A callable namespace: `cssText()` joins every contribution into one string, the server-side `<style>` source; `cssText.css()` collects the css-side half and `cssText.vars()` the vars half, so server rendering can emit each into its own `<style>` tag the client claims at hydration.
 
+## Basic Usage
+
+```typescript
+import { css, style, vars, keyframes, cssText } from '@hellajs/css';
+
+css({
+  body: {
+    margin: 0,
+    fontFamily: 'system-ui, sans-serif',
+  },
+});
+const card = style(
+  {
+    background: 'white',
+  },
+  {
+    label: 'card',
+  },
+);
+const theme = vars({
+  color: {
+    primary: '#3b82f6',
+  },
+});
+const spin = keyframes({
+  from: {
+    transform: 'rotate(0deg)',
+  },
+  to: {
+    transform: 'rotate(360deg)',
+  },
+});
+
+const head = `<style id="hella-css">${cssText()}</style>`;
+// "body {\n  margin: 0px;\n  font-family: system-ui, sans-serif;\n}" + "\n\n"
+// + ".card-… {\n  background: white;\n}" + "\n\n"
+// + "@keyframes kf-… {\n  from {\n    transform: rotate(0deg);\n  }\n  to {\n    transform: rotate(360deg);\n  }\n}" + "\n\n"
+// + ":root {\n  --color-primary: #3b82f6;\n}"
+```
+
 ## API
 
 ```typescript
@@ -14,33 +54,38 @@ declare const cssText: {
 
 - **Returns**: The joined rule text of all default-host registrations, in first-registration order (statement-leading texts, e.g. an `@import`, hoist ahead of braced-only texts).
 
-## Basic Usage
-
-```typescript
-import { css, style, vars, keyframes, cssText } from '@hellajs/css';
-
-css({ body: { margin: 0, fontFamily: 'system-ui, sans-serif' } });
-const card = style({ background: 'white' }, { label: 'card' });
-const theme = vars({ color: { primary: '#3b82f6' } });
-const spin = keyframes({ from: { transform: 'rotate(0deg)' }, to: { transform: 'rotate(360deg)' } });
-
-const head = `<style id="hella-css">${cssText()}</style>`;
-// "body {\n  margin: 0px;\n  font-family: system-ui, sans-serif;\n}" + "\n\n"
-// + ".card-… {\n  background: white;\n}" + "\n\n"
-// + "@keyframes kf-… {\n  from {\n    transform: rotate(0deg);\n  }\n  to {\n    transform: rotate(360deg);\n  }\n}" + "\n\n"
-// + ":root {\n  --color-primary: #3b82f6;\n}"
-```
-
-## Members
-
 ### css
 
 The css-side member: every registration except the vars buckets, collected for the rules sheet.
 
 ```typescript
-declare namespace cssText {
-  function css(): string;
-}
+import { css, keyframes, style, cssText } from '@hellajs/css';
+
+css({
+  body: {
+    margin: 0,
+  },
+});
+const panel = style(
+  {
+    background: 'white',
+  },
+  {
+    label: 'panel',
+  },
+);
+const fadeIn = keyframes({
+  from: {
+    opacity: '0',
+  },
+  to: {
+    opacity: '1',
+  },
+});
+
+// Rules and keyframes only; the vars half is excluded
+const rulesText = cssText.css();
+// "body {\n  margin: 0px;\n}" + ".panel-… {\n  background: white;\n}" + "@keyframes kf-… {…}"
 ```
 
 - **Returns**: The css-side text ([`css`](/reference/css/css), [`style`](/reference/css/style), [`keyframes`](/reference/css/keyframes) registrations, statements hoisted ahead of braced-only texts). `""` when nothing css-side is registered.
@@ -50,28 +95,19 @@ declare namespace cssText {
 The vars member: the custom-property bucket rules, collected for the vars sheet.
 
 ```typescript
-declare namespace cssText {
-  function vars(): string;
-}
+import { vars, cssText } from '@hellajs/css';
+
+vars({
+  color: {
+    primary: '#3b82f6',
+  },
+});
+
+// ":root {\n  --color-primary: #3b82f6;\n}"; media-wrapped when the bucket's media option was set
+const varsText = cssText.vars();
 ```
 
 - **Returns**: The vars text ([`vars`](/reference/css/vars) bucket rules, media-wrapped when the bucket's `media` option was set). `""` when nothing vars-side is registered.
-
-### Two Tags, One Per Sheet
-
-The client keeps two style elements, and each member's text embeds into the tag carrying its id:
-
-```js
-import { css, vars, cssText } from '@hellajs/css';
-
-css({ body: { margin: 0 } });
-vars({ color: { primary: '#3b82f6' } });
-
-const head = `<style id="hella-css">${cssText.css()}</style>
-<style id="hella-vars">${cssText.vars()}</style>`;
-// cssText.css(): "body {\n  margin: 0px;\n}"
-// cssText.vars(): ":root {\n  --color-primary: #3b82f6;\n}"
-```
 
 ## Key Concepts
 
@@ -93,7 +129,31 @@ Every emission is pretty-printed: one declaration per line (`prop: value;` with 
 
 ### One Tag Per Sheet
 
-The client keeps two style elements (`hella-css` for rules, `hella-vars` for custom properties), and the combined `cssText()` joins both sides into one string. Emitting that string through a single `hella-css` tag lands the vars declarations in the rules element, off the sheet the client keeps them on. `cssText.css()` and `cssText.vars()` restore the two-tag split: each part embeds into the tag carrying its id, so the delivered text mirrors the client's own element split.
+The client keeps two style elements (`hella-css` for rules, `hella-vars` for custom properties), and the combined `cssText()` joins both sides into one string. Emitting that string through a single `hella-css` tag lands the vars declarations in the rules element, off the sheet the client keeps them on.
+
+### Two Tags, One Per Sheet
+
+`cssText.css()` and `cssText.vars()` restore the two-tag split: each part embeds into the tag carrying its id, so the delivered text mirrors the client's own element split:
+
+```js
+import { css, vars, cssText } from '@hellajs/css';
+
+css({
+  body: {
+    margin: 0,
+  },
+});
+vars({
+  color: {
+    primary: '#3b82f6',
+  },
+});
+
+const head = `<style id="hella-css">${cssText.css()}</style>
+<style id="hella-vars">${cssText.vars()}</style>`;
+// cssText.css(): "body {\n  margin: 0px;\n}"
+// cssText.vars(): ":root {\n  --color-primary: #3b82f6;\n}"
+```
 
 ### Adopting the Server Tag on Hydration
 

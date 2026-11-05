@@ -14,7 +14,9 @@ The `host` option moves the vars sheet into the shadow root, but the scope selec
 ```ts
 import { vars } from "@hellajs/css";
 
-const root = document.createElement("my-card").attachShadow({ mode: "open" });
+const root = document.createElement("my-card").attachShadow({
+  mode: "open",
+});
 
 // :root matches nothing inside a shadow root: the tokens are
 // registered but never apply, and consumers get no value
@@ -22,7 +24,9 @@ vars(
   {
     accent: "#3b82f6",
   },
-  { host: root },
+  {
+    host: root,
+  },
 );
 ```
 
@@ -31,13 +35,18 @@ vars(
 ```ts
 import { style, vars } from "@hellajs/css";
 
-const root = document.createElement("my-card").attachShadow({ mode: "open" });
+const root = document.createElement("my-card").attachShadow({
+  mode: "open",
+});
 
 const theme = vars(
   {
     accent: "#3b82f6",
   },
-  { host: root, scoped: ":host" },
+  {
+    host: root,
+    scoped: ":host",
+  },
 );
 
 const card = style(
@@ -45,7 +54,9 @@ const card = style(
   {
     color: theme.accent,
   },
-  { host: root },
+  {
+    host: root,
+  },
 );
 ```
 

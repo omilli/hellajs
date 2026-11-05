@@ -16,7 +16,9 @@ import { signal } from "@hellajs/core";
 import { vars } from "@hellajs/css";
 
 const scale = signal(1);
-const tokens = vars({ scale: () => scale() });
+const tokens = vars({
+  scale: () => scale(),
+});
 
 scale(1.5);
 
@@ -33,11 +35,16 @@ import { signal } from "@hellajs/core";
 import { style, vars } from "@hellajs/css";
 
 const scale = signal(1);
-const tokens = vars({ scale: () => scale() });
-
-const box = style("box", {
-  transform: `scale(${tokens.scale})`,
+const tokens = vars({
+  scale: () => scale(),
 });
+
+const box = style(
+  "box",
+  {
+    transform: `scale(${tokens.scale})`,
+  },
+);
 
 // The effect rewrites --scale in the sheet; box rules never rebuild
 scale(1.5);

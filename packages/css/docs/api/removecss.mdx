@@ -2,6 +2,25 @@
 
 Removes specific CSS rules and decrements their reference count for memory management. Registration state is decremented on both platforms; the CSSOM rules drop at zero references (a no-op without a DOM).
 
+## Basic Usage
+
+```jsx
+import { css, removeCss } from '@hellajs/css';
+
+const styles = {
+  body: {
+    margin: 0,
+    fontFamily: 'system-ui',
+  },
+};
+
+// Inject the style
+css(styles);
+
+// Later, remove it when no longer needed
+removeCss(styles);
+```
+
 ## API
 
 ```typescript
@@ -12,40 +31,24 @@ function removeCss(obj: CSSObject, options?: CSSOptions): void
   - `host`: Parent node the style was injected into; a removal without the same `host` targets a different entry
 - **Returns**: `void`
 
-## Basic Usage
-
-```jsx
-import { css, removeCss } from '@hellajs/css';
-
-const styles = { body: { margin: 0, fontFamily: 'system-ui' } };
-
-// Inject the style
-css(styles);
-
-// Later, remove it when no longer needed
-removeCss(styles);
-```
-
 ## Key Concepts
 
 ### Reference Counting
 
-The `removeCss` function provides precise control over CSS rule lifecycle:
-
-- **Reference Counting**: Each `css()` call increments the reference count for the style
-- **Automatic Cleanup**: Removes CSS rules from DOM when reference count reaches zero
-- **Memory Management**: Frees memory used by unused styles
-- **Cache Cleanup**: Drops the style's entry from the injected-rules map when the count reaches zero
+Each `css()` call increments the reference count of the registration its text resolves to; each `removeCss()` call decrements it. The rules leave the stylesheet when the count reaches zero, and stay injected above it.
 
 ### Usage Pattern
 
-Styles are deduplicated via memoization: all `css()` calls with the same object use the same registration. Each call increments the reference count, so `removeCss()` must be called the same number of times to fully remove the style.
+Styles are deduplicated by their derived text: all `css()` calls with the same object land on the same registration. Each call increments the reference count, so `removeCss()` must be called the same number of times to fully remove the style.
 
 ```jsx
 import { css, removeCss } from '@hellajs/css';
 
 const sharedStyle = {
-  body: { display: 'flex', alignItems: 'center' }
+  body: {
+    display: 'flex',
+    alignItems: 'center',
+  },
 };
 
 // Each call increments the reference count: CSS is injected once
@@ -61,6 +64,8 @@ removeCss(sharedStyle);
 removeCss(sharedStyle); // refCount = 0, CSS removed from DOM
 ```
 
+For styles tied to a component's lifetime, keep the objects together and remove them together when it goes away; for clearing everything at once, use [`resetCss`](/reference/css/resetcss) instead.
+
 ### With Host
 
 ```jsx
@@ -68,12 +73,34 @@ import { css, removeCss } from '@hellajs/css';
 
 const el = document.createElement('my-card');
 document.body.appendChild(el);
-const shadowRoot = el.attachShadow({ mode: 'open' });
+const shadowRoot = el.attachShadow({
+  mode: 'open',
+});
 
-css({ ':host': { fontSize: '1.5rem', padding: '1rem' } }, { host: shadowRoot });
+css(
+  {
+    ':host': {
+      fontSize: '1.5rem',
+      padding: '1rem',
+    },
+  },
+  {
+    host: shadowRoot,
+  },
+);
 
 // Later remove with matching host
-removeCss({ ':host': { fontSize: '1.5rem', padding: '1rem' } }, { host: shadowRoot });
+removeCss(
+  {
+    ':host': {
+      fontSize: '1.5rem',
+      padding: '1rem',
+    },
+  },
+  {
+    host: shadowRoot,
+  },
+);
 ```
 
 ### Component Cleanup
@@ -81,22 +108,21 @@ removeCss({ ':host': { fontSize: '1.5rem', padding: '1rem' } }, { host: shadowRo
 ```jsx
 import { css, removeCss } from '@hellajs/css';
 
-const MyComponent = () => {
-  const styleObjects = [
-    { body: { background: 'white', padding: '1rem' } },
-    { h1: { color: 'blue', fontWeight: 'bold' } },
-    { '.card': { border: '1px solid #ccc', borderRadius: '4px' } }
-  ];
+const overlayStyles = {
+  '.overlay': {
+    position: 'fixed',
+    inset: 0,
+  },
+};
 
-  styleObjects.forEach(obj => css(obj));
+const Overlay = () => {
+  css(overlayStyles);
 
-  const destroy = () => {
-    styleObjects.forEach(obj => removeCss(obj));
-  };
+  const destroy = () => removeCss(overlayStyles);
 
   return (
-    <div class="card">
-      <h1>Styled component</h1>
+    <div class="overlay" on:click={destroy}>
+      Click to dismiss
     </div>
   );
 };
@@ -104,7 +130,7 @@ const MyComponent = () => {
 
 ### Dynamic Style Management
 
-```jsx
+```typescript
 import { css, removeCss } from '@hellajs/css';
 
 type ThemeStyles = { 'body': { background: string; color: string } };
@@ -119,15 +145,24 @@ const applyTheme = (colors: { background: string; text: string }) => {
 
   // Apply new theme, store for removal on next switch
   currentTheme = {
-    body: { background: colors.background, color: colors.text }
+    body: {
+      background: colors.background,
+      color: colors.text,
+    },
   };
 
   css(currentTheme);
 };
 
 // Switch themes
-applyTheme({ background: '#fff', text: '#000' });
-applyTheme({ background: '#000', text: '#fff' });
+applyTheme({
+  background: '#fff',
+  text: '#000',
+});
+applyTheme({
+  background: '#000',
+  text: '#fff',
+});
 ```
 
 ## Important Considerations
@@ -138,17 +173,37 @@ applyTheme({ background: '#000', text: '#fff' });
 
 ```jsx
 // ✅ Works - structurally identical objects match
-css({ body: { margin: '0' } });
-removeCss({ body: { margin: '0' } }); // Same CSS text
+css({
+  body: {
+    margin: '0',
+  },
+});
+removeCss({
+  body: {
+    margin: '0',
+  },
+}); // Same CSS text
 
 // ✅ Works - same reference (also works, and is clearer)
-const style = { body: { margin: '0' } };
+const style = {
+  body: {
+    margin: '0',
+  },
+};
 css(style);
 removeCss(style);
 
 // ❌ Won't work - different CSS content
-css({ body: { margin: '0' } });
-removeCss({ body: { margin: '1rem' } }); // Different CSS text
+css({
+  body: {
+    margin: '0',
+  },
+});
+removeCss({
+  body: {
+    margin: '1rem',
+  },
+}); // Different CSS text
 ```
 
 ### Function Values Throw
@@ -158,28 +213,12 @@ removeCss({ body: { margin: '1rem' } }); // Different CSS text
 ```jsx
 // ❌ Throws; functions are not CSS values in css() or removeCss()
 try {
-  removeCss({ padding: () => '1rem' });
+  removeCss({
+    '.card': {
+      padding: () => '1rem',
+    },
+  });
 } catch {}
 // Error: [css] function values are not supported in css objects
 //        (message continues: use vars() for reactive values, key: padding)
-```
-
-### Use Cases
-
-Perfect for:
-- **Component unmounting** - Clean up styles when components are destroyed
-- **Dynamic styling** - Remove old styles before applying new ones
-- **Long-running applications** - Prevent CSS accumulation over time
-- **Testing** - Ensure clean state between test runs
-
-For bulk cleanup of all styles at once, use [`resetCss`](/reference/css/resetcss) instead.
-
-### Global Styles
-
-```jsx
-const globalStyles = { body: { margin: '0', fontFamily: 'system-ui, sans-serif' } };
-
-// Global styles don't need any options
-css(globalStyles);
-removeCss(globalStyles);
 ```

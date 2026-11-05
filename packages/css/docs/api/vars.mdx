@@ -2,6 +2,28 @@
 
 Creates CSS custom properties (variables) from JavaScript objects with automatic reactivity support.
 
+## Basic Usage
+
+```jsx
+import { vars } from '@hellajs/css';
+
+const theme = vars({
+  colors: {
+    primary: '#3b82f6',
+    secondary: '#64748b',
+  },
+  spacing: {
+    small: '0.5rem',
+    medium: '1rem',
+    large: '2rem',
+  },
+});
+
+// theme.colors.primary = 'var(--colors-primary)'
+// theme.colors.secondary = 'var(--colors-secondary)'
+// theme.spacing.small = 'var(--spacing-small)'
+```
+
 ## API
 
 ```typescript
@@ -15,11 +37,11 @@ function vars<T extends CSSVarInputObject>(vars: T, options?: VarsOptions): CSSV
 
 ```typescript
 interface VarsOptions {
-  scoped?: string;   // CSS selector to scope variables to
-  prefix?: string;   // Prefix for all CSS variable names
-  media?: string;    // Media condition the variables live under
-  layer?: string;    // Cascade layer the declarations wrap in
-  host?: ParentNode; // Node the <style> element is created in
+  scoped?: string;
+  prefix?: string;
+  media?: string;
+  layer?: string;
+  host?: ParentNode;
 }
 ```
 
@@ -47,28 +69,6 @@ type CSSVars<T> = {
 - **`CSSVarInputObject`**: Plain object whose values are `CSSVarLeaf` or nested `CSSVarInputObject`, used as the input constraint
 - **`CSSVars<T>`**: Mapped type transforming an input object into a proxy with `var()` reference strings at every leaf
 
-## Basic Usage
-
-```jsx
-import { vars } from '@hellajs/css';
-
-const theme = vars({
-  colors: {
-    primary: '#3b82f6',
-    secondary: '#64748b'
-  },
-  spacing: {
-    small: '0.5rem',
-    medium: '1rem',
-    large: '2rem'
-  }
-});
-
-// theme.colors.primary = 'var(--colors-primary)'
-// theme.colors.secondary = 'var(--colors-secondary)'
-// theme.spacing.small = 'var(--spacing-small)'
-```
-
 ## Key Concepts
 
 ### Custom-Property Names
@@ -78,7 +78,9 @@ Flat keys convert at emission: dots fold to hyphens, camel and letter-digit boun
 ```jsx
 import { vars, cssText } from '@hellajs/css';
 
-const tokens = vars({ primaryForeground: 'oklch(0.985 0 0)' });
+const tokens = vars({
+  primaryForeground: 'oklch(0.985 0 0)',
+});
 
 // tokens.primaryForeground = 'var(--primary-foreground)'
 // cssText() collects:
@@ -97,17 +99,22 @@ import { style, vars } from '@hellajs/css';
 const theme = vars({
   colors: {
     primary: '#3b82f6',
-    background: '#ffffff'
-  }
+    background: '#ffffff',
+  },
 });
 
-const buttonStyle = style({
-  backgroundColor: theme.colors.primary,
-  color: theme.colors.background,
-  padding: '0.75rem 1.5rem',
-  border: 'none',
-  borderRadius: '0.5rem'
-}, { label: 'btn' });
+const buttonStyle = style(
+  {
+    backgroundColor: theme.colors.primary,
+    color: theme.colors.background,
+    padding: '0.75rem 1.5rem',
+    border: 'none',
+    borderRadius: '0.5rem',
+  },
+  {
+    label: 'btn',
+  },
+);
 ```
 
 ### Reactive CSS Variables
@@ -125,19 +132,24 @@ const ThemeExample = () => {
   // Reactive CSS variables - automatically update when signals change
   const theme = vars({
     colors: {
-      primary: primaryColor,                                    // Direct signal
-      background: () => isDark() ? '#1a1a1a' : '#ffffff',     // Computed value
-      text: () => isDark() ? '#ffffff' : '#000000'
-    }
+      primary: primaryColor,  // Direct signal
+      background: () => isDark() ? '#1a1a1a' : '#ffffff',
+      text: () => isDark() ? '#ffffff' : '#000000',
+    },
   });
 
-  const buttonStyle = style({
-    backgroundColor: theme.colors.primary,
-    color: theme.colors.text,
-    padding: '0.75rem 1.5rem',
-    border: 'none',
-    borderRadius: '0.5rem'
-  }, { label: 'btn' });
+  const buttonStyle = style(
+    {
+      backgroundColor: theme.colors.primary,
+      color: theme.colors.text,
+      padding: '0.75rem 1.5rem',
+      border: 'none',
+      borderRadius: '0.5rem',
+    },
+    {
+      label: 'btn',
+    },
+  );
 
   return (
     <div>
@@ -168,26 +180,16 @@ const mixedTheme = vars({
   // Static values (no reactivity)
   fonts: {
     body: 'system-ui, sans-serif',
-    mono: 'Menlo, monospace'
+    mono: 'Menlo, monospace',
   },
-
   // Reactive values (with signals)
   colors: {
-    primary: primaryColor,                 // Direct signal
-    accent: () => accentColor(),           // Computed function
-    surface: '#ffffff'                     // Static value
-  }
+    primary: primaryColor,  // Direct signal
+    accent: () => accentColor(),
+    surface: '#ffffff',  // Static value
+  },
 });
 ```
-
-### Performance Features
-
-CSS variables automatically optimize performance through:
-
-- **Static Detection**: Non-reactive objects use fast static path
-- **Reactive Tracking**: Only creates effects when functions are detected
-- **Smart Caching**: Identical static objects are cached and reused (evicts at 100 entries to prevent unbounded growth)
-- **Memory Management**: Effects are automatically cleaned up
 
 ### Identical on Both Platforms
 
@@ -204,7 +206,9 @@ const color = signal('red');
 //   --theme-color: red;
 // }
 // Server: { theme: { color: 'var(--theme-color)' } }, same cssText() text
-const theme = vars({ theme: { color } });
+const theme = vars({
+  theme: { color },
+});
 ```
 
 ### Variable Accumulation
@@ -218,16 +222,16 @@ import { vars } from '@hellajs/css';
 vars({
   colors: {
     primary: '#3b82f6',
-    secondary: '#64748b'
-  }
+    secondary: '#64748b',
+  },
 });
 
 // Second call adds spacing; colors are preserved
 vars({
   spacing: {
     small: '0.5rem',
-    large: '2rem'
-  }
+    large: '2rem',
+  },
 });
 
 // Both color and spacing variables are available
@@ -242,15 +246,29 @@ import { signal } from '@hellajs/core';
 import { vars } from '@hellajs/css';
 
 const isDark = signal(false);
-const theme = { bg: () => (isDark() ? '#000' : '#fff') };
+const theme = {
+  bg: () => (isDark() ? '#000' : '#fff'),
+};
 
 vars(theme);                             // ok; :root, reactive
 vars(theme);                             // ok; same options, refCount++
-vars(theme, { scoped: '.dark' });        // throws; same ref, different scope
-vars({ ...theme }, { scoped: '.dark' }); // ok; separate reference, own effect
+vars(
+  theme,
+  {
+    scoped: '.dark',
+  },
+);        // throws; same ref, different scope
+vars(
+  {
+    ...theme,
+  },
+  {
+    scoped: '.dark',
+  },
+); // ok; separate reference, own effect
 ```
 
-Static vars (no function leaves) are instead keyed by a hash of the object and its options, so structurally equal static objects collide regardless of reference identity.
+Static vars (no function leaves) are instead keyed by a hash of the object and its options, so structurally equal static objects share one registration regardless of reference identity.
 
 ### Scoping and Prefixing
 
@@ -260,10 +278,15 @@ Control where CSS variables are applied and how they're named:
 import { vars } from '@hellajs/css';
 
 // Scoped to a specific selector; variables only apply within .theme-container
-const themeVars = vars({
-  primary: '#3b82f6',
-  secondary: '#64748b'
-}, { scoped: '.theme-container' });
+const themeVars = vars(
+  {
+    primary: '#3b82f6',
+    secondary: '#64748b',
+  },
+  {
+    scoped: '.theme-container',
+  },
+);
 
 // themeVars.primary = 'var(--primary)'
 // Generated:
@@ -277,19 +300,33 @@ const themeVars = vars({
 import { vars } from '@hellajs/css';
 
 // Prefix adds a namespace to all variable names
-const appVars = vars({
-  fontFamily: 'system-ui, sans-serif',
-  borderRadius: '0.25rem'
-}, { prefix: 'app' });
+const appVars = vars(
+  {
+    fontFamily: 'system-ui, sans-serif',
+    borderRadius: '0.25rem',
+  },
+  {
+    prefix: 'app',
+  },
+);
 
 // appVars.fontFamily = 'var(--app-font-family)'
 // appVars.borderRadius = 'var(--app-border-radius)'
 
 // Combine both: scoped + prefixed
-const themed = vars({
-  primary: '#3b82f6',
-  spacing: { small: '0.5rem', medium: '1rem' }
-}, { scoped: '.theme-container', prefix: 'my-theme' });
+const themed = vars(
+  {
+    primary: '#3b82f6',
+    spacing: {
+      small: '0.5rem',
+      medium: '1rem',
+    },
+  },
+  {
+    scoped: '.theme-container',
+    prefix: 'my-theme',
+  },
+);
 
 // themed.primary = 'var(--my-theme-primary)'
 // themed.spacing.small = 'var(--my-theme-spacing-small)'
@@ -304,11 +341,18 @@ const themed = vars({
 import { vars } from '@hellajs/css';
 
 const hostElement = document.createElement('my-card');
-const root = hostElement.attachShadow({ mode: 'open' });
+const root = hostElement.attachShadow({
+  mode: 'open',
+});
 
 const theme = vars(
-  { accent: '#3b82f6' },
-  { host: root, scoped: ':host' }
+  {
+    accent: '#3b82f6',
+  },
+  {
+    host: root,
+    scoped: ':host',
+  },
 );
 
 // Generated inside the shadow root:
@@ -330,14 +374,21 @@ import { vars } from '@hellajs/css';
 vars({
   colors: {
     background: '#ffffff',
-    text: '#111827'
-  }
+    text: '#111827',
+  },
 });
 
 // Dark values; applied only when the OS prefers dark
 vars(
-  { colors: { background: '#1a1a1a', text: '#e5e7eb' } },
-  { media: '(prefers-color-scheme: dark)' }
+  {
+    colors: {
+      background: '#1a1a1a',
+      text: '#e5e7eb',
+    },
+  },
+  {
+    media: '(prefers-color-scheme: dark)',
+  },
 );
 
 // Generated:
@@ -378,10 +429,14 @@ Accepted leaf values:
 const isActive = signal(true);
 
 // ❌ Rejected; function returning boolean
-vars({ flag: isActive });
+vars({
+  flag: isActive,
+});
 
 // ✅ Explicit conversion
-vars({ flag: () => isActive() ? '1' : '0' });
+vars({
+  flag: () => isActive() ? '1' : '0',
+});
 ```
 
 ## Important Considerations
@@ -395,29 +450,25 @@ const primary = signal('#3b82f6');
 
 const theme = vars({
   colors: {
-    primary: '#3b82f6',      // Valid
-    secondary: primary       // Valid (signal)
+    primary: '#3b82f6',  // Valid
+    secondary: primary,  // Valid (signal)
   },
   spacing: {
-    base: '1rem'            // Valid
-  }
+    base: '1rem',  // Valid
+  },
 });
 
 // theme.colors.primary: string (= 'var(--colors-primary)')
 // theme.spacing.base: string (= 'var(--spacing-base)')
 ```
 
-### Boolean and Object Leaves Rejected
+### Boolean and Object Leaves Are Compile-Time Errors
 
-**Breaking type-level change from v1.x:** The `vars` parameter type was tightened from `Record<string, unknown>` to `CSSVarInputObject`. Callers passing leaf types outside the accepted set will now get compile-time errors where they compiled before; the rejected types are enumerated under Accepted Value Types above.
-
-- Runtime behavior is unchanged; `vars` calls `String()` on values, so `true` became `"true"` at runtime
-- Fix: Convert booleans explicitly with `() => flag() ? '1' : '0'`
-- Fix: Replace class instances with plain values before passing to `vars`
+Leaf values outside the accepted set fail to compile; the enumeration and the conversion recipes live under [Accepted Value Types](#accepted-value-types). Convert booleans explicitly (`() => isActive() ? '1' : '0'`) and replace class instances with plain values before passing them to `vars`.
 
 ### Memory Management
 
-Use [`resetVars`](/reference/css/resetvars) to clean up all CSS variables and reactive effects when needed:
+Use [`removeVars`](/reference/css/removevars) to decrement a specific registration (reactive entries dispose their effect at zero references), or [`resetVars`](/reference/css/resetvars) to clear all CSS variables and reactive effects at once:
 
 ```jsx
 import { resetVars } from '@hellajs/css';

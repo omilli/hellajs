@@ -2,6 +2,24 @@
 
 Joins class-name fragments into one space-separated string, clsx-compatible, with no styling side effects.
 
+## Basic Usage
+
+```typescript
+import { cx } from '@hellajs/css';
+
+const isHighlighted = true;
+const isDisabled = false;
+
+cx(
+  'card',
+  isHighlighted && 'card-highlight',
+  {
+    'card-disabled': isDisabled,
+  },
+);
+// "card card-highlight"
+```
+
 ## API
 
 ```typescript
@@ -9,18 +27,6 @@ function cx(...args: CXArg[]): string;
 ```
 - `args`: Fragments to join: strings and numbers contribute themselves, falsy values drop, objects contribute the keys whose values are truthy, and arrays recurse
 - **Returns**: The joined class string, `""` when nothing survives
-
-## Basic Usage
-
-```jsx
-import { cx } from '@hellajs/css';
-
-const isHighlighted = true;
-const isDisabled = false;
-
-cx('card', isHighlighted && 'card-highlight', { 'card-disabled': isDisabled });
-// "card card-highlight"
-```
 
 ## Key Concepts
 
@@ -31,10 +37,18 @@ cx('card', isHighlighted && 'card-highlight', { 'card-disabled': isDisabled });
 - Objects keep the keys whose values are truthy; value shapes are ignored, only key names join
 - Arrays recurse to any depth; falsy items and empty results contribute nothing
 
-```jsx
+```typescript
 import { cx } from '@hellajs/css';
 
-cx('menu', ['item', ['selected', null]], { hidden: false, active: true }, 0);
+cx(
+  'menu',
+  ['item', ['selected', null]],
+  {
+    hidden: false,
+    active: true,
+  },
+  0,
+);
 // "menu item selected active"
 ```
 
@@ -46,12 +60,28 @@ cx('menu', ['item', ['selected', null]], { hidden: false, active: true }, 0);
 import { cx, cva } from '@hellajs/css';
 
 const button = cva({
-  base: { cursor: 'pointer' },
-  variants: { size: { sm: { padding: '0.25rem' }, lg: { padding: '0.75rem' } } }
+  base: {
+    cursor: 'pointer',
+  },
+  variants: {
+    size: {
+      sm: {
+        padding: '0.25rem',
+      },
+      lg: {
+        padding: '0.75rem',
+      },
+    },
+  },
 });
 const isFullWidth = true;
 
-<div class={cx(button({ size: 'lg' }), isFullWidth && 'w-full')}>
+<div class={cx(
+  button({
+    size: 'lg',
+  }),
+  isFullWidth && 'w-full',
+)}>
   Save
 </div>
 ```

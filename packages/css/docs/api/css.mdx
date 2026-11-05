@@ -2,6 +2,22 @@
 
 Creates CSS rules from JavaScript objects. Global only: every rule is a raw CSS selector. Registers on both platforms and returns an empty string; collect the generated text with [`cssText`](/reference/css/csstext). For scoped/hashed styles, use [`style`](/reference/css/style).
 
+## Basic Usage
+
+```jsx
+import { css } from '@hellajs/css';
+
+css({
+  body: {
+    margin: 0,
+    fontFamily: 'system-ui, sans-serif',
+  },
+  '*': {
+    boxSizing: 'border-box',
+  },
+});
+```
+
 ## API
 
 ```typescript
@@ -11,44 +27,6 @@ function css(obj: CSSObject, options?: CSSOptions): string
 - `options`: Optional configuration object
   - `host`: Parent node the `<style>` element is created in; e.g. a `ShadowRoot` for web components. Defaults to `document.head`.
 - **Returns**: Always returns empty string (`""`), on both platforms. On the client the rules are injected into the CSSOM; on the server the registration is state-only; collect the text with [`cssText`](/reference/css/csstext).
-
-## Basic Usage
-
-### Global Styles
-
-```jsx
-import { css } from '@hellajs/css';
-
-css({
-  body: {
-    margin: 0,
-    fontFamily: 'system-ui, sans-serif'
-  },
-  '*': {
-    boxSizing: 'border-box'
-  }
-});
-```
-
-### Scoped Styles
-
-For scoped styles with content-hashed class names, use [`style`](/reference/css/style):
-
-```jsx
-import { style } from '@hellajs/css';
-
-const buttonStyle = style({
-  padding: '0.75rem 1.5rem',
-  backgroundColor: '#3b82f6',
-  color: 'white',
-  border: 'none',
-  borderRadius: '0.5rem',
-  cursor: 'pointer'
-}, { label: 'btn' });
-// "btn-lpqipao"; the same class on client and server
-
-<button class={buttonStyle}>Click me</button>
-```
 
 ## Key Concepts
 
@@ -61,22 +39,19 @@ css({
     backgroundColor: 'white',
     borderRadius: '0.5rem',
     boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-
     '&:hover': {
       transform: 'translateY(-2px)',
-      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
     },
-
     'h2': {
       margin: '0 0 0.5rem 0',
       fontSize: '1.25rem',
-      fontWeight: '600'
+      fontWeight: '600',
     },
-
     '@media (max-width: 768px)': {
-      padding: '0.75rem'
-    }
-  }
+      padding: '0.75rem',
+    },
+  },
 });
 // Generated CSS:
 // .card {
@@ -101,14 +76,13 @@ css({
 // }
 ```
 
+Nested keys compose against the active selector: `&` refers to it at every occurrence, plain keys become descendants (`h2` → `.card h2`), and conditional at-rules (`@media`, `@container`, `@supports`, `@starting-style`) inherit it. A key holding a comma group must carry `&` in every part or the later parts escape the scope; see [Comma Groups Need `&` in Every Part](#comma-groups-need--in-every-part).
+
 > **Note:** `css()` is always global; it does not wrap selectors in a class. For scoped styles that compose under a generated class, use [`style`](/reference/css/style).
 
-### Performance Features
+### Shared Registrations
 
-CSS automatically optimizes performance through:
-
-- **Reference Counting**: [`removeCss`](/reference/css/removecss) decrements usage; styles are removed from the DOM when the count reaches zero
-- **Smart Caching**: Previously processed styles return instantly
+Identical objects derive identical CSS text, and the text is the registration identity: every `css()` call with the same text lands on one registration and increments its reference count. Three calls need three [`removeCss`](/reference/css/removecss) calls before the rules leave the stylesheet; structurally equal objects in any key order match the same registration.
 
 ### Platform-Independent Return
 
@@ -121,7 +95,11 @@ CSS automatically optimizes performance through:
 import { css, cssText } from '@hellajs/css';
 
 // Client AND server: returns ""
-css({ body: { margin: 0 } });
+css({
+  body: {
+    margin: 0,
+  },
+});
 
 // Server: "body {\n  margin: 0px;\n}"; the text the client would have injected
 const text = cssText();
@@ -136,7 +114,14 @@ Under the unified registration, CSS is defined in shared modules or at the entry
 import { style } from '@hellajs/css';
 
 // Client AND server: returns "btn-mgmyaqx"
-export const btnClass = style({ color: 'red' }, { label: 'btn' });
+export const btnClass = style(
+  {
+    color: 'red',
+  },
+  {
+    label: 'btn',
+  },
+);
 ```
 
 ```jsx
@@ -151,8 +136,12 @@ All CSS `@` rules (`@media`, `@keyframes`, `@font-face`, `@container`, `@support
 ```jsx
 css({
   '@keyframes spin': {
-    from: { transform: 'rotate(0deg)' },
-    to: { transform: 'rotate(360deg)' },
+    from: {
+      transform: 'rotate(0deg)',
+    },
+    to: {
+      transform: 'rotate(360deg)',
+    },
   },
 });
 
@@ -165,7 +154,9 @@ css({
 
 css({
   '@container (min-width: 400px)': {
-    '.card': { fontSize: '1.25rem' },
+    '.card': {
+      fontSize: '1.25rem',
+    },
   },
 });
 ```
@@ -176,7 +167,13 @@ Conditional at-rules (`@media`, `@container`, `@supports`, `@starting-style`) in
 
 ```typescript
 // Nested under a plain selector; the at-rule inherits it:
-css({ 'div.card': { '@media (min-width: 1px)': { color: 'red' } } });
+css({
+  'div.card': {
+    '@media (min-width: 1px)': {
+      color: 'red',
+    },
+  },
+});
 // @media (min-width: 1px) {
 //   div.card {
 //     color: red;
@@ -184,7 +181,11 @@ css({ 'div.card': { '@media (min-width: 1px)': { color: 'red' } } });
 // }
 
 // Throws: direct declarations with no selector in scope:
-css({ '@media (min-width: 1px)': { color: 'red' } });
+css({
+  '@media (min-width: 1px)': {
+    color: 'red',
+  },
+});
 // Error: [css] conditional at-rule "@media (min-width: 1px)" contains
 //        declarations with no selector; nest selectors under the at-rule
 
@@ -198,8 +199,6 @@ css({
 
 Nest selectors under the at-rule so every declaration has a selector to attach to. The same input throws in [`removeCss`](/reference/css/removecss) and on the server; the check runs in the shared CSS derivation before any platform branching. Definitional at-rules (`@keyframes`, `@font-face`, `@layer`) never inherit a scope; their direct declarations are their normal shape (one `prop: value;` line per declaration inside the at-rule body, e.g. `@font-face`).
 
-One level up, a bare top-level declaration throws the sibling error: with no selector or at-rule in scope there is nothing to attach to, so nest it under a selector. The same [`removeCss`](/reference/css/removecss) and server parity hold (shared derivation).
-
 ### Shadow DOM Hosts
 
 Pass `host` to create the `<style>` element inside a shadow root instead of `document.head`. Each call site gets its own sheet per host: the same styles injected into two hosts produce two independent `<style>` elements with separate reference counting, and [`removeCss`](/reference/css/removecss) with the same `host` removes from that host's sheet:
@@ -209,18 +208,34 @@ import { css, vars } from '@hellajs/css';
 
 class MyCard extends HTMLElement {
   connectedCallback() {
-    const root = this.attachShadow({ mode: 'open' });
+    const root = this.attachShadow({
+      mode: 'open',
+    });
 
     // Shadow roots don't match :root; scope the vars to the host element
     const theme = vars(
-      { accent: '#3b82f6' },
-      { host: root, scoped: ':host' }
+      {
+        accent: '#3b82f6',
+      },
+      {
+        host: root,
+        scoped: ':host',
+      },
     );
 
-    css({
-      ':host': { padding: '1rem' },
-      ':host > .content': { border: '1px solid #e5e7eb' }
-    }, { host: root });
+    css(
+      {
+        ':host': {
+          padding: '1rem',
+        },
+        ':host > .content': {
+          border: '1px solid #e5e7eb',
+        },
+      },
+      {
+        host: root,
+      },
+    );
 
     root.innerHTML = '<div class="content"><slot></slot></div>';
   }
@@ -239,6 +254,34 @@ On the server, [`css`](/reference/css/css) returns `""`, exactly like the client
 ```typescript
 const head = `<style>${cssText()}</style>`;
 ```
+
+### Comma Groups Need `&` in Every Part
+
+Selector composition is literal: a plain nested key becomes `${parent} ${key}`, and `&` is replaced by the parent string. A comma inside the key splits nothing; every part after the first composes against nothing and escapes the scope:
+
+```typescript
+// ❌ Only the first part is scoped; ".toggle" leaks into the global scope
+css({
+  '.toolbar': {
+    '.copy, .toggle': {
+      color: 'var(--fg)',
+    },
+  },
+});
+// Generated: .toolbar .copy,.toggle { color: var(--fg); }
+
+// ✅ Every part carries &; every part is scoped
+css({
+  '.toolbar': {
+    '& .copy, & .toggle': {
+      color: 'var(--fg)',
+    },
+  },
+});
+// Generated: .toolbar .copy,.toolbar .toggle { color: var(--fg); }
+```
+
+Prefix every part of the group with `&`, and keep state selectors (`&:hover`, `&.is-open`) inside the per-element rules rather than nesting them under a group key. At the top level of a `css()` call there is no scope to leak, so a bare comma group (`'.dark .a, .dark .b'`) is fine there.
 
 ### Type Safety
 
@@ -261,14 +304,18 @@ const spacing = signal('1rem');
 // ❌ Throws; css() never calls property functions
 try {
   css({
-    padding: () => spacing(),
+    '.card': {
+      padding: () => spacing(),
+    },
   });
 } catch {}
 // Error: [css] function values are not supported in css objects
 //        (message continues: use vars() for reactive values, key: padding)
 
 // ✅ Reactive values are vars leaves
-const theme = vars({ spacing: () => spacing() });
+const theme = vars({
+  spacing: () => spacing(),
+});
 // theme.spacing === 'var(--spacing)'
 ```
 
@@ -276,53 +323,63 @@ The same input throws in [`removeCss`](/reference/css/removecss); the check runs
 
 ### Special Value Handling
 
-Numbers append `px` on length properties (React/Emotion semantics); unitless properties (`zIndex`, `opacity`, `lineHeight`, `flexGrow`, …) and `--` custom properties keep bare numbers. Array values join with commas, `content` auto-quotes unquoted strings, and `null`/`undefined` values are skipped:
+Every declaration sits under a selector (nesting under a bare key throws; see [Conditional at-rules inherit scope](#conditional-at-rules-inherit-scope)). Within one, numbers append `px` on length properties (React/Emotion semantics); unitless properties (`zIndex`, `opacity`, `lineHeight`, `flexGrow`, …) and `--` custom properties keep bare numbers. Array values join with commas, `content` auto-quotes unquoted strings, and `null`/`undefined` values are skipped:
 
 ```jsx
 css({
-  fontFamily: ['Helvetica', 'Arial', 'sans-serif'],
-  transition: ['color 0.2s', 'background 0.3s']
+  '.stack': {
+    fontFamily: ['Helvetica', 'Arial', 'sans-serif'],
+    transition: ['color 0.2s', 'background 0.3s'],
+  },
 });
 
 css({
   '&::before': {
-    content: 'arrow'
+    content: 'arrow',
   },
   '&::after': {
-    content: '"already quoted"'
-  }
+    content: '"already quoted"',
+  },
 });
 
 css({
-  color: 'red',
-  margin: undefined
+  '.note': {
+    color: 'red',
+    margin: undefined
+  },
 });
 
 // Numeric lengths append px
-
 css({
-  width: 5,
-  margin: 0
+  '.meter': {
+    width: 5,
+    margin: 0,
+  },
 });
-// Generated: width:5px;margin:0px
+// width: 5px; margin: 0px
 
 // Unitless properties and -- custom properties keep bare numbers
-
 css({
-  zIndex: 10,
-  opacity: 0.5,
-  lineHeight: 1.5,
-  '--gap': 4
+  '.badge': {
+    zIndex: 10,
+    opacity: 0.5,
+    lineHeight: 1.5,
+    '--gap': 4,
+  },
 });
-// Generated: z-index:10;opacity:0.5;line-height:1.5;--gap:4
+// z-index: 10; opacity: 0.5; line-height: 1.5; --gap: 4
 ```
 
 Quoted values may contain braces and escaped quotes; the rule splitter tracks CSS string state, so a `}` inside a value never truncates the rule or the rules after it:
 
 ```typescript
 css({
-  '.a': { content: '}' },
-  '.b': { color: 'red' }
+  '.a': {
+    content: '}',
+  },
+  '.b': {
+    color: 'red',
+  },
 });
 // Generated:
 // .a {
@@ -339,7 +396,11 @@ css({
 
 ```typescript
 css({
-  '@keyframes spin': { from: { transform: 'rotate(0deg)' } }
+  '@keyframes spin': {
+    from: {
+      transform: 'rotate(0deg)',
+    },
+  },
 });
 // @keyframes spin {
 //   from {
@@ -358,7 +419,9 @@ css({
 
 css({
   '@import': 'url("fonts.css")',
-  body: { margin: 0 },
+  body: {
+    margin: 0,
+  },
 });
 // @import url("fonts.css");
 // body {
@@ -376,5 +439,11 @@ Injection goes through the CSSOM (`insertRule`), so a rule the platform cannot p
 // In an environment whose CSSOM rejects @layer (e.g. some test DOMs),
 // the rule is skipped and a warning is logged:
 // [css] rule rejected by the platform and skipped: @layer base {\n//   body {\n//     margin: 0px;\n//   }\n// }
-css({ '@layer base': { body: { margin: 0 } } });
+css({
+  '@layer base': {
+    body: {
+      margin: 0,
+    },
+  },
+});
 ```

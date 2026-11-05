@@ -18,7 +18,13 @@ const card = {
   padding: "1rem",
 };
 
-style("card", card, { layer: "components" });
+style(
+  "card",
+  card,
+  {
+    layer: "components",
+  },
+);
 
 // Missing the layer: derives unlayered text, finds no registration, no-ops
 removeStyle("card", card);
@@ -33,10 +39,22 @@ const card = {
   padding: "1rem",
 };
 
-style("card", card, { layer: "components" });
+style(
+  "card",
+  card,
+  {
+    layer: "components",
+  },
+);
 
 // Same label form, same options: decrements the count, drops at zero
-removeStyle("card", card, { layer: "components" });
+removeStyle(
+  "card",
+  card,
+  {
+    layer: "components",
+  },
+);
 ```
 
 A registration kept for the whole page lifetime (module scope) needs no removal at all; pair registration and removal only for dynamically created styles.

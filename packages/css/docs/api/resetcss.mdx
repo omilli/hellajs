@@ -1,16 +1,8 @@
 # resetCss
 
-Clears all CSS rules and resets the CSS system to initial state. Clears the registration state on both platforms; the sheet reset is DOM-only (a no-op without a document).
-
-## API
-
-```typescript
-function resetCss(): void
-```
-- **Returns**: `void`
+Clears all css-side rules and resets the CSS system to its initial state: every `css()`, `style()`, and `keyframes()` registration, on both platforms. The sheet reset is DOM-only (a no-op without a document); `vars()` registrations are untouched.
 
 ## Basic Usage
-
 
 ```jsx
 import { style, resetCss } from '@hellajs/css';
@@ -21,14 +13,18 @@ const button = style(
     background: 'blue',
     color: 'white',
   },
-  { label: 'btn' }
+  {
+    label: 'btn',
+  },
 );
 const card = style(
   {
     padding: '1rem',
     border: '1px solid #ccc',
   },
-  { label: 'card' }
+  {
+    label: 'card',
+  },
 );
 
 // Later, reset everything
@@ -37,15 +33,43 @@ resetCss();
 // All previous styles are removed from DOM and memory
 ```
 
+## API
+
+```typescript
+function resetCss(): void
+```
+- **Returns**: `void`
+
 ## Key Concepts
 
-### Complete System Reset
+### What the Reset Covers
 
-The `resetCss` function provides a complete cleanup of the CSS system:
+`resetCss()` clears the css side only: the injected-rules registry (including `keyframes()` registrations and their reference counts) and the `hella-css` style element. Two isolation rules hold:
 
-- Clears all injected CSS rules from internal state
-- Removes all generated CSS from the DOM
-- Resets internal reference counts
+- [`vars`](/reference/css/vars) registrations and the `hella-vars` sheet are untouched; call [`resetVars`](/reference/css/resetvars) for those.
+- Hosted sheets (a `host` option, e.g. a shadow root) are abandoned, not cleared: their `<style>` elements keep their rules, and re-registering into the same host creates fresh sheets.
+
+```jsx
+import { css, style, resetCss } from '@hellajs/css';
+
+const buttonClass = style(
+  {
+    color: 'white',
+  },
+  {
+    label: 'btn',
+  },
+);
+css({
+  body: {
+    margin: 0,
+  },
+});
+
+resetCss();
+
+// The hella-css element stays in the DOM, emptied; nothing css-side remains registered
+```
 
 ### Testing Scenarios
 
@@ -55,45 +79,20 @@ import { css, resetCss } from '@hellajs/css';
 // Reset before each test suite for a predictable starting state
 resetCss();
 
-const buttonStyle = css({ body: { margin: 0 } });
+const buttonStyle = css({
+  body: {
+    margin: 0,
+  },
+});
 // buttonStyle === ''; styles injected cleanly
-```
-
-### Memory Management
-
-```jsx
-import { style, resetCss } from '@hellajs/css';
-
-const generateManyStyles = () => {
-  for (let i = 0; i < 1000; i++) {
-    style({
-      color: `hsl(${i}, 50%, 50%)`,
-    });
-  }
-};
-
-generateManyStyles();
-// Now DOM has many style rules and memory usage is high
-
-resetCss();
-// All styles cleared, memory freed, DOM cleaned
 ```
 
 ## Important Considerations
 
 ### Use Cases
 
-Perfect for:
-- **Unit tests** - Ensure clean state between tests
-- **Development tools** - Reset styles during hot reloading
-- **Long-running applications** - Periodic cleanup to prevent memory leaks
-- **Dynamic theming** - Clear old theme before applying new one
-
-### Integration with resetVars
-
-See [`resetVars`](/reference/css/resetvars) for clearing CSS variables. Use both together for a complete reset.
+Reach for `resetCss()` when every css-side registration should go at once: between test runs, during hot-module replacement in development, or when tearing down an app instance that owned its styles. For removing one registration while the rest live on, use [`removeCss`](/reference/css/removecss) / [`removeStyle`](/reference/css/removestyle) / [`removeKeyframes`](/reference/css/removekeyframes); for a complete reset of both sides, pair it with [`resetVars`](/reference/css/resetvars).
 
 ### Safety
 
-- **Non-destructive to external styles** - Only affects HellaJS-generated CSS
-- **Framework safe** - Safe to call at any time without breaking other systems
+Only HellaJS-generated CSS is affected: the reset never touches external stylesheets or hand-authored `<style>` elements. The `hella-css` element itself stays in the DOM, emptied.
