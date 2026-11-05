@@ -10,28 +10,29 @@ Call `element` with a hyphenated tag name and a render function. Attributes on t
 import { signal } from "@hellajs/core";
 import { element } from "@hellajs/dom";
 
-type CounterProps = { initial?: () => string | null };
+type BadgeProps = { name?: () => string | null };
 
-element("my-counter", (props: CounterProps) => {
-  const count = signal(Number(props.initial?.()) || 0);
+element("user-badge", (props: BadgeProps) => {
+  const visits = signal(0);
 
   return (
-    <div>
-      <span>{count}</span>
-      <button on:click={() => count(count() + 1)}>+</button>
-    </div>
+    <span class="badge">
+      {props.name?.() ?? "Anonymous"} ({visits})
+      <button on:click={() => visits(visits() + 1)}>Visit</button>
+    </span>
   );
 });
 ```
 
 ```html
-<my-counter initial="5"></my-counter>
+<user-badge name="Alice"></user-badge>
 ```
 
-Change the attribute later and the element updates:
+Attributes are reactive getters, so reading one in the template tracks it: change the attribute and the badge re-renders, no remount.
 
 ```js
-document.querySelector("my-counter").setAttribute("initial", "10");
+document.querySelector("user-badge").setAttribute("name", "Bob");
+// The badge now reads "Bob (0)"; the visit count signal kept its value
 ```
 
 ## API
@@ -67,7 +68,7 @@ interface ElementOptions {
 
 ### Reactive Attributes
 
-Every attribute is a getter function returning the current string value (or `null` when absent). Call it inside an effect or reactive expression and the element re-renders when the attribute changes.
+Every attribute is a getter function returning the current string value (or `null` when absent). Call it inside the template or an effect and the element re-renders when the attribute changes; read it once (for example seeding a signal) and that read stays fixed.
 
 ```jsx
 type GreetingProps = { name?: () => string | null };

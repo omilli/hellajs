@@ -1,11 +1,17 @@
 # error:
 
-Handle errors where they happen: fallback UI on a wrapping element, error categories for filtering, and boundaries that stop propagation.
+Configure error behavior on an element: a fallback build for failure UI, a category for filtering, and a boundary that stops the error's walk up the tree.
 
 ## Usage
 
 ```jsx
-import { mount } from "@hellajs/dom";
+import { mount, onError } from "@hellajs/dom";
+
+// Element fallbacks render through the global handler: delegate to
+// context.config.fallback when the failing element has one.
+onError((error, context) =>
+  context.config?.fallback?.(error) ?? null
+);
 
 const FlakyComponent = () => <div>Flaky content</div>;
 
@@ -22,11 +28,13 @@ const App = () => (
 mount(App, "#app");
 ```
 
+With no [`onError`](/reference/dom/onerror) handler registered, every error is logged to `console.error` and nothing renders, `error:` attributes included. See [Error Handling](/learn/concepts/error-handling) for the full flow.
+
 ## Key Concepts
 
 ### error:fallback
 
-Function receiving the error and returning a HellaNode for fallback UI. When present, the element implicitly becomes an error boundary.
+A function receiving the error and returning fallback UI. Its presence makes the element an error boundary: when a dispatched error's origin walks up the tree, the walk stops here, and the fallback renders within the boundary: replacing the boundary's content for event and binding errors, or standing in at the failing child's position for reactive-child errors.
 
 ```jsx
 const RiskyChild = () => <div>Risky content</div>;
@@ -38,7 +46,7 @@ const RiskyChild = () => <div>Risky content</div>;
 
 ### error:category
 
-String category passed to the global [`onError`](/reference/dom/onerror) handler for filtering and logging.
+A string passed to the global handler through `context.config.category`, for filtering and logging. On its own it changes nothing visually: it never stops the boundary walk and renders nothing.
 
 ```jsx
 const ImportantSection = () => <div>Important</div>;
@@ -50,7 +58,7 @@ const ImportantSection = () => <div>Important</div>;
 
 ### error:boundary
 
-Explicitly marks an element as an error boundary. When `true`, the element stops error propagation to parent boundaries even without a fallback function.
+Explicitly marks the element as a boundary. When `true`, the walk up the tree stops here even with no fallback, so errors below never reach an outer boundary.
 
 ```jsx
 const Child = () => <div>Child content</div>;
@@ -61,15 +69,15 @@ const Child = () => <div>Child content</div>;
 </div>
 ```
 
-An element with `error:fallback` is automatically a boundary. Use `error:boundary` alone when you want to stop propagation without providing fallback UI.
+An element with `error:fallback` is automatically a boundary. Use `error:boundary` alone to stop propagation without providing fallback UI.
 
 ## Important Considerations
 
 ### How Config Is Picked
 
-- **First found wins**: Walking up the DOM tree stops at the first element with any `error:` attributes
-- **No merging**: Child config does not inherit from parent config
-- **Category-only elements**: An element with only `error:category` (no `boundary` or `fallback`) is not a boundary
+- **Nearest qualifying boundary wins**: the walk stops at the first element whose config has `boundary` or `fallback`.
+- **No merging**: a child config never inherits from a parent config.
+- **Category-only elements are passed over**: they populate `context.config` for handlers, but the walk continues through them.
 
 ### What Errors Get Caught
 
@@ -80,3 +88,21 @@ An element with `error:fallback` is automatically a boundary. Use `error:boundar
 | `on:` and `e:` event handlers | Yes |
 | `hook:beforeMount` | No (logged only) |
 | `hook:beforeUpdate` / `hook:afterUpdate` | No (caught, no fallback UI) |
+
+### Reset Rebuilds the Boundary
+
+When the boundary element is a compiled template root, the error context carries `reset()`: it re-runs the boundary's stored build and mounts fresh nodes. A retry button in a global handler's fallback uses it:
+
+```jsx
+onError((error, context) => {
+  const retry = context.reset;
+  if (!retry) return null; // no compiled boundary build to reset; pass
+
+  return (
+    <div class="error">
+      <p>{error.message}</p>
+      <button on:click={retry}>Retry</button>
+    </div>
+  );
+});
+```

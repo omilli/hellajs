@@ -95,10 +95,12 @@ The full timing table (`beforeMount` through `afterDestroy`) lives in [`hook:`](
 
 ## Error Configuration: error:
 
-Handle a subtree's errors where it sits: fallback UI, a category for filtering, or a boundary that stops propagation.
+Handle a subtree's errors where it sits: fallback UI, a category for filtering, or a boundary that stops propagation. Fallback UI renders through the global [`onError`](/reference/dom/onerror) handler delegating to `context.config.fallback`.
 
 ```jsx
-import { mount } from "@hellajs/dom";
+import { mount, onError } from "@hellajs/dom";
+
+onError((error, context) => context.config?.fallback?.(error) ?? null);
 
 const FlakyComponent = () => <div>Flaky content</div>;
 

@@ -2,41 +2,46 @@ import Callout from "@components/Callout.astro";
 
 # component
 
-Wrap a manually-built component so its effects clean up when the component is removed from the DOM.
+The wrapper the compiler emits for every JSX component call: effects created inside the component are scoped to it, disposed when it leaves the DOM, and render errors route through the error system.
 
-<Callout variant="info">This is a low-level API. JSX users never need it: the compiler wraps every component call automatically. Reach for it only when constructing component trees by hand.</Callout>
+<Callout variant="info">This is a low-level API. JSX users never need it: the compiler wraps every component call automatically. Reach for it when you invoke a compiled component outside JSX, such as a loader-resolved root.</Callout>
 
 ## Basic Usage
 
-When you build trees by hand (raw AST objects, no JSX), wrap component calls with `component()`. Effects created inside the component are then scoped to it and disposed on removal.
+In JSX, the wrapping is automatic. This markup:
 
-```js
-import { signal } from "@hellajs/core";
-import { mount, component } from "@hellajs/dom";
+```jsx
+import { mount } from "@hellajs/dom";
 
-const Counter = (props) => {
-  const count = signal(props.initial ?? 0);
+const Counter = ({ initial }: { initial: number }) => (
+  <div>{initial}</div>
+);
 
-  return {
-    tag: "button",
-    on: { click: () => count(count() + 1) },
-    children: [count],
-  };
-};
-
-// Manual tree construction: wrap each component call
-const app = {
-  tag: "div",
-  children: [
-    component(Counter, { initial: 5 }),
-    component(Counter, { initial: 10 }),
-  ],
-};
-
-mount(app, document.body);
+mount(<Counter initial={5} />, "#app");
 ```
 
-Without `component()`, effects created inside `Counter` would never be cleaned up when the node is removed.
+compiles to `component(Counter, { initial: 5 })`, so the scope and error handling come along on their own.
+
+The manual use is invoking a compiled component outside JSX. A loader-resolved app root is the common case:
+
+```typescript
+import { component, mount, onError } from "@hellajs/dom";
+import type { ComponentFn, TemplateBuildFn } from "@hellajs/dom";
+
+declare const loadApp: () => Promise<{ App: ComponentFn }>;
+
+// Registered before the mount: async-root rejections have no element
+// context, so this handler (or the console) is the whole error story.
+onError((error, context) => {
+  console.error(context.phase, error.message); // telemetry in a real app
+  return null;
+});
+
+mount(async () => {
+  const mod = await loadApp();
+  return component(mod.App, {}) as TemplateBuildFn;
+}, "#app");
+```
 
 ## API
 
@@ -47,76 +52,49 @@ function component<P extends Record<string, unknown>>(
 ): ComponentReturn
 ```
 
-- `fn`: The component function to wrap.
-- `props`: Props object passed to the component function.
-- **Returns**: The component's build result with the disposal scope attached.
+- `fn`: The component function to wrap. Invoked immediately, inside the disposal scope.
+- `props`: Props object passed to the component function; JSX children arrive as `props.children`.
+- **Returns**: The component's build result with the disposal scope attached: a [flagged build fn](/reference/dom/runtime) ready for [`mount`](/reference/dom/mount) and children wiring when the result is a build function.
 
 ## Key Concepts
 
-### JSX vs Raw AST
+### One Scope per Call
 
-With JSX, the wrapping is automatic:
+`component()` invokes the component once and attaches one disposal scope to that result. Effects and [`scope()`](/reference/core/scope) calls created inside the component are disposed when its root leaves the DOM.
 
 ```jsx
-const Counter = ({ initial }: { initial: number }) => <div>Count: {initial}</div>;
+import { effect, signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
 
-// The plugin compiles this to component(Counter, { initial: 5 })
-<Counter initial={5} />;
+const Timer = () => {
+  const seconds = signal(0);
+
+  effect(() => {
+    const id = setInterval(() => seconds(seconds() + 1), 1000);
+    return () => clearInterval(id);
+  });
+
+  return <span>{seconds}s</span>;
+};
+
+// The interval clears itself when Timer's DOM is removed
+mount(<Timer />, "#app");
 ```
 
-With a hand-built tree, you wrap by hand:
+### Render Errors Route Through the Error System
 
-```js
-component(Counter, { initial: 5 })
-```
+A throw inside the component dispatches with phase `"render"` through [`onError`](/reference/dom/onerror), and the wrapper returns an empty build so the rest of the tree keeps mounting. See [Error Handling](/learn/concepts/error-handling).
 
-### Each Level Needs Its Own Scope
+### Meta-Components Pass Through
 
-Nested components each get their own `component()` call, at every level:
-
-```js
-const Parent = (props) => ({
-  tag: "div",
-  children: [
-    component(Child, { name: "first" }),
-    component(Child, { name: "second" }),
-  ],
-});
-
-// Parent itself wrapped when used
-mount(component(Parent, {}), document.body);
-```
+[`ForEach`](/reference/dom/foreach), [`Portal`](/reference/dom/portal), [`Lazy`](/reference/dom/lazy), [`Transition`](/reference/dom/transition), and [`Suspense`](/reference/dom/suspense) manage their own cleanup through their region anchors. Passing one to `component()` returns it unchanged with the scope chained on, so wrapping them is unnecessary.
 
 ## Important Considerations
 
-### Unwrapped Components Leak
+### Component Calls Only, Not Tree Building
 
-A direct component call creates effects with no owner:
+`component()` wraps component calls; it does not make hand-built tree objects mountable. [`mount`](/reference/dom/mount) and [`hydrate`](/reference/dom/hydrate) reject hand-built trees with the documented throw: build DOM imperatively through the [runtime](/reference/dom/runtime) module instead.
 
-```js
-// ❌ Effects created inside Counter are never cleaned up
-const app = {
-  tag: "div",
-  children: [Counter({ initial: 5 })],
-};
+### The Result Is One Build, Not a Factory
 
-// ✅ Effects scoped and disposed with the node
-const app = {
-  tag: "div",
-  children: [component(Counter, { initial: 5 })],
-};
-```
-
-### Meta-Components Wrap Themselves
-
-[`ForEach`](/reference/dom/foreach), [`Portal`](/reference/dom/portal), [`Lazy`](/reference/dom/lazy), [`Transition`](/reference/dom/transition), and [`Suspense`](/reference/dom/suspense) manage their own cleanup: call them directly, without `component()`.
-
-```js
-import { ForEach } from "@hellajs/dom";
-
-const items = ["a", "b", "c"];
-const renderItem = (item) => ({ tag: "li", children: [item] });
-
-// No component() wrapper needed
-const list = ForEach({ each: items, use: renderItem });
-```
+The call renders the component once. A second render is a second `component()` call (or, in JSX, a second element); the result carries no component definition to re-invoke.

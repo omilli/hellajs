@@ -1,20 +1,37 @@
 # raw
 
-Embed pre-rendered HTML in a component exactly as-is: no escaping, no reactivity inside.
+Embed pre-rendered HTML in a tree exactly as-is: no escaping, and no reactivity inside the boundary.
 
 ## Basic Usage
 
-Wrap an HTML string with `raw()` to place it in a tree unescaped. The typical use is slot passthrough, where a foreign renderer has already produced HTML that must land in the page untouched.
+Wrap an HTML string with `raw()` and place it as a child. The typical source is a trusted renderer: slot HTML from a meta-framework, fragments a server produced.
 
-```js
+```jsx
+import { mount, raw } from "@hellajs/dom";
+
+const serverHtml = "<h2>From the server</h2><p>Rendered elsewhere, shipped whole.</p>";
+
+const Article = () => (
+  <main>
+    {raw(serverHtml)}
+    <p>This paragraph is an ordinary reactive child.</p>
+  </main>
+);
+
+mount(<Article />, "#app");
+```
+
+On the server, [`ssr`](/reference/ssr/ssr) emits the wrapped HTML verbatim, and [`hydrate`](/reference/dom/hydrate) adopts the existing nodes on the client without wiring anything inside:
+
+```jsx
 import { raw } from "@hellajs/dom";
 import { ssr } from "@hellajs/ssr";
 
-ssr({ tag: "main", children: [raw("<h1>Hi</h1><p>from a foreign renderer</p>")] });
+const body = ssr(<main>{raw("<h1>Hi</h1><p>from a foreign renderer</p>")}</main>);
 // => '<main><!--[--><h1>Hi</h1><p>from a foreign renderer</p><!--]--></main>'
 ```
 
-The wrapped region is opaque: `ssr` emits the HTML verbatim, and on the client [`hydrate`](/reference/dom/hydrate) adopts the existing DOM in place without binding anything inside. No reactive scope crosses the boundary.
+No reactive scope crosses the boundary: if the content must update, it is a component, not raw HTML.
 
 ## API
 
@@ -23,10 +40,20 @@ function raw(html: string): HellaRaw
 ```
 
 - `html`: The raw HTML string.
-- **Returns**: A `HellaRaw` sentinel consumed by `ssr` and `hydrate`.
+- **Returns**: A `HellaRaw` sentinel consumed by the renderer, `ssr`, and `hydrate`.
 
 ## Important Considerations
 
 ### Bypasses HTML Escaping (XSS)
 
-`raw()` bypasses HTML escaping. **Never pass unsanitized user input**; it is an XSS vector. Sanitize untrusted HTML before wrapping it, exactly as you would for `dangerouslySetInnerHTML` / `set:html`.
+`raw()` inserts its string with no escaping. **Never pass unsanitized user input**; it is an XSS vector, exactly like `dangerouslySetInnerHTML` / `set:html`. Sanitize with a policy-based sanitizer before wrapping:
+
+```jsx
+import { raw } from "@hellajs/dom";
+
+declare function sanitizeHtml(dirty: string): string;
+
+const Comment = (props: { bodyHtml: string }) => (
+  <div>{raw(sanitizeHtml(props.bodyHtml))}</div>
+);
+```

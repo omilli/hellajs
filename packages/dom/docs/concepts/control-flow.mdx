@@ -36,26 +36,26 @@ Use [`ForEach`](/reference/dom/foreach) for reactive lists that change over time
 ```jsx
 import { mount, ForEach } from "@hellajs/dom";
 import { signal } from "@hellajs/core";
+import type { Signal } from "@hellajs/core";
+
+type Todo = { id: number; text: string; done: Signal<boolean> };
 
 const TodoList = () => {
-  const todos = signal([
-    { id: 1, text: "Learn HellaJS", done: false },
-    { id: 2, text: "Build an app", done: false }
+  const todos = signal<Todo[]>([
+    { id: 1, text: "Learn HellaJS", done: signal(false) },
+    { id: 2, text: "Build an app", done: signal(false) },
   ]);
 
   return (
     <ul>
-      <ForEach each={todos} use={(todo: { id: number; text: string; done: boolean }) => (
-        <li key={todo.id} class={todo.done ? "done" : ""}>
+      <ForEach each={todos} use={(todo: Todo) => (
+        <li key={todo.id} class={todo.done() ? "done" : ""}>
           <input
             type="checkbox"
             checked={todo.done}
-            on:change={e => {
+            on:change={(e) => {
               const target = e.target as HTMLInputElement;
-              const updated = todos().map(t =>
-                t.id === todo.id ? { ...t, done: target.checked } : t
-              );
-              todos(updated);
+              todo.done(target.checked);
             }}
           />
           {todo.text}
@@ -70,7 +70,7 @@ mount(TodoList, "#app");
 
 A bare `{todos().map(...)}` is reactive (it reads the signal). For a one-time static snapshot, hoist the read (`const items = todos()`) or wrap it in [`untracked`](/reference/core/untracked); or, for lists that change, prefer [`ForEach`](/reference/dom/foreach).
 
-ForEach tracks items by key: an explicit `key` attribute, then the item's `id` property, then the array index as fallback. Keys use key-only comparison, so the same key always reuses its DOM node even when the item reference changes (for example after a `.map()` spread); index-keyed items fall back to reference equality instead. Updates always set a fresh array reference (`items([...items(), "D"])`); mutating the array in place does not trigger reactivity. List items and their effects are cleaned up automatically when removed from the DOM, or when a reactive condition switches away from the list.
+ForEach tracks items by key: an explicit `key` attribute, then the item's `id` property, then the array index as fallback. Keys use key-only comparison, so the same key always reuses its DOM node even when the item reference changes (for example after a `.map()` spread); index-keyed items fall back to reference equality instead. A reused item keeps its DOM node and skips the renderer, so mutable item content (`done` above) lives in signals inside the item. Updates that change membership always set a fresh array reference (`items([...items(), "D"])`); mutating the array in place does not trigger reactivity. List items and their effects are cleaned up automatically when removed from the DOM, or when a reactive condition switches away from the list.
 
 See [`ForEach`](/reference/dom/foreach) for full keyed reconciliation details.
 

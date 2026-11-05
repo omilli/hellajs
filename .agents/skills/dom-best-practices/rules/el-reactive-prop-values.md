@@ -1,13 +1,13 @@
 ---
-title: Pass signals and getters as prop values, never their resolved results
+title: Element positions auto-wrap reactive expressions; component props and children pass through as-is
 impact: CRITICAL
-impactDescription: calling the signal in JSX resolves the value once at build time - the attribute renders its initial value and never updates again, with no error to notice
-tags: props, reactivity, signals, attributes
+impactDescription: a signal call at component position resolves once at build time - the prop or child renders its initial value and never updates again, with no error to notice
+tags: props, reactivity, signals, attributes, compiler
 ---
 
-## Pass signals and getters as prop values, never their resolved results
+## Element positions auto-wrap reactive expressions; component props and children pass through as-is
 
-A plain attribute value (string, number, boolean) applies once at build. A function value - a signal, or a `() => value` getter - is effect-wrapped: the element re-renders that attribute on every change. Writing `class={theme()}` calls the signal during the build, hands the renderer a plain string, and freezes the attribute at its build-time value; `class={theme}` keeps the reactivity. The same rule holds for children (`<p>{count}</p>` is reactive, `<p>{count()}</p>` is not) and for every HellaJS prop surface that accepts `HellaPrimitive`. Call signals in JSX only inside logic that must run once (key extractors, event handlers, computed arguments).
+At element position the compiler wraps any call-containing attribute value or child in a getter, so `class={theme()}` and `<p>{count()}</p>` are reactive, exactly like the bare forms `class={theme}` and `<p>{count}</p>`. At component position nothing is wrapped: props and children pass through as-is, so `label={theme()}` (or a child `<Card>{count()}</Card>`) resolves the signal during the build and the value freezes at its initial state, silently. Pass the signal or a getter into components and let the child component read it at its own element positions. Hand-authored `@hellajs/dom/runtime` calls mirror the component rule: a plain value applies once, a function value is effect-wrapped.
 
 **Incorrect (what is wrong):**
 
@@ -15,19 +15,29 @@ A plain attribute value (string, number, boolean) applies once at build. A funct
 import { signal } from "@hellajs/core";
 
 const theme = signal("light");
-// theme() resolves NOW: the class is the string "light" forever,
-// no matter how often theme changes.
-const App = () => <section class={theme()}>Settings</section>;
+// label={theme()} resolves NOW: the child receives the string "light"
+// forever, no matter how often theme changes.
+const App = () => <ThemeCard label={theme()}>Settings</ThemeCard>;
 ```
 
 **Correct (what is right):**
 
 ```tsx
 import { signal } from "@hellajs/core";
+import type { Signal } from "@hellajs/core";
+import type { HellaChildren } from "@hellajs/dom";
 
 const theme = signal("light");
-// The signal itself: the attribute is effect-wrapped and follows every write.
-const App = () => <section class={theme}>Settings</section>;
+
+type ThemeCardProps = { label: Signal<string>; children?: HellaChildren };
+
+const ThemeCard = ({ label }: ThemeCardProps) => (
+  <section>{label}</section>
+);
+
+// The signal itself: the child's element positions keep the binding
+// reactive across the component boundary.
+const App = () => <ThemeCard label={theme}>Settings</ThemeCard>;
 ```
 
-Reference: `packages/dom/lib/runtime.ts prop` and `packages/dom/lib/types/attributes.d.ts HellaPrimitive` and `packages/dom/docs/concepts/attribute-prefixes.mdx`
+Reference: `plugins/compiler/src/processors/attributes.mjs maybeReactive` and `packages/dom/lib/runtime.ts prop` and `packages/dom/docs/concepts/components.mdx`

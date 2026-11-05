@@ -123,6 +123,22 @@ const items = signal([
 
 ## Important Considerations
 
+### Pass the Signal, Not the Array
+
+`each` needs the reactive source itself. `each={items()}` calls the signal during the build and hands `ForEach` a plain array: the list renders once, then signal writes never reconcile it again, and no error flags it.
+
+```jsx
+const items = signal(["a", "b"]);
+
+// ❌ Snapshot: renders once; pushing "c" later never reaches the DOM
+<ForEach each={items()} use={(item: string) => <li>{item}</li>} />
+
+// ✅ The signal: every write reconciles the list in place
+<ForEach each={items} use={(item: string) => <li>{item}</li>} />
+```
+
+The same rule holds wherever a prop documents accepting a signal. A plain array is legal and renders statically, for lists that never change.
+
 ### New Arrays, Not Mutations
 
 Signals fire on reassignment; mutating the array in place triggers nothing.
