@@ -2,14 +2,6 @@
 
 Read signals without creating reactive dependencies.
 
-## API
-
-```typescript
-function untracked<T>(untrackedFn: () => T): T
-```
-- `untrackedFn`: Execute without tracking signal dependencies
-- **Returns**: The value returned by the function `untrackedFn`
-
 ## Basic Usage
 
 Access a [`signal`](/reference/core/signal) (like [`computed`](/reference/core/computed) or [`effect`](/reference/core/effect)) without creating a dependency.
@@ -39,9 +31,17 @@ multiplier(20);
 console.log(result()); // 60 (NOT recomputed because `multiplier` is untracked)
 ```
 
+## API
+
+```typescript
+function untracked<T>(untrackedFn: () => T): T
+```
+- `untrackedFn`: Execute without tracking signal dependencies
+- **Returns**: The value returned by the function `untrackedFn`
+
 ## Important Considerations
 
-### In templates
+### One-Time Reads in Templates
 
 In compiled dom templates (JSX), expressions that read signals are reactive by default. Use `untracked` to read a signal **once** without subscribing: a one-time snapshot in a template.
 

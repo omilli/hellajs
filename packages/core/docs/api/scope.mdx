@@ -2,14 +2,6 @@
 
 Batch-collect multiple [`effect`](/reference/core/effect) functions for a single cleanup.
 
-## API
-
-```typescript
-function scope(fn: () => void): () => void
-```
-- `fn`: All [`effect`](/reference/core/effect) functions created during execution are collected
-- **Returns**: A cleanup function that disposes all collected effects
-
 ## Basic Usage
 
 Run multiple [`effect`](/reference/core/effect) cleanup functions at once.
@@ -29,6 +21,14 @@ count(5); // Logs: "Count: 5" and "Doubled: 10"
 dispose(); // Stops both effects
 count(10); // Nothing logged
 ```
+
+## API
+
+```typescript
+function scope(fn: () => void): () => void
+```
+- `fn`: All [`effect`](/reference/core/effect) functions created during execution are collected
+- **Returns**: A cleanup function that disposes all collected effects
 
 ## Key Concepts
 

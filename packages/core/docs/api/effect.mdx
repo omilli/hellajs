@@ -2,19 +2,6 @@
 
 Runs automatically when reactive dependencies change.
 
-## API
-
-```typescript
-function effect(effectFn: () => unknown, options?: EffectOptions): () => void
-
-interface EffectOptions {
-  separate?: boolean;
-}
-```
-- `effectFn`: Re-executed whenever a signal read inside it changes. May return a cleanup function that runs before re-execution and on disposal.
-- `options`: Optional behavior switches. Pass `{ separate: true }` to register the effect without linking it to the effect that is currently running: it tracks, runs, and disposes independently, and whoever holds the returned cleanup owns its lifetime.
-- **Returns**: A function that stops the effect and prevents further executions
-
 ## Basic Usage
 
 Runs immediately, then again whenever a dependency changes.
@@ -38,6 +25,19 @@ count(2); // Logs: "The count is: 2"
 cleanup();
 count(3); // (nothing is logged)
 ```
+
+## API
+
+```typescript
+function effect(effectFn: () => unknown, options?: EffectOptions): () => void
+
+interface EffectOptions {
+  separate?: boolean;
+}
+```
+- `effectFn`: Re-executed whenever a signal read inside it changes. May return a cleanup function that runs before re-execution and on disposal.
+- `options`: Optional behavior switches. Pass `{ separate: true }` to register the effect without linking it to the effect that is currently running: it tracks, runs, and disposes independently, and whoever holds the returned cleanup owns its lifetime.
+- **Returns**: A function that stops the effect and prevents further executions
 
 ## Key Concepts
 
@@ -96,12 +96,14 @@ Passing `{ separate: true }` registers an effect that never links to the effect 
 import { signal, effect } from "@hellajs/core";
 
 const name = signal("Ada");
-const el = document.createElement("div");
+let rendered = "";
 
 // Registered separate: no parent link, the caller owns the lifetime
-const dispose = effect(() => (el.textContent = name()), { separate: true });
+const dispose = effect(() => {
+  rendered = name();
+}, { separate: true });
 
-name("Grace"); // el.textContent updates to "Grace"
+name("Grace"); // rendered updates to "Grace"
 
 dispose(); // The caller disposes it when done
 name("Alan"); // No further updates
@@ -111,22 +113,60 @@ name("Alan"); // No further updates
 
 ### Avoid Async
 
-The effect function itself must be synchronous (not `async`). Async operations can be started inside via `.then()` or `fetch()`, but the reactive system needs synchronous dependency tracking.
+The effect function must be synchronous. Dependency tracking is active only while the function runs; an `async` function returns a pending Promise at its first `await`, so signal reads after that point subscribe nothing and the effect never re-runs. Start async work inside the synchronous body and write results into a signal from the `.then` callbacks.
 
 ```typescript
-import { effect } from "@hellajs/core";
+import { signal, effect } from "@hellajs/core";
 
-// ❌ Async function directly
-effect(async () => { /* ... */ });
+const query = signal("");
+const results = signal<string[]>([]);
 
-// ✅ Handle async operations inside
+// ❌ query() runs after the first await: untracked, the effect never re-runs
+effect(async () => {
+  const res = await fetch("/api/search");
+  const items = (await res.json()) as string[];
+  results(items.filter(item => item.includes(query())));
+});
+
+// ✅ Synchronous body reads the dependency, async resolves into a signal
 effect(() => {
-  fetch("/api/data").then(data => {
-    // Handle the data here
-    console.log(data);
-  });
+  const currentQuery = query(); // tracked: read in the synchronous body
+  fetch(`/api/search?q=${currentQuery}`)
+    .then(res => res.json())
+    .then((items: string[]) => results(items));
 });
 ```
+
+### Nested Effects Accumulate
+
+Effects do not auto-dispose their children. Every re-run of a parent that creates a child effect adds another live child, and the old children keep firing on their own dependencies, duplicating side effects on every later change. Express the varying condition inside a single effect instead: dependencies are re-collected on every run, so reads in the inactive branch drop out automatically.
+
+```typescript
+import { signal, effect } from "@hellajs/core";
+
+const enabled = signal(false);
+const query = signal("");
+
+// ❌ Every enabled flip creates another child; the old children never stop
+// firing on query changes
+effect(() => {
+  enabled();
+  effect(() => {
+    console.log(query());
+  });
+});
+
+// ✅ One effect with conditional reads: subscriptions follow the active branch
+effect(() => {
+  if (enabled()) {
+    console.log(query().toUpperCase());
+  } else {
+    console.log("idle");
+  }
+});
+```
+
+When an external registry must own a nested effect's lifetime, pass `{ separate: true }` (see [Separate Effects](#separate-effects)); the registry, not the graph, disposes it.
 
 ### Self-Writes
 

@@ -2,13 +2,6 @@
 
 Drains the scheduled-effect queue, running every queued [`effect`](/reference/core/effect) synchronously.
 
-## API
-
-```typescript
-function flush(): void
-```
-- **Returns**: Nothing. Every queued effect runs before the call returns.
-
 ## Basic Usage
 
 An error thrown inside an effect aborts the drain and leaves the remaining queued effects waiting. Call `flush()` to run them at a known point:
@@ -41,6 +34,13 @@ try {
 flush(); // Runs the third effect left queued by the aborted drain
 console.log(events); // Logs: ["first: 0", "third effect ran", "first: 1", "third effect ran"]
 ```
+
+## API
+
+```typescript
+function flush(): void
+```
+- **Returns**: Nothing. Every queued effect runs before the call returns.
 
 ## Key Concepts
 

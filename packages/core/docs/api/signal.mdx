@@ -2,6 +2,24 @@
 
 Holds a value and notifies dependents when the value changes.
 
+## Basic Usage
+
+Create signals and read values.
+
+```typescript
+import { signal } from '@hellajs/core';
+
+// Create a signal with an initial value
+const count = signal(0);
+
+// Read the current value
+console.log(count()); // 0
+
+// Update the value
+count(5);
+console.log(count()); // 5
+```
+
 ## API
 
 ```typescript
@@ -23,24 +41,6 @@ function signal<T>(initialValue: T, options: EqualsOptions<T>): Signal<T>;
 - `initialValue`: The initial value for the signal. Omit to start as `undefined`.
 - `options`: An optional `{ equals }` comparator that replaces the default equality check (`===`, with `NaN` equal to itself). Pass `signal(undefined, { equals })` to combine a comparator with no initial value.
 - **Returns**: A `Signal<T>` function that gets the value when called with no arguments, or sets the value when called with an argument. Importable as `import type { Signal } from '@hellajs/core'` for typing function parameters.
-
-## Basic Usage
-
-Create signals and read values.
-
-```typescript
-import { signal } from '@hellajs/core';
-
-// Create a signal with an initial value
-const count = signal(0);
-
-// Read the current value
-console.log(count()); // 0
-
-// Update the value  
-count(5);
-console.log(count()); // 5
-```
 
 ## Key Concepts
 
@@ -115,7 +115,7 @@ An equal write keeps the old reference, so consumers comparing by identity never
 
 `NaN` needs no comparator; the default already treats it as self-equal. Use `Object.is` as `equals` only to also distinguish `+0` from `-0`; under the default they compare equal.
 
-The comparator receives the freshest stored value, and `{ equals: undefined }` behaves as no options.
+The comparator compares against the most recent write, so sequential writes compare against the last write, not the initial value. `{ equals: undefined }` behaves as no options.
 
 ## Important Considerations
 
@@ -136,3 +136,21 @@ todos(todos().map(todo =>
   todo.id === 1 ? { ...todo, text: 'Learn Signals' } : todo
 ));
 ```
+
+### Writing undefined Clears the Value
+
+The getter/setter split is the argument count, not the value: calling the signal with `undefined` is a write, not a read. A signal created without an initial value legitimately holds `undefined`, so a stored `undefined` is indistinguishable from never-set. Put fallbacks at read sites.
+
+```typescript
+import { signal } from '@hellajs/core';
+
+const userId = signal<number>(); // undefined until first set
+
+// ❌ Not a read with a default: a write that stores undefined
+userId(undefined);
+
+// ✅ Read, with the fallback at the read site
+const currentId = userId() ?? 0;
+```
+
+Call the setter with `undefined` only when deliberately clearing the value back to unset.

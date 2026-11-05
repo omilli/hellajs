@@ -2,22 +2,6 @@
 
 Read-only value that automatically updates when dependencies change.
 
-## API
-
-```typescript
-function computed<T>(computedFn: (previousValue?: T) => T): () => T
-
-// With an equality override
-function computed<T>(
-  computedFn: (previousValue?: T) => T,
-  options: EqualsOptions<T>
-): () => T
-```
-- `computedFn`: The function to compute the derived value. Receives `previousValue` (the last computed result) as an optional argument.
-- `previousValue`: The previously computed value. `undefined` on the first call. Useful for incremental calculations.
-- `options`: An optional `{ equals }` comparator that replaces the default result check (`===`, with `NaN` equal to itself).
-- **Returns**: A read-only getter function
-
 ## Basic Usage
 
 Values update automatically when any of their dependencies change.
@@ -35,6 +19,22 @@ firstName("Jane");
 
 console.log(fullName()); // "Jane Doe"
 ```
+
+## API
+
+```typescript
+function computed<T>(computedFn: (previousValue?: T) => T): () => T
+
+// With an equality override
+function computed<T>(
+  computedFn: (previousValue?: T) => T,
+  options: EqualsOptions<T>
+): () => T
+```
+- `computedFn`: The function to compute the derived value. Receives `previousValue` (the last computed result) as an optional argument.
+- `previousValue`: The previously computed value. `undefined` on the first call. Useful for incremental calculations.
+- `options`: An optional `{ equals }` comparator that replaces the default result check (`===`, with `NaN` equal to itself).
+- **Returns**: A read-only getter function
 
 ## Key Concepts
 
@@ -96,7 +96,7 @@ import { signal, computed, effect } from '@hellajs/core';
 const items = signal([1, 2, 3]);
 
 // Every call creates a new array reference, so effects always run
-const doubled = computed(() => items().map(x => x * 2));
+const doubled = computed(() => items().map(value => value * 2));
 
 effect(() => {
   console.log('Effect:', doubled());
@@ -114,7 +114,7 @@ The `equals` option replaces the default equality check on the recomputed result
 import { signal, computed, effect } from '@hellajs/core';
 
 const items = signal([1, 2, 3]);
-const doubled = computed(() => items().map(x => x * 2), {
+const doubled = computed(() => items().map(value => value * 2), {
   equals: (a, b) => a.length === b.length && a.every((v, i) => v === b[i])
 });
 
@@ -155,7 +155,6 @@ Values can depend on other computed values.
 
 ```typescript
 import { signal, computed } from '@hellajs/core';
-
 
 const price = signal(100);
 const quantity = signal(2);
@@ -218,6 +217,34 @@ const result = computed(() => {
 const doubled = computed(() => count() * 2);
 ```
 
+### Async Getters Cache the Promise
+
+The getter must be synchronous. An `async` getter returns a pending Promise at its first `await`, and that Promise becomes the cached value: subscribers receive the Promise, never the resolved payload. Signal reads after the first `await` also subscribe nothing, so the derivation never updates. Keep the getter synchronous; move async work into an [`effect`](/reference/core/effect) that writes a signal when it resolves.
+
+```typescript
+import { signal, computed, effect } from '@hellajs/core';
+
+const userId = signal(1);
+const profile = signal<{ name: string } | undefined>(undefined);
+
+// ❌ async getter: the cached value is the Promise itself, and reads
+// after the first await are untracked
+const badProfile = computed(async () => {
+  const res = await fetch(`/api/users/${userId()}`);
+  return res.json();
+});
+
+// ✅ sync derivation over signal state written by an effect
+const profileLabel = computed(() => profile()?.name ?? 'guest');
+
+effect(() => {
+  const id = userId(); // tracked: the fetch re-runs when id changes
+  fetch(`/api/users/${id}`)
+    .then(res => res.json())
+    .then(data => profile(data));
+});
+```
+
 ### Auto-GC
 
 A [`computed`](/reference/core/computed) with no subscribers releases its dependencies and is marked for lazy recomputation. When a new subscriber reads the value, the dependency graph is rebuilt and the value recomputed on demand.
@@ -241,7 +268,26 @@ console.log(doubled()); // 20 (graph rebuilt, recomputed)
 
 ### Error Recovery
 
-Errors thrown during computation prevent dependency tracking on that execution. Every read of a throwing computed re-attempts the computation and rethrows (no silent `undefined`, no stale cached value) until a dependency change allows success. On the next successful read, tracking rebuilds correctly.
+A throw inside the getter marks the computed for re-execution before the error escapes: every later read re-runs the getter and rethrows (no silent `undefined`, no stale cached value). Only the dependencies read before the throw survive; reads after the throw point are pruned. Handle expected failures inside the getter so every read returns a usable value:
+
+```typescript
+import { signal, computed } from '@hellajs/core';
+
+const raw = signal('{"n":1}');
+
+const parsed = computed(() => {
+  try {
+    return JSON.parse(raw()) as { n: number };
+  } catch {
+    return { n: 0 }; // fallback: every read stays usable, tracking preserved
+  }
+});
+
+raw('not json');
+console.log(parsed().n); // 0
+```
+
+Reserve read-site handling for errors no fallback can absorb. An unhandled throw retries the getter on every read until a dependency change allows success; the next successful read rebuilds tracking:
 
 ```typescript
 import { signal, computed } from '@hellajs/core';

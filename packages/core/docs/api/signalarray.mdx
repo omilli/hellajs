@@ -2,6 +2,24 @@
 
 Holds an array with one signal per element, so value writes wake only the readers of that element and in-place structural operations replace immutable spreads.
 
+## Basic Usage
+
+Create granular arrays and read single elements without waking unrelated readers.
+
+```typescript
+import { signalArray, effect } from '@hellajs/core';
+
+const items = signalArray([1, 2, 3]);
+
+effect(() => console.log('First:', items.get(0))); // Logs: "First: 1"
+
+items.set(0, 9);   // Logs: "First: 9" - only index-0 readers wake
+items.set(1, 20);  // No log: index-0 readers stay asleep
+items.push(4);     // Logs: "First: 9" - structural ops wake positional readers
+
+console.log(items()); // [9, 2, 4] - fresh plain array, tracks everything
+```
+
 ## API
 
 ```typescript
@@ -33,24 +51,6 @@ interface SignalArray<T, W = T> {
 ```
 
 The write-side parameter exists for host packages converting elements on entry (`@hellajs/store` deep collection keys instantiate it so writes accept raw objects while reads return element stores); standalone usage never sees it, because `W` defaults to `T`.
-
-## Basic Usage
-
-Create granular arrays and read single elements without waking unrelated readers.
-
-```typescript
-import { signalArray, effect } from '@hellajs/core';
-
-const items = signalArray([1, 2, 3]);
-
-effect(() => console.log('First:', items.get(0))); // Logs: "First: 1"
-
-items.set(0, 9);   // Logs: "First: 9" - only index-0 readers wake
-items.set(1, 20);  // No log: index-0 readers stay asleep
-items.push(4);     // Logs: "First: 9" - structural ops wake positional readers
-
-console.log(items()); // [9, 2, 4] - fresh plain array, tracks everything
-```
 
 ## Key Concepts
 

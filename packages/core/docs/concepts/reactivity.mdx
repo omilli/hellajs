@@ -2,7 +2,7 @@ import Callout from "@components/Callout.astro";
 
 # Reactivity
 
-HellaJS implements a directed acyclic graph where signals are sources, computed values are transforms, and effects are sinks. Updates propagate through the graph via depth-first traversal with glitch-free guarantees. Each node executes at most once per update cycle.
+HellaJS implements a directed acyclic graph where signals are sources, computed values are transforms, and effects are sinks. Updates propagate with glitch-free guarantees: each node executes at most once per update cycle, and effects never observe a half-updated state.
 
 <Callout variant="info">The core package is a heavily modified fork of the excellent Alien Signals library.</Callout>
 

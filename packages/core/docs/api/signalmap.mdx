@@ -2,6 +2,23 @@
 
 Holds a `Map` with one signal per key, so value writes wake only that key's readers while membership changes wake collection-wide readers.
 
+## Basic Usage
+
+Create granular maps and read single keys without waking unrelated readers.
+
+```typescript
+import { signalMap, effect } from '@hellajs/core';
+
+const scores = signalMap([['alice', 1], ['bob', 2]]);
+
+effect(() => console.log('Alice:', scores.get('alice'))); // Logs: "Alice: 1"
+
+scores.set('bob', 20);  // No rerun: bob is not tracked
+scores.set('alice', 5); // Logs: "Alice: 5" - only alice readers wake
+
+console.log(scores()); // Map { 'alice' => 5, 'bob' => 20 } - fresh plain Map
+```
+
 ## API
 
 ```typescript
@@ -32,23 +49,6 @@ interface SignalMap<K, V, W = V> {
 ```
 
 The write-side parameter exists for host packages converting values on entry (`@hellajs/store` deep collection keys instantiate it so writes accept raw objects while reads return element stores); standalone usage never sees it, because `W` defaults to `V`.
-
-## Basic Usage
-
-Create granular maps and read single keys without waking unrelated readers.
-
-```typescript
-import { signalMap, effect } from '@hellajs/core';
-
-const scores = signalMap([['alice', 1], ['bob', 2]]);
-
-effect(() => console.log('Alice:', scores.get('alice'))); // Logs: "Alice: 1"
-
-scores.set('bob', 20);  // No rerun: bob is not tracked
-scores.set('alice', 5); // Logs: "Alice: 5" - only alice readers wake
-
-console.log(scores()); // Map { 'alice' => 5, 'bob' => 20 } - fresh plain Map
-```
 
 ## Key Concepts
 

@@ -2,6 +2,24 @@
 
 Holds a `Set` with one membership signal per value, so `has` readers wake only on `add` and `delete` of their own value.
 
+## Basic Usage
+
+Create granular sets and watch single values without waking unrelated readers.
+
+```typescript
+import { signalSet, effect } from '@hellajs/core';
+
+const tags = signalSet(['urgent']);
+
+effect(() => console.log('Urgent:', tags.has('urgent'))); // Logs: "Urgent: true"
+
+tags.add('draft');      // No rerun: draft is not watched
+tags.delete('urgent');  // Logs: "Urgent: false" - only urgent readers wake
+tags.add('urgent');     // Logs: "Urgent: true"
+
+console.log(tags()); // Set { 'draft', 'urgent' } - fresh plain Set
+```
+
 ## API
 
 ```typescript
@@ -28,24 +46,6 @@ interface SignalSet<T, W = T> {
 ```
 
 The write-side parameter exists for host packages converting values on entry (`@hellajs/store` deep collection keys instantiate it so `add` accepts raw objects while membership keys on the converted stores); standalone usage never sees it, because `W` defaults to `T`. `has` and `delete` accept either form, so identity probes against a raw input stay legal.
-
-## Basic Usage
-
-Create granular sets and watch single values without waking unrelated readers.
-
-```typescript
-import { signalSet, effect } from '@hellajs/core';
-
-const tags = signalSet(['urgent']);
-
-effect(() => console.log('Urgent:', tags.has('urgent'))); // Logs: "Urgent: true"
-
-tags.add('draft');      // No rerun: draft is not watched
-tags.delete('urgent');  // Logs: "Urgent: false" - only urgent readers wake
-tags.add('urgent');     // Logs: "Urgent: true"
-
-console.log(tags()); // Set { 'draft', 'urgent' } - fresh plain Set
-```
 
 ## Key Concepts
 
