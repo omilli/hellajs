@@ -12,6 +12,7 @@ out
 dist
 .bench
 .doc-snippets/
+.skills-snippets/
 *.tgz
 
 # code coverage

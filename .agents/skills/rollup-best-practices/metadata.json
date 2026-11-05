@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "organization": "HellaJS",
+  "date": "2026-11-05",
+  "abstract": "Best practices for rollup-plugin-hellajs, the thin Rollup wrapper around hellajs-compiler: importing and calling the rollupHellaJS() default export in the plugins array, ordering the factory ahead of plugins that consume compiled output (its enforce field is inert under plain Rollup - the array position is the ordering control), the single target option (dom - imperative @hellajs/dom/runtime construction - is the default in every build, with no per-environment resolution; ast is pinned explicitly when the bundle runs server-side and feeds @hellajs/ssr), the options surface ending at target (extra keys are silently ignored), eager target validation at construction, and keeping one JSX pipeline per config. Every rule is grounded in the wrapper source, its target-option test suite, and the bench example config.",
+  "references": [
+    "https://github.com/vercel-labs/agent-skills",
+    "https://github.com/hellajs/hellajs"
+  ]
+}

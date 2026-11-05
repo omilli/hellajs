@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "organization": "HellaJS",
+  "date": "2026-11-04",
+  "abstract": "Best practices for @hellajs/store, the deeply reactive state package: store() converting plain objects into granular signals, nested stores, collection containers, and preserved functions; $snapshot copies, $update deep merges and draft mutators with structural diffing; per-key equals and middleware; readonly creation config; $subscribe single-key observation with unsubscribe discipline; $cleanup teardown scope; persistStore with localStorageAdaptor, sessionStorageAdaptor, and custom StoreAdaptors covering hydration, partialize, debounce, and dispose. Every rule is grounded in the package source and test suite.",
+  "references": [
+    "https://github.com/vercel-labs/agent-skills",
+    "https://github.com/hellajs/hellajs"
+  ]
+}

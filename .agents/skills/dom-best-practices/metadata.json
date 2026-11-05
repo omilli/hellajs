@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "organization": "HellaJS",
+  "date": "2026-11-04",
+  "abstract": "Best practices for @hellajs/dom, the surgical-DOM rendering package: mounting compiled trees, hydrating server HTML in place, keyed list reconciliation, portals, lazy and suspense boundaries, delegated events, and reactive references over existing DOM. Every rule is grounded in the package source and test suite.",
+  "references": [
+    "https://github.com/vercel-labs/agent-skills",
+    "https://github.com/hellajs/hellajs"
+  ]
+}

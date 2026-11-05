@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "organization": "HellaJS",
+  "date": "2026-11-05",
+  "abstract": "Best practices for vite-plugin-hellajs, the thin Vite wrapper around hellajs-compiler: registering the viteHellaJS() default export in the plugins array, the single target option (unset it resolves per build environment: server builds emit ast HellaNode for @hellajs/ssr, client builds emit dom @hellajs/dom/runtime construction), eager option validation at construction, bare-specifier resolution of @hellajs/* packages with no aliasing, declaring the runtime packages compiled output imports, and keeping one JSX pipeline per config. Every rule is grounded in the wrapper source and the example configs.",
+  "references": [
+    "https://github.com/vercel-labs/agent-skills",
+    "https://github.com/hellajs/hellajs"
+  ]
+}

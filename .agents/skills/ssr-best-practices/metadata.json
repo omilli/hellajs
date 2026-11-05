@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "organization": "HellaJS",
+  "date": "2026-11-04",
+  "abstract": "Best practices for @hellajs/ssr, the pure HellaNode-to-HTML stringifier: picking ssr/ssr.async/ssr.stream by the tree's Promise shape, hydration markers, doc document assembly (mount selector, head, JSON data payload), CSS delivery through cssText and the hella-css id, head hoisting with ssr.head(), islands pairing with dom hydrate, and server semantics (resource fetch no-op, read-once props). Every rule is grounded in the package source and test suite.",
+  "references": [
+    "https://github.com/vercel-labs/agent-skills",
+    "https://github.com/hellajs/hellajs"
+  ]
+}

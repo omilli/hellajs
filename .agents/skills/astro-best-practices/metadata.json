@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "organization": "HellaJS",
+  "date": "2026-11-05",
+  "abstract": "Best practices for astro-plugin-hellajs, the Astro 7 integration for HellaJS: registering hellajs() in the integrations array (exclusive-use, no options), island hydration behind client:* directives (client:only carries the renderer name), Astro slots consumed as props.children raw HTML, statically foldable css()/style()/keyframes() frontmatter calls with the cssText() opt-out and vars() sheet flushes, and server resolution of JSX-bearing @hellajs/* packages through the ssr export condition the integration adds - never ssr.noExternal or aliases. Every rule is grounded in the plugin source and test suite.",
+  "references": [
+    "https://github.com/vercel-labs/agent-skills",
+    "https://github.com/hellajs/hellajs"
+  ]
+}

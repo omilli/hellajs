@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "organization": "HellaJS",
+  "date": "2026-11-04",
+  "abstract": "Best practices for @hellajs/headless, the behavior package: renderer-free wiring utils (focus traps, dismissal layers, anchor positioning, hover timing, pointer gestures) plus the headless component factories - popover, dialog, menu, tooltip, combobox, select, command, toggles, tabs, toast, calendar, form - that render structure, never styles, with state in the caller's signals. Every rule is grounded in the package source and test suite.",
+  "references": [
+    "https://github.com/vercel-labs/agent-skills",
+    "https://github.com/hellajs/hellajs"
+  ]
+}

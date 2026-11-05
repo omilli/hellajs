@@ -1,0 +1,14 @@
+---
+title: Pass the JSX element itself where TemplateBuildFn is expected, never an arrow returning it
+description: "Props and handlers typed TemplateBuildFn (Lazy fallback, onError/ErrorFn returns) accept a JSX element expression directly - JSX.Element intersects TemplateBuildFn - but a fresh arrow `() => <X/>` fails TS2322 (no isTemplate member); only error:fallback takes (error) => element and mount/hydrate accept wrapper fns. Annotate ForEach key/use params with the full item type so T infers one shape."
+tags: [dom, TemplateBuildFn, JSX, fences, skills-check, typecheck, ForEach]
+confirmed: 2026-11-04
+---
+
+# Why
+
+`TemplateBuildFn` is a function type WITH required members (`isTemplate: true`, optional `props`/`componentScope`) - a value type, not any `() => Element`. The global `JSX.Element` (`HellaNode & RenderFn & TemplateBuildFn` in `packages/dom/lib/index.ts`) satisfies it, so a JSX element expression in a Correct-position fence typechecks wherever a flagged build is wanted. A freshly authored arrow returning a JSX element does NOT: the arrow carries no `isTemplate` member, so assigning it to `TemplateBuildFn` reds TS2322 (`Type '() => JSX.Element' is not assignable to type 'TemplateBuildFn'`). The confusion comes from the two legal function positions that LOOK the same: `error:fallback`/`ErrorConfig.fallback` is `(error: Error) => TemplateBuildFn` (an arrow RETURNING an element is right there), and `mount`/`hydrate` accept wrapper fns `(() => TemplateBuildFn)` (an arrow returning an element is right there too) - but `LazyProps.fallback`, `ErrorFn`'s return, and every other direct `TemplateBuildFn` slot wants the element itself. Second trap in the same red round: `ForEachProps<T>` infers T from EVERY props site, so a `key` extractor annotated with a narrower param type (`(todo: { id: number }) => ...`) than `use` (`(todo: { id, text }) => ...`) splits inference and reds TS2322 on `use`; annotate both with the same full item type (a `type Todo = ...` alias in the fence is cleanest), and note `signal<Todo[]>` - not `signal<Todo>` - for the `each` source.
+
+# Evidence
+
+`vp run skills-check` over a 25-rule dom-best-practices corpus: first run exit 1 with 6 findings, 4 of them the arrow-vs-element conflation (`fallback={() => <p/>}` TS2322 in LazyProps; `return () => <p/>` from onError handlers TS2345 against ErrorFn) plus the ForEachProps split-inference TS2322 and a `signal<Todo>` annotation miss; after replacing the arrows with element expressions (`fallback={<p/>}`, `return <p role="alert">...</p>`) and unifying `key`/`use` param types, the gate exited 0 (`40 blocks (0 findings)`). Type sources read at `packages/dom/lib/index.ts` (JSX.Element intersection), `packages/dom/lib/types/nodes.d.ts` (`LazyProps.fallback?: TemplateBuildFn`, `ErrorFn` return union, `ForEachProps<T>` each/use/key), `packages/dom/lib/error.ts` (`ErrorConfig.fallback?: (error: Error) => TemplateBuildFn`).

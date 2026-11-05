@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "organization": "HellaJS",
+  "date": "2026-11-04",
+  "abstract": "Best practices for @hellajs/resource, the reactive data fetching package: resource() over a URL or fetcher, fetcher-scoped LRU/TTL caching, request deduplication, SWR, abort and retry, polling, offline pausing, mutations with optimistic rollback, and the resourceCache singleton. Every rule is grounded in the package source and test suite.",
+  "references": [
+    "https://github.com/vercel-labs/agent-skills",
+    "https://github.com/hellajs/hellajs"
+  ]
+}

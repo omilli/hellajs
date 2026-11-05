@@ -1,11 +1,21 @@
 import fs from "node:fs";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
 import { logger, packagesDir, projectRoot } from "./utils/index.ts";
+import { extractBlocks } from "./snippets/blocks.ts";
+import type { MarkdownBlock } from "./snippets/blocks.ts";
+import { emitModules, isExecutableBlock, splitImports } from "./snippets/emit.ts";
+import { EXTERNAL_IMPORT_RE, LANGS_JS, LANGS_TS } from "./snippets/emit.ts";
+import { typecheckDir } from "./snippets/tsc.ts";
+import type { TscDiagnostic } from "./snippets/tsc.ts";
 
 /**
  * Audit tool (`vp run doc-snippets`): typechecks every package-doc code block via
  * per-doc concatenation (decision: per-block scoping, js-tagged blocks loose).
+ *
+ * Fence extraction, module emission, and the tsc driver live in the shared
+ * `scripts/snippets/` pipeline; every policy decision stays here: corpus
+ * roots, strict/tutorial tiers, skip rules, the relative-TS2307 exemption,
+ * AUDITSRC breadcrumbs, and the `.doc-snippets/` scratch lifecycle.
  *
  * Model (user-resolved 2026-08-26):
  * - Per doc, fenced blocks with lang in {typescript, ts, tsx, jsx} are emitted
@@ -31,7 +41,7 @@ import { logger, packagesDir, projectRoot } from "./utils/index.ts";
  * - Blocks importing externals: static imports of bare specifiers other than
  *   `@hellajs/*` (vite/astro/express config examples).
  *
- * Known parser quirks (handled here, documented for the next reader):
+ * Known parser quirks (handled in the shared pipeline, documented for the next reader):
  * - Adjacent JSX element statements false-positive TS2657 ("must have one
  *   parent") — the emitter appends `;` after statement-ending JSX closers and
  *   template-literal closers (tracked by backtick parity so semicolons never
@@ -52,43 +62,15 @@ import { logger, packagesDir, projectRoot } from "./utils/index.ts";
  * checked informationally — findings print, the exit code ignores them.
  */
 
-interface Block {
-  doc: string;
-  line: number;
-  lang: string;
-  text: string;
-}
-
-interface EmittedModule {
+interface DocModule {
   doc: string;
   file: string;
   blockCount: number;
 }
 
-interface Diagnostic {
-  file: string;
-  line: number;
-  col: number;
-  code: string;
-  message: string;
-}
-
-const LANGS_TS = new Set(["typescript", "ts", "tsx", "jsx"]);
-const LANGS_JS = new Set(["js"]);
+const ALL_LANGS = new Set([...LANGS_TS, ...LANGS_JS]);
 const OUT_DIR = path.join(projectRoot, ".doc-snippets");
 const PACKAGES = ["core", "dom", "css", "resource", "router", "store", "ssr"] as const;
-const CONTINUATION_RE = /^[.([,:?+*&|)}\]]|^(=>|&&|\|\||\?\?)/;
-const EXTERNAL_IMPORT_RE = /^import\s[^"']*from\s+["'](?!@hellajs\/)[^"']+["']/;
-/** Real assignment `=` — arrows and comparators stripped first. */
-const ASSIGN_RE = /(?<![!=<>])=(?!=)/;
-
-/** Strips `=>` and type-parameter lists so arrows and generic defaults (`<T = U>`)
- * never read as assignments. */
-function stripArrows(line: string): string {
-  return line.replace(/=>/g, "  ").replace(/<[^<>]*>/g, " ");
-}
-/** Executable-statement markers: declarations, control flow, call statements, JSX. */
-const EXECUTABLE_RE = /\b(const|let|var|return|await|new|throw)\b|^[A-Za-z_$][\w$.]*\s*\(|^</;
 
 /**
  * Recursively collects files under a directory, skipping `node_modules` and
@@ -146,80 +128,16 @@ function collectDocs(): { strictDocs: string[]; tutorialDocs: string[] } {
 }
 
 /**
- * Splits block text into import statements (each normalized to one line) and
- * the remaining body lines. Handles multi-line named imports: an `import`
- * line consumes through the line that closes the statement (ends with the
- * module specifier and optional semicolon).
- * @param text The block text
- * @returns The import statements and the body lines
- */
-function splitImports(text: string): { imports: string[]; body: string[] } {
-  const imports: string[] = [];
-  const body: string[] = [];
-  const lines = text.split("\n");
-  for (let i = 0; i < lines.length; i++) {
-    if (!/^import\b/.test(lines[i]!.trim())) {
-      body.push(lines[i]!);
-      continue;
-    }
-    const statement: string[] = [lines[i]!.trim()];
-    while (
-      i + 1 < lines.length &&
-      !/(?:from\s+)?["'][^"']+["']\s*;?\s*$/.test(statement[statement.length - 1]!)
-    ) {
-      i += 1;
-      statement.push(lines[i]!.trim());
-    }
-    imports.push(statement.join(" ").replace(/\s+/g, " "));
-  }
-  return { imports, body };
-}
-
-/**
- * Whether a block holds executable statements (vs. type/interface/declare
- * declarations and bare signatures). Import lines are already stripped.
- * @param bodyLines The block's body lines
- * @returns True if at least one line executes something
- */
-function isExecutableBlock(bodyLines: string[]): boolean {
-  return bodyLines.some((l) => {
-    const t = l.trim();
-    if (t.startsWith("declare ") || t.startsWith("type ") || t.startsWith("interface "))
-      return false;
-    if (t.startsWith("}")) return false; // closing a type/declare block
-    if (/^(export\s+)?function\b/.test(t) && !t.includes("{")) return false; // signature line (type-param defaults carry `=`)
-    if (/^const\s+\w+\s*:\s*[^=]+$/.test(t)) return false; // const signature (no initializer)
-    if (/^\w+\s*\(.*\)\s*:\s*[^=]*;$/.test(t)) return false; // type-literal member signature
-    return EXECUTABLE_RE.test(t) || ASSIGN_RE.test(stripArrows(t));
-  });
-}
-
-/**
- * Extracts the checkable fenced blocks from an mdx doc, applying every skip
- * rule (❌ marks, exercise blanks, signature-only, external imports).
+ * Extracts the checkable fenced blocks from an mdx doc, applying every local
+ * skip rule (❌ marks, exercise blanks, signature-only, external imports).
  * @param doc Absolute doc path
  * @returns The blocks to check, each with its mdx line number
  */
-function extractBlocks(doc: string): Block[] {
-  const lines = fs.readFileSync(doc, "utf-8").split("\n");
-  const blocks: Block[] = [];
-  let i = 0;
-  while (i < lines.length) {
-    const m = lines[i]!.match(/^```(\w+)\s*$/);
-    if (m === null || !(LANGS_TS.has(m[1]!) || LANGS_JS.has(m[1]!))) {
-      i += 1;
-      continue;
-    }
-    const lang = m[1]!;
-    const start = i + 1;
-    let j = i + 1;
-    while (j < lines.length && !lines[j]!.startsWith("```")) j += 1;
-    const text = lines.slice(start, j).join("\n");
-    i = j + 1;
-
-    if (text.includes("❌") || text.includes("/**/")) continue;
-    const { imports, body } = splitImports(text);
-    if (imports.some((statement) => EXTERNAL_IMPORT_RE.test(statement))) continue;
+function extractCheckableBlocks(doc: string): MarkdownBlock[] {
+  return extractBlocks(doc, ALL_LANGS).filter((block) => {
+    if (block.text.includes("❌") || block.text.includes("/**/")) return false;
+    const { imports, body } = splitImports(block.text);
+    if (imports.some((statement) => EXTERNAL_IMPORT_RE.test(statement))) return false;
     const bodyLines = body.filter(
       (l) =>
         l.trim() &&
@@ -227,257 +145,48 @@ function extractBlocks(doc: string): Block[] {
         !l.trim().startsWith("*") &&
         !l.trim().startsWith("/*"),
     );
-    if (bodyLines.length === 0) continue;
-    if (!isExecutableBlock(bodyLines)) continue; // signature-only block
-    blocks.push({ doc, line: start, lang, text });
-  }
-  return blocks;
+    if (bodyLines.length === 0) return false;
+    return isExecutableBlock(bodyLines); // signature-only block
+  });
 }
 
 /**
- * Merges a doc's import statements into a deduped module-level union: named
- * imports from the same module combine; bare/side-effect imports pass once.
- * @param statements One-line import statements
- * @returns The merged top-level import statements
- */
-function mergeImports(statements: string[]): string[] {
-  const named = new Map<string, string[]>();
-  const raw: string[] = [];
-  for (const statement of statements) {
-    const m = statement.match(/^import\s+\{(.*)\}\s+from\s+["']([^"']+)["'];?$/);
-    if (m) {
-      const names = m[1]!
-        .split(",")
-        .map((n) => n.trim())
-        .filter(Boolean);
-      named.set(m[2]!, [...(named.get(m[2]!) ?? []), ...names]);
-      continue;
-    }
-    if (!raw.includes(statement)) raw.push(statement);
-  }
-  const imports: string[] = [];
-  for (const [mod, names] of named) {
-    imports.push(`import { ${[...new Set(names)].join(", ")} } from "${mod}";`);
-  }
-  for (const statement of raw) {
-    imports.push(statement.endsWith(";") ? statement : `${statement};`);
-  }
-  return imports;
-}
-
-/**
- * Appends statement-terminating semicolons: after JSX closing tags and after
- * template-literal closers, when the next non-empty line starts a new
- * statement. Backtick parity is tracked so a semicolon never lands inside an
- * open template string. This suppresses the TS2657 adjacent-JSX false
- * positive without touching the doc text.
- * @param text The concatenated block body
- * @returns The body with defensive semicolons inserted
- */
-function terminateStatements(text: string): string {
-  const lines = text.split("\n");
-  let inTemplate = false;
-  for (let i = 0; i < lines.length; i++) {
-    const ticks = lines[i]!.split("`").length - 1;
-    const closesAtEol = inTemplate && ticks % 2 === 1 && lines[i]!.trimEnd().endsWith("`");
-    if (ticks % 2 === 1) inTemplate = !inTemplate;
-    if (inTemplate || (ticks % 2 === 1 && !closesAtEol)) continue;
-    const t = lines[i]!.trimEnd();
-    const needs = t.endsWith("/>") || /<\/[^>]*>$/.test(t) || (closesAtEol && t.endsWith("`"));
-    if (!needs) continue;
-    let next = "";
-    for (let j = i + 1; j < lines.length; j++) {
-      if (lines[j]!.trim()) {
-        next = lines[j]!.trim();
-        break;
-      }
-    }
-    if (next && !CONTINUATION_RE.test(next)) lines[i] = `${t};`;
-  }
-  return lines.join("\n");
-}
-
-/**
- * Emits one module per doc (TS-family and JS separately), with `// AUDITSRC`
- * breadcrumbs mapping diagnostics back to mdx line numbers.
- * @param doc Absolute doc path
+ * Checks one tier: emit (one module per doc, `// AUDITSRC` breadcrumbs
+ * mapping diagnostics back to mdx line numbers), then the shared two-pass
+ * typecheck with the local relative-TS2307 exemption.
  * @param tier "strict" or "tutorial" — namespaced into separate subdirs
- * @param runDir This run's scratch dir; modules land under `runDir/<tier>/`
- * @returns The emitted module descriptors
- */
-function emitModules(doc: string, tier: "strict" | "tutorial", runDir: string): EmittedModule[] {
-  const blocks = extractBlocks(doc);
-  const emitted: EmittedModule[] = [];
-  if (blocks.length === 0) return emitted;
-
-  const rel = path.relative(projectRoot, doc).replace(/[/\\]/g, "_").replace(/\./g, "_");
-  const base = path.join(runDir, tier, rel);
-
-  for (const [family, langs] of [
-    ["ts", LANGS_TS],
-    ["js", LANGS_JS],
-  ] as const) {
-    const familyBlocks = blocks.filter((b) => langs.has(b.lang));
-    if (familyBlocks.length === 0) continue;
-
-    const statements: string[] = [];
-    const scopes: string[] = [];
-    for (const [idx, block] of familyBlocks.entries()) {
-      const { imports, body } = splitImports(block.text);
-      statements.push(...imports);
-      const breadcrumb = `// AUDITSRC ${path.relative(projectRoot, block.doc)}:${block.line} block ${idx + 1}`;
-      scopes.push(`${breadcrumb}\n${body.join("\n")}`);
-    }
-    const imports = mergeImports(statements).join("\n");
-    // Nested scoping: each block opens a brace inside the previous block's
-    // scope. Chaining stays legal (a later block reads an earlier block's
-    // names — `guides/docs.md` concepts narrate that way) while same-name
-    // reuse across blocks shadows instead of colliding (TS2451). Blocks that
-    // declare ambient bindings (`declare const …`) cannot nest inside the
-    // IIFE — TS1184 — so they hoist to module scope.
-    const hoisted = scopes.filter((sc) => /^(declare|export) /m.test(sc));
-    const inline = scopes.filter((sc) => !hoisted.includes(sc));
-    const bodyText =
-      terminateStatements(inline.join("\n{\n")) + "\n" + "}".repeat(Math.max(inline.length - 1, 0));
-
-    const isTsx = familyBlocks.some((b) => b.lang === "tsx" || b.lang === "jsx");
-    const file = family === "ts" ? `${base}${isTsx ? ".tsx" : ".ts"}` : `${base}.js`;
-    const content =
-      family === "ts"
-        ? `${imports}\n\n${hoisted.join("\n")}\n\nexport async function __doc() {\n${bodyText}\n}\n__doc();\n`
-        : `${imports}\n\n${hoisted.join("\n")}\n\n${bodyText}\n`;
-    fs.mkdirSync(path.dirname(file), { recursive: true });
-    fs.writeFileSync(file, content);
-    emitted.push({ doc, file, blockCount: familyBlocks.length });
-  }
-  return emitted;
-}
-
-/**
- * Writes a tsconfig for an emitted tier directory: extends the repo base,
- * maps `@hellajs/*` to package sources, JSX preserve (typed against dom's
- * global JSX namespace via each doc's own imports). `exclude` quarantines
- * grammar-error files for the second semantic pass.
- * @param dir The tier directory
- * @param exclude Repo-relative... tier-relative file paths to exclude
- * @returns The written config path
- */
-function writeTierConfig(dir: string, exclude: string[] = []): string {
-  const rel = path.relative(dir, projectRoot).split(path.sep).join("/");
-  const paths: Record<string, string[]> = {};
-  for (const pkg of PACKAGES) {
-    paths[`@hellajs/${pkg}`] = [`${rel}/packages/${pkg}/lib/index.ts`];
-    paths[`@hellajs/${pkg}/*`] = [`${rel}/packages/${pkg}/lib/*`];
-  }
-  const config = {
-    extends: `${rel}/tsconfig.base.json`,
-    compilerOptions: {
-      noEmit: true,
-      // The corpus is check-only, but the base config's declaration-emit
-      // flags leak TS6424 here under TypeScript 7 (the native engine runs
-      // declaration-emit serialization analysis even under `noEmit`).
-      declaration: false,
-      emitDeclarationOnly: false,
-      allowJs: true,
-      checkJs: false,
-      noUncheckedIndexedAccess: true,
-      jsx: "preserve",
-      paths,
-    },
-    include: ["./**/*.ts", "./**/*.tsx", "./**/*.js"],
-    exclude: ["tsconfig.json", ...exclude],
-  };
-  const file = path.join(dir, "tsconfig.json");
-  fs.writeFileSync(file, JSON.stringify(config, null, 2));
-  return file;
-}
-
-/**
- * Runs tsc on the emitted corpus. Raw `spawnSync` (not `execCommand`) because
- * tsc intentionally exits 2 whenever findings exist — the output must be
- * captured, not rejected (guides/scripts.md's sanctioned non-zero exception).
- * @param configPath The generated tsconfig to compile
- * @returns Raw tsc stdout
- */
-function runTsc(configPath: string): string {
-  const result = spawnSync(
-    path.join(projectRoot, "node_modules/.bin/tsc"),
-    ["-p", configPath, "--noEmit", "--pretty", "false"],
-    {
-      encoding: "utf-8",
-      cwd: projectRoot,
-    },
-  );
-  return `${result.stdout ?? ""}${result.stderr ?? ""}`;
-}
-
-/**
- * Parses tsc output into diagnostics.
- * @param raw tsc stdout
- * @returns Parsed diagnostics
- */
-function parseDiagnostics(raw: string): Diagnostic[] {
-  const diagnostics: Diagnostic[] = [];
-  for (const m of raw.matchAll(/^(.+?)\((\d+),(\d+)\): error (TS\d+): (.+)$/gm)) {
-    diagnostics.push({
-      file: m[1]!,
-      line: Number(m[2]!),
-      col: Number(m[3]!),
-      code: m[4]!,
-      message: m[5]!,
-    });
-  }
-  return diagnostics;
-}
-
-/**
- * Checks one tier: emit, two-pass typecheck (grammar quarantine → semantic),
- * report findings with AUDITSRC breadcrumbs.
- * @param tier "strict" or "tutorial"
  * @param docs The tier's docs
  * @param runDir This run's scratch dir
- * @returns The tier's relevant (post-quarantine, post-exemption) diagnostics
+ * @returns The tier's emitted modules and relevant diagnostics
  */
 function checkTier(
   tier: "strict" | "tutorial",
   docs: string[],
   runDir: string,
-): { modules: EmittedModule[]; relevant: Diagnostic[] } {
-  const modules: EmittedModule[] = [];
-  for (const doc of docs) modules.push(...emitModules(doc, tier, runDir));
-  const tierDir = path.join(runDir, tier);
+): { modules: DocModule[]; relevant: TscDiagnostic[] } {
+  const modules: DocModule[] = [];
+  for (const doc of docs) {
+    const blocks = extractCheckableBlocks(doc);
+    if (blocks.length === 0) continue;
+    const rel = path.relative(projectRoot, doc).replace(/[/\\]/g, "_").replace(/\./g, "_");
+    const emitted = emitModules(
+      blocks,
+      path.join(runDir, tier, rel),
+      (block, idx) =>
+        `// AUDITSRC ${path.relative(projectRoot, block.source)}:${block.line} block ${idx + 1}`,
+    );
+    for (const module of emitted) {
+      modules.push({ doc, file: module.file, blockCount: module.blockCount });
+    }
+  }
   if (modules.length === 0) return { modules, relevant: [] };
 
-  let configPath = writeTierConfig(tierDir);
-  let relevant: Diagnostic[] = [];
-  let grammarFindings: Diagnostic[] = [];
-  const grammarFiles = new Set<string>();
-  for (let pass = 1; pass <= 2; pass++) {
-    const diagnostics = parseDiagnostics(runTsc(configPath));
-    const grammar = diagnostics.filter((d) => /^TS1\d{3}$/.test(d.code));
-    if (pass === 1 && grammar.length > 0) {
-      grammarFindings = grammar;
-      for (const d of grammar) grammarFiles.add(d.file);
-      configPath = writeTierConfig(
-        tierDir,
-        [...grammarFiles].map((file) => `./${path.relative(tierDir, file)}`),
-      );
-      continue;
-    }
-    relevant = [
-      ...grammarFindings,
-      ...diagnostics.filter(
-        (d) =>
-          !grammarFiles.has(d.file) &&
-          // Exempt: dynamic imports of notional doc-internal relative modules.
-          !(
-            d.code === "TS2307" &&
-            /Cannot find module '\.\/|Cannot find module '\.\.\//.test(d.message)
-          ),
-      ),
-    ];
-    break;
-  }
+  const relevant = typecheckDir(
+    path.join(runDir, tier),
+    PACKAGES,
+    (d) =>
+      d.code === "TS2307" && /Cannot find module '\.\/|Cannot find module '\.\.\//.test(d.message),
+  );
   return { modules, relevant };
 }
 

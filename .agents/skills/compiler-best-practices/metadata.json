@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "organization": "HellaJS",
+  "date": "2026-11-04",
+  "abstract": "Best practices for hellajs-compiler, the JS-glue dual-target JSX engine: transform(code, options) option surface and call-time validation, target selection (dom imperative runtime for the client, ast HellaNode for the server), the pipeline contract (oxc TS strip that never typechecks, already-chained sourcemaps, non-byte-stable output), and when to consume the vite/rollup wrappers instead of calling the engine directly. Every rule is grounded in the plugin source and test suite.",
+  "references": [
+    "https://github.com/vercel-labs/agent-skills",
+    "https://github.com/hellajs/hellajs"
+  ]
+}

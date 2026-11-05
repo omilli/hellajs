@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "organization": "HellaJS",
+  "date": "2026-11-04",
+  "abstract": "Best practices for @hellajs/ui, the copy/paste component registry CLI: the init/add/list workflow, hella.ui.json precedence, css vs tailwind style splicing, the split theme artifacts (tokens.ts / theme.css) and dark-default mode, peer installs, --lang js delivery, and the ownership contract - no runtime import surface; the copy is your code. Every rule is grounded in the package source and test suite.",
+  "references": [
+    "https://github.com/vercel-labs/agent-skills",
+    "https://github.com/hellajs/hellajs"
+  ]
+}

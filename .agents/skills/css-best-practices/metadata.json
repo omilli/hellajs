@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "organization": "HellaJS",
+  "date": "2026-11-04",
+  "abstract": "Best practices for @hellajs/css, the type-safe CSS-in-JS package: scoped style() classes, global css() rules, reactive vars() theming, hashed keyframes(), cva() variant recipes, cx() joins, and cssText() server collection. Every rule is grounded in the package source and test suite.",
+  "references": [
+    "https://github.com/vercel-labs/agent-skills",
+    "https://github.com/hellajs/hellajs"
+  ]
+}

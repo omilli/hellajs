@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "organization": "HellaJS",
+  "date": "2026-11-04",
+  "abstract": "Best practices for @hellajs/router, the reactive routing package: router() configuration with nested routes, params, meta, redirects, and notFound; the route() signal (path, params, query, crumbs, active, pending); navigate() and href() with typed param substitution; before/after/leave guards including async deferral; history/hash/memory modes, scroll behavior, link interception, and resetRouter. Every rule is grounded in the package source and test suite.",
+  "references": [
+    "https://github.com/vercel-labs/agent-skills",
+    "https://github.com/hellajs/hellajs"
+  ]
+}
