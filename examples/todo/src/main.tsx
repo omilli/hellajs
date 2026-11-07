@@ -1,4 +1,4 @@
-import { signal, computed, effect } from "@hellajs/core";
+import { batch, signal, computed, effect } from "@hellajs/core";
 import { mount, ForEach } from "@hellajs/dom";
 import { css, style } from "@hellajs/css";
 
@@ -9,52 +9,42 @@ css({
   },
 });
 
-const app = style(
-  {
-    width: "100%",
-    maxWidth: "30rem",
-    margin: "0 auto",
-    padding: "1rem",
-    h1: {
-      marginBottom: "1rem",
-    },
-    button: {
-      cursor: "pointer",
-    },
+const app = style({
+  width: "100%",
+  maxWidth: "30rem",
+  margin: "0 auto",
+  padding: "1rem",
+  h1: {
+    marginBottom: "1rem",
   },
-  { label: "app" },
-);
+  button: {
+    cursor: "pointer",
+  },
+});
 
-const row = style(
-  {
+const row = style({
+  display: "flex",
+  gap: "0.5rem",
+});
+
+const list = style({
+  listStyle: "none",
+  padding: 0,
+  li: {
     display: "flex",
+    alignItems: "center",
     gap: "0.5rem",
   },
-  { label: "row" },
-);
+});
 
-const list = style(
-  {
-    listStyle: "none",
-    padding: 0,
-    li: {
-      display: "flex",
-      alignItems: "center",
-      gap: "0.5rem",
-    },
-  },
-  { label: "list" },
-);
+const flex = style({
+  flex: "1",
+});
 
-const flex = style({ flex: "1" }, { label: "flex" });
-
-const done = style(
-  {
-    textDecoration: "line-through",
-    color: "#999",
-  },
-  { label: "done" },
-);
+const done = style({
+  textDecoration: "line-through",
+  color: "#999",
+});
 
 type FilterType = "all" | "active" | "completed";
 
@@ -118,8 +108,12 @@ const TodoApp = () => {
   const addTodo = () => {
     const text = newTodoText().trim();
     if (!text) return;
-    todos([...todos(), { id: Date.now(), text, completed: false }]);
-    newTodoText("");
+    // One flush: the list, the footer stats, and the persistence effect each
+    // observe the added todo once, not twice (todos write + input clear).
+    batch(() => {
+      todos([...todos(), { id: Date.now(), text, completed: false }]);
+      newTodoText("");
+    });
   };
 
   const toggleTodo = (id: number) => {
@@ -142,18 +136,23 @@ const TodoApp = () => {
   const saveEdit = () => {
     const id: number = editingId()!;
     const newText = editText().trim();
-    if (!newText) {
-      removeTodo(id);
-    } else {
-      todos(todos().map((todo) => (todo.id === id ? { ...todo, text: newText } : todo)));
-    }
-    editingId(null);
-    editText("");
+    // One flush for the conditional list write and the two edit-state resets.
+    batch(() => {
+      if (!newText) {
+        removeTodo(id);
+      } else {
+        todos(todos().map((todo) => (todo.id === id ? { ...todo, text: newText } : todo)));
+      }
+      editingId(null);
+      editText("");
+    });
   };
 
   const cancelEdit = () => {
-    editingId(null);
-    editText("");
+    batch(() => {
+      editingId(null);
+      editText("");
+    });
   };
 
   const handleEditKeydown = (e: KeyboardEvent) => {

@@ -73,7 +73,7 @@ Replace the content of `main.tsx` with the component shell.
 ```tsx
 // main.tsx
 import { signal } from "@hellajs/core";
-import { mount, ForEach } from "@hellajs/dom";
+import { mount } from "@hellajs/dom";
 
 interface Todo {
   id: number;
@@ -83,22 +83,25 @@ interface Todo {
 
 const TodoApp = () => {
   const todos = signal<Todo[]>([
-    { id: 1, text: 'Learn HellaJS', completed: false },
-    { id: 2, text: 'Build a todo app', completed: false }
+    { id: 1, text: "Learn HellaJS", completed: false },
+    { id: 2, text: "Build a todo app", completed: false },
   ]);
 
-  const newTodoText = signal('');
+  const newTodoText = signal("");
+
+  // placeholder until the full view lands in a later section
+  return <h1>Todo App</h1>;
 };
 
-mount(TodoApp, '#app');
+mount(TodoApp, "#app");
 ```
 
 **Code Explanation**
 
 - **`interface Todo`**:  Defines the shape of each todo item
 - **[`signal`](/reference/core/signal)`<Todo[]>([...])`**:  Creates reactive state for the todo list with initial data
-- **`signal('')`**:  Creates reactive state for the new todo input field
-- **[`mount`](/reference/dom/mount)`(TodoApp, '#app')`**:  Renders the component into the DOM
+- **`signal("")`**:  Creates reactive state for the new todo input field
+- **[`mount`](/reference/dom/mount)`(TodoApp, "#app")`**:  Renders the component into the DOM
 
 ## Styles
 
@@ -111,63 +114,64 @@ import { css, style } from "@hellajs/css";
 css({
   body: {
     margin: 0,
-    fontFamily: 'sans-serif',
+    fontFamily: "sans-serif",
   },
 });
 
 const app = style({
-  width: '100%',
-  maxWidth: '30rem',
-  margin: '0 auto',
-  padding: '1rem',
-  'h1': {
-    marginBottom: '1rem',
+  width: "100%",
+  maxWidth: "30rem",
+  margin: "0 auto",
+  padding: "1rem",
+  h1: {
+    marginBottom: "1rem",
   },
-  'button': {
-    cursor: 'pointer',
+  button: {
+    cursor: "pointer",
   },
-}, { label: 'app' });
+});
 
 const row = style({
-  display: 'flex',
-  gap: '0.5rem',
-}, { label: 'row' });
+  display: "flex",
+  gap: "0.5rem",
+});
 
 const list = style({
-  listStyle: 'none',
+  listStyle: "none",
   padding: 0,
-  'li': {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
+  li: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.5rem",
   },
-}, { label: 'list' });
+});
 
-const flex = style({ flex: '1' }, { label: 'flex' });
+const flex = style({
+  flex: "1",
+});
 
 const done = style({
-  textDecoration: 'line-through',
-  color: '#999',
-}, { label: 'done' });
-
-interface Todo {
-  //...
-}
+  textDecoration: "line-through",
+  color: "#999",
+});
 
 //... rest of the code unchanged
 ```
 
 **Code Explanation**
 - **`css({ body: { ... } })`**:  Registers global element selectors
-- **`style({ ... }, { label: 'app' })`**:  Scopes the styles under a generated class (`app-…`) and returns it for `class={app}`: `label` embeds a readable segment in the hashed name
-- **`'h1'` / `'li'`**:  Nested selectors scope descendants under the generated class
+- **`style()`**:  Scopes the styles under a generated class and returns it for `class={app}`
+- **`h1` / `li`**:  Nested selectors scope descendants under the generated class
 - **`class={[flex, todo.completed && done]}`**:  Combines class names in an array: `done` applies only when the todo is completed
 
 ## Todo Actions
 
-Now let's add the functions that modify our state. All state updates create new arrays to trigger reactivity.
+Now let's add the functions that modify our state. All state updates create new arrays to trigger reactivity, and each user action wraps its writes in [`batch`](/reference/core/batch) so every effect observes the action once.
 
 ```tsx
+//... add batch to the core import
+import { batch, signal } from "@hellajs/core";
+
 const TodoApp = () => {
   //after this signal
   const newTodoText = /**/
@@ -176,21 +180,19 @@ const TodoApp = () => {
     const text = newTodoText().trim();
     if (!text) return;
 
-    todos([
-      ...todos(),
-      { id: Date.now(), text, completed: false }
-    ]);
-    newTodoText('');
+    // one flush: the list and the cleared input land together
+    batch(() => {
+      todos([...todos(), { id: Date.now(), text, completed: false }]);
+      newTodoText("");
+    });
   };
 
   const toggleTodo = (id: number) => {
-    todos(todos().map(todo =>
-      todo.id === id ? { ...todo, completed: !todo.completed } : todo
-    ));
+    todos(todos().map((todo) => (todo.id === id ? { ...todo, completed: !todo.completed } : todo)));
   };
 
   const removeTodo = (id: number) => {
-    todos(todos().filter(todo => todo.id !== id));
+    todos(todos().filter((todo) => todo.id !== id));
   };
   
   //...
@@ -201,6 +203,7 @@ const TodoApp = () => {
 
 - **`todos([...todos(), newTodo])`**:  Creates a new array with spread to trigger reactive updates
 - **`Date.now()`**:  Generates unique IDs for new todos
+- **[`batch`](/reference/core/batch)`(() => { ... })`**:  Groups the two writes (list update + input clear) into one flush: effects run once, not once per write
 - **`todos().map(...)`**:  Creates a new array with the toggled todo
 - **`todos().filter(...)`**:  Creates a new array without the removed todo
 
@@ -221,6 +224,9 @@ todos().push(newTodo); // Won't trigger updates
 Now let's add the JSX that renders our todo list. Add the `return` statement inside `TodoApp`.
 
 ```tsx
+//... add ForEach to the dom import
+import { mount, ForEach } from "@hellajs/dom";
+
 const TodoApp = () => {
   //...
   // after the actions
@@ -236,8 +242,8 @@ const TodoApp = () => {
         <input
           type="text"
           value={newTodoText}
-          on:input={e => newTodoText((e.target as HTMLInputElement).value)}
-          on:keydown={e => e.key === 'Enter' && addTodo()}
+          on:input={(e) => newTodoText((e.target as HTMLInputElement).value)}
+          on:keydown={(e) => e.key === "Enter" && addTodo()}
           placeholder="What needs to be done?"
           class={flex}
         />
@@ -265,7 +271,7 @@ const TodoApp = () => {
       )}
     </div>
   );
-}
+};
 ```
 
 Start the development server to see your app in action.
@@ -310,29 +316,25 @@ Let's add filtering and live statistics using [computed](/reference/core/compute
 
 ```tsx
 //... import computed at the top
-import { signal, computed } from "@hellajs/core";
+import { batch, signal, computed } from "@hellajs/core";
 
 //... CSS code
 
-interface Todo {
-  //...
-}
-
 // add this type definition for filter state
-type FilterType = 'all' | 'active' | 'completed';
+type FilterType = "all" | "active" | "completed";
 
 const TodoApp = () => {
   // after this signal
   const newTodoText = /**/
   // add this signal
-  const filter = signal<FilterType>('all');
+  const filter = signal<FilterType>("all");
 
   // add these actions
   const filteredTodos = computed(() => {
     const allTodos = todos();
     switch (filter()) {
-      case 'active': return allTodos.filter(t => !t.completed);
-      case 'completed': return allTodos.filter(t => t.completed);
+      case "active": return allTodos.filter((t) => !t.completed);
+      case "completed": return allTodos.filter((t) => t.completed);
       default: return allTodos;
     }
   });
@@ -341,8 +343,8 @@ const TodoApp = () => {
     const allTodos = todos();
     return {
       total: allTodos.length,
-      active: allTodos.filter(t => !t.completed).length,
-      completed: allTodos.filter(t => t.completed).length
+      active: allTodos.filter((t) => !t.completed).length,
+      completed: allTodos.filter((t) => t.completed).length
     };
   });
 
@@ -361,13 +363,13 @@ Add filter buttons between the input and the list:
 </div>
 {/* add the filter buttons: */}
 <div class={row}>
-  <button on:click={() => filter('all')}>
+  <button on:click={() => filter("all")}>
     All ({stats().total})
   </button>
-  <button on:click={() => filter('active')}>
+  <button on:click={() => filter("active")}>
     Active ({stats().active})
   </button>
-  <button on:click={() => filter('completed')}>
+  <button on:click={() => filter("completed")}>
     Done ({stats().completed})
   </button>
 </div>
@@ -383,16 +385,19 @@ Update `<ForEach>` to use `filteredTodos` instead of `todos`, and update the emp
 
 ```tsx
 <ul class={list}>
+  {/* only the source changes: todos -> filteredTodos */}
   <ForEach each={filteredTodos} use={(todo) => (
-    //...
+    <li key={todo.id}>
+      {/* ... same item markup as before ... */}
+    </li>
   )} />
 </ul>
 
 {filteredTodos().length === 0 && (
   <div>
-    {filter() === 'all' && "No todos yet! Add one above."}
-    {filter() === 'active' && "No active todos. Great job!"}
-    {filter() === 'completed' && "No completed todos yet."}
+    {filter() === "all" && "No todos yet! Add one above."}
+    {filter() === "active" && "No active todos. Great job!"}
+    {filter() === "completed" && "No completed todos yet."}
   </div>
 )}
 ```
@@ -423,7 +428,7 @@ const TodoApp = () => {
   const filter = /**/
   // add these signals
   const editingId = signal<number | null>(null);
-  const editText = signal('');
+  const editText = signal("");
 }
 ```
 
@@ -444,25 +449,28 @@ const TodoApp = () => {
   const saveEdit = () => {
     const id: number = editingId()!;
     const newText = editText().trim();
-    if (!newText) {
-      removeTodo(id);
-    } else {
-      todos(todos().map(todo =>
-        todo.id === id ? { ...todo, text: newText } : todo
-      ));
-    }
-    editingId(null);
-    editText('');
+    // one flush for the list write and the two edit-state resets
+    batch(() => {
+      if (!newText) {
+        removeTodo(id);
+      } else {
+        todos(todos().map((todo) => (todo.id === id ? { ...todo, text: newText } : todo)));
+      }
+      editingId(null);
+      editText("");
+    });
   };
 
   const cancelEdit = () => {
-    editingId(null);
-    editText('');
+    batch(() => {
+      editingId(null);
+      editText("");
+    });
   };
 
   const handleEditKeydown = (e: KeyboardEvent) => {
-    if (e.key === 'Enter') saveEdit();
-    if (e.key === 'Escape') cancelEdit();
+    if (e.key === "Enter") saveEdit();
+    if (e.key === "Escape") cancelEdit();
   };
 
   //...
@@ -514,6 +522,7 @@ Update the list item JSX inside `<ForEach>` to support edit mode:
 
 - **`editingId` signal**:  Tracks which todo is currently being edited (null when none)
 - **`editText` signal**:  Stores the temporary text while editing
+- **[`batch`](/reference/core/batch)`(() => { ... })`**:  The edit-state resets land in the same flush as the list write, so persistence runs once per edit
 - **Conditional rendering**:  `{editingId() === todo.id ? (...) : (...)}` switches between edit and display mode
 - **Event coordination**:  `on:dblclick`, `on:keydown`, and `on:blur` work together for editing
 - **State coordination**:  Multiple signals (`editingId`, `editText`, `todos`) work together seamlessly
@@ -537,10 +546,10 @@ Add a `loadTodos` function outside the component:
 
 const loadTodos = (): Todo[] => {
   try {
-    const saved = localStorage.getItem('hellajs-todos');
+    const saved = localStorage.getItem("hellajs-todos");
     return saved ? JSON.parse(saved) : [
-      { id: 1, text: 'Learn HellaJS', completed: false },
-      { id: 2, text: 'Build a todo app', completed: false }
+      { id: 1, text: "Learn HellaJS", completed: false },
+      { id: 2, text: "Build a todo app", completed: false },
     ];
   } catch {
     return [];
@@ -568,45 +577,48 @@ const TodoApp = () => {
 
   // Update document title
   effect(() => {
-    const activeCount = todos().filter(t => !t.completed).length;
+    const activeCount = todos().filter((t) => !t.completed).length;
     document.title = activeCount === 0
-      ? 'Todo App'
+      ? "Todo App"
       : `Todo App (${activeCount} active)`;
   });
 
   //... computed values and functions unchanged
+};
 ```
 
 Add a `clearCompleted` function and a "Clear Done" button:
 
 ```tsx
 const clearCompleted = () => {
-  todos(todos().filter(todo => !todo.completed));
+  todos(todos().filter((todo) => !todo.completed));
 };
 ```
 
 Update the return to show stats in the header and add the clear button:
 
 ```tsx
-//... previous code unchanged, updating the return
+const TodoApp = () => {
+  //... signals, effects, and actions unchanged
 
-return (
-  <div class={app}>
-    <h1>Todo App</h1>
-    <div>{stats().active} active, {stats().completed} done</div>
+  return (
+    <div class={app}>
+      <h1>Todo App</h1>
+      <div>{stats().active} active, {stats().completed} done</div>
 
-    {/* ... input div unchanged */}
+      {/* ... input div unchanged */}
 
-    <div class={row}>
-      {/* ... filter buttons unchanged */}
-      {stats().completed > 0 && (
-        <button on:click={clearCompleted}>Clear Done</button>
-      )}
+      <div class={row}>
+        {/* ... filter buttons unchanged */}
+        {stats().completed > 0 && (
+          <button on:click={clearCompleted}>Clear Done</button>
+        )}
+      </div>
+
+      {/* ... list and empty state unchanged */}
     </div>
-
-    {/* ... list and empty state unchanged */}
-  </div>
-);
+  );
+};
 ```
 
 **Code Explanation**
@@ -631,7 +643,7 @@ The patterns you learned here - complex state management, computed derivations, 
 ## Complete Code
 
 ```tsx
-import { signal, computed, effect } from "@hellajs/core";
+import { batch, signal, computed, effect } from "@hellajs/core";
 import { mount, ForEach } from "@hellajs/dom";
 import { css, style } from "@hellajs/css";
 
@@ -642,52 +654,42 @@ css({
   },
 });
 
-const app = style(
-  {
-    width: "100%",
-    maxWidth: "30rem",
-    margin: "0 auto",
-    padding: "1rem",
-    h1: {
-      marginBottom: "1rem",
-    },
-    button: {
-      cursor: "pointer",
-    },
+const app = style({
+  width: "100%",
+  maxWidth: "30rem",
+  margin: "0 auto",
+  padding: "1rem",
+  h1: {
+    marginBottom: "1rem",
   },
-  { label: "app" },
-);
+  button: {
+    cursor: "pointer",
+  },
+});
 
-const row = style(
-  {
+const row = style({
+  display: "flex",
+  gap: "0.5rem",
+});
+
+const list = style({
+  listStyle: "none",
+  padding: 0,
+  li: {
     display: "flex",
+    alignItems: "center",
     gap: "0.5rem",
   },
-  { label: "row" },
-);
+});
 
-const list = style(
-  {
-    listStyle: "none",
-    padding: 0,
-    li: {
-      display: "flex",
-      alignItems: "center",
-      gap: "0.5rem",
-    },
-  },
-  { label: "list" },
-);
+const flex = style({
+  flex: "1",
+});
 
-const flex = style({ flex: "1" }, { label: "flex" });
-
-const done = style(
-  {
-    textDecoration: "line-through",
-    color: "#999",
-  },
-  { label: "done" },
-);
+const done = style({
+  textDecoration: "line-through",
+  color: "#999",
+});
 
 type FilterType = "all" | "active" | "completed";
 
@@ -751,8 +753,12 @@ const TodoApp = () => {
   const addTodo = () => {
     const text = newTodoText().trim();
     if (!text) return;
-    todos([...todos(), { id: Date.now(), text, completed: false }]);
-    newTodoText("");
+    // One flush: the list, the footer stats, and the persistence effect each
+    // observe the added todo once, not twice (todos write + input clear).
+    batch(() => {
+      todos([...todos(), { id: Date.now(), text, completed: false }]);
+      newTodoText("");
+    });
   };
 
   const toggleTodo = (id: number) => {
@@ -775,18 +781,23 @@ const TodoApp = () => {
   const saveEdit = () => {
     const id: number = editingId()!;
     const newText = editText().trim();
-    if (!newText) {
-      removeTodo(id);
-    } else {
-      todos(todos().map((todo) => (todo.id === id ? { ...todo, text: newText } : todo)));
-    }
-    editingId(null);
-    editText("");
+    // One flush for the conditional list write and the two edit-state resets.
+    batch(() => {
+      if (!newText) {
+        removeTodo(id);
+      } else {
+        todos(todos().map((todo) => (todo.id === id ? { ...todo, text: newText } : todo)));
+      }
+      editingId(null);
+      editText("");
+    });
   };
 
   const cancelEdit = () => {
-    editingId(null);
-    editText("");
+    batch(() => {
+      editingId(null);
+      editText("");
+    });
   };
 
   const handleEditKeydown = (e: KeyboardEvent) => {
