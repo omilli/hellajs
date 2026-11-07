@@ -34,14 +34,29 @@ The compiler (via the vite/rollup wrappers) must run on the **server** entry; wi
 
 ### Styled output
 
-[`@hellajs/css`](/reference/css) registers styles on both platforms; collect the generated text with [`cssText`](/reference/css/csstext) and pass it to [`doc`](/reference/ssr/doc)'s `styles` to emit a single `<style>` tag per response.
+[`@hellajs/css`](/reference/css) registers styles on both platforms; collect the generated text with [`cssText`](/reference/css/csstext) and deliver it through a `<style>` tag carrying the `hella-css` id, so hydration adopts the delivered rules instead of duplicating them.
 
 ```jsx
 import { style, cssText } from '@hellajs/css';
 import { ssr, doc } from '@hellajs/ssr';
-const card = style({ border: '1px solid #ccc' }, { label: 'card' });
+
+const card = style(
+  {
+    border: '1px solid #ccc',
+  },
+  {
+    label: 'card',
+  },
+);
 const body = ssr(<div class={card}>Content</div>);
-const page = doc({ head: { title: 'Card', styles: [cssText()] }, body });
+// The hella-css id lets hydration adopt the delivered rules
+const page = doc({
+  head: {
+    title: 'Card',
+    raw: `<style id="hella-css">${cssText()}</style>`,
+  },
+  body,
+});
 ```
 
 ### Express handler
@@ -123,12 +138,12 @@ mount(Counter, '#slot');
 Re-execute the full component tree against the existing server DOM to make the entire page interactive without replacing any nodes.
 
 ```jsx
-import { ssr } from '@hellajs/ssr';
+import { ssr, doc } from '@hellajs/ssr';
 
 const App = () => <h1>Profile</h1>;
 
-// Server renders the whole app into the target element
-const body = ssr(<App />);
+// Server: the app renders inside the #app wrapper
+const page = doc({ mount: '#app', body: ssr(<App />) });
 ```
 
 ```jsx
@@ -181,7 +196,10 @@ Let each route component carry its own `<title>`/`<meta>` instead of assembling 
 ```jsx
 import { createServer } from 'node:http';
 import { ssr, doc } from '@hellajs/ssr';
-const Profile = (user: { name: string; tagline: string; id: string }) => (
+
+type ProfileUser = { name: string; tagline: string; id: string };
+
+const Profile = (user: ProfileUser) => (
   <div>
     <title>{user.name} - Profile</title>
     <meta name="description" content={user.tagline} />
@@ -189,6 +207,7 @@ const Profile = (user: { name: string; tagline: string; id: string }) => (
     <h1>{user.name}</h1>
   </div>
 );
+
 createServer(async (req, res) => {
   const user = await fetch('/api/users/1').then(r => r.json());
   const head = ssr.head();
@@ -198,7 +217,23 @@ createServer(async (req, res) => {
 }).listen(3000);
 ```
 
-With the [Routing](/learn/patterns/routing) SSR recipes, each route view owns its entries the same way. Under [`ssr.stream`](/reference/ssr/ssr#stream) the bag fills as the walk proceeds, but a streamed document emits its `<head>` up front; pass head entries to `doc` explicitly when streaming.
+With the [Routing](/learn/patterns/routing) SSR recipes, each route view owns its entries the same way. Under [`ssr.stream`](/reference/ssr/ssr#stream) the head must be known up front (a streamed document emits its `<head>` before the body): fill the bag with one non-streaming pass first, then stream the same tree.
+
+```jsx
+import { ssr, doc } from '@hellajs/ssr';
+
+const Page = () => (
+  <div>
+    <title>Dashboard</title>
+    <h1>Dashboard</h1>
+  </div>
+);
+
+// One non-streaming pass fills the bag; the streamed document emits it up front
+const head = ssr.head();
+await ssr.async(Page(), { head });
+const page = doc({ body: ssr.stream(Page()), head, mount: '#app' });
+```
 
 ### Streaming responses
 

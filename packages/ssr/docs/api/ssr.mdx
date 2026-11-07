@@ -22,22 +22,6 @@ const body = ssr(page('Hello'));
 // body: "<section><h1>Hello</h1><p>Welcome.</p></section>"
 ```
 
-### Styled output
-
-[`@hellajs/css`](/reference/css) registers styles on both platforms: [`style`](/reference/css/style) returns its class and [`vars`](/reference/css/vars) its `var()` proxy on the server too. Collect the generated text with [`cssText`](/reference/css/csstext) and place it in a `<style>` tag carrying the `hella-css` id, so client hydration adopts the element instead of duplicating its rules. `ssr` never imports `@hellajs/css`; the caller assembles both.
-
-```jsx
-import { style, cssText } from '@hellajs/css';
-import { ssr } from '@hellajs/ssr';
-
-const btn = style({ color: 'red' }, { label: 'btn' });
-// btn === "btn-…"; the class, never text, on the server too
-// `cssText()` holds ".btn-…{color:red}"; on client and server alike
-
-const body = ssr(<button class={btn}>Click</button>);
-const page = `<style id="hella-css">${cssText()}</style><div id="app">${body}</div>`;
-```
-
 ## API
 
 ```typescript
@@ -128,9 +112,9 @@ createServer((req, res) => {
 }).listen(3000);
 ```
 
-Without a `nonce` (or with no options at all) the scripts are emitted unattributed, byte-identical to a stream rendered before the option existed.
+Without a `nonce`, the swap scripts carry no `nonce` attribute.
 
-The `head` option (inherited from `SsrOptions`) also works under `ssr.stream`, with one limit: the bag fills as the walk proceeds (staged [`<Suspense>`](/reference/dom/suspense) swaps keep filling it as they resolve), but a streamed document emits its `<head>` up front, so the collected entries are post-hoc. When streaming, pass head entries to [`doc`](/reference/ssr/doc) explicitly (see [`head`](#head)).
+The `head` option (inherited from `SsrOptions`) also works under `ssr.stream`, with one limit: the bag fills as the walk proceeds (staged [`<Suspense>`](/reference/dom/suspense) swaps keep filling it as they resolve), but a streamed document emits its `<head>` up front, so the collected entries are post-hoc. When streaming, pass head entries to [`doc`](/reference/ssr/doc) explicitly (see [`head`](#head)): either statically, or by running one [`ssr.async`](#async) pass with `{ head }` over the same tree first and handing the filled bag to `doc` (see [Per-route head entries](/learn/patterns/ssr)).
 
 ### head
 
@@ -168,13 +152,13 @@ Collection rules:
 - `<meta>` / `<link>`: attribute maps append to `head.meta` / `head.links` in order; getter attributes resolve, and falsy values drop (the same omission `doc`'s head builder applies).
 - `<style>`: its children's resolved text concatenates and appends to `head.styles` unescaped (CSS text, not HTML; a `>` selector survives).
 - Only text children hoist for `<title>`/`<style>`: a tag with any other child (an element) stays rendered in the body; nothing is silently dropped.
-- Non-head elements are untouched, and a walk with no `head` option renders head-eligible elements inline; byte-identical to before the option existed.
+- Non-head elements are untouched, and a walk with no `head` option renders head-eligible elements inline.
 
 ## Key Concepts
 
 ### Works with Any HellaNode
 
-`ssr` consumes any `HellaNode` identically, whichever member renders it. The compiler (via the vite/rollup wrappers) compiles JSX to the AST at build time, so the same component tree serializes on the server and hydrates on the client.
+`ssr` consumes any `HellaNode` identically, whichever member renders it. The compiler (via the vite/rollup wrappers) compiles JSX at build time: the server build emits the HellaNode AST `ssr` walks, the client build emits dom runtime code. The same component tree serializes on the server and hydrates on the client.
 
 ```jsx
 import { ssr } from '@hellajs/ssr';
@@ -185,6 +169,29 @@ const body = ssr(<App name="World" />);
 ```
 
 The plugin must run on the **server** entry; it is a compile-time transform, so without it JSX is not a `HellaNode`. See [Render from JSX](/learn/patterns/ssr) for a full recipe.
+
+### Styled output
+
+[`@hellajs/css`](/reference/css) registers styles on the server too: [`style`](/reference/css/style) returns its class and [`vars`](/reference/css/vars) its `var()` references without a DOM. Collect the generated text with [`cssText`](/reference/css/csstext) and place it in a `<style>` tag carrying the `hella-css` id, so client hydration adopts the element instead of duplicating its rules. `ssr` never imports `@hellajs/css`; the caller assembles both.
+
+```jsx
+import { style, cssText } from '@hellajs/css';
+import { ssr } from '@hellajs/ssr';
+
+const btn = style(
+  {
+    color: 'red',
+  },
+  {
+    label: 'btn',
+  },
+);
+// btn === "btn-…"; the class, never text, on the server too
+// cssText() holds ".btn-…{color:red}" on client and server alike
+
+const body = ssr(<button class={btn}>Click</button>);
+const page = `<style id="hella-css">${cssText()}</style><div id="app">${body}</div>`;
+```
 
 ### Zero Runtime Dependencies
 
@@ -203,7 +210,7 @@ const body = ssr(<p>Count: {count}</p>);
 // body: "<p>Count: <!--[-->5<!--]--></p>"
 ```
 
-This is a **breaking** part of the output contract: if you parse or snapshot `ssr()` output, expect the markers around dynamic regions. Generate server HTML with `ssr()` rather than hand-building it.
+The markers are part of the output contract: if you parse or snapshot `ssr()` output, expect them around every dynamic region. Generate server HTML with `ssr()` rather than hand-building it.
 
 ### Awaits Promises In Place
 
@@ -245,17 +252,17 @@ The base `ssr(node)` call walks the tree once and returns. Reactive getters are 
 
 ### Fetch Directly; Resource Is Unchanged
 
-`ssr.async` provides a generic await mechanism: return a `Promise` from a getter. [`Lazy`](/reference/dom/lazy) loaders run server-side under the async members (see the Lazy note above), while [`resource`](/reference/resource/resource) still no-ops its fetch pipeline on the server. Fetch server-side data with direct `fetch()` and expose it through a Promise-returning getter.
+`ssr.async` provides a generic await mechanism: return a `Promise` from a getter. [`Lazy`](/reference/dom/lazy) loaders run server-side under the async members (see the Lazy note above); [`resource`](/reference/resource/resource) never fetches during a server render (see [Resource Fetching Suppressed](#resource-fetching-suppressed)).
 
 ### In-Order Streaming
 
-Bare Promises (no [`<Suspense>`](/reference/dom/suspense)) are awaited in tree order under `ssr.stream`, so a slow Promise delays everything after it. A `<Suspense>` boundary opts out: its `fallback` flushes inline immediately, then each region's resolved children stream as a `<template>` followed by an inline `<script>$hs(id)</script>` that swaps the fallback for the resolved content **the moment it arrives**; so the user sees each region fill in progressively (React/Solid parity), not all at once at hydrate. Multiple regions swap concurrently (completion order, not document order); a one-time `$hs` bootstrap precedes them. `hydrate` later adopts the already-swapped nodes (its `swapSuspenseStage` is the no-script/HappyDOM fallback). A region whose Promise rejects is isolated instead of fatal: its `<template>` is skipped (the `fallback` and sentinel stay in the shell), the stream completes with its healthy siblings, and `hydrate` re-suspends that region on the client; the rejection surfaces at the nearest [`onError`](/reference/dom/onerror) / `error:fallback` boundary. Prefer `ssr.stream` when you want progressive paint; prefer the sync call or `ssr.async` when streaming isn't needed (no Promise overhead).
+Bare Promises (no [`<Suspense>`](/reference/dom/suspense)) are awaited in tree order under `ssr.stream`, so a slow Promise delays everything after it. A `<Suspense>` boundary opts out: its `fallback` flushes inline immediately, then each region's resolved children stream as a `<template>` followed by an inline swap script that replaces the fallback **the moment the region arrives**; the user sees each region fill in progressively, not all at once at hydrate. Multiple regions swap concurrently (completion order, not document order); a one-time `$hs` bootstrap script precedes them, and `hydrate` later adopts the already-swapped nodes. A rejecting region is isolated, not fatal (see [Errors Propagate](#errors-propagate)). Prefer `ssr.stream` when you want progressive paint; prefer the sync call or `ssr.async` when streaming isn't needed (no Promise overhead).
 
 ### Errors Propagate
 
 The sync call throws, a rejected `Promise` rejects `ssr.async`'s returned `Promise`, and a rejected bare `Promise` in the main walk errors `ssr.stream`'s `ReadableStream` (reading it throws). A rejecting `<Suspense>` region is the exception: the stream skips its `<template>` (the `fallback` and sentinel stay in the shell) and completes with its healthy siblings; `hydrate` re-suspends that region on the client, where the rejection reaches the nearest [`onError`](/reference/dom/onerror) / `error:fallback` boundary. Wrap the render in your own error handling if a value may throw; handle stream errors at the consumer (your server handler). A throwing *component* does not propagate: `component()` catches render errors and emits an empty fragment. See [Error handling](/learn/patterns/ssr#error-handling) for a try/catch-fallback recipe.
 
-This isolation composes with a `hydrate` script that executes mid-stream (parsed while `document.readyState` is still `loading`): a region whose staged `<template>` hasn't arrived, whether still pending or skipped by a rejection, defers (the fallback stays mounted, the children never re-run), and [`hydrate`](/reference/dom/hydrate) adopts the region when its stage lands. The inline-script contract is unchanged: an inline `$hs` that runs after hydrate consumed the region markers no-ops (its balance walk finds no open marker), leaving the template in place for hydrate's watcher to swap in.
+This isolation composes with a client hydrate script that executes mid-stream: a region whose staged `<template>` has not arrived yet, whether still pending or skipped by a rejection, keeps its `fallback`, and [`hydrate`](/reference/dom/hydrate) adopts the region when its content lands. The swap scripts and `hydrate` coordinate over the same markers in either arrival order; nothing doubles or flashes.
 
 ### Throws on invalid input
 

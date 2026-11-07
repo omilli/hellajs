@@ -6,7 +6,7 @@ Render HellaNode templates to HTML strings on the server, then enhance them on t
 
 `@hellajs/ssr` is a pure stringifier; see [`ssr`](/reference/ssr/ssr).
 
-`ssr` walks a [`HellaNode`](/reference/dom) AST and emits an HTML string. It mirrors the attribute rules of dom's internal `renderProp` (the reconciliation `key` prop omitted, falsy attributes omitted, boolean attributes bare, arrays space-joined) and escapes interpolated text and attribute values. Static template text is emitted raw; resolved interpolation values are escaped. Every dynamic region (a reactive child, a [`raw`](/reference/dom/raw) child, a control-flow component, or a nested fragment) is wrapped in `<!--[-->…<!--]-->` markers that [`hydrate`](/reference/dom/hydrate) reads; static elements and text are unwrapped (matched by position), keeping the payload minimal.
+`ssr` walks a [`HellaNode`](/reference/dom) AST, the tree JSX compiles to, and emits an HTML string. Attribute serialization follows browser rules: falsy values are omitted, `true` renders a bare attribute, arrays join with spaces. Static template text is emitted as written; interpolated text and attribute values are escaped. Every dynamic region (a reactive child, a [`raw`](/reference/dom/raw) child, a control-flow component, or a nested fragment) is wrapped in `<!--[-->…<!--]-->` markers that [`hydrate`](/reference/dom/hydrate) reads; static elements and text are unwrapped (matched by position), keeping the payload minimal.
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -26,7 +26,7 @@ Because no DOM is involved, `ssr` runs in Bun, Node, Deno, and workers alike.
 
 ## Control Flow on the Server
 
-[`ForEach`](/reference/dom/foreach) renders each item in array order. [`Transition`](/reference/dom/transition) renders its child when `show` is truthy, nothing otherwise. [`Lazy`](/reference/dom/lazy) renders its `loading` fallback without calling the loader; the async members await it and render the loaded component. [`Portal`](/reference/dom/portal) renders nothing: there is no document to teleport into. Each attaches a descriptor the stringifier reads, so `ssr` needs no DOM to interpret them.
+[`ForEach`](/reference/dom/foreach) renders each item in array order. [`Transition`](/reference/dom/transition) renders its child when `show` is truthy, nothing otherwise. [`Lazy`](/reference/dom/lazy) renders its `loading` fallback without calling the loader; the async members await it and render the loaded component. [`Portal`](/reference/dom/portal) renders nothing: there is no document to teleport into. [`Suspense`](/reference/dom/suspense) renders its children directly and drops the `fallback`, because nothing waits; only [`ssr.stream`](/reference/ssr/ssr#stream) ships the fallback and streams the resolved children after it. Each control-flow component carries its own server-render rule, so the walk needs no DOM.
 
 ## Raw HTML Children
 
@@ -49,18 +49,18 @@ The shipped HTML is the source of truth. The client can either hydrate the full 
 - Mount a reactive island into an empty placeholder the template left for it.
 
 ```jsx
-import { hydrate } from '@hellajs/dom';
-import { ssr } from '@hellajs/ssr';
+import { ssr, doc } from '@hellajs/ssr';
 
 const App = () => <h1>Hello</h1>;
 
-// Server renders the whole app (the plugin compiles the server entry too)
-const body = ssr(<App />);
-// page: <div id="app">${body}</div>
+// Server: the app renders inside the #app wrapper
+const page = doc({ mount: '#app', body: ssr(<App />) });
 ```
 
 ```jsx
-// Client hydrates it in place (the plugin wraps App automatically)
+import { hydrate } from '@hellajs/dom';
+
+// Client: the same tree binds to the existing nodes in place
 hydrate(<App />, '#app');
 ```
 
@@ -71,7 +71,7 @@ Server-fetched values ride along via [`doc`](/reference/ssr/doc)'s `data` option
 const { user } = JSON.parse(document.getElementById('hella-data').textContent);
 ```
 
-⚠️ A full-tree [`mount`](/reference/dom/mount) over the server-rendered container wipes it; `mount` replaces the container's children and rebuilds. Use `hydrate`, the enhancement modes above, or reserve full re-mount for throwaway SEO-only content.
+> **Never mount over server HTML**: [`mount`](/reference/dom/mount) replaces the container's children, so a full-tree mount over the server-rendered container wipes the shipped markup and any DOM state in that subtree. Use `hydrate`, the enhancement modes above, or reserve full re-mount for throwaway SEO-only content.
 
 ## Synchronous Render
 

@@ -6,13 +6,20 @@ Assemble a rendered body and an optional head into a complete HTML document: a p
 
 One overload pair, discriminated by the `body` type: a `string` body returns a string document; a `ReadableStream<string>` body returns a streaming document.
 
-Render a template with [`ssr`](/reference/ssr/ssr), collect the CSS text from [`@hellajs/css`](/reference/css) via [`cssText`](/reference/css/csstext), and assemble both into a document. `mount` emits the wrapper `hydrate` targets.
+Render a template with [`ssr`](/reference/ssr/ssr), collect the CSS text from [`@hellajs/css`](/reference/css) via [`cssText`](/reference/css/csstext), and assemble both into a document. `mount` emits the wrapper `hydrate` targets. Deliver `cssText()` through a `<style>` element carrying the `hella-css` id (`head.raw`), so client hydration adopts the element instead of duplicating its rules.
 
 ```jsx
 import { style, cssText } from '@hellajs/css';
 import { ssr, doc } from '@hellajs/ssr';
 
-const card = style({ border: '1px solid #ccc' }, { label: 'card' });
+const card = style(
+  {
+    border: '1px solid #ccc',
+  },
+  {
+    label: 'card',
+  },
+);
 const body = ssr(<div class={card}>Hi</div>);
 
 const page = doc({
@@ -21,7 +28,7 @@ const page = doc({
   head: {
     title: 'Home',
     meta: [{ charset: 'utf-8' }, { name: 'viewport', content: 'width=device-width' }],
-    styles: [cssText()],
+    raw: `<style id="hella-css">${cssText()}</style>`,
   },
   body,
 });
@@ -64,7 +71,7 @@ function doc(options: DocOptions & { body: ReadableStream<string> }): ReadableSt
 ```
 
 - `options`: Document assembly options.
-  - `body` (`string | ReadableStream<string>`): Already-rendered HTML: the string output of [`ssr`](/reference/ssr/ssr)/[`ssr.async`](/reference/ssr/ssr#async), or the `ReadableStream` from [`ssr.stream`](/reference/ssr/ssr#stream). Placed verbatim; **not** re-escaped. The mode is inferred from the body's type: nothing is collected unless you pass a string.
+  - `body` (`string | ReadableStream<string>`): Already-rendered HTML: the string output of [`ssr`](/reference/ssr/ssr)/[`ssr.async`](/reference/ssr/ssr#async), or the `ReadableStream` from [`ssr.stream`](/reference/ssr/ssr#stream). Placed verbatim; **not** re-escaped. The mode is inferred from the body's type: a string body returns a string document, a stream body is piped chunk by chunk, never buffered.
   - `mount?` (`string`): Mount-point selector wrapping the body, the same string [`hydrate`](/reference/dom/hydrate) targets on the client (`'#app'`, `'main#app'`, `'.wrap.x'`). One optional tag (defaults to `div`), at most one `#id`, any number of `.class` tokens (space-joined, in order). Anything else throws. Works in both modes.
   - `head?` (`HeadOptions`): Document head contents. Fields emit in declaration order: `title`, `meta`, `links`, `styles`, `scripts`, then `raw`.
     - `title?` (`string`): Document title: text-escaped (`& < > "`).
@@ -113,7 +120,7 @@ For the full wiring (seeding [`resource`](/reference/resource/resource) with `in
 
 ### Reuses the package's escaping rules
 
-`title` text and every attribute value run through the same `serializeProp` / `escapeHtml` rules the stringifiers apply to element attributes: falsy values are omitted, `true` renders bare, strings are quoted and escaped. `async: true` emits a bare `async`; `async: false` is omitted.
+`title` text and every attribute value run through the same escaping rules element attributes use: falsy values are omitted, `true` renders bare, strings are quoted and escaped. `async: true` emits a bare `async`; `async: false` is omitted.
 
 ### Verbatim `body` and `raw`
 
@@ -131,7 +138,7 @@ For the full wiring (seeding [`resource`](/reference/resource/resource) with `in
 
 ### No automatic CSS or head collection
 
-`doc` takes an already-composed CSS string (`styles`) and explicit `title` / `meta` / `links` / `scripts`. It does not track [`css()`](/reference/css/css) / [`vars()`](/reference/css/vars) calls; collect their output yourself with [`cssText()`](/reference/css/csstext) and pass it in. Head entries *can* come from the tree, though: [`ssr.head()`](/reference/ssr/ssr#head) plus `ssr(node, { head })` hoists the tree's `<title>`/`<meta>`/`<link>`/`<style>` into a bag this `head` option consumes directly.
+`doc` takes an already-composed CSS string (`styles`) and explicit `title` / `meta` / `links` / `scripts`. It does not track [`css()`](/reference/css/css) / [`vars()`](/reference/css/vars) calls; collect their output yourself with [`cssText()`](/reference/css/csstext) and deliver it through a `hella-css` tagged `<style>` (`head.raw`), so hydration adopts the delivered rules instead of duplicating them. Head entries *can* come from the tree, though: [`ssr.head()`](/reference/ssr/ssr#head) plus `ssr(node, { head })` hoists the tree's `<title>`/`<meta>`/`<link>`/`<style>` into a bag this `head` option consumes directly.
 
 ### `mount` accepts tag, `#id`, `.class` only
 
@@ -143,4 +150,4 @@ A mount point is a single wrapping element. Combinators, attribute selectors, ps
 
 ### `data` must be JSON-serializable
 
-`data` runs through `JSON.stringify`: a circular structure (or a lone function/symbol) throws `[ssr] doc: data must be JSON-serializable` in both modes, before anything is returned or streamed. This is a plain JSON channel, not reactive-state serialization: functions, Promises, and signals do not transfer; resolve them server-side and pass their values.
+`data` runs through `JSON.stringify`: a circular structure (or a lone function/symbol) throws `[ssr] doc: data must be JSON-serializable` in both modes, before anything is returned or streamed. This is a plain JSON channel, not reactive-state serialization: functions, Promises, and signals do not transfer. A function nested inside `data` (a signal, a getter) is silently dropped rather than thrown, so read values out first: `data: { user: user() }`.
