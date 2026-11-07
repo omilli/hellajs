@@ -277,6 +277,48 @@ describe("resource", () => {
       expect(r2.status()).toBe("idle");
     });
 
+    test("a resource joining its own in-flight request shares it without aborting", async () => {
+      const fetcher = vi.fn(async (key: string) => {
+        await delay(20);
+        return `data-${key}`;
+      });
+
+      const r = resource(fetcher, { key: () => "user-1", deduplicate: true });
+
+      r.fetch();
+      r.fetch();
+
+      await delay(40);
+
+      expect(fetcher).toHaveBeenCalledTimes(1);
+      expect(r.data()).toBe("data-user-1");
+      expect(r.status()).toBe("success");
+    });
+
+    test("a manual fetch joins the refetchOnKeyChange auto-fetch of the same resource", async () => {
+      const fetcher = vi.fn(async (key: string) => {
+        await delay(20);
+        return `data-${key}`;
+      });
+
+      // Module-scope resource: creation auto-fetches (refetchOnKeyChange),
+      // the mounting component calls fetch() in the same tick - the join
+      // must not abort the auto-fetch
+      const r = resource(fetcher, {
+        key: () => "user-1",
+        refetchOnKeyChange: true,
+        deduplicate: true,
+      });
+      r.fetch();
+
+      await delay(40);
+
+      expect(fetcher).toHaveBeenCalledTimes(1);
+      expect(r.data()).toBe("data-user-1");
+      expect(r.isFetching()).toBe(false);
+      expect(r.status()).toBe("success");
+    });
+
     test("prefetch registration survives a superseding force fetch", async () => {
       const fetcher = vi.fn(async (key: string) => {
         const result = `data-${key}-${fetcher.mock.calls.length}`;

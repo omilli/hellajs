@@ -187,7 +187,10 @@ export function resource<T, K = undefined, TTransformed = T>(
    * Cleans up current abort controller and returns new one
    */
   const cleanAbort = (controller?: AbortController) => {
-    currentAbortController && currentAbortController.abort();
+    // Switching to the controller already held — a dedup join onto this
+    // resource's own in-flight request — must not abort it
+    if (currentAbortController && currentAbortController !== controller)
+      currentAbortController.abort();
     return controller || new AbortController();
   };
 
