@@ -2,6 +2,19 @@
 
 Backs a store's persistence with `window.localStorage` under a key, creating the `StoreAdaptor` that [`persistStore`](/reference/store/persiststore) writes through.
 
+## Basic Usage
+
+```typescript
+import { localStorageAdaptor, persistStore, store } from '@hellajs/store';
+
+const ui = store({ theme: 'light', fontSize: 12 });
+const persist = persistStore(ui, localStorageAdaptor('ui-preferences'));
+
+// Synchronous storage: persisted values are applied before this line runs.
+
+ui.theme('dark'); // localStorage "ui-preferences": {"theme":"dark","fontSize":12}
+```
+
 ## API
 
 ```typescript
@@ -12,20 +25,6 @@ function localStorageAdaptor(key: string): StoreAdaptor
 
 - `key`: the localStorage slot the persisted snapshot occupies
 - **Returns**: a `StoreAdaptor` reading and writing that slot
-
-## Basic Usage
-
-```typescript
-import { store } from '@hellajs/store';
-import { persistStore, localStorageAdaptor } from '@hellajs/store';
-
-const ui = store({ theme: 'light', fontSize: 12 });
-const persist = persistStore(ui, localStorageAdaptor('ui-preferences'));
-
-// Synchronous storage: persisted values are applied before this line runs.
-
-ui.theme('dark'); // localStorage "ui-preferences": {"theme":"dark","fontSize":12}
-```
 
 ## Key Concepts
 

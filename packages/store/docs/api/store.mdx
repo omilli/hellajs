@@ -2,6 +2,23 @@
 
 Converts a plain object into a deeply reactive store where primitives become signals, nested objects recurse into stores, Array/Map/Set values become granular collection containers whose object elements convert to element stores, and functions are preserved.
 
+## Basic Usage
+
+```typescript
+import { store } from '@hellajs/store';
+
+const appStore = store({
+  count: 0,
+  user: { name: 'Alice' }
+});
+
+appStore.count(5);
+appStore.user.name('Bob');
+
+console.log(appStore.count());       // 5
+console.log(appStore.user.name());   // Bob
+```
+
 ## API
 
 ```typescript
@@ -85,7 +102,6 @@ type SettableKeyOf<T> = {
 
 // Recursively unwraps composed store types so Snapshot matches the plain
 // values $snapshot() actually returns
-
 type Snapshot<T> = {
   [K in keyof T]:
     T[K] extends Store<infer U, PropertyKey> ? Snapshot<U> : T[K];
@@ -120,6 +136,7 @@ type EqualsFor<V> = ((previous: V, next: V) => boolean) | "structural";
 - `initial`: Plain object to transform. Functions stay as-is, primitives become signals, plain objects recurse into nested stores, Array/Map/Set values become granular collection containers (`SignalArray`/`SignalMap`/`SignalSet` from `@hellajs/core`) with object elements converted to element stores.
 - `options.readonly`: `true` for all properties readonly, or an array of keys to lock. Propagates deep: `true` locks every plain-object level; a listed object key locks its entire subtree. Composed stores keep their own readonly config.
 - `options.middleware`: Per-key transform functions applied on every set.
+- `options.equals`: Per-key write-equality comparators; a comparator returning `true` skips the write so no subscriber wakes, and `'structural'` compares by content. Object keys take a nested equals map, and collection keys apply the comparator per element.
 - **Returns**: A reactive store with `$snapshot`, `$update`, `$cleanup`, and `$subscribe` methods.
 
 ### `$snapshot`
@@ -136,6 +153,8 @@ const appStore = store({ count: 0, user: { name: 'Alice' } });
 const snapshot = appStore.$snapshot();
 console.log(snapshot); // { count: 0, user: { name: 'Alice' } }
 ```
+
+The snapshot is a detached plain copy: mutating it never reaches the store, and a reference captured once freezes at that moment. Read it fresh inside each tracking context; inside an [`effect`](/reference/core/effect) or [`computed`](/reference/core/computed), a fresh call re-runs on any change. For one-property observation use the property signal itself or [`$subscribe`](#subscribe).
 
 The snapshot is reactive across composed store boundaries. When one store is nested inside another, mutating a leaf signal in either store triggers re-computation of the outer snapshot, and composed leaves unwrap to their plain values:
 
@@ -158,6 +177,8 @@ userStore.name('Bob'); // triggers the effect; snapshot is reactive across compo
 Partial deep updates to the store state. Accepts either a partial object or a function that receives the current state.
 
 For single property updates, set the property directly. For multiple properties or nested merges, use `$update()`. The call returns the store itself, typed with any keys the partial added (see [Growing Stores](#growing-stores)).
+
+Every key in the partial (and every change extracted from a draft) applies as its own signal write; wrap multi-key updates in [`batch`](/reference/core/batch)`()` to flush collected effects once. The draft path runs its mutator over a deep clone of the full snapshot, so calling `$update(draft => ...)` inside an effect subscribes that effect to every signal in the tree; keep drafts out of narrow effects.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -239,32 +260,15 @@ userStore.$subscribe('name', (next) => console.log(next));
 appStore.user.name('Bob'); // Logs: Bob; shared signals fire the subscription
 ```
 
-## Basic Usage
-
-```typescript
-import { store } from '@hellajs/store';
-
-const appStore = store({
-  count: 0,
-  user: { name: 'Alice' }
-});
-
-appStore.count(5);
-appStore.user.name('Bob');
-
-console.log(appStore.count());       // 5
-console.log(appStore.user.name());   // Bob
-```
-
 ## Key Concepts
 
 ### Deep Reactivity
 
-All nested objects become stores, Array/Map/Set values become granular collection containers with element stores, and functions stay as-is, a fully reactive state tree. See [State](/learn/concepts/state) for the deep walk and effect examples, the [deep collection keys](/learn/concepts/state#deep-collection-keys) section for the granularity matrix, and the [middleware](/learn/concepts/state#middleware) and [readonly](/learn/concepts/state#readonly) sections for control configuration.
+All nested objects become stores, Array/Map/Set values become granular collection containers with element stores, and functions stay as-is, a fully reactive state tree. Class instances (`Date`, `RegExp`, custom classes) are not plain objects, so each becomes a single signal holding the instance. See [State](/learn/concepts/state) for the deep walk and effect examples, the [deep collection keys](/learn/concepts/state#deep-collection-keys) section for the granularity matrix, and the [middleware](/learn/concepts/state#middleware) and [readonly](/learn/concepts/state#readonly) sections for control configuration.
 
 ### Nested Stores
 
-Existing stores compose as values: `store({ user: userStore })` nests the store with shared signal references, so writing through either reference updates the same signals. See [State](/learn/concepts/state) for what composed stores provide and [`$snapshot`](#snapshot) for reactive composed snapshots.
+Existing stores compose as values: `store({ user: userStore })` nests the store with shared signal references, so writing through either reference updates the same signals. Updates follow the same ownership rule as subscriptions: the partial type never unwraps a composed store, so `appStore.$update({ user: { name: 'Bob' } })` is a type error; update through the owning store (`userStore.$update({ name: 'Bob' })`) or write the shared signals directly (`appStore.user.name('Bob')`). See [State](/learn/concepts/state) for what composed stores provide and [`$snapshot`](#snapshot) for reactive composed snapshots.
 
 ### Partial Updates
 
@@ -280,7 +284,7 @@ By default every write is reference-compared; the `equals` option replaces that 
 
 ### Function Preservation
 
-Functions in the initial object are preserved as-is, not wrapped in signals, functional in snapshots. Snapshots preserve the **original** initial function references; a handler swapped in later (`appStore.onSave = newHandler`) is not what `$snapshot()` returns. See [State](/learn/concepts/state) for `computed`-in-store examples.
+Functions in the initial object are preserved as-is, not wrapped in signals, functional in snapshots. Snapshots preserve the **original** initial function references; a handler swapped in later (`appStore.onSave = newHandler`) is not what `$snapshot()` returns. A function property types as preserved (and stays directly swappable) only when its signature accepts unknown arguments; zero-argument handlers always qualify, while a handler with narrower parameters types as a signal holding the function, so keep swappable handlers zero-arg. See [State](/learn/concepts/state) for `computed`-in-store examples.
 
 ### Growing Stores
 
@@ -292,7 +296,7 @@ import { store } from '@hellajs/store';
 const appStore = store({ count: 0 });
 
 const withTags = appStore.$update({ tags: ['a'] });
-withTags.tags();          // ['a'], a Signal<string[]>
+withTags.tags();          // ['a'], read through a SignalArray<string> container
 withTags.$snapshot();      // { count: 0, tags: ['a'] }
 
 const withUser = withTags.$update({ user: { name: 'Bob' } });
@@ -339,6 +343,22 @@ Extracts the readonly property key set from a `StoreOptions` value. See [`Readon
 
 ## Important Considerations
 
+### Class Instances Are Whole Values
+
+`Date`, `RegExp`, and custom class instances become single signals, not nested stores. Mutating the instance in place changes the object the signal already holds without a write, so no subscriber wakes; write a new instance through the property call instead.
+
+```typescript
+import { store } from '@hellajs/store';
+
+const session = store({ startedAt: new Date(2026, 0, 1) });
+
+// ❌ In-place mutation: the signal still holds the same Date; nobody wakes
+session.startedAt().setFullYear(2024);
+
+// ✅ A new instance through the property call is a real write
+session.startedAt(new Date(2024, 0, 1));
+```
+
 ### Draft Updates Compare Structurally
 
 The `$update(fn)` draft path diffs by content, not reference. Untouched `Date`, `Map`, `Set`, `RegExp`, and array values are not rewritten; their signals keep the same value and subscribers do not fire. Mutated class instances keep their prototype:
@@ -362,6 +382,10 @@ data.$update(draft => {
 });
 ```
 
+### Update In Place, Never Recreate
+
+The store's properties are the signals consumers subscribed to, so replacing the whole store (`appStore = store({ ... })`) strands every prior effect, subscription, and rendered binding on dead state. Change state through the property calls or `$update()`; both keep the store's identity.
+
 ### Reserved Keys
 
 The keys `$snapshot`, `$update`, `$cleanup`, and `$subscribe` are reserved by the store implementation. Passing them as properties in the initial object throws an error.
@@ -372,24 +396,13 @@ import { store } from '@hellajs/store';
 store({ $snapshot: 1 }); // Throws: Error '[store] store: reserved key collision, received "$snapshot"'
 ```
 
-### Memory Management
-
-`$cleanup()` propagates teardown through the store tree, invoking each nested store's `cleanup`. Assign a custom `cleanup` method to release external resources (timers, listeners, subscriptions); the call recurses through the whole tree.
-
-```typescript
-import { store } from '@hellajs/store';
-
-const userStore = store({ name: 'John' });
-userStore.$cleanup();
-```
-
 ### Readonly Propagates Deep
 
 `readonly: true` locks every plain-object level of the store tree, and a listed object key locks its entire subtree. Composed stores are the exception: adoption preserves their signals, so a composed store keeps its own readonly configuration regardless of the parent's. See [readonly](/learn/concepts/state#readonly) for the full explanation and examples.
 
 ### Signals Survive Cleanup
 
-`$cleanup()` recursively invokes `cleanup` on nested stores but does not dispose individual signals or null the store object. This is intentional: signals owned by other contexts (composed stores, external effects) keep working.
+`$cleanup()` recursively invokes `$cleanup` on nested stores but does not dispose individual signals or null the store object. This is intentional: signals owned by other contexts (composed stores, external effects) keep working. To stop an effect reading store signals, call its own disposer or the [`$subscribe`](#subscribe) unsubscribe function.
 
 ### Store Properties Are Non-Writable
 

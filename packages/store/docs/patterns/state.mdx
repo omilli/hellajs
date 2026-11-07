@@ -96,8 +96,9 @@ todos.$update(draft => {
   draft.count = draft.items.length; // updates derived state
 });
 
-todos.items(); // [{ id: 2, ... }, { id: 3, ... }]
-todos.count(); // 2
+todos.items.length();  // 2
+todos.count();         // 2
+todos.$snapshot().items; // deep-plain: [{ id: 2, ... }, { id: 3, ... }]
 // changes apply as individual writes; wrap in batch() to fire effects once
 ```
 
@@ -141,6 +142,7 @@ todos.todos.set(0, { completed: true });        // Patch: text kept, completed-r
 todos.todos.push({ id: 2, text: 'ship', completed: false }); // Structural: positional readers wake
 console.log(todos.$snapshot().todos.length);     // 2, deep-plain
 ```
+
 ### Collections in ForEach
 
 Pass the container callable to `ForEach` and close over the element stores for field-precise bindings: each row reads its own element store's fields, so a field write re-renders nothing but the bound text.

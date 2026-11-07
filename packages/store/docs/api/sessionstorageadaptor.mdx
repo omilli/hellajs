@@ -2,6 +2,19 @@
 
 Backs a store's persistence with `window.sessionStorage` under a key: same contract as [`localStorageAdaptor`](/reference/store/localstorageadaptor), scoped to the current tab session.
 
+## Basic Usage
+
+```typescript
+import { persistStore, sessionStorageAdaptor, store } from '@hellajs/store';
+
+const wizard = store({ step: 1, choice: '' });
+const persist = persistStore(wizard, sessionStorageAdaptor('wizard-draft'));
+
+// Synchronous storage: persisted values are applied before this line runs.
+
+wizard.step(2); // sessionStorage "wizard-draft": {"step":2,"choice":""}
+```
+
 ## API
 
 ```typescript
@@ -12,20 +25,6 @@ function sessionStorageAdaptor(key: string): StoreAdaptor
 
 - `key`: the sessionStorage slot the persisted snapshot occupies
 - **Returns**: a `StoreAdaptor` reading and writing that slot
-
-## Basic Usage
-
-```typescript
-import { store } from '@hellajs/store';
-import { persistStore, sessionStorageAdaptor } from '@hellajs/store';
-
-const wizard = store({ step: 1, choice: '' });
-const persist = persistStore(wizard, sessionStorageAdaptor('wizard-draft'));
-
-// Synchronous storage: persisted values are applied before this line runs.
-
-wizard.step(2); // sessionStorage "wizard-draft": {"step":2,"choice":""}
-```
 
 ## Key Concepts
 

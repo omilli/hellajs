@@ -28,11 +28,13 @@ counter.count(5);
 counter.step(2);
 ```
 
+A store keeps one identity for its lifetime: update it in place (property calls or `$update()`), never replace it with a fresh `store()` call, which strands every subscriber and binding on the old store's signals.
+
 ## What Stores Provide
 
 Beyond basic get/set, stores offer several capabilities, each covered in a section below or in the [`store`](/reference/store/store) reference.
 
-- **Readonly**: Restrict specific properties or the entire store to read-only access, enforced at the type level.
+- **Readonly**: Restrict specific properties or the entire store to read-only access, enforced with throwing guards at runtime and getter-only types.
 - **Snapshots**: Get a plain object representation of the entire store state. Reactive: recomputes when any property changes.
 - **Subscriptions**: Observe a single property with `$subscribe(key, cb)`: the callback receives `(next, prev)` and the call returns an unsubscribe function.
 - **Updates**: Apply partial deep merges or mutate a draft directly for ergonomic multi-property and array changes.
@@ -44,7 +46,7 @@ Beyond basic get/set, stores offer several capabilities, each covered in a secti
 
 ## Deep Reactivity
 
-All nested objects are automatically converted to reactive stores, Array/Map/Set values become granular collection containers, and functions remain unchanged, creating a fully reactive state tree.
+All nested objects are automatically converted to reactive stores, Array/Map/Set values become granular collection containers, and functions remain unchanged, creating a fully reactive state tree. Class instances (`Date`, `RegExp`, custom classes) are not plain objects: each becomes a single signal holding the instance, so write a new instance through the property call; in-place mutation wakes no subscriber.
 
 ```typescript
 import { effect } from '@hellajs/core';
@@ -111,7 +113,7 @@ console.log(todos.items.get(0)!.done()); // true - element reads go through the 
 
 ## Deep Collection Keys
 
-Array, `Map`, and `Set` values install granular collection containers from `@hellajs/core` (`signalArray`, `signalMap`, `signalSet`). Plain-object elements convert to element stores at construction: every field of every element is its own signal, so field writes wake exactly the field's readers. Collections nested inside collections recurse the same way.
+Array, `Map`, and `Set` values install granular collection containers from `@hellajs/core` (`signalArray`, `signalMap`, `signalSet`). Plain-object elements convert to element stores at construction: every field of every element is its own signal, so field writes wake exactly the field's readers. Collections nested inside collections recurse the same way. A bare read (`todos.todos()`) returns a fresh plain array holding the element stores; mutating that copy notifies nobody, so write through the container's methods.
 
 ```typescript
 import { effect } from '@hellajs/core';
@@ -295,7 +297,7 @@ Applied: `{ readonly: ['apiUrl'] }` resolves to `'apiUrl'`, `{ readonly: true }`
 
 ## Readonly
 
-Granular control over which properties can be modified, enforced at the type level.
+Granular control over which properties can be modified. Every write path is guarded at runtime with a throwing error, and readonly keys type as getter-only calls, so writing one is a compile error too.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -386,7 +388,7 @@ const app = store({
 app.$update({ count: 5 });              // ✅ works; count is in the initial object
 app.$update({ user: { name: 'Bob' } }); // ✅ works; nested stores accept object partials
 const grown = app.$update({ tags: [] as string[] }); // ✅ works; unknown keys materialize, typed on the return
-grown.tags();                           // ✅ [], a Signal<string[]>
+grown.tags();                           // ✅ [], read through a SignalArray<string> container
 
 // ❌ app.$update({ onSave: () => {} }); // throws: [store] $update: "onSave" is a function property, not state
 // ❌ app.$update({ $snapshot: 1 });      // throws: [store] $update: reserved key "$snapshot"
@@ -419,7 +421,7 @@ import { store } from '@hellajs/store';
 const app = store({ count: 0 });
 
 const withTags = app.$update({ tags: ['a'] });
-withTags.tags();     // ['a'], a Signal<string[]>
+withTags.tags();     // ['a'], read through a SignalArray<string> container
 app.$snapshot();      // { count: 0, tags: ['a'] }; runtime sees the key, app's TYPE stays narrow
 ```
 
