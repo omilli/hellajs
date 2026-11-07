@@ -320,7 +320,7 @@ Full runnable code matching the example app.
 - **Code Explanation**: always after every code block — bullet list, bold backtick-wrapped API names linking to reference docs on first mention, factual tone.
 - **Callouts**: `<Callout variant="error">` (import from `@components/Callout.astro`) for critical warnings (mutation pitfalls, reactivity gotchas), followed by Good/Bad examples.
 - **Dev server callout**: in the section where the app first becomes reachable, the actual run command + URL — Vite: `npm run dev` + `http://localhost:5173`; Node-served SSR: the start command (`npm run dev` / `node --watch src/server.js`) + its URL.
-- **What You'll Learn**: bold concept labels + brief descriptions, linked to reference docs on first mention. **Project Setup**: always `### Installation` (npm commands) + `### Configuration` (vite config, tsconfig).
+- **What You'll Learn**: bold concept labels + brief descriptions, linked to reference docs on first mention. **Project Setup**: always `### Installation` (npm commands) + `### Configuration` (vite config, tsconfig, and the entry `index.html` with its mount-point element and module script — scaffold templates ship no `#app` div, and `mount` throws on a missing target).
 - **Next Steps**: 3 links + one-line closing sentence. **Complete Code**: every source file under `examples/{name}/src/` appears identically (ambient shims like `vite-env.d.ts` may be omitted); single-file apps one block, multi-file one `### `src/...`` heading + block per file; configs appear in Project Setup.
 
 ### Concept Section Order
@@ -636,7 +636,7 @@ try {
 
 ### Exports per Doc
 
-One block per doc carries `export` lines. `vp run doc-snippets` concatenates a doc's same-language blocks into ONE module, and export-bearing blocks (any line matching `/^(declare|export) /m`) hoist whole to module scope, so a second one collides: TS2451 on shared export names, TS2528 on double `default`. Structure multi-page or multi-component examples as one export-bearing block plus export-free blocks (export-free blocks nest-scope and chain: a later block reads earlier blocks' names); narrate additional pages in prose or build-output comments.
+One block per doc carries `export` lines. `vp run doc-snippets` concatenates a doc's same-language blocks into ONE module, and export-bearing blocks (any line matching `/^(declare|export) /m`) hoist whole to module scope, so a second one collides: TS2451 on shared export names, TS2528 on double `default`. Every other block is wrapped in its own scope: chaining across blocks is not supported (a later block referencing an earlier block's name fails with TS2304), so each block is self-contained. Structure multi-page or multi-component examples as one export-bearing block plus self-contained export-free blocks; narrate additional pages in prose or build-output comments.
 
 ## Example Syntax (JSX Default)
 
