@@ -16,32 +16,29 @@ import { resource } from '@hellajs/resource';
 
 const userId = signal(1);
 
-// Create a resource that depends on reactive state
+// Create a resource parameterized by a reactive key
 const userResource = resource(
   (id) => fetch(`/api/users/${id}`).then(r => r.json()),
   {
     key: () => userId(),
-    cacheTime: 60000 // Cache for 1 minute
+    refetchOnKeyChange: true,
+    cacheTime: 60000, // Cache for 1 minute
   }
 );
 
-// React to loading states and data
+// React to loading, error, and data states
 effect(() => {
   if (userResource.isLoading()) {
     console.log('Loading user...');
   } else if (userResource.error()) {
-    console.error('Failed to load user:', userResource.error());
+    console.error('Failed to load user:', userResource.error()?.message);
   } else if (userResource.data()) {
     console.log('User loaded:', userResource.data());
   }
 });
 
-// Start fetching
-userResource.fetch({ force: true });
-
-// Change user and refetch
+// Changing the key refetches automatically
 userId(2);
-userResource.invalidate(); // Clear cache and refetch with new userId
 ```
 
 ### API
@@ -56,4 +53,4 @@ userResource.invalidate(); // Clear cache and refetch with new userId
 
 ### Patterns
 
-- **[Data](/learn/patterns/resource)**: Cache strategies, polling, optimistic updates, error recovery
+- **[Data](/learn/patterns/resource)**: Cache strategies, prefetching, polling, optimistic updates, error recovery

@@ -1,4 +1,3 @@
-
 # Resource
 
 Short patterns for common async data tasks using [`@hellajs/resource`](/reference/resource).
@@ -61,22 +60,38 @@ config.fetch(); // First call: network request
 config.fetch(); // Within 30s: instant cache hit
 ```
 
+### Cache Prefetching
+
+Warm the cache before the user navigates; share a named fetcher so the resource hits the prefetched entry.
+
+```typescript
+import { signal } from '@hellajs/core';
+import { resource, resourceCache } from '@hellajs/resource';
+
+const userId = signal(1);
+const fetchUser = async (id: number) => (await fetch(`/api/users/${id}`)).json();
+
+// Same fetcher reference -> the resource reuses the prefetched entry
+const userResource = resource(fetchUser, { key: () => userId(), cacheTime: 60000 });
+
+// Call on link hover, or ahead of navigation
+const prefetchUser = () =>
+  resourceCache.prefetch({ fetcher: fetchUser, key: userId(), cacheTime: 60000 });
+```
+
 ### Polling
 
-Refresh data at regular intervals for real-time updates.
+Refresh data at regular intervals for real-time updates; `refetchInterval` works on its own, no `refetchOnKeyChange` needed.
 
 ```typescript
 import { resource } from '@hellajs/resource';
 
 const notifications = resource(
   () => fetch('/api/notifications').then(r => r.json()),
-  {
-    refetchInterval: 5000,
-    refetchOnKeyChange: true
-  }
+  { refetchInterval: 5000 }
 );
 
-// Data refreshes every 5 seconds
+notifications.fetch(); // Initial load; polling keeps it fresh every 5s
 // Call dispose() to stop polling
 ```
 
@@ -119,6 +134,26 @@ const addTodo = resource(
 );
 
 addTodo.mutate('Build something awesome').catch(() => { /* handled in onSettled */ });
+```
+
+### Invalidate After Mutations
+
+Declare cache entries to clear on mutation success with `invalidates`; string prefixes and regex patterns combine in one list.
+
+```typescript
+import { resource, resourceCache } from '@hellajs/resource';
+
+// Seed the entries the mutation will invalidate
+resourceCache.set('user:1', { id: 1 }, 60000);
+resourceCache.set('posts:1', [{ id: 10 }], 60000);
+
+const saveUser = resource(
+  (data) => fetch('/api/user', { method: 'PUT', body: JSON.stringify(data) }).then(r => r.json()),
+  { invalidates: ['user:', /^posts:\d+$/] }
+);
+
+await saveUser.mutate({ name: 'John Doe' });
+// On success: user:1 and posts:1 are gone; the next fetch for each goes to the network
 ```
 
 ### Error Recovery
@@ -178,6 +213,23 @@ const conditional = resource(
 
 gate(true); // enabled transitions to true -> fetch triggers automatically
 conditional.fetch(); // manual fetch bypasses the enabled check
+```
+
+### Offline-Aware Fetching
+
+Defer fetches while the browser is offline instead of letting them fail; the deferred fetch replays on reconnect.
+
+```typescript
+import { resource } from '@hellajs/resource';
+
+const feed = resource(
+  () => fetch('/api/feed').then(r => r.json()),
+  { pauseWhenOffline: true, refetchOnKeyChange: true }
+);
+
+feed.fetch();
+// While offline: isPaused() is true, no request attempted, no error state
+// On reconnect: the deferred fetch runs and isPaused() flips back to false
 ```
 
 ### Structural Sharing

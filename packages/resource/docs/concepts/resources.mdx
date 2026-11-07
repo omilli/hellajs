@@ -35,6 +35,15 @@ const users = resource('/api/users');
 users.fetch({ force: true });
 ```
 
+Each URL resource builds its own fetcher, so two URL resources never share cache or deduplication, even with the same URL. When resources must share entries, hoist a named fetcher and pass it instead:
+
+```typescript
+const fetchUsers = () => fetch('/api/users').then(r => r.json());
+
+const sidebarUsers = resource(fetchUsers, { cacheTime: 60000 });
+const pageUsers = resource(fetchUsers, { cacheTime: 60000 }); // Same cache scope
+```
+
 ### Reactive Keys
 
 Use the `key` option to parameterize resources with reactive values. Changing the key dependency does not trigger a refetch by itself; call `invalidate()` or `fetch()` to use the new key value.
@@ -250,7 +259,7 @@ With both `pauseWhenOffline` and `refetchOnReconnect`, the reconnect event fires
 
 ### Data Transformation
 
-Transform data before returning while caching the original. Multiple resources with different `transform` functions can share the same cache entry by using the same fetcher function.
+Transform data for `data()` reads while caching the original; `setData` and `mutate` keep operating on the raw shape. Keep the fetcher returning the server shape: mapping inside the fetcher bakes the view shape into the cache, so writers and other readers of the same entry operate on the wrong shape. Multiple resources with different `transform` functions can share the same cache entry by using the same fetcher function.
 
 ```typescript
 // Same fetcher function → shared cache scope for "user-1"

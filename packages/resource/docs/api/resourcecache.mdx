@@ -1,6 +1,21 @@
 # resourceCache
 
-Global cache management providing advanced cache control, LRU eviction, and batch operations for all [`resource`](/reference/resource/resource) instances.
+Global cache store shared across all [`resource`](/reference/resource/resource) instances, with cross-scope reads, batch updates, pattern invalidation, and prefetching.
+
+## Basic Usage
+
+```typescript
+import { resourceCache } from '@hellajs/resource';
+
+// Store an entry with a 5-minute TTL
+resourceCache.set('user:123', { name: 'John' }, 300000);
+
+// Read it back; a hit within the TTL
+console.log(resourceCache.get('user:123')); // { name: 'John' }
+
+// Remove it
+resourceCache.invalidate('user:123');
+```
 
 ## API
 
@@ -70,7 +85,7 @@ interface PrefetchOptions<T, K> {
 
 ### `map`
 
-Read-only flattened view over every fetcher-scoped cache. `get`, `has`, and `size` search across all scopes; `clear()` empties every scope.
+Read-only flattened view over every fetcher-scoped cache. `get`, `has`, and `size` search across all scopes; `clear()` empties every scope. Prefer `map` for inspection: unlike [`get`](#get), `map.get` does not refresh an entry's recency, so inspecting never influences LRU eviction order.
 
 ```typescript
 import { resourceCache } from '@hellajs/resource';
@@ -164,6 +179,8 @@ console.log(updated); // Logs: true
 resourceCache.update('user:123', { name: 'Johnny' }); // direct value works too
 ```
 
+`update` writes the cache entry only; a resource currently displaying that data keeps its reactive copy until the next fetch or a `setData` call. Use it for entries other resources will read later, not for live UI updates.
+
 ### `updateMultiple`
 
 Updates multiple cache entries in a batch operation.
@@ -193,7 +210,7 @@ setInterval(() => resourceCache.cleanup(), 60000);
 
 ### `prefetch`
 
-Fetches via `fetcher(key)` and caches the result under the fetcher's own scope **without creating a resource**, returning the fetched data. Deduplicates, retries, and aborts like a [`resource()`](/reference/resource/resource) fetch; the `retry` predicate receives the failure count starting at `1` on the first failure. See [Prefetching](#prefetching) for the same-fetcher-reference requirement that lets a later `resource()` reuse the entry.
+Fetches via `fetcher(key)` and caches the result under the fetcher's own scope **without creating a resource**, returning the fetched data. Deduplicates, retries, and aborts like a [`resource()`](/reference/resource/resource) fetch; the `retry` predicate receives the failure count starting at `1`. See [Prefetching](#prefetching) for the same-fetcher-reference requirement that lets a later `resource()` reuse the entry.
 
 ```typescript
 import { resourceCache } from '@hellajs/resource';
@@ -273,6 +290,7 @@ Immediately invalidates all provided resources by calling their invalidate metho
 ```typescript
 import { resourceCache, resource } from '@hellajs/resource';
 
+const fetchUser = (id: string) => fetch(`/api/users/${id}`).then(r => r.json());
 const fetchUserPosts = (id: string) => fetch(`/api/users/${id}/posts`).then(r => r.json());
 
 const userResource = resource(fetchUser);
@@ -281,7 +299,7 @@ const userPostsResource = resource(fetchUserPosts);
 resourceCache.invalidateResources([userResource, userPostsResource]);
 ```
 
-### Utility Methods
+### Online Status
 
 ### `onOnlineChange`
 
@@ -293,21 +311,6 @@ const unsubscribe = resourceCache.onOnlineChange((online) => {
   else console.log('Gone offline - using cached data');
 });
 unsubscribe(); // Clean up subscription
-```
-
-## Basic Usage
-
-```typescript
-import { resourceCache } from '@hellajs/resource';
-
-// Store an entry with a 5-minute TTL
-resourceCache.set('user:123', { name: 'John' }, 300000);
-
-// Read it back; a hit within the TTL
-console.log(resourceCache.get('user:123')); // { name: 'John' }
-
-// Remove it
-resourceCache.invalidate('user:123');
 ```
 
 ## Key Concepts
@@ -392,4 +395,4 @@ const user = resourceCache.get(getUserKey(123));
 
 ### Production Memory Management
 
-Monitor cache size via `resourceCache.map.size` against `resourceCache.config.maxSize`. The LRU eviction strategy (see [LRU Eviction Strategy](#lru-eviction-strategy) above) automatically removes old entries when the limit is exceeded; adjust `maxSize` with `setConfig()` based on available memory.
+Monitor cache size via `resourceCache.map.size` against `resourceCache.config.maxSize`. The LRU eviction strategy (see [LRU Eviction Strategy](#lru-eviction-strategy)) automatically removes old entries when the limit is exceeded; adjust `maxSize` with `setConfig()` based on available memory.
