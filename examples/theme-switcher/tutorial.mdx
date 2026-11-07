@@ -88,12 +88,12 @@ import { mount } from "@hellajs/dom";
 
 const isDark = signal(false);
 
-const ThemeSwitcher = () => <>
-  <h1>Theme Switcher</h1>
-  <p>
-    Toggle the button to switch themes.
-  </p>
-</>
+const ThemeSwitcher = () => (
+  <>
+    <h1>Theme Switcher</h1>
+    <p>Toggle the button to switch themes.</p>
+  </>
+);
 
 mount(ThemeSwitcher, "#app");
 ```
@@ -160,15 +160,13 @@ css({
   },
 });
 
-const ThemeSwitcher = () => <>
-  <h1>Theme Switcher</h1>
-  <button on:click={() => isDark(!isDark())}>
-    {isDark() ? "☀️ Light" : "🌙 Dark"}
-  </button>
-  <p>
-    Toggle the button to switch themes.
-  </p>
-</>
+const ThemeSwitcher = () => (
+  <>
+    <h1>Theme Switcher</h1>
+    <button on:click={() => isDark(!isDark())}>{isDark() ? "☀️ Light" : "🌙 Dark"}</button>
+    <p>Toggle the button to switch themes.</p>
+  </>
+);
 ```
 
 **Code Explanation**
@@ -219,15 +217,13 @@ css({
   },
 });
 
-const ThemeSwitcher = () => <>
-  <h1>Theme Switcher</h1>
-  <button on:click={() => isDark(!isDark())}>
-    {isDark() ? "☀️ Light" : "🌙 Dark"}
-  </button>
-  <p>
-    Toggle the button to switch themes.
-  </p>
-</>
+const ThemeSwitcher = () => (
+  <>
+    <h1>Theme Switcher</h1>
+    <button on:click={() => isDark(!isDark())}>{isDark() ? "☀️ Light" : "🌙 Dark"}</button>
+    <p>Toggle the button to switch themes.</p>
+  </>
+);
 
 mount(ThemeSwitcher, "#app");
 ```
