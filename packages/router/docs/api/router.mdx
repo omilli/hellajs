@@ -1,26 +1,47 @@
 # router
 
-Set up client-side routing with dynamic parameters, hooks, redirects, and notFound handling.
+Configure the app's routes and resolve the current URL synchronously: patterns with params, guards, redirects, scroll behavior, and URL mode.
+
+## Basic Usage
+
+Define routes by mapping URL patterns to handler functions that update a signal. `router()` matches the current URL during the call and returns the resolved route.
+
+```typescript
+import { router } from "@hellajs/router";
+import { signal } from "@hellajs/core";
+
+const currentView = signal("Home");
+
+router({
+  routes: {
+    "/": () => currentView("Home"),
+    "/users/:id": (params) => currentView(`User ${params.id}`),
+    "/files/*": (params) => currentView(`File ${params["*"]}`),
+    "/search": (params, query) => currentView(`Search: ${query.q}`)
+  },
+  notFound: () => currentView("Not found")
+});
+```
 
 ## API
 
 ```typescript
 function router(config: RouterConfig): RouteInfo
 
-// RouterConfig shape:
-// {
-//   routes: Record<string, RouteValue | string>,
-//   hooks?: GlobalHooks,
-//   redirects?: { from: readonly string[]; to: string }[],
-//   notFound?: string | ((path: string) => void),
-//   mode?: 'history' | 'hash' | 'memory',
-//   base?: string,
-//   scrollBehavior?: ScrollBehavior,
-//   intercept?: boolean,
-//   inheritMeta?: boolean,
-//   url?: string
-// }
+interface RouterConfig {
+  routes: Routes;
+  hooks?: GlobalHooks;
+  redirects?: Redirect[];
+  notFound?: string | ((path: string) => void);
+  mode?: HistoryMode;
+  base?: string;
+  scrollBehavior?: ScrollBehavior;
+  intercept?: boolean;
+  inheritMeta?: boolean;
+  url?: string;
+}
 ```
+
 - `routes`: URL patterns mapped to handlers, handler objects with hooks, nested route objects with children, or redirect strings.
 - `hooks`: Optional global hooks: `leave(to, from)` guards the route being left (same verdicts as `before`), `before(to, from)` guards every incoming navigation (`to` is the incoming path with its query string, `from` is the pre-commit path being left; can cancel or redirect), `after(to, from)` runs once the route commits.
 - `redirects`: Optional array of redirect objects. `from` entries match as route patterns (`:param` captures a segment, `*` captures the rest), with the query ignored; captured values substitute into `to` tokens (unmatched tokens stripped). First matching entry in array order wins.
@@ -33,35 +54,11 @@ function router(config: RouterConfig): RouteInfo
 - `url`: Resolve against this URL instead of `window.location`. Accepts a full request URL (e.g. `req.url` in a Node or Bun request handler, like `https://host/users/7?q=1`) or a path (`/users/7?q=1`); the origin and hash fragment are ignored. Invalid URLs throw. Used for SSR, where there is no window. Resolution is synchronous either way.
 - **Returns**: The resolved initial [`RouteInfo`](/reference/router/route): the route is matched synchronously during the call.
 
-## Basic Usage
-
-Define routes by mapping URL patterns to handler functions that update a signal.
-
-```typescript
-import { router, route, navigate } from "@hellajs/router";
-import { signal } from "@hellajs/core";
-
-const checkAuth = () => true;
-const trackPageView = (page: string) => console.log("viewed", page);
-const someAsyncCheck = () => Promise.resolve(true);
-const currentView = signal("");
-
-router({
-  routes: {
-    "/": () => currentView("HomePage"),
-    "/users/:id": (params) => currentView(`UserProfile: ${params.id}`),
-    "/files/*": (params) => currentView(`FileViewer: ${params["*"]}`),
-    "/search": (params, query) => currentView(`Search: ${query.q}`)
-  },
-  notFound: (path) => currentView(`NotFound: ${path}`)
-});
-```
-
 ## Key Concepts
 
 ### Route Patterns
 
-URL patterns support dynamic parameters (`:id`) and wildcards (`*`).
+URL patterns support dynamic parameters (`:id`), optional segments (`:id?`), and wildcards (`*`).
 
 ```typescript
 router({
@@ -69,6 +66,10 @@ router({
     '/users/:id': (params) => {
       // /users/123 → params.id = '123'
       currentView(`UserProfile: ${params.id}`);
+    },
+    '/users/:id?': (params) => {
+      // /users → params.id is undefined; /users/7 → params.id = '7'
+      currentView(params.id ? `User ${params.id}` : 'Users');
     },
     '/files/*': (params) => {
       // /files/docs/readme.txt → params['*'] = 'docs/readme.txt'
@@ -80,13 +81,15 @@ router({
 
 ### Nested Routes
 
-Create hierarchical route structures with `children` for automatic parameter inheritance. Nested routes are sorted by specificity: non-wildcard before wildcard, deeper segment count before shallow.
+Create hierarchical route structures with `children` for automatic parameter inheritance. Nested routes are sorted by specificity: non-wildcard before wildcard, deeper segment count before shallow. Nested matches take precedence over flat routes regardless of map order.
 
-See [routing concepts](/learn/concepts/routing) for parameter inheritance, specificity ordering, and multi-level nesting.
+See [routing concepts](/learn/concepts/routing) for parameter inheritance, matching order, and multi-level nesting.
 
 ### Navigation Mode
 
 ```typescript
+import { router, navigate } from '@hellajs/router';
+
 // History API (default): example.com/about
 router({
   routes: { '/about': () => currentView('AboutPage') }
@@ -124,6 +127,9 @@ Route-level `leave` hooks run child→parent after the global `leave`, receiving
 Routes can also carry `meta` for analytics, SEO, or feature flags; `inheritMeta` cascades parent meta down the nested match chain. See [Route Metadata](/learn/concepts/routing#route-metadata) for the cascade, per-route boundaries, and inline `navigate()` precedence.
 
 ```typescript
+const checkAuth = () => true;
+const trackPageView = (page: string) => console.log("viewed", page);
+
 router({
   routes: {
     '/dashboard': {
@@ -177,7 +183,7 @@ router({
 });
 ```
 
-The saved-position stack mirrors pushState entries: `navigate({ replace: true })` and redirects never push, and back/forward pops. Forward-after-back is not tracked per index (the router doesn't own `history.state`), so a forward after a back reports `null`.
+The saved-position stack mirrors pushState entries: `navigate({ replace: true })` and redirects never push, and back/forward pops. Position is not tracked per history index (the router doesn't own `history.state`), so a forward after a back can report a stale entry or `null`.
 
 See [routing concepts](/learn/concepts/routing) for scroll priority and per-route overrides.
 
@@ -233,7 +239,45 @@ Resolution follows strict precedence with early exits.
 - **Flat routes** (traditional route matching)
 - **Not found handler**
 
-Within nested routes, specific patterns take precedence over wildcards.
+Nested route levels are sorted by specificity automatically: non-wildcard patterns before wildcard ones, deeper patterns before shallow ones. Flat routes are **not** sorted; they match in insertion order, and the first matching pattern wins. List specific patterns before generic ones:
+
+```typescript
+router({
+  routes: {
+    // ✅ Specific first: /users/admin matches its own route
+    '/users/admin': () => currentView('AdminUser'),
+    '/users/:id': (params) => currentView(`User ${params.id}`)
+  }
+});
+```
+
+```typescript
+router({
+  routes: {
+    // ❌ Generic first: /users/:id shadows /users/admin forever
+    '/users/:id': (params) => currentView(`User ${params.id}`),
+    '/users/admin': () => currentView('AdminUser')
+  }
+});
+```
+
+When two flat patterns can match the same path, prefer moving the shared prefix into a nested route, where sorting is automatic.
+
+### Route Map Identity
+
+The route map is cached by identity when `router()` runs: nested matching and redirect scans read the cached snapshot, so mutating the registered object in place is invisible to them. Reconfigure by calling `router()` again with a fresh routes object.
+
+```typescript
+const routes = {
+  '/': () => currentView('Home')
+};
+
+// ❌ In-place mutation: nested routes and redirect strings keep the old snapshot
+routes['/new'] = () => currentView('New');
+
+// ✅ Fresh object: a new cache entry, every level sees the change
+router({ routes: { ...routes, '/new': () => currentView('New') } });
+```
 
 ### Router Return Value
 
@@ -241,15 +285,16 @@ Within nested routes, specific patterns take precedence over wildcards.
 
 ```typescript
 import { effect } from "@hellajs/core";
+import { route } from "@hellajs/router";
+
+const showUser = (params: Record<string, string>) => console.log(params);
 
 // ✅ The return value is the resolved route; read it directly
-const showUser = (params: Record<string, string>) => console.log(params);
-const { handler, params } = router({ routes: { '/users/:id': (params) => showUser(params) } });
+const { handler, params } = router({ routes: { '/users/:id': (p) => showUser(p) } });
 console.log(handler); // the matched handler function
 
 // ✅ Or react to later navigations inside an effect
-const showHome = () => console.log('home');
-router({ routes: { '/': () => showHome() } });
+router({ routes: { '/': () => {} } });
 effect(() => {
   const { path } = route();
   console.log(`Now at ${path}`);
@@ -302,7 +347,7 @@ const searchHandler = (params, query) => {
 ```typescript
 const authState = signal({ authenticated: false });
 const isAuthenticated = () => authState().authenticated;
-const currentView = (view: string) => console.log(view);
+const showView = (view: string) => console.log(view);
 
 router({
   routes: {
@@ -311,7 +356,7 @@ router({
         if (!isAuthenticated()) return false;
       },
       handler: () => {
-        currentView('ProtectedPage');
+        showView('ProtectedPage');
       }
     }
   }
@@ -321,6 +366,8 @@ router({
 Async guards block. A `Promise`-returning `before`/`leave` defers the commit: the route signal keeps the previous match with `route().pending === true` until the Promise settles, and its resolution is interpreted as the verdict. The URL, handler, and `after` hooks are untouched until then:
 
 ```typescript
+const someAsyncCheck = () => Promise.resolve(true);
+
 router({
   routes: {
     '/protected': {
@@ -328,9 +375,9 @@ router({
         const ok = await someAsyncCheck();
         return ok ? true : '/login';
       },
-      handler: () => currentView('ProtectedPage')
+      handler: () => showView('ProtectedPage')
     },
-    '/login': () => currentView('LoginPage')
+    '/login': () => showView('LoginPage')
   }
 });
 
@@ -384,11 +431,13 @@ Errors in `after` hooks are logged but do not affect the already-completed navig
 Async guard rejections cancel the deferred navigation and are logged; async handler/`after` rejections only log.
 
 ```typescript
+const validateSession = () => Promise.resolve(true);
+
 router({
   routes: {},
   hooks: {
     before: async () => {
-      await someAsyncCheck(); // A rejection here cancels the navigation and logs `[router] Global before:`
+      await validateSession(); // A rejection here cancels the navigation and logs `[router] Global before:`
     }
   }
 });

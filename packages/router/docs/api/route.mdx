@@ -2,6 +2,29 @@
 
 A reactive [`signal`](/reference/core/signal) containing current route information including path, parameters, query, and handler.
 
+## Basic Usage
+
+Access the `route` signal inside a reactive context to get the current path, parameters, and query string.
+
+```typescript
+import { effect } from '@hellajs/core';
+import { route } from '@hellajs/router';
+
+effect(() => {
+  const { path, params, query } = route();
+
+  console.log(`Current path: ${path}`);
+
+  if (params.id) {
+    console.log(`User ID from params: ${params.id}`);
+  }
+
+  if (query.sort) {
+    console.log(`Sort order from query: ${query.sort}`);
+  }
+});
+```
+
 ## API
 
 ```typescript
@@ -25,28 +48,7 @@ interface Crumb {
 }
 ```
 
-## Basic Usage
-
-Access the `route` signal inside a reactive context to get the current path, parameters, and query string.
-
-```typescript
-import { effect } from '@hellajs/core';
-import { route } from '@hellajs/router';
-
-effect(() => {
-  const { path, params, query } = route();
-  
-  console.log(`Current path: ${path}`);
-  
-  if (params.id) {
-    console.log(`User ID from params: ${params.id}`);
-  }
-  
-  if (query.sort) {
-    console.log(`Sort order from query: ${query.sort}`);
-  }
-});
-```
+- **Returns**: The current `RouteInfo`. Reading `route()` inside a reactive context (effect, computed, component body) subscribes it to later navigations.
 
 ## Key Concepts
 

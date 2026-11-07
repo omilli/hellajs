@@ -2,23 +2,6 @@
 
 Builds a typed, URL-encoded URL string from a route pattern, the same substitution and query serialization as `navigate`, without touching history.
 
-## API
-
-```typescript
-function href<T extends string>(
-  path: T,
-  options?: {
-    params?: ExtractParams<T>;
-    query?: Record<string, string>;
-  }
-): string
-```
-
-- `path`: The route pattern to build a URL from.
-- `options.params`: Parameters substituted into `:param` tokens. Type-checked against the pattern; a wrong key is a compile error.
-- `options.query`: Query parameters appended to the URL.
-- **Returns**: The built URL string.
-
 ## Basic Usage
 
 Same-origin `<a>` clicks are intercepted and routed through [`navigate`](/reference/router/navigate) by default, so `href()` paired with a plain anchor is the primary navigation path: no click handler, no hand-written template strings.
@@ -42,6 +25,23 @@ href('/users/:id', { params: { id: '123' }, query: { tab: 'overview' } });
 href('/search', { query: { q: 'hello world' } });
 // '/search?q=hello%20world'
 ```
+
+## API
+
+```typescript
+function href<T extends string>(
+  path: T,
+  options?: {
+    params?: ExtractParams<T>;
+    query?: Record<string, string>;
+  }
+): string
+```
+
+- `path`: The route pattern to build a URL from.
+- `options.params`: Parameters substituted into `:param` tokens. Type-checked against the pattern; a wrong key is a compile error.
+- `options.query`: Query parameters appended to the URL.
+- **Returns**: The built URL string.
 
 ## Key Concepts
 

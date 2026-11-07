@@ -20,14 +20,18 @@ const HomePage = () => <div>Home</div>;
 const AboutPage = () => <div>About</div>;
 const TodoDetail = ({ id }: { id?: string }) => <div>Todo {id}</div>;
 const NotFound = ({ attempted }: { attempted?: string }) => <div>Not found: {attempted}</div>;
-const UserTodo = ({ userId, todoId }: { userId?: string; todoId?: string }) => (
+type UserTodoProps = { userId?: string; todoId?: string };
+
+const UserTodo = ({ userId, todoId }: UserTodoProps) => (
   <div>Todo {todoId} of user {userId}</div>
 );
 const AdminDashboard = () => <div>Admin</div>;
 const UsersList = () => <div>Users</div>;
 const UserDetail = ({ id }: { id?: string }) => <div>User {id}</div>;
 const AdminSettings = () => <div>Settings</div>;
-const SearchResults = ({ term, sort }: { term?: string; sort?: string }) => (
+type SearchResultsProps = { term?: string; sort?: string };
+
+const SearchResults = ({ term, sort }: SearchResultsProps) => (
   <div>Results for {term} (sorted by {sort})</div>
 );
 const FileViewer = ({ path }: { path?: string }) => <div>File {path}</div>;
@@ -182,38 +186,59 @@ Key benefits of nested routes:
 - **Hook cascading**: parent hooks execute before child hooks, enabling guard patterns
 - **Shared layout**: parent handlers set up layout, children fill in content areas
 
-## Route Hooks
+## Matching Order
 
-Routes can be defined as objects with `before`, `after`, and `handler` properties for lifecycle control.
+Resolution runs a fixed pipeline with early exits: global `redirects` first, then string values in the route map, then nested routes, then flat routes, and finally `notFound`.
+
+The two matching phases order differently:
+
+- **Nested routes are sorted by specificity**: non-wildcard patterns before wildcard ones, deeper patterns before shallow ones. Map order does not matter.
+- **Flat routes match in insertion order**: the first pattern that matches wins, so list specific patterns before generic ones.
 
 ```jsx
-import { router, navigate } from '@hellajs/router';
+router({
+  routes: {
+    // ✅ Specific first: /users/admin gets its own route
+    '/users/admin': () => currentView(<AdminPanel />),
+    // Generic second: everything else under /users/:id
+    '/users/:id': (params) => currentView(<UserDetail id={params.id} />)
+  }
+});
+
+// ❌ Reversed, '/users/:id' would shadow '/users/admin' for every URL
+```
+
+A nested match always beats a flat one, regardless of map order. When two flat patterns compete for the same paths, move the shared prefix into a nested route and let the sort handle precedence.
+
+The route map is cached by identity when [`router`](/reference/router/router) runs. Mutating the registered object in place is invisible to nested matching and redirect scans; reconfigure by calling `router()` again with a fresh routes object.
+
+## Route Hooks
+
+Routes can be defined as objects with `before`, `after`, and `leave` properties for lifecycle control. Guards control navigation by what they **return**: `undefined` proceeds, `false` cancels, and a path string redirects.
+
+```jsx
+import { router } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
 const isAuthenticated = () => true;
 const trackPageView = (page: string) => console.log("viewed", page);
+const LoginPage = () => <div>Login</div>;
 const UserProfile = () => <div>User profile</div>;
-const Home = () => <div>Home</div>;
-const TodoList = () => <div>Todos</div>;
 const currentView = signal(<div>Loading…</div>);
 
 router({
   routes: {
+    '/login': () => currentView(<LoginPage />),
     '/profile': {
-      before: () => {
-        if (!isAuthenticated()) {
-          navigate('/login');
-        }
-      },
-      handler: () => {
-        if (!isAuthenticated()) return;
-        currentView(<UserProfile />);
-      },
+      before: () => (isAuthenticated() ? undefined : '/login'),
+      handler: () => currentView(<UserProfile />),
       after: () => trackPageView('profile')
     }
   }
 });
 ```
+
+Return the redirect path from the guard instead of calling [`navigate`](/reference/router/navigate) inside it. The returned string redirects with a history replace; a `navigate()` call inside the guard starts a second navigation while the first is still resolving, and the guard's own verdict commits on top of it.
 
 Hooks execute in cascade order for nested routes:
 
@@ -237,7 +262,7 @@ const currentView = signal(<div>Loading…</div>);
 
 router({
   routes: {
-    '/': () => currentView(<Home />)
+    '/': () => currentView(<HomePage />)
   },
   hooks: {
     before: () => {
@@ -429,6 +454,7 @@ The router supports two redirect mechanisms.
 import { router } from '@hellajs/router';
 
 const Archive = () => <div>Archive</div>;
+const TodoList = () => <div>Todos</div>;
 
 // String redirects: simplest form
 router({
@@ -572,7 +598,7 @@ router({
 
 See [`route`](/reference/router/route) for the complete `RouteInfo` structure.
 
-Set `inheritMeta: true` on the [`router()`](/reference/router/router) configuration to inherit parent meta through the nested route chain, the same [parent-to-leaf merge order](/learn/concepts/routing#nested-routes) as parameter inheritance. Child keys override parent keys on conflict, and inline meta from [`navigate()`](/reference/router/navigate) always wins over the inherited result. Without `inheritMeta`, only the leaf route's meta is exposed.
+Set `inheritMeta: true` on the [`router()`](/reference/router/router) configuration to inherit parent meta through the nested route chain, the same [parent-to-leaf merge order](#nested-routes) as parameter inheritance. Child keys override parent keys on conflict, and inline meta from [`navigate()`](/reference/router/navigate) always wins over the inherited result. Without `inheritMeta`, only the leaf route's meta is exposed.
 
 ```typescript
 import { router, route, navigate } from '@hellajs/router';

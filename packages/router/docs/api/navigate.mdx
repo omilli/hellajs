@@ -2,22 +2,6 @@
 
 Programmatically navigate to routes with dynamic parameters, query strings, scroll control, and metadata.
 
-## API
-
-```typescript
-function navigate<T extends string>(
-  path: T,
-  options?: {
-    params?: ExtractParams<T>;
-    query?: Record<string, string>;
-    replace?: boolean;
-    force?: boolean;
-    scroll?: ScrollBehavior | false;
-    meta?: Record<string, unknown>;
-  }
-): void
-```
-
 ## Basic Usage
 
 Use `navigate` to trigger navigation from event handlers, effects, or anywhere in your application logic.
@@ -36,6 +20,30 @@ navigate("/posts/:slug", { params: { slug: "hello-world" } });
 // Navigates to /search?q=reactive
 navigate("/search", { query: { q: "reactive" } });
 ```
+
+## API
+
+```typescript
+function navigate<T extends string>(path: T, options?: NavigateOptions<T>): void
+
+interface NavigateOptions<T extends string = string> {
+  params?: ExtractParams<T>;
+  query?: Params;
+  replace?: boolean;
+  force?: boolean;
+  scroll?: ScrollBehavior | false;
+  meta?: Record<string, unknown>;
+}
+```
+
+- `path`: The route pattern to navigate to.
+- `options.params`: Route parameters substituted into `:param` tokens with automatic URL encoding; the `"*"` key substitutes wildcards raw.
+- `options.query`: Query parameters appended to the URL, encoded.
+- `options.replace`: Replace the current history entry instead of pushing a new one. Default `false`.
+- `options.force`: Skip leave guards on this navigation; incoming `before` guards still run.
+- `options.scroll`: Scroll behavior override for this navigation.
+- `options.meta`: Metadata attached to this navigation; merges over route-level meta.
+- **Returns**: `void`. Navigation is synchronous: `route()` is updated before `navigate()` returns (unless an async guard defers the commit).
 
 ## Key Concepts
 
@@ -119,7 +127,20 @@ navigate('/login', { replace: true });
 Skip leave guards on this navigation: the route being left does not run its `leave` hooks (nor the global `hooks.leave`). The override path for unsaved-form flows; incoming `before` guards on the target still run.
 
 ```typescript
-// The editor's leave guard blocks while the form is dirty
+import { router, navigate } from '@hellajs/router';
+
+router({
+  routes: {
+    '/editor': {
+      leave: () => false, // blocks every departure, e.g. a dirty form
+      handler: () => {}
+    },
+    '/dashboard': () => {}
+  }
+});
+
+navigate('/editor');
+
 navigate('/dashboard'); // cancelled; route and URL unchanged
 
 // Override it; leave guards skipped, target guards still run
@@ -171,6 +192,8 @@ navigate('/profile', {
 
 ## Combined Example
 
+Every option in one call.
+
 ```typescript
 navigate('/users/:id', {
   params: { id: '123' },
@@ -205,6 +228,8 @@ effect(() => {
 });
 ```
 
+The exception is an async guard: a `Promise`-returning `before`/`leave` defers the commit with `route().pending === true` until it settles ([Pending State](/reference/router/route#pending-state)).
+
 ### Input Validation
 
 `navigate()` throws if `path` is `null`, `undefined`, or not a string. The error message follows the shape `[router] navigate: path must be a string, received <value>`.
@@ -230,7 +255,7 @@ navigate('/users/:id', { params: { userId: '123' } });
 // Results in: /users/
 
 // ✅ Best practice: validate parameters before navigation
-const navigateToUser = (userId) => {
+const navigateToUser = (userId: string) => {
   if (!userId) {
     console.error('User ID is required');
     return;

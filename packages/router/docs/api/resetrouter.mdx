@@ -1,6 +1,21 @@
 # resetRouter
 
-Factory-resets the router singleton state to defaults and detaches all event listeners.
+Factory-reset the router to its defaults and detach all event listeners.
+
+## Basic Usage
+
+Use `resetRouter` to tear down routing state for session reset, HMR, or test isolation. The URL is left untouched; call `navigate` explicitly if a new path is needed.
+
+```jsx
+import { router, navigate, resetRouter } from "@hellajs/router";
+
+router({ routes: { "/home": () => {} } });
+navigate("/home");
+
+// Session reset / HMR / between tests:
+resetRouter();
+// Config cleared, route() back to defaults, listeners detached; URL untouched
+```
 
 ## API
 
@@ -8,47 +23,43 @@ Factory-resets the router singleton state to defaults and detaches all event lis
 function resetRouter(): void
 ```
 
-## Basic Usage
-
-Use `resetRouter` to tear down routing state for session reset, HMR, or return-to-initial-state scenarios. The URL is left untouched; call `navigate` explicitly if a new path is needed.
-
-```jsx
-import { mount } from "@hellajs/dom";
-import { router, navigate, resetRouter } from "@hellajs/router";
-
-const HomePage = () => <div>Home</div>;
-
-router({ routes: { home: () => mount(<HomePage />) } });
-navigate("/home");
-
-// Session reset / HMR / return-to-home:
-resetRouter();
-// Singleton signals back to defaults + listeners detached; URL untouched
-```
+- **Returns**: `void`.
 
 ## Key Concepts
 
-### What gets reset
+### What Gets Reset
 
-`resetRouter` resets all ten singleton signals to their defaults: the nine config signals plus the `route` signal:
+Configuration returns to defaults and `route()` holds the default route state:
 
-- `routes` → `{}`
-- `hooks` → `{}`
-- `redirects` → `[]`
-- `notFound` → `null`
-- `mode` → `"history"`
-- `base` → `""`
-- `scrollBehavior` → `undefined`
-- `previousPath` → `"/"`
-- `inheritMeta` → `false`
-- `route` → default `RouteInfo`: `handler: null`, `params: {}`, `query: {}`, `path: "/"`, `pending: false`, `meta: undefined`, `crumbs: []` (frozen), `active` predicate reattached
+- Routes, hooks, redirects, and `notFound` are cleared
+- `mode` returns to `"history"`, `base` to `""`, `inheritMeta` to `false`, and scroll behavior is unset
+- `route()` reads the default `RouteInfo`: `handler: null`, `params: {}`, `query: {}`, `path: "/"`, `pending: false`, no `meta`, empty `crumbs` (the `active` predicate still works)
 
-Reading `route()` immediately after `resetRouter()` returns these defaults, not the prior match.
+Reading `route()` immediately after `resetRouter()` returns these defaults, not the prior match. In-flight deferred navigations (async guards awaiting) are abandoned: their commits never land.
 
-### What is NOT affected
+### Listener Cleanup
 
-- **`window.location` and `history`**: the URL and browser history are external state; `resetRouter` does not mutate them.
+The popstate/hashchange listener and the same-origin click interceptor attached by [`router()`](/reference/router/router) are detached, so a later re-init never double-fires handlers.
 
-### Listener cleanup
+### Reinitializing
 
-If `router()` was previously called, its popstate/hashchange and click interception listeners are detached so re-init does not double-fire handlers.
+Configure fresh routes by calling [`router()`](/reference/router/router) again after the reset. `resetRouter()` is the teardown half; `router()` is the setup half, and re-initializing in a URL mode replaces the previous listeners on its own.
+
+### URL and History Are External
+
+`resetRouter()` never mutates `window.location` or `history`. The address bar keeps whatever path it had; drive it with [`navigate()`](/reference/router/navigate) after re-init if the URL must move.
+
+## Important Considerations
+
+### Test Isolation
+
+Tests that call `router()` mutate shared singleton state. Call `resetRouter()` in `beforeEach`/`afterEach` (or between test files sharing one environment) so one test's route map, guards, and current route never leak into the next.
+
+```typescript
+import { afterEach } from "vitest";
+import { resetRouter } from "@hellajs/router";
+
+afterEach(() => {
+  resetRouter();
+});
+```

@@ -14,18 +14,6 @@ const HomePage = () => <div>Home</div>;
 const AboutPage = () => <div>About</div>;
 const UserProfile = ({ id }: { id?: string }) => <div>User {id}</div>;
 const NotFound = () => <div>Not found</div>;
-const DashboardLayout = () => <div>Dashboard</div>;
-const Overview = () => <div>Overview</div>;
-const UserDetail = ({ id }: { id?: string }) => <div>User {id}</div>;
-const SearchResults = ({ term, sort }: { term?: string; sort?: string }) => (
-  <div>Results for {term} (sorted by {sort})</div>
-);
-const Feed = () => <div>Feed</div>;
-const Settings = () => <div>Settings</div>;
-const Chat = () => <div>Chat</div>;
-const Docs = ({ path }: { path?: string }) => <div>Docs {path}</div>;
-const Users = () => <div>Users</div>;
-const Profile = ({ id }: { id?: string }) => <div>Profile {id}</div>;
 const currentView = signal(<div>Loading…</div>);
 
 router({
@@ -185,7 +173,9 @@ Query parameters are parsed automatically and passed as the second argument. Pas
 import { router, navigate } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
-const SearchResults = ({ term, sort }: { term?: string; sort?: string }) => <div>Results for {term} (sorted by {sort})</div>;
+type SearchResultsProps = { term?: string; sort?: string };
+
+const SearchResults = ({ term, sort }: SearchResultsProps) => <div>Results for {term} (sorted by {sort})</div>;
 const currentView = signal(<div>Loading…</div>);
 
 router({
@@ -317,19 +307,23 @@ router({
   }
 });
 
-const navItems = [
+type NavItem = { path: string; label: string };
+
+const navItems: NavItem[] = [
   { path: '/dashboard', label: 'Dashboard' },
   { path: '/dashboard/users', label: 'Users' },
   { path: '/dashboard/settings', label: 'Settings' }
 ];
 
-<nav>
-  {navItems.map(item => (
-    <a href={item.path} class={route().active(item.path) ? 'active' : ''}>
-      {item.label}
-    </a>
-  ))}
-</nav>
+const Nav = () => (
+  <nav>
+    {navItems.map(item => (
+      <a href={item.path} class={route().active(item.path) ? 'active' : ''}>
+        {item.label}
+      </a>
+    ))}
+  </nav>
+);
 ```
 
 ### Breadcrumbs
@@ -337,13 +331,14 @@ const navItems = [
 Render a breadcrumb trail from [`route`](/reference/router/route)`().crumbs`. Each crumb's `path` is a linkable href; `segment` keys into a label dictionary.
 
 ```jsx
-import { router, route, navigate } from '@hellajs/router';
+import { router, route } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
 const Profile = ({ id }: { id?: string }) => <div>Profile {id}</div>;
 const currentView = signal(<div>Loading…</div>);
+// segment is the route-map key at each nesting level, so labels mirror the map
 const labels: Record<string, string> = {
-  '/admin': 'Admin', '/admin/users': 'Users', '/admin/users/:id': 'Profile'
+  '/admin': 'Admin', '/users': 'Users', '/:id': 'Profile'
 };
 
 router({
@@ -354,16 +349,16 @@ router({
   }
 });
 
-// crumbs is parent-to-leaf; each crumb.path is a valid href
-<ol class="breadcrumbs">
-  {route().crumbs.map(crumb => (
-    <li>
-      <a href={crumb.path} on:click={(e) => { e.preventDefault(); navigate(crumb.path); }}>
-        {labels[crumb.segment] || crumb.segment}
-      </a>
-    </li>
-  ))}
-</ol>
+// crumbs is parent-to-leaf; each crumb.path is a valid, intercepted href
+const Breadcrumbs = () => (
+  <ol class="breadcrumbs">
+    {route().crumbs.map(crumb => (
+      <li>
+        <a href={crumb.path}>{labels[crumb.segment] || crumb.segment}</a>
+      </li>
+    ))}
+  </ol>
+);
 ```
 
 ### Shared App
@@ -382,11 +377,11 @@ const User = ({ id }: { id: string }) => <h1>User {id}</h1>;
 const NotFound = () => <h1>Not Found</h1>;
 
 const routes = {
-  '/': () => currentView(Home()),
-  '/users/:id': (params: Params) => currentView(User({ id: params.id ?? '' }))
+  '/': () => currentView(<Home />),
+  '/users/:id': (params: Params) => currentView(<User id={params.id ?? ''} />)
 };
 
-const notFound = () => currentView(NotFound());
+const notFound = () => currentView(<NotFound />);
 
 const App = () => (
   <>
@@ -444,7 +439,7 @@ const Profile = ({ id }: { id: string }) => <h1>{() => loadName(id)}</h1>
 const currentView = signal(<h1>Loading…</h1>);
 const routes = {
   '/': () => currentView(<h1>Home</h1>),
-  '/users/:id': (params: Params) => currentView(Profile({ id: params.id ?? '' }))
+  '/users/:id': (params: Params) => currentView(<Profile id={params.id ?? ''} />)
 };
 const App = () => <main>{currentView}</main>;
 
@@ -480,7 +475,7 @@ const Profile = ({ id }: { id: string }) => (
 
 const currentView = signal(<h1>Loading…</h1>);
 const routes = {
-  '/users/:id': (params: Params) => currentView(Profile({ id: params.id ?? '' }))
+  '/users/:id': (params: Params) => currentView(<Profile id={params.id ?? ''} />)
 };
 const App = () => <main>{currentView}</main>;
 
@@ -504,7 +499,7 @@ Streamed [`<Suspense>`](/reference/dom/suspense) regions stage their resolved ch
 
 ### Keep Handlers Pure
 
-Route handlers should be pure state-setters (`() => currentView(View())`). Put side effects (analytics, subscriptions, `localStorage`) in component [`effect`](/reference/core/effect) bodies, not in the handler: [`ssr`](/reference/ssr/ssr) walks the tree once and never flushes the scheduler, so effects do not run during the server render, only on the client after [`hydrate`](/reference/dom/hydrate). The initial route's handler fires on both the server render and the client hydrate, harmless for a pure setter, visible for an impure one.
+Route handlers should be pure state-setters (`() => currentView(<View />)`). Put side effects (analytics, subscriptions, `localStorage`) in component [`effect`](/reference/core/effect) bodies, not in the handler: [`ssr`](/reference/ssr/ssr) walks the tree once and never flushes the scheduler, so effects do not run during the server render, only on the client after [`hydrate`](/reference/dom/hydrate). The initial route's handler fires on both the server render and the client hydrate, harmless for a pure setter, visible for an impure one.
 
 ### Concurrency
 
