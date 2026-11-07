@@ -174,6 +174,33 @@ export function clearRenderedNodes(nodes: Node[] | undefined, parent: Node) {
 
 /**
  * @internal
+ * Clears a region's live DOM span: every child between `lead` (exclusive) and `anchor`
+ * (exclusive) is cleaned and removed. Span-walking, not array-walking: nodes a nested
+ * region inserted or removed after this region's last run are handled by construction —
+ * live children are removed whatever tracked them, detached or portal-moved nodes are
+ * skipped (they are no longer children), and no stale bookkeeping can throw. The marker
+ * pair (persistent empty text nodes) bounds the walk so foreign siblings outside the span
+ * stay untouched.
+ * @param lead The region's persistent leading marker node
+ * @param anchor The region's persistent trailing anchor node
+ */
+export function clearRegionSpan(lead: Node, anchor: Node) {
+  const parent = anchor.parentNode;
+  if (!parent) return;
+  let node = anchor.previousSibling;
+  while (node && node !== lead) {
+    const prev = node.previousSibling;
+    cleanupSubtree(node);
+    // A component cleanup may remove span siblings itself (ForEach's anchor
+    // cleanup clears its items) or the node may have been moved out - remove
+    // only what is still this parent's child
+    if (node.parentNode === parent) parent.removeChild(node);
+    node = prev;
+  }
+}
+
+/**
+ * @internal
  * Resolves a HellaChild to a DOM Node with reactive support. A `HellaChild[]` (compiled JSX
  * children arrive as an array) mounts each child into a `DocumentFragment`, mirroring the
  * ssr `walkChildren` array branch.
@@ -232,17 +259,19 @@ export function resolveNode(value: HellaChild | HellaChild[], parent?: Node, ns?
         if (parent) popBuildParent();
       }
     }
-    // A reactive child is a region, not text: deep-resolve, then swap nodes or text ahead of a
-    // persistent anchor. The anchor rides a detached carrier fragment so the effect's first
-    // (synchronous) run inserts into it before the caller mounts the returned fragment — later
-    // runs find the live parent, and a removed region bails on the anchor-parent null check.
+    // A reactive child is a region, not text: deep-resolve, then swap nodes or text inside a
+    // persistent marker pair - lead and anchor, both empty text nodes. The pair rides a
+    // detached carrier fragment so the effect's first (synchronous) run inserts into it
+    // before the caller mounts the returned fragment - later runs find the live parent, and
+    // a removed region bails on the anchor-parent null check.
+    const lead = document.createTextNode("");
     const anchor = document.createTextNode("");
     const carrier = document.createDocumentFragment();
+    carrier.appendChild(lead);
     carrier.appendChild(anchor);
     const effectNode = parent || anchor;
-    let nodes: Node[] | undefined = undefined;
     registry.addEffect(effectNode, () => {
-      nodes = runReactiveChild(anchor, nodes, value, effectNode, undefined, ns);
+      runReactiveChild(lead, anchor, value, effectNode, undefined, ns);
     });
     return carrier;
   }
@@ -252,53 +281,52 @@ export function resolveNode(value: HellaChild | HellaChild[], parent?: Node, ns?
 /**
  * @internal
  * Shared effect body for every reactive child region — direct element children and
- * children-array entries alike: deep-resolves the child, clears the previous run's nodes, and
- * mounts the classified value at the region anchor. A resolved `isDynamic` render function
- * dispatches against a proxy parent whose appends are tracked and inserted before the anchor;
- * node-valued results mount ahead of it; text settles INTO the anchor — the anchor doubles as
- * the persistent text node, so text regions keep their DOM node identity across updates. On
- * the effect's first (synchronous) run the anchor may still sit in `resolveNode`'s detached
- * carrier fragment — insertion then targets that fragment, and later runs find the live parent.
- * @param anchor The persistent empty text node marking the region's position
- * @param nodes The region's live node list — cleared and refilled every run; undefined
- * until the first node push lazily allocates it (text-only regions never allocate)
+ * children-array entries alike: deep-resolves the child, clears the live DOM span between
+ * the region's markers, and mounts the classified value before the anchor. A resolved
+ * `isDynamic` render function dispatches against a proxy parent whose appends insert before
+ * the anchor; node-valued results mount ahead of it; text settles INTO the lead — the
+ * leading marker doubles as the persistent text node, so text regions keep their DOM node
+ * identity across updates. On the effect's first (synchronous) run the anchor may still sit
+ * in `resolveNode`'s detached carrier fragment — insertion then targets that fragment, and later
+ * runs find the live parent.
+ * @param lead The persistent empty text node bounding the region's start (exclusive); text
+ * settles into it
+ * @param anchor The persistent empty text node marking the region's end; content inserts
+ * before it
  * @param child The unresolved function child
  * @param parent The effect-registration node, and registration parent for nested regions
  * @param currentBoundary The nearest error boundary element, or undefined when unknown
  * @param ns The namespace URI inherited at the insertion site
- * @returns The region's node list after this run — the caller's closure rebinds it for the next run
  */
 export function runReactiveChild(
+  lead: Node,
   anchor: Node,
-  nodes: Node[] | undefined,
   child: unknown,
   parent: Node,
   currentBoundary: Element | undefined,
   ns?: string,
-): Node[] | undefined {
+): void {
   const actualParent = anchor.parentNode as HellaElement;
-  if (!actualParent) return nodes;
+  if (!actualParent) return;
 
   try {
     const resolved = resolveDeep(child);
 
-    clearRenderedNodes(nodes, actualParent);
+    clearRegionSpan(lead, anchor);
 
     if (isFunction(resolved) && (resolved as RenderFn).isDynamic) {
-      anchor.textContent = "";
-      // A component()-wrapped meta's wrapper scope disposes with the region anchor.
+      lead.textContent = "";
+      // A component()-wrapped meta's wrapper scope disposes with the region's
+      // leading marker - the persistent first node.
       const renderScope = (resolved as { componentScope?: () => void }).componentScope;
       if (renderScope) {
-        const anchorState = getState(anchor);
-        anchorState.componentScope = chainScopes(anchorState.componentScope, renderScope);
+        const leadState = getState(lead);
+        leadState.componentScope = chainScopes(leadState.componentScope, renderScope);
       }
       const proxyParent = new Proxy(actualParent as Element, {
         get(target, prop) {
           if (prop === "appendChild") {
-            return (node: Node) => {
-              (nodes ??= []).push(node);
-              return target.insertBefore(node, anchor);
-            };
+            return (node: Node) => target.insertBefore(node, anchor);
           }
           const val = (target as unknown as Record<string, unknown>)[prop as string];
           return isFunction(val) ? (val as (...args: unknown[]) => unknown).bind(target) : val;
@@ -309,7 +337,7 @@ export function runReactiveChild(
       pushBuildParent(actualParent);
       (resolved as RenderFn)(proxyParent as HellaElement);
       popBuildParent();
-      return nodes;
+      return;
     }
 
     if (
@@ -318,7 +346,7 @@ export function runReactiveChild(
       isTemplateBuild(resolved) ||
       (isObject(resolved) && "raw" in resolved)
     ) {
-      anchor.textContent = "";
+      lead.textContent = "";
       pushBuildParent(actualParent);
       const newNode = resolveNode(resolved as HellaChild, parent, ns);
       popBuildParent();
@@ -326,17 +354,15 @@ export function runReactiveChild(
       if (newNode.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
         let fragChild: ChildNode | null;
         while ((fragChild = newNode.firstChild)) {
-          (nodes ??= []).push(fragChild);
           actualParent.insertBefore(fragChild, anchor);
         }
       } else {
-        (nodes ??= []).push(newNode);
         actualParent.insertBefore(newNode, anchor);
       }
-      return nodes;
+      return;
     }
 
-    anchor.textContent = toText(resolved);
+    lead.textContent = toText(resolved);
   } catch (e) {
     // The runtime resolves the boundary at run time (no construction-time threading):
     // the nearest boundary of the live parent, falling back to the caller's threaded one.
@@ -344,15 +370,13 @@ export function runReactiveChild(
     const config = getBoundaryConfig(boundary);
     const fallback = dispatchError(toError(e), { phase: "mount", element: actualParent, config });
     if (fallback) {
-      clearRenderedNodes(nodes, actualParent);
-      anchor.textContent = "";
+      clearRegionSpan(lead, anchor);
+      lead.textContent = "";
 
       pushBuildParent(actualParent);
       const fbNode = constructFresh(() => resolveNode(fallback, parent, ns));
       popBuildParent();
-      (nodes ??= []).push(fbNode);
       actualParent.insertBefore(fbNode, anchor);
     }
   }
-  return nodes;
 }

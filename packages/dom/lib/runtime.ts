@@ -519,12 +519,13 @@ export function child(parent: Element, value: unknown): void {
       claims!.claimAndAdoptRegion(parent, value);
       return;
     }
+    const lead = document.createTextNode("");
     const anchor = document.createTextNode("");
+    parent.appendChild(lead);
     parent.appendChild(anchor);
     const ns = childNamespaceOf(parent);
-    let nodes: Node[] | undefined = undefined;
     registry.addEffect(parent, () => {
-      nodes = runReactiveChild(anchor, nodes, value, parent, undefined, ns);
+      runReactiveChild(lead, anchor, value, parent, undefined, ns);
     });
     return;
   }

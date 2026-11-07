@@ -8,6 +8,7 @@ import {
   resolveNode,
   getBoundaryConfig,
   clearRenderedNodes,
+  clearRegionSpan,
   childNamespaceOf,
   HTML_NS,
 } from "./render";
@@ -204,10 +205,13 @@ setDeferredAdopters(adoptRegion, swapSuspenseStage);
 /**
  * Sets up a reactive (non-dynamic) child's effect against a marker-bounded region: the server-rendered
  * nodes are ADOPTED as the initial render (first run skipped); subsequent signal changes clear + render
- * fresh, incl. the isDynamic-resolved `Proxy` branch — safe here because
- * `clearRenderedNodes` runs before re-rendering on subsequent runs. Each re-run first drains any
- * component state left on the persistent region anchor (`drainAnchorCleanup` — a no-op for the common
- * text/element case), so a dynamic component's effect and disposers never outlive their run.
+ * fresh, incl. the isDynamic-resolved `Proxy` branch — safe here because the region's leading span
+ * marker is seated (before the anchor) at the first clearing re-run: that run removes the adopted
+ * nodes by their gathered array (they sit AFTER the anchor — it replaced the open marker), and every
+ * later run clears the live DOM span between lead and anchor (`clearRegionSpan`) — fresh content
+ * always inserts before the anchor. Each re-run first drains any component state left on the
+ * persistent region anchor (`drainAnchorCleanup` — a no-op for the common text/element case), so a
+ * dynamic component's effect and disposers never outlive their run.
  * @internal Exported for the runtime's adoption machinery — the compiled text/child arms drive it.
  */
 export function adoptReactiveRegion(
@@ -219,6 +223,14 @@ export function adoptReactiveRegion(
 ): void {
   const renderedNodes: Node[] = existing;
   let firstRun = existing.length > 0;
+  // The leading span bound. NOT seated at adoption: the region anchor sits at the
+  // open-marker position and must stay the region's first node while adopted content
+  // lives (scope carriers are captured off that position). Seated at the first clearing
+  // re-run, before the anchor - adopted content sits after the anchor and is cleared by
+  // its gathered array; fresh content inserts before the anchor, inside the (lead, anchor)
+  // span every later run clears.
+  const lead = document.createTextNode("");
+  let leadSeated = false;
   registry.addEffect(parent, () => {
     drainAnchorCleanup(anchor);
     const actualParent = anchor.parentNode;
@@ -295,15 +307,21 @@ export function adoptReactiveRegion(
         return;
       }
       firstRun = false;
-      clearRenderedNodes(renderedNodes, actualParent);
+      if (!leadSeated) {
+        leadSeated = true;
+        actualParent.insertBefore(lead, anchor);
+      }
+      if (renderedNodes.length) {
+        clearRenderedNodes(renderedNodes, actualParent);
+        renderedNodes.length = 0;
+      } else {
+        clearRegionSpan(lead, anchor);
+      }
       if (isDyn) {
         const proxyParent = new Proxy(actualParent as Element, {
           get(target, prop) {
             if (prop === "appendChild") {
-              return (node: Node) => {
-                renderedNodes.push(node);
-                return target.insertBefore(node, anchor);
-              };
+              return (node: Node) => target.insertBefore(node, anchor);
             }
             const val = (target as unknown as Record<string, unknown>)[prop as string];
             return isFunction(val) ? (val as (...args: unknown[]) => unknown).bind(target) : val;
@@ -326,12 +344,10 @@ export function adoptReactiveRegion(
         if (node.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
           let f: ChildNode | null = node.firstChild;
           while (f) {
-            renderedNodes.push(f);
             actualParent.insertBefore(f, anchor);
             f = node.firstChild;
           }
         } else {
-          renderedNodes.push(node);
           actualParent.insertBefore(node, anchor);
         }
         return;
