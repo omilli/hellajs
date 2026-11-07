@@ -26,14 +26,12 @@ css({
   },
 });
 
-const ThemeSwitcher = () => <>
-  <h1>Theme Switcher</h1>
-  <button on:click={() => isDark(!isDark())}>
-    {isDark() ? "☀️ Light" : "🌙 Dark"}
-  </button>
-  <p>
-    Toggle the button to switch themes.
-  </p>
-</>
+const ThemeSwitcher = () => (
+  <>
+    <h1>Theme Switcher</h1>
+    <button on:click={() => isDark(!isDark())}>{isDark() ? "☀️ Light" : "🌙 Dark"}</button>
+    <p>Toggle the button to switch themes.</p>
+  </>
+);
 
 mount(ThemeSwitcher, "#app");
