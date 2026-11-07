@@ -10,31 +10,19 @@ css({
 });
 
 const app = style({
-  width: "100%",
   maxWidth: "30rem",
   margin: "0 auto",
-  padding: "1rem",
-  h1: {
-    marginBottom: "1rem",
-  },
-  button: {
-    cursor: "pointer",
-  },
 });
 
 const row = style({
   display: "flex",
   gap: "0.5rem",
+  alignItems: "center",
 });
 
 const list = style({
   listStyle: "none",
   padding: 0,
-  li: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.5rem",
-  },
 });
 
 const flex = style({
@@ -72,8 +60,6 @@ const TodoApp = () => {
   const todos = signal<Todo[]>(loadTodos());
   const newTodoText = signal("");
   const filter = signal<FilterType>("all");
-  const editingId = signal<number | null>(null);
-  const editText = signal("");
 
   effect(() => {
     localStorage.setItem("hellajs-todos", JSON.stringify(todos()));
@@ -128,38 +114,6 @@ const TodoApp = () => {
     todos(todos().filter((todo) => !todo.completed));
   };
 
-  const startEditing = (id: number, currentText: string) => {
-    editingId(id);
-    editText(currentText);
-  };
-
-  const saveEdit = () => {
-    const id: number = editingId()!;
-    const newText = editText().trim();
-    // One flush for the conditional list write and the two edit-state resets.
-    batch(() => {
-      if (!newText) {
-        removeTodo(id);
-      } else {
-        todos(todos().map((todo) => (todo.id === id ? { ...todo, text: newText } : todo)));
-      }
-      editingId(null);
-      editText("");
-    });
-  };
-
-  const cancelEdit = () => {
-    batch(() => {
-      editingId(null);
-      editText("");
-    });
-  };
-
-  const handleEditKeydown = (e: KeyboardEvent) => {
-    if (e.key === "Enter") saveEdit();
-    if (e.key === "Escape") cancelEdit();
-  };
-
   return (
     <div class={app}>
       <h1>Todo App</h1>
@@ -172,7 +126,6 @@ const TodoApp = () => {
           type="text"
           value={newTodoText}
           on:input={(e) => newTodoText((e.target as HTMLInputElement).value)}
-          on:keydown={(e) => e.key === "Enter" && addTodo()}
           placeholder="What needs to be done?"
           class={flex}
         />
@@ -190,39 +143,14 @@ const TodoApp = () => {
         <ForEach
           each={filteredTodos}
           use={(todo) => (
-            <li key={todo.id}>
+            <li class={row} key={todo.id}>
               <input
                 type="checkbox"
                 checked={todo.completed}
                 on:change={() => toggleTodo(todo.id)}
               />
-              {editingId() === todo.id ? (
-                <input
-                  type="text"
-                  value={editText}
-                  on:input={(e) => editText((e.target as HTMLInputElement).value)}
-                  on:keydown={handleEditKeydown}
-                  on:blur={saveEdit}
-                  class={flex}
-                  autofocus
-                />
-              ) : (
-                <span
-                  class={[flex, todo.completed && done]}
-                  on:dblclick={() => startEditing(todo.id, todo.text)}
-                  title="Double-click to edit"
-                >
-                  {todo.text}
-                </span>
-              )}
-              {editingId() === todo.id ? (
-                <>
-                  <button on:click={saveEdit}>✓</button>
-                  <button on:click={cancelEdit}>✕</button>
-                </>
-              ) : (
-                <button on:click={() => removeTodo(todo.id)}>Delete</button>
-              )}
+              <span class={[flex, todo.completed && done]}>{todo.text}</span>
+              <button on:click={() => removeTodo(todo.id)}>Delete</button>
             </li>
           )}
         />

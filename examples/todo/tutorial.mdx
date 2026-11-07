@@ -13,7 +13,6 @@ Jump to the [Complete Code](#complete-code) for the finished application.
 - **Form handling**:  Capturing and validating user input
 - **Conditional rendering**:  Showing different UI based on state
 - **Computed filtering**:  Deriving filtered views from data
-- **Inline editing**:  Advanced interaction patterns
 - **Data persistence**:  Saving state across browser sessions
 - **Effects for side actions**:  Document title updates and more
 
@@ -119,31 +118,19 @@ css({
 });
 
 const app = style({
-  width: "100%",
   maxWidth: "30rem",
   margin: "0 auto",
-  padding: "1rem",
-  h1: {
-    marginBottom: "1rem",
-  },
-  button: {
-    cursor: "pointer",
-  },
 });
 
 const row = style({
   display: "flex",
   gap: "0.5rem",
+  alignItems: "center",
 });
 
 const list = style({
   listStyle: "none",
   padding: 0,
-  li: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.5rem",
-  },
 });
 
 const flex = style({
@@ -161,7 +148,7 @@ const done = style({
 **Code Explanation**
 - **`css({ body: { ... } })`**:  Registers global element selectors
 - **`style()`**:  Scopes the styles under a generated class and returns it for `class={app}`
-- **`h1` / `li`**:  Nested selectors scope descendants under the generated class
+- **`alignItems: "center"`**:  Vertically centers the children of every `row` flex container
 - **`class={[flex, todo.completed && done]}`**:  Combines class names in an array: `done` applies only when the todo is completed
 
 ## Todo Actions
@@ -243,7 +230,6 @@ const TodoApp = () => {
           type="text"
           value={newTodoText}
           on:input={(e) => newTodoText((e.target as HTMLInputElement).value)}
-          on:keydown={(e) => e.key === "Enter" && addTodo()}
           placeholder="What needs to be done?"
           class={flex}
         />
@@ -252,7 +238,7 @@ const TodoApp = () => {
 
       <ul class={list}>
         <ForEach each={todos} use={(todo) => (
-          <li key={todo.id}>
+          <li class={row} key={todo.id}>
             <input
               type="checkbox"
               checked={todo.completed}
@@ -285,8 +271,8 @@ Your app will be running at `http://localhost:5173`. Add some todos and watch th
 **Code Explanation**
 
 - **`value={newTodoText}`**:  Two-way binding for the input field
-- **`on:keydown={e => e.key === 'Enter' && addTodo()}`**:  Submits on Enter key
 - **[`<ForEach>`](/reference/dom/foreach) `each={todos} use={(todo) => ...}`**:  Renders the list with optimized diffing
+- **`class={row}` on `<li>`**:  Reuses the flex row style so each todo item lays out like the form rows
 - **`class={['flex', todo.completed && 'done']}`**:  Conditionally adds the `done` class when completed
 - **`{todos().length === 0 && (...)}`**:  Conditional empty state
 
@@ -387,7 +373,7 @@ Update `<ForEach>` to use `filteredTodos` instead of `todos`, and update the emp
 <ul class={list}>
   {/* only the source changes: todos -> filteredTodos */}
   <ForEach each={filteredTodos} use={(todo) => (
-    <li key={todo.id}>
+    <li class={row} key={todo.id}>
       {/* ... same item markup as before ... */}
     </li>
   )} />
@@ -416,118 +402,6 @@ Update `<ForEach>` to use `filteredTodos` instead of `todos`, and update the emp
 
 **Inefficient:** `const filtered = () => todos().filter(...)` (recalculates every time)
 
-## Interactive Editing
-
-Now let's add inline editing. This introduces editing state management and shows how multiple signals work together.
-
-Add two new signals for tracking edit state:
-
-```tsx
-const TodoApp = () => {
-  // after this signal
-  const filter = /**/
-  // add these signals
-  const editingId = signal<number | null>(null);
-  const editText = signal("");
-}
-```
-
-Add the editing functions:
-
-```tsx
-const TodoApp = () => {
-  // after the existing actions
-  const removeTodo = (id: number) => {
-    //...
-  };
-
-  const startEditing = (id: number, currentText: string) => {
-    editingId(id);
-    editText(currentText);
-  };
-
-  const saveEdit = () => {
-    const id: number = editingId()!;
-    const newText = editText().trim();
-    // one flush for the list write and the two edit-state resets
-    batch(() => {
-      if (!newText) {
-        removeTodo(id);
-      } else {
-        todos(todos().map((todo) => (todo.id === id ? { ...todo, text: newText } : todo)));
-      }
-      editingId(null);
-      editText("");
-    });
-  };
-
-  const cancelEdit = () => {
-    batch(() => {
-      editingId(null);
-      editText("");
-    });
-  };
-
-  const handleEditKeydown = (e: KeyboardEvent) => {
-    if (e.key === "Enter") saveEdit();
-    if (e.key === "Escape") cancelEdit();
-  };
-
-  //...
-}
-```
-
-Update the list item JSX inside `<ForEach>` to support edit mode:
-
-```tsx
-<ForEach each={filteredTodos} use={(todo) => (
-  <li key={todo.id}>
-    <input
-      type="checkbox"
-      checked={todo.completed}
-      on:change={() => toggleTodo(todo.id)}
-    />
-    {editingId() === todo.id ? (
-      <input
-        type="text"
-        value={editText}
-        on:input={e => editText((e.target as HTMLInputElement).value)}
-        on:keydown={handleEditKeydown}
-        on:blur={saveEdit}
-        class={flex}
-        autofocus
-      />
-    ) : (
-      <span
-        class={[flex, todo.completed && done]}
-        on:dblclick={() => startEditing(todo.id, todo.text)}
-        title="Double-click to edit"
-      >
-        {todo.text}
-      </span>
-    )}
-    {editingId() === todo.id ? (
-      <>
-        <button on:click={saveEdit}>✓</button>
-        <button on:click={cancelEdit}>✕</button>
-      </>
-    ) : (
-      <button on:click={() => removeTodo(todo.id)}>Delete</button>
-    )}
-  </li>
-)} />
-```
-
-**Code Explanation**
-
-- **`editingId` signal**:  Tracks which todo is currently being edited (null when none)
-- **`editText` signal**:  Stores the temporary text while editing
-- **[`batch`](/reference/core/batch)`(() => { ... })`**:  The edit-state resets land in the same flush as the list write, so persistence runs once per edit
-- **Conditional rendering**:  `{editingId() === todo.id ? (...) : (...)}` switches between edit and display mode
-- **Event coordination**:  `on:dblclick`, `on:keydown`, and `on:blur` work together for editing
-- **State coordination**:  Multiple signals (`editingId`, `editText`, `todos`) work together seamlessly
-- **Smart validation**:  Empty text triggers todo deletion instead of saving empty content
-
 ## State Persistence
 
 Now let's make the app production-ready by adding data persistence and user experience enhancements. This showcases how effects handle side actions elegantly.
@@ -536,7 +410,7 @@ Update the import to include `effect`:
 
 ```tsx
 //... import effects at the top
-import { signal, computed, effect } from "@hellajs/core";
+import { batch, signal, computed, effect } from "@hellajs/core";
 ```
 
 Add a `loadTodos` function outside the component:
@@ -572,7 +446,7 @@ const TodoApp = () => {
 
   // Persist todos to localStorage
   effect(() => {
-    localStorage.setItem('hellajs-todos', JSON.stringify(todos()));
+    localStorage.setItem("hellajs-todos", JSON.stringify(todos()));
   });
 
   // Update document title
@@ -655,31 +529,19 @@ css({
 });
 
 const app = style({
-  width: "100%",
   maxWidth: "30rem",
   margin: "0 auto",
-  padding: "1rem",
-  h1: {
-    marginBottom: "1rem",
-  },
-  button: {
-    cursor: "pointer",
-  },
 });
 
 const row = style({
   display: "flex",
   gap: "0.5rem",
+  alignItems: "center",
 });
 
 const list = style({
   listStyle: "none",
   padding: 0,
-  li: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.5rem",
-  },
 });
 
 const flex = style({
@@ -717,8 +579,6 @@ const TodoApp = () => {
   const todos = signal<Todo[]>(loadTodos());
   const newTodoText = signal("");
   const filter = signal<FilterType>("all");
-  const editingId = signal<number | null>(null);
-  const editText = signal("");
 
   effect(() => {
     localStorage.setItem("hellajs-todos", JSON.stringify(todos()));
@@ -773,38 +633,6 @@ const TodoApp = () => {
     todos(todos().filter((todo) => !todo.completed));
   };
 
-  const startEditing = (id: number, currentText: string) => {
-    editingId(id);
-    editText(currentText);
-  };
-
-  const saveEdit = () => {
-    const id: number = editingId()!;
-    const newText = editText().trim();
-    // One flush for the conditional list write and the two edit-state resets.
-    batch(() => {
-      if (!newText) {
-        removeTodo(id);
-      } else {
-        todos(todos().map((todo) => (todo.id === id ? { ...todo, text: newText } : todo)));
-      }
-      editingId(null);
-      editText("");
-    });
-  };
-
-  const cancelEdit = () => {
-    batch(() => {
-      editingId(null);
-      editText("");
-    });
-  };
-
-  const handleEditKeydown = (e: KeyboardEvent) => {
-    if (e.key === "Enter") saveEdit();
-    if (e.key === "Escape") cancelEdit();
-  };
-
   return (
     <div class={app}>
       <h1>Todo App</h1>
@@ -817,7 +645,6 @@ const TodoApp = () => {
           type="text"
           value={newTodoText}
           on:input={(e) => newTodoText((e.target as HTMLInputElement).value)}
-          on:keydown={(e) => e.key === "Enter" && addTodo()}
           placeholder="What needs to be done?"
           class={flex}
         />
@@ -835,39 +662,14 @@ const TodoApp = () => {
         <ForEach
           each={filteredTodos}
           use={(todo) => (
-            <li key={todo.id}>
+            <li class={row} key={todo.id}>
               <input
                 type="checkbox"
                 checked={todo.completed}
                 on:change={() => toggleTodo(todo.id)}
               />
-              {editingId() === todo.id ? (
-                <input
-                  type="text"
-                  value={editText}
-                  on:input={(e) => editText((e.target as HTMLInputElement).value)}
-                  on:keydown={handleEditKeydown}
-                  on:blur={saveEdit}
-                  class={flex}
-                  autofocus
-                />
-              ) : (
-                <span
-                  class={[flex, todo.completed && done]}
-                  on:dblclick={() => startEditing(todo.id, todo.text)}
-                  title="Double-click to edit"
-                >
-                  {todo.text}
-                </span>
-              )}
-              {editingId() === todo.id ? (
-                <>
-                  <button on:click={saveEdit}>✓</button>
-                  <button on:click={cancelEdit}>✕</button>
-                </>
-              ) : (
-                <button on:click={() => removeTodo(todo.id)}>Delete</button>
-              )}
+              <span class={[flex, todo.completed && done]}>{todo.text}</span>
+              <button on:click={() => removeTodo(todo.id)}>Delete</button>
             </li>
           )}
         />
