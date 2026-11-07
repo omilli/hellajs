@@ -4,7 +4,8 @@ import { $ref } from "@hellajs/dom";
 export default function NameSync() {
   const name = signal("User");
 
-  $ref("#name-input").bind(name)
+  $ref("#name-input")
+    .bind(name)
     .on("input", (event) => {
       const input = event.target as HTMLInputElement;
       name(input.value);
