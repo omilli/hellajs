@@ -175,27 +175,35 @@ export function clearRenderedNodes(nodes: Node[] | undefined, parent: Node) {
 /**
  * @internal
  * Clears a region's live DOM span: every child between `lead` (exclusive) and `anchor`
- * (exclusive) is cleaned and removed. Span-walking, not array-walking: nodes a nested
- * region inserted or removed after this region's last run are handled by construction —
- * live children are removed whatever tracked them, detached or portal-moved nodes are
- * skipped (they are no longer children), and no stale bookkeeping can throw. The marker
- * pair (persistent empty text nodes) bounds the walk so foreign siblings outside the span
- * stay untouched.
+ * (exclusive) is cleaned and removed. Span-snapshot, not live walk: the nodes collect
+ * before any cleanup runs, because a cleanup (ForEach's anchor cleanup clears its
+ * items) detaches span siblings, and a detached node's `previousSibling` is null — a
+ * live backward walk would stop at the first detached jump and strand the span's
+ * leading nodes. Removal keeps the existing guards: nodes a nested region inserted or
+ * removed after this region's last run are handled by construction — live children are
+ * removed whatever tracked them, detached or portal-moved nodes are skipped (they are no
+ * longer children), and no stale bookkeeping can throw. The marker pair (persistent
+ * empty text nodes) bounds the walk so foreign siblings outside the span stay untouched.
  * @param lead The region's persistent leading marker node
  * @param anchor The region's persistent trailing anchor node
  */
 export function clearRegionSpan(lead: Node, anchor: Node) {
   const parent = anchor.parentNode;
   if (!parent) return;
+  const nodes: Node[] = [];
   let node = anchor.previousSibling;
   while (node && node !== lead) {
-    const prev = node.previousSibling;
-    cleanupSubtree(node);
+    nodes.push(node);
+    node = node.previousSibling;
+  }
+  let i = nodes.length;
+  while (i--) {
+    const current = nodes[i]!;
+    cleanupSubtree(current);
     // A component cleanup may remove span siblings itself (ForEach's anchor
     // cleanup clears its items) or the node may have been moved out - remove
     // only what is still this parent's child
-    if (node.parentNode === parent) parent.removeChild(node);
-    node = prev;
+    if (current.parentNode === parent) parent.removeChild(current);
   }
 }
 

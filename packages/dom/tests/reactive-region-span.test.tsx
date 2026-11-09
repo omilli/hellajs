@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState } from "@utils/test-helpers.js";
-import { mount, hydrate } from "@hellajs/dom";
+import { mount, hydrate, ForEach } from "@hellajs/dom";
 import type { TemplateBuildFn } from "@hellajs/dom";
 import { twoTargetContainer } from "./helpers";
 
@@ -96,6 +96,36 @@ describe("dom", () => {
       expect(host.querySelector("#inner-on")).toBe(null);
       expect(host.querySelector("#mid")).toBe(null);
       expect(host.querySelector("#next")).toBeTruthy();
+    });
+
+    test("a cleanup that detaches span siblings mid-walk does not strand the span's leading nodes", () => {
+      const items = signal([1, 2, 3]);
+      const view = signal(
+        <div id="list-page">
+          <div id="search">search</div>
+          {() => <ForEach each={items} use={(n: number) => <div class="item">{n}</div>} />}
+        </div>,
+      );
+      const host = document.createElement("div");
+      document.body.appendChild(host);
+      mount(<div id="app">{view}</div>, host);
+
+      expect(host.querySelectorAll(".item").length).toBe(3);
+
+      view(
+        <div id="detail-page">
+          <div id="detail">detail</div>
+        </div>,
+      );
+      flush();
+
+      // ForEach's anchor cleanup removes its own items mid-walk; a walk that steps
+      // onto a detached item reads previousSibling null and would stop there,
+      // stranding every node ahead of it (here: the search div and region markers)
+      expect(host.querySelector("#search")).toBe(null);
+      expect(host.querySelectorAll(".item").length).toBe(0);
+      expect(host.querySelector("#detail")).toBeTruthy();
+      expect(host.querySelector("#list-page")).toBe(null);
     });
 
     test("span clear skips nodes moved out of the region parent", () => {
