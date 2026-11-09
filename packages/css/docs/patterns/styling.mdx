@@ -2,6 +2,17 @@
 
 Short patterns for common tasks using [`@hellajs/css`](/reference/css).
 
+### Preflight Reset
+
+Register the shipped preflight object once at the app entry to normalize browser default margins, borders, typography, and form controls; component styles layer on top by specificity.
+
+```typescript
+import { css, reset } from '@hellajs/css';
+
+// App entry: defaults cleared, ready for tokens and scoped styles
+css(reset);
+```
+
 ### Variant Recipes
 
 Use [`cva`](/reference/css/cva) to drive conditional classes from typed variant props (defaults, compounds, and one class per selection), and join extra fragments with [`cx`](/reference/css/cx).

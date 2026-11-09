@@ -1,12 +1,12 @@
 ---
 name: css-best-practices
 description: >
-  Best practices for @hellajs/css type-safe CSS-in-JS: style, css, vars, keyframes, cva, cx, cssText, removeCss, removeStyle, removeVars, removeKeyframes, resetCss, resetVars. Use when writing or reviewing code that imports @hellajs/css - scoping component styles with style(), writing globals with css(), reactive theming with vars(), hashed animations with keyframes(), typed variants with cva(), joining classes with cx(), or collecting server CSS with cssText(). Covers the silent failure modes: function values in style objects throw instead of reacting, :root vars match nothing inside a shadow root, resolved variant classes freeze unless re-resolved at the call site, a server page ships unstyled without a cssText embed, mismatched remove options silently leak registrations. Use ONLY for @hellajs/css styling - DOM rendering and components belong to dom-best-practices, the copy/paste component registry belongs to ui-best-practices.
+  Best practices for @hellajs/css type-safe CSS-in-JS: style, css, reset, vars, keyframes, cva, cx, cssText, removeCss, removeStyle, removeVars, removeKeyframes, resetCss, resetVars. Use when writing or reviewing code that imports @hellajs/css - scoping component styles with style(), writing globals with css(), applying the preflight reset with css(reset), reactive theming with vars(), hashed animations with keyframes(), typed variants with cva(), joining classes with cx(), or collecting server CSS with cssText(). Covers the silent failure modes: function values in style objects throw instead of reacting, :root vars match nothing inside a shadow root, resolved variant classes freeze unless re-resolved at the call site, a server page ships unstyled without a cssText embed, mismatched remove options silently leak registrations. Use ONLY for @hellajs/css styling - DOM rendering and components belong to dom-best-practices, the copy/paste component registry belongs to ui-best-practices.
 ---
 
 # css-best-practices
 
-Grounded rules for `@hellajs/css`: `style()` scopes declarations under content-hashed classes, `css()` writes globals, `vars()` drives reactive theming, `keyframes()` hashes animation definitions, `cva()` resolves typed variants, and `cssText()` collects registered text for server rendering. Every rule is derived from the package source and its test suite; each rule file cites the symbols and tests that pin it.
+Grounded rules for `@hellajs/css`: `style()` scopes declarations under content-hashed classes, `css()` writes globals, `reset` ships the preflight object for `css(reset)`, `vars()` drives reactive theming, `keyframes()` hashes animation definitions, `cva()` resolves typed variants, and `cssText()` collects registered text for server rendering. Every rule is derived from the package source and its test suite; each rule file cites the symbols and tests that pin it.
 
 ## When to Apply
 

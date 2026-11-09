@@ -1,0 +1,65 @@
+# reset
+
+A preflight reset sheet as a plain CSS object: register it once with [`css`](/reference/css/css)(`reset`) to normalize browser default margins, borders, typography, and form control styling.
+
+## Basic Usage
+
+```typescript
+import { css, reset } from '@hellajs/css';
+
+// Once, at the app entry (module scope is fine)
+css(reset);
+
+// Every default margin, padding, and border is gone; headings and links
+// inherit their styling; form controls inherit typography
+```
+
+## API
+
+```typescript
+declare const reset: CSSObject;
+```
+- A global CSS object keyed by element selectors (plus one `@supports` block), a rule-for-rule port of tailwindcss's preflight
+- Pass it to `css(reset)`; the call registers the rules and returns `""` on both platforms
+
+## Key Concepts
+
+### What the Reset Covers
+
+The sheet removes default margins, padding, and borders from every element and sets `box-sizing: border-box`. Typography normalizes to inherited values: headings drop their sizes and weights, links drop their color and underline, `code` and friends get a monospace stack at `1em`, and lists render unstyled. Media elements (`img`, `video`, `svg`, ...) become block-level and constrained to their parent width. Form controls (`button`, `input`, `select`, `textarea`) inherit the page font and lose their default backgrounds, radii, and disabled dimming; the `[hidden]` attribute keeps working even against author `display` rules.
+
+### Composing with Styles and Tokens
+
+The reset's element selectors stay underneath class-scoped rules by specificity, so component styles win without any cascade-layer choreography: register [`style`](/reference/css/style) classes and [`vars`](/reference/css/vars) tokens after it and they compose normally.
+
+```typescript
+import { css, reset, style, vars } from '@hellajs/css';
+
+css(reset);
+
+const tokens = vars({
+  fontSans: 'Inter, system-ui, sans-serif',
+});
+
+const card = style(
+  {
+    fontFamily: tokens.fontSans,
+    padding: '1rem',
+  },
+  {
+    label: 'card',
+  },
+);
+```
+
+On the server the same `css(reset)` call registers state-only and [`cssText`](/reference/css/csstext) collects the reset alongside every other registration, so the emitted `<style>` ships the reset to first paint.
+
+## Important Considerations
+
+### Register Once, Remove Once
+
+`css(reset)` keys on the generated text, so repeated calls dedup into one registration with a reference count; calling [`removeCss`](/reference/css/removecss)(`reset`) drops one reference and only the last removal clears the rules. The reset is a plain object: register the exported reference as-is, never a mutated copy, or the removal mirror no longer matches.
+
+### Defaults, Not Opinions
+
+The sheet ships literal font stacks and `line-height: 1.5` as sane defaults, not design decisions. Anything the app cares about belongs in its own `vars()` tokens or `style()` classes layered on top; the reset only clears the browser's starting point.

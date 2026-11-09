@@ -1,4 +1,5 @@
 export { css } from "./css";
+export { reset } from "./reset";
 export { style } from "./style";
 export { cva } from "./cva";
 export { cx } from "./cx";
