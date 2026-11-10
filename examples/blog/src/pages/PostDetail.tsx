@@ -1,32 +1,28 @@
-import { postResource } from "../state.ts";
-import { Placeholder } from "../components/Placeholder.tsx";
-import { PostCard } from "../components/PostCard.tsx";
 import { BackLink } from "../components/BackLink.tsx";
+import { Placeholder } from "../components/Placeholder.tsx";
+import { Post } from "../components/Post.tsx";
+import { postResource } from "../state.ts";
 
-const { fetch, isFetching, data } = postResource;
+const { isFetching, data } = postResource;
 
-export const PostDetail = () => {
-  fetch();
+export const PostDetail = () => (
+  <>
+    <BackLink />
 
-  return (
-    <>
-      <BackLink />
+    {() => {
+      const post = data();
 
-      {() => {
-        const post = data();
-
-        return (
-          <div class="post-detail">
-            {isFetching() ? (
-              <Placeholder message="Loading post..." />
-            ) : post?.body ? (
-              <PostCard post={post!} />
-            ) : (
-              <Placeholder message="Post not found" />
-            )}
-          </div>
-        );
-      }}
-    </>
-  );
-};
+      return (
+        <div class="post-detail">
+          {isFetching() ? (
+            <Placeholder message="Loading post..." />
+          ) : post?.body ? (
+            <Post data={post} />
+          ) : (
+            <Placeholder message="Post not found" />
+          )}
+        </div>
+      );
+    }}
+  </>
+);

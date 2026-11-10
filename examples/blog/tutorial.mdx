@@ -7,15 +7,16 @@ Jump to the [Complete Code](#complete-code) for the finished application.
 ## What You'll Learn
 
 - **[store](/reference/store/store)**: Centralized app state with granular reactive properties
-- **[resource](/reference/resource/resource)**: Async data fetching with caching and explicit fetch control
+- **[resource](/reference/resource/resource)**: Async data fetching with cache keys that trigger their own fetches
 - **[router](/reference/router/router)**: Client-side routing with params, query strings, and scroll behavior
-- **[signal](/reference/core/signal)**: Reactive values for view state and page titles
+- **[signal](/reference/core/signal)**: Reactive values for the swapped page view
 - **[computed](/reference/core/computed)**: Derived pagination state from resource data
+- **[effect](/reference/core/effect)**: Keeping the document title in sync with the store
 - **[style](/reference/css/style) / [vars](/reference/css/vars)**: Design tokens and scoped hashed classes
 - **[ForEach](/reference/dom/foreach)**: Rendering lists with keyed reconciliation
-- **[navigate](/reference/router/navigate)**: Programmatic navigation with params and query strings
+- **[navigate](/reference/router/navigate)**: Programmatic navigation with query strings
 
-The core pattern: router handlers set store signals and render page components into a view [signal](/reference/core/signal). Page components call `fetch()` on their resources to load data. Components dispatch navigation via [navigate](/reference/router/navigate).
+The core pattern: router handlers write the store and render page components into a view [signal](/reference/core/signal). Resources derive their cache keys from store state, so a key change is the whole trigger - submit a search, turn a page, or open a post and the fetch fires by itself. No component ever calls `fetch()` manually. Components that need to move the user dispatch [navigate](/reference/router/navigate) instead.
 
 ## Project Setup
 
@@ -39,41 +40,73 @@ npm install -D vite-plugin-hellajs
 
 Update your `vite.config.js` to use the HellaJS plugin.
 
-```ts
-// vite.config.js
-import { defineConfig } from 'vite';
-import viteHellaJS from 'vite-plugin-hellajs';
+```js
+import { defineConfig } from "vite";
+import viteHellaJS from "vite-plugin-hellajs";
 
 export default defineConfig({
   plugins: [viteHellaJS()],
 });
 ```
 
-Update your `tsconfig.json` to add HellaJS type definitions.
+Update your `tsconfig.json` to add HellaJS type definitions and preserve JSX for the plugin to transform.
 
 ```json
 {
   "compilerOptions": {
-    //...
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "module": "ESNext",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "skipLibCheck": true,
     "jsx": "preserve",
-    "types": ["@hellajs/dom"]
-    //...
-  }
+    "types": ["@hellajs/dom"],
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
+  },
+  "include": ["src"]
 }
+```
+
+Finally, replace the scaffold's `index.html` with the mount point and the entry module. The `#app` div is where [`mount`](/reference/dom/mount) renders the app, and the script tag loads `src/main.tsx`.
+
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Blog</title>
+  </head>
+
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
 ```
 
 ## App State
 
-This app uses [store](/reference/store/store) for centralized state and [resource](/reference/resource/resource) for data fetching. The store holds the search query, page number, and selected IDs. Resources derive their cache keys from store signals.
+This app uses [store](/reference/store/store) for centralized state and [resource](/reference/resource/resource) for data fetching. The store holds the search draft, the submitted query, the page number, the selected ids, and the page title. Resources derive their cache keys from store properties, so a key change is the whole trigger: submit a search or turn a page and the fetch fires by itself.
 
 Create `src/state.ts`:
 
 ```tsx
-// src/state.ts
-import { store } from "@hellajs/store";
+import { effect } from "@hellajs/core";
 import { resource } from "@hellajs/resource";
+import { store } from "@hellajs/store";
 
-export interface Post {
+export interface PostData {
   id: number;
   title: string;
   body: string;
@@ -85,7 +118,7 @@ export interface Post {
 }
 
 interface PostsResponse {
-  posts: Post[];
+  posts: PostData[];
   total: number;
   skip: number;
   limit: number;
@@ -101,70 +134,87 @@ interface User {
   message?: string;
 }
 
-export const appStore = store({
+export const appStore = store<{
+  searchValue: string;
+  query: string;
+  page: number;
+  postId: string | null;
+  userId: string | null;
+  title: string;
+}>({
   searchValue: "",
+  query: "",
   page: 1,
-  postId: "",
-  userId: "",
+  postId: null,
+  userId: null,
+  title: "",
 });
 
-const BASE = "https://dummyjson.com";
+effect(() => (document.title = `Blog - ${appStore.title()}`));
 
-const cacheTime = 300000; // 5 minutes
+const BASE = "https://dummyjson.com";
+const cacheTime = 300000;
 
 export const postsResource = resource<PostsResponse, string>(
-  (urlPath) => fetch(`${BASE}/${urlPath}`).then(r => r.json()),
+  (urlPath) => fetch(`${BASE}/${urlPath}`).then((r) => r.json()),
   {
     key: () => {
-      const search = appStore.searchValue();
+      const search = appStore.query();
       const skip = (appStore.page() - 1) * 10;
       const base = search ? "posts/search" : "posts";
       const params = new URLSearchParams({ limit: "10", skip: String(skip) });
       if (search) params.set("q", search);
       return `${base}?${params}`;
     },
+    refetchOnKeyChange: true,
+    keepPreviousData: false,
     staleTime: 30000,
     cacheTime,
-  }
+  },
 );
 
-export const postResource = resource<Post, string>(
-  (id) => fetch(`${BASE}/posts/${id}`).then(r => r.json()),
-  { key: () => appStore.postId(), cacheTime, }
+export const postResource = resource<PostData, string | null>(
+  (id) => fetch(`${BASE}/posts/${id}`).then((r) => r.json()),
+  { key: () => appStore.postId(), refetchOnKeyChange: true, cacheTime },
 );
 
-export const userResource = resource<User, string>(
-  (id) => fetch(`${BASE}/users/${id}`).then(r => r.json()),
-  { key: () => appStore.userId(), cacheTime, }
+export const userResource = resource<User, string | null>(
+  (id) => fetch(`${BASE}/users/${id}`).then((r) => r.json()),
+  { key: () => appStore.userId(), refetchOnKeyChange: true, cacheTime },
 );
 
-export const userPostsResource = resource<PostsResponse, string>(
-  (id) => fetch(`${BASE}/users/${id}/posts`).then(r => r.json()),
-  { key: () => appStore.userId(), cacheTime, }
+export const userPostsResource = resource<PostsResponse, string | null>(
+  (id) => fetch(`${BASE}/users/${id}/posts`).then((r) => r.json()),
+  { key: () => appStore.userId(), refetchOnKeyChange: true, cacheTime },
 );
 ```
 
 **Code Explanation**
 
-- **[`store`](/reference/store/store)`({ ... })`**: Creates a deeply reactive store where each property is an independent signal
-- **`searchValue` and `page`**: Drive the posts list API query. Changing either produces a new cache key for `postsResource`
-- **`postId` and `userId`**: Selected items for detail and profile views
-- **`BASE`**: The DummyJSON API base URL
-- **[`resource`](/reference/resource/resource)`(fetcher, { key, ... })`**: Creates a reactive async data container with a key function for caching
-- **`key: () => ...`**: A function reading store signals. Produces a cache key for deduplication and caching
-- **`postsResource`**: Key encodes search query and page number. Returns the full URL path as the cache key
-- **`staleTime: 30000`**: Data stays fresh for 30 seconds. Subsequent fetches within that window return cached data instantly
-- **`cacheTime: 300000`**: Cached data persists for 5 minutes in memory
+- **[`store`](/reference/store/store)`<{ ... }>({ ... })`**: Creates a deeply reactive store where each property is an independent signal, typed by the generic
+- **`searchValue` vs `query`**: `searchValue` is the input draft, updated on every keystroke. `query` is the submitted search, written only when the user presses Enter or the Search button. The posts key reads `query` only, so typing alone never fires a request
+- **`page`**: The current page number, set from the URL by the `/posts` route handler
+- **`postId` and `userId`**: Selected items for the detail and profile views. They start `null`, and a `null` key makes the fetch skip until a route sets the id
+- **`title`**: The current page heading. Route handlers write it, the header reads it, and the effect below mirrors it into the browser tab
+- **[`effect`](/reference/core/effect)`(() => ...)`**: Reads `appStore.title()` and re-runs whenever it changes, keeping `document.title` in sync
+- **[`resource`](/reference/resource/resource)`<PostsResponse, string>`**: Creates a reactive async data container. The first type parameter is the data shape, the second is the key shape
+- **`key: () => ...`**: A function reading store properties. It builds the request path from the submitted query and the page, picking the `posts/search` endpoint when a query exists and adding `q` and `skip` params. The key doubles as the cache identity
+- **`refetchOnKeyChange: true`**: Turns the key into the whole trigger. The initial fetch fires on its own, and every later key change (a submitted search, a new page, a new post id) refetches automatically. No component calls `fetch()`
+- **`keepPreviousData: false`**: On a key change the list data clears and the loading state shows, instead of displaying the previous page's rows while the next page loads
+- **`staleTime: 30000`**: Data stays fresh for 30 seconds. Reads within that window return cached data instantly
+- **`cacheTime: 300000`**: Cached data persists for 5 minutes in memory, shared across every resource with the same key
+- **`postResource`, `userResource`, `userPostsResource`**: The id resources key directly on the selection. `userResource` and `userPostsResource` share the same `userId` key, so both fetch in parallel when a profile opens
 
 ## Shared Styles
 
-Define reusable design tokens with [`vars`](/reference/css/vars) and shared styles with [`css`](/reference/css/css) + [`style`](/reference/css/style). Each component file adds its own `style()` call for component-specific styles.
+Define reusable design tokens with [`vars`](/reference/css/vars) and global element styles with [`css`](/reference/css/css). Each component file adds its own [`style`](/reference/css/style) call for component-specific styles.
 
 Create `src/theme.ts`:
 
 ```tsx
-// src/theme.ts
-import { css, style, vars } from "@hellajs/css";
+import { css, reset, vars } from "@hellajs/css";
+
+css(reset);
 
 export const theme = vars({
   color: {
@@ -191,116 +241,126 @@ css({
     backgroundColor: theme.color.bg,
     color: theme.color.text,
   },
+  a: {
+    color: theme.color.link,
+    textDecoration: "none",
+    "&:hover": {
+      textDecoration: "underline",
+    },
+  },
 });
-
-// Shared card styles; composed by PostCard via style(card, ...) and consumed
-// directly by UserProfile.
-export const card = style({
-  backgroundColor: theme.color.surface,
-  borderRadius: theme.radius.md,
-  padding: "1rem",
-  marginBottom: "0.75rem",
-  border: `1px solid ${theme.color.border}`,
-}, { label: "card" });
-
-export const cardTitle = style({
-  fontSize: "1.1rem",
-  fontWeight: 600,
-  margin: "0 0 0.5rem",
-}, { label: "card-title" });
-
-export const cardBody = style({
-  color: theme.color.muted,
-  fontSize: "0.9rem",
-  lineHeight: 1.5,
-}, { label: "card-body" });
 ```
 
 **Code Explanation**
 
-- **[`vars`](/reference/css/vars)`({ ... })`**: Creates CSS custom properties. Returns an object where each value is a `var()` reference
-- **`theme.color.surface`**: Resolves to `var(--color-surface)`. Use it anywhere you'd use a CSS value
-- **Nested objects**: `color: { bg: "..." }` becomes `--color-bg`. Dots become hyphens in the variable name
-- **[`css`](/reference/css/css)`({ body: { ... } })`**: Registers global element selectors
-- **[`style`](/reference/css/style)`({ ... }, { label })`**: Returns a content-hashed class for `class={card}`: `label` embeds a readable segment in the name. Export the classes shared across files (`card`, `cardTitle`, `cardBody`); PostCard composes onto `card` later
+- **[`css`](/reference/css/css)`(reset)`**: Applies the preflight reset that ships with `@hellajs/css`, normalizing browser default styles across the app
+- **[`vars`](/reference/css/vars)`({ ... })`**: Creates CSS custom properties and returns an object where each value is a `var()` reference. `theme.color.bg` resolves to `var(--color-bg)`; use it anywhere you'd use a CSS value
+- **Nested objects**: `color: { bg: "..." }` becomes `--color-bg`. Dots become hyphens in the variable name. Pass a `prefix` option if the tokens could collide with another app's variables on the same page
+- **[`css`](/reference/css/css)`({ body: ..., a: ... })`**: Registers global element selectors. The `a` rules give every link the theme link color with an underline on hover, so plain anchors anywhere in the app look consistent without per-component work
+- **`"&:hover"`**: The `&` refers to the parent selector, producing `a:hover { text-decoration: underline }`
+
+## Routing
+
+The router maps URL patterns to handlers. Each handler writes the store through `$update` and swaps the page component into `currentView`, a [signal](/reference/core/signal) holding the rendered DOM. Store writes are what make the resources fetch: a new `postId` or a new `page` changes a resource key, and `refetchOnKeyChange` does the rest.
+
+Create `src/router.tsx`:
+
+```tsx
+import { signal } from "@hellajs/core";
+import { router } from "@hellajs/router";
+import { Placeholder } from "./components/Placeholder.tsx";
+import { PostDetail } from "./pages/PostDetail.tsx";
+import { PostList } from "./pages/PostList.tsx";
+import { UserProfile } from "./pages/UserProfile.tsx";
+import { appStore } from "./state.ts";
+
+export const currentView = signal(<Placeholder message="Loading..." />);
+
+router({
+  scrollBehavior: "top",
+  routes: {
+    "/": "/posts",
+    "/posts": (_params, query) => {
+      appStore.$update({
+        page: query.page ? Number(query.page) : 1,
+        postId: null,
+        userId: null,
+        title: "Posts",
+      });
+      currentView(PostList());
+    },
+    "/posts/:id": ({ id }) => {
+      appStore.$update({
+        postId: id,
+        userId: null,
+        title: `Post ${id}`,
+      });
+      currentView(PostDetail());
+    },
+    "/users/:id": ({ id }) => {
+      appStore.$update({
+        postId: null,
+        userId: id,
+        title: `User ${id}`,
+      });
+      currentView(UserProfile());
+    },
+  },
+  notFound: () => currentView(PostList()),
+});
+```
+
+**Code Explanation**
+
+- **[`signal`](/reference/core/signal)`(<Placeholder ... />)`**: `currentView` holds a DOM node, initialized to a loading placeholder that shows before the first route resolves
+- **[`router`](/reference/router/router)`({ routes, ... })`**: Maps URL patterns to handler functions and starts listening for navigation immediately
+- **`"/": "/posts"`**: Redirect from the root path to `/posts`
+- **`appStore.$update({ ... })`**: Writes several store properties in one call. Each handler resets the ids it does not own, so navigating from a profile back to the list clears `userId` and the user resources stop being keyed
+- **`query.page ? Number(query.page) : 1`**: The `/posts` handler's second argument carries the query string. The page comes from `?page=2` style URLs, defaulting to 1 - this keeps pagination shareable and back-button friendly
+- **`currentView(PostList())`**: Evaluates the page component and stores its DOM in the signal. The entry point renders `{currentView}`, so the page swaps on every navigation
+- **`"/posts/:id": ({ id }) => ...`**: Dynamic parameters arrive as properties of the first argument. Writing `postId` changes `postResource`'s key, which fetches the post
+- **`notFound: () => ...`**: Unknown URLs render the post list instead of a blank screen
+- **`scrollBehavior: "top"`**: Scrolls to the top on every navigation, so opening a post starts at its heading
 
 ## Entry Point
 
-The entry point wires everything together. Two [signals](/reference/core/signal) hold the page title and the rendered view. The [router](/reference/router/router) maps URL patterns to handlers that set store signals and render page components. An [effect](/reference/core/effect) keeps the document title in sync.
+The entry point renders the app shell: a centered container, the store-driven heading, and the current view. The heading reads `appStore.title` directly, so it updates on every navigation without any wiring of its own.
 
 Create `src/main.tsx`:
 
 ```tsx
-// src/main.tsx
-import { effect, signal } from "@hellajs/core";
 import { style } from "@hellajs/css";
 import { mount } from "@hellajs/dom";
-import { router } from "@hellajs/router";
+import { currentView } from "./router.tsx";
 import { appStore } from "./state.ts";
 import "./theme.ts";
-import { Placeholder } from "./components/Placeholder.tsx";
-import { PostDetail } from "./pages/PostDetail.tsx";
-import { UserProfile } from "./pages/UserProfile.tsx";
-import { PostList } from "./pages/PostList.tsx";
 
-const title = signal("");
-const view = signal(<Placeholder message="Loading..." />);
-
-effect(() => document.title = `Blog - ${title}`);
-
-router({
-  scrollBehavior: 'top',
-  routes: {
-    "/": "/posts",
-    "/posts": (_params, query) => {
-      appStore.page(query.page ? Number(query.page) : 1);
-      view(PostList());
-      title("Posts");
-    },
-    "/posts/:id": ({ id }) => {
-      appStore.postId(id);
-      view(PostDetail());
-      title(`Post ${id}`);
-    },
-    "/users/:id": ({ id }) => {
-      appStore.userId(id);
-      view(UserProfile());
-      title(`User ${id}`);
-    },
-  },
-  notFound: () => view(PostList()),
-});
-
-const appContainer = style({
+const container = style({
   maxWidth: "48rem",
   margin: "0 auto",
   padding: "1rem",
-}, { label: "app-container" });
+  h1: {
+    fontSize: "1.5rem",
+    marginBottom: "1rem",
+  },
+});
 
-const appTitle = style({
-  fontSize: "1.5rem",
-}, { label: "app-title" });
-
-const App = <div class={appContainer}>
-  <h1 class={appTitle}>{title}</h1>
-  {view}
-</div>;
+const App = (
+  <div class={container}>
+    <h1>{appStore.title}</h1>
+    {currentView}
+  </div>
+);
 
 mount(App, "#app");
 ```
 
 **Code Explanation**
 
-- **[`signal`](/reference/core/signal)`("")`**: Creates a reactive value. `title` holds the page heading, `view` holds the rendered DOM for the current page
-- **[`effect`](/reference/core/effect)`(() => ...)`**: Reacts to `title()` changes and updates the document title
-- **[`router`](/reference/router/router)`({ routes, ... })`**: Maps URL patterns to handler functions
-- **`"/": "/posts"`**: Redirect from root to `/posts`
-- **`"/posts": (_params, query) => ...`**: The second argument `query` provides query string parameters. Used here to read the `page` param
-- **[`appStore.page`](/reference/store/store)`(query.page ? Number(query.page) : 1)`**: Sets the page from the URL, defaulting to 1
-- **[`signal`](/reference/core/signal)` `view` `(PostList())`**: Renders the PostList component into the view signal. The component is evaluated immediately and its DOM stored in the signal
-- **`"/posts/:id": ({ id }) => ...`**: Dynamic parameter extracted from the URL, stored in `appStore.postId`
-- **`scrollBehavior: 'top'`**: Scrolls to the top on every navigation
-- **[`mount`](/reference/dom/mount)`(App, '#app')`**: Renders the App element into the DOM. Since `App` is a plain element (not a function), it's mounted directly
+- **`import "./theme.ts"`**: A side-effect import. Registering the reset, the tokens, and the global styles only needs the module to run; nothing is imported from it here
+- **[`style`](/reference/css/style)`({ ..., h1: { ... } })`**: Returns a content-hashed class. Nested selectors scope under the generated class, so the `h1` rules only apply to headings inside the container
+- **`{appStore.title}` and `{currentView}`**: Store properties and signals passed as children bind reactively. Both update the DOM when the value behind them changes
+- **[`mount`](/reference/dom/mount)`(App, "#app")`**: Renders the app into the `#app` div from `index.html`
 
 Start the development server to see your app in action.
 
@@ -308,11 +368,11 @@ Start the development server to see your app in action.
 npm run dev
 ```
 
-Your app will be running at `http://localhost:5173`. At this point you'll see the loading placeholder. Let's build the components and pages next.
+Your app will be running at `http://localhost:5173`. With only the shell in place you'll see the loading placeholder; the pages that fill the view come next.
 
 ## Display Components
 
-These components handle rendering without complex interactivity. They demonstrate component functions, props, [navigate](/reference/router/navigate), and [ForEach](/reference/dom/foreach).
+These components render without owning state. They demonstrate component functions, props, [ForEach](/reference/dom/foreach), and plain-anchor navigation.
 
 ### Placeholder
 
@@ -321,25 +381,28 @@ A simple component that displays a centered message. Used for loading and empty 
 Create `src/components/Placeholder.tsx`:
 
 ```tsx
-// src/components/Placeholder.tsx
 import { style } from "@hellajs/css";
 import { theme } from "../theme.ts";
+
+interface PlaceholderProps {
+  message: string;
+}
 
 const placeholder = style({
   textAlign: "center",
   color: theme.color.subtle,
   padding: "2rem 0",
-}, { label: "placeholder" });
+});
 
-export const Placeholder = ({ message }: { message: string }) => (
+export const Placeholder = ({ message }: PlaceholderProps) => (
   <div class={placeholder}>{message}</div>
 );
 ```
 
 **Code Explanation**
 
-- **`({ message }: { message: string })`**: Component props defined inline with a TypeScript type
-- **[`style`](/reference/css/style)`({ ... }, { label: "placeholder" })`**: Returns the hashed class the markup consumes as `class={placeholder}`: no hand-picked class names to collide
+- **`interface PlaceholderProps`**: Component props as a named interface. The interface and the style live next to the component they serve
+- **`{message}`**: A plain captured value. The parent re-renders this component when its data changes, so no reactive binding is needed for the message itself
 
 ### BackLink
 
@@ -348,21 +411,15 @@ A reusable back navigation link.
 Create `src/components/BackLink.tsx`:
 
 ```tsx
-// src/components/BackLink.tsx
 import { style } from "@hellajs/css";
-import { navigate } from "@hellajs/router";
-import { theme } from "../theme.ts";
 
-const backLink = style({
+const link = style({
   display: "inline-block",
   marginBottom: "1rem",
-  color: theme.color.link,
-  cursor: "pointer",
-  fontSize: "0.9rem",
-}, { label: "back-link" });
+});
 
 export const BackLink = () => (
-  <a class={backLink} on:click={e => { e.preventDefault(); navigate("/posts"); }}>
+  <a class={link} href="/posts">
     &larr; Back to posts
   </a>
 );
@@ -370,9 +427,7 @@ export const BackLink = () => (
 
 **Code Explanation**
 
-- **[`navigate`](/reference/router/navigate)`("/posts")`**: Programmatic client-side navigation. Triggers the `/posts` route handler
-- **`on:click={e => { e.preventDefault(); navigate(...) }}`**: Delegated event listener. `preventDefault()` stops the browser from following the `<a>` href
-- **[`style`](/reference/css/style)`({ ... }, { label: "back-link" })`**: The back link is used across multiple pages, so its class lives with the component and imports the shared `theme` tokens
+- **`<a href="/posts">`**: A plain anchor with no click handler. Link interception is on by default, so same-origin clicks route through the router with no page reload - and the link stays keyboard-focusable and middle-clickable
 
 ### Tags
 
@@ -381,44 +436,41 @@ Renders a list of tag badges using [ForEach](/reference/dom/foreach).
 Create `src/components/Tags.tsx`:
 
 ```tsx
-// src/components/Tags.tsx
-import { ForEach } from "@hellajs/dom";
 import { style } from "@hellajs/css";
+import { ForEach } from "@hellajs/dom";
 import { theme } from "../theme.ts";
-
-const tagList = style({
-  display: "flex",
-  gap: "0.4rem",
-  flexWrap: "wrap",
-  marginTop: "0.5rem",
-}, { label: "tags" });
-
-const tag = style({
-  fontSize: "0.75rem",
-  padding: "0.15rem 0.5rem",
-  borderRadius: theme.radius.pill,
-  backgroundColor: theme.color.tag,
-  color: theme.color.muted,
-}, { label: "tag" });
 
 interface TagsProps {
   tags: string[];
 }
 
+const list = style({
+  display: "flex",
+  gap: "0.4rem",
+  flexWrap: "wrap",
+  marginTop: "0.5rem",
+});
+
+const badge = style({
+  fontSize: "0.8rem",
+  padding: "0.15rem 0.5rem",
+  borderRadius: theme.radius.pill,
+  backgroundColor: theme.color.tag,
+  color: theme.color.muted,
+});
+
 export const Tags = ({ tags = [] }: TagsProps) => (
-  <div class={tagList}>
-    <ForEach each={tags} use={(t: string) => (
-      <span class={tag}>{t}</span>
-    )} />
+  <div class={list}>
+    <ForEach each={tags} use={(tag) => <span class={badge}>{tag}</span>} />
   </div>
 );
 ```
 
 **Code Explanation**
 
-- **[`ForEach`](/reference/dom/foreach)` each={tags} use={(tag) => ...}`**: Renders the list with keyed reconciliation. Each item gets a stable DOM node keyed by index
-- **`tags = []`**: Default parameter handles cases where tags might be undefined
-- **`theme.radius.pill`**: Resolves to `var(--radius-pill)` for consistent border radius
+- **[`ForEach`](/reference/dom/foreach)` each={tags} use={(tag) => ...}`**: Renders each item through the `use` callback. Items are keyed by an explicit `key` attribute if present, then by the item's `id` property, then by index - tags have neither, so they fall back to index keys, which is fine for a static per-post list
+- **`tags = []`**: Default parameter handles a post with no tags
+- **`theme.radius.pill`**: Resolves to `var(--radius-pill)` for consistent rounded badges
 
 ### Reactions
 
@@ -427,93 +479,82 @@ Displays like and view counts.
 Create `src/components/Reactions.tsx`:
 
 ```tsx
-// src/components/Reactions.tsx
 import { style } from "@hellajs/css";
 import { theme } from "../theme.ts";
-
-const reactions = style({
-  fontSize: "0.8rem",
-  color: theme.color.subtle,
-  marginTop: "0.5rem",
-}, { label: "reactions" });
 
 interface ReactionsProps {
   likes: number;
   views?: number;
 }
 
+const reactions = style({
+  fontSize: "0.8rem",
+  color: theme.color.subtle,
+  margin: "0.5rem 0",
+});
+
 export const Reactions = ({ likes, views }: ReactionsProps) => (
   <div class={reactions}>
-    {likes ?? 0} likes{views != null && <> · {views} views</>}
+    {likes ?? 0} likes{views != null && ` • ${views} views`}
   </div>
 );
 ```
 
 **Code Explanation**
 
-- **`views?: number`**: Optional prop. When omitted, only likes are displayed
-- **`{likes ?? 0}`**: Function expression creates a reactive binding. Updates if `likes` changes
-- **`views != null`**: Checks both `undefined` and `null`, so `0` views still displays
+- **`views?: number`**: Optional prop. When omitted, only likes display
+- **`likes ?? 0`**: Falls back to 0 for posts whose `reactions` object is missing
+- **`views != null && ...`**: Checks both `undefined` and `null` with one comparison, so `0` views still displays. The `&&` expression renders nothing when false
 
-## Interactive Components
+### Post
 
-These components handle user interaction through function-ref props, event handlers, and Signal props.
+The post card: a title link, the body, tags, reactions, and a user link. Composed from the components above.
 
-### SearchBar
-
-A search input with two-way binding and keyboard handling.
-
-Create `src/components/SearchBar.tsx`:
+Create `src/components/Post.tsx`:
 
 ```tsx
-// src/components/SearchBar.tsx
 import { style } from "@hellajs/css";
-import type { Signal } from "@hellajs/core";
+import type { PostData } from "../state.ts";
 import { theme } from "../theme.ts";
+import { Reactions } from "./Reactions.tsx";
+import { Tags } from "./Tags.tsx";
 
-const searchBar = style({
-  display: "flex",
-  gap: "0.5rem",
-  marginBottom: "1rem",
-  "input": {
-    flex: 1,
-    padding: "0.5rem 0.75rem",
-    borderRadius: theme.radius.sm,
-    border: `1px solid ${theme.color.border}`,
-    fontSize: "0.9rem",
-  },
-  "button": {
-    cursor: "pointer",
-    borderRadius: theme.radius.sm,
-    border: `1px solid ${theme.color.border}`,
-    backgroundColor: theme.color.surface,
-    color: theme.color.text,
-    padding: "0.5rem 1rem",
-    fontSize: "0.9rem",
-  },
-}, { label: "search-bar" });
-
-interface SearchBarProps {
-  value: Signal<string>;
-  onSearch: () => void;
+interface PostProps {
+  data: PostData;
 }
 
-export const SearchBar = ({ value, onSearch }: SearchBarProps) => {
-  const handleKeyup = (e: KeyboardEvent) => {
-    (e.key === "Enter" || value() === "") && onSearch();
-  };
+const post = style({
+  cursor: "pointer",
+  marginTop: "1rem",
+  h3: {
+    fontSize: "1.2rem",
+    marginBottom: "0",
+  },
+  p: {
+    color: theme.color.muted,
+    fontSize: "0.9rem",
+  },
+  ".user-link": {
+    fontSize: "0.8rem",
+  },
+});
+
+export const Post = ({ data }: PostProps) => {
+  const { id, title, body, tags, reactions, views, userId } = data;
 
   return (
-    <div class={searchBar}>
-      <input
-        type="text"
-        placeholder={"Search..."}
-        value={value}
-
-        on:input={e => value((e.target as HTMLInputElement).value)}
-        on:keyup={handleKeyup}
-      />
-      <button on:click={onSearch}>Search</button>
+    <div class={post}>
+      <div>
+        <h3>
+          <a href={`/posts/${id}`}>{title}</a>
+        </h3>
+        <p>{body}</p>
+        <Tags tags={tags} />
+        <Reactions likes={reactions?.likes} views={views} />
+      </div>
+      <a class="user-link" href={`/users/${userId}`}>
+        User {userId}
+      </a>
     </div>
   );
 };
@@ -521,88 +562,86 @@ export const SearchBar = ({ value, onSearch }: SearchBarProps) => {
 
 **Code Explanation**
 
-- **`Signal<string>`**: The component accepts a signal directly as a prop, enabling two-way binding without callbacks
-- **`value``={value}`**: Two-way binding between the input and the signal. The input value stays in sync with `searchValue`
-- **`on:input={e => value(...)}`**: Delegated input event. Updates the signal on every keystroke
-- **`on:keyup={handleKeyup}`**: Triggers search on Enter or when the input is cleared
-- **Nested selectors**: `"input": { ... }` inside the `searchBar` object generates `.search-bar-… input { ... }`: descendants scope under the generated class
+- **`import type { PostData }`**: Type-only import. The interface annotates the prop without pulling any runtime code from `state.ts` into the component's module graph
+- **`{`/posts/${id}`}` and `{`/users/${userId}`}`**: Both links are plain anchors with interpolated hrefs. Link interception routes same-origin clicks through the router, so no click handlers are needed
+- **Nested selectors**: `h3`, `p`, and `.user-link` rules scope under the generated post class. The class names in the markup (`class={post}`, `class="user-link"`) are the only hooks the styles need
+- **`reactions?.likes`**: Optional chaining tolerates posts without a reactions object, and `Reactions` falls back to 0
 
-### PostCard
+## Interactive Components
 
-A reusable card component that composes Tags, Reactions, and user links. Accepts an optional click handler for navigation.
+These components own interaction: the search bar writes the draft into the store, and pagination navigates. Both read the store directly instead of taking props - state stays centralized, and the components stay drop-in.
 
-Create `src/components/PostCard.tsx`:
+### SearchBar
+
+A search input bound to the store draft, with Enter-to-submit and clear-on-empty behavior.
+
+Create `src/components/SearchBar.tsx`:
 
 ```tsx
-// src/components/PostCard.tsx
 import { style } from "@hellajs/css";
-import { navigate } from "@hellajs/router";
-import { card, cardTitle, cardBody, theme } from "../theme.ts";
-import { Tags } from "./Tags.tsx";
-import { Reactions } from "./Reactions.tsx";
-import type { Post } from "../state.ts";
+import { theme } from "../theme.ts";
+import { appStore } from "../state.ts";
 
-interface PostCardProps {
-  post: Post;
-  onClick?: () => void;
-}
-
-// Compose onto the shared card class; the returned class string carries both
-// ("card-… post-card-…"), each side keeping its own rule.
-const postCard = style(card, {
-  "&:hover": {
-    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+const search = style({
+  display: "flex",
+  gap: "0.5rem",
+  marginBottom: "1rem",
+  "& input, & button": {
+    borderRadius: theme.radius.sm,
+    border: `1px solid ${theme.color.border}`,
+    fontSize: "0.9rem",
+    padding: "0.5rem 0.75rem",
   },
-}, { label: "post-card" });
-
-const userLink = style({
-  color: theme.color.link,
-  display: "inline-block",
-  fontSize: "0.9rem",
-  marginTop: "0.5rem",
-  cursor: "pointer",
-  textDecoration: "none",
-  "&:hover": {
-    textDecoration: "underline"
+  input: {
+    flex: 1,
   },
-}, { label: "user-link" });
+});
 
-const openUser = (id: number) => navigate(`/users/${id}`);
+const { searchValue } = appStore;
 
-export const PostCard = ({ post, onClick }: PostCardProps) => (
-  <div class={postCard} style={onClick ? "cursor: pointer;" : ""}>
-    <div on:click={onClick}>
-      <h3 class={cardTitle}>{post.title}</h3>
-      <p class={cardBody}>{post.body}</p>
-      <Tags tags={post.tags} />
-      <Reactions likes={post.reactions?.likes} views={post.views} />
+const submitSearch = () => appStore.query(appStore.searchValue());
+
+export const SearchBar = () => {
+  const handleKeyup = (e: KeyboardEvent) => {
+    (e.key === "Enter" || searchValue() === "") && submitSearch();
+  };
+
+  return (
+    <div class={search}>
+      <input
+        type="text"
+        placeholder="Search..."
+        name="search"
+        value={searchValue}
+        on:input={(e) => searchValue((e.target as HTMLInputElement).value)}
+        on:keyup={handleKeyup}
+      />
+      <button on:click={submitSearch}>Search</button>
     </div>
-    <a class={userLink} on:click={e => { e.stopPropagation(); openUser(post.userId); }}>
-      User {post.userId}
-    </a>
-  </div>
-);
+  );
+};
 ```
 
 **Code Explanation**
 
-- **`onClick?: () => void`**: Optional click handler. When provided, the card shows a pointer cursor and is clickable
-- **[`style`](/reference/css/style)`(card, { ... }, { label: "post-card" })`**: Composes onto the shared card class: the returned string carries both (`"card-… post-card-…"`), each side keeping its own rule
-- **[`navigate`](/reference/router/navigate)**: String interpolation builds URLs like `` `/users/${id}` `` directly. No param substitution needed
-- **`e.stopPropagation()`**: Prevents the user link click from bubbling up to the card's click handler
-- **`import type { Post }`**: Type-only import keeps the interface out of the runtime bundle
-- **`&:hover`**: The `&` refers to the parent selector. `.post-card-…:hover { ... }` adds a subtle shadow on hover
+- **`const { searchValue } = appStore`**: Destructures the store property into a local signal handle, keeping the JSX below free of repeated `appStore.` prefixes
+- **`value={searchValue}`**: The signal passed as the `value` prop makes the binding two-way: the input displays `searchValue()`, and typing updates it
+- **`on:input={(e) => searchValue(...)}`**: Delegated input event. Every keystroke writes the draft into the store - this is `searchValue`, not `query`, so no request fires while typing
+- **`submitSearch`**: The single line that moves the draft into `query`. Writing `query` changes the posts resource key, and `refetchOnKeyChange` fires the request
+- **`(e.key === "Enter" || searchValue() === "") && submitSearch()`**: Submits on Enter, and also submits whenever the input is empty on keyup - emptying the field clears the search and returns to the plain list
+- **`"& input, & button"`**: Nested selector scoping both children under the generated class in one rule
 
 ### Pagination
 
-Page navigation controls with Signal props and reactive disabled state.
+Prev/Next controls derived from the resource data. Reads the page from the store and navigates with a query string.
 
 Create `src/components/Pagination.tsx`:
 
 ```tsx
-// src/components/Pagination.tsx
+import { computed } from "@hellajs/core";
 import { style } from "@hellajs/css";
-import type { Signal } from "@hellajs/core";
+import { navigate } from "@hellajs/router";
+import { appStore, postsResource } from "../state.ts";
 import { theme } from "../theme.ts";
 
 const pagination = style({
@@ -611,242 +650,224 @@ const pagination = style({
   alignItems: "center",
   gap: "0.5rem",
   marginTop: "1rem",
-  "button": {
-    cursor: "pointer",
-  },
-}, { label: "pagination" });
+});
 
 const pageInfo = style({
   fontSize: "0.85rem",
   color: theme.color.subtle,
   padding: "0 0.5rem",
-}, { label: "page-info" });
+});
 
-interface PaginationProps {
-  page: Signal<number>;
-  totalPages: () => number;
-  onPageChange: (page: number) => void;
-}
+const { data } = postsResource;
+const { page } = appStore;
 
-export const Pagination = ({ page, totalPages, onPageChange }: PaginationProps) => (
-  <div class={pagination}>
-    <button
-      on:click={() => onPageChange(Math.max(1, page() - 1))}
-      disabled={() => page() <= 1}
-    >
-      Prev
-    </button>
-    <span class={pageInfo}>
-      Page {page()} of {totalPages()}
-    </span>
-    <button
-      on:click={() => onPageChange(Math.min(totalPages(), page() + 1))}
-      disabled={() => page() >= totalPages()}
-    >
-      Next
-    </button>
-  </div>
+const totalPages = computed(() => {
+  const posts = data();
+  return posts ? Math.ceil(posts.total / 10) : 0;
+});
+
+const goToPage = (p: number) =>
+  navigate("/posts", {
+    query: {
+      page: String(p),
+    },
+  });
+
+export const Pagination = () => {
+  const pages = totalPages();
+
+  return (
+    <>
+      {pages > 1 && (
+        <div class={pagination}>
+          <button on:click={() => goToPage(Math.max(1, page() - 1))} disabled={() => page() <= 1}>
+            Prev
+          </button>
+          <span class={pageInfo}>
+            Page {page} of {pages}
+          </span>
+          <button
+            on:click={() => goToPage(Math.min(pages, page() + 1))}
+            disabled={() => page() >= pages}
+          >
+            Next
+          </button>
+        </div>
+      )}
+    </>
+  );
+};
+```
+
+**Code Explanation**
+
+- **[`computed`](/reference/core/computed)`(() => ...)`**: Derives the total page count from the resource data. It caches until `data()` changes, and a `null` response (before the first fetch) yields 0 pages, which hides the whole control
+- **[`navigate`](/reference/router/navigate)`("/posts", { query })`**: Pagination navigates instead of writing the store. The `/posts` route handler reads `query.page` back out of the URL and writes `page` itself, producing shareable `/posts?page=2` URLs
+- **`Math.max(1, page() - 1)` and `Math.min(pages, page() + 1)`**: Clamp the target page so the buttons can never navigate out of range
+- **`disabled={() => page() <= 1}`**: A function-valued attribute is reactive - the buttons disable and enable as the page changes, with `Prev` dead on page 1 and `Next` dead on the last page
+- **`{page} of {pages}`**: `page` renders as the signal itself (reactive), while `pages` is the plain number captured above - it only needs to be current for this render, since `totalPages()` changing re-runs the component's expression
+- **The fragment wrapper `<>...</>`**: A component must return a node, not a bare boolean. The conditional lives inside the fragment, and the compiler wires its signal reads into a reactive child
+
+## Post List Page
+
+The list page composes the search bar, the posts, and pagination. It never fetches: `postsResource` fetched itself when its key was set, and every later search or page change refetches the same way.
+
+Create `src/pages/PostList.tsx`:
+
+```tsx
+import { computed } from "@hellajs/core";
+import { ForEach } from "@hellajs/dom";
+import { Pagination } from "../components/Pagination.tsx";
+import { Placeholder } from "../components/Placeholder.tsx";
+import { Post } from "../components/Post.tsx";
+import { SearchBar } from "../components/SearchBar.tsx";
+import { appStore, postsResource } from "../state.ts";
+
+const { isFetching, data } = postsResource;
+const { searchValue } = appStore;
+
+const posts = computed(() => data()?.posts ?? []);
+
+export const PostList = () => (
+  <>
+    <SearchBar />
+
+    {isFetching() ? (
+      <Placeholder message="Loading posts..." />
+    ) : posts().length > 0 ? (
+      <ForEach each={posts} use={(post) => <Post data={post} />} />
+    ) : (
+      <Placeholder message={`No posts found "${searchValue()}".`} />
+    )}
+
+    <Pagination />
+  </>
 );
 ```
 
 **Code Explanation**
 
-- **`Signal<number>` and `() => number`**: The `page` prop is a signal (read+write), while `totalPages` is a computed function (read-only). Both are reactive
-- **`disabled``={() => page() <= 1}`**: Reactive disabled state. The button disables when on the first page
-- **`onPageChange`**: Callback that handles the actual page change logic. The parent page component decides how to update the URL
-- **`Math.max(1, page() - 1)`**: Clamps the page number so it never goes below 1
-
-## Post List Page
-
-The Post List page shows searchable, paginated posts. It uses [computed](/reference/core/computed) for derived pagination state and explicitly calls `fetch()` to load data.
-
-Create `src/pages/PostList.tsx`:
-
-```tsx
-// src/pages/PostList.tsx
-import { computed } from "@hellajs/core";
-import { ForEach } from "@hellajs/dom";
-import { navigate } from "@hellajs/router";
-import { appStore, postsResource } from "../state.ts";
-import { Placeholder } from "../components/Placeholder.tsx";
-import { PostCard } from "../components/PostCard.tsx";
-import { SearchBar } from "../components/SearchBar.tsx";
-import { Pagination } from "../components/Pagination.tsx";
-
-const { fetch, isFetching, data } = postsResource;
-const { searchValue, page } = appStore;
-
-const totalPages = computed(() => {
-  const dataValue = data();
-  return dataValue ? Math.ceil(dataValue.total / 10) : 0;
-});
-
-const goToPage = (p: number) => navigate("/posts", { query: { page: String(p) } });
-
-export const PostList = () => {
-  fetch();
-
-  return <>
-    <SearchBar
-      value={searchValue}
-      onSearch={fetch}
-    />
-
-    {() => {
-      const posts = data()?.posts ?? [];
-
-      return isFetching() ?
-        <Placeholder message="Loading posts..." /> :
-        posts.length > 0 ?
-          <ForEach each={posts} use={(post) =>
-            <PostCard post={post} onClick={() => navigate(`/posts/${post.id}`)} />
-          } /> :
-          <Placeholder message={`No posts found "${searchValue()}".`} />;
-    }}
-
-    {totalPages() > 1 &&
-      <Pagination page={page} totalPages={totalPages} onPageChange={goToPage} />
-    }
-  </>;
-};
-```
-
-**Code Explanation**
-
-- **`const { fetch, isFetching, data } = postsResource`**: Destructures resource methods for cleaner usage. `fetch()` triggers the API call, `isFetching()` returns the loading state, `data()` returns the cached response
-- **[`computed`](/reference/core/computed)`(() => ...)`**: Derives total pages from resource data. Cached until `data()` changes
-- **`fetch()`**: Called at the top of the component. Triggers a data load if the key is new or data is stale. Returns instantly if cached and fresh
-- **[`navigate`](/reference/router/navigate)`("/posts", { query: { page: ... } })`**: Navigates with a query string, producing URLs like `/posts?page=2`. The route handler reads `query.page` to set the store
-- **`<SearchBar>` outside the reactive block**: Static elements placed outside `{() => {}}` never re-render. The search bar doesn't depend on fetched data, so it stays mounted across fetches
-- **`{() => { ... } }`**: Function expression makes the block reactive. When `data()` changes, the posts list re-renders
-- **`isFetching() ? ... : ... ? ... : ...`**: Single ternary returning directly handles three states: loading, has results, no results. No wrapping `<div>` needed
-- **`searchValue` as a Signal prop**: Passed directly to SearchBar, which uses it for `value` two-way binding
-- **`<Pagination>` in its own reactive block**: Separated into its own reactive expression so pagination controls stay mounted while posts update independently
+- **`const posts = computed(() => data()?.posts ?? [])`**: A derived list that is always an array, so the length check below never fights `undefined`. It recomputes when the resource data changes
+- **`{isFetching() ? ... : ... ? ... : ...}`**: Expression children that read signals are reactive by default - the compiler wraps them, so this ternary re-runs whenever `isFetching()` or `posts()` change. It covers the three states in one expression: loading, results, empty
+- **[`ForEach`](/reference/dom/foreach)` each={posts}`**: The computed list renders each post through `Post`. Posts carry an `id`, so items are keyed by id: reordering or replacing the array reuses DOM nodes instead of rebuilding them
+- **`searchValue()` in the empty message**: Reads the live draft so the message echoes exactly what the user typed when the search came back empty
+- **`<Pagination />` rendered unconditionally**: The component itself decides visibility from the derived page count, keeping the page's markup free of pagination wiring
 
 ## Post Detail Page
 
-The Post Detail page shows a single post. It demonstrates explicit resource fetching and conditional rendering based on loading and data state.
+The detail page reads the single-post resource. Same key-driven flow: the route wrote `postId`, the key changed, the fetch fired.
 
 Create `src/pages/PostDetail.tsx`:
 
 ```tsx
-// src/pages/PostDetail.tsx
-import { postResource } from "../state.ts";
-import { Placeholder } from "../components/Placeholder.tsx";
-import { PostCard } from "../components/PostCard.tsx";
 import { BackLink } from "../components/BackLink.tsx";
+import { Placeholder } from "../components/Placeholder.tsx";
+import { Post } from "../components/Post.tsx";
+import { postResource } from "../state.ts";
 
-const { fetch, isFetching, data } = postResource;
+const { isFetching, data } = postResource;
 
-export const PostDetail = () => {
-  fetch();
-
-  return <>
+export const PostDetail = () => (
+  <>
     <BackLink />
 
     {() => {
       const post = data();
 
-      return <div class="post-detail">
-        {isFetching() ?
-          <Placeholder message="Loading post..." /> :
-          post?.body ?
-            <PostCard post={post!} /> :
+      return (
+        <div class="post-detail">
+          {isFetching() ? (
+            <Placeholder message="Loading post..." />
+          ) : post?.body ? (
+            <Post data={post} />
+          ) : (
             <Placeholder message="Post not found" />
-        }
-      </div>;
+          )}
+        </div>
+      );
     }}
-  </>;
-};
+  </>
+);
 ```
 
 **Code Explanation**
 
-- **`<BackLink>` outside the reactive block**: Static navigation stays mounted across fetches. Only the content inside `{() => {}}` re-renders when data changes
-- **`fetch()`**: Called with the current `key` derived from `appStore.postId()`. Uses cached data if fresh, fetches if stale or new
-- **`post?.body`**: Checks if the post has content. The DummyJSON API returns `{ message: "..." }` for invalid IDs instead of a 404
-- **`post!`**: Non-null assertion since the `post?.body` check already confirmed the post exists
-- **`<PostCard post={post!} />`**: Reuses the PostCard component without an `onClick` prop, so it renders as a static card
-- **No component-specific styles**: This page relies entirely on shared global styles and child component styles
+- **`<BackLink />` outside the reactive block**: Static elements never re-render. Only the content inside the function expression updates when the resource changes
+- **`{() => { ... }}`**: An explicit function child. Same reactivity as the list page's bare ternary, written as a block so `data()` can be read once into a local
+- **`post?.body`**: Truthiness check on the body. The DummyJSON API answers invalid ids with a `{ message: "..." }` object rather than a 404, and that object has no `body` - so this one check routes bad ids to the not-found placeholder
+- **`<Post data={post} />`**: The same card component the list page uses; the detail page just renders one of them
 
 ## User Profile Page
 
-The User Profile page shows user details and their posts. It fetches from two independent resources (`userResource` and `userPostsResource`) that share the same key.
+The profile page reads two resources at once - the user and their posts - both keyed on `userId`, both fetched in parallel by the same key change.
 
 Create `src/pages/UserProfile.tsx`:
 
 ```tsx
-// src/pages/UserProfile.tsx
 import { style } from "@hellajs/css";
 import { ForEach } from "@hellajs/dom";
-import { navigate } from "@hellajs/router";
-import { userResource, userPostsResource } from "../state.ts";
-import { card, theme } from "../theme.ts";
-import { Placeholder } from "../components/Placeholder.tsx";
-import { PostCard } from "../components/PostCard.tsx";
 import { BackLink } from "../components/BackLink.tsx";
+import { Placeholder } from "../components/Placeholder.tsx";
+import { Post } from "../components/Post.tsx";
+import { userResource, userPostsResource } from "../state.ts";
+import { theme } from "../theme.ts";
 
 const avatar = style({
   width: "4rem",
   height: "4rem",
   borderRadius: "50%",
   objectFit: "cover",
-}, { label: "avatar" });
+});
 
-const userInfo = style({
+const info = style({
   display: "flex",
   gap: "1rem",
   alignItems: "center",
   marginBottom: "1rem",
-}, { label: "user-info" });
+});
 
-const userMeta = style({
+const meta = style({
   fontSize: "0.85rem",
   color: theme.color.subtle,
-  "& p": { margin: "0.15rem 0" },
-}, { label: "user-meta" });
+  p: {
+    margin: "0.15rem 0",
+  },
+});
 
-const {
-  fetch: fetchUser,
-  isFetching: isFetchingUser,
-  data: userData
-} = userResource;
+const { data: userData, isFetching: isFetchingUser } = userResource;
+const { data: postsData, isFetching: isFetchingPosts } = userPostsResource;
 
-const {
-  fetch: fetchPosts,
-  data: postsData,
-  isFetching: isFetchingPosts
-} = userPostsResource;
-
-export const UserProfile = () => {
-  fetchUser();
-  fetchPosts();
-
-  return <div class="user-profile">
+export const UserProfile = () => (
+  <div>
     <BackLink />
 
     {() => {
       const user = userData();
+
       const { firstName, lastName, email, image, company } = user || {};
 
       if (isFetchingUser()) return <Placeholder message="Loading user..." />;
 
       if (!user?.id) return <Placeholder message="User not found." />;
 
-      return <div class={card}>
-        <div class={userInfo}>
-          <img class={avatar} src={image} alt={`${firstName} ${lastName}`} />
-          <div>
-            <h2 class="title" style="margin-bottom: 0.25rem">
-              {firstName} {lastName}
-            </h2>
-            <div class={userMeta}>
-              <p>{email}</p>
-              <p>{company?.title} at {company?.name}</p>
+      return (
+        <div>
+          <div class={info}>
+            <img class={avatar} src={image} alt={`${firstName} ${lastName}`} />
+            <div>
+              <h2 class="title" style="margin-bottom: 0.25rem">
+                {firstName} {lastName}
+              </h2>
+              <div class={meta}>
+                <p>{email}</p>
+                <p>
+                  {company?.title} at {company?.name}
+                </p>
+              </div>
             </div>
           </div>
         </div>
-      </div>;
+      );
     }}
 
     <h3>Recent Posts</h3>
@@ -854,28 +875,26 @@ export const UserProfile = () => {
     {() => {
       const posts = postsData()?.posts ?? [];
 
-      return isFetchingPosts() ?
-        <Placeholder message="Loading posts..." /> :
-        posts.length > 0 ?
-          <ForEach each={posts} use={(post) =>
-            <PostCard post={post} onClick={() => navigate(`/posts/${post.id}`)} />
-          } /> :
-          <Placeholder message="No posts found." />;
+      return isFetchingPosts() ? (
+        <Placeholder message="Loading posts..." />
+      ) : posts.length > 0 ? (
+        <ForEach each={posts} use={(post) => <Post data={post} />} />
+      ) : (
+        <Placeholder message="No posts found." />
+      );
     }}
-  </div>;
-};
+  </div>
+);
 ```
 
 **Code Explanation**
 
-- **`fetchUser()` and `fetchPosts()`**: Two independent resources keyed by `appStore.userId()`. Both fetch in parallel when the component renders
-- **`<div class="user-profile">` as root**: A semantic wrapper class (no generated rule: the avatar/user-info/user-meta classes carry the styles). Static elements (`BackLink`, heading) sit outside reactive blocks
-- **`const { firstName, ... } = user || {}`**: Destructures with a fallback. The fields are undefined while loading, and the JSX handles that gracefully
-- **`user?.id`**: Checks if the user data is valid. The DummyJSON API returns `{ message: "..." }` for invalid IDs
-- **Separate reactive blocks for user and posts**: Each `{() => {}}` handles one concern independently. User info re-renders without touching the posts list and vice versa
-- **`"& p": { margin: "0.15rem 0" }`**: The `&` refers to the parent selector, producing `.user-meta-… p { ... }`
-- **`isFetchingPosts()` checked first**: Returns a loading placeholder while fetching. Only shows posts or "not found" when loading is done
-- **`class={card}`**: The profile header reuses the shared card class imported from `theme.ts`; `avatar`, `userInfo`, and `userMeta` are their own hashed classes, so the styles are scoped to the user profile page
+- **`const { data: userData, isFetching: isFetchingUser } = userResource`**: Destructuring with renames keeps the two resources' handles distinct - `userData` vs `postsData`, `isFetchingUser` vs `isFetchingPosts`
+- **Two independent reactive blocks**: The user card and the posts list each live in their own function child. The user block re-renders without touching the posts block and vice versa, so a slow user fetch never rebuilds the post list
+- **`const { firstName, ... } = user || {}`**: Destructures with a fallback so the fields are `undefined` rather than throwing while the first fetch is in flight
+- **`isFetchingUser()` first, then `!user?.id`**: Loading wins over not-found. The DummyJSON API returns a `{ message: "..." }` object for invalid ids; that object has no `id`, so the second check catches it after loading finishes
+- **`company?.title`**: Optional chaining tolerates users whose company field is missing
+- **`style="margin-bottom: 0.25rem"`**: A one-off inline style string. For anything reused, a `style()` class is the tool; a single static declaration is fine inline
 
 ## Next Steps
 
@@ -883,17 +902,18 @@ export const UserProfile = () => {
 - **[Routing](/learn/concepts/routing)**: Nested routes, guards, and redirects
 - **[Resources](/learn/concepts/resources)**: Polling, optimistic updates, and SWR patterns
 
-The patterns you learned here, store-driven resource keys, router-to-signal communication, and reusable component architecture, are the foundation for building real-world data-driven applications with HellaJS.
+The patterns you learned here, key-driven resource fetching, store-driven page state, and router-to-signal communication, are the foundation for building real-world data-driven applications with HellaJS.
 
 ## Complete Code
 
 ### `src/state.ts`
 
 ```tsx
-import { store } from "@hellajs/store";
+import { effect } from "@hellajs/core";
 import { resource } from "@hellajs/resource";
+import { store } from "@hellajs/store";
 
-export interface Post {
+export interface PostData {
   id: number;
   title: string;
   body: string;
@@ -905,7 +925,7 @@ export interface Post {
 }
 
 interface PostsResponse {
-  posts: Post[];
+  posts: PostData[];
   total: number;
   skip: number;
   limit: number;
@@ -921,53 +941,67 @@ interface User {
   message?: string;
 }
 
-export const appStore = store({
+export const appStore = store<{
+  searchValue: string;
+  query: string;
+  page: number;
+  postId: string | null;
+  userId: string | null;
+  title: string;
+}>({
   searchValue: "",
+  query: "",
   page: 1,
-  postId: "",
-  userId: "",
+  postId: null,
+  userId: null,
+  title: "",
 });
 
-const BASE = "https://dummyjson.com";
+effect(() => (document.title = `Blog - ${appStore.title()}`));
 
-const cacheTime = 300000; // 5 minutes
+const BASE = "https://dummyjson.com";
+const cacheTime = 300000;
 
 export const postsResource = resource<PostsResponse, string>(
   (urlPath) => fetch(`${BASE}/${urlPath}`).then((r) => r.json()),
   {
     key: () => {
-      const search = appStore.searchValue();
+      const search = appStore.query();
       const skip = (appStore.page() - 1) * 10;
       const base = search ? "posts/search" : "posts";
       const params = new URLSearchParams({ limit: "10", skip: String(skip) });
       if (search) params.set("q", search);
       return `${base}?${params}`;
     },
+    refetchOnKeyChange: true,
+    keepPreviousData: false,
     staleTime: 30000,
     cacheTime,
   },
 );
 
-export const postResource = resource<Post, string>(
+export const postResource = resource<PostData, string | null>(
   (id) => fetch(`${BASE}/posts/${id}`).then((r) => r.json()),
-  { key: () => appStore.postId(), cacheTime },
+  { key: () => appStore.postId(), refetchOnKeyChange: true, cacheTime },
 );
 
-export const userResource = resource<User, string>(
+export const userResource = resource<User, string | null>(
   (id) => fetch(`${BASE}/users/${id}`).then((r) => r.json()),
-  { key: () => appStore.userId(), cacheTime },
+  { key: () => appStore.userId(), refetchOnKeyChange: true, cacheTime },
 );
 
-export const userPostsResource = resource<PostsResponse, string>(
+export const userPostsResource = resource<PostsResponse, string | null>(
   (id) => fetch(`${BASE}/users/${id}/posts`).then((r) => r.json()),
-  { key: () => appStore.userId(), cacheTime },
+  { key: () => appStore.userId(), refetchOnKeyChange: true, cacheTime },
 );
 ```
 
 ### `src/theme.ts`
 
 ```tsx
-import { css, style, vars } from "@hellajs/css";
+import { css, reset, vars } from "@hellajs/css";
+
+css(reset);
 
 export const theme = vars({
   color: {
@@ -994,195 +1028,242 @@ css({
     backgroundColor: theme.color.bg,
     color: theme.color.text,
   },
+  a: {
+    color: theme.color.link,
+    textDecoration: "none",
+    "&:hover": {
+      textDecoration: "underline",
+    },
+  },
 });
-
-// Shared card styles; composed by PostCard via style(card, ...) and consumed
-// directly by UserProfile.
-export const card = style(
-  {
-    backgroundColor: theme.color.surface,
-    borderRadius: theme.radius.md,
-    padding: "1rem",
-    marginBottom: "0.75rem",
-    border: `1px solid ${theme.color.border}`,
-  },
-  { label: "card" },
-);
-
-export const cardTitle = style(
-  {
-    fontSize: "1.1rem",
-    fontWeight: 600,
-    margin: "0 0 0.5rem",
-  },
-  { label: "card-title" },
-);
-
-export const cardBody = style(
-  {
-    color: theme.color.muted,
-    fontSize: "0.9rem",
-    lineHeight: 1.5,
-  },
-  { label: "card-body" },
-);
 ```
 
-### `src/main.tsx`
+### `src/router.tsx`
 
 ```tsx
-import { effect, signal } from "@hellajs/core";
-import { style } from "@hellajs/css";
-import { mount } from "@hellajs/dom";
+import { signal } from "@hellajs/core";
 import { router } from "@hellajs/router";
-import { appStore } from "./state.ts";
-import "./theme.ts";
 import { Placeholder } from "./components/Placeholder.tsx";
 import { PostDetail } from "./pages/PostDetail.tsx";
-import { UserProfile } from "./pages/UserProfile.tsx";
 import { PostList } from "./pages/PostList.tsx";
+import { UserProfile } from "./pages/UserProfile.tsx";
+import { appStore } from "./state.ts";
 
-const title = signal("");
-const view = signal(<Placeholder message="Loading..." />);
-
-effect(() => (document.title = `Blog - ${title}`));
+export const currentView = signal(<Placeholder message="Loading..." />);
 
 router({
   scrollBehavior: "top",
   routes: {
     "/": "/posts",
     "/posts": (_params, query) => {
-      appStore.page(query.page ? Number(query.page) : 1);
-      view(PostList());
-      title("Posts");
+      appStore.$update({
+        page: query.page ? Number(query.page) : 1,
+        postId: null,
+        userId: null,
+        title: "Posts",
+      });
+      currentView(PostList());
     },
     "/posts/:id": ({ id }) => {
-      appStore.postId(id);
-      view(PostDetail());
-      title(`Post ${id}`);
+      appStore.$update({
+        postId: id,
+        userId: null,
+        title: `Post ${id}`,
+      });
+      currentView(PostDetail());
     },
     "/users/:id": ({ id }) => {
-      appStore.userId(id);
-      view(UserProfile());
-      title(`User ${id}`);
+      appStore.$update({
+        postId: null,
+        userId: id,
+        title: `User ${id}`,
+      });
+      currentView(UserProfile());
     },
   },
-  notFound: () => view(PostList()),
+  notFound: () => currentView(PostList()),
+});
+```
+
+### `src/main.tsx`
+
+```tsx
+import { style } from "@hellajs/css";
+import { mount } from "@hellajs/dom";
+import { currentView } from "./router.tsx";
+import { appStore } from "./state.ts";
+import "./theme.ts";
+
+const container = style({
+  maxWidth: "48rem",
+  margin: "0 auto",
+  padding: "1rem",
+  h1: {
+    fontSize: "1.5rem",
+    marginBottom: "1rem",
+  },
 });
 
-const appContainer = style(
-  {
-    maxWidth: "48rem",
-    margin: "0 auto",
-    padding: "1rem",
-  },
-  { label: "app-container" },
-);
-
-const appTitle = style(
-  {
-    fontSize: "1.5rem",
-  },
-  { label: "app-title" },
-);
-
 const App = (
-  <div class={appContainer}>
-    <h1 class={appTitle}>{title}</h1>
-    {view}
+  <div class={container}>
+    <h1>{appStore.title}</h1>
+    {currentView}
   </div>
 );
 
 mount(App, "#app");
-```
-### `src/components/Placeholder.tsx`
-
-```tsx
-import { style } from "@hellajs/css";
-import { theme } from "../theme.ts";
-
-const placeholder = style(
-  {
-    textAlign: "center",
-    color: theme.color.subtle,
-    padding: "2rem 0",
-  },
-  { label: "placeholder" },
-);
-
-export const Placeholder = ({ message }: { message: string }) => (
-  <div class={placeholder}>{message}</div>
-);
 ```
 
 ### `src/components/BackLink.tsx`
 
 ```tsx
 import { style } from "@hellajs/css";
-import { navigate } from "@hellajs/router";
-import { theme } from "../theme.ts";
 
-const backLink = style(
-  {
-    display: "inline-block",
-    marginBottom: "1rem",
-    color: theme.color.link,
-    cursor: "pointer",
-    fontSize: "0.9rem",
-  },
-  { label: "back-link" },
-);
+const link = style({
+  display: "inline-block",
+  marginBottom: "1rem",
+});
 
 export const BackLink = () => (
-  <a
-    class={backLink}
-    on:click={(e) => {
-      e.preventDefault();
-      navigate("/posts");
-    }}
-  >
+  <a class={link} href="/posts">
     &larr; Back to posts
   </a>
 );
 ```
 
-### `src/components/Tags.tsx`
+### `src/components/Pagination.tsx`
 
 ```tsx
-import { ForEach } from "@hellajs/dom";
+import { computed } from "@hellajs/core";
+import { style } from "@hellajs/css";
+import { navigate } from "@hellajs/router";
+import { appStore, postsResource } from "../state.ts";
+import { theme } from "../theme.ts";
+
+const pagination = style({
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  gap: "0.5rem",
+  marginTop: "1rem",
+});
+
+const pageInfo = style({
+  fontSize: "0.85rem",
+  color: theme.color.subtle,
+  padding: "0 0.5rem",
+});
+
+const { data } = postsResource;
+const { page } = appStore;
+
+const totalPages = computed(() => {
+  const posts = data();
+  return posts ? Math.ceil(posts.total / 10) : 0;
+});
+
+const goToPage = (p: number) =>
+  navigate("/posts", {
+    query: {
+      page: String(p),
+    },
+  });
+
+export const Pagination = () => {
+  const pages = totalPages();
+
+  return (
+    <>
+      {pages > 1 && (
+        <div class={pagination}>
+          <button on:click={() => goToPage(Math.max(1, page() - 1))} disabled={() => page() <= 1}>
+            Prev
+          </button>
+          <span class={pageInfo}>
+            Page {page} of {pages}
+          </span>
+          <button
+            on:click={() => goToPage(Math.min(pages, page() + 1))}
+            disabled={() => page() >= pages}
+          >
+            Next
+          </button>
+        </div>
+      )}
+    </>
+  );
+};
+```
+
+### `src/components/Placeholder.tsx`
+
+```tsx
 import { style } from "@hellajs/css";
 import { theme } from "../theme.ts";
 
-const tagList = style(
-  {
-    display: "flex",
-    gap: "0.4rem",
-    flexWrap: "wrap",
-    marginTop: "0.5rem",
-  },
-  { label: "tags" },
-);
-
-const tag = style(
-  {
-    fontSize: "0.75rem",
-    padding: "0.15rem 0.5rem",
-    borderRadius: theme.radius.pill,
-    backgroundColor: theme.color.tag,
-    color: theme.color.muted,
-  },
-  { label: "tag" },
-);
-
-interface TagsProps {
-  tags: string[];
+interface PlaceholderProps {
+  message: string;
 }
 
-export const Tags = ({ tags = [] }: TagsProps) => (
-  <div class={tagList}>
-    <ForEach each={tags} use={(t: string) => <span class={tag}>{t}</span>} />
-  </div>
+const placeholder = style({
+  textAlign: "center",
+  color: theme.color.subtle,
+  padding: "2rem 0",
+});
+
+export const Placeholder = ({ message }: PlaceholderProps) => (
+  <div class={placeholder}>{message}</div>
 );
+```
+
+### `src/components/Post.tsx`
+
+```tsx
+import { style } from "@hellajs/css";
+import type { PostData } from "../state.ts";
+import { theme } from "../theme.ts";
+import { Reactions } from "./Reactions.tsx";
+import { Tags } from "./Tags.tsx";
+
+interface PostProps {
+  data: PostData;
+}
+
+const post = style({
+  cursor: "pointer",
+  marginTop: "1rem",
+  h3: {
+    fontSize: "1.2rem",
+    marginBottom: "0",
+  },
+  p: {
+    color: theme.color.muted,
+    fontSize: "0.9rem",
+  },
+  ".user-link": {
+    fontSize: "0.8rem",
+  },
+});
+
+export const Post = ({ data }: PostProps) => {
+  const { id, title, body, tags, reactions, views, userId } = data;
+
+  return (
+    <div class={post}>
+      <div>
+        <h3>
+          <a href={`/posts/${id}`}>{title}</a>
+        </h3>
+        <p>{body}</p>
+        <Tags tags={tags} />
+        <Reactions likes={reactions?.likes} views={views} />
+      </div>
+      <a class="user-link" href={`/users/${userId}`}>
+        User {userId}
+      </a>
+    </div>
+  );
+};
 ```
 
 ### `src/components/Reactions.tsx`
@@ -1191,23 +1272,20 @@ export const Tags = ({ tags = [] }: TagsProps) => (
 import { style } from "@hellajs/css";
 import { theme } from "../theme.ts";
 
-const reactions = style(
-  {
-    fontSize: "0.8rem",
-    color: theme.color.subtle,
-    marginTop: "0.5rem",
-  },
-  { label: "reactions" },
-);
-
 interface ReactionsProps {
   likes: number;
   views?: number;
 }
 
+const reactions = style({
+  fontSize: "0.8rem",
+  color: theme.color.subtle,
+  margin: "0.5rem 0",
+});
+
 export const Reactions = ({ likes, views }: ReactionsProps) => (
   <div class={reactions}>
-    {likes ?? 0} likes{views != null && <> · {views} views</>}
+    {likes ?? 0} likes{views != null && ` • ${views} views`}
   </div>
 );
 ```
@@ -1216,176 +1294,112 @@ export const Reactions = ({ likes, views }: ReactionsProps) => (
 
 ```tsx
 import { style } from "@hellajs/css";
-import type { Signal } from "@hellajs/core";
 import { theme } from "../theme.ts";
+import { appStore } from "../state.ts";
 
-const searchBar = style(
-  {
-    display: "flex",
-    gap: "0.5rem",
-    marginBottom: "1rem",
-    input: {
-      flex: 1,
-      padding: "0.5rem 0.75rem",
-      borderRadius: theme.radius.sm,
-      border: `1px solid ${theme.color.border}`,
-      fontSize: "0.9rem",
-    },
-    button: {
-      cursor: "pointer",
-      borderRadius: theme.radius.sm,
-      border: `1px solid ${theme.color.border}`,
-      backgroundColor: theme.color.surface,
-      color: theme.color.text,
-      padding: "0.5rem 1rem",
-      fontSize: "0.9rem",
-    },
+const search = style({
+  display: "flex",
+  gap: "0.5rem",
+  marginBottom: "1rem",
+  "& input, & button": {
+    borderRadius: theme.radius.sm,
+    border: `1px solid ${theme.color.border}`,
+    fontSize: "0.9rem",
+    padding: "0.5rem 0.75rem",
   },
-  { label: "search-bar" },
-);
+  input: {
+    flex: 1,
+  },
+});
 
-interface SearchBarProps {
-  value: Signal<string>;
-  onSearch: () => void;
-}
+const { searchValue } = appStore;
 
-export const SearchBar = ({ value, onSearch }: SearchBarProps) => {
+const submitSearch = () => appStore.query(appStore.searchValue());
+
+export const SearchBar = () => {
   const handleKeyup = (e: KeyboardEvent) => {
-    (e.key === "Enter" || value() === "") && onSearch();
+    (e.key === "Enter" || searchValue() === "") && submitSearch();
   };
 
   return (
-    <div class={searchBar}>
+    <div class={search}>
       <input
         type="text"
-        placeholder={"Search..."}
-        value={value}
-
-        on:input={(e) => value((e.target as HTMLInputElement).value)}
+        placeholder="Search..."
+        name="search"
+        value={searchValue}
+        on:input={(e) => searchValue((e.target as HTMLInputElement).value)}
         on:keyup={handleKeyup}
       />
-      <button on:click={onSearch}>Search</button>
+      <button on:click={submitSearch}>Search</button>
     </div>
   );
 };
 ```
 
-### `src/components/PostCard.tsx`
+### `src/components/Tags.tsx`
 
 ```tsx
 import { style } from "@hellajs/css";
-import { navigate } from "@hellajs/router";
-import { card, cardTitle, cardBody, theme } from "../theme.ts";
-import { Tags } from "./Tags.tsx";
-import { Reactions } from "./Reactions.tsx";
-import type { Post } from "../state.ts";
+import { ForEach } from "@hellajs/dom";
+import { theme } from "../theme.ts";
 
-interface PostCardProps {
-  post: Post;
-  onClick?: () => void;
+interface TagsProps {
+  tags: string[];
 }
 
-// Compose onto the shared card class; the returned class string carries both
-// ("card-… post-card-…"), each side keeping its own rule.
-const postCard = style(
-  card,
-  {
-    "&:hover": {
-      boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-    },
-  },
-  { label: "post-card" },
-);
+const list = style({
+  display: "flex",
+  gap: "0.4rem",
+  flexWrap: "wrap",
+  marginTop: "0.5rem",
+});
 
-const userLink = style(
-  {
-    color: theme.color.link,
-    display: "inline-block",
-    fontSize: "0.9rem",
-    marginTop: "0.5rem",
-    cursor: "pointer",
-    textDecoration: "none",
-    "&:hover": {
-      textDecoration: "underline",
-    },
-  },
-  { label: "user-link" },
-);
+const badge = style({
+  fontSize: "0.8rem",
+  padding: "0.15rem 0.5rem",
+  borderRadius: theme.radius.pill,
+  backgroundColor: theme.color.tag,
+  color: theme.color.muted,
+});
 
-const openUser = (id: number) => navigate(`/users/${id}`);
-
-export const PostCard = ({ post, onClick }: PostCardProps) => (
-  <div class={postCard} style={onClick ? "cursor: pointer;" : ""}>
-    <div on:click={onClick}>
-      <h3 class={cardTitle}>{post.title}</h3>
-      <p class={cardBody}>{post.body}</p>
-      <Tags tags={post.tags} />
-      <Reactions likes={post.reactions?.likes} views={post.views} />
-    </div>
-    <a
-      class={userLink}
-      on:click={(e) => {
-        e.stopPropagation();
-        openUser(post.userId);
-      }}
-    >
-      User {post.userId}
-    </a>
+export const Tags = ({ tags = [] }: TagsProps) => (
+  <div class={list}>
+    <ForEach each={tags} use={(tag) => <span class={badge}>{tag}</span>} />
   </div>
 );
 ```
 
-### `src/components/Pagination.tsx`
+### `src/pages/PostDetail.tsx`
 
 ```tsx
-import { style } from "@hellajs/css";
-import type { Signal } from "@hellajs/core";
-import { theme } from "../theme.ts";
+import { BackLink } from "../components/BackLink.tsx";
+import { Placeholder } from "../components/Placeholder.tsx";
+import { Post } from "../components/Post.tsx";
+import { postResource } from "../state.ts";
 
-const pagination = style(
-  {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: "0.5rem",
-    marginTop: "1rem",
-    button: {
-      cursor: "pointer",
-    },
-  },
-  { label: "pagination" },
-);
+const { isFetching, data } = postResource;
 
-const pageInfo = style(
-  {
-    fontSize: "0.85rem",
-    color: theme.color.subtle,
-    padding: "0 0.5rem",
-  },
-  { label: "page-info" },
-);
+export const PostDetail = () => (
+  <>
+    <BackLink />
 
-interface PaginationProps {
-  page: Signal<number>;
-  totalPages: () => number;
-  onPageChange: (page: number) => void;
-}
+    {() => {
+      const post = data();
 
-export const Pagination = ({ page, totalPages, onPageChange }: PaginationProps) => (
-  <div class={pagination}>
-    <button on:click={() => onPageChange(Math.max(1, page() - 1))} disabled={() => page() <= 1}>
-      Prev
-    </button>
-    <span class={pageInfo}>
-      Page {page()} of {totalPages()}
-    </span>
-    <button
-      on:click={() => onPageChange(Math.min(totalPages(), page() + 1))}
-      disabled={() => page() >= totalPages()}
-    >
-      Next
-    </button>
-  </div>
+      return (
+        <div class="post-detail">
+          {isFetching() ? (
+            <Placeholder message="Loading post..." />
+          ) : post?.body ? (
+            <Post data={post} />
+          ) : (
+            <Placeholder message="Post not found" />
+          )}
+        </div>
+      );
+    }}
+  </>
 );
 ```
 
@@ -1394,186 +1408,116 @@ export const Pagination = ({ page, totalPages, onPageChange }: PaginationProps) 
 ```tsx
 import { computed } from "@hellajs/core";
 import { ForEach } from "@hellajs/dom";
-import { navigate } from "@hellajs/router";
-import { appStore, postsResource } from "../state.ts";
-import { Placeholder } from "../components/Placeholder.tsx";
-import { PostCard } from "../components/PostCard.tsx";
-import { SearchBar } from "../components/SearchBar.tsx";
 import { Pagination } from "../components/Pagination.tsx";
-
-const { fetch, isFetching, data } = postsResource;
-const { searchValue, page } = appStore;
-
-const totalPages = computed(() => {
-  const dataValue = data();
-  return dataValue ? Math.ceil(dataValue.total / 10) : 0;
-});
-
-const goToPage = (p: number) => navigate("/posts", { query: { page: String(p) } });
-
-export const PostList = () => {
-  fetch();
-
-  return (
-    <>
-      <SearchBar value={searchValue} onSearch={fetch} />
-
-      {() => {
-        const posts = data()?.posts ?? [];
-
-        return isFetching() ? (
-          <Placeholder message="Loading posts..." />
-        ) : posts.length > 0 ? (
-          <ForEach
-            each={posts}
-            use={(post) => <PostCard post={post} onClick={() => navigate(`/posts/${post.id}`)} />}
-          />
-        ) : (
-          <Placeholder message={`No posts found "${searchValue()}".`} />
-        );
-      }}
-
-      {totalPages() > 1 && (
-        <Pagination page={page} totalPages={totalPages} onPageChange={goToPage} />
-      )}
-    </>
-  );
-};
-```
-### `src/pages/PostDetail.tsx`
-
-```tsx
-import { postResource } from "../state.ts";
 import { Placeholder } from "../components/Placeholder.tsx";
-import { PostCard } from "../components/PostCard.tsx";
-import { BackLink } from "../components/BackLink.tsx";
+import { Post } from "../components/Post.tsx";
+import { SearchBar } from "../components/SearchBar.tsx";
+import { appStore, postsResource } from "../state.ts";
 
-const { fetch, isFetching, data } = postResource;
+const { isFetching, data } = postsResource;
+const { searchValue } = appStore;
 
-export const PostDetail = () => {
-  fetch();
+const posts = computed(() => data()?.posts ?? []);
 
-  return (
-    <>
-      <BackLink />
+export const PostList = () => (
+  <>
+    <SearchBar />
 
-      {() => {
-        const post = data();
+    {isFetching() ? (
+      <Placeholder message="Loading posts..." />
+    ) : posts().length > 0 ? (
+      <ForEach each={posts} use={(post) => <Post data={post} />} />
+    ) : (
+      <Placeholder message={`No posts found "${searchValue()}".`} />
+    )}
 
-        return (
-          <div class="post-detail">
-            {isFetching() ? (
-              <Placeholder message="Loading post..." />
-            ) : post?.body ? (
-              <PostCard post={post!} />
-            ) : (
-              <Placeholder message="Post not found" />
-            )}
-          </div>
-        );
-      }}
-    </>
-  );
-};
+    <Pagination />
+  </>
+);
 ```
+
 ### `src/pages/UserProfile.tsx`
 
 ```tsx
 import { style } from "@hellajs/css";
 import { ForEach } from "@hellajs/dom";
-import { navigate } from "@hellajs/router";
-import { userResource, userPostsResource } from "../state.ts";
-import { card, theme } from "../theme.ts";
-import { Placeholder } from "../components/Placeholder.tsx";
-import { PostCard } from "../components/PostCard.tsx";
 import { BackLink } from "../components/BackLink.tsx";
+import { Placeholder } from "../components/Placeholder.tsx";
+import { Post } from "../components/Post.tsx";
+import { userResource, userPostsResource } from "../state.ts";
+import { theme } from "../theme.ts";
 
-const avatar = style(
-  {
-    width: "4rem",
-    height: "4rem",
-    borderRadius: "50%",
-    objectFit: "cover",
+const avatar = style({
+  width: "4rem",
+  height: "4rem",
+  borderRadius: "50%",
+  objectFit: "cover",
+});
+
+const info = style({
+  display: "flex",
+  gap: "1rem",
+  alignItems: "center",
+  marginBottom: "1rem",
+});
+
+const meta = style({
+  fontSize: "0.85rem",
+  color: theme.color.subtle,
+  p: {
+    margin: "0.15rem 0",
   },
-  { label: "avatar" },
-);
+});
 
-const userInfo = style(
-  {
-    display: "flex",
-    gap: "1rem",
-    alignItems: "center",
-    marginBottom: "1rem",
-  },
-  { label: "user-info" },
-);
+const { data: userData, isFetching: isFetchingUser } = userResource;
+const { data: postsData, isFetching: isFetchingPosts } = userPostsResource;
 
-const userMeta = style(
-  {
-    fontSize: "0.85rem",
-    color: theme.color.subtle,
-    "& p": { margin: "0.15rem 0" },
-  },
-  { label: "user-meta" },
-);
+export const UserProfile = () => (
+  <div>
+    <BackLink />
 
-const { fetch: fetchUser, isFetching: isFetchingUser, data: userData } = userResource;
+    {() => {
+      const user = userData();
 
-const { fetch: fetchPosts, data: postsData, isFetching: isFetchingPosts } = userPostsResource;
+      const { firstName, lastName, email, image, company } = user || {};
 
-export const UserProfile = () => {
-  fetchUser();
-  fetchPosts();
+      if (isFetchingUser()) return <Placeholder message="Loading user..." />;
 
-  return (
-    <div class="user-profile">
-      <BackLink />
+      if (!user?.id) return <Placeholder message="User not found." />;
 
-      {() => {
-        const user = userData();
-        const { firstName, lastName, email, image, company } = user || {};
-
-        if (isFetchingUser()) return <Placeholder message="Loading user..." />;
-
-        if (!user?.id) return <Placeholder message="User not found." />;
-
-        return (
-          <div class={card}>
-            <div class={userInfo}>
-              <img class={avatar} src={image} alt={`${firstName} ${lastName}`} />
-              <div>
-                <h2 class="title" style="margin-bottom: 0.25rem">
-                  {firstName} {lastName}
-                </h2>
-                <div class={userMeta}>
-                  <p>{email}</p>
-                  <p>
-                    {company?.title} at {company?.name}
-                  </p>
-                </div>
+      return (
+        <div>
+          <div class={info}>
+            <img class={avatar} src={image} alt={`${firstName} ${lastName}`} />
+            <div>
+              <h2 class="title" style="margin-bottom: 0.25rem">
+                {firstName} {lastName}
+              </h2>
+              <div class={meta}>
+                <p>{email}</p>
+                <p>
+                  {company?.title} at {company?.name}
+                </p>
               </div>
             </div>
           </div>
-        );
-      }}
+        </div>
+      );
+    }}
 
-      <h3>Recent Posts</h3>
+    <h3>Recent Posts</h3>
 
-      {() => {
-        const posts = postsData()?.posts ?? [];
+    {() => {
+      const posts = postsData()?.posts ?? [];
 
-        return isFetchingPosts() ? (
-          <Placeholder message="Loading posts..." />
-        ) : posts.length > 0 ? (
-          <ForEach
-            each={posts}
-            use={(post) => <PostCard post={post} onClick={() => navigate(`/posts/${post.id}`)} />}
-          />
-        ) : (
-          <Placeholder message="No posts found." />
-        );
-      }}
-    </div>
-  );
-};
+      return isFetchingPosts() ? (
+        <Placeholder message="Loading posts..." />
+      ) : posts.length > 0 ? (
+        <ForEach each={posts} use={(post) => <Post data={post} />} />
+      ) : (
+        <Placeholder message="No posts found." />
+      );
+    }}
+  </div>
+);
 ```

@@ -1,62 +1,23 @@
-import { effect, signal } from "@hellajs/core";
 import { style } from "@hellajs/css";
 import { mount } from "@hellajs/dom";
-import { router } from "@hellajs/router";
+import { currentView } from "./router.tsx";
 import { appStore } from "./state.ts";
 import "./theme.ts";
-import { Placeholder } from "./components/Placeholder.tsx";
-import { PostDetail } from "./pages/PostDetail.tsx";
-import { UserProfile } from "./pages/UserProfile.tsx";
-import { PostList } from "./pages/PostList.tsx";
 
-const title = signal("");
-const view = signal(<Placeholder message="Loading..." />);
-
-effect(() => (document.title = `Blog - ${title}`));
-
-router({
-  scrollBehavior: "top",
-  routes: {
-    "/": "/posts",
-    "/posts": (_params, query) => {
-      appStore.page(query.page ? Number(query.page) : 1);
-      view(PostList());
-      title("Posts");
-    },
-    "/posts/:id": ({ id }) => {
-      appStore.postId(id);
-      view(PostDetail());
-      title(`Post ${id}`);
-    },
-    "/users/:id": ({ id }) => {
-      appStore.userId(id);
-      view(UserProfile());
-      title(`User ${id}`);
-    },
+const container = style({
+  maxWidth: "48rem",
+  margin: "0 auto",
+  padding: "1rem",
+  h1: {
+    fontSize: "1.5rem",
+    marginBottom: "1rem",
   },
-  notFound: () => view(PostList()),
 });
 
-const appContainer = style(
-  {
-    maxWidth: "48rem",
-    margin: "0 auto",
-    padding: "1rem",
-  },
-  { label: "app-container" },
-);
-
-const appTitle = style(
-  {
-    fontSize: "1.5rem",
-  },
-  { label: "app-title" },
-);
-
 const App = (
-  <div class={appContainer}>
-    <h1 class={appTitle}>{title}</h1>
-    {view}
+  <div class={container}>
+    <h1>{appStore.title}</h1>
+    {currentView}
   </div>
 );
 

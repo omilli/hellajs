@@ -1,53 +1,42 @@
 import { style } from "@hellajs/css";
-import type { Signal } from "@hellajs/core";
 import { theme } from "../theme.ts";
+import { appStore } from "../state.ts";
 
-const searchBar = style(
-  {
-    display: "flex",
-    gap: "0.5rem",
-    marginBottom: "1rem",
-    input: {
-      flex: 1,
-      padding: "0.5rem 0.75rem",
-      borderRadius: theme.radius.sm,
-      border: `1px solid ${theme.color.border}`,
-      fontSize: "0.9rem",
-    },
-    button: {
-      cursor: "pointer",
-      borderRadius: theme.radius.sm,
-      border: `1px solid ${theme.color.border}`,
-      backgroundColor: theme.color.surface,
-      color: theme.color.text,
-      padding: "0.5rem 1rem",
-      fontSize: "0.9rem",
-    },
+const search = style({
+  display: "flex",
+  gap: "0.5rem",
+  marginBottom: "1rem",
+  "& input, & button": {
+    borderRadius: theme.radius.sm,
+    border: `1px solid ${theme.color.border}`,
+    fontSize: "0.9rem",
+    padding: "0.5rem 0.75rem",
   },
-  { label: "search-bar" },
-);
+  input: {
+    flex: 1,
+  },
+});
 
-interface SearchBarProps {
-  value: Signal<string>;
-  onSearch: () => void;
-}
+const { searchValue } = appStore;
 
-export const SearchBar = ({ value, onSearch }: SearchBarProps) => {
+const submitSearch = () => appStore.query(appStore.searchValue());
+
+export const SearchBar = () => {
   const handleKeyup = (e: KeyboardEvent) => {
-    (e.key === "Enter" || value() === "") && onSearch();
+    (e.key === "Enter" || searchValue() === "") && submitSearch();
   };
 
   return (
-    <div class={searchBar}>
+    <div class={search}>
       <input
         type="text"
-        placeholder={"Search..."}
-        value={value}
-
-        on:input={(e) => value((e.target as HTMLInputElement).value)}
+        placeholder="Search..."
+        name="search"
+        value={searchValue}
+        on:input={(e) => searchValue((e.target as HTMLInputElement).value)}
         on:keyup={handleKeyup}
       />
-      <button on:click={onSearch}>Search</button>
+      <button on:click={submitSearch}>Search</button>
     </div>
   );
 };
