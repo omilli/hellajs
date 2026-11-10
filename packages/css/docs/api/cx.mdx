@@ -10,13 +10,9 @@ import { cx } from '@hellajs/css';
 const isHighlighted = true;
 const isDisabled = false;
 
-cx(
-  'card',
-  isHighlighted && 'card-highlight',
-  {
-    'card-disabled': isDisabled,
-  },
-);
+cx('card', isHighlighted && 'card-highlight', {
+  'card-disabled': isDisabled,
+});
 // "card card-highlight"
 ```
 
@@ -40,15 +36,10 @@ function cx(...args: CXArg[]): string;
 ```typescript
 import { cx } from '@hellajs/css';
 
-cx(
-  'menu',
-  ['item', ['selected', null]],
-  {
-    hidden: false,
-    active: true,
-  },
-  0,
-);
+cx('menu', ['item', ['selected', null]], {
+  hidden: false,
+  active: true,
+}, 0);
 // "menu item selected active"
 ```
 

@@ -15,14 +15,11 @@ Name derivation is fixed: nested object keys flatten to dot-joined paths, dots b
 import { vars } from "@hellajs/css";
 
 // Trailing hyphen in the prefix doubles up: "--brand--accent"
-vars(
-  {
-    accent: "#3b82f6",
-  },
-  {
-    prefix: "brand-",
-  },
-);
+vars({
+  accent: "#3b82f6",
+}, {
+  prefix: "brand-",
+});
 ```
 
 **Correct (what is right):**
@@ -31,16 +28,13 @@ vars(
 import { vars } from "@hellajs/css";
 
 // "--brand-accent", scoped to .panel, dark-scheme only
-vars(
-  {
-    accent: "#3b82f6",
-  },
-  {
-    prefix: "brand",
-    scoped: ".panel",
-    media: "(prefers-color-scheme: dark)",
-  },
-);
+vars({
+  accent: "#3b82f6",
+}, {
+  prefix: "brand",
+  scoped: ".panel",
+  media: "(prefers-color-scheme: dark)",
+});
 ```
 
 Reference: `packages/css/lib/internal/vars.ts resolveVarsOptions` and `packages/css/lib/internal/vars.ts kebabVarName` and `packages/css/docs/api/vars.mdx`

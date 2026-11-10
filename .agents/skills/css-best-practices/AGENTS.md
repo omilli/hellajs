@@ -33,7 +33,7 @@ Best practices for @hellajs/css, the type-safe CSS-in-JS package: scoped style()
   - 2.5 Register the preflight reset through css(), never scoped or hand-copied (`css-reset-preflight`)
   - 2.6 Numbers mean px, so pass other units in strings (`css-value-semantics`)
 - 3. Styling object authoring
-  - 3.1 Break every styling object across lines, single-property objects included (`format-multiline-objects`)
+  - 3.1 Break every styling object across lines and hug its call (`format-multiline-objects`)
 - 4. Reactive CSS variables
   - 4.1 One reactive vars object per scope (`vars-one-object-one-scope`)
   - 4.2 Remove reactive vars by reference, static by structure (`vars-remove-refcount`)
@@ -82,16 +82,13 @@ import { style } from "@hellajs/css";
 
 // Scoped, content-hashed, removable as a unit; "card-{hash}" is
 // identical on client and server
-const card = style(
-  "card",
-  {
-    padding: "1rem",
-    borderRadius: "0.5rem",
-    "&:hover": {
-      background: "#f9fafb",
-    },
+const card = style("card", {
+  padding: "1rem",
+  borderRadius: "0.5rem",
+  "&:hover": {
+    background: "#f9fafb",
   },
-);
+});
 ```
 
 Nested keys compose under the generated class: `&` refers to the class at every occurrence, plain keys become descendants, and conditional at-rules (`@media`, `@container`, `@supports`) inherit it. The options-bag form with a `label` key is equivalent to the positional label.
@@ -137,12 +134,9 @@ const base = {
 };
 
 // One merged class: override wins, nested objects merge, arrays replace
-const dense = style(
-  base,
-  {
-    padding: "0.5rem",
-  },
-);
+const dense = style(base, {
+  padding: "0.5rem",
+});
 ```
 
 A second plain object reads as an options bag only when every own key is `label`, `layer`, or `host` and no third argument is present; anything else is the override. A positional string first argument is a label, never a base.
@@ -164,12 +158,9 @@ import { style } from "@hellajs/css";
 const theme = signal("light");
 
 // Throws: function values are not supported in css objects
-const button = style(
-  "theme-btn",
-  {
-    background: () => (theme() === "dark" ? "#374151" : "#3b82f6"),
-  },
-);
+const button = style("theme-btn", {
+  background: () => (theme() === "dark" ? "#374151" : "#3b82f6"),
+});
 ```
 
 **Correct (what is right):**
@@ -184,12 +175,9 @@ const themeVars = vars({
   background: () => (theme() === "dark" ? "#374151" : "#3b82f6"),
 });
 
-const button = style(
-  "theme-btn",
-  {
-    background: themeVars.background,
-  },
-);
+const button = style("theme-btn", {
+  background: themeVars.background,
+});
 ```
 
 Reference: `packages/css/lib/css.ts process` and `packages/css/docs/concepts/styling.mdx`
@@ -214,15 +202,11 @@ css({
 
 // Layered rules lose to unlayered CSS by construction: this padding
 // silently loses despite the class specificity
-const cta = style(
-  "cta",
-  {
-    padding: "0.5rem",
-  },
-  {
-    layer: "components",
-  },
-);
+const cta = style("cta", {
+  padding: "0.5rem",
+}, {
+  layer: "components",
+});
 ```
 
 **Correct (what is right):**
@@ -239,15 +223,11 @@ css({
   },
 });
 
-const cta = style(
-  "cta",
-  {
-    padding: "0.5rem",
-  },
-  {
-    layer: "components",
-  },
-);
+const cta = style("cta", {
+  padding: "0.5rem",
+}, {
+  layer: "components",
+});
 ```
 
 Reference: `packages/css/lib/internal/identity.ts scopedRule` and `packages/css/tests/style-layer.test.ts` and `packages/css/docs/api/style.mdx`
@@ -267,13 +247,9 @@ const card = {
   padding: "1rem",
 };
 
-style(
-  "card",
-  card,
-  {
-    layer: "components",
-  },
-);
+style("card", card, {
+  layer: "components",
+});
 
 // Missing the layer: derives unlayered text, finds no registration, no-ops
 removeStyle("card", card);
@@ -288,22 +264,14 @@ const card = {
   padding: "1rem",
 };
 
-style(
-  "card",
-  card,
-  {
-    layer: "components",
-  },
-);
+style("card", card, {
+  layer: "components",
+});
 
 // Same label form, same options: decrements the count, drops at zero
-removeStyle(
-  "card",
-  card,
-  {
-    layer: "components",
-  },
-);
+removeStyle("card", card, {
+  layer: "components",
+});
 ```
 
 A registration kept for the whole page lifetime (module scope) needs no removal at all; pair registration and removal only for dynamically created styles.
@@ -327,12 +295,9 @@ const root = document.createElement("my-card").attachShadow({
 
 // No host: the rules land in document.head, outside the shadow root,
 // and the component's inner tree never sees them under encapsulation
-const card = style(
-  "card",
-  {
-    color: "#111827",
-  },
-);
+const card = style("card", {
+  color: "#111827",
+});
 ```
 
 **Correct (what is right):**
@@ -345,26 +310,19 @@ const root = document.createElement("my-card").attachShadow({
 });
 
 // Sheets are created inside the host, not document.head
-const card = style(
-  "card",
-  {
-    color: "#111827",
-  },
-  {
-    host: root,
-  },
-);
+const card = style("card", {
+  color: "#111827",
+}, {
+  host: root,
+});
 
-css(
-  {
-    "*": {
-      boxSizing: "border-box",
-    },
+css({
+  "*": {
+    boxSizing: "border-box",
   },
-  {
-    host: root,
-  },
-);
+}, {
+  host: root,
+});
 ```
 
 Reference: `packages/css/lib/internal/sheet.ts getSheet` and `packages/css/tests/style-host.test.ts` and `packages/css/docs/concepts/styling.mdx`
@@ -383,18 +341,15 @@ At-rules split in two. Conditional ones (`@media`, `@container`, `@supports`, `@
 ```ts
 import { style } from "@hellajs/css";
 
-const card = style(
-  "card",
-  {
-    padding: "1rem",
-    // Definitional at-rules never pick up the class: this @font-face
+const card = style("card", {
+  padding: "1rem",
+  // Definitional at-rules never pick up the class: this @font-face
   // registers globally despite sitting under .card-{hash}
   "@font-face": {
-      fontFamily: "Inter",
-      src: "url('/fonts/inter.woff2')",
-    },
+    fontFamily: "Inter",
+    src: "url('/fonts/inter.woff2')",
   },
-);
+});
 ```
 
 **Correct (what is right):**
@@ -403,15 +358,12 @@ const card = style(
 import { css, style } from "@hellajs/css";
 
 // Conditional at-rules inherit the class scope
-const card = style(
-  "card",
-  {
-    padding: "1rem",
-    "@media (min-width: 768px)": {
-      padding: "1.5rem",
-    },
+const card = style("card", {
+  padding: "1rem",
+  "@media (min-width: 768px)": {
+    padding: "1.5rem",
   },
-);
+});
 
 // Definitional at-rules belong at the global level
 css({
@@ -483,12 +435,9 @@ const root = document.createElement("my-card").attachShadow({
   mode: "open",
 });
 
-css(
-  reset,
-  {
-    host: root,
-  },
-);
+css(reset, {
+  host: root,
+});
 
 // No host: decrements the document-head registration that does not
 // exist, and the hosted rules leak
@@ -510,20 +459,14 @@ const root = document.createElement("my-card").attachShadow({
   mode: "open",
 });
 
-css(
-  reset,
-  {
-    host: root,
-  },
-);
+css(reset, {
+  host: root,
+});
 
 // Same object, same host: decrements the hosted registration exactly
-removeCss(
-  reset,
-  {
-    host: root,
-  },
-);
+removeCss(reset, {
+  host: root,
+});
 ```
 
 Reference: `packages/css/lib/removeCss.ts` and `packages/css/lib/internal/injection.ts deregisterText`
@@ -601,14 +544,11 @@ import { css, reset, style } from "@hellajs/css";
 // Once, at the app entry: registers globally, deduped and refcounted
 css(reset);
 
-const card = style(
-  {
-    padding: "1rem",
-  },
-  {
-    label: "card",
-  },
-);
+const card = style({
+  padding: "1rem",
+}, {
+  label: "card",
+});
 ```
 
 Register the exported reference as-is; if teardown is ever needed, `removeCss(reset)` with the same reference.
@@ -656,112 +596,54 @@ Reference: `packages/css/lib/css.ts UNITLESS_PROPERTIES` and `packages/css/docs/
 
 ## 3. Styling object authoring
 
-### 3.1 Break every styling object across lines, single-property objects included
+### 3.1 Break every styling object across lines and hug its call
 
-**Impact: LOW** - single-line object props bury selectors and variant selections inside dense one-liners, so reading a recipe means parsing nested braces and every edit reflows a whole line instead of touching one
+**Impact: LOW** - single-line object props bury selectors and variant selections inside dense one-liners, and a dangling call line with the object on its own line stretches one call across two extra lines the reader must rejoin
 
-Every object literal in styling code breaks across lines, one property per line, at every nesting depth: the `css()` / `style()` / `keyframes()` object and its nested selector blocks, `cva()` configs and their variant maps and selections, `vars()` token objects, and the options bags (`{ label }`, `{ host, scoped }`). Single-property objects are included. When a call takes several arguments and any of them is an object literal, each argument goes on its own line. Type literals (`{ title: string }` prop annotations, `type X = { … }` declarations) and comments showing output shapes are not object literals; they stay compact.
+Every object literal in styling code breaks across lines, one property per line, at every nesting depth: the `css()` / `style()` / `keyframes()` object and its nested selector blocks, `cva()` configs and their variant maps and selections, `vars()` token objects, and the options bags (`{ label }`, `{ host, scoped }`). Single-property objects are included. The object's opening brace hugs its call: on the call's line for a sole argument (`style({`), on the preceding argument's line otherwise (`style("card", {`, `vars(tokens, {`), with consecutive object arguments joined `}, {` and the closing `}` beside the `)` (`});`). Type literals (`{ title: string }` prop annotations, `type X = { … }` declarations) and comments showing output shapes are not object literals; they stay compact.
 
 **Incorrect (what is wrong):**
 
 ```ts
-import { cva, style } from "@hellajs/css";
+import { cva, style, vars } from "@hellajs/css";
 
-// Variant selections buried in one-liners; reading means parsing nested braces
-const button = cva({
-  base: {
-    borderRadius: "0.5rem",
-    cursor: "pointer",
-  },
-  variants: {
-    size: {
-      sm: {
-        padding: "0.25rem 0.5rem",
-      },
-      lg: {
-        padding: "0.75rem 1.5rem",
-      },
-    },
-  },
-});
+// Variant selections buried in one-liners
+const button = cva({ base: { borderRadius: "0.5rem", cursor: "pointer" }, variants: {} });
 
-// Options bags and single-property objects too
+// Dangling call line; the object floats on its own lines
 const card = style(
+  "card",
   {
     padding: "1rem",
   },
-  {
-    label: "card",
-  },
 );
+
+// Options bags collapsed onto one line
+const theme = vars({ accent: "#3b82f6" }, { scoped: ".card" });
 ```
 
 **Correct (what is right):**
 
 ```ts
-import { cva, style } from "@hellajs/css";
+import { cva, style, vars } from "@hellajs/css";
 
 const button = cva({
   base: {
     borderRadius: "0.5rem",
     cursor: "pointer",
   },
-  variants: {
-    size: {
-      sm: {
-        padding: "0.25rem 0.5rem",
-      },
-      lg: {
-        padding: "0.75rem 1.5rem",
-      },
-    },
-  },
+  variants: {},
 });
 
-// One argument per line once any argument is an object literal
-const card = style(
-  {
-    padding: "1rem",
-  },
-  {
-    label: "card",
-  },
-);
-```
+const card = style("card", {
+  padding: "1rem",
+});
 
-**Incorrect (what is wrong):**
-
-```ts
-import { vars } from "@hellajs/css";
-
-// Token objects and scoped options collapsed onto one line
-const theme = vars(
-  {
-    colors: {
-      primary: "#3b82f6",
-    },
-  },
-  {
-    scoped: ".card",
-  },
-);
-```
-
-**Correct (what is right):**
-
-```ts
-import { vars } from "@hellajs/css";
-
-const theme = vars(
-  {
-    colors: {
-      primary: "#3b82f6",
-    },
-  },
-  {
-    scoped: ".card",
-  },
-);
+const theme = vars({
+  accent: "#3b82f6",
+}, {
+  scoped: ".card",
+});
 ```
 
 Reference: `guides/docs.md` and `packages/css/docs/api/cva.mdx`
@@ -784,20 +666,14 @@ import { vars } from "@hellajs/css";
 const accent = signal("#3b82f6");
 const tokens = { accent };
 
-vars(
-  tokens,
-  {
-    scoped: ".panel",
-  },
-);
+vars(tokens, {
+  scoped: ".panel",
+});
 
 // Throws: the same object reference re-registered with new options
-vars(
-  tokens,
-  {
-    scoped: ".sidebar",
-  },
-);
+vars(tokens, {
+  scoped: ".sidebar",
+});
 ```
 
 **Correct (what is right):**
@@ -811,18 +687,12 @@ const panelTokens = { accent };
 const sidebarTokens = { accent };
 
 // One object per scope: distinct references register independently
-vars(
-  panelTokens,
-  {
-    scoped: ".panel",
-  },
-);
-vars(
-  sidebarTokens,
-  {
-    scoped: ".sidebar",
-  },
-);
+vars(panelTokens, {
+  scoped: ".panel",
+});
+vars(sidebarTokens, {
+  scoped: ".sidebar",
+});
 ```
 
 Reference: `packages/css/lib/vars.ts` and `packages/css/tests/vars-media.test.ts`
@@ -880,14 +750,11 @@ Name derivation is fixed: nested object keys flatten to dot-joined paths, dots b
 import { vars } from "@hellajs/css";
 
 // Trailing hyphen in the prefix doubles up: "--brand--accent"
-vars(
-  {
-    accent: "#3b82f6",
-  },
-  {
-    prefix: "brand-",
-  },
-);
+vars({
+  accent: "#3b82f6",
+}, {
+  prefix: "brand-",
+});
 ```
 
 **Correct (what is right):**
@@ -896,16 +763,13 @@ vars(
 import { vars } from "@hellajs/css";
 
 // "--brand-accent", scoped to .panel, dark-scheme only
-vars(
-  {
-    accent: "#3b82f6",
-  },
-  {
-    prefix: "brand",
-    scoped: ".panel",
-    media: "(prefers-color-scheme: dark)",
-  },
-);
+vars({
+  accent: "#3b82f6",
+}, {
+  prefix: "brand",
+  scoped: ".panel",
+  media: "(prefers-color-scheme: dark)",
+});
 ```
 
 Reference: `packages/css/lib/internal/vars.ts resolveVarsOptions` and `packages/css/lib/internal/vars.ts kebabVarName` and `packages/css/docs/api/vars.mdx`
@@ -927,14 +791,11 @@ const root = document.createElement("my-card").attachShadow({
 
 // :root matches nothing inside a shadow root: the tokens are
 // registered but never apply, and consumers get no value
-vars(
-  {
-    accent: "#3b82f6",
-  },
-  {
-    host: root,
-  },
-);
+vars({
+  accent: "#3b82f6",
+}, {
+  host: root,
+});
 ```
 
 **Correct (what is right):**
@@ -946,25 +807,18 @@ const root = document.createElement("my-card").attachShadow({
   mode: "open",
 });
 
-const theme = vars(
-  {
-    accent: "#3b82f6",
-  },
-  {
-    host: root,
-    scoped: ":host",
-  },
-);
+const theme = vars({
+  accent: "#3b82f6",
+}, {
+  host: root,
+  scoped: ":host",
+});
 
-const card = style(
-  "card",
-  {
-    color: theme.accent,
-  },
-  {
-    host: root,
-  },
-);
+const card = style("card", {
+  color: theme.accent,
+}, {
+  host: root,
+});
 ```
 
 Reference: `packages/css/lib/internal/vars.ts resolveVarsOptions` and `packages/css/docs/concepts/styling.mdx`
@@ -1005,12 +859,9 @@ const tokens = vars({
   scale: () => scale(),
 });
 
-const box = style(
-  "box",
-  {
-    transform: `scale(${tokens.scale})`,
-  },
-);
+const box = style("box", {
+  transform: `scale(${tokens.scale})`,
+});
 
 // The effect rewrites --scale in the sheet; box rules never rebuild
 scale(1.5);
@@ -1094,12 +945,9 @@ const spin = keyframes({
 
 // The registered name is "kf-{hash}", not "spin": the animation
 // matches nothing and never runs
-const spinner = style(
-  "spinner",
-  {
-    animation: "spin 0.8s linear infinite",
-  },
-);
+const spinner = style("spinner", {
+  animation: "spin 0.8s linear infinite",
+});
 ```
 
 **Correct (what is right):**
@@ -1116,14 +964,11 @@ const spin = keyframes({
   },
 });
 
-const spinner = style(
-  "spinner",
-  {
-    width: "2rem",
-    height: "2rem",
-    animation: `${spin} 0.8s linear infinite`,
-  },
-);
+const spinner = style("spinner", {
+  width: "2rem",
+  height: "2rem",
+  animation: `${spin} 0.8s linear infinite`,
+});
 ```
 
 Reference: `packages/css/lib/keyframes.ts` and `packages/css/docs/api/keyframes.mdx`
@@ -1431,12 +1276,9 @@ css({
     margin: 0,
   },
 });
-const card = style(
-  "card",
-  {
-    padding: "1rem",
-  },
-);
+const card = style("card", {
+  padding: "1rem",
+});
 
 // Registrations are state-only on the server: without a cssText()
 // embed the page ships with no styles at all
@@ -1457,12 +1299,9 @@ css({
     backgroundColor: tokens.bg,
   },
 });
-const card = style(
-  "card",
-  {
-    padding: "1rem",
-  },
-);
+const card = style("card", {
+  padding: "1rem",
+});
 
 // One embed per response: css side in registration order, then vars
 const page = `<!DOCTYPE html><html><head><style id="hella-css">${cssText()}</style></head><body><div class="${card}"></div></body></html>`;

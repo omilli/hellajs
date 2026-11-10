@@ -20,14 +20,11 @@ const root = document.createElement("my-card").attachShadow({
 
 // :root matches nothing inside a shadow root: the tokens are
 // registered but never apply, and consumers get no value
-vars(
-  {
-    accent: "#3b82f6",
-  },
-  {
-    host: root,
-  },
-);
+vars({
+  accent: "#3b82f6",
+}, {
+  host: root,
+});
 ```
 
 **Correct (what is right):**
@@ -39,25 +36,18 @@ const root = document.createElement("my-card").attachShadow({
   mode: "open",
 });
 
-const theme = vars(
-  {
-    accent: "#3b82f6",
-  },
-  {
-    host: root,
-    scoped: ":host",
-  },
-);
+const theme = vars({
+  accent: "#3b82f6",
+}, {
+  host: root,
+  scoped: ":host",
+});
 
-const card = style(
-  "card",
-  {
-    color: theme.accent,
-  },
-  {
-    host: root,
-  },
-);
+const card = style("card", {
+  color: theme.accent,
+}, {
+  host: root,
+});
 ```
 
 Reference: `packages/css/lib/internal/vars.ts resolveVarsOptions` and `packages/css/docs/concepts/styling.mdx`

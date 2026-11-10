@@ -19,12 +19,9 @@ css({
     margin: 0,
   },
 });
-const card = style(
-  "card",
-  {
-    padding: "1rem",
-  },
-);
+const card = style("card", {
+  padding: "1rem",
+});
 
 // Registrations are state-only on the server: without a cssText()
 // embed the page ships with no styles at all
@@ -45,12 +42,9 @@ css({
     backgroundColor: tokens.bg,
   },
 });
-const card = style(
-  "card",
-  {
-    padding: "1rem",
-  },
-);
+const card = style("card", {
+  padding: "1rem",
+});
 
 // One embed per response: css side in registration order, then vars
 const page = `<!DOCTYPE html><html><head><style id="hella-css">${cssText()}</style></head><body><div class="${card}"></div></body></html>`;

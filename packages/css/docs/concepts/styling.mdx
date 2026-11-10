@@ -13,23 +13,20 @@ import { style } from '@hellajs/css';
 const Counter = () => {
   const count = signal(0);
 
-  const buttonStyle = style(
-    'btn',
-    {
-      padding: '0.75rem 1.5rem',
-      border: 'none',
-      borderRadius: '0.5rem',
-      background: '#3b82f6',
-      color: 'white',
-      fontWeight: '600',
-      cursor: 'pointer',
-      transition: 'all 0.2s ease',
-      '&:hover': {
-        background: '#2563eb',
-        transform: 'translateY(-1px)',
-      },
+  const buttonStyle = style('btn', {
+    padding: '0.75rem 1.5rem',
+    border: 'none',
+    borderRadius: '0.5rem',
+    background: '#3b82f6',
+    color: 'white',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    '&:hover': {
+      background: '#2563eb',
+      transform: 'translateY(-1px)',
     },
-  );
+  });
   // "btn-nficjjz"; identical on client and server
   // style({ ... }, { label: 'btn' }) is the equivalent bag form
 
@@ -53,13 +50,10 @@ A second object argument composes: an object base deep-merges with the override 
 ```jsx
 import { style, cx } from '@hellajs/css';
 
-const card = style(
-  'card',
-  {
-    padding: '1rem',
-    borderRadius: '0.5rem',
-  },
-);
+const card = style('card', {
+  padding: '1rem',
+  borderRadius: '0.5rem',
+});
 const alert = cx(
   card,
   style({
@@ -68,15 +62,12 @@ const alert = cx(
 );
 // "card-drokihk …"; the second class carries only the added declarations
 
-const denseCard = style(
-  {
-    padding: '1rem',
-    borderRadius: '0.5rem',
-  },
-  {
-    padding: '0.5rem',
-  },
-);
+const denseCard = style({
+  padding: '1rem',
+  borderRadius: '0.5rem',
+}, {
+  padding: '0.5rem',
+});
 // One merged class; "jptpugw" with the override's padding
 ```
 
@@ -181,17 +172,14 @@ const themeVars = vars({
   },
 });
 
-const buttonStyle = style(
-  'theme-btn',
-  {
-    padding: '0.75rem 1.5rem',
-    border: 'none',
-    borderRadius: '0.5rem',
-    background: themeVars.button.background,
-    color: themeVars.button.color,
-    cursor: 'pointer',
-  },
-);
+const buttonStyle = style('theme-btn', {
+  padding: '0.75rem 1.5rem',
+  border: 'none',
+  borderRadius: '0.5rem',
+  background: themeVars.button.background,
+  color: themeVars.button.color,
+  cursor: 'pointer',
+});
 
 <button
   class={buttonStyle}
@@ -219,17 +207,14 @@ const spin = keyframes({
   },
 });
 
-const spinner = style(
-  'spinner',
-  {
-    width: '2rem',
-    height: '2rem',
-    border: '3px solid #e5e7eb',
-    borderTopColor: '#3b82f6',
-    borderRadius: '50%',
-    animation: `${spin} 0.8s linear infinite`,
-  },
-);
+const spinner = style('spinner', {
+  width: '2rem',
+  height: '2rem',
+  border: '3px solid #e5e7eb',
+  borderTopColor: '#3b82f6',
+  borderRadius: '50%',
+  animation: `${spin} 0.8s linear infinite`,
+});
 ```
 
 ## Server Rendering
@@ -248,12 +233,9 @@ css({
     backgroundColor: tokens.bg,
   },
 });
-const card = style(
-  'card',
-  {
-    padding: '1rem',
-  },
-);
+const card = style('card', {
+  padding: '1rem',
+});
 
 // In the response handler; one embed per response
 const page = `<!DOCTYPE html><html><head><style id="hella-css">${cssText()}</style></head><body>…</body></html>`;
@@ -297,25 +279,18 @@ const root = hostElement.attachShadow({
 });
 
 // Shadow roots don't match :root; scope vars to the host element
-const theme = vars(
-  {
-    accent: '#3b82f6',
-  },
-  {
-    host: root,
-    scoped: ':host',
-  },
-);
+const theme = vars({
+  accent: '#3b82f6',
+}, {
+  host: root,
+  scoped: ':host',
+});
 
-const card = style(
-  'card',
-  {
-    color: theme.accent,
-  },
-  {
-    host: root,
-  },
-);
+const card = style('card', {
+  color: theme.accent,
+}, {
+  host: root,
+});
 // <style> created inside the shadow root, not document.head
 ```
 

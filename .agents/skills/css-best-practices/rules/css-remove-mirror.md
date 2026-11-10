@@ -24,12 +24,9 @@ const root = document.createElement("my-card").attachShadow({
   mode: "open",
 });
 
-css(
-  reset,
-  {
-    host: root,
-  },
-);
+css(reset, {
+  host: root,
+});
 
 // No host: decrements the document-head registration that does not
 // exist, and the hosted rules leak
@@ -51,20 +48,14 @@ const root = document.createElement("my-card").attachShadow({
   mode: "open",
 });
 
-css(
-  reset,
-  {
-    host: root,
-  },
-);
+css(reset, {
+  host: root,
+});
 
 // Same object, same host: decrements the hosted registration exactly
-removeCss(
-  reset,
-  {
-    host: root,
-  },
-);
+removeCss(reset, {
+  host: root,
+});
 ```
 
 Reference: `packages/css/lib/removeCss.ts` and `packages/css/lib/internal/injection.ts deregisterText`

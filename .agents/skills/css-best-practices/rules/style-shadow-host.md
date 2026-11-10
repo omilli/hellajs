@@ -20,12 +20,9 @@ const root = document.createElement("my-card").attachShadow({
 
 // No host: the rules land in document.head, outside the shadow root,
 // and the component's inner tree never sees them under encapsulation
-const card = style(
-  "card",
-  {
-    color: "#111827",
-  },
-);
+const card = style("card", {
+  color: "#111827",
+});
 ```
 
 **Correct (what is right):**
@@ -38,26 +35,19 @@ const root = document.createElement("my-card").attachShadow({
 });
 
 // Sheets are created inside the host, not document.head
-const card = style(
-  "card",
-  {
-    color: "#111827",
-  },
-  {
-    host: root,
-  },
-);
+const card = style("card", {
+  color: "#111827",
+}, {
+  host: root,
+});
 
-css(
-  {
-    "*": {
-      boxSizing: "border-box",
-    },
+css({
+  "*": {
+    boxSizing: "border-box",
   },
-  {
-    host: root,
-  },
-);
+}, {
+  host: root,
+});
 ```
 
 Reference: `packages/css/lib/internal/sheet.ts getSheet` and `packages/css/tests/style-host.test.ts` and `packages/css/docs/concepts/styling.mdx`

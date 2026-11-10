@@ -134,24 +134,18 @@ removeVars({
 For **static** vars, the `options` argument must match the `options` used in the original `vars` call, including `scoped`, `prefix`, and `host`; they feed the hash that locates the entry:
 
 ```jsx
-vars(
-  {
-    color: 'red',
-  },
-  {
-    scoped: '.card',
-    prefix: 'ui',
-  },
-);
-removeVars(
-  {
-    color: 'red',
-  },
-  {
-    scoped: '.card',
-    prefix: 'ui',
-  },
-); // ✅ matches
+vars({
+  color: 'red',
+}, {
+  scoped: '.card',
+  prefix: 'ui',
+});
+removeVars({
+  color: 'red',
+}, {
+  scoped: '.card',
+  prefix: 'ui',
+}); // ✅ matches
 removeVars({
   color: 'red',
 }); // ❌ different hash; no-op

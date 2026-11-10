@@ -178,14 +178,11 @@ The plugin must run on the **server** entry; it is a compile-time transform, so 
 import { style, cssText } from '@hellajs/css';
 import { ssr } from '@hellajs/ssr';
 
-const btn = style(
-  {
-    color: 'red',
-  },
-  {
-    label: 'btn',
-  },
-);
+const btn = style({
+  color: 'red',
+}, {
+  label: 'btn',
+});
 // btn === "btn-…"; the class, never text, on the server too
 // cssText() holds ".btn-…{color:red}" on client and server alike
 

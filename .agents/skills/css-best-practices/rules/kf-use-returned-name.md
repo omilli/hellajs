@@ -25,12 +25,9 @@ const spin = keyframes({
 
 // The registered name is "kf-{hash}", not "spin": the animation
 // matches nothing and never runs
-const spinner = style(
-  "spinner",
-  {
-    animation: "spin 0.8s linear infinite",
-  },
-);
+const spinner = style("spinner", {
+  animation: "spin 0.8s linear infinite",
+});
 ```
 
 **Correct (what is right):**
@@ -47,14 +44,11 @@ const spin = keyframes({
   },
 });
 
-const spinner = style(
-  "spinner",
-  {
-    width: "2rem",
-    height: "2rem",
-    animation: `${spin} 0.8s linear infinite`,
-  },
-);
+const spinner = style("spinner", {
+  width: "2rem",
+  height: "2rem",
+  animation: `${spin} 0.8s linear infinite`,
+});
 ```
 
 Reference: `packages/css/lib/keyframes.ts` and `packages/css/docs/api/keyframes.mdx`

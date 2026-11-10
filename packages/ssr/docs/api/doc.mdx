@@ -12,14 +12,11 @@ Render a template with [`ssr`](/reference/ssr/ssr), collect the CSS text from [`
 import { style, cssText } from '@hellajs/css';
 import { ssr, doc } from '@hellajs/ssr';
 
-const card = style(
-  {
-    border: '1px solid #ccc',
-  },
-  {
-    label: 'card',
-  },
-);
+const card = style({
+  border: '1px solid #ccc',
+}, {
+  label: 'card',
+});
 const body = ssr(<div class={card}>Hi</div>);
 
 const page = doc({

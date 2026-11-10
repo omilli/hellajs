@@ -14,18 +14,15 @@ At-rules split in two. Conditional ones (`@media`, `@container`, `@supports`, `@
 ```ts
 import { style } from "@hellajs/css";
 
-const card = style(
-  "card",
-  {
-    padding: "1rem",
-    // Definitional at-rules never pick up the class: this @font-face
+const card = style("card", {
+  padding: "1rem",
+  // Definitional at-rules never pick up the class: this @font-face
   // registers globally despite sitting under .card-{hash}
   "@font-face": {
-      fontFamily: "Inter",
-      src: "url('/fonts/inter.woff2')",
-    },
+    fontFamily: "Inter",
+    src: "url('/fonts/inter.woff2')",
   },
-);
+});
 ```
 
 **Correct (what is right):**
@@ -34,15 +31,12 @@ const card = style(
 import { css, style } from "@hellajs/css";
 
 // Conditional at-rules inherit the class scope
-const card = style(
-  "card",
-  {
-    padding: "1rem",
-    "@media (min-width: 768px)": {
-      padding: "1.5rem",
-    },
+const card = style("card", {
+  padding: "1rem",
+  "@media (min-width: 768px)": {
+    padding: "1.5rem",
   },
-);
+});
 
 // Definitional at-rules belong at the global level
 css({

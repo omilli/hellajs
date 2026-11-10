@@ -39,12 +39,9 @@ const tokens = vars({
   scale: () => scale(),
 });
 
-const box = style(
-  "box",
-  {
-    transform: `scale(${tokens.scale})`,
-  },
-);
+const box = style("box", {
+  transform: `scale(${tokens.scale})`,
+});
 
 // The effect rewrites --scale in the sheet; box rules never rebuild
 scale(1.5);

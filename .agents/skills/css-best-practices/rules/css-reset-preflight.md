@@ -29,14 +29,11 @@ import { css, reset, style } from "@hellajs/css";
 // Once, at the app entry: registers globally, deduped and refcounted
 css(reset);
 
-const card = style(
-  {
-    padding: "1rem",
-  },
-  {
-    label: "card",
-  },
-);
+const card = style({
+  padding: "1rem",
+}, {
+  label: "card",
+});
 ```
 
 Register the exported reference as-is; if teardown is ever needed, `removeCss(reset)` with the same reference.

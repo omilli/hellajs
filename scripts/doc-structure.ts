@@ -51,10 +51,13 @@ import { logger, packagesDir, projectRoot } from "./utils/index.ts";
  *    `guides/docs.md`: no `children` prop typed `unknown`, no `<summary>Internal
  *    Mechanics</summary>` details blocks, no `<span>⚠️</span>` / `<span>ℹ️</span>`
  *    alert icon spans, no `> ⚠️` blockquote markers, no function-wrapped
- *    `class`/`style`/`title`/`href`/`id` attributes inside jsx/tsx fences, and no
+ *    `class`/`style`/`title`/`href`/`id` attributes inside jsx/tsx fences, no
  *    single-line `css()`/`style()` object arguments (multiline always,
- *    single-property calls included). JSX is the only example syntax; the
- *    rule stays audit-enforced.
+ *    single-property calls included), and no dangling styling calls in
+ *    `packages/css/docs` — the object argument's opening brace hugs the call
+ *    line; real source follows the formatter and Complete-Code tutorial
+ *    fences mirror their files. JSX is the only
+ *    example syntax; the rule stays audit-enforced.
  *
  * 7. Table delimiter parity — outside code fences, a header row starting with
  *    `|` whose next line is a delimiter row must match its cell count (an
@@ -94,9 +97,9 @@ const JSX_FENCE_RE = /^```(jsx|tsx)\b/;
 const CODE_FENCE_RE = /^```(?:typescript|javascript|ts|tsx|js|jsx)\b/;
 const WRAPPED_ATTR_RE = /(class|style|title|href|id)=\{\(\) =>/;
 const INLINE_CSS_OBJECT_RE = /(css|style)\(\{[^}\n]*\}\)/;
-const STYLING_CALL_ARGS_RE =
-  /\b(?:css|style|cva|vars|keyframes|cx|removeCss|removeStyle|removeVars|removeKeyframes)\([^()\n]*,[^()\n]*\{/;
-const OBJECT_ARGS_SHARE_LINE_RE = /\},\s*\{/;
+const DANGLING_STYLING_CALL_RE =
+  /\b(?:css|style|cva|vars|keyframes|removeCss|removeStyle|removeVars|removeKeyframes)\(\s*$/;
+const LONE_OBJECT_OPENER_RE = /^\s*\{,?\s*$/;
 const TABLE_DELIM_RE = /^\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)+\|?$/;
 
 /** Mask line-comment interiors (outside quotes) so detectors read code only. */
@@ -770,16 +773,47 @@ function checkRegistration(): Finding[] {
  * from guides/docs.md. `children` props are never typed `unknown`, Internal
  * Mechanics details blocks are gone, alert callouts carry no icon spans and no
  * blockquote warning markers, jsx/tsx fences carry no function-wrapped
- * `class`/`style`/`title`/`href`/`id` attributes, and `css()`/`style()` object
- * arguments are always multiline. For `packages/css/docs` fences, every object
+ * `class`/`style`/`title`/`href`/`id` attributes, `css()`/`style()` object
+ * arguments are always multiline, and styling calls never dangle — the object
+ * argument's opening brace hugs the call line (`style({`, `style('card', {`,
+ * `}, {` join). For `packages/css/docs` fences, every object
  * literal breaks across lines (one property per line, single-property objects
  * included; type literals, destructuring, and comment interiors exempt) and
- * styling-call arguments sit one per line once any argument is an object —
- * other packages are pending the batched migration. JSX is the only example
+ * neither dangles nor opens on its own line — it hugs the call or the
+ * preceding argument; real source (tests, example `src/`) follows the
+ * formatter instead (sole-arg hug, multi-arg one-per-line) and Complete-Code
+ * tutorial fences mirror their files, so both detectors stay css-docs-scoped.
+ * Other packages are pending the batched migration. JSX is the only example
  * syntax; the rule stays audit-enforced. Each finding names its construct.
  * @param corpus Every mdx file in scope
  * @returns Findings (one per offending line)
  */
+/** Quote-aware `[`/`]` delta so object openers inside arrays are exempt. */
+function arrayDepthDelta(line: string): number {
+  const chars = line.split("");
+  let quote: string | null = null;
+  let delta = 0;
+  let i = 0;
+  while (i < chars.length) {
+    const c = chars[i]!;
+    if (quote) {
+      if (c === "\\") {
+        i += 2;
+        continue;
+      }
+      if (c === quote) quote = null;
+    } else if (c === '"' || c === "'" || c === "`") {
+      quote = c;
+    } else if (c === "[") {
+      delta += 1;
+    } else if (c === "]") {
+      delta -= 1;
+    }
+    i += 1;
+  }
+  return delta;
+}
+
 function checkExampleConventions(corpus: string[]): Finding[] {
   const findings: Finding[] = [];
   for (const file of corpus) {
@@ -787,14 +821,17 @@ function checkExampleConventions(corpus: string[]): Finding[] {
     if (content === null) continue;
     let inJsxFence = false;
     let inCodeFence = false;
+    let arrayDepth = 0;
     const cssDocsScope = file.replace(/\\/g, "/").includes("packages/css/docs/");
     for (const [idx, line] of content.split("\n").entries()) {
       const lineNo = idx + 1;
       if (FENCE_RE.test(line)) {
         inJsxFence = JSX_FENCE_RE.test(line);
         inCodeFence = CODE_FENCE_RE.test(line);
+        arrayDepth = 0;
         continue;
       }
+      arrayDepth += arrayDepthDelta(maskLineComment(line));
       if (CHILDREN_UNKNOWN_RE.test(line)) {
         findings.push({
           file,
@@ -838,10 +875,15 @@ function checkExampleConventions(corpus: string[]): Finding[] {
             file,
             message: `line ${lineNo}: single-line object literal — break it across lines, one property per line (single-property objects included)`,
           });
-        } else if (STYLING_CALL_ARGS_RE.test(code) || OBJECT_ARGS_SHARE_LINE_RE.test(code)) {
+        } else if (DANGLING_STYLING_CALL_RE.test(code)) {
           findings.push({
             file,
-            message: `line ${lineNo}: styling call arguments share a line — put each argument on its own line when any argument is an object`,
+            message: `line ${lineNo}: dangling styling call — the object argument's opening brace hugs the call line (style({ / style('card', { / }, { join)`,
+          });
+        } else if (arrayDepth === 0 && LONE_OBJECT_OPENER_RE.test(line)) {
+          findings.push({
+            file,
+            message: `line ${lineNo}: object literal opens on its own line — hug it against the call or the preceding argument`,
           });
         }
       }

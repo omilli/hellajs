@@ -7,31 +7,25 @@ Removes a style created by [`style`](/reference/css/style) and decrements its re
 ```jsx
 import { style, removeStyle } from '@hellajs/css';
 
-const buttonStyle = style(
-  {
-    background: 'blue',
-    color: 'white',
-    padding: '0.5rem 1rem',
-  },
-  {
-    label: 'btn',
-  },
-);
+const buttonStyle = style({
+  background: 'blue',
+  color: 'white',
+  padding: '0.5rem 1rem',
+}, {
+  label: 'btn',
+});
 
 // Use the style...
 <button class={buttonStyle}>Click me</button>
 
 // Later, remove it when no longer needed
-removeStyle(
-  {
-    background: 'blue',
-    color: 'white',
-    padding: '0.5rem 1rem',
-  },
-  {
-    label: 'btn',
-  },
-);
+removeStyle({
+  background: 'blue',
+  color: 'white',
+  padding: '0.5rem 1rem',
+}, {
+  label: 'btn',
+});
 ```
 
 ## API
@@ -90,22 +84,16 @@ Structurally identical objects re-derive the same class and text; no cached refe
 
 ```jsx
 // ✅ Works; structurally identical objects match
-style(
-  {
-    color: 'red',
-  },
-  {
-    label: 'x',
-  },
-);
-removeStyle(
-  {
-    color: 'red',
-  },
-  {
-    label: 'x',
-  },
-);
+style({
+  color: 'red',
+}, {
+  label: 'x',
+});
+removeStyle({
+  color: 'red',
+}, {
+  label: 'x',
+});
 
 // ❌ Won't match; different content
 style({

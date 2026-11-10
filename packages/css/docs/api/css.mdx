@@ -114,14 +114,11 @@ Under the unified registration, CSS is defined in shared modules or at the entry
 import { style } from '@hellajs/css';
 
 // Client AND server: returns "btn-mgmyaqx"
-export const btnClass = style(
-  {
-    color: 'red',
-  },
-  {
-    label: 'btn',
-  },
-);
+export const btnClass = style({
+  color: 'red',
+}, {
+  label: 'btn',
+});
 ```
 
 ```jsx
@@ -213,29 +210,23 @@ class MyCard extends HTMLElement {
     });
 
     // Shadow roots don't match :root; scope the vars to the host element
-    const theme = vars(
-      {
-        accent: '#3b82f6',
-      },
-      {
-        host: root,
-        scoped: ':host',
-      },
-    );
+    const theme = vars({
+      accent: '#3b82f6',
+    }, {
+      host: root,
+      scoped: ':host',
+    });
 
-    css(
-      {
-        ':host': {
-          padding: '1rem',
-        },
-        ':host > .content': {
-          border: '1px solid #e5e7eb',
-        },
+    css({
+      ':host': {
+        padding: '1rem',
       },
-      {
-        host: root,
+      ':host > .content': {
+        border: '1px solid #e5e7eb',
       },
-    );
+    }, {
+      host: root,
+    });
 
     root.innerHTML = '<div class="content"><slot></slot></div>';
   }

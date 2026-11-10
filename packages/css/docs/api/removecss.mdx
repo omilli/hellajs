@@ -77,30 +77,24 @@ const shadowRoot = el.attachShadow({
   mode: 'open',
 });
 
-css(
-  {
-    ':host': {
-      fontSize: '1.5rem',
-      padding: '1rem',
-    },
+css({
+  ':host': {
+    fontSize: '1.5rem',
+    padding: '1rem',
   },
-  {
-    host: shadowRoot,
-  },
-);
+}, {
+  host: shadowRoot,
+});
 
 // Later remove with matching host
-removeCss(
-  {
-    ':host': {
-      fontSize: '1.5rem',
-      padding: '1rem',
-    },
+removeCss({
+  ':host': {
+    fontSize: '1.5rem',
+    padding: '1rem',
   },
-  {
-    host: shadowRoot,
-  },
-);
+}, {
+  host: shadowRoot,
+});
 ```
 
 ### Component Cleanup

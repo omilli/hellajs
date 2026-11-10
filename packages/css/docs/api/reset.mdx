@@ -41,15 +41,12 @@ const tokens = vars({
   fontSans: 'Inter, system-ui, sans-serif',
 });
 
-const card = style(
-  {
-    fontFamily: tokens.fontSans,
-    padding: '1rem',
-  },
-  {
-    label: 'card',
-  },
-);
+const card = style({
+  fontFamily: tokens.fontSans,
+  padding: '1rem',
+}, {
+  label: 'card',
+});
 ```
 
 On the server the same `css(reset)` call registers state-only and [`cssText`](/reference/css/csstext) collects the reset alongside every other registration, so the emitted `<style>` ships the reset to first paint.

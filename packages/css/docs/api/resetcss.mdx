@@ -8,24 +8,18 @@ Clears all css-side rules and resets the CSS system to its initial state: every 
 import { style, resetCss } from '@hellajs/css';
 
 // Create some styles
-const button = style(
-  {
-    background: 'blue',
-    color: 'white',
-  },
-  {
-    label: 'btn',
-  },
-);
-const card = style(
-  {
-    padding: '1rem',
-    border: '1px solid #ccc',
-  },
-  {
-    label: 'card',
-  },
-);
+const button = style({
+  background: 'blue',
+  color: 'white',
+}, {
+  label: 'btn',
+});
+const card = style({
+  padding: '1rem',
+  border: '1px solid #ccc',
+}, {
+  label: 'card',
+});
 
 // Later, reset everything
 resetCss();
@@ -52,14 +46,11 @@ function resetCss(): void
 ```jsx
 import { css, style, resetCss } from '@hellajs/css';
 
-const buttonClass = style(
-  {
-    color: 'white',
-  },
-  {
-    label: 'btn',
-  },
-);
+const buttonClass = style({
+  color: 'white',
+}, {
+  label: 'btn',
+});
 css({
   body: {
     margin: 0,

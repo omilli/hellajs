@@ -31,16 +31,13 @@ import { style } from "@hellajs/css";
 
 // Scoped, content-hashed, removable as a unit; "card-{hash}" is
 // identical on client and server
-const card = style(
-  "card",
-  {
-    padding: "1rem",
-    borderRadius: "0.5rem",
-    "&:hover": {
-      background: "#f9fafb",
-    },
+const card = style("card", {
+  padding: "1rem",
+  borderRadius: "0.5rem",
+  "&:hover": {
+    background: "#f9fafb",
   },
-);
+});
 ```
 
 Nested keys compose under the generated class: `&` refers to the class at every occurrence, plain keys become descendants, and conditional at-rules (`@media`, `@container`, `@supports`) inherit it. The options-bag form with a `label` key is equivalent to the positional label.

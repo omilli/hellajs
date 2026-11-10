@@ -103,18 +103,15 @@ const theme = vars({
   },
 });
 
-const buttonStyle = style(
-  {
-    backgroundColor: theme.colors.primary,
-    color: theme.colors.background,
-    padding: '0.75rem 1.5rem',
-    border: 'none',
-    borderRadius: '0.5rem',
-  },
-  {
-    label: 'btn',
-  },
-);
+const buttonStyle = style({
+  backgroundColor: theme.colors.primary,
+  color: theme.colors.background,
+  padding: '0.75rem 1.5rem',
+  border: 'none',
+  borderRadius: '0.5rem',
+}, {
+  label: 'btn',
+});
 ```
 
 ### Reactive CSS Variables
@@ -138,18 +135,15 @@ const ThemeExample = () => {
     },
   });
 
-  const buttonStyle = style(
-    {
-      backgroundColor: theme.colors.primary,
-      color: theme.colors.text,
-      padding: '0.75rem 1.5rem',
-      border: 'none',
-      borderRadius: '0.5rem',
-    },
-    {
-      label: 'btn',
-    },
-  );
+  const buttonStyle = style({
+    backgroundColor: theme.colors.primary,
+    color: theme.colors.text,
+    padding: '0.75rem 1.5rem',
+    border: 'none',
+    borderRadius: '0.5rem',
+  }, {
+    label: 'btn',
+  });
 
   return (
     <div>
@@ -252,20 +246,14 @@ const theme = {
 
 vars(theme);                             // ok; :root, reactive
 vars(theme);                             // ok; same options, refCount++
-vars(
-  theme,
-  {
-    scoped: '.dark',
-  },
-);        // throws; same ref, different scope
-vars(
-  {
-    ...theme,
-  },
-  {
-    scoped: '.dark',
-  },
-); // ok; separate reference, own effect
+vars(theme, {
+  scoped: '.dark',
+});        // throws; same ref, different scope
+vars({
+  ...theme,
+}, {
+  scoped: '.dark',
+}); // ok; separate reference, own effect
 ```
 
 Static vars (no function leaves) are instead keyed by a hash of the object and its options, so structurally equal static objects share one registration regardless of reference identity.
@@ -278,15 +266,12 @@ Control where CSS variables are applied and how they're named:
 import { vars } from '@hellajs/css';
 
 // Scoped to a specific selector; variables only apply within .theme-container
-const themeVars = vars(
-  {
-    primary: '#3b82f6',
-    secondary: '#64748b',
-  },
-  {
-    scoped: '.theme-container',
-  },
-);
+const themeVars = vars({
+  primary: '#3b82f6',
+  secondary: '#64748b',
+}, {
+  scoped: '.theme-container',
+});
 
 // themeVars.primary = 'var(--primary)'
 // Generated:
@@ -300,33 +285,27 @@ const themeVars = vars(
 import { vars } from '@hellajs/css';
 
 // Prefix adds a namespace to all variable names
-const appVars = vars(
-  {
-    fontFamily: 'system-ui, sans-serif',
-    borderRadius: '0.25rem',
-  },
-  {
-    prefix: 'app',
-  },
-);
+const appVars = vars({
+  fontFamily: 'system-ui, sans-serif',
+  borderRadius: '0.25rem',
+}, {
+  prefix: 'app',
+});
 
 // appVars.fontFamily = 'var(--app-font-family)'
 // appVars.borderRadius = 'var(--app-border-radius)'
 
 // Combine both: scoped + prefixed
-const themed = vars(
-  {
-    primary: '#3b82f6',
-    spacing: {
-      small: '0.5rem',
-      medium: '1rem',
-    },
+const themed = vars({
+  primary: '#3b82f6',
+  spacing: {
+    small: '0.5rem',
+    medium: '1rem',
   },
-  {
-    scoped: '.theme-container',
-    prefix: 'my-theme',
-  },
-);
+}, {
+  scoped: '.theme-container',
+  prefix: 'my-theme',
+});
 
 // themed.primary = 'var(--my-theme-primary)'
 // themed.spacing.small = 'var(--my-theme-spacing-small)'
@@ -345,15 +324,12 @@ const root = hostElement.attachShadow({
   mode: 'open',
 });
 
-const theme = vars(
-  {
-    accent: '#3b82f6',
-  },
-  {
-    host: root,
-    scoped: ':host',
-  },
-);
+const theme = vars({
+  accent: '#3b82f6',
+}, {
+  host: root,
+  scoped: ':host',
+});
 
 // Generated inside the shadow root:
 // :host {
@@ -379,17 +355,14 @@ vars({
 });
 
 // Dark values; applied only when the OS prefers dark
-vars(
-  {
-    colors: {
-      background: '#1a1a1a',
-      text: '#e5e7eb',
-    },
+vars({
+  colors: {
+    background: '#1a1a1a',
+    text: '#e5e7eb',
   },
-  {
-    media: '(prefers-color-scheme: dark)',
-  },
-);
+}, {
+  media: '(prefers-color-scheme: dark)',
+});
 
 // Generated:
 // :root {

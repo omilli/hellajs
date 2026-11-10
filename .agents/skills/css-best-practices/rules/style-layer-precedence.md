@@ -23,15 +23,11 @@ css({
 
 // Layered rules lose to unlayered CSS by construction: this padding
 // silently loses despite the class specificity
-const cta = style(
-  "cta",
-  {
-    padding: "0.5rem",
-  },
-  {
-    layer: "components",
-  },
-);
+const cta = style("cta", {
+  padding: "0.5rem",
+}, {
+  layer: "components",
+});
 ```
 
 **Correct (what is right):**
@@ -48,15 +44,11 @@ css({
   },
 });
 
-const cta = style(
-  "cta",
-  {
-    padding: "0.5rem",
-  },
-  {
-    layer: "components",
-  },
-);
+const cta = style("cta", {
+  padding: "0.5rem",
+}, {
+  layer: "components",
+});
 ```
 
 Reference: `packages/css/lib/internal/identity.ts scopedRule` and `packages/css/tests/style-layer.test.ts` and `packages/css/docs/api/style.mdx`

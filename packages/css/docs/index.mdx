@@ -29,15 +29,12 @@ const tokens = vars({
 });
 
 // The class is the identity: style() returns the same string on both platforms
-const card = style(
-  {
-    padding: '1rem',
-    backgroundColor: '#f8f9fa',
-  },
-  {
-    label: 'card',
-  },
-);
+const card = style({
+  padding: '1rem',
+  backgroundColor: '#f8f9fa',
+}, {
+  label: 'card',
+});
 
 // Variant recipes: cva() resolves typed props to a composed class string
 const button = cva({

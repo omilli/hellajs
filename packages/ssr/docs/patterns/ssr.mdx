@@ -40,14 +40,11 @@ The compiler (via the vite/rollup wrappers) must run on the **server** entry; wi
 import { style, cssText } from '@hellajs/css';
 import { ssr, doc } from '@hellajs/ssr';
 
-const card = style(
-  {
-    border: '1px solid #ccc',
-  },
-  {
-    label: 'card',
-  },
-);
+const card = style({
+  border: '1px solid #ccc',
+}, {
+  label: 'card',
+});
 const body = ssr(<div class={card}>Content</div>);
 // The hella-css id lets hydration adopt the delivered rules
 const page = doc({
