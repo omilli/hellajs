@@ -76,7 +76,7 @@ css({
 // }
 ```
 
-Nested keys compose against the active selector: `&` refers to it at every occurrence, plain keys become descendants (`h2` → `.card h2`), and conditional at-rules (`@media`, `@container`, `@supports`, `@starting-style`) inherit it. A key holding a comma group must carry `&` in every part or the later parts escape the scope; see [Comma Groups Need `&` in Every Part](#comma-groups-need--in-every-part).
+Nested keys compose against the active selector: `&` refers to it at every occurrence, plain keys become descendants (`h2` → `.card h2`), and conditional at-rules (`@media`, `@container`, `@supports`, `@starting-style`) inherit it. Every part of a comma group composes the same way, so no part escapes the scope; see [Comma Groups Compose Per Part](#comma-groups-compose-per-part).
 
 > **Note:** `css()` is always global; it does not wrap selectors in a class. For scoped styles that compose under a generated class, use [`style`](/reference/css/style).
 
@@ -246,12 +246,13 @@ On the server, [`css`](/reference/css/css) returns `""`, exactly like the client
 const head = `<style>${cssText()}</style>`;
 ```
 
-### Comma Groups Need `&` in Every Part
+### Comma Groups Compose Per Part
 
-Selector composition is literal: a plain nested key becomes `${parent} ${key}`, and `&` is replaced by the parent string. A comma inside the key splits nothing; every part after the first composes against nothing and escapes the scope:
+Every part of a comma-separated nested key composes against the parent selector on its own: a part carrying `&` substitutes it at every occurrence, and a part without one becomes a descendant. No part escapes the scope, and no `&` repetition is needed:
 
 ```typescript
-// ❌ Only the first part is scoped; ".toggle" leaks into the global scope
+// ✅ Both parts scoped, no & repetition
+// Generated: .toolbar .copy, .toolbar .toggle { color: var(--fg); }
 css({
   '.toolbar': {
     '.copy, .toggle': {
@@ -259,20 +260,19 @@ css({
     },
   },
 });
-// Generated: .toolbar .copy,.toggle { color: var(--fg); }
 
-// ✅ Every part carries &; every part is scoped
+// ✅ & composes non-descendant parts (pseudo-states, compounds)
+// Generated: .toolbar:hover, .toolbar:focus-within { … }
 css({
   '.toolbar': {
-    '& .copy, & .toggle': {
-      color: 'var(--fg)',
+    '&:hover, &:focus-within': {
+      outline: '1px solid var(--fg)',
     },
   },
 });
-// Generated: .toolbar .copy,.toolbar .toggle { color: var(--fg); }
 ```
 
-Prefix every part of the group with `&`, and keep state selectors (`&:hover`, `&.is-open`) inside the per-element rules rather than nesting them under a group key. At the top level of a `css()` call there is no scope to leak, so a bare comma group (`'.dark .a, .dark .b'`) is fine there.
+Commas inside parens, brackets, or quoted strings never split a part (`& a:is(button, link)` and `[data-tags='a,b']` stay whole). Keep state selectors (`&:hover`, `&.is-open`) inside the per-element rules rather than nesting them under a group key: a nested `&` under a comma-group parent substitutes the whole parent list verbatim, so `&:hover` under `'h1, h2'` pins the hover to the last part. At the top level of a `css()` call there is no scope to compose against, so a bare comma group (`'.dark .a, .dark .b'`) stays raw.
 
 ### Type Safety
 

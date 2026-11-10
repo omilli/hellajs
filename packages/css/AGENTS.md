@@ -91,9 +91,9 @@ Type-safe CSS-in-JS. `css()` generates global rules from JS objects; `style()` g
 | direct declaration (non-`@` scalar key) at a top-level entry call | **throws** `[css] top-level declarations have no selector — nest them under a selector or at-rule` |
 | `@`-prefixed scalar key (non-object value) | block-less statement: `@key value;`, hoisted ahead of all braced text, never scoped |
 | nested obj under definitional `@`-rule | always empty selector (global) — even when nested under a class scope; direct declarations emit bare, one `prop: value;` line per declaration (`@font-face`) |
-| nested obj, key starts with `&` | `&` → parent selector (all occurrences) |
-| nested obj, plain key, non-empty `selector` | descendant: `${selector} ${key}` (scoped `.{name}` or any nested global key) |
-| nested obj, plain key, empty `selector` (top-level global) | key unwrapped |
+| nested obj, part carrying `&` (anywhere in the part) | every `&` in the part → parent selector (comma groups compose per part via `composeNestedSelector`; commas inside parens/brackets/quotes never split) |
+| nested obj, part without `&`, non-empty `selector` | descendant: `${selector} ${part.trim()}` (scoped `.{name}` or any nested global key; the former literal `${selector} ${key}` leaked every comma part after the first) |
+| nested obj, part without `&`, empty `selector` (top-level global) | raw part verbatim (authored spacing preserved) |
 | array value | joined with `", "` |
 | number value | appends `px` unless the property is unitless (`UNITLESS_PROPERTIES` in `css.ts`, stored kebabed — camel and kebab spellings both resolve) or `--`-prefixed |
 | camelCase key | kebab-case (`fontSize` → `font-size`) |

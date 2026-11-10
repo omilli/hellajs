@@ -55,6 +55,23 @@ describe("platform-independent registration (no document)", () => {
     expect(cssText()).toBe(`.${cls} {\n  color: red;\n}\n.${cls}:hover {\n  color: blue;\n}`);
   });
 
+  test("comma groups compose per part and parenthesized commas never split in cssText()", () => {
+    css({
+      ".x": { "& a:is(button, link)": { color: "red" } },
+      ".toolbar": { ".copy, .toggle": { color: "var(--fg)" } },
+    });
+    expect(cssText()).toBe(
+      ".x a:is(button, link) {\n  color: red;\n}\n.toolbar .copy,.toolbar .toggle {\n  color: var(--fg);\n}",
+    );
+  });
+
+  test("commas inside quoted attribute values never split in cssText()", () => {
+    css({
+      ".row": { "& [data-tags='a,b'], &[data-lang='en\\,b']": { color: "red" } },
+    });
+    expect(cssText()).toBe(".row [data-tags='a,b'], .row[data-lang='en\\,b'] {\n  color: red;\n}");
+  });
+
   test("style() positional label returns the labeled class and registers the rule", () => {
     const cls = style("card", { color: "red", fontWeight: "700" });
     expect(cls).toMatch(/^card-[a-z]+$/);

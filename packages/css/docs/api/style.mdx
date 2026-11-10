@@ -132,7 +132,7 @@ The former class-string argument (`style(card, { … })`) is removed: a string f
 
 Nested objects compose against the class exactly as they do under [`css`](/reference/css/css) with a `name`: `&` refers to the generated class (every occurrence), plain keys become descendants, conditional at-rules (`@media`, `@container`, `@supports`, `@starting-style`) inherit the class, and definitional at-rules (`@keyframes`, `@font-face`, `@layer`) stay global.
 
-One consequence of the literal composition: a comma group must carry `&` in every part, or every part after the first escapes the class scope. `'h1, h2': { … }` under the class compiles to `.{class} h1,h2`, leaving the `h2` rule global; write `'& h1, & h2'` so both parts stay scoped. See [`css`: Comma Groups Need `&` in Every Part](/reference/css/css#comma-groups-need--in-every-part).
+Every part of a comma group composes the same way: `'h1, h2': { … }` under the class compiles to `.{class} h1, .{class} h2` with both parts scoped, and parts carrying `&` substitute it. See [`css`: Comma Groups Compose Per Part](/reference/css/css#comma-groups-compose-per-part).
 
 ## Important Considerations
 

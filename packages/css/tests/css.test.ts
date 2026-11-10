@@ -41,6 +41,20 @@ describe("css", () => {
     expect(content).toBe("nav{display:flex}nav a{color:blue}nav a:hover{color:red}");
   });
 
+  test("nested comma group composes per part under the parent", () => {
+    css({
+      ".toolbar": {
+        ".copy, .toggle": { color: "var(--fg)" },
+      },
+    });
+    expect(getStylesheet("hella-css")).toBe(".toolbar .copy,.toolbar .toggle{color:var(--fg)}");
+  });
+
+  test("top-level comma group stays raw with no scope to compose against", () => {
+    css({ ".dark .a, .dark .b": { color: "red" } });
+    expect(getStylesheet("hella-css")).toBe(".dark .a,.dark .b{color:red}");
+  });
+
   test("multiple global styles accumulate", () => {
     css({ body: { margin: "0" } });
     css({ "*": { boxSizing: "border-box" } });

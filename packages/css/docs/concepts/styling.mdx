@@ -41,7 +41,7 @@ const Counter = () => {
 };
 ```
 
-Nested keys compose under the generated class: `&` refers to the class at every occurrence, plain keys become descendants (`h2` → `.{class} h2`), and conditional at-rules (`@media`, `@container`, `@supports`) inherit it. Value semantics carry over from `css()`: numbers append `px` (unitless properties excepted), `content` strings auto-quote, array values join with commas, and `--` custom properties pass through verbatim.
+Nested keys compose under the generated class: `&` refers to the class at every occurrence, plain keys become descendants (`h2` → `.{class} h2`), every comma-separated part composes on its own (`'h1, h2'` scopes both), and conditional at-rules (`@media`, `@container`, `@supports`) inherit it. Value semantics carry over from `css()`: numbers append `px` (unitless properties excepted), `content` strings auto-quote, array values join with commas, and `--` custom properties pass through verbatim.
 
 ### Composing Styles
 

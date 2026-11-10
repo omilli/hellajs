@@ -83,6 +83,21 @@ describe("style", () => {
     expect(getStylesheet("hella-css")).toBe(`.${cls}:hover,.${cls}.active{color:blue}`);
   });
 
+  test("comma group composes against the class at every part", () => {
+    const cls = style({ "h1, h2": { margin: 0 } });
+    expect(getStylesheet("hella-css")).toBe(`.${cls} h1,.${cls} h2{margin:0px}`);
+  });
+
+  test("mixed comma group substitutes & and composes bare parts as descendants", () => {
+    const cls = style({ "&:hover, .active": { color: "blue" } });
+    expect(getStylesheet("hella-css")).toBe(`.${cls}:hover,.${cls} .active{color:blue}`);
+  });
+
+  test("mid-key & composes against the class", () => {
+    const cls = style({ ".dark &": { color: "blue" } });
+    expect(getStylesheet("hella-css")).toBe(`.dark .${cls}{color:blue}`);
+  });
+
   test("plain nested keys compose as descendants of the class", () => {
     const cls = style({ h2: { marginTop: 0 } });
     expect(getStylesheet("hella-css")).toBe(`.${cls} h2{margin-top:0px}`);

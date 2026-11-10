@@ -64,6 +64,61 @@ const UNITLESS_PROPERTIES = new Set([
 const CONDITIONAL_AT_RULES = ["@media", "@container", "@supports", "@starting-style"] as const;
 
 /**
+ * Composes a nested selector key against the active parent selector, one
+ * top-level comma part at a time: a part carrying `&` substitutes the parent
+ * at every occurrence; a part without one composes as a descendant when a
+ * parent is in scope (scoped `.{name}` or any nested key under a non-empty
+ * global selector); with no parent in scope parts stay raw, so top-level
+ * global keys are unwrapped. Authored spacing survives: parts compose from
+ * their raw slices (`&` substitution and raw parts keep the spacing around
+ * each comma; only a descendant-composed part trims, the parent prefix
+ * supplying its own boundary). Commas inside parens, brackets, or quoted
+ * strings (`:is(a, b)`, `[data-x="a,b"]`) never split a part — the walk
+ * tracks depth and quotes the same way `splitTopLevelRules` tracks braces.
+ */
+function composeNestedSelector(key: string, selector: string): string {
+  const parts: string[] = [];
+  let depth = 0;
+  let start = 0;
+  let i = 0;
+  let quote: string | null = null;
+  const len = key.length;
+  while (i < len) {
+    const ch = key[i++] as string;
+    if (quote !== null) {
+      // A backslash escapes the next character inside a quoted attribute string.
+      if (ch === "\\") i++;
+      else if (ch === quote) quote = null;
+    } else if (ch === '"' || ch === "'") quote = ch;
+    else if (ch === "(" || ch === "[") depth++;
+    else if (ch === ")" || ch === "]") depth--;
+    else if (ch === "," && depth === 0) {
+      parts.push(key.slice(start, i - 1));
+      start = i;
+    }
+  }
+  parts.push(key.slice(start));
+
+  const composed: string[] = [];
+  let p = 0;
+  const partsLen = parts.length;
+  while (p < partsLen) {
+    const part = parts[p++] as string;
+    // Raw slices keep the authored spacing around each comma (`&` substitution
+    // and verbatim parts); only a descendant-composed part trims — the parent
+    // prefix supplies its own leading boundary.
+    if (part.includes("&")) {
+      composed.push(part.replace(AMP_REGEX, selector));
+    } else if (selector) {
+      composed.push(`${selector} ${part.trim()}`);
+    } else {
+      composed.push(part);
+    }
+  }
+  return composed.join(",");
+}
+
+/**
  * Creates CSS rules from JavaScript objects. Global only.
  *
  * Registers the generated rules on both platforms and returns an empty string.
@@ -101,8 +156,11 @@ export function css(obj: CSSObject, options: CSSOptions = {}): string {
  * braced text in the same call's emission, mirroring the client placement).
  * Definitional at-rules (@keyframes, @font-face, @layer, etc.) always process
  * content with an empty selector; their direct declarations emit bare, one
- * `prop: value;` line per declaration (e.g. inside `@font-face { … }`). The `&` token in nested selectors is replaced
- * with the parent selector. CamelCase property keys convert to kebab-case.
+ * `prop: value;` line per declaration (e.g. inside `@font-face { … }`). Nested selector keys
+ * compose per top-level comma part against the parent selector: a part carrying `&` substitutes
+ * it at every occurrence, a part without one becomes a descendant, and with no parent in scope
+ * parts stay raw. Commas inside parens, brackets, or quotes never split a part. CamelCase property
+ * keys convert to kebab-case.
  * The `content` property auto-quotes unquoted strings. Array values join with
  * commas. Numeric values append `px` except on unitless properties and `--` custom
  * properties. Null and undefined values are skipped. Function values throw —
@@ -170,19 +228,9 @@ export function process(obj: CSSObject, selector: string, isTopLevel: boolean, i
             : process(value as CSSObject, "", false, indent + 1);
         rules.push(wrapBlock(key, nestedCss, indent));
       } else {
-        let nestedSelector: string;
-        if (key.startsWith("&")) {
-          nestedSelector = key.replace(AMP_REGEX, selector);
-        } else if (selector) {
-          // Compose against the parent selector when one exists (scoped `.{name}`
-          // or any key nested under a non-empty global selector). Top-level global
-          // keys have an empty selector and stay unwrapped (raw CSS selectors).
-          nestedSelector = `${selector} ${key}`;
-        } else {
-          nestedSelector = key;
-        }
-
-        rules.push(process(value as CSSObject, nestedSelector, false, indent));
+        rules.push(
+          process(value as CSSObject, composeNestedSelector(key, selector), false, indent),
+        );
       }
     } else {
       if (isFunction(value)) {

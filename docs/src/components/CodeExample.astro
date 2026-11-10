@@ -49,14 +49,12 @@ css({
       pointerEvents: "none",
     },
     // Shared floating-chip chrome, solid like InstallSection's .install-copy
-    // (base50 over the code canvas, near-white text). Every part of the
-    // comma group carries & so the whole group stays card-scoped: css()
-    // replaces each & with the parent selector but prefix-concatenates a
-    // bare group key, leaking every part after the first out of scope. No
-    // nested & keys under the group, though — & substitution is literal, so
-    // a comma parent never distributes across them (a nested &:hover would
-    // apply unconditionally to every part but the last); state keys like
-    // &:hover belong inside the per-element rules below.
+    // (base50 over the code canvas, near-white text). The comma group needs
+    // no & repetition: css() composes every part against the parent selector
+    // (parts carrying & substitute it, bare parts become descendants). No
+    // nested & keys under the group, though — & substitution under a comma
+    // parent is literal, so a nested &:hover would pin the state to the last
+    // part; state keys like &:hover belong inside the per-element rules below.
     "& .code-copy, & .code-toggle": {
       position: "absolute",
       display: "inline-flex",

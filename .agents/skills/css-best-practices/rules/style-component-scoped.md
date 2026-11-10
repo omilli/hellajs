@@ -40,6 +40,6 @@ const card = style("card", {
 });
 ```
 
-Nested keys compose under the generated class: `&` refers to the class at every occurrence, plain keys become descendants, and conditional at-rules (`@media`, `@container`, `@supports`) inherit it. The options-bag form with a `label` key is equivalent to the positional label.
+Nested keys compose under the generated class: `&` refers to the class at every occurrence, plain keys become descendants, every comma-separated part composes on its own (`'h1, h2'` scopes both parts, no `&` repetition needed), and conditional at-rules (`@media`, `@container`, `@supports`) inherit it. The options-bag form with a `label` key is equivalent to the positional label.
 
 Reference: `packages/css/lib/style.ts` and `packages/css/lib/internal/identity.ts scopedClassName` and `packages/css/docs/api/style.mdx`
