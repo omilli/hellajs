@@ -1,6 +1,6 @@
 import { signal } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
 import { css, vars } from "@hellajs/css";
+import { mount } from "@hellajs/dom";
 
 const isDark = signal(false);
 

@@ -1,10 +1,10 @@
 import { signal } from "@hellajs/core";
 import { router } from "@hellajs/router";
-import { Placeholder } from "./components/Placeholder.tsx";
-import { PostDetail } from "./pages/PostDetail.tsx";
-import { PostList } from "./pages/PostList.tsx";
-import { UserProfile } from "./pages/UserProfile.tsx";
-import { appStore } from "./state.ts";
+import { Placeholder } from "./components/Placeholder";
+import { PostDetail } from "./pages/PostDetail";
+import { PostList } from "./pages/PostList";
+import { UserProfile } from "./pages/UserProfile";
+import { appStore } from "./state";
 
 export const currentView = signal(<Placeholder message="Loading..." />);
 

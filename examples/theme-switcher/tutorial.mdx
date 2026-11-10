@@ -119,7 +119,7 @@ Now let's connect our theme state to CSS. [`vars`](/reference/css/vars) creates 
 Add the CSS import and define the theme variables:
 
 ```tsx
-//... add after the dom import
+//... add after the core import
 import { vars } from "@hellajs/css";
 
 const colors = vars({
@@ -190,8 +190,8 @@ The patterns you learned here (reactive CSS variables and signal-driven toggles)
 
 ```tsx
 import { signal } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
 import { css, vars } from "@hellajs/css";
+import { mount } from "@hellajs/dom";
 
 const isDark = signal(false);
 

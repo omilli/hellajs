@@ -1,11 +1,3 @@
-// Build glue for JSX everywhere: the same hellajs-compiler pass the test
-// preload uses, applied to both entries. The client bundles for the browser;
-// the server bundles for node (`platform: "node"`), keeping `@hellajs/*` and
-// hono external so they resolve from node_modules at runtime. JSX cannot run
-// under raw `node`, so the server entry is compiled here too — `npm run dev`
-// watches both and restarts the built server on change.
-//
-// Usage: `node build.mjs` (one-shot) or `node build.mjs --watch`.
 import { build, context } from "esbuild";
 import { transform } from "hellajs-compiler";
 import { readFile } from "node:fs/promises";
@@ -22,7 +14,7 @@ const hellajsJsx = (target) => ({
         lang: "tsx",
         target: target ?? "ast",
       });
-      if (!result) return undefined; // JSX-free: esbuild's tsx loader handles it natively
+      if (!result) return undefined;
       return { contents: result.code, loader: "js" };
     });
   },
@@ -34,7 +26,7 @@ const client = {
   format: "esm",
   platform: "browser",
   outfile: "dist/client.js",
-  plugins: [hellajsJsx("dom")], // client: imperative runtime construction (the wrapper default, explicit here — esbuild bridges bypass the wrappers)
+  plugins: [hellajsJsx("dom")],
 };
 
 const server = {
@@ -44,7 +36,7 @@ const server = {
   platform: "node",
   outfile: "dist/server.mjs",
   external: ["@hellajs/*", "hono", "@hono/node-server"],
-  plugins: [hellajsJsx()], // server: default-"ast" HellaNode emission for @hellajs/ssr
+  plugins: [hellajsJsx()],
 };
 
 const watch = process.argv.includes("--watch");
@@ -58,8 +50,6 @@ if (watch) {
   await serverCtx.watch();
   spawn("node", ["--watch", "dist/server.mjs"], { stdio: "inherit" });
 } else {
-  // `build()` tears esbuild's service down when done; `context()` would keep
-  // the process alive for incremental rebuilds.
   await build(client);
   await build(server);
 }

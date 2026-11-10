@@ -1,10 +1,10 @@
 import { computed } from "@hellajs/core";
 import { ForEach } from "@hellajs/dom";
-import { Pagination } from "../components/Pagination.tsx";
-import { Placeholder } from "../components/Placeholder.tsx";
-import { Post } from "../components/Post.tsx";
-import { SearchBar } from "../components/SearchBar.tsx";
-import { appStore, postsResource } from "../state.ts";
+import { Pagination } from "../components/Pagination";
+import { Placeholder } from "../components/Placeholder";
+import { Post } from "../components/Post";
+import { SearchBar } from "../components/SearchBar";
+import { appStore, postsResource } from "../state";
 
 const { isFetching, data } = postsResource;
 const { searchValue } = appStore;

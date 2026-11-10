@@ -1,7 +1,7 @@
-import { BackLink } from "../components/BackLink.tsx";
-import { Placeholder } from "../components/Placeholder.tsx";
-import { Post } from "../components/Post.tsx";
-import { postResource } from "../state.ts";
+import { BackLink } from "../components/BackLink";
+import { Placeholder } from "../components/Placeholder";
+import { Post } from "../components/Post";
+import { postResource } from "../state";
 
 const { isFetching, data } = postResource;
 

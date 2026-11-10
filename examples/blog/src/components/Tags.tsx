@@ -1,6 +1,6 @@
 import { style } from "@hellajs/css";
 import { ForEach } from "@hellajs/dom";
-import { theme } from "../theme.ts";
+import { theme } from "../theme";
 
 interface TagsProps {
   tags: string[];

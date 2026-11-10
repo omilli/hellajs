@@ -88,7 +88,6 @@ const TodoApp = () => {
 
   const newTodoText = signal("");
 
-  // placeholder until the full view lands in a later section
   return <h1>Todo App</h1>;
 };
 
@@ -100,6 +99,7 @@ mount(TodoApp, "#app");
 - **`interface Todo`**:  Defines the shape of each todo item
 - **[`signal`](/reference/core/signal)`<Todo[]>([...])`**:  Creates reactive state for the todo list with initial data
 - **`signal("")`**:  Creates reactive state for the new todo input field
+- **`return <h1>Todo App</h1>`**:  A placeholder view standing in until the full list lands in a later section
 - **[`mount`](/reference/dom/mount)`(TodoApp, "#app")`**:  Renders the component into the DOM
 
 ## Styles
@@ -107,7 +107,7 @@ mount(TodoApp, "#app");
 Define styles using [`css`](/reference/css/css) for global selectors and [`style`](/reference/css/style) for scoped styles: each `style()` call returns a hashed class name you consume with `class={...}`.
 
 ```tsx
-//... add after dom import
+//... add after the core import
 import { css, style } from "@hellajs/css";
 
 css({
@@ -160,14 +160,13 @@ Now let's add the functions that modify our state. All state updates create new 
 import { batch, signal } from "@hellajs/core";
 
 const TodoApp = () => {
-  //after this signal
+  //... after this signal
   const newTodoText = /**/
 
   const addTodo = () => {
     const text = newTodoText().trim();
     if (!text) return;
 
-    // one flush: the list and the cleared input land together
     batch(() => {
       todos([...todos(), { id: Date.now(), text, completed: false }]);
       newTodoText("");
@@ -203,7 +202,7 @@ todos([...todos(), newTodo]);
 
 **Bad:** Mutates an existing array
 ```jsx
-todos().push(newTodo); // Won't trigger updates
+todos().push(newTodo);
 ```
 
 ## The View
@@ -216,7 +215,7 @@ import { mount, ForEach } from "@hellajs/dom";
 
 const TodoApp = () => {
   //...
-  // after the actions
+  //... after the actions
   const removeTodo = (id: number) => {
     //...
   };
@@ -306,16 +305,16 @@ import { batch, signal, computed } from "@hellajs/core";
 
 //... CSS code
 
-// add this type definition for filter state
+//... add this type definition for filter state
 type FilterType = "all" | "active" | "completed";
 
 const TodoApp = () => {
-  // after this signal
+  //... after this signal
   const newTodoText = /**/
-  // add this signal
+  //... add this signal
   const filter = signal<FilterType>("all");
 
-  // add these actions
+  //... add these computed values
   const filteredTodos = computed(() => {
     const allTodos = todos();
     switch (filter()) {
@@ -444,12 +443,10 @@ const TodoApp = () => {
   const todos = signal<Todo[]>(loadTodos());
   //... other signals unchanged
 
-  // Persist todos to localStorage
   effect(() => {
     localStorage.setItem("hellajs-todos", JSON.stringify(todos()));
   });
 
-  // Update document title
   effect(() => {
     const activeCount = todos().filter((t) => !t.completed).length;
     document.title = activeCount === 0
@@ -460,6 +457,11 @@ const TodoApp = () => {
   //... computed values and functions unchanged
 };
 ```
+
+**Code Explanation**
+
+- **[`effect`](/reference/core/effect)`(() => localStorage.setItem(...))`**:  Re-runs after every `todos` write, persisting the current list to localStorage
+- **`document.title`**:  The second effect derives the active count and keeps the tab title in sync
 
 Add a `clearCompleted` function and a "Clear Done" button:
 
@@ -518,8 +520,8 @@ The patterns you learned here - complex state management, computed derivations, 
 
 ```tsx
 import { batch, signal, computed, effect } from "@hellajs/core";
-import { mount, ForEach } from "@hellajs/dom";
 import { css, style } from "@hellajs/css";
+import { mount, ForEach } from "@hellajs/dom";
 
 css({
   body: {
@@ -613,8 +615,6 @@ const TodoApp = () => {
   const addTodo = () => {
     const text = newTodoText().trim();
     if (!text) return;
-    // One flush: the list, the footer stats, and the persistence effect each
-    // observe the added todo once, not twice (todos write + input clear).
     batch(() => {
       todos([...todos(), { id: Date.now(), text, completed: false }]);
       newTodoText("");

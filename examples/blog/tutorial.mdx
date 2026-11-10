@@ -268,11 +268,11 @@ Create `src/router.tsx`:
 ```tsx
 import { signal } from "@hellajs/core";
 import { router } from "@hellajs/router";
-import { Placeholder } from "./components/Placeholder.tsx";
-import { PostDetail } from "./pages/PostDetail.tsx";
-import { PostList } from "./pages/PostList.tsx";
-import { UserProfile } from "./pages/UserProfile.tsx";
-import { appStore } from "./state.ts";
+import { Placeholder } from "./components/Placeholder";
+import { PostDetail } from "./pages/PostDetail";
+import { PostList } from "./pages/PostList";
+import { UserProfile } from "./pages/UserProfile";
+import { appStore } from "./state";
 
 export const currentView = signal(<Placeholder message="Loading..." />);
 
@@ -331,9 +331,9 @@ Create `src/main.tsx`:
 ```tsx
 import { style } from "@hellajs/css";
 import { mount } from "@hellajs/dom";
-import { currentView } from "./router.tsx";
-import { appStore } from "./state.ts";
-import "./theme.ts";
+import { currentView } from "./router";
+import { appStore } from "./state";
+import "./theme";
 
 const container = style({
   maxWidth: "48rem",
@@ -357,7 +357,7 @@ mount(App, "#app");
 
 **Code Explanation**
 
-- **`import "./theme.ts"`**: A side-effect import. Registering the reset, the tokens, and the global styles only needs the module to run; nothing is imported from it here
+- **`import "./theme"`**: A side-effect import. Registering the reset, the tokens, and the global styles only needs the module to run; nothing is imported from it here
 - **[`style`](/reference/css/style)`({ ..., h1: { ... } })`**: Returns a content-hashed class. Nested selectors scope under the generated class, so the `h1` rules only apply to headings inside the container
 - **`{appStore.title}` and `{currentView}`**: Store properties and signals passed as children bind reactively. Both update the DOM when the value behind them changes
 - **[`mount`](/reference/dom/mount)`(App, "#app")`**: Renders the app into the `#app` div from `index.html`
@@ -382,7 +382,7 @@ Create `src/components/Placeholder.tsx`:
 
 ```tsx
 import { style } from "@hellajs/css";
-import { theme } from "../theme.ts";
+import { theme } from "../theme";
 
 interface PlaceholderProps {
   message: string;
@@ -438,7 +438,7 @@ Create `src/components/Tags.tsx`:
 ```tsx
 import { style } from "@hellajs/css";
 import { ForEach } from "@hellajs/dom";
-import { theme } from "../theme.ts";
+import { theme } from "../theme";
 
 interface TagsProps {
   tags: string[];
@@ -480,7 +480,7 @@ Create `src/components/Reactions.tsx`:
 
 ```tsx
 import { style } from "@hellajs/css";
-import { theme } from "../theme.ts";
+import { theme } from "../theme";
 
 interface ReactionsProps {
   likes: number;
@@ -514,10 +514,10 @@ Create `src/components/Post.tsx`:
 
 ```tsx
 import { style } from "@hellajs/css";
-import type { PostData } from "../state.ts";
-import { theme } from "../theme.ts";
-import { Reactions } from "./Reactions.tsx";
-import { Tags } from "./Tags.tsx";
+import type { PostData } from "../state";
+import { theme } from "../theme";
+import { Reactions } from "./Reactions";
+import { Tags } from "./Tags";
 
 interface PostProps {
   data: PostData;
@@ -563,7 +563,7 @@ export const Post = ({ data }: PostProps) => {
 **Code Explanation**
 
 - **`import type { PostData }`**: Type-only import. The interface annotates the prop without pulling any runtime code from `state.ts` into the component's module graph
-- **`{`/posts/${id}`}` and `{`/users/${userId}`}`**: Both links are plain anchors with interpolated hrefs. Link interception routes same-origin clicks through the router, so no click handlers are needed
+- **``{`/posts/${id}`}`` and ``{`/users/${userId}`}``**: Both links are plain anchors with interpolated hrefs. Link interception routes same-origin clicks through the router, so no click handlers are needed
 - **Nested selectors**: `h3`, `p`, and `.user-link` rules scope under the generated post class. The class names in the markup (`class={post}`, `class="user-link"`) are the only hooks the styles need
 - **`reactions?.likes`**: Optional chaining tolerates posts without a reactions object, and `Reactions` falls back to 0
 
@@ -579,8 +579,8 @@ Create `src/components/SearchBar.tsx`:
 
 ```tsx
 import { style } from "@hellajs/css";
-import { theme } from "../theme.ts";
-import { appStore } from "../state.ts";
+import { theme } from "../theme";
+import { appStore } from "../state";
 
 const search = style({
   display: "flex",
@@ -641,8 +641,8 @@ Create `src/components/Pagination.tsx`:
 import { computed } from "@hellajs/core";
 import { style } from "@hellajs/css";
 import { navigate } from "@hellajs/router";
-import { appStore, postsResource } from "../state.ts";
-import { theme } from "../theme.ts";
+import { appStore, postsResource } from "../state";
+import { theme } from "../theme";
 
 const pagination = style({
   display: "flex",
@@ -717,11 +717,11 @@ Create `src/pages/PostList.tsx`:
 ```tsx
 import { computed } from "@hellajs/core";
 import { ForEach } from "@hellajs/dom";
-import { Pagination } from "../components/Pagination.tsx";
-import { Placeholder } from "../components/Placeholder.tsx";
-import { Post } from "../components/Post.tsx";
-import { SearchBar } from "../components/SearchBar.tsx";
-import { appStore, postsResource } from "../state.ts";
+import { Pagination } from "../components/Pagination";
+import { Placeholder } from "../components/Placeholder";
+import { Post } from "../components/Post";
+import { SearchBar } from "../components/SearchBar";
+import { appStore, postsResource } from "../state";
 
 const { isFetching, data } = postsResource;
 const { searchValue } = appStore;
@@ -760,10 +760,10 @@ The detail page reads the single-post resource. Same key-driven flow: the route 
 Create `src/pages/PostDetail.tsx`:
 
 ```tsx
-import { BackLink } from "../components/BackLink.tsx";
-import { Placeholder } from "../components/Placeholder.tsx";
-import { Post } from "../components/Post.tsx";
-import { postResource } from "../state.ts";
+import { BackLink } from "../components/BackLink";
+import { Placeholder } from "../components/Placeholder";
+import { Post } from "../components/Post";
+import { postResource } from "../state";
 
 const { isFetching, data } = postResource;
 
@@ -806,11 +806,11 @@ Create `src/pages/UserProfile.tsx`:
 ```tsx
 import { style } from "@hellajs/css";
 import { ForEach } from "@hellajs/dom";
-import { BackLink } from "../components/BackLink.tsx";
-import { Placeholder } from "../components/Placeholder.tsx";
-import { Post } from "../components/Post.tsx";
-import { userResource, userPostsResource } from "../state.ts";
-import { theme } from "../theme.ts";
+import { BackLink } from "../components/BackLink";
+import { Placeholder } from "../components/Placeholder";
+import { Post } from "../components/Post";
+import { userResource, userPostsResource } from "../state";
+import { theme } from "../theme";
 
 const avatar = style({
   width: "4rem",
@@ -1043,11 +1043,11 @@ css({
 ```tsx
 import { signal } from "@hellajs/core";
 import { router } from "@hellajs/router";
-import { Placeholder } from "./components/Placeholder.tsx";
-import { PostDetail } from "./pages/PostDetail.tsx";
-import { PostList } from "./pages/PostList.tsx";
-import { UserProfile } from "./pages/UserProfile.tsx";
-import { appStore } from "./state.ts";
+import { Placeholder } from "./components/Placeholder";
+import { PostDetail } from "./pages/PostDetail";
+import { PostList } from "./pages/PostList";
+import { UserProfile } from "./pages/UserProfile";
+import { appStore } from "./state";
 
 export const currentView = signal(<Placeholder message="Loading..." />);
 
@@ -1090,9 +1090,9 @@ router({
 ```tsx
 import { style } from "@hellajs/css";
 import { mount } from "@hellajs/dom";
-import { currentView } from "./router.tsx";
-import { appStore } from "./state.ts";
-import "./theme.ts";
+import { currentView } from "./router";
+import { appStore } from "./state";
+import "./theme";
 
 const container = style({
   maxWidth: "48rem",
@@ -1137,8 +1137,8 @@ export const BackLink = () => (
 import { computed } from "@hellajs/core";
 import { style } from "@hellajs/css";
 import { navigate } from "@hellajs/router";
-import { appStore, postsResource } from "../state.ts";
-import { theme } from "../theme.ts";
+import { appStore, postsResource } from "../state";
+import { theme } from "../theme";
 
 const pagination = style({
   display: "flex",
@@ -1199,7 +1199,7 @@ export const Pagination = () => {
 
 ```tsx
 import { style } from "@hellajs/css";
-import { theme } from "../theme.ts";
+import { theme } from "../theme";
 
 interface PlaceholderProps {
   message: string;
@@ -1220,10 +1220,10 @@ export const Placeholder = ({ message }: PlaceholderProps) => (
 
 ```tsx
 import { style } from "@hellajs/css";
-import type { PostData } from "../state.ts";
-import { theme } from "../theme.ts";
-import { Reactions } from "./Reactions.tsx";
-import { Tags } from "./Tags.tsx";
+import type { PostData } from "../state";
+import { theme } from "../theme";
+import { Reactions } from "./Reactions";
+import { Tags } from "./Tags";
 
 interface PostProps {
   data: PostData;
@@ -1270,7 +1270,7 @@ export const Post = ({ data }: PostProps) => {
 
 ```tsx
 import { style } from "@hellajs/css";
-import { theme } from "../theme.ts";
+import { theme } from "../theme";
 
 interface ReactionsProps {
   likes: number;
@@ -1294,8 +1294,8 @@ export const Reactions = ({ likes, views }: ReactionsProps) => (
 
 ```tsx
 import { style } from "@hellajs/css";
-import { theme } from "../theme.ts";
-import { appStore } from "../state.ts";
+import { appStore } from "../state";
+import { theme } from "../theme";
 
 const search = style({
   display: "flex",
@@ -1342,7 +1342,7 @@ export const SearchBar = () => {
 ```tsx
 import { style } from "@hellajs/css";
 import { ForEach } from "@hellajs/dom";
-import { theme } from "../theme.ts";
+import { theme } from "../theme";
 
 interface TagsProps {
   tags: string[];
@@ -1373,10 +1373,10 @@ export const Tags = ({ tags = [] }: TagsProps) => (
 ### `src/pages/PostDetail.tsx`
 
 ```tsx
-import { BackLink } from "../components/BackLink.tsx";
-import { Placeholder } from "../components/Placeholder.tsx";
-import { Post } from "../components/Post.tsx";
-import { postResource } from "../state.ts";
+import { BackLink } from "../components/BackLink";
+import { Placeholder } from "../components/Placeholder";
+import { Post } from "../components/Post";
+import { postResource } from "../state";
 
 const { isFetching, data } = postResource;
 
@@ -1408,11 +1408,11 @@ export const PostDetail = () => (
 ```tsx
 import { computed } from "@hellajs/core";
 import { ForEach } from "@hellajs/dom";
-import { Pagination } from "../components/Pagination.tsx";
-import { Placeholder } from "../components/Placeholder.tsx";
-import { Post } from "../components/Post.tsx";
-import { SearchBar } from "../components/SearchBar.tsx";
-import { appStore, postsResource } from "../state.ts";
+import { Pagination } from "../components/Pagination";
+import { Placeholder } from "../components/Placeholder";
+import { Post } from "../components/Post";
+import { SearchBar } from "../components/SearchBar";
+import { appStore, postsResource } from "../state";
 
 const { isFetching, data } = postsResource;
 const { searchValue } = appStore;
@@ -1441,11 +1441,11 @@ export const PostList = () => (
 ```tsx
 import { style } from "@hellajs/css";
 import { ForEach } from "@hellajs/dom";
-import { BackLink } from "../components/BackLink.tsx";
-import { Placeholder } from "../components/Placeholder.tsx";
-import { Post } from "../components/Post.tsx";
-import { userResource, userPostsResource } from "../state.ts";
-import { theme } from "../theme.ts";
+import { BackLink } from "../components/BackLink";
+import { Placeholder } from "../components/Placeholder";
+import { Post } from "../components/Post";
+import { userResource, userPostsResource } from "../state";
+import { theme } from "../theme";
 
 const avatar = style({
   width: "4rem",

@@ -1,8 +1,8 @@
 import { style } from "@hellajs/css";
-import type { PostData } from "../state.ts";
-import { theme } from "../theme.ts";
-import { Reactions } from "./Reactions.tsx";
-import { Tags } from "./Tags.tsx";
+import type { PostData } from "../state";
+import { theme } from "../theme";
+import { Reactions } from "./Reactions";
+import { Tags } from "./Tags";
 
 interface PostProps {
   data: PostData;

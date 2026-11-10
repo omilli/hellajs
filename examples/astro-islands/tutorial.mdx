@@ -96,7 +96,6 @@ import Counter from '../components/Counter';
   <body>
     <h1>Astro Islands</h1>
 
-    <!-- Island 1: server-rendered JSX, adopted in place by hydrate() -->
     <Counter client:load initial={0} />
   </body>
 </html>
@@ -169,10 +168,6 @@ export const tracker = style({
   borderRadius: "0.375rem",
 });
 
-// client:only on the page: pointer coordinates only exist in a live browser,
-// so the server render would emit a static "0, 0" island whose markup the
-// client throws away anyway - skipping the server render loses nothing and
-// keeps the component free of server branches.
 export default function MouseTracker() {
   const pointerX = signal(0);
   const pointerY = signal(0);
@@ -199,7 +194,6 @@ Add the import and the island to `src/pages/index.astro`:
 import MouseTracker from '../components/MouseTracker';
 ---
 <!-- ... -->
-<!-- Island 2: client-only JSX island, rendered fresh on the client -->
 <MouseTracker client:only />
 ```
 
@@ -220,12 +214,10 @@ The third mode needs no island markup of its own: `$ref` reaches into HTML that 
 import NameSync from '../components/NameSync';
 ---
 <!-- ... -->
-<!-- Plain Astro-rendered HTML that island 3 binds to from the outside -->
 <label for="name-input">Name</label>
 <input id="name-input" />
 <h1 id="greeting"></h1>
 
-<!-- Island 3: client-only $ref bindings into Astro's own HTML -->
 <NameSync client:only />
 ```
 
@@ -296,7 +288,7 @@ css({
     borderRadius: "0.375rem",
     border: "1px solid #d1d5db",
     marginTop: "1rem",
-  }
+  },
 });
 ---
 ```
@@ -366,7 +358,7 @@ css({
     borderRadius: "0.375rem",
     border: "1px solid #d1d5db",
     marginTop: "1rem",
-  }
+  },
 });
 ---
 <html lang="en">
@@ -377,18 +369,14 @@ css({
   <body>
     <h1>Astro Islands</h1>
 
-    <!-- Island 1: server-rendered JSX, adopted in place by hydrate() -->
     <Counter client:load initial={0} />
 
-    <!-- Island 2: client-only JSX island, rendered fresh on the client -->
     <MouseTracker client:only />
 
-    <!-- Plain Astro-rendered HTML that island 3 binds to from the outside -->
     <label for="name-input">Name</label>
     <input id="name-input" />
     <h1 id="greeting"></h1>
 
-    <!-- Island 3: client-only $ref bindings into Astro's own HTML -->
     <NameSync client:only />
   </body>
 </html>
@@ -438,10 +426,6 @@ export const tracker = style({
   borderRadius: "0.375rem",
 });
 
-// client:only on the page: pointer coordinates only exist in a live browser,
-// so the server render would emit a static "0, 0" island whose markup the
-// client throws away anyway - skipping the server render loses nothing and
-// keeps the component free of server branches.
 export default function MouseTracker() {
   const pointerX = signal(0);
   const pointerY = signal(0);

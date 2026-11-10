@@ -1,6 +1,6 @@
 import { signal, computed } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
 import { css } from "@hellajs/css";
+import { mount } from "@hellajs/dom";
 
 css({
   body: {

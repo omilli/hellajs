@@ -1,8 +1,8 @@
 import { computed } from "@hellajs/core";
 import { style } from "@hellajs/css";
 import { navigate } from "@hellajs/router";
-import { appStore, postsResource } from "../state.ts";
-import { theme } from "../theme.ts";
+import { appStore, postsResource } from "../state";
+import { theme } from "../theme";
 
 const pagination = style({
   display: "flex",

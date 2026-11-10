@@ -1,5 +1,6 @@
 import { mount, ForEach } from "@hellajs/dom";
-import { rows, append, clear, create, swap, update, RowSchema } from "./state";
+import type { RowSchema } from "./state";
+import { rows, append, clear, create, swap, update } from "./state";
 import { ActionButton } from "./ActionButton";
 import { Row } from "./Row";
 

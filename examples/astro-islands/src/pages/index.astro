@@ -17,7 +17,7 @@ css({
     borderRadius: "0.375rem",
     border: "1px solid #d1d5db",
     marginTop: "1rem",
-  }
+  },
 });
 ---
 <html lang="en">
@@ -28,18 +28,14 @@ css({
   <body>
     <h1>Astro Islands</h1>
 
-    <!-- Island 1: server-rendered JSX, adopted in place by hydrate() -->
     <Counter client:load initial={0} />
 
-    <!-- Island 2: client-only JSX island, rendered fresh on the client -->
     <MouseTracker client:only />
 
-    <!-- Plain Astro-rendered HTML that island 3 binds to from the outside -->
     <label for="name-input">Name</label>
     <input id="name-input" />
     <h1 id="greeting"></h1>
 
-    <!-- Island 3: client-only $ref bindings into Astro's own HTML -->
     <NameSync client:only />
   </body>
 </html>

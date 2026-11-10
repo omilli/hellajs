@@ -1,4 +1,5 @@
-import { remove, selected, type RowSchema } from "./state";
+import type { RowSchema } from "./state";
+import { remove, selected } from "./state";
 
 export const Row = ({ row }: { row: RowSchema }) => (
   <tr class={() => (selected() === row.id ? "danger" : "")}>

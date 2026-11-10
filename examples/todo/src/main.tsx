@@ -1,6 +1,6 @@
 import { batch, signal, computed, effect } from "@hellajs/core";
-import { mount, ForEach } from "@hellajs/dom";
 import { css, style } from "@hellajs/css";
+import { mount, ForEach } from "@hellajs/dom";
 
 css({
   body: {
@@ -94,8 +94,6 @@ const TodoApp = () => {
   const addTodo = () => {
     const text = newTodoText().trim();
     if (!text) return;
-    // One flush: the list, the footer stats, and the persistence effect each
-    // observe the added todo once, not twice (todos write + input clear).
     batch(() => {
       todos([...todos(), { id: Date.now(), text, completed: false }]);
       newTodoText("");

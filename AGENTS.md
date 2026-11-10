@@ -55,6 +55,7 @@
   | bundle | `vp run bundle [package]` | Build `dist/` bundles. |
   | lint | `vp run lint` | `./node_modules/.bin/vp check` (single static-checks entry: oxfmt format check + oxlint + tsgolint type-check; `vite.config.ts` fmt/lint blocks + `lint/hellajs.js` JS-plugin rules) + `npm run lint:guards`. oxfmt's config rides vp — the bare `node_modules/.bin/oxfmt` binary finds no repo config and applies defaults (reformats quoting/trailing-comma/array-collapse against house style); never format or fmt-check with it directly. |
   | lint:guards | `vp run lint:guards` | The seven guards composed (below): visibility, dead-exports, jsdoc-params, doc-links, doc-structure, em-dash, skills-check; standalone to skip vp check. |
+  | format | `vp run format` | Format all code in place (`npx vp fmt`, oxfmt printWidth-80 Prettier-compatible); ignore patterns ride the `fmt` block in `vite.config.ts` — md/mdx, docs, generated dirs excluded, so it never races the docs guards or Complete-Code parity. |
   | clean | `vp run clean [package]` | Remove build artifacts. |
   | changeset | `vp run changeset` | Add a changeset entry (user-only — §Core rules). |
   | release | `vp run release` | Bundle, then publish via changesets (user-only). |

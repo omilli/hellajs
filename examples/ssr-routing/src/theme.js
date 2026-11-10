@@ -1,9 +1,5 @@
-import { css, vars, cssText } from "@hellajs/css";
+import { css, vars } from "@hellajs/css";
 
-// vars() registers the custom-property declarations on both platforms and returns
-// the var() proxy everywhere; css() registers its rules the same way. cssText()
-// then collects both (the css-side rules in registration order, then the vars
-// buckets) as the text for one <style> tag via doc({ head: { styles } }).
 export const tokens = vars({
   color: { primary: "#2563eb", text: "#333" },
   space: { nav: "1rem" },
@@ -33,6 +29,3 @@ css({
     padding: tokens.space.nav,
   },
 });
-
-// The registered rule text (css rules + vars buckets), collected after the calls above.
-export const stylesheet = cssText();

@@ -1,10 +1,10 @@
 import { style } from "@hellajs/css";
 import { ForEach } from "@hellajs/dom";
-import { BackLink } from "../components/BackLink.tsx";
-import { Placeholder } from "../components/Placeholder.tsx";
-import { Post } from "../components/Post.tsx";
-import { userResource, userPostsResource } from "../state.ts";
-import { theme } from "../theme.ts";
+import { BackLink } from "../components/BackLink";
+import { Placeholder } from "../components/Placeholder";
+import { Post } from "../components/Post";
+import { userResource, userPostsResource } from "../state";
+import { theme } from "../theme";
 
 const avatar = style({
   width: "4rem",

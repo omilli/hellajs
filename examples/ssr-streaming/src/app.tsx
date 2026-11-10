@@ -1,15 +1,10 @@
 import { Suspense } from "@hellajs/dom";
 import { dashboard, grid, card, bone } from "./theme";
 
-// Simulated async fetch; resolves with `data` after `ms`. Deterministic (no backend),
-// so the streamed shape is reproducible. Each card uses a distinct latency: the shell and
-// every skeleton paints at TTFB, then the cards fill in as their data resolves (fast → slow).
 function after<T>(data: T, ms: number): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(data), ms));
 }
 
-// A static placeholder: the <Suspense> fallback. It ships in the first flushed chunk, so
-// the layout is stable before the real card resolves.
 const Skeleton = ({ label }: { label: string }) => (
   <section class={card}>
     <h2>{label}</h2>
@@ -18,11 +13,6 @@ const Skeleton = ({ label }: { label: string }) => (
     <span class={bone} />
   </section>
 );
-
-// Each card wraps its async fetch in <Suspense>: the skeleton flushes inline immediately,
-// then the resolved body streams as <template id="hsN">…</template> + an inline $hs swap
-// script that swaps it in on arrival. Regions are ordered fast → slow so the page fills
-// top-to-bottom.
 
 const StatsCard = () => (
   <Suspense fallback={<Skeleton label="Stats" />}>
@@ -80,9 +70,6 @@ const TopCard = () => (
   </Suspense>
 );
 
-// The static shell renders synchronously, so it paints at TTFB; before any card resolves.
-// Three independent <Suspense> regions make streaming's value obvious: the page is useful
-// immediately, and each card streams in as its own data lands (no waiting on the slowest).
 export const Dashboard = () => (
   <div class={dashboard}>
     <header>

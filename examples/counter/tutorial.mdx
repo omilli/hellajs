@@ -127,7 +127,7 @@ Your app will be running at `http://localhost:5173`. Click the button and watch 
 Define global styles with [`css`](/reference/css/css). Each top-level key is a raw CSS selector and the rules are injected into the document once.
 
 ```jsx
-//... add after the dom import
+//... add after the core import
 import { css } from "@hellajs/css";
 
 css({
@@ -167,7 +167,6 @@ const Counter = () => {
 
   const increment = () => count(count() + 1);
 
-  // add this computed value
   const isDisabled = computed(() => count() === 0);
 
   return (
@@ -247,8 +246,8 @@ The patterns you learned here are the foundation for any HellaJS application. Yo
 
 ```jsx
 import { signal, computed } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
 import { css } from "@hellajs/css";
+import { mount } from "@hellajs/dom";
 
 css({
   body: {

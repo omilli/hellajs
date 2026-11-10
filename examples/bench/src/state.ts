@@ -1,4 +1,5 @@
-import { signal, batch, type Signal } from "@hellajs/core";
+import { signal, batch } from "@hellajs/core";
+import type { Signal } from "@hellajs/core";
 
 export interface RowSchema {
   id: number;

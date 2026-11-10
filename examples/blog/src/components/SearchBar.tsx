@@ -1,6 +1,6 @@
 import { style } from "@hellajs/css";
-import { theme } from "../theme.ts";
-import { appStore } from "../state.ts";
+import { appStore } from "../state";
+import { theme } from "../theme";
 
 const search = style({
   display: "flex",

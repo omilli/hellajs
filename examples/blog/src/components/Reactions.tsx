@@ -1,5 +1,5 @@
 import { style } from "@hellajs/css";
-import { theme } from "../theme.ts";
+import { theme } from "../theme";
 
 interface ReactionsProps {
   likes: number;

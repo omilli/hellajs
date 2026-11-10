@@ -1,8 +1,8 @@
 import { style } from "@hellajs/css";
 import { mount } from "@hellajs/dom";
-import { currentView } from "./router.tsx";
-import { appStore } from "./state.ts";
-import "./theme.ts";
+import { currentView } from "./router";
+import { appStore } from "./state";
+import "./theme";
 
 const container = style({
   maxWidth: "48rem",
