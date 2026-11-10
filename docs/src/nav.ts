@@ -98,6 +98,7 @@ export const navigation: Record<NavSection, NavEntry[]> = {
     {
       css: [
         "css",
+        "reset",
         "style",
         "cva",
         "cx",
