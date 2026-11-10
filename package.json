@@ -24,6 +24,7 @@
     "doc-snippets": "node ./scripts/doc-snippets.ts",
     "docs-ui": "node ./scripts/docs-ui.ts",
     "em-dash": "node ./scripts/em-dash.ts",
+    "format": "npx vp fmt",
     "jsdoc-params": "node ./scripts/jsdoc-params.ts",
     "lint": "npx vp check && npm run lint:guards && npm run lint:structure",
     "lint:guards": "node ./scripts/type-visibility.ts && node ./scripts/dead-exports.ts && node ./scripts/jsdoc-params.ts && node ./scripts/doc-links.ts && node ./scripts/doc-structure.ts && node ./scripts/em-dash.ts && node ./scripts/skills-check.ts",
