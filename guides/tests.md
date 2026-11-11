@@ -25,6 +25,7 @@ Decision index — jump to the section for the decision you are making; do not s
 | Comments / code style? | §Comments, §Code Style |
 | What must be covered? | §Test Coverage |
 | Running gates / triaging failures? | §Triage & Gate Semantics |
+| Examples' Playwright e2e specs? | §Examples e2e |
 | Final audit before finishing? | §Verification Checklist |
 
 ## Decision Precedence
@@ -277,11 +278,67 @@ How test gates are run and triaged. The verification gate is `vp run coverage` (
 
 - **No bare `vp test`/`vitest` for verification.** Tests import from `dist/` bundles; a bare runner never rebuilds them and silently tests stale code. Mid-flight iteration uses the triage form: `vp run bundle <package> --quiet && ./node_modules/.bin/vp test packages/<package>/tests[/<file>.test.tsx]` (explicit rebuild + scoped tests). The green baseline and final gate are always `vp run coverage <package>` + `vp run lint`.
 - **Scoped-run scoping.** `vp run coverage <package>` scopes tests to the target package and runs no lint (`vp run lint` is its own gate, repo-wide). A scoped run failing on a file OUTSIDE the target is foreign, not yours: report the foreign failure, move on — `vp run lint` pairs with every gate run and is itself repo-wide, so a foreign lint red reports the same way; CI's unscoped pair re-checks the full repo.
+- **Unscoped e2e stage.** `vp run coverage` without a scope continues into the tutorial examples' Playwright suites (§Examples e2e) after the vitest run — CI's single coverage step gates unit + browser e2e together, and it requires system Chrome. Scoped runs never execute e2e (the per-package merge gate must not pay for eight browser suites): a packages change breaking an example surfaces in CI's unscoped run or locally via `vp run e2e`, not in the scoped gate.
 - **Bundle-stage foreign block.** `bundle.ts --quiet` builds ALL packages before scoped tests run, so a foreign bundle failure blocks the target's own tests. Verify via `vp run bundle <package>` (explicit rebuild — honors no-stale-dist) followed by the scoped test command coverage runs internally (`vp test packages/<package>/tests --coverage`); report the foreign failure.
 - **Gate-failure attribution.** A check failing on files outside your diff → `git status -sb` first; verify the files carry no edits of yours (concurrent user changes) before debugging your own work. Re-run the gate after the foreign change settles.
 - **Plugin scoping.** `vp run coverage <plugin>` scopes tests to `plugins/<p>/tests` and narrows the coverage includes to the plugin's rows (source `.mjs` — plugins have no `dist/`; `vite`/`rollup` carry no suites and fail the tests-dir check). The bundle stage still runs before plugin tests: `plugins/astro`'s tests import `@hellajs/core`'s dist. Package-scoped runs still execute no plugin suites: a `packages/` change breaking them (serializer output, runtime contracts a plugin test asserts) surfaces only when a plugin unit executes — run the affected `vp run coverage <plugin>` (bare `./node_modules/.bin/vp test plugins/<p>/tests` mid-flight — plugin tests import source, not `dist/`) before declaring done when the change reaches what they assert.
-- **Coverage blind spots.** `vp run coverage` runs bundle + tests only — no lint. The mechanical subset (the `hella/*` JS-plugin rules: `for…of`/`for…in` and raw typeof in `packages/*/lib`, banned test APIs in test files) is `vp run lint`'s to catch. Everything else — `guides/code.md`'s thin-wrapper ban, `lib/internal/` placement, single-callsite <30-line extraction, `@internal` visibility, and most of §Anti-Patterns — has no lint counterpart. A new file, file structure, or shared test helper → run `audit-tests` as part of verification.
+- **Coverage blind spots.** `vp run coverage` runs bundle + unit tests (unscoped: plus the examples' e2e stage) — no lint. The mechanical subset (the `hella/*` JS-plugin rules: `for…of`/`for…in` and raw typeof in `packages/*/lib`, banned test APIs in test files) is `vp run lint`'s to catch. Everything else — `guides/code.md`'s thin-wrapper ban, `lib/internal/` placement, single-callsite <30-line extraction, `@internal` visibility, and most of §Anti-Patterns — has no lint counterpart. A new file, file structure, or shared test helper → run `audit-tests` as part of verification.
 - **Measurement target.** Coverage instruments the entry-graph per-module dist files (`dist/*.js` + `dist/internal/*.js`), the ui registry minus `cn.js`/`tokens*.js`, and `plugins/**/*.mjs` — not `lib/`: `lib/` is truth, the built dist artifact is the measurement. `bundle.js` is exercised by each package's `tests/bundle.test.ts` smoke test (export parity), not measured. A reading is point-in-time: re-run `vp run coverage` immediately before reporting coverage findings.
+
+## Examples e2e
+
+Governs the tutorial examples' browser e2e: each example's `e2e/<name>.spec.ts`
+and colocated `playwright.config.ts` (bench excluded — its app is already
+driven end-to-end by `scripts/bench/driver.ts`). Vitest-only rules do NOT
+apply to these files: the framework-import, DOM-access, and coverage rules
+above target `packages/*/tests`; e2e specs import from `playwright/test` and
+verify the built app in a real browser (`channel: "chrome"` — system Chrome,
+never bundled chromium). Adopted rules:
+
+- One behavior per `test()` (§Scenario → test() derivation); DRY within the
+  file; `describe("<name> e2e")` wraps the file; specs are self-contained —
+  no imports from other examples or shared helper files.
+- Assert rendered text, never the source's apparent spacing: the compiler drops
+  whitespace-only text between JSX expressions (`filterEmptyChildren`), so
+  `{a} {b}` renders as one glued text node ("aB"). Write assertions against the
+  built app's actual output.
+- Playwright text matchers (`toContainText`/`toHaveText`) cannot see `<head>`
+  descendants or STYLE/SCRIPT tags — their text plumbing skips them
+  (`shouldSkipForTextMatching` in playwright-core), so the assertion polls
+  `""` forever while the locator resolves with content. Assert head content
+  via `toHaveCount` + an explicit `textContent()` read.
+- The error-collector fixture (below) sits on every spec: page errors and
+  console errors fail the test in `afterEach`. The `**/favicon.ico` route is
+  part of the fixture — no example ships a favicon, and Chrome's auto-request
+  would 404 into the collector.
+
+```ts
+const pageErrors: string[] = [];
+
+test.beforeEach(async ({ page }) => {
+  pageErrors.length = 0;
+  await page.route("**/favicon.ico", (route) => route.fulfill({ status: 200, body: "" }));
+  page.on("pageerror", (error) => pageErrors.push(`pageerror: ${error}`));
+  page.on("console", (message) => {
+    if (message.type() === "error") pageErrors.push(`console.error: ${message.text()}`);
+  });
+});
+
+test.afterEach(() => {
+  expect(pageErrors, "no page or console errors").toEqual([]);
+});
+```
+
+- The runner is `vp run e2e [name] [--headed]` (root `scripts/e2e.ts`) — never
+  bare `playwright test` from the root. Unscoped `vp run coverage` fires the
+  full registry as its final stage. Each example's config serves its app
+  (`webServer`) on a pinned port with `reuseExistingServer: false`, so a stray
+  server fails loudly — prod builds for every example except `ssr-streaming`
+  (no prod server entry exists; its `webServer` runs
+  `npm run dev -- --port <port> --strictPort --force` so a package rebuild
+  earlier in the runner can never serve stale prebundled deps).
+- Vitest never discovers these specs: the root `vite.config.ts` test
+  `include` scopes to `packages/*/tests/**` + `plugins/*/tests/**`.
 
 ## Verification Checklist
 
@@ -335,3 +392,10 @@ Run this when holding a Tests file (`*.test.ts` / `*.spec.ts`). Each item is a y
 - [ ] No bare `vp test`/`vitest` used for verification — mid-flight iteration used the triage form; final gate was `vp run coverage <package|plugin>` + `vp run lint`
 - [ ] Foreign failure triaged per protocol (own package verified clean, failure reported), not debugged as own work
 - [ ] New file/structure/helper → `audit-tests` run (coverage's blind spots)
+
+**Examples e2e (§Examples e2e)**
+- [ ] One behavior per `test()`; `describe("<name> e2e")`; self-contained spec (no cross-example imports)
+- [ ] Assertions pin rendered text, not source spacing (inter-expression JSX whitespace renders glued)
+- [ ] Error-collector fixture present (favicon route included)
+- [ ] Head content asserted via count + explicit `textContent()` (text matchers skip `<head>`/STYLE)
+- [ ] `vp run e2e <name>` exits 0

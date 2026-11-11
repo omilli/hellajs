@@ -23,6 +23,7 @@
     "doc-links": "node ./scripts/doc-links.ts",
     "doc-snippets": "node ./scripts/doc-snippets.ts",
     "docs-ui": "node ./scripts/docs-ui.ts",
+    "e2e": "node ./scripts/e2e.ts",
     "em-dash": "node ./scripts/em-dash.ts",
     "format": "npx vp fmt",
     "jsdoc-params": "node ./scripts/jsdoc-params.ts",

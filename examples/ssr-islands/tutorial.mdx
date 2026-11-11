@@ -189,7 +189,7 @@ app.get("*", (c) =>
   ),
 );
 
-serve({ fetch: app.fetch, port: 3000 });
+serve({ fetch: app.fetch, port: Number(process.env.PORT) || 3000 });
 ```
 
 **Code Explanation**
@@ -199,7 +199,7 @@ serve({ fetch: app.fetch, port: 3000 });
 - **`readFileSync(new URL('../dist/client.js', import.meta.url))`**: Loads the client bundle `build.mjs` emitted, relative to this file inside `dist/`
 - **`app.get(path, handler)`**: Registers a Hono route. `/client.js` serves the bundle from disk; the catch-all renders the document
 - **[`ssr`](/reference/ssr/ssr)`(App())`**: Walks the view tree to an HTML string. `App()` runs server-side; the compiled output is DOM-free
-- **[`serve`](https://hono.dev/docs/getting-started/nodejs)`({ fetch: app.fetch, port: 3000 })`**: Runs the Hono app on Node's HTTP server
+- **[`serve`](https://hono.dev/docs/getting-started/nodejs)`({ fetch: app.fetch, port: Number(process.env.PORT) || 3000 })`**: Runs the Hono app on Node's HTTP server
 - **[`doc`](/reference/ssr/doc)`({ head, body })`**: Assembles a full document. `head.raw` carries the `hella-css`-tagged `<style>` verbatim; `scripts` emits each tag
 
 ## Client Enhancement
@@ -323,7 +323,7 @@ app.get("*", (c) =>
   ),
 );
 
-serve({ fetch: app.fetch, port: 3000 });
+serve({ fetch: app.fetch, port: Number(process.env.PORT) || 3000 });
 ```
 
 ### `src/client.tsx`

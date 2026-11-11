@@ -265,7 +265,7 @@ app.get("*", (c) => {
   );
 });
 
-serve({ fetch: app.fetch, port: 3000 });
+serve({ fetch: app.fetch, port: Number(process.env.PORT) || 3000 });
 ```
 
 **Code Explanation**
@@ -276,7 +276,7 @@ serve({ fetch: app.fetch, port: 3000 });
 - **[`doc`](/reference/ssr/doc)`({ head, body })`**: `head.raw` carries the collected CSS inside a `<style>` tagged `hella-css`. That id matters here: the client entry re-runs the same `css()`/`vars()` registrations when `theme.js` loads, and the id is what lets hydration adopt the delivered tag instead of registering every rule a second time; `scripts` emits the client tag
 - **`readFileSync(new URL('../dist/client.js', import.meta.url))`**: Loads the client bundle `build.mjs` emitted, relative to this file inside `dist/`
 - **`app.get(path, handler)`**: Registers a Hono route. `/client.js` serves the bundle from disk; the single catch-all renders the document for every other path
-- **[`serve`](https://hono.dev/docs/getting-started/nodejs)`({ fetch: app.fetch, port: 3000 })`**: Runs the Hono app on Node's HTTP server
+- **[`serve`](https://hono.dev/docs/getting-started/nodejs)`({ fetch: app.fetch, port: Number(process.env.PORT) || 3000 })`**: Runs the Hono app on Node's HTTP server
 
 ## Client Hydration
 
@@ -439,7 +439,7 @@ app.get("*", (c) => {
   );
 });
 
-serve({ fetch: app.fetch, port: 3000 });
+serve({ fetch: app.fetch, port: Number(process.env.PORT) || 3000 });
 ```
 
 ### `src/client.tsx`

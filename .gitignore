@@ -13,6 +13,8 @@ dist
 .bench
 .doc-snippets/
 .skills-snippets/
+test-results/
+playwright-report/
 *.tgz
 
 # code coverage

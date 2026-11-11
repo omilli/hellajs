@@ -33,4 +33,4 @@ app.get("*", (c) => {
   );
 });
 
-serve({ fetch: app.fetch, port: 3000 });
+serve({ fetch: app.fetch, port: Number(process.env.PORT) || 3000 });

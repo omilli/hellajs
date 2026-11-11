@@ -6,7 +6,8 @@
   "scripts": {
     "build": "node build.mjs",
     "dev": "node build.mjs --watch",
-    "start": "node build.mjs && node dist/server.mjs"
+    "start": "node build.mjs && node dist/server.mjs",
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
     "@hono/node-server": "^2.1.3",

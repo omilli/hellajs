@@ -28,6 +28,11 @@ import {
  * and the stock table's uncovered-line numbers are kept (they reference the
  * dist files, near-verbatim copies of the lib sources).
  *
+ * Full (unscoped) runs continue into the tutorial examples' Playwright e2e
+ * stage after the vitest run, so CI's single coverage step gates unit +
+ * browser e2e together. Scoped runs never execute e2e — the per-package
+ * gate (worker/merge) must not pay for eight browser suites.
+ *
  * `--coverage` must precede the `--coverage.*` flags on the vp command line
  * — nested flags appearing before it are silently ignored (the run stays
  * green and renders a repo-wide table).
@@ -112,6 +117,25 @@ async function runTests(testPath: string | null, coverageFlags: string[]): Promi
   }
 }
 
+/**
+ * Run every tutorial example's Playwright suite (delegates to `e2e.ts`,
+ * whose bundle stage is cache-fingerprinted so the repeat bundle is a
+ * no-op). Exits non-zero on failure so CI's unscoped coverage step blocks.
+ * Requires system Chrome (`channel: "chrome"` — no bundled chromium).
+ */
+async function runExamplesE2e(): Promise<void> {
+  logger.info("Running example e2e suites...");
+  try {
+    await execCommandInherited(process.execPath, ["./scripts/e2e.ts"], {
+      cwd: projectRoot,
+      timeout: 0,
+    });
+  } catch {
+    logger.error("example e2e suites failed — see the streamed output above");
+    process.exit(1);
+  }
+}
+
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const scopeName = args.find((arg) => !arg.startsWith("--"));
@@ -120,6 +144,7 @@ async function main(): Promise<void> {
     logger.info("Running full coverage...");
     await execCommand(process.execPath, ["./scripts/bundle.ts", "--quiet"], { cwd: projectRoot });
     await runTests(null, repoFlags());
+    await runExamplesE2e();
     return;
   }
 
