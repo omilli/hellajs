@@ -265,10 +265,17 @@ export type HookType =
  * @template R - The return type for method chaining
  */
 interface DomWrapperBase<T extends Element, R> {
-  /** Bind reactive values - string/primitive sets textContent, object sets attributes */
-  bind(value: HellaPrimitive | HellaProps): R;
-  /** Add event handlers with proper typing */
+  /** Bind reactive text — a string/primitive sets textContent (value on form elements) */
+  text(value: HellaPrimitive): R;
+  /** Set attributes/props reactively — function values re-run when their signals change */
+  attr(props: HellaProps): R;
+  /** Add delegated event handlers (one shared capture-phase body listener per type) */
   on<K extends keyof DOMEventMap>(event: K, handler: (this: T, event: DOMEventMap[K]) => void): R;
+  /** Add direct (non-delegated) event handlers; the spec form forwards native listener options */
+  e<K extends keyof DOMEventMap>(
+    event: K,
+    handler: ((this: T, event: DOMEventMap[K]) => void) | DirectListenerSpec<DOMEventMap[K]>,
+  ): R;
   /** Add stackable hooks */
   hooks(hooks: ElementHooks): R;
 }

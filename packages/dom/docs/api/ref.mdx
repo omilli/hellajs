@@ -16,7 +16,7 @@ const count = signal(0);
 const button = $ref(".btn");
 
 // Bind reactive text content
-button.bind(() => `Count: ${count}`);
+button.text(() => `Count: ${count}`);
 
 // Add event handler
 button.on("click", () => count(count() + 1));
@@ -35,7 +35,7 @@ function $ref<T extends Element = Element>(element: T): DomRef<T>
 ```
 - `selector`: A CSS selector string to find the first matching element.
 - `element`: An element to wrap directly. Operations apply immediately.
-- **Returns**: A reactive reference with `.bind()`, `.on()`, and `.hooks()` methods.
+- **Returns**: A reactive reference with `.text()`, `.attr()`, `.on()`, `.e()`, and `.hooks()` methods.
 
 For multiple elements with auto-watching, see [`$collection`](/reference/dom/$collection).
 
@@ -58,15 +58,15 @@ All methods return the reference for fluent chaining.
 
 ```js
 $ref(".counter")
-  .bind(() => `Count: ${count}`)
-  .bind({ class: () => count() > 10 ? "high" : "low" })
+  .text(() => `Count: ${count}`)
+  .attr({ class: () => count() > 10 ? "high" : "low" })
   .on("click", () => count(count() + 1))
   .hooks({ afterMount: () => console.log("ready") });
 ```
 
 ### Reactive Bindings
 
-Use `.bind()` for text content or attributes.
+Use `.text()` for text content and `.attr()` for attributes.
 
 **Text/value binding** - pass a string or reactive function:
 
@@ -74,17 +74,17 @@ Use `.bind()` for text content or attributes.
 const status = signal("idle");
 
 // Static text
-$ref(".label").bind("Hello");
+$ref(".label").text("Hello");
 
 // Reactive text (updates when signal changes)
-$ref(".status").bind(() => status());
-$ref(".status").bind(status); // Signal directly also works
+$ref(".status").text(() => status());
+$ref(".status").text(status); // Signal directly also works
 ```
 
 Form elements (INPUT, TEXTAREA, SELECT) automatically use `.value` instead of `.textContent`.
 
 ```js
-$ref("#username").bind("default value"); // Sets input.value
+$ref("#username").text("default value"); // Sets input.value
 ```
 
 **Attribute binding** - pass an object:
@@ -92,7 +92,7 @@ $ref("#username").bind("default value"); // Sets input.value
 ```js
 const isLoading = signal(false);
 
-$ref(".btn").bind({
+$ref(".btn").attr({
   disabled: () => isLoading(),
   class: ["btn", "primary"],           // Array joined with spaces
   "data-count": () => count()
@@ -106,7 +106,7 @@ Attribute behavior:
 
 ### Event Handlers
 
-Attach event handlers with `.on()`.
+Attach delegated event handlers with `.on()`: one shared capture-phase body listener per event type dispatches to every matching element.
 
 ```js
 $ref(".btn").on("click", function(event) {
@@ -119,6 +119,23 @@ $ref(".input")
   .on("focus", () => console.log("focused"))
   .on("blur", () => console.log("blurred"));
 ```
+
+### Direct Event Handlers
+
+Attach non-delegated handlers with `.e()`. Unlike `.on()`, `.e()` calls `addEventListener` on the element itself. The plain form takes a handler; the spec form forwards native listener options (`once`, `passive`, `capture`) verbatim.
+
+```js
+// Plain handler; the wrapper types the event per DOMEventMap
+$ref(".btn").e("focus", (event) => console.log("focused directly"));
+
+// Spec form with native listener options
+$ref(".slider").e("pointerdown", {
+  handler: (event) => event.preventDefault(), // cancelable gesture
+  options: { passive: false },
+});
+```
+
+Prefer delegated `.on()` for most events. Reach for `.e()` when you need native listener options or a cancelable gesture: browsers treat body-level touch/wheel listeners as passive by default, so `preventDefault()` silently no-ops in `on:` handlers. A second `.e()` for the same event type replaces the first.
 
 ### Lifecycle Hooks
 
@@ -149,7 +166,7 @@ const button = document.createElement("button");
 document.body.appendChild(button);
 
 $ref(button)
-  .bind(() => `Count: ${count}`)
+  .text(() => `Count: ${count}`)
   .on("click", () => count(count() + 1));
 ```
 
@@ -157,7 +174,7 @@ $ref(button)
 
 ### Detached Elements
 
-When the passed element is detached (not in the document yet), `bind` and `on` still apply immediately. `afterMount` waits until the element is inserted into a mounted container, and never fires for elements inserted outside one.
+When the passed element is detached (not in the document yet), `text`, `attr`, `on`, and `e` still apply immediately. `afterMount` waits until the element is inserted into a mounted container, and never fires for elements inserted outside one.
 
 ### Single Element Only
 
@@ -183,7 +200,7 @@ ref()   // null
 ref()   // still null; nothing throws
 
 // Queued; applies automatically when a matching element is added to the DOM
-ref.bind("Hello");
+ref.text("Hello");
 ref.on("click", () => console.log("clicked"));
 ```
 

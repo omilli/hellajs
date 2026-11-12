@@ -22,16 +22,16 @@ describe("dom", () => {
       expect(ref(1)?.textContent).toBe("B");
     });
 
-    test("binds static content", () => {
+    test("sets static text on all matches", () => {
       const ref = $collection(".item");
-      ref.bind("Updated");
+      ref.text("Updated");
       expect(document.querySelectorAll(".item")[0]?.textContent).toBe("Updated");
       expect(document.querySelectorAll(".item")[1]?.textContent).toBe("Updated");
     });
 
-    test("binds reactive signal content", () => {
+    test("sets reactive text on all matches", () => {
       const content = signal("reactive");
-      $collection(".item").bind(content);
+      $collection(".item").text(content);
       expect(document.querySelectorAll(".item")[0]?.textContent).toBe("reactive");
 
       content("changed");
@@ -39,16 +39,16 @@ describe("dom", () => {
       expect(document.querySelectorAll(".item")[0]?.textContent).toBe("changed");
     });
 
-    test("binds static and reactive attributes", () => {
+    test("sets static and reactive attributes", () => {
       const isActive = signal(false);
       const inputValue = signal("initial");
 
-      $collection("#app").bind({
+      $collection("#app").attr({
         "data-static": "value",
         class: () => (isActive() ? "active" : "inactive"),
       });
 
-      $collection("#text-input").bind(inputValue);
+      $collection("#text-input").text(inputValue);
 
       const app = document.getElementById("app")!;
       const input = document.getElementById("text-input") as HTMLInputElement;
@@ -89,7 +89,7 @@ describe("dom", () => {
 
       $collection(".item").forEach((el: DomWrapper, idx: number) => {
         texts.push(el.node!.textContent!);
-        el.bind(`Item ${idx}`);
+        el.text(`Item ${idx}`);
       });
 
       expect(texts).toEqual(["A", "B"]);
@@ -99,9 +99,14 @@ describe("dom", () => {
 
     test("lazy binding for dynamic elements", () => {
       const clickHandler = vi.fn(() => {});
+      const focusHandler = vi.fn(() => {});
       const content = signal("lazy");
 
-      $collection(".lazy").bind(content).bind({ "data-test": "value" }).on("click", clickHandler);
+      $collection(".lazy")
+        .text(content)
+        .attr({ "data-test": "value" })
+        .on("click", clickHandler)
+        .e("focus", { handler: focusHandler });
 
       expect(document.querySelector(".lazy")).toBeNull();
 
@@ -118,13 +123,16 @@ describe("dom", () => {
       document.querySelector(".lazy")?.dispatchEvent(new Event("click"));
       expect(clickHandler).toHaveBeenCalledTimes(1);
 
+      document.querySelector(".lazy")?.dispatchEvent(new Event("focus"));
+      expect(focusHandler).toHaveBeenCalledTimes(1);
+
       content("updated");
       flush();
       expect(document.querySelector(".lazy")?.textContent).toBe("updated");
     });
 
     test("dispose stops watching for elements", () => {
-      const ref = $collection(".disposable").bind({ "data-processed": "true" });
+      const ref = $collection(".disposable").attr({ "data-processed": "true" });
       expect(multiSelectors.size).toBe(1);
 
       ref.dispose();
@@ -160,13 +168,13 @@ describe("dom", () => {
       expect(mountHandler).toHaveBeenCalledTimes(2);
     });
 
-    test("chains bind, forEach, and on with reactive updates", () => {
+    test("chains text, attr, forEach, and on with reactive updates", () => {
       const count = signal(0);
 
       $collection(".item")
-        .bind(() => `Count: ${count()}`)
-        .bind({ "data-reactive": "true" })
-        .forEach((el: DomWrapper, idx: number) => el.bind({ "data-index": idx.toString() }))
+        .text(() => `Count: ${count()}`)
+        .attr({ "data-reactive": "true" })
+        .forEach((el: DomWrapper, idx: number) => el.attr({ "data-index": idx.toString() }))
         .on("click", () => count(count() + 1));
 
       flush();
@@ -187,15 +195,15 @@ describe("dom", () => {
       expect(ref[0]?.node?.textContent).toBe("A");
       expect(ref[1]?.node?.textContent).toBe("B");
 
-      ref[0]?.bind("First");
-      ref[1]?.bind("Second");
+      ref[0]?.text("First");
+      ref[1]?.text("Second");
 
       expect(document.querySelectorAll(".item")[0]?.textContent).toBe("First");
       expect(document.querySelectorAll(".item")[1]?.textContent).toBe("Second");
     });
 
     test("mutation callback schedules check", async () => {
-      $collection(".scheduled").bind("test");
+      $collection(".scheduled").text("test");
       expect(multiSelectors.size).toBe(1);
 
       checkMultiSelectors();

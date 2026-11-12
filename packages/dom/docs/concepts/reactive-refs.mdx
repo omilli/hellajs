@@ -1,6 +1,6 @@
 # Reactive Refs
 
-Make existing DOM elements reactive without mounting a component: [`$ref`](/reference/dom/$ref) binds one element, [`$collection`](/reference/dom/$collection) binds every match and keeps watching for new ones.
+Make existing DOM elements reactive without mounting a component: [`$ref`](/reference/dom/$ref) binds one element, [`$collection`](/reference/dom/$collection) binds every match and keeps watching for new ones. Both expose the same chainable methods: `.text()` for content, `.attr()` for attributes, `.on()`/`.e()` for delegated and direct events, and `.hooks()` for lifecycle.
 
 ## Single Element
 
@@ -13,18 +13,19 @@ import { $ref } from "@hellajs/dom";
 const count = signal(0);
 
 // Reactive text content
-$ref(".counter").bind(count);
+$ref(".counter").text(count);
 
 // Reactive attributes
-$ref(".input").bind({ disabled: () => count() > 5 });
+$ref(".input").attr({ disabled: () => count() > 5 });
 
-// Event handlers
+// Event handlers: delegated on(), direct e()
 $ref(".button").on("click", () => count(count() + 1));
+$ref(".button").e("focus", { handler: () => console.log("focused"), options: { once: true } });
 
 // Method chaining
 $ref(".node")
-  .bind(() => `Count: ${count}`)
-  .bind({ "data-active": () => count() > 5 })
+  .text(() => `Count: ${count}`)
+  .attr({ "data-active": () => count() > 5 })
   .on("click", () => console.log("clicked"));
 ```
 
@@ -41,9 +42,9 @@ if (node) {
 }
 ```
 
-When binding a primitive value to form elements (INPUT, TEXTAREA, SELECT), `.value` is used instead of `.textContent`.
+A primitive value on form elements (INPUT, TEXTAREA, SELECT) targets `.value` instead of `.textContent`.
 
-Attribute bindings follow the same value rules as template props: `true` renders a bare attribute, `false` removes it, arrays join with spaces, and `style` objects serialize to kebab-case declarations.
+Attribute values follow the same value rules as template props: `true` renders a bare attribute, `false` removes it, arrays join with spaces, and `style` objects serialize to kebab-case declarations.
 
 ```js
 import { signal } from "@hellajs/core";
@@ -51,7 +52,7 @@ import { $ref } from "@hellajs/dom";
 
 const theme = signal("light");
 
-$ref(".hero").bind({ style: () => ({ color: theme() === "dark" ? "#fff" : "#000" }) });
+$ref(".hero").attr({ style: () => ({ color: theme() === "dark" ? "#fff" : "#000" }) });
 ```
 
 ## Multiple Elements
@@ -66,8 +67,8 @@ const status = signal("ready");
 const items = $collection(".status-indicator");
 
 // All current and future elements get the binding
-items.bind(() => `Status: ${status()}`);
-items.bind({ class: () => `indicator ${status()}` });
+items.text(() => `Status: ${status()}`);
+items.attr({ class: () => `indicator ${status()}` });
 items.on("click", () => console.log("Clicked"));
 items.forEach((wrapper, index) => {
   // Access individual DomWrapper elements

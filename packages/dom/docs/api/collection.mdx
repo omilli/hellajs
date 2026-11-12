@@ -14,7 +14,7 @@ const count = signal(0);
 const buttons = $collection(".btn");
 
 // Bind reactive text to all matched elements
-buttons.bind(() => `Count: ${count}`);
+buttons.text(() => `Count: ${count}`);
 
 // Add event handlers to all elements
 buttons.on("click", () => count(count() + 1));
@@ -57,8 +57,8 @@ const items = $collection(".items");
 console.log(items.length); // Number of matched elements
 
 items.forEach((element, index) => {
-  element.bind(`Item ${index + 1}`);
-  element.bind({ "data-index": index.toString() });
+  element.text(`Item ${index + 1}`);
+  element.attr({ "data-index": index.toString() });
 });
 ```
 
@@ -68,15 +68,15 @@ All methods return the reference for fluent chaining.
 
 ```js
 $collection(".counter")
-  .bind(() => `Count: ${count}`)
-  .bind({ class: () => count() > 10 ? "high" : "low" })
+  .text(() => `Count: ${count}`)
+  .attr({ class: () => count() > 10 ? "high" : "low" })
   .on("click", () => count(count() + 1))
   .hooks({ afterMount: () => console.log("ready") });
 ```
 
 ### Reactive Bindings
 
-`.bind()` for text content or attributes, applied to **all** matched elements.
+`.text()` sets text content and `.attr()` sets attributes, applied to **all** matched elements.
 
 **Text/value binding** - pass a string or reactive function:
 
@@ -84,10 +84,10 @@ $collection(".counter")
 const status = signal("idle");
 
 // Static text on all elements
-$collection(".label").bind("Hello");
+$collection(".label").text("Hello");
 
 // Reactive text (updates when signal changes)
-$collection(".status").bind(() => status());
+$collection(".status").text(() => status());
 ```
 
 Form elements (INPUT, TEXTAREA, SELECT) automatically use `.value` instead of `.textContent`.
@@ -97,7 +97,7 @@ Form elements (INPUT, TEXTAREA, SELECT) automatically use `.value` instead of `.
 ```js
 const isLoading = signal(false);
 
-$collection(".btn").bind({
+$collection(".btn").attr({
   disabled: () => isLoading(),
   class: ["btn", "primary"],
   "data-count": () => count()
@@ -111,12 +111,18 @@ Attribute behavior:
 
 ### Event Handlers
 
-Attach handlers to all matched elements, with `this` bound to the clicked element.
+Attach delegated handlers to all matched elements with `.on()`, with `this` bound to the clicked element. Use `.e()` for direct, non-delegated handlers; its spec form forwards native listener options (`once`, `passive`, `capture`) to `addEventListener`.
 
 ```js
 $collection(".btn").on("click", function(event) {
   console.log("Clicked:", this);
   console.log("Event:", event);
+});
+
+// Direct: options forwarded, one listener per element
+$collection(".card").e("pointerdown", {
+  handler: (event) => event.preventDefault(),
+  options: { passive: false },
 });
 ```
 
@@ -139,7 +145,7 @@ $collection(".card").hooks({
 
 ```js
 const ref = $collection(".dynamic-item");
-ref.bind("Hello");  // Applied to existing elements
+ref.text("Hello");  // Applied to existing elements
 
 // Later, anywhere in the app:
 document.body.innerHTML += '<div class="dynamic-item"></div>';
@@ -152,7 +158,7 @@ Call `dispose()` to stop watching and drop queued operations. Bindings already a
 
 ```js
 const ref = $collection(".temporary");
-ref.bind("Content");
+ref.text("Content");
 
 // Stop watching; later matches get nothing
 ref.dispose();

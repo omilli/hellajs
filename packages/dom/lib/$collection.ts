@@ -6,6 +6,7 @@ import type {
   HellaPrimitive,
   HellaProps,
   ElementHooks,
+  DirectListenerSpec,
 } from "./types/nodes";
 import type { DOMEventMap } from "./types/attributes";
 
@@ -15,7 +16,7 @@ import type { DOMEventMap } from "./types/attributes";
  * Use $ref for single element references without collection overhead.
  *
  * @param selector CSS selector string
- * @returns DomCollection with bind/on/hooks/forEach chainable methods
+ * @returns DomCollection with text/attr/on/e/hooks/forEach chainable methods
  */
 export function $collection<T extends Element = Element>(selector: string): DomCollection<T> {
   const elementWrappers: DomWrapper<T>[] = [];
@@ -63,8 +64,13 @@ export function $collection<T extends Element = Element>(selector: string): DomC
     enumerable: true,
   });
 
-  result.bind = (value: HellaPrimitive | HellaProps) => {
-    applyAndQueue((w) => w.bind(value));
+  result.text = (value: HellaPrimitive) => {
+    applyAndQueue((w) => w.text(value));
+    return result;
+  };
+
+  result.attr = (props: HellaProps) => {
+    applyAndQueue((w) => w.attr(props));
     return result;
   };
 
@@ -73,6 +79,14 @@ export function $collection<T extends Element = Element>(selector: string): DomC
     handler: (this: T, event: DOMEventMap[K]) => void,
   ) => {
     applyAndQueue((w) => w.on(event, handler as EventListener));
+    return result;
+  };
+
+  result.e = <K extends keyof DOMEventMap>(
+    event: K,
+    handler: ((this: T, event: DOMEventMap[K]) => void) | DirectListenerSpec<DOMEventMap[K]>,
+  ) => {
+    applyAndQueue((w) => w.e(event, handler));
     return result;
   };
 

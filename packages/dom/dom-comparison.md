@@ -242,7 +242,7 @@ HellaJS is the only entry whose entire util surface is the wiring itself: the tr
 
 ### Notable HellaJS differentiators
 
-- `$ref` / `$collection` wrap existing DOM outside HellaJS's render tree, queueing operations until a match appears via an independent `MutationObserver` on `document.body`: `bind`/`on`/`hooks` apply to nodes HellaJS never created (`lib/$ref.ts`, `lib/$collection.ts`, `lib/internal/selectors.ts`).
+- `$ref` / `$collection` wrap existing DOM outside HellaJS's render tree, queueing operations until a match appears via an independent `MutationObserver` on `document.body`: `text`/`attr`/`on`/`e`/`hooks` apply to nodes HellaJS never created (`lib/$ref.ts`, `lib/$collection.ts`, `lib/internal/selectors.ts`).
 - `Lazy` cancellation is total: parent removal sets `isCancelled`, aborts an `AbortController`, and the loader receives `{ signal }` for network-level cancellation; both settle paths guard against a removed anchor (`lib/Lazy.ts`).
 - `Transition` rapid-toggle rescue: showing during a leave cancels the timer, strips the leave class, and keeps the node: no flicker or double nodes (`lib/Transition.ts`).
 - Hydrated `<Suspense>` regions degrade instead of breaking: a sentinel whose staged `<template>` never arrived (interrupted stream) flags the context and the boundary re-suspends client-side with fresh-mount semantics; and when hydrate runs mid-stream, such regions defer instead: each adopts the moment its stage lands, with buffered discrete events replayed positionally (selective hydration, React 19 parity) (`lib/internal/deferred.ts`).

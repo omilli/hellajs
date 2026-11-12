@@ -1,4 +1,11 @@
-import type { DomWrapper, HellaPrimitive, HellaProps, ElementHooks, DomRef } from "./types/nodes";
+import type {
+  DomWrapper,
+  HellaPrimitive,
+  HellaProps,
+  ElementHooks,
+  DomRef,
+  DirectListenerSpec,
+} from "./types/nodes";
 import type { DOMEventMap } from "./types/attributes";
 import { createReactive } from "./internal/reactive";
 import { isString } from "./internal/core";
@@ -11,7 +18,7 @@ import { queueMountNode, drainMountQueue } from "./internal/queue";
  * Use $collection for multiple elements with continuous watching.
  *
  * @param selector CSS selector string
- * @returns DomRef with bind/on/hooks chainable methods
+ * @returns DomRef with text/attr/on/e/hooks chainable methods
  */
 export function $ref<T extends Element = Element>(selector: string): DomRef<T>;
 /**
@@ -20,7 +27,7 @@ export function $ref<T extends Element = Element>(selector: string): DomRef<T>;
  * Use $collection for multiple elements with continuous watching.
  *
  * @param element The element to wrap
- * @returns DomRef with bind/on/hooks chainable methods
+ * @returns DomRef with text/attr/on/e/hooks chainable methods
  */
 export function $ref<T extends Element = Element>(element: T): DomRef<T>;
 export function $ref<T extends Element = Element>(target: string | T): DomRef<T> {
@@ -78,8 +85,14 @@ export function $ref<T extends Element = Element>(target: string | T): DomRef<T>
 
   const result = (() => targetNode) as DomRef<T>;
 
-  result.bind = (value: HellaPrimitive | HellaProps) => {
-    applyOp((w) => w.bind(value));
+  result.text = (value: HellaPrimitive) => {
+    applyOp((w) => w.text(value));
+    !targetNode && startWatching();
+    return result;
+  };
+
+  result.attr = (props: HellaProps) => {
+    applyOp((w) => w.attr(props));
     !targetNode && startWatching();
     return result;
   };
@@ -89,6 +102,15 @@ export function $ref<T extends Element = Element>(target: string | T): DomRef<T>
     handler: (this: T, event: DOMEventMap[K]) => void,
   ) => {
     applyOp((w) => w.on(event, handler as EventListener));
+    !targetNode && startWatching();
+    return result;
+  };
+
+  result.e = <K extends keyof DOMEventMap>(
+    event: K,
+    handler: ((this: T, event: DOMEventMap[K]) => void) | DirectListenerSpec<DOMEventMap[K]>,
+  ) => {
+    applyOp((w) => w.e(event, handler));
     !targetNode && startWatching();
     return result;
   };

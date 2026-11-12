@@ -105,7 +105,7 @@ import { $ref } from '@hellajs/dom';
 // Client
 const count = signal(0);
 const span = $ref('#count');
-span.bind(() => String(count()));
+span.text(() => String(count()));
 ```
 
 ### Mount an island into an empty slot

@@ -7,7 +7,7 @@ tags: $ref, refs, selectors, queuing
 
 ## $ref ops queue until the element appears; element inputs never watch
 
-`$ref(selector)` runs `document.querySelector` synchronously: a hit wraps immediately, a miss returns a callable ref that is `null` until found. Operations (`bind`, `on`, `hooks`) queue and apply when a matching element appears - but the MutationObserver watch starts lazily on the FIRST operation call, so `const r = $ref("#x")` alone never watches anything. Chain at least one operation to arm the watcher. `$ref(element)` (a node already in hand) applies operations immediately and never starts a watcher; a null-ish runtime element input stays a safe queued no-op. Read the node through the call (`ref()`) or the `.node` getter rather than re-querying.
+`$ref(selector)` runs `document.querySelector` synchronously: a hit wraps immediately, a miss returns a callable ref that is `null` until found. Operations (`text`, `attr`, `on`, `hooks`) queue and apply when a matching element appears - but the MutationObserver watch starts lazily on the FIRST operation call, so `const r = $ref("#x")` alone never watches anything. Chain at least one operation to arm the watcher. `$ref(element)` (a node already in hand) applies operations immediately and never starts a watcher; a null-ish runtime element input stays a safe queued no-op. Read the node through the call (`ref()`) or the `.node` getter rather than re-querying.
 
 **Incorrect (what is wrong):**
 
@@ -30,7 +30,7 @@ import { $ref } from "@hellajs/dom";
 // The operation call arms the watcher: whenever #save-btn appears, the
 // handler and attribute apply to it automatically.
 $ref("#save-btn")
-  .bind({ "data-armed": "true" })
+  .attr({ "data-armed": "true" })
   .on("click", () => void 0);
 
 // Element already in hand: immediate, no watcher.

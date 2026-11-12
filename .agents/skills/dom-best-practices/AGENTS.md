@@ -772,7 +772,7 @@ Reference: `packages/dom/lib/features/direct-events.ts` and `packages/dom/docs/a
 
 **Impact: MEDIUM** - reading collection[i] for dynamically added elements yields undefined - indexed access holds only the initial set - and a $collection never disposed keeps a document.body observer alive forever
 
-`$collection(selector)` wraps every current match and registers a body-level watcher so elements added later auto-apply the same queued operations (`bind`/`on`/`hooks`/`forEach` apply to current AND future members). Two asymmetries to respect: indexed access (`collection[2]`) is populated only for the initial set - dynamically added elements are reachable through the callable form `collection(2)` and `length`; and the watcher (a document.body MutationObserver with a selector registry) lives until you call `dispose()` - call it when the page section driving the collection goes away, or the observer and queued ops outlive their usefulness. The registry itself is introspectable: `multiSelectors` maps selector to state, and `checkMultiSelectors()` forces the check the observer would schedule.
+`$collection(selector)` wraps every current match and registers a body-level watcher so elements added later auto-apply the same queued operations (`text`/`attr`/`on`/`hooks`/`forEach` apply to current AND future members). Two asymmetries to respect: indexed access (`collection[2]`) is populated only for the initial set - dynamically added elements are reachable through the callable form `collection(2)` and `length`; and the watcher (a document.body MutationObserver with a selector registry) lives until you call `dispose()` - call it when the page section driving the collection goes away, or the observer and queued ops outlive their usefulness. The registry itself is introspectable: `multiSelectors` maps selector to state, and `checkMultiSelectors()` forces the check the observer would schedule.
 
 **Incorrect (what is wrong):**
 
@@ -780,7 +780,7 @@ Reference: `packages/dom/lib/features/direct-events.ts` and `packages/dom/docs/a
 import { $collection } from "@hellajs/dom";
 
 const badges = $collection(".badge");
-badges.bind("live");
+badges.text("live");
 
 const fresh = document.createElement("span");
 fresh.className = "badge";
@@ -797,7 +797,7 @@ console.log(String(badges[1]?.node?.textContent));
 import { $collection, checkMultiSelectors, multiSelectors } from "@hellajs/dom";
 
 const badges = $collection(".badge");
-badges.bind("live").on("click", () => void 0);
+badges.text("live").on("click", () => void 0);
 
 const fresh = document.createElement("span");
 fresh.className = "badge";
@@ -848,7 +848,7 @@ Reference: `packages/dom/lib/internal/state.ts getState` and `packages/dom/lib/i
 
 **Impact: MEDIUM** - calling $ref(selector) before the element exists and then reading ref() gets null - operations only apply later if you actually issue them, and assuming an element input watches wastes a body observer
 
-`$ref(selector)` runs `document.querySelector` synchronously: a hit wraps immediately, a miss returns a callable ref that is `null` until found. Operations (`bind`, `on`, `hooks`) queue and apply when a matching element appears - but the MutationObserver watch starts lazily on the FIRST operation call, so `const r = $ref("#x")` alone never watches anything. Chain at least one operation to arm the watcher. `$ref(element)` (a node already in hand) applies operations immediately and never starts a watcher; a null-ish runtime element input stays a safe queued no-op. Read the node through the call (`ref()`) or the `.node` getter rather than re-querying.
+`$ref(selector)` runs `document.querySelector` synchronously: a hit wraps immediately, a miss returns a callable ref that is `null` until found. Operations (`text`, `attr`, `on`, `hooks`) queue and apply when a matching element appears - but the MutationObserver watch starts lazily on the FIRST operation call, so `const r = $ref("#x")` alone never watches anything. Chain at least one operation to arm the watcher. `$ref(element)` (a node already in hand) applies operations immediately and never starts a watcher; a null-ish runtime element input stays a safe queued no-op. Read the node through the call (`ref()`) or the `.node` getter rather than re-querying.
 
 **Incorrect (what is wrong):**
 
@@ -871,7 +871,7 @@ import { $ref } from "@hellajs/dom";
 // The operation call arms the watcher: whenever #save-btn appears, the
 // handler and attribute apply to it automatically.
 $ref("#save-btn")
-  .bind({ "data-armed": "true" })
+  .attr({ "data-armed": "true" })
   .on("click", () => void 0);
 
 // Element already in hand: immediate, no watcher.

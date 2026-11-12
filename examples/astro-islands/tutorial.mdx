@@ -232,13 +232,13 @@ export default function NameSync() {
   const name = signal("User");
 
   $ref("#name-input")
-    .bind(name)
+    .text(name)
     .on("input", (event) => {
       const input = event.target as HTMLInputElement;
       name(input.value);
     });
 
-  $ref("#greeting").bind(() => `Hello, ${name()}!`);
+  $ref("#greeting").text(() => `Hello, ${name()}!`);
 
   return <p>Typing in the input above updates the greeting through a $ref binding.</p>;
 }
@@ -247,9 +247,9 @@ export default function NameSync() {
 **Code Explanation**
 
 - **[`$ref`](/reference/dom/$ref)`("#name-input")`**: Queries `document` at call time and wraps the first match in a chainable reference. Operations on an element that doesn't exist yet queue until it appears
-- **`.bind(name)`**: On a form element, a bound primitive targets `value`, so the field tracks the `name` signal
-- **`.on("input", ...)`**: Attaches a delegated listener. Every keystroke writes the field's value back into `name`, closing the loop with `.bind`
-- **`.bind(() => ...)`** on `#greeting`: Binds a reactive function to the element's text. The greeting updates whenever `name` changes
+- **`.text(name)`**: On a form element, text targets `value`, so the field tracks the `name` signal
+- **`.on("input", ...)`**: Attaches a delegated listener. Every keystroke writes the field's value back into `name`, closing the loop with `.text`
+- **`.text(() => ...)`** on `#greeting`: Binds a reactive function to the element's text. The greeting updates whenever `name` changes
 - **The returned JSX root**: Gives the island a small visible root; the real work happens through the `$ref` bindings
 
 <Callout variant="error">$ref queries document at call time. It throws on the server (no document exists), so keep $ref calls in client:only islands or client scripts. A client:load component body executes during server rendering, which is why NameSync is client:only.</Callout>
@@ -454,13 +454,13 @@ export default function NameSync() {
   const name = signal("User");
 
   $ref("#name-input")
-    .bind(name)
+    .text(name)
     .on("input", (event) => {
       const input = event.target as HTMLInputElement;
       name(input.value);
     });
 
-  $ref("#greeting").bind(() => `Hello, ${name()}!`);
+  $ref("#greeting").text(() => `Hello, ${name()}!`);
 
   return <p>Typing in the input above updates the greeting through a $ref binding.</p>;
 }

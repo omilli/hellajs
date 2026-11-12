@@ -33,12 +33,12 @@ describe("dom", () => {
       expect(ref.node).toBeNull();
     });
 
-    test("binds reactive signal content", () => {
+    test("sets static and reactive text", () => {
       const content = signal("initial");
-      $ref("#app").bind("Hello");
+      $ref("#app").text("Hello");
       expect(document.getElementById("app")?.textContent).toBe("Hello");
 
-      $ref("#app").bind(content);
+      $ref("#app").text(content);
       expect(document.getElementById("app")?.textContent).toBe("initial");
 
       content("updated");
@@ -46,10 +46,10 @@ describe("dom", () => {
       expect(document.getElementById("app")?.textContent).toBe("updated");
     });
 
-    test("binds static and reactive attributes", () => {
+    test("sets static and reactive attributes", () => {
       const isActive = signal(false);
 
-      $ref("#app").bind({
+      $ref("#app").attr({
         "data-static": "value",
         class: () => (isActive() ? "active" : "inactive"),
       });
@@ -65,7 +65,7 @@ describe("dom", () => {
 
     test("detects form elements for value binding", () => {
       const inputValue = signal("initial");
-      $ref("#text-input").bind(inputValue);
+      $ref("#text-input").text(inputValue);
 
       const input = document.getElementById("text-input") as HTMLInputElement;
       expect(input.value).toBe("initial");
@@ -76,12 +76,35 @@ describe("dom", () => {
       expect(input.value).toBe("updated");
     });
 
-    test("chains bind and on with reactive signal updates", () => {
+    test("routes text() to value on TEXTAREA and SELECT too", () => {
+      const textarea = document.createElement("textarea");
+      const select = document.createElement("select");
+      select.innerHTML = '<option value="picked"></option><option value="changed"></option>';
+      textarea.className = "form-route";
+      select.className = "form-route";
+      document.body.appendChild(textarea);
+      document.body.appendChild(select);
+
+      const value = signal("picked");
+      $ref("textarea.form-route").text(value);
+      $ref("select.form-route").text(value);
+
+      expect((textarea as HTMLTextAreaElement).value).toBe("picked");
+      expect((select as HTMLSelectElement).value).toBe("picked");
+      expect(textarea.textContent).toBe("");
+
+      value("changed");
+      flush();
+      expect((textarea as HTMLTextAreaElement).value).toBe("changed");
+      expect((select as HTMLSelectElement).value).toBe("changed");
+    });
+
+    test("chains text, attr, and on with reactive signal updates", () => {
       const count = signal(0);
 
       $ref("#app")
-        .bind(() => `Count: ${count()}`)
-        .bind({ "data-reactive": "true" })
+        .text(() => `Count: ${count()}`)
+        .attr({ "data-reactive": "true" })
         .on("click", () => count(count() + 1));
 
       flush();
@@ -100,6 +123,45 @@ describe("dom", () => {
 
       document.getElementById("app")?.dispatchEvent(new Event("click"));
       expect(clickHandler).toHaveBeenCalledTimes(1);
+    });
+
+    test("direct e() handler fires with this set to the element", () => {
+      const contexts: Element[] = [];
+      const events: Event[] = [];
+      const app = document.getElementById("app")!;
+
+      $ref(app).e("click", function (this: Element, event: Event) {
+        contexts.push(this);
+        events.push(event);
+      });
+
+      app.dispatchEvent(new Event("click"));
+      expect(contexts).toEqual([app]);
+      expect(events[0]).toBeInstanceOf(Event);
+    });
+
+    test("e() spec form forwards native listener options (once)", () => {
+      const handler = vi.fn(() => {});
+      const app = document.getElementById("app")!;
+
+      $ref(app).e("click", { handler, options: { once: true } });
+
+      app.dispatchEvent(new Event("click"));
+      app.dispatchEvent(new Event("click"));
+      expect(handler).toHaveBeenCalledTimes(1);
+    });
+
+    test("a second e() for the same type replaces the first", () => {
+      const first = vi.fn(() => {});
+      const second = vi.fn(() => {});
+      const app = document.getElementById("app")!;
+
+      $ref(app).e("click", first);
+      $ref(app).e("click", second);
+
+      app.dispatchEvent(new Event("click"));
+      expect(first).not.toHaveBeenCalled();
+      expect(second).toHaveBeenCalledTimes(1);
     });
 
     test("attaches lifecycle hooks", () => {
@@ -147,7 +209,7 @@ describe("dom", () => {
       expect(afterMountHandler).toHaveBeenCalledTimes(1);
 
       const count = signal(0);
-      $ref("#app").bind(() => `Count: ${count()}`);
+      $ref("#app").text(() => `Count: ${count()}`);
       flush();
 
       expect(beforeUpdateHandler).toHaveBeenCalledTimes(1);
@@ -188,7 +250,7 @@ describe("dom", () => {
             el!.textContent = "Watched!";
           },
         })
-        .bind({ "data-test": "value" })
+        .attr({ "data-test": "value" })
         .on("click", clickHandler);
 
       const newElement = document.createElement("div");
@@ -217,16 +279,40 @@ describe("dom", () => {
     test("safe no-op when element not found", () => {
       const ref = $ref(".missing");
 
-      ref.bind("test");
-      ref.bind({ class: "test" });
+      ref.text("test");
+      ref.attr({ class: "test" });
       ref.on("click", () => {});
       ref.hooks({ afterMount: () => {} });
+    });
+
+    test("queues text, attr, and e until the element appears", async () => {
+      const focusHandler = vi.fn(() => {});
+
+      $ref(".queued-ops")
+        .text("queued text")
+        .attr({ "data-queued": "true" })
+        .e("focus", { handler: focusHandler });
+
+      expect(document.querySelector(".queued-ops")).toBeNull();
+
+      const el = document.createElement("div");
+      el.className = "queued-ops";
+      document.body.appendChild(el);
+
+      checkMultiSelectors();
+      await delay(10);
+
+      expect(el.textContent).toBe("queued text");
+      expect(el.getAttribute("data-queued")).toBe("true");
+
+      el.dispatchEvent(new Event("focus"));
+      expect(focusHandler).toHaveBeenCalledTimes(1);
     });
 
     test("auto-watch when element doesn't exist", async () => {
       const clickHandler = vi.fn(() => {});
 
-      $ref(".auto-watch").bind({ "data-test": "value" }).on("click", clickHandler);
+      $ref(".auto-watch").attr({ "data-test": "value" }).on("click", clickHandler);
 
       const newElement = document.createElement("div");
       newElement.className = "auto-watch";
@@ -267,7 +353,7 @@ describe("dom", () => {
     });
 
     test("stops watching after the ref resolves", async () => {
-      $ref(".late-element").bind({ "data-test": "value" });
+      $ref(".late-element").attr({ "data-test": "value" });
       expect(multiSelectors.size).toBe(1);
 
       const first = document.createElement("div");
@@ -294,7 +380,7 @@ describe("dom", () => {
       const el = document.createElement("button");
 
       const ref = $ref(el);
-      ref.bind({ "data-test": "value" });
+      ref.attr({ "data-test": "value" });
 
       expect(ref()).toBe(el);
       expect(ref.node).toBe(el);
@@ -302,14 +388,14 @@ describe("dom", () => {
       expect(multiSelectors.size).toBe(0);
     });
 
-    test("element input applies bind, on, and hooks immediately", () => {
+    test("element input applies text, on, and hooks immediately", () => {
       const el = document.createElement("button");
       document.body.appendChild(el);
 
       const clickHandler = vi.fn(() => {});
       const mountHandler = vi.fn(() => {});
 
-      $ref(el).bind("Hello").on("click", clickHandler).hooks({ afterMount: mountHandler });
+      $ref(el).text("Hello").on("click", clickHandler).hooks({ afterMount: mountHandler });
 
       expect(el.textContent).toBe("Hello");
 
@@ -324,7 +410,7 @@ describe("dom", () => {
 
       expect(ref()).toBeNull();
 
-      ref.bind("test");
+      ref.text("test");
       ref.on("click", () => {});
       ref.hooks({ afterMount: () => {} });
 
@@ -336,7 +422,7 @@ describe("dom", () => {
       const el = document.createElement("div");
       el.className = "detached-ref";
 
-      $ref(el).hooks({ afterMount: mountHandler }).bind({ "data-test": "value" });
+      $ref(el).hooks({ afterMount: mountHandler }).attr({ "data-test": "value" });
 
       expect(el.getAttribute("data-test")).toBe("value");
       expect(mountHandler).toHaveBeenCalledTimes(0);

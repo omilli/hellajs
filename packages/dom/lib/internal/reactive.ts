@@ -6,40 +6,55 @@ import type {
   ElementHooks,
   HookType,
   ElementMountFn,
+  DirectListenerSpec,
 } from "../types/nodes";
 import type { DOMEventMap } from "../types/attributes";
 import { registry } from "../registry";
-import { isFunction, isPlainObject, objectLoop } from "./core";
+import { isFunction, objectLoop } from "./core";
 import { renderProp, resolveValue, resolveText } from "./utils";
 import { setNodeHandler } from "./events";
+import { bindDirectHandler } from "./cleanup";
 // The hooks feature loads with the $ref/$collection wrappers: their `.hooks()` method
 // registers lifecycle hooks at runtime, with no `hook:` JSX for the compiler to
 // detect. Only reachable through those wrappers, so feature-free bundles still
 // tree-shake the hook wiring.
 import "../features/hooks";
+// Same for the direct-events feature: the wrappers' `.e()` method registers direct
+// (non-delegated) listeners at runtime, with no `e:` JSX for the compiler to detect.
+// Without it `bindDirectHandler` is the no-op default.
+import "../features/direct-events";
 
 const FORM_ELEMENTS = Object.freeze(new Set(["INPUT", "TEXTAREA", "SELECT"]));
 
 /**
  * @internal
- * Creates a reactive wrapper for a DOM element with bind, on, and hooks methods.
+ * Creates a reactive wrapper for a DOM element with text, attr, on, e, and hooks methods.
  * Shared between $ref (single) and $collection (multiple) APIs.
  */
 export function createReactive<T extends HellaElement>(element: T): DomWrapper<T> {
   const wrapper: DomWrapper<T> = {
-    bind: (value: HellaPrimitive | HellaProps) => {
-      if (isPlainObject(value)) {
-        objectLoop(value as HellaProps, (key, val) => {
-          const set = () => renderProp(element, key, resolveValue(val));
-          if (isFunction(val)) registry.addEffect(element, set);
-          else set();
-        });
-      } else {
-        const prop = FORM_ELEMENTS.has(element.tagName) ? "value" : "textContent";
-        const set = () => (element[prop] = resolveText(value));
-        if (isFunction(value)) registry.addEffect(element, set);
+    text: (value: HellaPrimitive) => {
+      const prop = FORM_ELEMENTS.has(element.tagName) ? "value" : "textContent";
+      const set = () => (element[prop] = resolveText(value));
+      if (isFunction(value)) registry.addEffect(element, set);
+      else set();
+      return wrapper;
+    },
+
+    attr: (props: HellaProps) => {
+      objectLoop(props, (key, val) => {
+        const set = () => renderProp(element, key, resolveValue(val));
+        if (isFunction(val)) registry.addEffect(element, set);
         else set();
-      }
+      });
+      return wrapper;
+    },
+
+    e: <K extends keyof DOMEventMap>(
+      event: K,
+      handler: ((this: T, event: DOMEventMap[K]) => void) | DirectListenerSpec<DOMEventMap[K]>,
+    ) => {
+      bindDirectHandler(element, event as string, handler as EventListener | DirectListenerSpec);
       return wrapper;
     },
 
