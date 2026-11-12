@@ -89,6 +89,7 @@ describe("combobox", () => {
       [...content.querySelectorAll("[role='option']")].filter(
         (el) => (el as HTMLElement).style.display !== "none",
       );
+    flush();
     expect(visible()).toHaveLength(3);
     input.value = "BLU";
     input.dispatchEvent(new Event("input", { bubbles: true }));
@@ -114,13 +115,17 @@ describe("combobox", () => {
     const activeId = () => input.getAttribute("aria-activedescendant") ?? "";
     expect(activeId()).toContain("opt-apple");
     pressKey(input, "ArrowDown");
+    flush();
     expect(activeId()).toContain("opt-blueberry");
     // The disabled entry is skipped.
     pressKey(input, "ArrowDown");
+    flush();
     expect(activeId()).toContain("opt-canteloupe");
     pressKey(input, "ArrowDown");
+    flush();
     expect(activeId()).toContain("opt-apple");
     pressKey(input, "ArrowUp");
+    flush();
     expect(activeId()).toContain("opt-canteloupe");
   });
 
@@ -292,6 +297,7 @@ describe("combobox", () => {
     await awaitDetached(content);
     pressKey(document.body, "Escape");
     pointerDown(document.body);
+    flush();
     expect(onValueChange).not.toHaveBeenCalled();
   });
 

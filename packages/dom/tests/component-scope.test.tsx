@@ -109,6 +109,7 @@ describe("dom", () => {
       expect(effectRuns).toHaveBeenCalledTimes(1);
 
       count(1);
+      flush();
       expect(effectRuns).toHaveBeenCalledTimes(2);
 
       app.unmount();
@@ -149,6 +150,7 @@ describe("dom", () => {
 
       trigger1(1);
       trigger2(1);
+      flush();
       expect(effect1Runs).toHaveBeenCalledTimes(2);
       expect(effect2Runs).toHaveBeenCalledTimes(2);
 
@@ -162,6 +164,7 @@ describe("dom", () => {
 
       trigger1(2);
       trigger2(2);
+      flush();
       expect(effect1Runs).toHaveBeenCalledTimes(3);
       expect(effect2Runs).toHaveBeenCalledTimes(2);
 
@@ -193,6 +196,7 @@ describe("dom", () => {
       expect(effectRuns).toHaveBeenCalledTimes(1);
 
       count(1);
+      flush();
       expect(effectRuns).toHaveBeenCalledTimes(2);
 
       const counter = document.getElementById("html-counter") as HellaElement;
@@ -248,6 +252,7 @@ describe("dom", () => {
 
       trigger1(1);
       trigger2(1);
+      flush();
       expect(effect1Runs).toHaveBeenCalledTimes(1);
       expect(effect2Runs).toHaveBeenCalledTimes(2);
 

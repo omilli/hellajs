@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
+import { flush } from "@hellajs/core";
 import { contextMenuVariants } from "./variants";
 import { pressKey } from "../../helpers/anchored";
 import { Item, openContextMenu } from "./helpers";
@@ -47,6 +48,7 @@ describe("context-menu", () => {
       expect(content.querySelector("[data-slot='menu-shortcut']")!.textContent).toBe("⌘R");
       pressKey(content, "Enter");
       expect(onclick).toHaveBeenCalledTimes(1);
+      flush();
       expect(content.getAttribute("data-state")).toBe("closed");
     },
   );
@@ -59,6 +61,7 @@ describe("context-menu", () => {
     ]);
     const locked = content.querySelector("[data-disabled]")!;
     locked.dispatchEvent(new Event("click", { bubbles: true }));
+    flush();
     expect(onclick).not.toHaveBeenCalled();
     expect(content.getAttribute("data-state")).toBe("open");
   });
@@ -80,6 +83,7 @@ describe("context-menu", () => {
   test.each(contextMenuVariants)("$style closes under Tab", async (variant) => {
     const { content } = await openContextMenu(variant);
     pressKey(content, "Tab");
+    flush();
     expect(content.getAttribute("data-state")).toBe("closed");
   });
 });

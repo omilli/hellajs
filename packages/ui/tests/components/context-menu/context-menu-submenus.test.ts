@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
+import { flush } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { mount } from "@hellajs/dom";
 import type { HellaChildren } from "@hellajs/dom";
@@ -40,6 +41,7 @@ describe("context-menu", () => {
       const subContent = await awaitPortaled("context-menu-sub-content");
       expect(document.activeElement).toBe(subContent.querySelector("[role='menuitem']"));
       pressKey(subContent, "ArrowLeft");
+      flush();
       expect(subContent.getAttribute("data-state")).toBe("closed");
       expect(document.activeElement).toBe(subTrigger);
       expect(content.getAttribute("data-state")).toBe("open");
@@ -63,11 +65,13 @@ describe("context-menu", () => {
       subTrigger.dispatchEvent(new Event("click", { bubbles: true }));
       const subContent = await awaitPortaled("context-menu-sub-content");
       pressEscape();
+      flush();
       expect(subContent.getAttribute("data-state")).toBe("closed");
       expect(content.getAttribute("data-state")).toBe("open");
       subContent.dispatchEvent(new Event("animationend"));
       await awaitDetached(subContent);
       pressEscape();
+      flush();
       expect(content.getAttribute("data-state")).toBe("closed");
     },
   );

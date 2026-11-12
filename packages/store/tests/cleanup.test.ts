@@ -1,5 +1,5 @@
 import { describe, test, expect, vi } from "vite-plus/test";
-import { effect } from "@hellajs/core";
+import { effect, flush } from "@hellajs/core";
 import { store } from "@hellajs/store";
 import { spyCleanup } from "./helpers";
 
@@ -40,12 +40,14 @@ describe("store", () => {
       expect(tracker).toHaveBeenCalledTimes(1);
 
       data.nested.count(1);
+      flush();
       expect(tracker).toHaveBeenCalledTimes(2);
 
       // Cleanup only disposes nested store references, not individual signals
       data.$cleanup();
 
       data.nested.count(2);
+      flush();
       // Signal still works: effect still fires
       expect(tracker).toHaveBeenCalledTimes(3);
     });

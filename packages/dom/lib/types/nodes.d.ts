@@ -68,7 +68,7 @@ export interface ErrorConfig {
  * Provides error metadata and optional reset capability.
  */
 export interface ErrorContext {
-  phase: "render" | "mount" | "update" | "event";
+  phase: "render" | "mount" | "update" | "event" | "flush";
   element?: Element;
   event?: Event;
   config?: ErrorConfig;

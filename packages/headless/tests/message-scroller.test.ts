@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
-import { signal } from "@hellajs/core";
+import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
 import { mount, peekState } from "@hellajs/dom";
 import { messageScroller, ScrollerRows } from "@hellajs/headless";
@@ -73,6 +73,7 @@ describe("message-scroller", () => {
     expect(scroller.button.getAttribute("data-active")).toBe("false");
     withScrollableViewport(scroller.viewport);
     scroller.viewport.dispatchEvent(new Event("scroll"));
+    flush();
     expect(scroller.button.getAttribute("data-active")).toBe("true");
   });
 
@@ -82,6 +83,7 @@ describe("message-scroller", () => {
     await awaitWiring(scroller.viewport);
     withScrollableViewport(scroller.viewport);
     scroller.viewport.dispatchEvent(new Event("scroll"));
+    flush();
     expect(atBottom()).toBe(false);
     expect(scroller.button.getAttribute("data-active")).toBe("true");
   });
@@ -92,6 +94,7 @@ describe("message-scroller", () => {
     await awaitWiring(scroller.viewport);
     withGeometry(scroller.viewport, 300, 50, 190);
     scroller.viewport.dispatchEvent(new Event("scroll"));
+    flush();
     expect(atBottom()).toBe(true);
   });
 
@@ -147,8 +150,10 @@ describe("message-scroller", () => {
     await awaitWiring(scroller.viewport);
     withScrollableViewport(scroller.viewport);
     scroller.viewport.dispatchEvent(new Event("scroll"));
+    flush();
     expect(atBottom()).toBe(false);
     scroller.button.dispatchEvent(new Event("click"));
+    flush();
     expect(scroller.viewport.scrollTop).toBe(300);
     expect(atBottom()).toBe(true);
   });
@@ -168,6 +173,7 @@ describe("message-scroller", () => {
     root
       .querySelector<HTMLElement>("[data-slot='message-scroller-button']")!
       .dispatchEvent(new Event("click"));
+    flush();
     expect(userClick).toHaveBeenCalledTimes(1);
     expect(viewport.scrollTop).toBe(300);
     expect(atBottom()).toBe(true);
@@ -179,6 +185,7 @@ describe("message-scroller", () => {
     const parts = messageScroller({ atBottom, scrollToBottom: override });
     const button = mountPart(parts.Button({})) as HTMLElement;
     button.dispatchEvent(new Event("click"));
+    flush();
     expect(override).toHaveBeenCalledTimes(1);
     expect(atBottom()).toBe(true);
   });
@@ -190,6 +197,7 @@ describe("message-scroller", () => {
     expect(button.getAttribute("data-direction")).toBe("start");
     expect(button.getAttribute("data-active")).toBe("true");
     atBottom(false);
+    flush();
     expect(button.getAttribute("data-active")).toBe("false");
     expect(button.querySelector("span")!.textContent).toBe("Scroll to start");
   });
@@ -277,6 +285,7 @@ describe("message-scroller", () => {
     expect(dispose).toHaveBeenCalledTimes(1);
     withScrollableViewport(scroller.viewport);
     scroller.viewport.dispatchEvent(new Event("scroll"));
+    flush();
     expect(atBottom()).toBe(true);
   });
 });

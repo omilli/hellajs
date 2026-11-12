@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
+import { flush } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components import the bare
 // specifier, so the harness mount and a component's Portal must share one dom instance.
@@ -106,6 +107,7 @@ describe("sonner", () => {
     async (variant) => {
       await mountToaster(variant);
       variant.toast("Saved", { description: "Your work is safe", type: "success" });
+      flush();
       const li = newestToast();
       expect(li).toBeDefined();
       expect(li!.getAttribute("data-type")).toBe("success");
@@ -114,6 +116,7 @@ describe("sonner", () => {
       expect(li!.querySelector('[data-slot="sonner-description"]')!.textContent).toBe(
         "Your work is safe",
       );
+      flush();
       expect(li!.querySelector('[data-slot="sonner-icon"]')).not.toBeNull();
       expect(li!.querySelector('[data-slot="sonner-icon"] svg')).not.toBeNull();
       expect(li!.querySelector('[data-slot="sonner-close"]')).not.toBeNull();
@@ -125,6 +128,7 @@ describe("sonner", () => {
     async (variant) => {
       await mountToaster(variant);
       variant.toast("Plain note");
+      flush();
       const li = newestToast();
       expect(li!.getAttribute("data-type")).toBe("default");
       expect(li!.querySelector('[data-slot="sonner-icon"]')).toBeNull();
@@ -142,10 +146,12 @@ describe("sonner", () => {
       variant.toast("Four");
       // The oldest retires immediately; the exit keeps it mounted under data-removed.
       expect(first.id).toBeDefined();
+      flush();
       const retired = document.querySelectorAll('[data-slot="sonner-toast"][data-removed="true"]');
       expect(retired.length).toBe(1);
       expect(retired[0]!.querySelector('[data-slot="sonner-title"]')!.textContent).toBe("One");
       variant.toast("Five");
+      flush();
       expect(
         document.querySelectorAll('[data-slot="sonner-toast"][data-removed="true"]').length,
       ).toBe(2);
@@ -154,6 +160,7 @@ describe("sonner", () => {
       const visible = document.querySelectorAll(
         '[data-slot="sonner-toast"]:not([data-removed="true"])',
       );
+      flush();
       expect(visible.length).toBe(3);
       expect(document.querySelectorAll('[data-slot="sonner-toast"]').length).toBe(3);
     },
@@ -166,6 +173,7 @@ describe("sonner", () => {
       variant.toast("Oldest");
       variant.toast("Middle");
       variant.toast("Newest");
+      flush();
       const lis = [
         ...document.querySelectorAll('[data-slot="sonner-toast"]:not([data-removed="true"])'),
       ];
@@ -180,8 +188,10 @@ describe("sonner", () => {
   test.each(sonnerVariants)("$style auto-dismisses after the toast's duration", async (variant) => {
     await mountToaster(variant);
     variant.toast("Brief", { duration: 300 });
+    flush();
     const li = newestToast()!;
     await delay(null, 450);
+    flush();
     expect(li.getAttribute("data-removed")).toBe("true");
     await delay(null, 280);
     await awaitUnmounted(li);
@@ -192,6 +202,7 @@ describe("sonner", () => {
     async (variant) => {
       await mountToaster(variant);
       variant.toast("Hover me", { duration: 700 });
+      flush();
       const li = newestToast()!;
       await delay(null, 200);
       li.dispatchEvent(new Event("pointerenter"));
@@ -213,11 +224,13 @@ describe("sonner", () => {
       await mountToaster(variant);
       const onclick = vi.fn(() => {});
       variant.toast("Undoable", { action: { label: "Undo", onclick } });
+      flush();
       const button = newestToast()!.querySelector(
         '[data-slot="sonner-action"]',
       ) as HTMLButtonElement;
       expect(button.textContent).toBe("Undo");
       button.click();
+      flush();
       expect(onclick).toHaveBeenCalledTimes(1);
       expect(newestToast()!.getAttribute("data-removed")).toBe("true");
     },
@@ -238,6 +251,7 @@ describe("sonner", () => {
           error: "Failed",
         },
       );
+      flush();
       let li = newestToast()!;
       expect(li.getAttribute("data-type")).toBe("loading");
       expect(li.querySelector('[data-slot="sonner-title"]')!.textContent).toBe("Uploading");
@@ -292,6 +306,7 @@ describe("sonner", () => {
           error: "Save failed",
         },
       );
+      flush();
       let li = newestToast()!;
       expect(li.getAttribute("data-type")).toBe("loading");
       resolve("ok");
@@ -335,8 +350,10 @@ describe("sonner", () => {
           error: "Failed",
         },
       );
+      flush();
       const li = newestToast()!;
       handle.dismiss();
+      flush();
       expect(li.getAttribute("data-removed")).toBe("true");
       resolve("late");
       await delay();
@@ -378,6 +395,7 @@ describe("sonner", () => {
     const handle = variant.toast("Retired drag");
     const li = await awaitToastArmed();
     handle.dismiss();
+    flush();
     expect(li.getAttribute("data-removed")).toBe("true");
     spyToastRect(li);
     await swipeSequence(li, [80], false);
@@ -419,6 +437,7 @@ describe("sonner", () => {
       const first = variant.toast("First");
       variant.toast("Second");
       variant.toast.dismiss(first.id);
+      flush();
       const lis = [...document.querySelectorAll('[data-slot="sonner-toast"]')];
       expect(lis.filter((li) => li.getAttribute("data-removed") === "true").length).toBe(1);
       expect(
@@ -427,6 +446,7 @@ describe("sonner", () => {
       // Double-dismiss of the same id is a no-op.
       variant.toast.dismiss(first.id);
       variant.toast.dismiss();
+      flush();
       expect(
         document.querySelectorAll('[data-slot="sonner-toast"][data-removed="true"]').length,
       ).toBe(2);
@@ -439,6 +459,7 @@ describe("sonner", () => {
       const ol = await mountToaster(variant, { position: "top-left", richColors: true });
       expect(ol.getAttribute("data-position")).toBe("top-left");
       variant.toast("Tinted", { type: "success" });
+      flush();
       expect(newestToast()!.getAttribute("data-rich-colors")).toBe("true");
     },
   );
@@ -453,6 +474,7 @@ describe("sonner", () => {
     const onClick = vi.fn(() => {});
     const ol = await mountToaster(variant, { "on:click": onClick });
     ol.dispatchEvent(new Event("click", { bubbles: true }));
+    flush();
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 
@@ -475,8 +497,10 @@ describe("sonner", () => {
     const variant = sonnerVariants[0]!;
     await mountToaster(variant);
     variant.toast("Default budget");
+    flush();
     const li = newestToast()!;
     await delay(null, 3600);
+    flush();
     expect(li.getAttribute("data-removed")).toBeNull();
     await delay(null, 700);
     expect(li.getAttribute("data-removed")).toBe("true");

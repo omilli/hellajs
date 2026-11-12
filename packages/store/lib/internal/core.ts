@@ -2,7 +2,6 @@ export {
   signal,
   computed,
   effect,
-  batch,
   untracked,
   isFunction,
   isPlainObject,

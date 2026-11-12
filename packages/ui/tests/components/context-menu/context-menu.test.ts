@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
+import { flush } from "@hellajs/core";
 import { resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { mount, peekState } from "@hellajs/dom";
 import { assertStructuralParity, classTokens, renderVariant } from "../../helpers/variants-core";
@@ -73,6 +74,7 @@ describe("context-menu", () => {
     async (variant) => {
       const { trigger, content } = await openContextMenu(variant);
       pressEscape();
+      flush();
       expect(content.getAttribute("data-state")).toBe("closed");
       expect(trigger.getAttribute("aria-expanded")).toBeNull();
       expect(document.activeElement).toBe(trigger);
@@ -84,6 +86,7 @@ describe("context-menu", () => {
     async (variant) => {
       const { content } = await openContextMenu(variant);
       pointerDownOutside();
+      flush();
       expect(content.getAttribute("data-state")).toBe("closed");
       content.dispatchEvent(new Event("animationend"));
       await awaitDetached(content);
@@ -132,6 +135,7 @@ describe("context-menu", () => {
       const userClick = vi.fn(() => {});
       const trigger = renderVariant(variant, { content: "Inspect", "on:click": userClick });
       trigger.dispatchEvent(new Event("click"));
+      flush();
       expect(userClick).toHaveBeenCalledTimes(1);
     },
   );

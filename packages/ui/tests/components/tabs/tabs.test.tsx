@@ -79,16 +79,19 @@ describe("tabs", () => {
         "true",
         "false",
       ]);
+      flush();
       expect(tabs.map((tab) => tab.getAttribute("data-state"))).toEqual([
         "inactive",
         "active",
         "inactive",
       ]);
+      flush();
       expect(panels.map((panel) => panel.getAttribute("data-state"))).toEqual([
         "inactive",
         "active",
         "inactive",
       ]);
+      flush();
       expect(panels[0]!.hasAttribute("hidden")).toBe(true);
       expect(panels[1]!.hasAttribute("hidden")).toBe(false);
       expect(panels[2]!.hasAttribute("hidden")).toBe(true);
@@ -102,6 +105,7 @@ describe("tabs", () => {
       await awaitWiring(root);
       expect(tabs[0]!.getAttribute("data-state")).toBe("active");
       tabs[2]!.dispatchEvent(new Event("click"));
+      flush();
       expect(tabs[2]!.getAttribute("aria-selected")).toBe("true");
       expect(tabs[2]!.getAttribute("data-state")).toBe("active");
       expect(tabs[0]!.getAttribute("data-state")).toBe("inactive");
@@ -170,18 +174,24 @@ describe("tabs", () => {
       await awaitWiring(root);
       tabs[1]!.focus();
       press(tabs[1]!, "ArrowRight");
+      flush();
       expect(document.activeElement).toBe(tabs[2]!);
+      flush();
       expect(panels[2]!.hasAttribute("hidden")).toBe(false);
       expect(panels[1]!.hasAttribute("hidden")).toBe(true);
       expect(tabs[2]!.getAttribute("aria-selected")).toBe("true");
       press(tabs[2]!, "ArrowRight");
+      flush();
       expect(document.activeElement).toBe(tabs[0]!);
       press(tabs[0]!, "ArrowLeft");
+      flush();
       expect(document.activeElement).toBe(tabs[2]!);
       press(tabs[2]!, "Home");
+      flush();
       expect(document.activeElement).toBe(tabs[0]!);
       expect(panels[0]!.hasAttribute("hidden")).toBe(false);
       press(tabs[0]!, "End");
+      flush();
       expect(document.activeElement).toBe(tabs[2]!);
       expect(panels[2]!.hasAttribute("hidden")).toBe(false);
     },
@@ -233,12 +243,16 @@ describe("tabs", () => {
         Array.from(root.querySelectorAll('[role="tab"]')).map((el) => el.textContent);
       const panelIds = () =>
         Array.from(root.querySelectorAll('[role="tabpanel"]')).map((el) => el.id);
+      flush();
       expect(labels()).toEqual(["Alpha", "Beta", "Gamma"]);
       liveItems([...liveItems(), { id: "delta", label: "Delta", content: "Delta panel" }]);
+      flush();
       expect(labels()).toEqual(["Alpha", "Beta", "Gamma", "Delta"]);
       liveItems(liveItems().filter((entry) => entry.id !== "beta"));
+      flush();
       expect(labels()).toEqual(["Alpha", "Gamma", "Delta"]);
       liveItems([liveItems()[2]!, liveItems()[0]!, liveItems()[1]!]);
+      flush();
       expect(labels()).toEqual(["Delta", "Alpha", "Gamma"]);
       expect(panelIds()).toEqual([
         "hella-tabs-panel-delta",
@@ -258,6 +272,7 @@ describe("tabs", () => {
       const betaBefore = tabEls()[1]!;
       expect(betaBefore.getAttribute("aria-selected")).toBe("true");
       liveItems([liveItems()[2]!, liveItems()[0]!, liveItems()[1]!]);
+      flush();
       expect(tabEls().map((el) => el.textContent)).toEqual(["Gamma", "Alpha", "Beta"]);
       const betaAfter = tabEls().find((el) => el.textContent === "Beta")!;
       expect(betaAfter).toBe(betaBefore);
@@ -309,6 +324,7 @@ describe("tabs", () => {
         "false",
       ]);
       tabs[0]!.dispatchEvent(new Event("click"));
+      flush();
       expect(onValueChange).toHaveBeenCalledTimes(1);
       expect(onValueChange).toHaveBeenCalledWith("alpha");
       // Controlled: the root never writes its internal state, so beta stays active.
@@ -330,6 +346,7 @@ describe("tabs", () => {
       await awaitWiring(root);
       expect(panels[1]!.hasAttribute("hidden")).toBe(false);
       tabs[2]!.dispatchEvent(new Event("click"));
+      flush();
       expect(active()).toBe("gamma");
       expect(tabs[2]!.getAttribute("aria-selected")).toBe("true");
       expect(panels[2]!.hasAttribute("hidden")).toBe(false);

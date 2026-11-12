@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
-import { signal } from "@hellajs/core";
+import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { mount, peekState } from "@hellajs/dom";
 import {
@@ -53,10 +53,12 @@ describe("select", () => {
     async (variant) => {
       const first = await openSelect(variant);
       pressEscape();
+      flush();
       expect(first.content.getAttribute("data-state")).toBe("closed");
       expect(first.trigger.getAttribute("aria-expanded")).toBe("false");
       const second = await openSelect(variant);
       pointerDownOutside();
+      flush();
       expect(second.content.getAttribute("data-state")).toBe("closed");
     },
   );
@@ -66,6 +68,7 @@ describe("select", () => {
     async (variant) => {
       const { trigger, content } = await openSelect(variant);
       trigger.dispatchEvent(new Event("click"));
+      flush();
       expect(content.getAttribute("data-state")).toBe("closed");
     },
   );
@@ -132,14 +135,17 @@ describe("select", () => {
         content.dispatchEvent(new Event("scroll"));
       };
       scroll();
+      flush();
       expect(up.style.visibility).toBe("hidden");
       expect(down.style.visibility).toBe("visible");
       scrollTop = 50;
       scroll();
+      flush();
       expect(up.style.visibility).toBe("visible");
       expect(down.style.visibility).toBe("visible");
       scrollTop = 200;
       scroll();
+      flush();
       expect(down.style.visibility).toBe("hidden");
       // Hovering repeats the step on an interval; leaving stops it (the
       // position freezes once the interval is gone).
@@ -167,6 +173,7 @@ describe("select", () => {
       const clear = trigger.querySelector("[data-slot='select-clear']")!;
       expect(clear).not.toBeNull();
       clear.dispatchEvent(new Event("click", { bubbles: true }));
+      flush();
       expect(onValueChange).toHaveBeenCalledWith("");
       expect(trigger.getAttribute("aria-expanded")).toBe("false");
       expect(trigger.querySelector("[data-slot='select-content']")).toBeNull();
@@ -187,8 +194,10 @@ describe("select", () => {
     trigger.dispatchEvent(new Event("click"));
     const content = await awaitPortaled("select-content");
     pressKey(content, "Enter");
+    flush();
     expect(current()).toBe("apple");
     expect(onValueChange).toHaveBeenCalledWith("apple");
+    flush();
     expect(content.getAttribute("data-state")).toBe("closed");
   });
 
@@ -199,6 +208,7 @@ describe("select", () => {
       trigger.dispatchEvent(new Event("click"));
       const first = await awaitPortaled("select-content");
       pressEscape();
+      flush();
       expect(first.getAttribute("data-state")).toBe("closed");
       first.dispatchEvent(new Event("animationend"));
       await awaitDetached(first);
@@ -214,6 +224,7 @@ describe("select", () => {
     async (variant) => {
       const { trigger, content } = await openSelect(variant);
       pressEscape();
+      flush();
       expect(content.getAttribute("data-state")).toBe("closed");
       content.dispatchEvent(new Event("animationend"));
       await awaitDetached(content);
@@ -235,6 +246,7 @@ describe("select", () => {
       expect(trigger.isConnected).toBe(false);
       pressEscape();
       pointerDownOutside();
+      flush();
       expect(content.isConnected).toBe(false);
     },
   );
@@ -262,12 +274,16 @@ describe("select", () => {
       const { content } = await openSelect(variant, { items: liveItems });
       const values = () =>
         [...content.querySelectorAll("[role='option']")].map((el) => el.getAttribute("data-value"));
+      flush();
       expect(values()).toEqual(["apple", "blueberry", "canteloupe"]);
       liveItems([...liveItems(), { value: "date", label: "Date" }]);
+      flush();
       expect(values()).toEqual(["apple", "blueberry", "canteloupe", "date"]);
       liveItems(liveItems().filter((entry) => entry.value !== "blueberry"));
+      flush();
       expect(values()).toEqual(["apple", "canteloupe", "date"]);
       liveItems([liveItems()[2]!, liveItems()[0]!, liveItems()[1]!]);
+      flush();
       expect(values()).toEqual(["date", "apple", "canteloupe"]);
     },
   );
@@ -287,6 +303,7 @@ describe("select", () => {
       )!;
       expect(blueberryBefore.getAttribute("data-state")).toBe("checked");
       liveItems([liveItems()[2]!, liveItems()[0]!, liveItems()[1]!]);
+      flush();
       expect(itemEls().map((el) => el.getAttribute("data-value"))).toEqual([
         "canteloupe",
         "apple",

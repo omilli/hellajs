@@ -66,7 +66,6 @@ export const navigation: Record<NavSection, NavEntry[]> = {
         "signalSet",
         "computed",
         "effect",
-        "batch",
         "scope",
         "untracked",
         "flush"

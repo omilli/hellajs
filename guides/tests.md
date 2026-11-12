@@ -63,7 +63,7 @@ A file name that is only a category (`features-*.test.ts`, `unit-*.test.ts`) sig
 
 ## Anti-Patterns
 
-- Import reactive primitives (`signal`, `effect`, `computed`, `batch`, `untracked`, `flush`, `scope`) from `@hellajs/core`; `onError` from `@hellajs/dom`; test helpers (`delay`, `suppressConsole`, `setupContainer`, `resetTestState`) from `@utils/test-helpers.js`. Never import a symbol whose module isn't listed — a needed primitive joins the existing `@hellajs/core` import, never a duplicate.
+- Import reactive primitives (`signal`, `effect`, `computed`, `untracked`, `flush`, `scope`) from `@hellajs/core`; `onError` from `@hellajs/dom`; test helpers (`delay`, `suppressConsole`, `setupContainer`, `resetTestState`) from `@utils/test-helpers.js`. Never import a symbol whose module isn't listed — a needed primitive joins the existing `@hellajs/core` import, never a duplicate.
 - Never `jest.fn()` / `jest.spyOn()` / `mock()` — `vi.fn()` from `vite-plus/test`.
 - Never unawaited `expect(promise).rejects` / `.resolves` — under Vitest the expectation silently skips: `await expect(p).rejects.toThrow(...)`. A sync-style `expect(() => asyncFn()).toThrow()` never sees the rejection — assert `rejects`.
 - Never `any` — `unknown` only. Never `it()` or `test.skip()` — always `test()`.
@@ -183,7 +183,7 @@ Any test reassigning a global (`window.scrollTo = ...`, `global.window = {...}`,
 ### Async Tests
 
 - Mark `async` only when it `await`s. Structure: **act → await → assert**.
-- `delay()` (no args) drains one microtask hop (`= await Promise.resolve()`) — sufficient when exactly one microtask-bound continuation must settle (`signal.set(x)` → one effect callback). **NOT** sufficient for multi-hop chains.
+- `delay()` (no args) drains one microtask hop (`= await Promise.resolve()`) — sufficient when exactly one microtask-bound continuation must settle (`signal.set(x)` → the scheduled drain runs one effect callback; `flush()` after the write reaches it synchronously instead). **NOT** sufficient for multi-hop chains.
 - `await delay(0)` (setTimeout 0) crosses a macrotask boundary, draining the entire pending microtask queue — use for multi-hop promise chains (`.then().catch()`), async generator yields (each `yield` resumes on a separate microtask), or GC setup needing a full flush. The sanctioned alternative to the banned double-`delay()`.
 - `await delay(N)` — a real-time wait of N ms (transition leave timer: `await delay(160); // duration(100) + safety buffer(50) + frame slack`).
 - `await delay(val, ms)` — resolve a value after ms (mocking async APIs).

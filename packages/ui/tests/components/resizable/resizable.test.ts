@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
+import { flush } from "@hellajs/core";
 import { resetTestState, delay } from "@utils/test-helpers.js";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components import the bare
 // specifier, so the harness mount shares one dom instance with the components.
@@ -132,6 +133,7 @@ describe("resizable", () => {
       const panels = Array.from(
         root.querySelectorAll("[data-slot='resizable-panel']"),
       ) as HTMLElement[];
+      flush();
       expect(panels[0]!.style.flexGrow).toBe("65");
       expect(panels[1]!.style.flexGrow).toBe("35");
     },

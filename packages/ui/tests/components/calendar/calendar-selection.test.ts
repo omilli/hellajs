@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
+import { flush } from "@hellajs/core";
 import { calendarVariants } from "./variants";
 import { MAR_2025, calendarRoot, dayCell, dayButton, click } from "./helpers";
 import { resetTestState } from "@utils/test-helpers.js";
@@ -12,6 +13,7 @@ describe("calendar", () => {
     const onSelect = vi.fn<(selected: unknown) => void>(() => undefined);
     const root = calendarRoot(variant, { defaultMonth: MAR_2025, onSelect });
     click(root, "2025-03-14");
+    flush();
     expect(dayCell(root, "2025-03-14")!.getAttribute("data-selected")).toBe("true");
     const button = dayButton(root, "2025-03-14");
     expect(button.getAttribute("aria-selected")).toBe("true");
@@ -19,8 +21,10 @@ describe("calendar", () => {
     expect(onSelect).toHaveBeenCalledTimes(1);
     expect((onSelect.mock.calls[0]![0] as Date).getTime()).toBe(new Date(2025, 2, 14).getTime());
     click(root, "2025-03-14");
+    flush();
     expect(dayCell(root, "2025-03-14")!.getAttribute("data-selected")).toBe("true");
     click(root, "2025-03-20");
+    flush();
     expect(onSelect).toHaveBeenCalledTimes(3);
     expect((onSelect.mock.calls[1]![0] as Date).getDate()).toBe(14);
     expect((onSelect.mock.calls[2]![0] as Date).getDate()).toBe(20);
@@ -39,9 +43,12 @@ describe("calendar", () => {
     });
     click(root, "2025-03-10");
     click(root, "2025-03-20");
+    flush();
     expect(latest.map((day) => day.getDate())).toEqual([10, 20]);
+    flush();
     expect(dayCell(root, "2025-03-20")!.getAttribute("data-selected")).toBe("true");
     click(root, "2025-03-10");
+    flush();
     expect(latest.map((day) => day.getDate())).toEqual([20]);
     expect(dayCell(root, "2025-03-10")!.hasAttribute("data-selected")).toBe(false);
     expect(dayButton(root, "2025-03-20").getAttribute("data-selected-single")).toBe("true");
@@ -59,10 +66,13 @@ describe("calendar", () => {
         },
       });
       click(root, "2025-03-10");
+      flush();
       expect(latest.from!.getDate()).toBe(10);
       expect(latest.to).toBeUndefined();
+      flush();
       expect(dayCell(root, "2025-03-10")!.getAttribute("data-range-start")).toBe("true");
       click(root, "2025-03-20");
+      flush();
       expect(latest.from!.getDate()).toBe(10);
       expect(latest.to!.getDate()).toBe(20);
       expect(dayCell(root, "2025-03-15")!.getAttribute("data-range-middle")).toBe("true");
@@ -79,10 +89,12 @@ describe("calendar", () => {
       });
       click(backwards, "2025-03-20");
       click(backwards, "2025-03-10");
+      flush();
       expect(latest.from!.getDate()).toBe(10);
       expect(latest.to!.getDate()).toBe(20);
 
       click(backwards, "2025-03-25");
+      flush();
       expect(latest.from!.getDate()).toBe(25);
       expect(latest.to).toBeUndefined();
       expect(dayCell(backwards, "2025-03-25")!.getAttribute("data-range-start")).toBe("true");
@@ -97,9 +109,11 @@ describe("calendar", () => {
       click(root, "2025-03-10");
       const hoverButton = dayButton(root, "2025-03-20");
       hoverButton.dispatchEvent(new PointerEvent("pointerenter", { bubbles: true }));
+      flush();
       expect(dayCell(root, "2025-03-20")!.getAttribute("data-range-end")).toBe("true");
       expect(dayCell(root, "2025-03-15")!.getAttribute("data-range-middle")).toBe("true");
       hoverButton.dispatchEvent(new PointerEvent("pointerleave", { bubbles: true }));
+      flush();
       expect(dayCell(root, "2025-03-20")!.hasAttribute("data-range-end")).toBe(false);
       expect(dayCell(root, "2025-03-15")!.hasAttribute("data-range-middle")).toBe(false);
     },
@@ -118,9 +132,11 @@ describe("calendar", () => {
       expect(cell.getAttribute("data-disabled")).toBe("true");
       expect(cell.querySelector("button")!.getAttribute("aria-disabled")).toBe("true");
       click(root, "2025-03-14");
+      flush();
       expect(cell.hasAttribute("data-selected")).toBe(false);
       expect(onSelect).not.toHaveBeenCalled();
       click(root, "2025-03-15");
+      flush();
       expect(onSelect).toHaveBeenCalledTimes(1);
     },
   );

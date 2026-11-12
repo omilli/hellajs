@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vite-plus/test";
-import { effect, signal } from "@hellajs/core";
+import { effect, flush, signal } from "@hellajs/core";
 
 describe("core", () => {
   describe("signal equality option", () => {
@@ -31,6 +31,7 @@ describe("core", () => {
       effect(runs);
 
       todos([{ id: 1 }, { id: 2 }]); // Content-different
+      flush();
       expect(runs).toHaveBeenCalledTimes(2);
       expect(todos()).toEqual([{ id: 1 }, { id: 2 }]);
     });
@@ -48,6 +49,7 @@ describe("core", () => {
       expect(runs).toHaveBeenCalledTimes(1);
 
       s(1); // Different value: propagates
+      flush();
       expect(runs).toHaveBeenCalledTimes(2);
     });
 
@@ -60,9 +62,11 @@ describe("core", () => {
       effect(runs);
 
       s(2);
+      flush();
       expect(runs).toHaveBeenCalledTimes(2);
 
       s(1); // Back to a previous value: Object.is(2, 1) is false, propagates
+      flush();
       expect(runs).toHaveBeenCalledTimes(3);
 
       s(1); // Same as freshest: no propagation
@@ -80,10 +84,12 @@ describe("core", () => {
       effect(runs);
 
       s("hello");
+      flush();
       expect(runs).toHaveBeenCalledTimes(2);
       expect(s()).toBe("hello");
 
       s(undefined);
+      flush();
       expect(runs).toHaveBeenCalledTimes(3);
       expect(s()).toBeUndefined();
     });
@@ -108,6 +114,7 @@ describe("core", () => {
 
       withEmpty(2);
       withUndefined(2);
+      flush();
       expect(runsEmpty).toHaveBeenCalledTimes(2);
       expect(runsUndefined).toHaveBeenCalledTimes(2);
     });

@@ -1,4 +1,4 @@
-import { signal, batch } from "@hellajs/core";
+import { signal } from "@hellajs/core";
 import type { Signal } from "@hellajs/core";
 
 export interface RowSchema {
@@ -83,8 +83,11 @@ export const create = (count: number) => rows(buildData(count));
 
 export const append = (count: number) => rows([...rows(), ...buildData(count)]);
 
-export const update = () =>
-  batch(() => rows().forEach((row, i) => i % 10 === 0 && row.label(`${row.label()} !!!`)));
+export const update = () => {
+  // One measured op = one write cluster; the deferred flush coalesces the
+  // label writes into a single effect pass at the microtask boundary.
+  rows().forEach((row, i) => i % 10 === 0 && row.label(`${row.label()} !!!`));
+};
 
 export const swap = () => {
   const list = [...rows()];

@@ -1,5 +1,5 @@
 import { describe, test, expect, vi } from "vite-plus/test";
-import { effect } from "@hellajs/core";
+import { effect, flush } from "@hellajs/core";
 import { store } from "@hellajs/store";
 
 describe("store", () => {
@@ -33,6 +33,7 @@ describe("store", () => {
       expect(lastSnapshot!.name).toBe("Alice");
 
       data.name("Bob");
+      flush();
 
       expect(runs).toHaveBeenCalledTimes(2);
       expect(lastSnapshot!.name).toBe("Bob");
@@ -60,6 +61,7 @@ describe("store", () => {
       expect((lastSnap as { user: { profile: { name: string } } }).user.profile.name).toBe("John");
 
       data.user.profile.settings.theme("light");
+      flush();
 
       expect(tracker).toHaveBeenCalledTimes(2);
       expect(
@@ -82,6 +84,7 @@ describe("store", () => {
       expect(tracker).toHaveBeenCalledTimes(1);
 
       innerStore.value("b");
+      flush();
 
       expect(tracker).toHaveBeenCalledTimes(2);
     });
@@ -99,6 +102,7 @@ describe("store", () => {
       expect(tracker).toHaveBeenCalledTimes(1);
 
       itemsStore.items([1, 2, 3, 4]);
+      flush();
 
       expect(tracker).toHaveBeenCalledTimes(2);
     });
@@ -116,6 +120,7 @@ describe("store", () => {
       expect(tracker).toHaveBeenCalledTimes(1);
 
       innerStore.age(31);
+      flush();
 
       expect(tracker).toHaveBeenCalledTimes(2);
     });

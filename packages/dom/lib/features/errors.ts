@@ -1,7 +1,7 @@
 import type { ErrorConfig, ErrorContext, ErrorFn } from "../types/nodes";
 import type { TemplateBuildFn } from "../runtime";
-import { setErrorDispatch } from "../internal/dispatch";
-import { isNull } from "../internal/core";
+import { setErrorDispatch, toError } from "../internal/dispatch";
+import { isNull, setFlushErrorHandler } from "../internal/core";
 import { peekState } from "../internal/state";
 
 /**
@@ -137,10 +137,29 @@ function dispatchError(error: Error, context: ErrorContext): TemplateBuildFn | n
 }
 
 /**
- * Clears all registered error handlers — the reset arm `resetDom()` dispatches to.
+ * Installs dom's dispatch as the core scheduled-drain error handler: scheduled
+ * drains carry no element, so dispatch finds no boundary and no reset —
+ * registered onError handlers run with phase "flush" (reporting-only); with
+ * none registered the dispatch falls back to console.error.
+ */
+function installFlushErrorRouting(): void {
+  setFlushErrorHandler((error) => {
+    dispatchError(toError(error), { phase: "flush" });
+  });
+}
+
+/**
+ * Clears all registered error handlers and restores the scheduled-drain
+ * routing — the reset arm `resetDom()` dispatches to. Re-installing the flush
+ * routing returns the package to its freshly-loaded state: a core-side
+ * `setFlushErrorHandler(null)` (or another handler) between resets does not
+ * survive the next `resetDom()`.
  */
 function resetErrorState(): void {
   handlers.clear();
+  installFlushErrorRouting();
 }
 
 setErrorDispatch({ dispatchError, findBoundary, resolveErrorConfig, resetErrorState });
+
+installFlushErrorRouting();

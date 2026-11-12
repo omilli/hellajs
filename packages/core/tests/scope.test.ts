@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vite-plus/test";
-import { batch, computed, effect, scope, signal } from "@hellajs/core";
+import { computed, effect, flush, scope, signal } from "@hellajs/core";
 
 describe("core", () => {
   describe("scope", () => {
@@ -25,12 +25,14 @@ describe("core", () => {
       expect(unscopedRuns).toHaveBeenCalledTimes(1);
 
       count(1);
+      flush();
       expect(scopedRuns).toHaveBeenCalledTimes(4);
       expect(unscopedRuns).toHaveBeenCalledTimes(2);
 
       // Dispose scope - unscoped continues
       dispose();
       count(2);
+      flush();
       expect(scopedRuns).toHaveBeenCalledTimes(4);
       expect(unscopedRuns).toHaveBeenCalledTimes(3);
 
@@ -58,21 +60,24 @@ describe("core", () => {
         });
 
         count(1);
+        flush();
         expect(outerRuns).toHaveBeenCalledTimes(2);
         expect(innerRuns).toHaveBeenCalledTimes(2);
 
         disposeInner();
         count(2);
+        flush();
         expect(outerRuns).toHaveBeenCalledTimes(3);
         expect(innerRuns).toHaveBeenCalledTimes(2);
       });
 
       disposeOuter();
       count(3);
+      flush();
       expect(outerRuns).toHaveBeenCalledTimes(3);
     });
 
-    test("scope works with batch and computed", () => {
+    test("scope works with auto-batched writes and computed", () => {
       const a = signal(0);
       const b = signal(0);
 
@@ -86,17 +91,15 @@ describe("core", () => {
 
       expect(runs).toHaveBeenCalledTimes(1);
 
-      batch(() => {
-        a(5);
-        b(10);
-      });
+      a(5);
+      b(10);
+      flush();
       expect(runs).toHaveBeenCalledTimes(2);
 
       dispose();
-      batch(() => {
-        a(100);
-        b(200);
-      });
+      a(100);
+      b(200);
+      flush();
       expect(runs).toHaveBeenCalledTimes(2);
     });
 
@@ -112,15 +115,18 @@ describe("core", () => {
 
       expect(runs).toHaveBeenCalledTimes(1);
       count(1);
+      flush();
       expect(runs).toHaveBeenCalledTimes(2);
 
       dispose();
       count(2);
+      flush();
       expect(runs).toHaveBeenCalledTimes(2);
 
       // Second cleanup is safe but effects stay disposed
       dispose();
       count(3);
+      flush();
       expect(runs).toHaveBeenCalledTimes(2);
     });
 

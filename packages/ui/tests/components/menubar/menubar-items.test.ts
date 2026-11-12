@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
-import { signal } from "@hellajs/core";
+import { flush, signal } from "@hellajs/core";
 import { type MenuRadioEntryVariant } from "../../helpers/variants-core";
 import { menubarVariants } from "./variants";
 import { Item, Menu, Part, renderBar, triggers, openMenu } from "./helpers";
@@ -26,6 +26,7 @@ describe("menubar", () => {
       expect(checkbox.getAttribute("aria-checked")).toBe("false");
       expect(checkbox.querySelector("svg")).toBeNull();
       checkbox.dispatchEvent(new Event("click", { bubbles: true }));
+      flush();
       expect(onCheckedChange).toHaveBeenCalledWith(true);
       expect(checkbox.getAttribute("aria-checked")).toBe("true");
       expect(checkbox.getAttribute("data-state")).toBe("checked");
@@ -57,6 +58,7 @@ describe("menubar", () => {
       const radios = [...content.querySelectorAll("[role='menuitemradio']")] as HTMLElement[];
       expect(radios).toHaveLength(2);
       radios[0]!.dispatchEvent(new Event("click", { bubbles: true }));
+      flush();
       expect(onValueChange).toHaveBeenCalledWith("light");
       expect(radios[0]!.getAttribute("aria-checked")).toBe("true");
       expect(radios[0]!.getAttribute("data-state")).toBe("checked");
@@ -82,6 +84,7 @@ describe("menubar", () => {
         );
       expect(values()).toEqual(["light"]);
       liveItems([...liveItems(), { value: "dark", label: "Dark" }]);
+      flush();
       expect(values()).toEqual(["light", "dark"]);
     },
   );
@@ -123,6 +126,7 @@ describe("menubar", () => {
     const locked = content.querySelector("[data-disabled]")!;
     expect(locked.getAttribute("aria-disabled")).toBe("true");
     locked.dispatchEvent(new Event("click", { bubbles: true }));
+    flush();
     expect(onclick).not.toHaveBeenCalled();
     expect(content.getAttribute("data-state")).toBe("open");
   });

@@ -23,7 +23,7 @@ npm install @hellajs/core
 ### Basic Usage
 
 ```typescript
-import { signal, signalArray, computed, effect, batch, untracked, scope } from '@hellajs/core';
+import { signal, signalArray, computed, effect, untracked, scope } from '@hellajs/core';
 
 // Create signals (writable state)
 const count = signal(0);
@@ -37,11 +37,9 @@ const effectCleanup = effect(() => {
   console.log(`Count: ${count()}, Doubled: ${doubled()}`);
 });
 
-// Batch multiple updates to run effects once
-batch(() => {
-  count(count() + 1);
-  multiplier(3);
-});
+// Two writes in one tick: effects drain once at the microtask boundary
+count(count() + 1);
+multiplier(3);
 
 // Cleanup effect when done
 effectCleanup();
@@ -53,7 +51,7 @@ effect(() => {
   // Only re-runs when count changes, not multiplier
 });
 
-// Batch-dispose multiple effects with scope
+// Dispose multiple effects together with scope
 const scopeCleanup = scope(() => {
   effect(() => console.log(`Count: ${count()}`));
   effect(() => console.log(`Doubled: ${doubled()}`));

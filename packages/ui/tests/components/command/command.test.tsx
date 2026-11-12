@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
-import { signal } from "@hellajs/core";
+import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { mount } from "@hellajs/dom";
 import {
@@ -192,13 +192,17 @@ describe("command", () => {
       const input = queryInput(root);
       expect(items(root)[0]!.getAttribute("aria-selected")).toBe("true");
       pressKey(input, "ArrowDown");
+      flush();
       expect(items(root)[2]!.getAttribute("aria-selected")).toBe("true");
       expect(items(root)[0]!.getAttribute("aria-selected")).toBe("false");
       pressKey(input, "ArrowDown");
+      flush();
       expect(items(root)[2]!.getAttribute("aria-selected")).toBe("true");
       pressKey(input, "ArrowUp");
+      flush();
       expect(items(root)[0]!.getAttribute("aria-selected")).toBe("true");
       pressKey(input, "ArrowUp");
+      flush();
       expect(items(root)[0]!.getAttribute("aria-selected")).toBe("true");
     },
   );
@@ -211,8 +215,10 @@ describe("command", () => {
     await delay();
     const input = queryInput(root);
     pressKey(input, "ArrowUp");
+    flush();
     expect(items(root)[2]!.getAttribute("aria-selected")).toBe("true");
     pressKey(input, "ArrowDown");
+    flush();
     expect(items(root)[0]!.getAttribute("aria-selected")).toBe("true");
   });
 
@@ -230,6 +236,7 @@ describe("command", () => {
       });
       await delay();
       pressKey(queryInput(root), "Enter");
+      flush();
       expect(onSelect).toHaveBeenCalledTimes(1);
       expect(onValueChange).toHaveBeenCalledWith("apple");
     },
@@ -247,6 +254,7 @@ describe("command", () => {
     });
     await delay();
     items(root)[1]!.dispatchEvent(new Event("click", { bubbles: true }));
+    flush();
     expect(onSelect).toHaveBeenCalledTimes(1);
     expect(onValueChange).toHaveBeenCalledWith("banana");
   });
@@ -258,6 +266,7 @@ describe("command", () => {
     const scroll = vi.fn(() => {});
     target.scrollIntoView = scroll;
     pressKey(queryInput(root), "ArrowDown");
+    flush();
     expect(scroll).toHaveBeenCalledWith({ block: "nearest" });
   });
 
@@ -275,10 +284,13 @@ describe("command", () => {
       const input = queryInput(root);
       pressKey(input, "ArrowDown");
       pressKey(input, "ArrowDown");
+      flush();
       expect(items(root)[2]!.getAttribute("aria-selected")).toBe("true");
       pressKey(input, "Home");
+      flush();
       expect(items(root)[1]!.getAttribute("aria-selected")).toBe("true");
       pressKey(input, "End");
+      flush();
       expect(items(root)[2]!.getAttribute("aria-selected")).toBe("true");
     },
   );
@@ -292,6 +304,7 @@ describe("command", () => {
     });
     await delay();
     items(root)[0]!.dispatchEvent(new Event("click", { bubbles: true }));
+    flush();
     expect(onSelect).not.toHaveBeenCalled();
     expect(onValueChange).not.toHaveBeenCalled();
   });
@@ -312,14 +325,18 @@ describe("command", () => {
       await delay();
       expect(items(root)[0]!.getAttribute("aria-selected")).toBe("true");
       pressKey(queryInput(root), "ArrowDown");
+      flush();
       expect(onValueChange).toHaveBeenCalledWith("banana");
       await delay();
       expect(items(root)[1]!.getAttribute("aria-selected")).toBe("true");
       pressKey(queryInput(root), "End");
+      flush();
       expect(onValueChange).toHaveBeenLastCalledWith("carrot");
       pressKey(queryInput(root), "Home");
+      flush();
       expect(onValueChange).toHaveBeenLastCalledWith("apple");
       pressKey(queryInput(root), "Enter");
+      flush();
       expect(onValueChange).toHaveBeenLastCalledWith("apple");
     },
   );
@@ -342,6 +359,7 @@ describe("command", () => {
       pressKey(input, "End");
       pressKey(input, "ArrowDown");
       pressKey(input, "Enter");
+      flush();
       expect(onValueChange).not.toHaveBeenCalled();
     },
   );
@@ -361,8 +379,10 @@ describe("command", () => {
       });
       await delay();
       pressKey(queryInput(root), "Home");
+      flush();
       expect(onValueChange).toHaveBeenLastCalledWith("b");
       pressKey(queryInput(root), "End");
+      flush();
       expect(onValueChange).toHaveBeenLastCalledWith("b");
     },
   );
@@ -411,6 +431,7 @@ describe("command", () => {
       await delay();
       expect(items(root).map((el) => el.getAttribute("data-value"))).toEqual(["date"]);
       pressKey(queryInput(root), "Enter");
+      flush();
       expect(onSelect).toHaveBeenCalledTimes(1);
       expect(onValueChange).toHaveBeenCalledWith("date");
     },
@@ -470,6 +491,7 @@ describe("command", () => {
       expect(panel.querySelector("[data-slot='command']")).not.toBeNull();
       expect(panel.contains(document.activeElement)).toBe(true);
       panel.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+      flush();
       expect(onClose).toHaveBeenCalledTimes(1);
       expect(panel.getAttribute("data-state")).toBe("closed");
       panel.dispatchEvent(new Event("animationend"));
@@ -527,6 +549,7 @@ describe("command", () => {
       const root = renderVariant(variant, { items: GROUPED });
       const input = queryInput(root);
       type(input, "ban");
+      flush();
       const visible = items(root).filter((el) => (el as HTMLElement).style.display !== "none");
       expect(visible.map((el) => el.getAttribute("data-value"))).toEqual(["banana"]);
     }

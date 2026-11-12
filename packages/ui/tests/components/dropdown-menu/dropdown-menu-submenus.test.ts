@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeEach } from "vite-plus/test";
+import { flush } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
 import { dropdownMenuVariants } from "./variants";
 import {
@@ -73,6 +74,7 @@ describe("dropdown-menu", () => {
       const subContent = await awaitPortaled("dropdown-menu-sub-content");
       expect(document.activeElement).toBe(subContent.querySelector("[role='menuitem']"));
       pressKey(subContent, "ArrowLeft");
+      flush();
       expect(subContent.getAttribute("data-state")).toBe("closed");
       expect(document.activeElement).toBe(subTrigger);
       expect(content.getAttribute("data-state")).toBe("open");
@@ -91,9 +93,11 @@ describe("dropdown-menu", () => {
       subTrigger.dispatchEvent(new Event("click", { bubbles: true }));
       const subContent = await awaitPortaled("dropdown-menu-sub-content");
       pressEscape();
+      flush();
       expect(subContent.getAttribute("data-state")).toBe("closed");
       expect(content.getAttribute("data-state")).toBe("open");
       pressEscape();
+      flush();
       expect(content.getAttribute("data-state")).toBe("closed");
     },
   );
@@ -111,6 +115,7 @@ describe("dropdown-menu", () => {
       const subContent = await awaitPortaled("dropdown-menu-sub-content");
       const deep = subContent.querySelector("[role='menuitem']") as HTMLElement;
       deep.dispatchEvent(new Event("click", { bubbles: true }));
+      flush();
       expect(subContent.getAttribute("data-state")).toBe("closed");
       expect(content.getAttribute("data-state")).toBe("closed");
       expect(onOpenChange).toHaveBeenLastCalledWith(false);
@@ -153,6 +158,7 @@ describe("dropdown-menu", () => {
       subTrigger.dispatchEvent(new Event("click", { bubbles: true }));
       const subContent = await awaitPortaled("dropdown-menu-sub-content");
       pressEscape();
+      flush();
       expect(subContent.getAttribute("data-state")).toBe("closed");
       subContent.dispatchEvent(new Event("animationend"));
       await awaitDetached(subContent);

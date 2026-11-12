@@ -7,7 +7,7 @@ tags: onError, errors, global handlers, teardown
 
 ## onError is the global drain: first non-null fallback build wins
 
-`onError(fn)` registers a global handler that sees every dispatched error - render, mount, update, and event phases - including the ones no boundary caught (async mount rejections have no element context and can only land here). Handlers run in insertion order; the FIRST handler returning a non-null flagged build wins and later handlers are skipped for that error - return `null` to pass, a build to render. Registering does not replace: `onError(fn)` adds, the returned function removes that one handler, and `onError(null)` clears every handler. An error thrown inside a handler is caught and logged (`[dom] Error handler threw:`), never re-dispatched.
+`onError(fn)` registers a global handler that sees every dispatched error - render, mount, update, event, and flush phases - including the ones no boundary caught (async mount rejections have no element context and can only land here, and flush-phase errors from core's scheduled drain carry no element and render no fallback either). Handlers run in insertion order; the FIRST handler returning a non-null flagged build wins and later handlers are skipped for that error - return `null` to pass, a build to render. Registering does not replace: `onError(fn)` adds, the returned function removes that one handler, and `onError(null)` clears every handler. An error thrown inside a handler is caught and logged (`[dom] Error handler threw:`), never re-dispatched.
 
 **Incorrect (what is wrong):**
 

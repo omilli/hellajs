@@ -1,5 +1,5 @@
 import { describe, test, expect, vi } from "vite-plus/test";
-import { effect } from "@hellajs/core";
+import { effect, flush } from "@hellajs/core";
 import { store } from "@hellajs/store";
 import type { StoreEquals } from "@hellajs/store";
 
@@ -38,6 +38,7 @@ describe("store", () => {
       expect(data.when().getTime()).toBe(new Date("2026-01-01T00:00:00Z").getTime());
 
       data.when(new Date("2026-01-02T00:00:00Z"));
+      flush();
       expect(tracker).toHaveBeenCalledTimes(2);
       expect(data.when().getTime()).toBe(new Date("2026-01-02T00:00:00Z").getTime());
     });
@@ -60,6 +61,7 @@ describe("store", () => {
       expect(data.count()).toBe(0);
 
       data.count(10);
+      flush();
       expect(tracker).toHaveBeenCalledTimes(2);
       expect(data.count()).toBe(10);
     });

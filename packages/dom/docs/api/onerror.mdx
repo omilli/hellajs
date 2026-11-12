@@ -1,6 +1,6 @@
 # onError
 
-Catch errors anywhere in the rendered app: one global handler receives render, mount, update, and event errors, and decides what to show instead.
+Catch errors anywhere in the rendered app: one global handler receives render, mount, update, event, and flush errors, and decides what to show instead.
 
 ## Basic Usage
 
@@ -53,7 +53,7 @@ The second argument carries the error's origin: the phase it threw in, the eleme
 
 ```typescript
 interface ErrorContext {
-  phase: "render" | "mount" | "update" | "event";
+  phase: "render" | "mount" | "update" | "event" | "flush";
   element?: Element;
   event?: Event;
   config?: ErrorConfig;
@@ -84,6 +84,9 @@ Fallback UI only renders for errors from reactive children, function-ref binding
 | `mount` | Error during initial mount | Yes | Yes (reactive children), No (`beforeMount`) |
 | `update` | Error in reactive update | Yes | Yes (bindings), No (`beforeUpdate`/`afterUpdate`) |
 | `event` | Error in event handler | Yes | Yes |
+| `flush` | A scheduled effect drain threw (a reconciler or effect error outside a manual flush) | No | No |
+
+The `flush` phase is reporting-only: core's scheduled drain dispatches through dom's registration (core's [`setFlushErrorHandler`](/reference/core/flush)), so no element is attached and no boundary fallback resolves.
 
 ### Categories Route by Region
 

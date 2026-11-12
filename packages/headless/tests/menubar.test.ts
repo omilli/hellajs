@@ -68,8 +68,8 @@ describe("menubar", () => {
 
     // Opening the sibling closes the first without a second open layer.
     triggers[1]!.dispatchEvent(new Event("click"));
-    const editContent = await openContent();
     flush();
+    const editContent = await openContent();
     expect(editContent.getAttribute("data-state")).toBe("open");
     expect(triggers[0]!.getAttribute("aria-expanded")).toBe("false");
     expect(fileContent.getAttribute("data-state")).toBe("closed");
@@ -86,12 +86,15 @@ describe("menubar", () => {
   test("the bar roves focus across its triggers while no menu is open", async () => {
     const { triggers } = mountBar();
     triggers[0]!.focus();
+    flush();
     expect(document.activeElement).toBe(triggers[0]);
 
     pressKey(triggers[0]!, "ArrowRight");
+    flush();
     expect(document.activeElement).toBe(triggers[1]);
 
     pressKey(triggers[1]!, "ArrowLeft");
+    flush();
     expect(document.activeElement).toBe(triggers[0]);
     expect(triggers[0]!.getAttribute("aria-expanded")).toBe("false");
   });
@@ -102,10 +105,11 @@ describe("menubar", () => {
     const fileContent = await openContent();
 
     pressKey(fileContent, "ArrowRight");
-    const editContent = await openContent();
     flush();
+    const editContent = await openContent();
     // The handoff opens the adjacent menu (whose content takes focus) and the
     // announcement closes the first.
+    flush();
     expect(editContent.getAttribute("data-state")).toBe("open");
     expect(triggers[0]!.getAttribute("aria-expanded")).toBe("false");
     expect(fileContent.getAttribute("data-state")).toBe("closed");

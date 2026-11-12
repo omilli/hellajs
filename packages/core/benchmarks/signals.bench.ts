@@ -1,5 +1,5 @@
 import { bench, run, group } from "mitata";
-import { signal, computed, effect, batch } from "../lib/index";
+import { signal, computed, effect } from "../lib/index";
 
 const ITERATIONS = 100;
 
@@ -59,7 +59,7 @@ group("Computed Evaluation", () => {
   });
 });
 
-group("Batching", () => {
+group("Same-tick writes", () => {
   const s1 = signal(0);
   const s2 = signal(0);
   effect(() => {
@@ -67,19 +67,12 @@ group("Batching", () => {
     s2();
   });
 
-  bench("un-batched updates", () => {
+  // Auto-batching coalesces a tick's writes into one drain, so the loop
+  // measures the propagation path without per-write effect runs
+  bench("write pairs per tick", () => {
     for (let i = 0; i < ITERATIONS; i++) {
       s1(i);
       s2(i);
-    }
-  });
-
-  bench("batched updates", () => {
-    for (let i = 0; i < ITERATIONS; i++) {
-      batch(() => {
-        s1(i);
-        s2(i);
-      });
     }
   });
 });

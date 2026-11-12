@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vite-plus/test";
-import { computed, effect, signal } from "@hellajs/core";
+import { computed, effect, flush, signal } from "@hellajs/core";
 import { delay } from "@utils/test-helpers.js";
 
 describe("core", () => {
@@ -191,6 +191,7 @@ describe("core", () => {
       const cleanup1 = effect(runs);
       expect(runs).toHaveBeenCalledTimes(1);
       a(2);
+      flush();
       expect(runs).toHaveBeenCalledTimes(2);
       expect(b()).toBe(20);
       cleanup1();
@@ -208,6 +209,7 @@ describe("core", () => {
 
       // Updates propagate through rebuilt graph
       a(4);
+      flush();
       expect(runs2).toHaveBeenCalledTimes(2);
       expect(b()).toBe(40);
 
@@ -292,10 +294,12 @@ describe("core", () => {
       expect(sum()).toBe(30);
 
       a(100);
+      flush();
       expect(runs2).toHaveBeenCalledTimes(2);
       expect(sum()).toBe(120);
 
       b(200);
+      flush();
       expect(runs2).toHaveBeenCalledTimes(3);
       expect(sum()).toBe(300);
 
@@ -330,14 +334,17 @@ describe("core", () => {
       expect(runs).toHaveBeenCalledTimes(1);
 
       src(2); // Recomputes to NaN: self-equal under the default, effect not re-run
+      flush();
       expect(runs).toHaveBeenCalledTimes(1);
       expect(Number.isNaN(c())).toBe(true);
 
       src(3); // Recomputes to 1: propagates
+      flush();
       expect(runs).toHaveBeenCalledTimes(2);
       expect(c()).toBe(1);
 
       src(5); // Recomputes to 1: unchanged
+      flush();
       expect(runs).toHaveBeenCalledTimes(2);
     });
   });

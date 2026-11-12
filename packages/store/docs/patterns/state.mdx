@@ -76,7 +76,7 @@ app.tags?.(); // [ 'a' ] - optional-chained, typed string[] | undefined
 
 ### Mutable Draft Updates
 
-Pass a function to `$update()` for ergonomic array operations and coordinated mutations. The function receives a mutable draft copy of the state, and changes are extracted via diff and applied per key: collection values reconcile through their containers, so changed positions patch their element stores and untouched positions write nothing. This is particularly useful for array operations. Wrap the call in [`batch`](/reference/core/batch) to fire collected effects once.
+Pass a function to `$update()` for ergonomic array operations and coordinated mutations. The function receives a mutable draft copy of the state, and changes are extracted via diff and applied per key: collection values reconcile through their containers, so changed positions patch their element stores and untouched positions write nothing. This is particularly useful for array operations. The extracted writes land on core's microtask drain, so subscribed effects run once with final values; call core's [`flush`](/reference/core/flush) when they must run before the next line.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -99,7 +99,7 @@ todos.$update(draft => {
 todos.items.length();  // 2
 todos.count();         // 2
 todos.$snapshot().items; // deep-plain: [{ id: 2, ... }, { id: 3, ... }]
-// changes apply as individual writes; wrap in batch() to fire effects once
+// changes apply as individual writes; effects fire once at the microtask drain
 ```
 
 ### Structural Array Equality

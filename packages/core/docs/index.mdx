@@ -12,7 +12,7 @@ npm install @hellajs/core
 ### Example
 
 ```typescript
-import { signal, computed, effect, batch, untracked, scope } from "@hellajs/core";
+import { signal, computed, effect, flush, untracked, scope } from "@hellajs/core";
 
 // Simple pricing with member discount
 const quantity = signal(1);
@@ -28,11 +28,12 @@ const cleanup = effect(() => {
   console.log(`[${uid}] qty=${quantity()} price=$${price().toFixed(2)} -> total=$${total().toFixed(2)}`);
 });
 
-// Group updates so the effect runs once
-batch(() => {
-  quantity(3);
-  discount(0.10);
-});
+// Two writes in one tick: the effect drains once at the microtask boundary
+quantity(3);
+discount(0.10);
+
+// Need the effect before the next line? flush() drains synchronously
+flush();
 
 // Independent change: effect runs once
 price(44.99);
@@ -40,7 +41,7 @@ price(44.99);
 // Change logging-only context without retriggering the effect
 userId("member-777");
 
-// Collect effects for batch disposal
+// Collect effects for grouped disposal
 const stopAll = scope(() => {
   effect(() => console.log(`qty: ${quantity()}`));
 });
@@ -58,10 +59,9 @@ cleanup();
 - **[signalSet](/reference/core/signalset)**: Granular set signal with one membership signal per value plus a structural version
 - **[computed](/reference/core/computed)**: Derived value that auto-updates from dependencies
 - **[effect](/reference/core/effect)**: Side effect that re-runs when dependencies change
-- **[batch](/reference/core/batch)**: Group updates so effects run once
-- **[scope](/reference/core/scope)**: Collect effects for batch cleanup
+- **[scope](/reference/core/scope)**: Collect effects for grouped disposal
 - **[untracked](/reference/core/untracked)**: Read reactive state without creating dependencies
-- **[flush](/reference/core/flush)**: Drain scheduled effects synchronously (advanced/testing)
+- **[flush](/reference/core/flush)**: Drain the effect queue synchronously; writes coalesce per microtask
 
 ### Concepts
 
@@ -70,4 +70,4 @@ cleanup();
 
 ### Patterns
 
-- **[Reactivity](/learn/patterns/reactivity)**: Derived state, batching, cleanup, conditional dependencies
+- **[Reactivity](/learn/patterns/reactivity)**: Derived state, automatic batching, cleanup, conditional dependencies

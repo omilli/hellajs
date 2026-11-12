@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
-import { signal } from "@hellajs/core";
+import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components import the bare
 // specifier, and Portal's hook wiring (observer walk, element state) only works when the test's
@@ -32,14 +32,20 @@ function mountSheet(
 ) {
   const open = signal(false);
   const container = setupContainer();
+  const panelCountAtMount = document.querySelectorAll('[data-slot="sheet-content"]').length;
   mount(
     <div>{variant.render({ ...props, open: () => open(), children: props.children ?? [] })}</div>,
     container,
   );
   const panel = async (): Promise<HTMLElement> => {
+    // The count floor keeps a second sheet's resolver from aliasing an earlier
+    // sheet's still-mounted panel while the newest insertion lags one
+    // microtask behind the deferred flush.
     for (let i = 0; i < 50; i++) {
-      const newest = newestPanel();
+      const panels = document.querySelectorAll('[data-slot="sheet-content"]');
+      const newest = panels.length === 0 ? undefined : (panels[panels.length - 1] as HTMLElement);
       if (
+        panels.length > panelCountAtMount &&
         newest !== undefined &&
         peekState(newest)?.isMounted &&
         newest.getAttribute("aria-modal") === "true"
@@ -111,6 +117,7 @@ describe("sheet", () => {
     for (const side of ["top", "bottom", "left"] as const) {
       const sheet = mountSheet(variant, { onClose: () => {}, title: "Menu", side });
       sheet.open(true);
+      flush();
       const panel = await sheet.panel();
       expect(panel.getAttribute("data-side")).toBe(side);
       sheet.open(false);
@@ -137,6 +144,7 @@ describe("sheet", () => {
       const rightTokens = (rightPanel.getAttribute("class") ?? "")
         .split(" ")
         .filter((token) => token.length > 0);
+      flush();
       const sideTokens = panelTokens.filter((token) => !rightTokens.includes(token));
       expect(sideTokens.length).toBeGreaterThan(0);
       expect(panel.className).not.toBe(rightPanel.className);
@@ -149,6 +157,7 @@ describe("sheet", () => {
     sheet.open(true);
     const panel = await sheet.panel();
     panel.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    flush();
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
@@ -158,6 +167,7 @@ describe("sheet", () => {
     sheet.open(true);
     const panel = await sheet.panel();
     document.body.dispatchEvent(new Event("pointerdown"));
+    flush();
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(panel.isConnected).toBe(true);
   });
@@ -170,6 +180,7 @@ describe("sheet", () => {
       sheet.open(true);
       await sheet.panel();
       document.body.dispatchEvent(new Event("pointerdown"));
+      flush();
       expect(onClose).not.toHaveBeenCalled();
     },
   );
@@ -185,6 +196,7 @@ describe("sheet", () => {
       expect(close.tagName).toBe("BUTTON");
       expect(close.querySelector("span")!.textContent).toBe("Close");
       close.dispatchEvent(new Event("click"));
+      flush();
       expect(onClose).toHaveBeenCalledTimes(1);
     },
   );
@@ -211,6 +223,7 @@ describe("sheet", () => {
       sheet.open(true);
       const panel = await sheet.panel();
       sheet.open(false);
+      flush();
       expect(panel.getAttribute("data-state")).toBe("closed");
       expect(panel.isConnected).toBe(true);
       panel.dispatchEvent(new Event("animationend"));
@@ -243,9 +256,11 @@ describe("sheet", () => {
       sheet.open(true);
       const panel = await sheet.panel();
       sheet.open(false);
+      flush();
       expect(panel.getAttribute("data-state")).toBe("closed");
       panel.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
       document.body.dispatchEvent(new Event("pointerdown"));
+      flush();
       expect(onClose).not.toHaveBeenCalled();
       panel.dispatchEvent(new Event("animationend"));
       await awaitUnmounted(panel);
@@ -278,6 +293,7 @@ describe("sheet", () => {
       sheet.open(true);
       const panel = await sheet.panel();
       panel.dispatchEvent(new Event("click"));
+      flush();
       expect(onPanelClick).toHaveBeenCalledTimes(1);
     },
   );

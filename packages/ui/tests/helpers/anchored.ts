@@ -15,10 +15,11 @@ export function newestPortaled(slot: string): HTMLElement | undefined {
   return nodes.length === 0 ? undefined : (nodes[nodes.length - 1] as HTMLElement);
 }
 
-/** Polls (microtask hops) until the newest portaled node of the slot has finished the observer-driven mount walk. */
-export async function awaitPortaled(slot: string): Promise<HTMLElement> {
+/** Polls (microtask hops) until the newest portaled node of the slot has finished the observer-driven mount walk; `min` guards stacked opens against aliasing a previous layer's already-mounted content. */
+export async function awaitPortaled(slot: string, min = 1): Promise<HTMLElement> {
   for (let i = 0; i < 50; i++) {
-    const node = newestPortaled(slot);
+    const nodes = document.querySelectorAll(`[data-slot="${slot}"]`);
+    const node = nodes.length < min ? undefined : (nodes[nodes.length - 1] as HTMLElement);
     if (node !== undefined && peekState(node)?.isMounted) return node;
     await delay();
   }

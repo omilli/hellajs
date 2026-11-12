@@ -116,7 +116,7 @@ const buttonStyle = style({
 
 ### Reactive CSS Variables
 
-CSS variables automatically update when signals change. Multiple signal updates inside `batch()` flush together; the sheet updates once when the batch completes:
+CSS variables automatically update when signals change. Multiple signal updates in one tick drain together; the sheet updates once at the microtask boundary (core's [`flush`](/reference/core/flush) forces it synchronously):
 
 ```jsx
 import { signal } from '@hellajs/core';

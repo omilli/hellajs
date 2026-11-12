@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vite-plus/test";
-import { computed, effect, signal, untracked } from "@hellajs/core";
+import { computed, effect, flush, signal, untracked } from "@hellajs/core";
 
 describe("core", () => {
   describe("untracked", () => {
@@ -15,8 +15,10 @@ describe("core", () => {
 
       expect(runs).toHaveBeenCalledTimes(1);
       a(100);
+      flush();
       expect(runs).toHaveBeenCalledTimes(2);
       untrackedSig(999);
+      flush();
       expect(runs).toHaveBeenCalledTimes(2); // No rerun
     });
 
@@ -35,9 +37,11 @@ describe("core", () => {
       expect(runs).toHaveBeenCalledTimes(1);
 
       s(100); // Inner untracked read never tracked
+      flush();
       expect(runs).toHaveBeenCalledTimes(1);
 
       t(100); // Tracked read re-runs
+      flush();
       expect(runs).toHaveBeenCalledTimes(2);
     });
 

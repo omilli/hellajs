@@ -42,10 +42,11 @@ export const Item = (variant: ComponentVariant<DropdownMenuVariantProps>, props:
 export const Sub = (variant: ComponentVariant<DropdownMenuVariantProps>, props: SubProps) =>
   menuModulePart<SubProps>(dropdownMenuModules, variant, "DropdownMenuSub")(props);
 
-/** Opens the menu by clicking the trigger and resolves the portaled content once the mount walk finished. */
+/** Opens the menu by clicking the trigger and resolves the portaled content once the mount walk finished; `min` guards a second open against aliasing the previous menu's content. */
 export async function openMenu(
   variant: ComponentVariant<DropdownMenuVariantProps>,
   content?: HellaChildren,
+  min = 1,
 ) {
   const onOpenChange = vi.fn<(open: boolean) => void>(() => {});
   const trigger = renderVariant(variant, {
@@ -53,6 +54,6 @@ export async function openMenu(
     onOpenChange,
   });
   trigger.dispatchEvent(new Event("click"));
-  const contentNode = await awaitPortaled("dropdown-menu-content");
+  const contentNode = await awaitPortaled("dropdown-menu-content", min);
   return { onOpenChange, trigger, content: contentNode };
 }

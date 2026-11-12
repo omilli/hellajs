@@ -1,12 +1,11 @@
 import { currentValue } from "./internal/context";
 import { updateSignal } from "./internal/execution";
-import { flush } from "./internal/scheduler";
+import { scheduleFlush } from "./internal/scheduler";
 import { link, propagate, shallowPropagate } from "./internal/system";
 import { isFunction, isEqual } from "./internal/utils";
 import { MUTABLE, DIRTY } from "./internal/flags";
 import type { ReactiveNode } from "./internal/system";
 import type { Signal, EqualsOptions } from "./types";
-import { batchDepth } from "./batch";
 
 /**
  * Reactive signal node: a value source with a committed value and a pending
@@ -77,7 +76,7 @@ export function signal<T>(initialValue?: T, options?: EqualsOptions<T>) {
         const subs = signalNode.subs;
         if (subs !== undefined) {
           propagate(subs, false); // Notify all subscribers
-          !batchDepth && flush(); // Process effects immediately unless batching
+          scheduleFlush(); // Effects drain once at the microtask boundary
         }
       }
       return;

@@ -1,4 +1,5 @@
 import { describe, test, expect, vi } from "vite-plus/test";
+import { flush } from "@hellajs/core";
 import { store } from "@hellajs/store";
 
 describe("store", () => {
@@ -93,6 +94,7 @@ describe("store", () => {
       data.update("u2");
       data.cleanup("c2");
       data.subscribe("b2");
+      flush();
 
       expect(data.$snapshot()).toEqual({
         snapshot: "s2",

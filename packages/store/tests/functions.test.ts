@@ -1,5 +1,5 @@
 import { describe, test, expect, vi } from "vite-plus/test";
-import { computed, effect } from "@hellajs/core";
+import { computed, effect, flush } from "@hellajs/core";
 import { store } from "@hellajs/store";
 import type { Store } from "@hellajs/store";
 
@@ -35,6 +35,7 @@ describe("store", () => {
       expect(tracker).toHaveBeenNthCalledWith(1, 0);
 
       data.count(4);
+      flush();
 
       expect(tracker).toHaveBeenCalledTimes(2);
       expect(tracker).toHaveBeenNthCalledWith(2, 8);

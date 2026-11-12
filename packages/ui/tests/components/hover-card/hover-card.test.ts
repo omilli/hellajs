@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach, vi } from "vite-plus/test";
+import { flush } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { mount, resetDom } from "@hellajs/dom";
 import { resetHeadless } from "@hellajs/headless";
@@ -102,6 +103,7 @@ describe("hover-card", () => {
     async (variant) => {
       const { content } = await openHoverCard(variant);
       pointerDownOutside();
+      flush();
       expect(content.getAttribute("data-state")).toBe("closed");
     },
   );
@@ -162,6 +164,7 @@ describe("hover-card", () => {
     async (variant) => {
       const { content } = await openHoverCard(variant);
       pointerDownOutside();
+      flush();
       expect(content.getAttribute("data-state")).toBe("closed");
       expect(content.isConnected).toBe(true);
       content.dispatchEvent(new Event("animationend"));
@@ -197,6 +200,7 @@ describe("hover-card", () => {
       const userClick = vi.fn(() => {});
       const trigger = renderVariant(variant, { content: "Card", "on:click": userClick });
       trigger.dispatchEvent(new Event("click"));
+      flush();
       expect(userClick).toHaveBeenCalledTimes(1);
     },
   );

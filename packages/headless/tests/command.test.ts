@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
-import { signal } from "@hellajs/core";
+import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
 import { mount } from "@hellajs/dom";
 import { command } from "@hellajs/headless";
@@ -108,6 +108,7 @@ describe("command", () => {
       "banana",
       "orangish",
     ]);
+    flush();
     expect(items(container)[0]!.getAttribute("aria-selected")).toBe("true");
     expect(items(container)[0]!.querySelector("[data-slot='command-shortcut']")!.textContent).toBe(
       "⌘B",
@@ -144,11 +145,14 @@ describe("command", () => {
     const { container, input, handles } = mountCommand(parts, { items: itemsSource });
     expect(items(container)[0]!.getAttribute("aria-selected")).toBe("true");
     pressKey(input, "ArrowDown");
+    flush();
     expect(items(container)[2]!.getAttribute("aria-selected")).toBe("true");
     pressKey(input, "Enter");
+    flush();
     expect(onSelect).toHaveBeenCalledTimes(1);
     expect(onValueChange).toHaveBeenCalledWith("c");
     pressKey(input, "ArrowUp");
+    flush();
     expect(items(container)[0]!.getAttribute("aria-selected")).toBe("true");
     handles.forEach((handle) => handle.unmount());
   });
@@ -170,8 +174,10 @@ describe("command", () => {
     const parts = command({ items: ITEMS, loop: true });
     const { container, input, handles } = mountCommand(parts, { items: ITEMS });
     pressKey(input, "ArrowUp");
+    flush();
     expect(items(container)[2]!.getAttribute("aria-selected")).toBe("true");
     pressKey(input, "ArrowDown");
+    flush();
     expect(items(container)[0]!.getAttribute("aria-selected")).toBe("true");
     handles.forEach((handle) => handle.unmount());
   });
@@ -202,16 +208,20 @@ describe("command", () => {
       ],
     });
     expect(items(container)).toHaveLength(2);
+    flush();
     expect(items(container)[0]!.getAttribute("aria-selected")).toBe("true");
     pressKey(input, "ArrowDown");
+    flush();
     expect(items(container)[1]!.getAttribute("aria-selected")).toBe("true");
     pressKey(input, "Enter");
+    flush();
     expect(settings).toHaveBeenCalledTimes(1);
     type(input, "cal");
     await delay();
     const visible = items(container).filter((el) => el.style.display !== "none");
     expect(visible.map((el) => el.getAttribute("data-value"))).toEqual(["calendar"]);
     pressKey(input, "Enter");
+    flush();
     expect(calendar).toHaveBeenCalledTimes(1);
     handles.forEach((handle) => handle.unmount());
   });
@@ -234,14 +244,18 @@ describe("command", () => {
     });
     const { container, input, handles } = mountCommand(parts, { items: itemsSource });
     pressKey(input, "ArrowDown");
+    flush();
     expect(onValueChange).toHaveBeenCalledWith("banana");
     await delay();
     expect(items(container)[1]!.getAttribute("aria-selected")).toBe("true");
     pressKey(input, "End");
+    flush();
     expect(onValueChange).toHaveBeenLastCalledWith("carrot");
     pressKey(input, "Home");
+    flush();
     expect(onValueChange).toHaveBeenLastCalledWith("apple");
     pressKey(input, "Enter");
+    flush();
     expect(onValueChange).toHaveBeenLastCalledWith("apple");
     handles.forEach((handle) => handle.unmount());
   });
@@ -274,7 +288,9 @@ describe("command", () => {
     expect(panel.querySelector("[data-slot='command']")).not.toBeNull();
     expect(panel.contains(document.activeElement)).toBe(true);
     pressKey(panel, "Escape");
+    flush();
     expect(onClose).toHaveBeenCalledTimes(1);
+    flush();
     expect(panel.getAttribute("data-state")).toBe("closed");
     panel.dispatchEvent(new Event("animationend"));
     await awaitDetached(panel);

@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
-import { signal } from "@hellajs/core";
+import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { mount, peekState } from "@hellajs/dom";
 import {
@@ -64,6 +64,7 @@ describe("combobox", () => {
       expect(input.getAttribute("aria-controls")).toBe(
         content.querySelector("[role='listbox']")!.id,
       );
+      flush();
       expect(input.getAttribute("aria-autocomplete")).toBe("list");
     },
   );
@@ -113,13 +114,16 @@ describe("combobox", () => {
       expect(options[0]!.hasAttribute("data-highlighted")).toBe(true);
       expect(input.getAttribute("aria-activedescendant")).toBe(options[0]!.id);
       pressKey(input, "ArrowDown");
+      flush();
       expect(options[1]!.hasAttribute("data-highlighted")).toBe(true);
       expect(options[0]!.hasAttribute("data-highlighted")).toBe(false);
       expect(input.getAttribute("aria-activedescendant")).toBe(options[1]!.id);
       pressKey(input, "ArrowUp");
       pressKey(input, "ArrowUp");
+      flush();
       expect(input.getAttribute("aria-activedescendant")).toBe(options[2]!.id);
       pressKey(input, "ArrowDown");
+      flush();
       expect(input.getAttribute("aria-activedescendant")).toBe(options[0]!.id);
     },
   );
@@ -129,7 +133,9 @@ describe("combobox", () => {
     async (variant) => {
       const { onValueChange, input, content } = await openCombobox(variant);
       pressKey(input, "Enter");
+      flush();
       expect(onValueChange).toHaveBeenCalledWith("apple");
+      flush();
       expect(content.getAttribute("data-state")).toBe("closed");
       expect(input.getAttribute("aria-expanded")).toBe("false");
       expect(input.value).toBe("");
@@ -158,7 +164,9 @@ describe("combobox", () => {
       type(input, "blue");
       await delay();
       pressKey(input, "Enter");
+      flush();
       expect(onValueChange).toHaveBeenCalledWith("blueberry");
+      flush();
       expect(content.getAttribute("data-state")).toBe("closed");
     },
   );
@@ -188,6 +196,7 @@ describe("combobox", () => {
       // Escape fires at the input (the typing position) and bubbles to the
       // document capture listener that owns the layered dismissal.
       pressKey(input, "Escape");
+      flush();
       expect(input.value).toBe("");
       expect(content.getAttribute("data-state")).toBe("closed");
     },
@@ -196,6 +205,7 @@ describe("combobox", () => {
   test.each(comboboxVariants)("$style closes on an outside pointerdown", async (variant) => {
     const { content } = await openCombobox(variant);
     pointerDownOutside();
+    flush();
     expect(content.getAttribute("data-state")).toBe("closed");
   });
 
@@ -206,8 +216,10 @@ describe("combobox", () => {
       const trigger = root.querySelector("[data-slot='combobox-trigger']")!;
       expect(trigger).not.toBeNull();
       trigger.dispatchEvent(new Event("click", { bubbles: true }));
+      flush();
       expect(content.getAttribute("data-state")).toBe("closed");
       trigger.dispatchEvent(new Event("click", { bubbles: true }));
+      flush();
       expect(content.getAttribute("data-state")).toBe("open");
       expect(document.activeElement).not.toBeNull();
       expect(input.getAttribute("aria-expanded")).toBe("true");
@@ -231,6 +243,7 @@ describe("combobox", () => {
       const clear = root.querySelector("[data-slot='combobox-clear']")!;
       expect(clear).not.toBeNull();
       clear.dispatchEvent(new Event("click", { bubbles: true }));
+      flush();
       expect(onValueChange).toHaveBeenCalledWith("");
     },
   );
@@ -244,6 +257,7 @@ describe("combobox", () => {
     const visible = [...content.querySelectorAll("[role='option']")].filter(
       (el) => (el as HTMLElement).style.display !== "none",
     );
+    flush();
     expect(visible).toHaveLength(1);
     expect(visible[0]!.getAttribute("data-value")).toBe("apple");
   });
@@ -253,10 +267,12 @@ describe("combobox", () => {
     async (variant) => {
       const { onValueChange, input, content } = await openCombobox(variant, { multiple: true });
       pressKey(input, "Enter");
+      flush();
       expect(onValueChange).toHaveBeenCalledWith(["apple"]);
       expect(content.getAttribute("data-state")).toBe("open");
       expect(input.value).toBe("");
       pressKey(input, "Enter");
+      flush();
       expect(onValueChange).toHaveBeenLastCalledWith([]);
     },
   );
@@ -286,6 +302,7 @@ describe("combobox", () => {
       expect(chips[0]!.textContent).toContain("Apple");
       const remove = chips[0]!.querySelector("[data-slot='combobox-chip-remove']")!;
       remove.dispatchEvent(new Event("click", { bubbles: true }));
+      flush();
       expect(onValueChange).toHaveBeenCalledWith(["blueberry"]);
       await delay();
       expect(root.querySelectorAll("[data-slot='combobox-chip']")).toHaveLength(1);
@@ -309,8 +326,10 @@ describe("combobox", () => {
     input.dispatchEvent(new Event("focus"));
     const content = await awaitPortaled("combobox-content");
     pressKey(input, "Enter");
+    flush();
     expect(onValueChange).toHaveBeenCalledWith("apple");
     expect(current()).toBe("");
+    flush();
     expect(content.getAttribute("data-state")).toBe("closed");
   });
 
@@ -322,6 +341,7 @@ describe("combobox", () => {
       input.dispatchEvent(new Event("focus"));
       const first = await awaitPortaled("combobox-content");
       pressEscape();
+      flush();
       expect(first.getAttribute("data-state")).toBe("closed");
       first.dispatchEvent(new Event("animationend"));
       await awaitDetached(first);
@@ -347,6 +367,7 @@ describe("combobox", () => {
       expect(root.isConnected).toBe(false);
       pressEscape();
       pointerDownOutside();
+      flush();
       expect(content.isConnected).toBe(false);
     },
   );
@@ -372,6 +393,7 @@ describe("combobox", () => {
     await awaitDetached(content);
     pressEscape();
     pointerDownOutside();
+    flush();
     expect(content.isConnected).toBe(false);
   });
 
@@ -384,8 +406,10 @@ describe("combobox", () => {
         [...content.querySelectorAll("[role='option']")]
           .filter((el) => (el as HTMLElement).style.display !== "none")
           .map((el) => el.getAttribute("data-value"));
+      flush();
       expect(visibleValues()).toEqual(["apple", "blueberry", "canteloupe"]);
       liveItems([...liveItems(), { value: "date", label: "Date" }]);
+      flush();
       expect(visibleValues()).toEqual(["apple", "blueberry", "canteloupe", "date"]);
       type(input, "dat");
       await delay();
@@ -411,6 +435,7 @@ describe("combobox", () => {
       )!;
       expect(blueberryBefore.getAttribute("aria-selected")).toBe("true");
       liveItems([liveItems()[2]!, liveItems()[0]!, liveItems()[1]!]);
+      flush();
       expect(itemEls().map((el) => el.getAttribute("data-value"))).toEqual([
         "canteloupe",
         "apple",
@@ -434,8 +459,10 @@ describe("combobox", () => {
         `${listId}-opt-blueberry`,
         `${listId}-opt-canteloupe`,
       ]);
+      flush();
       expect(input.getAttribute("aria-activedescendant")).toBe(`${listId}-opt-apple`);
       liveItems([liveItems()[2]!, liveItems()[0]!, liveItems()[1]!]);
+      flush();
       expect(itemEls().map((el) => el.id)).toEqual([
         `${listId}-opt-canteloupe`,
         `${listId}-opt-apple`,
@@ -444,6 +471,7 @@ describe("combobox", () => {
       // The highlight roves by value: ArrowDown from apple lands on blueberry,
       // whose node moved to the last position but kept its value-derived id.
       pressKey(input, "ArrowDown");
+      flush();
       const highlighted = itemEls().find((el) => el.hasAttribute("data-highlighted"))!;
       expect(highlighted.getAttribute("data-value")).toBe("blueberry");
       expect(highlighted.id).toBe(`${listId}-opt-blueberry`);
@@ -471,6 +499,7 @@ describe("combobox", () => {
       const visible = [...content.querySelectorAll("[role='option']")].filter(
         (el) => (el as HTMLElement).style.display !== "none",
       );
+      flush();
       expect(visible.map((el) => el.getAttribute("data-value"))).toEqual(["blueberry"]);
     }
   });

@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
-import { signal } from "@hellajs/core";
+import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
 import { mount, peekState } from "@hellajs/dom";
 import { calendar, CalendarRows } from "@hellajs/headless";
@@ -116,9 +116,11 @@ describe("calendar", () => {
     expect(root.querySelector("[data-slot='calendar-grid']")!.getAttribute("aria-label")).toBe(
       "March 2025",
     );
+    flush();
     expect(root.querySelector("[data-slot='calendar-previous']")!.getAttribute("aria-label")).toBe(
       "Go to the previous month",
     );
+    flush();
     expect(root.querySelector("[data-slot='calendar-next']")!.getAttribute("aria-label")).toBe(
       "Go to the next month",
     );
@@ -132,6 +134,7 @@ describe("calendar", () => {
       "Fri",
       "Sat",
     ]);
+    flush();
     expect(root.querySelector("[data-slot='calendar-months']")).not.toBeNull();
     expect(root.querySelector("[data-slot='calendar-month']")).not.toBeNull();
     expect(root.querySelector("[data-slot='calendar-caption']")).not.toBeNull();
@@ -190,6 +193,7 @@ describe("calendar", () => {
     const parts = calendar({ defaultMonth: MAR_2025, onValueChange });
     const root = await mountCalendar(parts);
     click(root, "2025-03-14");
+    flush();
     expect(dayCell(root, "2025-03-14")!.getAttribute("data-selected")).toBe("true");
     expect(dayButton(root, "2025-03-14").getAttribute("aria-selected")).toBe("true");
     expect(dayButton(root, "2025-03-14").getAttribute("data-selected-single")).toBe("true");
@@ -198,6 +202,7 @@ describe("calendar", () => {
       new Date(2025, 2, 14).getTime(),
     );
     click(root, "2025-03-20");
+    flush();
     expect(onValueChange).toHaveBeenCalledTimes(2);
     expect(dayCell(root, "2025-03-14")!.hasAttribute("data-selected")).toBe(false);
     expect(dayCell(root, "2025-03-20")!.getAttribute("data-selected")).toBe("true");
@@ -211,7 +216,9 @@ describe("calendar", () => {
     const parts = calendar({ defaultMonth: MAR_2025, value: () => picked(), onValueChange });
     const root = await mountCalendar(parts);
     click(root, "2025-03-14");
+    flush();
     expect(onValueChange).toHaveBeenCalledTimes(1);
+    flush();
     expect(dayCell(root, "2025-03-14")!.getAttribute("data-selected")).toBe("true");
     expect(picked()!.getTime()).toBe(new Date(2025, 2, 14).getTime());
 
@@ -222,6 +229,7 @@ describe("calendar", () => {
     });
     const ignoredRoot = await mountCalendar(ignored);
     click(ignoredRoot, "2025-03-14");
+    flush();
     expect(dayCell(ignoredRoot, "2025-03-14")!.hasAttribute("data-selected")).toBe(false);
   });
 
@@ -231,11 +239,14 @@ describe("calendar", () => {
     const root = await mountCalendar(parts);
     click(root, "2025-03-10");
     click(root, "2025-03-20");
+    flush();
     expect((onValueChange.mock.calls[1]![0] as Date[]).map((day) => day.getDate())).toEqual([
       10, 20,
     ]);
+    flush();
     expect(dayButton(root, "2025-03-20").getAttribute("data-selected-single")).toBe("true");
     click(root, "2025-03-10");
+    flush();
     expect((onValueChange.mock.calls[2]![0] as Date[]).map((day) => day.getDate())).toEqual([20]);
     expect(dayCell(root, "2025-03-10")!.hasAttribute("data-selected")).toBe(false);
   });
@@ -245,19 +256,24 @@ describe("calendar", () => {
     const parts = calendar({ defaultMonth: MAR_2025, mode: "range", onValueChange });
     const root = await mountCalendar(parts);
     click(root, "2025-03-10");
+    flush();
     expect((onValueChange.mock.calls[0]![0] as { from?: Date }).from!.getDate()).toBe(10);
+    flush();
     expect(dayCell(root, "2025-03-10")!.getAttribute("data-range-start")).toBe("true");
 
     // While `from` dangles, hovering borrows the preview as the range end.
     const hoverButton = dayButton(root, "2025-03-20");
     hoverButton.dispatchEvent(new PointerEvent("pointerenter", { bubbles: true }));
+    flush();
     expect(dayCell(root, "2025-03-20")!.getAttribute("data-range-end")).toBe("true");
     expect(dayCell(root, "2025-03-15")!.getAttribute("data-range-middle")).toBe("true");
     hoverButton.dispatchEvent(new PointerEvent("pointerleave", { bubbles: true }));
+    flush();
     expect(dayCell(root, "2025-03-20")!.hasAttribute("data-range-end")).toBe(false);
     expect(dayCell(root, "2025-03-15")!.hasAttribute("data-range-middle")).toBe(false);
 
     click(root, "2025-03-20");
+    flush();
     expect((onValueChange.mock.calls[1]![0] as { from?: Date; to?: Date }).to!.getDate()).toBe(20);
     expect(dayCell(root, "2025-03-15")!.getAttribute("data-range-middle")).toBe("true");
     expect(dayCell(root, "2025-03-20")!.getAttribute("data-range-end")).toBe("true");
@@ -280,6 +296,7 @@ describe("calendar", () => {
     expect(dayCell(root, "2025-03-14")!.getAttribute("data-disabled")).toBe("true");
     expect(dayButton(root, "2025-03-14").getAttribute("aria-disabled")).toBe("true");
     click(root, "2025-03-14");
+    flush();
     expect(onValueChange).not.toHaveBeenCalled();
     expect(dayCell(root, "2025-03-14")!.hasAttribute("data-selected")).toBe(false);
 
@@ -287,9 +304,11 @@ describe("calendar", () => {
     expect(outside.getAttribute("data-outside")).toBe("true");
     expect(outside.getAttribute("data-disabled")).toBe("true");
     click(root, "2025-02-23");
+    flush();
     expect(onValueChange).not.toHaveBeenCalled();
 
     click(root, "2025-03-15");
+    flush();
     expect(onValueChange).toHaveBeenCalledTimes(1);
   });
 
@@ -306,6 +325,7 @@ describe("calendar", () => {
       new Date(now.getFullYear(), now.getMonth(), now.getDate()).toLocaleDateString(),
     );
     click(root, TODAY_KEY);
+    flush();
     expect(todayCell.querySelector("button")!.getAttribute("aria-selected")).toBe("true");
   });
 
@@ -315,6 +335,7 @@ describe("calendar", () => {
     const stops = Array.from(
       absentRoot.querySelectorAll("[data-slot='calendar-day-button']"),
     ).filter((button) => (button as HTMLElement).tabIndex === 0);
+    flush();
     expect(stops.length).toBe(1);
     expect(stops[0]!.textContent).toBe("1");
 
@@ -326,6 +347,7 @@ describe("calendar", () => {
     const todayStops = Array.from(
       presentRoot.querySelectorAll("[data-slot='calendar-day-button']"),
     ).filter((button) => (button as HTMLElement).tabIndex === 0);
+    flush();
     expect(todayStops.length).toBe(1);
     expect(todayStops[0]!.getAttribute("aria-current")).toBe("date");
   });
@@ -345,6 +367,7 @@ describe("calendar", () => {
 
     press(root, "2025-03-31", "ArrowRight");
     await awaitCell(root, "2025-04-01");
+    flush();
     await awaitFocus(root, "2025-04-01");
     expect(caption(root)).toBe("April 2025");
 
@@ -362,8 +385,10 @@ describe("calendar", () => {
     await awaitFocus(root, "2025-04-19");
 
     press(root, "2025-04-19", "Enter");
+    flush();
     expect(dayCell(root, "2025-04-19")!.getAttribute("data-selected")).toBe("true");
     press(root, "2025-04-18", " ");
+    flush();
     expect(dayCell(root, "2025-04-18")!.getAttribute("data-selected")).toBe("true");
     expect(dayCell(root, "2025-04-19")!.hasAttribute("data-selected")).toBe(false);
   });
@@ -373,6 +398,7 @@ describe("calendar", () => {
     const el = mountPart(
       DayButton({ day: new Date(2025, 2, 14), selectedSingle: true, focused: true, today: true }),
     );
+    flush();
     expect(el.tagName).toBe("BUTTON");
     expect(el.getAttribute("data-slot")).toBe("calendar-day-button");
     expect(el.getAttribute("data-day")).toBe(new Date(2025, 2, 14).toLocaleDateString());
@@ -391,6 +417,7 @@ describe("calendar", () => {
     const reactive = mountPart(DayButton({ day: new Date(2025, 2, 14), focused: () => flag() }));
     expect(reactive.tabIndex).toBe(-1);
     flag(true);
+    flush();
     expect(reactive.tabIndex).toBe(0);
   });
 
@@ -425,6 +452,7 @@ describe("calendar", () => {
     const before = document.activeElement;
     button.focus();
     pressKey(button, "Enter");
+    flush();
     expect(document.activeElement).toBe(before);
     expect(onValueChange).not.toHaveBeenCalled();
   });

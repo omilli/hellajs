@@ -1,5 +1,5 @@
 import { describe, expect, test, beforeEach } from "vite-plus/test";
-import { batch, flush, signal } from "@hellajs/core";
+import { flush, signal } from "@hellajs/core";
 import { resetTestState, getStylesheet } from "@utils/test-helpers.js";
 import { vars, resetVars } from "@hellajs/css";
 
@@ -133,10 +133,8 @@ describe("vars scoped", () => {
     let varsText = getStylesheet("hella-vars");
     expect(varsText).toContain(".dynamic{--dyn-theme-color:green;--dyn-font-size:18px}");
 
-    batch(() => {
-      color("purple");
-      size("22px");
-    });
+    color("purple");
+    size("22px");
 
     flush();
     varsText = getStylesheet("hella-vars");

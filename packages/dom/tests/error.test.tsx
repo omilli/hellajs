@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
-import { signal } from "@hellajs/core";
+import { flush, signal } from "@hellajs/core";
 import { resetTestState, setupContainer, suppressConsole } from "@utils/test-helpers.js";
 import { mount, onError } from "@hellajs/dom";
 import type { ErrorContext, TemplateBuildFn } from "@hellajs/dom";
@@ -321,6 +321,7 @@ describe("dom", () => {
         );
 
         s(true);
+        flush();
         app.flush();
 
         expect(calls).toHaveBeenCalledTimes(1);
@@ -448,6 +449,7 @@ describe("dom", () => {
         expect(container.querySelector("#child")?.textContent).toBe("Content");
 
         shouldThrow(true);
+        flush();
         app.flush();
 
         expect(container.querySelector("#child")?.textContent).toBe("E: bind");

@@ -32,6 +32,7 @@ describe("collapsible", () => {
     expect(trigger.getAttribute("data-state")).toBe("closed");
     expect(content.getAttribute("data-state")).toBe("closed");
     trigger.dispatchEvent(new Event("click"));
+    flush();
     expect(onOpenChange).toHaveBeenCalledTimes(1);
     expect(onOpenChange.mock.calls[0]).toEqual([true]);
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
@@ -40,6 +41,7 @@ describe("collapsible", () => {
     // The content stays mounted under data-state for the CSS collapse.
     expect(content.isConnected).toBe(true);
     trigger.dispatchEvent(new Event("click"));
+    flush();
     expect(onOpenChange.mock.calls[1]).toEqual([false]);
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
     expect(content.isConnected).toBe(true);
@@ -61,6 +63,7 @@ describe("collapsible", () => {
     const parts = collapsible({ open: () => open(), onOpenChange });
     const { trigger, content } = mountPair(parts);
     trigger.dispatchEvent(new Event("click"));
+    flush();
     expect(onOpenChange).toHaveBeenCalledTimes(1);
     expect(onOpenChange.mock.calls[0]).toEqual([true]);
     // The controller ignored the request: the display holds the controlled state.
@@ -71,6 +74,7 @@ describe("collapsible", () => {
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
     expect(content.getAttribute("data-state")).toBe("open");
     trigger.dispatchEvent(new Event("click"));
+    flush();
     expect(onOpenChange.mock.calls[1]).toEqual([false]);
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
   });
@@ -93,6 +97,7 @@ describe("collapsible", () => {
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
     expect(trigger.getAttribute("data-state")).toBe("open");
     trigger.dispatchEvent(new Event("click"));
+    flush();
     expect(onToggle).toHaveBeenCalledTimes(1);
     const content = mountPart(parts.Content({ active: () => false, children: "Details" }));
     expect(content.getAttribute("data-state")).toBe("closed");

@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vite-plus/test";
-import { computed, effect, signal } from "@hellajs/core";
+import { computed, effect, flush, signal } from "@hellajs/core";
 
 describe("core", () => {
   describe("computed equality option", () => {
@@ -33,6 +33,7 @@ describe("core", () => {
       effect(runs);
 
       items([4]); // Content-different: propagates
+      flush();
       expect(runs).toHaveBeenCalledTimes(2);
       expect(doubled()).toEqual([8]);
     });

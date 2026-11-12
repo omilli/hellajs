@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
-import { effect } from "@hellajs/core";
+import { effect, flush } from "@hellajs/core";
 import { router, route, navigate } from "@hellajs/router";
 import { setupRouterEnv } from "./helpers";
 
@@ -22,6 +22,7 @@ describe("router", () => {
       effect(tracker);
       tracker.mockClear();
       navigate("/users/123");
+      flush();
       expect(tracker).toHaveBeenCalledTimes(1);
     });
 
@@ -55,6 +56,7 @@ describe("router", () => {
       tracker.mockClear();
       history.pushState({}, "", "/users/123");
       window.dispatchEvent(new Event("popstate"));
+      flush();
       expect(tracker).toHaveBeenCalledTimes(1);
     });
   });

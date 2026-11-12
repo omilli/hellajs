@@ -1,5 +1,5 @@
 import { describe, expect, test, beforeEach, vi } from "vite-plus/test";
-import { batch, computed, flush, signal } from "@hellajs/core";
+import { computed, flush, signal } from "@hellajs/core";
 import { resetTestState, getStylesheet } from "@utils/test-helpers.js";
 import { vars, resetVars, removeVars } from "@hellajs/css";
 
@@ -77,10 +77,8 @@ describe("vars", () => {
     let varsText = getStylesheet("hella-vars");
     expect(varsText).toBe(":root{--colors-primary:red;--colors-secondary:blue}");
 
-    batch(() => {
-      primaryColor("green");
-      secondaryColor("yellow");
-    });
+    primaryColor("green");
+    secondaryColor("yellow");
 
     flush();
     varsText = getStylesheet("hella-vars");
@@ -150,10 +148,8 @@ describe("vars", () => {
     expect(varsText).toContain("--theme-text:#fff");
     expect(varsText).toContain("--typography-size:20px");
 
-    batch(() => {
-      theme("light");
-      size("small");
-    });
+    theme("light");
+    size("small");
 
     flush();
     varsText = getStylesheet("hella-vars");
@@ -268,10 +264,9 @@ describe("vars", () => {
     expect(varsText).toContain("--theme-primary:green");
     expect(varsText).toContain("--theme-secondary:yellow");
 
-    batch(() => {
-      color1("purple");
-      color2("orange");
-    });
+    color1("purple");
+    color2("orange");
+
     flush();
 
     varsText = getStylesheet("hella-vars");

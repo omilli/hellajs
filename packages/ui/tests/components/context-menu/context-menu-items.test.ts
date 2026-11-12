@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
-import { signal } from "@hellajs/core";
+import { flush, signal } from "@hellajs/core";
 import type { HellaChildren } from "@hellajs/dom";
 import { menuModulePart, type MenuRadioEntryVariant } from "../../helpers/variants-core";
 import { contextMenuModules, contextMenuVariants } from "./variants";
@@ -27,6 +27,7 @@ describe("context-menu", () => {
       const checkbox = content.querySelector("[role='menuitemcheckbox']")!;
       expect(checkbox.getAttribute("aria-checked")).toBe("false");
       checkbox.dispatchEvent(new Event("click", { bubbles: true }));
+      flush();
       expect(onCheckedChange).toHaveBeenCalledWith(true);
       expect(checkbox.getAttribute("data-state")).toBe("checked");
       expect(checkbox.querySelector("svg")).not.toBeNull();
@@ -54,6 +55,7 @@ describe("context-menu", () => {
       );
       const radios = [...content.querySelectorAll("[role='menuitemradio']")] as HTMLElement[];
       radios[1]!.dispatchEvent(new Event("click", { bubbles: true }));
+      flush();
       expect(onValueChange).toHaveBeenCalledWith("large");
       expect(radios[0]!.getAttribute("aria-checked")).toBe("false");
       expect(radios[1]!.getAttribute("aria-checked")).toBe("true");
@@ -74,6 +76,7 @@ describe("context-menu", () => {
         );
       expect(values()).toEqual(["small"]);
       liveItems([...liveItems(), { value: "large", label: "Large" }]);
+      flush();
       expect(values()).toEqual(["small", "large"]);
     },
   );

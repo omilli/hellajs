@@ -173,7 +173,7 @@ All per-element state lives in a `WeakMap<Node, ElementState>`: no expando prope
 | Vue | Component unmount lifecycle |
 | Angular | `OnDestroy` / `DestroyRef` |
 
-HellaJS is the only one here that auto-disposes effects when a node is removed by *outside* code: a third-party library calling `removeChild` inside an observed mount container triggers full cleanup of scopes, handlers, and effects on the next microtask (`lib/internal/queue.ts`), while the synchronous path makes framework-driven updates immediate. Solid, Vue, React, and Angular own their removal paths and leave externally-yanked nodes leaking or diverging.
+HellaJS is the only one here that auto-disposes effects when a node is removed by *outside* code: a third-party library calling `removeChild` inside an observed mount container triggers full cleanup of scopes, handlers, and effects on the next microtask (`lib/internal/queue.ts`), while framework-driven swaps land on the microtask flush with their disposal running synchronously inside the swap (`lib/internal/cleanup.ts`). Solid, Vue, React, and Angular own their removal paths and leave externally-yanked nodes leaking or diverging.
 
 ---
 

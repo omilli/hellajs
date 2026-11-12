@@ -93,7 +93,7 @@ Direct `addHook` calls need the hooks feature loaded; any `hook:` prop or `$ref`
 
 ### Two Cleanup Paths
 
-- **Reactive swaps are synchronous**: when HellaJS itself replaces or removes nodes (conditional rendering, list updates), effects, handlers, and hooks are disposed immediately, before the DOM node leaves the tree.
+- **Reactive swaps run on the flush**: when HellaJS itself replaces or removes nodes (conditional rendering, list updates), the swap lands at the microtask drain that follows the triggering writes, and effects, handlers, and hooks are disposed synchronously within the swap, before the DOM node leaves the tree. Call core's `flush()` to force a pending swap before the next line.
 - **External removals are batched**: when other code removes nodes from a mounted container (`el.remove()`), cleanup runs on a microtask, before the browser paints. Nodes re-appended before the microtask fires are recognized as moved and skip cleanup entirely.
 
 ```js

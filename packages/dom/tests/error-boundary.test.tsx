@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
-import { signal } from "@hellajs/core";
+import { flush, signal } from "@hellajs/core";
 import { resetTestState, setupContainer, suppressConsole } from "@utils/test-helpers.js";
 import { mount, onError, peekState } from "@hellajs/dom";
 import { fallbackHandler } from "./helpers";
@@ -59,12 +59,15 @@ describe("dom", () => {
       const deep = container.querySelector("#deep") as Element;
 
       shouldThrow(true);
+      flush();
       app.flush();
       expect(peekState(deep)?.cachedBoundary?.id).toBe("b");
 
       shouldThrow(false);
+      flush();
       app.flush();
       shouldThrow(true);
+      flush();
       app.flush();
 
       expect(peekState(deep)?.cachedBoundary?.id).toBe("b");
@@ -208,6 +211,7 @@ describe("dom", () => {
         const deep = container.querySelector("#deep") as Element;
 
         shouldThrow(true);
+        flush();
         app.flush();
         expect(peekState(deep)?.cachedBoundary).toBeDefined();
 
@@ -215,8 +219,10 @@ describe("dom", () => {
         peekState(boundary)!.errorConfig = undefined;
 
         shouldThrow(false);
+        flush();
         app.flush();
         shouldThrow(true);
+        flush();
         app.flush();
 
         expect(container.textContent).toBe("E");
@@ -279,6 +285,7 @@ describe("dom", () => {
       expect(container.textContent).toBe("OK1OK2");
 
       shouldThrow(true);
+      flush();
       app.flush();
 
       expect(container.textContent).toContain("FB: oops1");
@@ -311,6 +318,7 @@ describe("dom", () => {
       expect(container.textContent).toBe("Static BeforeDynamicStatic After");
 
       shouldThrow(true);
+      flush();
       app.flush();
 
       expect(container.textContent).toContain("Static Before");
@@ -361,6 +369,7 @@ describe("dom", () => {
       expect(container.querySelector("#c1")).not.toBeNull();
 
       shouldThrow(true);
+      flush();
       app.flush();
 
       expect(container.textContent).toBe("FB: bind");
@@ -391,6 +400,7 @@ describe("dom", () => {
       expect(container.textContent).toBe("Outer StaticInner Dynamic");
 
       shouldThrowInner(true);
+      flush();
       app.flush();
 
       expect(container.textContent).toContain("Outer Static");

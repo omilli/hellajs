@@ -1,5 +1,5 @@
 import { describe, test, expect, vi } from "vite-plus/test";
-import { effect, signal } from "@hellajs/core";
+import { effect, flush, signal } from "@hellajs/core";
 
 describe("core", () => {
   describe("effect lifecycle", () => {
@@ -52,11 +52,13 @@ describe("core", () => {
 
       // Tracks its own dependencies: re-runs on writes to them
       count(1);
+      flush();
       expect(childRuns).toHaveBeenCalledTimes(2);
 
       // The returned cleanup disposes it
       childStop();
       count(2);
+      flush();
       expect(childRuns).toHaveBeenCalledTimes(2);
     });
 
@@ -74,10 +76,12 @@ describe("core", () => {
       // the first child itself was neither re-run (would be 3) nor disposed (would
       // stop at 1) by the parent's re-run
       parentDep(1);
+      flush();
       expect(childRuns).toHaveBeenCalledTimes(2);
 
       // Both children are alive and track their own dependency (+2)
       childDep(1);
+      flush();
       expect(childRuns).toHaveBeenCalledTimes(4);
     });
   });

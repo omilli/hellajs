@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach } from "vite-plus/test";
-import { signal } from "@hellajs/core";
+import { flush, signal } from "@hellajs/core";
 import { resetTestState } from "@utils/test-helpers.js";
 import { mount } from "@hellajs/dom";
 
@@ -47,8 +47,11 @@ describe("dom", () => {
       expect(getListTexts()).toEqual(["A", "B"]);
 
       // index-fallback keys: the new item reference forces a fresh build at index 0;
-      // a signal write drains effects synchronously outside a batch, so the write itself throws
-      expect(() => items(["FRAG", "B"])).toThrow("[dom] ForEach: use must return a single element");
+      // the write schedules, and the manual drain throws to its caller
+      expect(() => {
+        items(["FRAG", "B"]);
+        flush();
+      }).toThrow("[dom] ForEach: use must return a single element");
     });
 
     test("throws when an extractor-built new item resolves to a fragment on update", () => {
@@ -70,14 +73,15 @@ describe("dom", () => {
       expect(getListTexts()).toEqual(["A", "B"]);
 
       // the new key has no live node, so use() runs and its fragment result must throw;
-      // a signal write drains effects synchronously outside a batch, so the write itself throws
-      expect(() =>
+      // the write schedules, and the manual drain throws to its caller
+      expect(() => {
         items([
           { id: 1, name: "A" },
           { id: 2, name: "B" },
           { id: 3, name: "FRAG" },
-        ]),
-      ).toThrow("[dom] ForEach: use must return a single element");
+        ]);
+        flush();
+      }).toThrow("[dom] ForEach: use must return a single element");
     });
   });
 });

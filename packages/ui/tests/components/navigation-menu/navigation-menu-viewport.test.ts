@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach } from "vite-plus/test";
-import { signal } from "@hellajs/core";
+import { flush, signal } from "@hellajs/core";
 import { resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { mount } from "@hellajs/dom";
 import { renderVariant } from "../../helpers/variants-core";
@@ -35,6 +35,7 @@ describe("navigation-menu", () => {
             "--radix-navigation-menu-viewport-width",
           ),
         ).toBe(`${content.offsetWidth}px`);
+        flush();
         expect(
           (viewport as HTMLElement).style.getPropertyValue(
             "--radix-navigation-menu-viewport-height",
@@ -162,15 +163,19 @@ describe("navigation-menu", () => {
       const trigger = bar.querySelector("[data-value='learn']") as HTMLElement;
       pinRect(bar, 0, 0, 400, 40);
       pinRect(trigger, 0, 40, 90, 40);
+      flush();
       expect(indicator.getAttribute("data-state")).toBe("hidden");
       trigger.dispatchEvent(new Event("click", { bubbles: true }));
+      flush();
       expect(indicator.getAttribute("data-state")).toBe("visible");
       expect(indicator.style.transform).toBe("translateX(40px)");
       expect(indicator.style.width).toBe("90px");
       pinRect(trigger, 0, 60, 90, 40);
       window.dispatchEvent(new Event("resize"));
+      flush();
       expect(indicator.style.transform).toBe("translateX(60px)");
       trigger.dispatchEvent(new Event("click", { bubbles: true }));
+      flush();
       expect(indicator.getAttribute("data-state")).toBe("hidden");
     },
   );
@@ -199,8 +204,10 @@ describe("navigation-menu", () => {
       trigger.dispatchEvent(new Event("click", { bubbles: true }));
       const first = await awaitPortaled("navigation-menu-content");
       value("");
+      flush();
       expect(first.getAttribute("data-state")).toBe("closed");
       value("learn");
+      flush();
       expect(first.getAttribute("data-state")).toBe("open");
       expect(first.isConnected).toBe(true);
     },
@@ -220,6 +227,7 @@ describe("navigation-menu", () => {
       ) as HTMLElement;
       expect(indicator).not.toBeNull();
       handle.unmount();
+      flush();
       expect(container.contains(indicator)).toBe(false);
       expect(() => window.dispatchEvent(new Event("resize"))).not.toThrow();
     },

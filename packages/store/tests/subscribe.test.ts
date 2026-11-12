@@ -1,5 +1,5 @@
 import { describe, test, expect, vi } from "vite-plus/test";
-import { signal, batch } from "@hellajs/core";
+import { signal, flush } from "@hellajs/core";
 import { store } from "@hellajs/store";
 
 describe("store", () => {
@@ -12,6 +12,7 @@ describe("store", () => {
       expect(seen).not.toHaveBeenCalled();
 
       data.count(5);
+      flush();
 
       expect(seen).toHaveBeenCalledTimes(1);
       expect(seen.mock.calls[0]).toEqual([5, 0]);
@@ -42,6 +43,7 @@ describe("store", () => {
       expect(seen).not.toHaveBeenCalled();
 
       data.count(1);
+      flush();
       expect(seen).toHaveBeenCalledTimes(1);
     });
 
@@ -55,7 +57,7 @@ describe("store", () => {
       expect(seen).not.toHaveBeenCalled();
     });
 
-    test("fires once per subscribed key after a batch of writes", () => {
+    test("fires once per subscribed key after same-tick writes", () => {
       const data = store({ count: 0, name: "Alice" });
       const countSeen = vi.fn<(next: number, prev: number) => void>(() => {});
       const nameSeen = vi.fn<(next: string, prev: string) => void>(() => {});
@@ -63,11 +65,10 @@ describe("store", () => {
       data.$subscribe("count", countSeen);
       data.$subscribe("name", nameSeen);
 
-      batch(() => {
-        data.count(1);
-        data.count(2);
-        data.name("Bob");
-      });
+      data.count(1);
+      data.count(2);
+      data.name("Bob");
+      flush();
 
       expect(countSeen).toHaveBeenCalledTimes(1);
       expect(countSeen.mock.calls[0]).toEqual([2, 0]);
@@ -114,6 +115,7 @@ describe("store", () => {
 
       userStore.$subscribe("name", seen);
       appStore.user.name("Bob");
+      flush();
 
       expect(seen).toHaveBeenCalledTimes(1);
       expect(seen.mock.calls[0]).toEqual(["Bob", "Alice"]);

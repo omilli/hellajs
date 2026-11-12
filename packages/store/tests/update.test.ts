@@ -1,5 +1,5 @@
 import { describe, test, expect, vi } from "vite-plus/test";
-import { batch, effect } from "@hellajs/core";
+import { effect, flush } from "@hellajs/core";
 import { store } from "@hellajs/store";
 
 describe("store", () => {
@@ -198,6 +198,7 @@ describe("store", () => {
         draft.a = 1;
         draft.b = 20;
       });
+      flush();
 
       expect(data.a()).toBe(1);
       expect(data.b()).toBe(20);
@@ -229,6 +230,7 @@ describe("store", () => {
         // Access items without mutating — count change is the only write
         draft.count = 10;
       });
+      flush();
 
       expect(data.items()).toEqual([1, 2, 3]);
       expect(data.count()).toBe(10);
@@ -250,7 +252,7 @@ describe("store", () => {
       expect(data.b()).toBe(2);
     });
 
-    test("batched store updates trigger effects once", () => {
+    test("same-tick store updates trigger effects once", () => {
       const data = store({ x: 0, y: 0 });
       const tracker = vi.fn(() => {});
 
@@ -262,17 +264,16 @@ describe("store", () => {
 
       expect(tracker).toHaveBeenCalledTimes(1);
 
-      batch(() => {
-        data.x(1);
-        data.y(2);
-      });
+      data.x(1);
+      data.y(2);
+      flush();
 
       expect(data.x()).toBe(1);
       expect(data.y()).toBe(2);
       expect(tracker).toHaveBeenCalledTimes(2);
     });
 
-    test("batch wraps update(draft)", () => {
+    test("$update(draft) writes batch like plain writes", () => {
       const data = store({ x: 0, y: 0 });
       const tracker = vi.fn(() => {});
 
@@ -284,12 +285,11 @@ describe("store", () => {
 
       expect(tracker).toHaveBeenCalledTimes(1);
 
-      batch(() => {
-        data.$update((draft) => {
-          draft.x = 1;
-          draft.y = 2;
-        });
+      data.$update((draft) => {
+        draft.x = 1;
+        draft.y = 2;
       });
+      flush();
 
       expect(tracker).toHaveBeenCalledTimes(2);
     });

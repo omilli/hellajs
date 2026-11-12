@@ -75,6 +75,7 @@ describe("accordion", () => {
     expect(triggers[0]!.getAttribute("data-state")).toBe("closed");
     expect(contents[0]!.getAttribute("data-state")).toBe("closed");
     triggers[0]!.dispatchEvent(new Event("click"));
+    flush();
     expect(triggers[0]!.getAttribute("aria-expanded")).toBe("true");
     expect(triggers[0]!.getAttribute("data-state")).toBe("open");
     expect(contents[0]!.getAttribute("data-state")).toBe("open");
@@ -91,6 +92,7 @@ describe("accordion", () => {
       "closed",
     ]);
     triggers[2]!.dispatchEvent(new Event("click"));
+    flush();
     expect(onValueChange).toHaveBeenCalledTimes(1);
     expect(onValueChange.mock.calls[0]).toEqual(["gamma"]);
     expect(triggers.map((trigger) => trigger.getAttribute("data-state"))).toEqual([
@@ -99,6 +101,7 @@ describe("accordion", () => {
       "open",
     ]);
     triggers[2]!.dispatchEvent(new Event("click"));
+    flush();
     expect(onValueChange).toHaveBeenCalledTimes(1);
     expect(triggers[2]!.getAttribute("data-state")).toBe("open");
   });
@@ -108,12 +111,14 @@ describe("accordion", () => {
     const { triggers } = mountItems(parts);
     triggers[0]!.dispatchEvent(new Event("click"));
     triggers[2]!.dispatchEvent(new Event("click"));
+    flush();
     expect(triggers.map((trigger) => trigger.getAttribute("data-state"))).toEqual([
       "open",
       "open",
       "open",
     ]);
     triggers[1]!.dispatchEvent(new Event("click"));
+    flush();
     expect(triggers.map((trigger) => trigger.getAttribute("data-state"))).toEqual([
       "open",
       "closed",
@@ -127,6 +132,7 @@ describe("accordion", () => {
     const parts = accordion({ value: () => value(), onValueChange });
     const { triggers } = mountItems(parts);
     triggers[2]!.dispatchEvent(new Event("click"));
+    flush();
     expect(onValueChange).toHaveBeenCalledTimes(1);
     expect(onValueChange.mock.calls[0]).toEqual(["gamma"]);
     // The controller ignored the request: the display holds the controlled value.
@@ -175,6 +181,7 @@ describe("accordion", () => {
     expect(triggers[0]!.getAttribute("aria-disabled")).toBe("true");
     expect(triggers[0]!.hasAttribute("disabled")).toBe(true);
     triggers[0]!.dispatchEvent(new Event("click"));
+    flush();
     expect(onValueChange).not.toHaveBeenCalled();
     expect(triggers[0]!.getAttribute("data-state")).toBe("closed");
     triggers[1]!.focus();
@@ -225,6 +232,7 @@ describe("accordion", () => {
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
     expect(trigger.getAttribute("data-state")).toBe("open");
     trigger.dispatchEvent(new Event("click"));
+    flush();
     expect(onToggle).toHaveBeenCalledTimes(1);
     const content = mountPart(
       parts.Content({ value: "solo", active: () => false, children: "Solo body" }),

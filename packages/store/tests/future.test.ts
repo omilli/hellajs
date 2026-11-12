@@ -131,6 +131,7 @@ describe("store", () => {
       s1.$subscribe("tags", seen);
 
       s1.$update({ tags: ["b"] });
+      flush();
       expect(seen).toHaveBeenCalledTimes(1);
       expect(seen.mock.calls[0]).toEqual([["b"], ["a"]]);
     });

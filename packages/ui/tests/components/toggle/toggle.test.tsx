@@ -38,9 +38,11 @@ describe("toggle", () => {
   test.each(toggleVariants)("$style flips aria-pressed and data-state on click", (variant) => {
     const root = mountToggle(variant, { children: variant.child("Bold") });
     root.dispatchEvent(new Event("click"));
+    flush();
     expect(root.getAttribute("aria-pressed")).toBe("true");
     expect(root.getAttribute("data-state")).toBe("on");
     root.dispatchEvent(new Event("click"));
+    flush();
     expect(root.getAttribute("aria-pressed")).toBe("false");
     expect(root.getAttribute("data-state")).toBe("off");
   });
@@ -50,6 +52,7 @@ describe("toggle", () => {
     const root = mountToggle(variant, { onPressedChange, children: variant.child("Bold") });
     root.dispatchEvent(new Event("click"));
     root.dispatchEvent(new Event("click"));
+    flush();
     expect(onPressedChange).toHaveBeenCalledTimes(2);
     expect(onPressedChange.mock.calls[0]).toEqual([true]);
     expect(onPressedChange.mock.calls[1]).toEqual([false]);
@@ -70,6 +73,7 @@ describe("toggle", () => {
       expect(root.getAttribute("aria-pressed")).toBe("true");
       expect(root.getAttribute("data-state")).toBe("on");
       root.dispatchEvent(new Event("click"));
+      flush();
       expect(onPressedChange).toHaveBeenCalledTimes(1);
       expect(onPressedChange.mock.calls[0]).toEqual([false]);
       expect(root.getAttribute("aria-pressed")).toBe("true");
@@ -83,6 +87,7 @@ describe("toggle", () => {
       expect(root.getAttribute("aria-pressed")).toBe("true");
       expect(root.getAttribute("data-state")).toBe("on");
       root.dispatchEvent(new Event("click"));
+      flush();
       expect(root.getAttribute("aria-pressed")).toBe("false");
     },
   );
@@ -96,6 +101,7 @@ describe("toggle", () => {
     });
     expect(root.hasAttribute("disabled")).toBe(true);
     root.dispatchEvent(new Event("click"));
+    flush();
     expect(root.getAttribute("aria-pressed")).toBe("false");
     expect(onPressedChange).not.toHaveBeenCalled();
   });
@@ -134,6 +140,7 @@ describe("toggle", () => {
     });
     const root = mountToggle(variant, { "on:click": userClick, children: variant.child("Bold") });
     root.dispatchEvent(new Event("click"));
+    flush();
     expect(userClick).toHaveBeenCalledTimes(1);
     expect(root.getAttribute("aria-pressed")).toBe("true");
     expect(root.getAttribute("data-state")).toBe("on");

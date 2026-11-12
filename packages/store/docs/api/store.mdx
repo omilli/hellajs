@@ -178,7 +178,7 @@ Partial deep updates to the store state. Accepts either a partial object or a fu
 
 For single property updates, set the property directly. For multiple properties or nested merges, use `$update()`. The call returns the store itself, typed with any keys the partial added (see [Growing Stores](#growing-stores)).
 
-Every key in the partial (and every change extracted from a draft) applies as its own signal write; wrap multi-key updates in [`batch`](/reference/core/batch)`()` to flush collected effects once. The draft path runs its mutator over a deep clone of the full snapshot, so calling `$update(draft => ...)` inside an effect subscribes that effect to every signal in the tree; keep drafts out of narrow effects.
+Every key in the partial (and every change extracted from a draft) applies as its own signal write; multi-key updates fire collected effects once at core's microtask drain. The draft path runs its mutator over a deep clone of the full snapshot, so calling `$update(draft => ...)` inside an effect subscribes that effect to every signal in the tree; keep drafts out of narrow effects.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -246,7 +246,7 @@ appStore.count(6); // silent; unsubscribed
 - `callback`: Receives the next and previous values. Runs untracked; reading signals inside it never widens the subscription. Skipped when a write compares equal to the current value.
 - **Returns**: An unsubscribe function; calling it more than once is safe.
 
-Unlike an [`effect`](/reference/core/effect) reading [`$snapshot()`](#snapshot), `$subscribe` tracks one property only (no whole-store dependency) and hands you the previous value, which effects never see. Writes inside [`batch`](/reference/core/batch)`()` fire the callback once per subscribed key when the batch ends.
+Unlike an [`effect`](/reference/core/effect) reading [`$snapshot()`](#snapshot), `$subscribe` tracks one property only (no whole-store dependency) and hands you the previous value, which effects never see. Multiple same-tick writes fire the callback once per subscribed key at core's microtask drain.
 
 Subscriptions belong to the store that owns the key: a composed parent exposes only its own signal-backed keys, so `appStore.$subscribe('user', cb)` throws; subscribe on the nested store itself:
 

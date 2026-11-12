@@ -1,5 +1,5 @@
 import { describe, test, expect, vi } from "vite-plus/test";
-import { batch, computed, effect, signal } from "@hellajs/core";
+import { computed, effect, flush, signal } from "@hellajs/core";
 
 describe("core", () => {
   describe("propagation", () => {
@@ -18,6 +18,7 @@ describe("core", () => {
       // The deferred state re-arms on the next external write and the effect's own
       // write still commits
       count(9);
+      flush();
       expect(runs).toHaveBeenCalledTimes(2);
       expect(count()).toBe(10);
     });
@@ -34,10 +35,13 @@ describe("core", () => {
       expect(runs).toHaveBeenCalledTimes(1);
 
       first(2);
+      flush();
       expect(runs).toHaveBeenCalledTimes(2);
       second(20);
+      flush();
       expect(runs).toHaveBeenCalledTimes(3);
       first(3);
+      flush();
       expect(runs).toHaveBeenCalledTimes(4);
     });
 
@@ -60,16 +64,16 @@ describe("core", () => {
 
       // base's write cancels out: validation dives through total, resolves it clean,
       // clears its pending state, and still walks the effect's remaining dependency
-      batch(() => {
-        base(5);
-        base(0);
-      });
+      base(5);
+      base(0);
+      flush();
       expect(runs).toHaveBeenCalledTimes(1);
       expect(tailRuns).toHaveBeenCalledTimes(1);
       expect(total()).toBe(100);
 
       // A real change through the same chain still propagates to both subscribers
       base(5);
+      flush();
       expect(runs).toHaveBeenCalledTimes(2);
       expect(tailRuns).toHaveBeenCalledTimes(2);
       expect(total()).toBe(105);
@@ -90,6 +94,7 @@ describe("core", () => {
 
       // The next external write queues a normal validated re-run
       count(1);
+      flush();
       expect(runs).toHaveBeenCalledTimes(2);
       expect(count()).toBe(99);
     });
@@ -110,8 +115,20 @@ describe("core", () => {
       expect(first()).toBe(2);
 
       first(50);
+      flush();
       expect(runs).toHaveBeenCalledTimes(2);
       expect(first()).toBe(51);
+    });
+
+    test("reads between write and flush return the new value synchronously", () => {
+      const base = signal(1);
+      const doubled = computed(() => base() * 2);
+
+      base(5);
+      // The getter commits the staged write; the computed recomputes lazily —
+      // neither waits for the microtask drain
+      expect(base()).toBe(5);
+      expect(doubled()).toBe(10);
     });
 
     test("a mid-validation dirty mark runs the effect despite an equal recompute", () => {
@@ -131,6 +148,7 @@ describe("core", () => {
       // that commit dirties the effect directly; pointfree then recomputes equal, but
       // the effect's own dirty state survives — the direct dependency changed
       base(1);
+      flush();
       expect(runs).toHaveBeenCalledTimes(2);
       expect(pointfree()).toBe(7);
     });

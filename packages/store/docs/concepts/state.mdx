@@ -41,7 +41,7 @@ Beyond basic get/set, stores offer several capabilities, each covered in a secti
 - **Middleware**: Validate and transform values before they're stored. Runs synchronously on every set operation.
 - **Write equality**: Skip writes whose content matches the stored value: per-key comparators or the `'structural'` content-equality preset.
 - **Nested stores**: Compose stores hierarchically. Nested stores share signal references bidirectionally.
-- **Batching**: Wrap multiple store updates in [`batch`](/reference/core/batch) to defer computation until all changes are applied.
+- **Automatic batching**: store updates coalesce on core's microtask drain, so subscribed effects run once with final values.
 - **Cleanup**: Recursively propagate teardown to nested stores when the store is no longer needed.
 
 ## Deep Reactivity
@@ -364,7 +364,7 @@ unsub();
 appStore.count(6); // silent; unsubscribed
 ```
 
-The callback runs untracked: reading other signals inside it never widens the subscription. Writes that compare equal to the current value skip the callback entirely, and multiple writes inside [`batch`](/reference/core/batch)`()` fire it once, with the final value, when the batch ends.
+The callback runs untracked: reading other signals inside it never widens the subscription. Writes that compare equal to the current value skip the callback entirely, and multiple same-tick writes fire it once, with the final value, at core's microtask drain.
 
 Only signal-backed properties are subscribable: nested stores, preserved functions, reserved keys, and unknown keys throw. A composed parent exposes only its own signal-backed keys: subscribe on the store that owns the key (the nested store itself), and writes through either reference fire it because composed stores share signals.
 

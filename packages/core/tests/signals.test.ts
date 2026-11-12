@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vite-plus/test";
-import { computed, effect, signal } from "@hellajs/core";
+import { computed, effect, flush, signal } from "@hellajs/core";
 
 describe("core", () => {
   describe("signals", () => {
@@ -58,9 +58,11 @@ describe("core", () => {
 
       // New object instances trigger updates (reference equality)
       obj({ a: 1, b: 2 });
+      flush();
       expect(runs).toHaveBeenCalledTimes(2);
 
       arr([1, 2, 3]);
+      flush();
       expect(runs).toHaveBeenCalledTimes(3);
 
       // Same reference - no update
@@ -91,16 +93,20 @@ describe("core", () => {
       num(42);
       str("hello");
       bool(false);
+      flush();
       expect(runs).toHaveBeenCalledTimes(1);
 
       // Different values - updates
       num(100);
+      flush();
       expect(runs).toHaveBeenCalledTimes(2);
 
       str("world");
+      flush();
       expect(runs).toHaveBeenCalledTimes(3);
 
       bool(true);
+      flush();
       expect(runs).toHaveBeenCalledTimes(4);
     });
 
@@ -137,18 +143,22 @@ describe("core", () => {
 
       // NaN is self-equal under the default: writing NaN over NaN skips the write
       s(NaN);
+      flush();
       expect(runs).toHaveBeenCalledTimes(1);
 
       // Finite transitions propagate normally
       s(1);
+      flush();
       expect(runs).toHaveBeenCalledTimes(2);
 
       // Same finite value: no propagation
       s(1);
+      flush();
       expect(runs).toHaveBeenCalledTimes(2);
 
       // Back to NaN is a real value change: propagates
       s(NaN);
+      flush();
       expect(runs).toHaveBeenCalledTimes(3);
       expect(Number.isNaN(s())).toBe(true);
     });

@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
-import { signal } from "@hellajs/core";
+import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components import the bare
 // specifier, and Portal's hook wiring (observer walk, element state) only works when the test's
@@ -206,6 +206,7 @@ describe("drawer", () => {
       await dragSequence(panel, [{ dx: 0, dy: 20 }], false);
       expect(panel.getAttribute("data-dragging")).toBe("true");
       panel.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
+      flush();
       expect(panel.getAttribute("data-dragging")).toBeNull();
     },
   );
@@ -247,6 +248,7 @@ describe("drawer", () => {
       // The caller's onClose wires the signal flip (the component never flips it);
       // drive it test-scope like the delivered dialog exit tests.
       drawer.open(false);
+      flush();
       expect(panel.getAttribute("data-state")).toBe("closed");
       expect(panel.style.transform).toBe("translateY(100%)");
       await awaitUnmounted(panel);
@@ -268,6 +270,7 @@ describe("drawer", () => {
       ]);
       expect(onClose).toHaveBeenCalledTimes(1);
       drawer.open(false);
+      flush();
       expect(panel.getAttribute("data-state")).toBe("closed");
       await awaitUnmounted(panel);
     },
@@ -329,6 +332,7 @@ describe("drawer", () => {
       drawer.open(true);
       const panel = await drawer.panel();
       drawer.open(false);
+      flush();
       expect(panel.getAttribute("data-state")).toBe("closed");
       panel.dispatchEvent(new TransitionEvent("transitionend", { propertyName: "transform" }));
       await awaitUnmounted(panel);
@@ -343,8 +347,10 @@ describe("drawer", () => {
       drawer.open(true);
       const panel = await drawer.panel();
       panel.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+      flush();
       expect(onClose).toHaveBeenCalledTimes(1);
       drawer.open(false);
+      flush();
       expect(panel.getAttribute("data-state")).toBe("closed");
       for (let i = 0; i < 20 && panel.style.transform !== "translateY(100%)"; i++) await delay();
       expect(panel.style.transform).toBe("translateY(100%)");
@@ -358,6 +364,7 @@ describe("drawer", () => {
     drawer.open(true);
     const panel = await drawer.panel();
     document.body.dispatchEvent(new Event("pointerdown"));
+    flush();
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(panel.isConnected).toBe(true);
   });
@@ -388,6 +395,7 @@ describe("drawer", () => {
       drawer.open(true);
       const panel = await drawer.panel();
       panel.dispatchEvent(new Event("click"));
+      flush();
       expect(onPanelClick).toHaveBeenCalledTimes(1);
     },
   );

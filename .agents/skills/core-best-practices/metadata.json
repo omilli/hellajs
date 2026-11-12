@@ -2,7 +2,7 @@
   "version": "1.0.0",
   "organization": "HellaJS",
   "date": "2026-11-04",
-  "abstract": "Best practices for @hellajs/core, the reactive-graph package underlying every HellaJS library: signal writes, computed derivations, effect lifecycle, batching, scope disposal, and environment probes. Every rule is grounded in the package source and test suite.",
+  "abstract": "Best practices for @hellajs/core, the reactive-graph package underlying every HellaJS library: signal writes, computed derivations, effect lifecycle, deferred flushing, scope disposal, and environment probes. Every rule is grounded in the package source and test suite.",
   "references": [
     "https://github.com/vercel-labs/agent-skills",
     "https://github.com/hellajs/hellajs"

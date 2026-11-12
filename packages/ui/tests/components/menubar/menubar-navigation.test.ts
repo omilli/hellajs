@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
+import { flush } from "@hellajs/core";
 import { menubarVariants } from "./variants";
 import { awaitPortaled, pressKey } from "../../helpers/anchored";
 import { Item, Sub, Menu, renderBar, triggers, openMenu } from "./helpers";
@@ -20,12 +21,16 @@ describe("menubar", () => {
       const [file, edit, view] = triggers(bar);
       file!.focus();
       pressKey(bar, "ArrowRight");
+      flush();
       expect(document.activeElement).toBe(edit!);
       pressKey(bar, "ArrowRight");
+      flush();
       expect(document.activeElement).toBe(view!);
       pressKey(bar, "ArrowRight");
+      flush();
       expect(document.activeElement).toBe(file!);
       pressKey(bar, "ArrowLeft");
+      flush();
       expect(document.activeElement).toBe(view!);
     },
   );
@@ -41,9 +46,10 @@ describe("menubar", () => {
       const first = await openMenu(file!);
       expect(document.activeElement).toBe(first.querySelector("[role='menuitem']"));
       pressKey(first, "ArrowRight");
-      const second = await awaitPortaled("menubar-content");
+      const second = await awaitPortaled("menubar-content", 2);
       const contents = [...document.querySelectorAll("[data-slot='menubar-content']")];
       expect(contents).toHaveLength(2);
+      flush();
       expect(second.getAttribute("data-state")).toBe("open");
       expect(first.getAttribute("data-state")).toBe("closed");
       expect(file!.getAttribute("aria-expanded")).toBe("false");
@@ -99,6 +105,7 @@ describe("menubar", () => {
     const [file] = triggers(bar);
     const content = await openMenu(file!);
     pressKey(content, "Tab");
+    flush();
     expect(content.getAttribute("data-state")).toBe("closed");
   });
 
@@ -120,14 +127,19 @@ describe("menubar", () => {
       const items = [...content.querySelectorAll("[role='menuitem']")] as HTMLElement[];
       expect(document.activeElement).toBe(items[0]!);
       pressKey(content, "ArrowDown");
+      flush();
       expect(document.activeElement).toBe(items[1]!);
       pressKey(content, "ArrowUp");
+      flush();
       expect(document.activeElement).toBe(items[0]!);
       pressKey(content, "ArrowUp");
+      flush();
       expect(document.activeElement).toBe(items[2]!);
       pressKey(content, "Home");
+      flush();
       expect(document.activeElement).toBe(items[0]!);
       pressKey(content, "End");
+      flush();
       expect(document.activeElement).toBe(items[2]!);
       pressKey(content, " ");
     },
@@ -157,12 +169,16 @@ describe("menubar", () => {
       const items = [...subContent.querySelectorAll("[role='menuitem']")] as HTMLElement[];
       expect(document.activeElement).toBe(items[0]!);
       pressKey(subContent, "ArrowDown");
+      flush();
       expect(document.activeElement).toBe(items[1]!);
       pressKey(subContent, "ArrowUp");
+      flush();
       expect(document.activeElement).toBe(items[0]!);
       pressKey(subContent, "Enter");
+      flush();
       expect(onclick).toHaveBeenCalledTimes(1);
       // Close-on-select: activating a sub item closes every open layer.
+      flush();
       expect(subContent.getAttribute("data-state")).toBe("closed");
       expect(content.getAttribute("data-state")).toBe("closed");
       const [fileAgain] = triggers(bar);
@@ -174,6 +190,7 @@ describe("menubar", () => {
       subTriggerAgain.dispatchEvent(new Event("click", { bubbles: true }));
       const reopened = await awaitPortaled("menubar-sub-content");
       pressKey(reopened, "Tab");
+      flush();
       expect(reopened.getAttribute("data-state")).toBe("closed");
       expect(reopenedContent.getAttribute("data-state")).toBe("closed");
     },

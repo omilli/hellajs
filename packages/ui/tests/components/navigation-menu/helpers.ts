@@ -26,7 +26,7 @@ export interface NavFixture {
   onValueChange: ReturnType<typeof vi.fn<(value: string) => void>>;
   learnTrigger: () => HTMLElement;
   referenceTrigger: () => HTMLElement;
-  clickTrigger: (get: () => HTMLElement) => Promise<HTMLElement>;
+  clickTrigger: (get: () => HTMLElement, min?: number) => Promise<HTMLElement>;
 }
 
 /** Builds a two-trigger bar whose triggers and contents share one signal; an explicit Viewport part is the sole portal target. */
@@ -86,9 +86,9 @@ export function buildNav(variant: ComponentVariant<NavigationMenuVariantProps>):
   const learnTrigger = (): HTMLElement => bar.querySelector("[data-value='learn']") as HTMLElement;
   const referenceTrigger = (): HTMLElement =>
     bar.querySelector("[data-value='reference']") as HTMLElement;
-  const clickTrigger = async (get: () => HTMLElement): Promise<HTMLElement> => {
+  const clickTrigger = async (get: () => HTMLElement, min = 1): Promise<HTMLElement> => {
     get().dispatchEvent(new Event("click", { bubbles: true }));
-    return awaitPortaled("navigation-menu-content");
+    return awaitPortaled("navigation-menu-content", min);
   };
   return { bar, value, onValueChange, learnTrigger, referenceTrigger, clickTrigger };
 }

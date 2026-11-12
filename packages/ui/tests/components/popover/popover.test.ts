@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
+import { flush } from "@hellajs/core";
 import { resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { mount, peekState } from "@hellajs/dom";
 import type { HellaChildren } from "@hellajs/dom";
@@ -57,6 +58,7 @@ describe("popover", () => {
     async (variant) => {
       const { trigger, content } = await openPopover(variant);
       pointerDownOutside();
+      flush();
       expect(content.getAttribute("data-state")).toBe("closed");
       expect(trigger.getAttribute("aria-expanded")).toBe("false");
     },
@@ -65,6 +67,7 @@ describe("popover", () => {
   test.each(popoverVariants)("$style closes on Escape", async (variant) => {
     const { content } = await openPopover(variant);
     pressEscape();
+    flush();
     expect(content.getAttribute("data-state")).toBe("closed");
   });
 
@@ -73,6 +76,7 @@ describe("popover", () => {
     async (variant) => {
       const { trigger, content } = await openPopover(variant);
       trigger.dispatchEvent(new Event("click"));
+      flush();
       expect(content.getAttribute("data-state")).toBe("closed");
     },
   );
@@ -83,12 +87,15 @@ describe("popover", () => {
       const first = await openPopover(variant);
       const second = renderVariant(variant, { content: "Top" });
       second.dispatchEvent(new Event("click"));
+      flush();
       const secondContent = await awaitPortaled("popover-content");
       expect(secondContent.textContent).toBe("Top");
       pressEscape();
+      flush();
       expect(secondContent.getAttribute("data-state")).toBe("closed");
       expect(first.content.getAttribute("data-state")).toBe("open");
       pressEscape();
+      flush();
       expect(first.content.getAttribute("data-state")).toBe("closed");
     },
   );
@@ -137,6 +144,7 @@ describe("popover", () => {
       trigger.dispatchEvent(new Event("click"));
       const first = await awaitPortaled("popover-content");
       pressEscape();
+      flush();
       expect(first.getAttribute("data-state")).toBe("closed");
       first.dispatchEvent(new Event("animationend"));
       await awaitDetached(first);
@@ -166,6 +174,7 @@ describe("popover", () => {
         "on:click": userClick,
       });
       trigger.dispatchEvent(new Event("click"));
+      flush();
       expect(userClick).toHaveBeenCalledTimes(1);
       expect(onOpenChange).toHaveBeenCalledWith(true);
     },
@@ -179,6 +188,7 @@ describe("popover", () => {
         expect(classTokens(trigger).some((token) => token.startsWith("popover-trigger"))).toBe(
           true,
         );
+        flush();
         expect(classTokens(content).some((token) => token.startsWith("popover-content"))).toBe(
           true,
         );

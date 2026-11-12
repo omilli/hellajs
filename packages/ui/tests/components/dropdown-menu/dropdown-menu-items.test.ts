@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
-import { signal } from "@hellajs/core";
+import { flush, signal } from "@hellajs/core";
 import type { HellaChildren } from "@hellajs/dom";
 import { menuModulePart, type MenuRadioEntryVariant } from "../../helpers/variants-core";
 import { dropdownMenuModules, dropdownMenuVariants } from "./variants";
@@ -49,6 +49,7 @@ describe("dropdown-menu", () => {
       expect(checkbox.getAttribute("aria-checked")).toBe("false");
       expect(checkbox.querySelector("svg")).toBeNull();
       checkbox.dispatchEvent(new Event("click", { bubbles: true }));
+      flush();
       expect(onCheckedChange).toHaveBeenCalledWith(true);
       expect(checkbox.getAttribute("aria-checked")).toBe("true");
       expect(checkbox.getAttribute("data-state")).toBe("checked");
@@ -78,6 +79,7 @@ describe("dropdown-menu", () => {
       const radios = [...content.querySelectorAll("[role='menuitemradio']")] as HTMLElement[];
       expect(radios).toHaveLength(2);
       radios[0]!.dispatchEvent(new Event("click", { bubbles: true }));
+      flush();
       expect(onValueChange).toHaveBeenCalledWith("light");
       expect(radios[0]!.getAttribute("aria-checked")).toBe("true");
       expect(radios[0]!.getAttribute("data-state")).toBe("checked");
@@ -103,12 +105,16 @@ describe("dropdown-menu", () => {
         [...content.querySelectorAll("[role='menuitemradio']")].map((el) =>
           el.getAttribute("data-value"),
         );
+      flush();
       expect(values()).toEqual(["light", "dark"]);
       liveItems([...liveItems(), { value: "system", label: "System" }]);
+      flush();
       expect(values()).toEqual(["light", "dark", "system"]);
       liveItems(liveItems().filter((entry) => entry.value !== "dark"));
+      flush();
       expect(values()).toEqual(["light", "system"]);
       liveItems([liveItems()[1]!, liveItems()[0]!]);
+      flush();
       expect(values()).toEqual(["system", "light"]);
     },
   );
@@ -133,6 +139,7 @@ describe("dropdown-menu", () => {
       const lightBefore = radios()[0]!;
       expect(lightBefore.getAttribute("aria-checked")).toBe("true");
       liveItems([liveItems()[1]!, liveItems()[0]!]);
+      flush();
       expect(radios().map((el) => el.getAttribute("data-value"))).toEqual(["dark", "light"]);
       const lightAfter = radios()[1]!;
       expect(lightAfter).toBe(lightBefore);
@@ -159,6 +166,7 @@ describe("dropdown-menu", () => {
           keyBy: "value",
         }),
       );
+      flush();
       expect(content.outerHTML).not.toContain("key=");
     },
   );

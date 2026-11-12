@@ -11,13 +11,13 @@ A ground-up comparison based on the actual source code of `@hellajs/core` v2. Ev
 | Reactive model | Signals over a doubly-linked dependency DAG | Signals + owner tree | Runes: compiled to a signal runtime | Snapshot state + VDOM re-render | Proxies (`ref`/`reactive`) over a linked dep graph | Signals + producer/consumer graph |
 | Granularity | Per-binding, dynamic per-execution; per-element via `signalArray`/`signalMap`/`signalSet` | Per-binding, dynamic per-execution | Per-binding, compiler-analyzed | Component subtree | Per-ref / per-property | Per-signal / per-template |
 | Glitch-free | Yes: DFS propagation, each node runs once per cycle | Yes: topological `runTop` re-execution | Yes: version counters + batch traversal | No: render then commit | Yes: id-sorted job queue | Yes: pull-based version polling |
-| Default flush | Synchronous (effects run at the write) | Synchronous (memos first, then effects) | Microtask batch (`flushSync` to force) | Concurrent scheduler (lanes) | Microtask (`nextTick`, `flush: 'sync'` opt-in) | Change-detection cycle (async) |
+| Default flush | Microtask (automatic; `flush()` to force) | Synchronous (memos first, then effects) | Microtask batch (`flushSync` to force) | Concurrent scheduler (lanes) | Microtask (`nextTick`, `flush: 'sync'` opt-in) | Change-detection cycle (async) |
 | Deep reactivity | No: elements stay raw; the collection signals add per-element granularity without depth | No in core (`createStore` is a separate package) | Yes: `$state` proxies deeply | No: immutable updates | Yes: `reactive()` proxies deeply | No |
 | Equality | Reference `===` with `NaN` self-equal, optional `equals` comparator | Optional `equals` comparator per signal | `===` / proxy-aware `safe_equals` | `Object.is` bailouts | `Object.is` + custom via options | `Object.is` + optional `equal` per signal |
 | Compile step | None | JSX → reactive code (required) | SFC → JS (required) | JSX → JS (compiler optional for memoization) | Templates compiled (required for SFC) | Decorators/templates compiled (required) |
 | Standalone reactivity | Yes: the package is only reactivity | Partially: coupled to `solid-js` runtime | No: runes only exist through the compiler | No: hooks need a renderer | Yes: `@vue/reactivity` published separately | No: coupled to `@angular/core` DI |
 
-HellaJS core sits in the standalone-signals camp with `@vue/reactivity` and (loosely) Solid's reactive core: a framework-agnostic reactivity module usable without a render tree. Its distinguishing choices are a doubly-linked-list dependency graph, a fully synchronous default flush, and a single effect primitive with no owner tree, no injection context, and no compiler.
+HellaJS core sits in the standalone-signals camp with `@vue/reactivity` and (loosely) Solid's reactive core: a framework-agnostic reactivity module usable without a render tree. Its distinguishing choices are a doubly-linked-list dependency graph, a microtask-deferred default flush with a synchronous `flush()` drain, and a single effect primitive with no owner tree, no injection context, and no compiler.
 
 ---
 
@@ -30,7 +30,7 @@ The package is a single reactive engine: three node kinds, one edge type, one st
 - Three node kinds share one `ReactiveNode` base: `deps` (dependency bookmark), `depsTail` (dependency-list tail), `subs` (first subscriber link), `subsTail` (subscriber-list tail), `flags` (state bitmask) (`lib/internal/system.ts`). Edges are version-stamped `Link` nodes carrying `dep`/`sub` plus four list pointers, forming two parallel doubly-linked lists per node (`lib/internal/system.ts`).
 - A bitmask state machine drives every transition: `NONE`, `MUTABLE`, `WATCHING`, `RECURSED_CHECK`, `DIRTY`, `PENDING`, plus the host-owned `SIGNAL_DEPS` fast-path bit (`lib/internal/flags.ts`). All checks are inline bitwise tests with no method dispatch (`lib/signal.ts`).
 - Signals and computeds share the `MUTABLE` bit so propagation descends into both; effects are sinks: the host's `notify` queues them (clearing `WATCHING`) rather than traversing into them (`lib/internal/scheduler.ts`). The host `update` callback dispatches between computed and signal execution by node kind (`"getter" in node`) (`lib/internal/scheduler.ts`); the vendored graph machinery itself is factory-isolated, with `createReactiveSystem` leaving node kinds, queueing, and disposal to the host (`lib/internal/system.ts`).
-- The whole surface is nine primitives (`signal`, `computed`, `effect`, `batch`, `untracked`, `scope`, and the collection factories `signalArray`, `signalMap`, `signalSet`) plus a `flush` drain for advanced use (`lib/index.ts`). No owner tree, no context system, no scheduler modes. The collection signals are pure composition over `signal`/`computed` (`lib/internal/collections.ts`): no new node kinds, no scheduler or flag changes.
+- The whole surface is eight primitives (`signal`, `computed`, `effect`, `untracked`, `scope`, and the collection factories `signalArray`, `signalMap`, `signalSet`) plus a `flush` drain for advanced use (`lib/index.ts`). No owner tree, no context system, no scheduler modes. The collection signals are pure composition over `signal`/`computed` (`lib/internal/collections.ts`): no new node kinds, no scheduler or flag changes.
 
 ### Solid
 
@@ -146,7 +146,7 @@ HellaJS has three distinct memory behaviors:
 
 | Framework | Edge structure | Auto-disposal |
 |---|---|---|
-| HellaJS | Doubly-linked lists, reused in place | Computed auto-GC with cascade; effect disposal runs cleanup and unlinks everything (`lib/internal/scheduler.ts`); `scope()` batch-disposes (`lib/scope.ts`) |
+| HellaJS | Doubly-linked lists, reused in place | Computed auto-GC with cascade; effect disposal runs cleanup and unlinks everything (`lib/internal/scheduler.ts`); `scope()` disposes together (`lib/scope.ts`) |
 | Solid | Index-linked arrays + owner tree | Owner-based: `createRoot` + `onCleanup`, owned arrays disposed top-down |
 | Svelte 5 | Flat reaction arrays | Component teardown destroys the effect tree; deriveds carry connection flags and re-evaluate lazily |
 | React 19 | Hook list on the fiber | `useEffect` return on unmount; no disposal of externally moved nodes |
@@ -159,20 +159,20 @@ HellaJS, Vue, and Angular all converge on linked-list edges with some form of "u
 
 ## 7. Batching & Scheduling
 
-HellaJS's default is a **synchronous flush**. A signal write outside a batch propagates and runs effects before the setter returns (`lib/signal.ts`: `propagate(subs)` then `!batchDepth && flush()`); a write to a signal with no subscribers does no work at all (`lib/signal.ts`).
+HellaJS's default is a **microtask-deferred flush**. A signal write propagates immediately (`lib/signal.ts`: stages the value, dirt-marks subscribers), then schedules one shared microtask drain (`scheduleFlush`, `lib/internal/scheduler.ts`): consecutive synchronous writes in the same tick coalesce into a single effect pass observing final state. Reads stay synchronous the whole time: a signal getter or computed read commits the staged write and returns the fresh value before any effect runs. A write to a signal with no subscribers does no work at all (`lib/signal.ts`).
 
-`batch(fn)` is a depth counter: increments on entry, flushes when the count returns to zero, nested batches collapse into the outermost (`lib/batch.ts`). The `WATCHING` bit dedups queue entries: `notify` clears it at queue time and propagation only notifies armed effects, so one propagation touching an effect through multiple paths queues it once (`lib/internal/scheduler.ts`). The flush itself drains the queue in order with per-effect staleness validation; a parent effect re-runs before effects subscribed to it through its own dependency write nesting a flush inside the child-notification pass (`lib/internal/scheduler.ts`). An uncaught effect error aborts the remaining queue (the queue indices stay untouched), and the next flush recovers the survivors (`packages/core/tests/flush.test.ts`).
+`flush()` is the synchronous drain (`lib/internal/scheduler.ts`): it runs the queued effects before returning, for tests and integration code that need effects before the next line. Writes inside a running drain append to the same pass, so an effect writing a signal it also reads stabilizes without a nested drain. The `WATCHING` bit dedups queue entries: `notify` clears it at queue time and propagation only notifies armed effects, so one propagation touching an effect through multiple paths queues it once (`lib/internal/scheduler.ts`). The flush itself drains the queue in order with per-effect staleness validation; a parent effect re-runs before effects subscribed to it through its own dependency write appending to the same pass (`lib/internal/scheduler.ts`). An uncaught effect error aborts the remaining queue (the queue indices stay untouched), and the next flush recovers the survivors (`packages/core/tests/flush.test.ts`). A scheduled drain's throw dispatches through the settable `setFlushErrorHandler` handler instead of surfacing as an unhandled rejection, while a manual `flush()` drain still throws to its caller (`packages/core/tests/flush-errors.test.ts`); `@hellajs/dom` registers its `onError` dispatch as that handler.
 
 | Framework | Default timing | Batching primitive | Notes |
 |---|---|---|---|
-| HellaJS | Synchronous | `batch(fn)` | `flush()` drain exposed for advanced use (`lib/internal/scheduler.ts`) |
+| HellaJS | Microtask | Automatic | `flush()` forces a synchronous drain (`lib/internal/scheduler.ts`) |
 | Solid | Synchronous | `batch(fn)` / automatic per write | Memos (pure) run before effects; optional `MessageChannel` scheduler for transitions |
 | Svelte 5 | Microtask batch | Automatic; `flushSync(fn)` forces | Batch commits via `queueMicrotask`; traversal-time schedules bail to avoid double runs |
 | React 19 | Concurrent/async | Automatic; `startTransition` to deprioritize | Lane-priority scheduler can split work across frames |
 | Vue 3 | Microtask | Automatic; `nextTick` awaits it | Job queue insertion-sorted by component id; `flush: 'sync'` opt-in per watcher; recursion capped |
 | Angular | Change-detection cycle | Automatic via scheduler notify | Effects run during CD; zoneless by default in v22 |
 
-Only HellaJS and Solid run effects synchronously at the write. That is a real trade-off, not a free win: synchronous flush makes cause and effect observable in one stack frame (the test suite leans on this everywhere, `packages/core/tests/signals.test.ts`), but it means one write deep in a call tree can run arbitrary effects before returning. Vue and Svelte batch to a microtask for exactly that reason; Angular defers to the CD cycle; React's scheduler goes further and can interleave and interrupt. HellaJS's answer is that `batch` gives you the microtask-style grouping explicitly when you want it, with nothing asynchronous ever happening implicitly.
+Only Solid still runs effects synchronously at the write; HellaJS joined Vue and Svelte in batching to a microtask. Reads stay synchronous (unlike React's concurrent model), so derived values are always fresh, while the drain means one write deep in a call tree can no longer run arbitrary effects before returning. The `flush()` drain keeps the synchronous escape hatch explicit: call it when cause and effect must be observable in one stack frame (the test suite leans on this everywhere, `packages/core/tests/signals.test.ts`).
 
 ---
 
@@ -184,7 +184,7 @@ Only HellaJS and Solid run effects synchronously at the write. That is a real tr
 | Read-only derived | `computed(prev => …)` (`lib/computed.ts`) | `createMemo` | `$derived` | `useMemo` (per-render) | `computed` | `computed` |
 | Side effect | `effect(fn)`: one primitive (`lib/effect.ts`) | `createEffect` + 3 eager variants | `$effect` | `useEffect` | `watchEffect` / `watch` | `effect` (injection context) |
 | Cleanup | Return value from effect fn (`lib/effect.ts`) | `onCleanup` | Return value from `$effect` | Return value from `useEffect` | `onScopeDispose` / `onCleanup` | `onCleanup` (injected) |
-| Batching | `batch(fn)` (`lib/batch.ts`) | `batch(fn)` | Automatic | Automatic | Automatic | Automatic |
+| Batching | Automatic microtask; `flush()` to force (`lib/internal/scheduler.ts`) | `batch(fn)` | Automatic | Automatic | Automatic | Automatic |
 | Untracked reads | `untracked(fn)` (`lib/untracked.ts`) | `untrack(fn)` | `untrack(fn)` | - | `markRaw` / `shallowRef` | `untracked(fn)` |
 | Batch disposal | `scope(fn)` (`lib/scope.ts`) | `createRoot` | Component scope | (manual) | `effectScope` | `DestroyRef` |
 | Previous value to compute fn | Yes (`lib/computed.ts`) | Yes (`createMemo((v) => …)`) | No | No | No | No |
@@ -194,7 +194,7 @@ Only HellaJS and Solid run effects synchronously at the write. That is a real tr
 | Write inside computed | Permitted; self-writes stabilize (`lib/internal/scheduler.ts`) | No guard in source read | Throws `state_unsafe_mutation` | n/a | Permitted | Throws `InvalidWriteToSignalError` |
 | Async-aware tracking | No: sync effects only | `createResource` | `await` in `$derived`/async effects | `use(promise)`, actions | `asyncComputed` (3rd-party) | `resource` |
 | Devtools / interop | None | `enableExternalSource`, `observable` | Dev tooling via compiler | `useSyncExternalStore` bridge | Vue DevTools | Built-in devtools formatter |
-| Error containment | Flush aborts; next write recovers (`packages/core/tests/effects.test.ts`) | `onError` / owner-scoped handling | `<svelte:boundary>` | Error boundaries | `errorCaptured` | `ErrorHandler` |
+| Error containment | Flush aborts; next write recovers; scheduled drains route through `setFlushErrorHandler` (`packages/core/tests/flush-errors.test.ts`) | `onError` / owner-scoped handling | `<svelte:boundary>` | Error boundaries | `errorCaptured` | `ErrorHandler` |
 
 ### Notable HellaJS differentiators
 
@@ -205,14 +205,14 @@ Only HellaJS and Solid run effects synchronously at the write. That is a real tr
 - **Zero-allocation steady-state tracking**: same-order re-reads reuse link objects via the `depsTail` bookmark (`lib/internal/system.ts`)
 - **Manual-stack iterative DFS everywhere**: `propagate` and `checkDirty` allocate one lightweight stack frame per branch, never recurse (`lib/internal/system.ts`)
 - **Keyed identity handles**: `nodeAt(i)`/`entry(k)` hand out the per-element signal itself, surviving reorders and deletes (`lib/signalArray.ts`, `lib/signalMap.ts`)
-- **Synchronous flush with explicit batch**: no hidden microtask, ever (`lib/signal.ts`, `lib/batch.ts`)
+- **Microtask-deferred flush with a synchronous drain**: writes auto-batch per tick; `flush()` forces the drain (`lib/internal/scheduler.ts`)
 
 ---
 
 ## 9. Ergonomics & Syntax
 
 ```typescript
-import { signal, computed, effect, batch, untracked, scope } from '@hellajs/core';
+import { signal, computed, effect, flush, untracked, scope } from '@hellajs/core';
 
 const count = signal(0);
 const total = computed(prev => prev + count());  // prev = previous result
@@ -223,7 +223,8 @@ const stop = effect(() => {
   return () => console.log('cleanup');      // runs before re-run and on stop
 });
 
-batch(() => { count(1); count(2); });      // effect runs once, after the batch
+count(1); count(2);                        // one effect run at the microtask drain
+flush();                                   // forces that drain synchronously
 
 const dispose = scope(() => {
   effect(() => count());

@@ -2,7 +2,7 @@
 
 Compiled by `vp run skills-build` from `rules/` - never hand-edit; regenerate instead.
 
-Best practices for @hellajs/core, the reactive-graph package underlying every HellaJS library: signal writes, computed derivations, effect lifecycle, batching, scope disposal, and environment probes. Every rule is grounded in the package source and test suite.
+Best practices for @hellajs/core, the reactive-graph package underlying every HellaJS library: signal writes, computed derivations, effect lifecycle, deferred flushing, scope disposal, and environment probes. Every rule is grounded in the package source and test suite.
 
 - Version: 1.0.0
 - Organization: HellaJS
@@ -32,8 +32,8 @@ Best practices for @hellajs/core, the reactive-graph package underlying every He
   - 3.2 Return cleanup functions from effects (`eff-return-cleanup`)
   - 3.3 Keep effect bodies synchronous (`eff-sync-only`)
   - 3.4 Wrap incidental reads in untracked (`eff-untracked-reads`)
-- 4. Batching and lifecycle
-  - 4.1 Batch multi-signal writes (`sched-batch-writes`)
+- 4. Scheduling and lifecycle
+  - 4.1 Trust auto-batching for same-tick writes (`sched-deferred-flush`)
   - 4.2 Reach for flush only to drain a stalled queue (`sched-flush-advanced`)
   - 4.3 Collect effects in scopes and dispose on teardown (`sched-scope-dispose`)
 - 5. Environment guards
@@ -439,67 +439,65 @@ effect(() => {
 Reference: `packages/core/lib/untracked.ts` and `packages/core/tests/untracked.test.ts` and `packages/core/docs/api/untracked.mdx`
 
 
-## 4. Batching and lifecycle
+## 4. Scheduling and lifecycle
 
-### 4.1 Batch multi-signal writes
+### 4.1 Trust auto-batching for same-tick writes
 
-**Impact: HIGH** - each unbatched write flushes effects immediately, so N related writes re-run their effects N times
+**Impact: HIGH** - hand-rolling write sequencing or reaching for removed batching APIs fights the scheduler the library already runs
 
-Outside a batch, every signal write drains the effect queue synchronously: two related writes run a subscribed effect twice, with the first run observing a half-updated state. `batch(fn)` increments a depth counter and defers the flush to the outermost exit, so effects observe the final state once. Nested batches drain at the outermost boundary. Batching is synchronous only: async work scheduled inside escapes the boundary.
+Signal writes coalesce automatically: each write propagates and dirt-marks immediately, then one `queueMicrotask` drain runs the effects once with final values. Two related writes in the same tick (event handler, store `$update`, loop) never run a subscribed effect twice, and no intermediate state is ever observed. Reads stay synchronous: a signal getter or computed read between the writes returns the fresh committed value before any effect runs. Reach for `flush()` only when the effects must run before the next line; `batch` is not part of the API.
 
 **Incorrect (what is wrong):**
 
 ```ts
-import { effect, signal } from "@hellajs/core";
+import { effect, flush, signal } from "@hellajs/core";
 
 const first = signal("");
 const last = signal("");
 effect(() => {
   console.log(first(), last());
 });
-first("Ada"); // flush: the effect runs on half-updated state
-last("Lovelace"); // flush: the effect runs again
+flush(); // Redundant noise: nothing has been written yet
+first("Ada");
+flush(); // Manual drain per write: effects run before the second write lands
+last("Lovelace");
+flush();
 ```
 
 **Correct (what is right):**
 
 ```ts
-import { batch, effect, signal } from "@hellajs/core";
+import { effect, signal } from "@hellajs/core";
 
 const first = signal("");
 const last = signal("");
 effect(() => {
   console.log(first(), last());
 });
-batch(() => {
-  first("Ada");
-  last("Lovelace");
-}); // one flush at the outermost exit: the effect runs once
+first("Ada");
+last("Lovelace"); // One drain at the microtask boundary: the effect runs once
 ```
 
-Reference: `packages/core/lib/batch.ts` and `packages/core/tests/batch.test.ts` and `packages/core/docs/api/batch.mdx`
+Reference: `packages/core/lib/internal/scheduler.ts scheduleFlush` and `packages/core/tests/deferred-flush.test.ts` and `packages/core/docs/api/flush.mdx`
 
 ### 4.2 Reach for flush only to drain a stalled queue
 
 **Impact: LOW** - misunderstanding the abort behavior leaves queued effects stranded until an unrelated write drains them
 
-`flush()` is the scheduler's drain, exported for advanced and testing use. Normal writes flush on their own (immediately outside `batch`, at outermost batch exit inside it), so explicit `flush()` calls in application code are noise. One real use: when an effect throws, the drain aborts with the remaining queue entries intact but unrun. Swallowing that error strands the survivors; a bare `flush()` in the recovery path runs each exactly once.
+`flush()` is the scheduler's synchronous drain, exported for advanced and testing use. Normal writes schedule their own microtask drain, so explicit `flush()` calls in application code are noise unless effects must run before the next line. One real use: when an effect throws, the drain aborts with the remaining queue entries intact but unrun. On the scheduled path the throw dispatches to the handler registered with `setFlushErrorHandler` when one is registered (dom's errors feature registers its `onError` dispatch), and surfaces as an unhandled microtask rejection otherwise; a manual `flush()` throws to the caller and never dispatches. Swallowing either strands the survivors; a bare `flush()` in the recovery path runs each exactly once.
 
 **Incorrect (what is wrong):**
 
 ```ts
-import { effect, signal } from "@hellajs/core";
+import { effect, flush, signal } from "@hellajs/core";
 
 const count = signal(0);
 effect(() => {
   if (count() === 1) throw new Error("boom");
 });
-try {
-  count(1); // the throw aborts the whole drain
-} catch {
-  // Swallowed: effects queued after the throwing one never ran and stay
-  // queued until some later write happens to drain them
-}
+count(1); // The scheduled drain aborts at the throw (unhandled rejection)
+// Swallowed: effects queued after the throwing one never ran and stay
+// queued until some later write happens to drain them
 ```
 
 **Correct (what is right):**
@@ -511,14 +509,15 @@ const count = signal(0);
 effect(() => {
   if (count() === 1) throw new Error("boom");
 });
+count(1); // Schedules the drain
 try {
-  count(1); // aborts the drain; later-queued effects survive, still queued
+  flush(); // The manual drain aborts at the throw; later-queued effects survive
 } catch {
-  flush(); // recovers the surviving queue entries, each exactly once
+  flush(); // Recovers the surviving queue entries, each exactly once
 }
 ```
 
-Reference: `packages/core/lib/internal/scheduler.ts flush` and `packages/core/tests/flush.test.ts` and `packages/core/docs/api/flush.mdx`
+Reference: `packages/core/lib/internal/scheduler.ts flush` and `packages/core/tests/flush-errors.test.ts` and `packages/core/docs/api/flush.mdx`
 
 ### 4.3 Collect effects in scopes and dispose on teardown
 

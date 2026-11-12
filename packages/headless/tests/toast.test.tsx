@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
+import { flush } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { mount, peekState } from "@hellajs/dom";
 import { toast, Toaster, ToastItem, resetHeadless } from "@hellajs/headless";
@@ -117,6 +118,7 @@ describe("toast", () => {
     const handle = toast("Handle mine");
     const li = await awaitToastArmed();
     handle.dismiss();
+    flush();
     expect(li.getAttribute("data-removed")).toBe("true");
     await delay(null, 280);
     await awaitUnmounted(li);
@@ -127,6 +129,7 @@ describe("toast", () => {
     const first = toast("First");
     toast("Second");
     toast.dismiss(first.id);
+    flush();
     const lis = [...document.querySelectorAll('[data-slot="toast"]')];
     expect(lis).toHaveLength(2);
     expect(lis[1]!.getAttribute("data-removed")).toBe("true");
@@ -139,6 +142,7 @@ describe("toast", () => {
     toast("Second");
     toast.dismiss();
     toast.dismiss(first.id);
+    flush();
     expect(document.querySelectorAll('[data-slot="toast"][data-removed="true"]').length).toBe(2);
   });
 
@@ -183,6 +187,7 @@ describe("toast", () => {
     const handle = toast("Retired drag");
     const li = await awaitToastArmed();
     handle.dismiss();
+    flush();
     expect(li.getAttribute("data-removed")).toBe("true");
     spyToastRect(li);
     await swipe(li, [80], false);
@@ -195,12 +200,15 @@ describe("toast", () => {
     const first = toast("One");
     toast("Two");
     toast("Three");
+    flush();
     expect(document.querySelectorAll('[data-removed="true"]').length).toBe(0);
     toast("Four");
+    flush();
     const retired = document.querySelectorAll('[data-slot="toast"][data-removed="true"]');
     expect(retired).toHaveLength(1);
     expect(retired[0]!.getAttribute("data-toast-id")).toBe(String(first.id));
     toast("Five");
+    flush();
     expect(document.querySelectorAll('[data-slot="toast"][data-removed="true"]').length).toBe(2);
     await delay(null, 280);
     expect(document.querySelectorAll('[data-slot="toast"]').length).toBe(3);
@@ -212,6 +220,7 @@ describe("toast", () => {
     toast("Oldest");
     toast("Middle");
     toast("Newest");
+    flush();
     const depths = [
       ...document.querySelectorAll('[data-slot="toast"]:not([data-removed="true"])'),
     ].map((li) => li.getAttribute("data-depth"));
@@ -255,6 +264,7 @@ describe("toast", () => {
     resolve("ok");
     await delay(0);
     li = newestToast();
+    flush();
     expect(li.getAttribute("data-type")).toBe("success");
     expect(li.querySelector('[data-slot="toast-title"]')!.textContent).toBe("Done: ok");
     expect(handle.dismiss).toBeDefined();
@@ -289,6 +299,7 @@ describe("toast", () => {
     );
     const li = await awaitToastArmed();
     handle.dismiss();
+    flush();
     expect(li.getAttribute("data-removed")).toBe("true");
     resolve("late");
     await delay(0);
@@ -300,9 +311,11 @@ describe("toast", () => {
     await mountToaster();
     const onclick = vi.fn(() => {});
     toast("Undoable", { action: { label: "Undo", onclick } });
+    flush(); // drain renders the toast li before the query
     const button = newestToast().querySelector('[data-slot="toast-action"]') as HTMLButtonElement;
     expect(button.textContent).toBe("Undo");
     button.click();
+    flush();
     expect(onclick).toHaveBeenCalledTimes(1);
     expect(newestToast().getAttribute("data-removed")).toBe("true");
   });
@@ -312,6 +325,7 @@ describe("toast", () => {
     toast("Closable");
     const li = await awaitToastArmed();
     (li.querySelector('[data-slot="toast-close"]') as HTMLElement).click();
+    flush();
     expect(li.getAttribute("data-removed")).toBe("true");
   });
 
@@ -323,6 +337,7 @@ describe("toast", () => {
       ),
     ).toBe("top-left");
     toast("Tinted", { type: "success" });
+    flush();
     expect(newestToast().getAttribute("data-rich-colors")).toBe("true");
   });
 

@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
+import { flush } from "@hellajs/core";
 import { resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { mount } from "@hellajs/dom";
 import { renderVariant } from "../../helpers/variants-core";
@@ -19,6 +20,7 @@ describe("select", () => {
       expect(document.activeElement).toBe(first);
       pressKey(content, "Enter");
       expect(onValueChange).toHaveBeenCalledWith("apple");
+      flush();
       expect(content.getAttribute("data-state")).toBe("closed");
       expect(trigger.getAttribute("aria-expanded")).toBe("false");
       expect(document.activeElement).toBe(trigger);
@@ -71,6 +73,7 @@ describe("select", () => {
     async (variant) => {
       const { content } = await openSelect(variant);
       pressKey(content, "Tab");
+      flush();
       expect(content.getAttribute("data-state")).toBe("closed");
     },
   );

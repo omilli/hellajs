@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
-import { signal } from "@hellajs/core";
+import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components import the bare
 // specifier, and Portal's hook wiring (observer walk, element state) only works when the test's
@@ -104,6 +104,7 @@ describe("dialog", () => {
     dlg.open(true);
     const panel = await dlg.panel();
     panel.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    flush();
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
@@ -115,6 +116,7 @@ describe("dialog", () => {
       dlg.open(true);
       const panel = await dlg.panel();
       panel.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+      flush();
       expect(onClose).not.toHaveBeenCalled();
     },
   );
@@ -130,6 +132,7 @@ describe("dialog", () => {
       expect(close.tagName).toBe("BUTTON");
       expect(close.querySelector("span")!.textContent).toBe("Close");
       close.dispatchEvent(new Event("click"));
+      flush();
       expect(onClose).toHaveBeenCalledTimes(1);
     },
   );
@@ -162,8 +165,10 @@ describe("dialog", () => {
       const close = panel.querySelector('[data-slot="dialog-close"]') as HTMLElement;
       close.focus();
       close.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab" }));
+      flush();
       expect(document.activeElement).toBe(first);
       first.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", shiftKey: true }));
+      flush();
       expect(document.activeElement).toBe(close);
     },
   );
@@ -174,6 +179,7 @@ describe("dialog", () => {
     dlg.open(true);
     const panel = await dlg.panel();
     document.body.dispatchEvent(new Event("pointerdown"));
+    flush();
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(panel.isConnected).toBe(true);
   });
@@ -186,6 +192,7 @@ describe("dialog", () => {
       dlg.open(true);
       await dlg.panel();
       document.body.dispatchEvent(new Event("pointerdown"));
+      flush();
       expect(onClose).not.toHaveBeenCalled();
     },
   );
@@ -198,6 +205,7 @@ describe("dialog", () => {
       dlg.open(true);
       const panel = await dlg.panel();
       dlg.open(false);
+      flush();
       expect(panel.getAttribute("data-state")).toBe("closed");
       expect(panel.isConnected).toBe(true);
       panel.dispatchEvent(new Event("animationend"));
@@ -230,9 +238,11 @@ describe("dialog", () => {
       dlg.open(true);
       const panel = await dlg.panel();
       dlg.open(false);
+      flush();
       expect(panel.getAttribute("data-state")).toBe("closed");
       panel.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
       document.body.dispatchEvent(new Event("pointerdown"));
+      flush();
       expect(onClose).not.toHaveBeenCalled();
       panel.dispatchEvent(new Event("animationend"));
       await awaitUnmounted(panel);
@@ -286,6 +296,7 @@ describe("dialog", () => {
       dlg.open(true);
       const panel = await dlg.panel();
       panel.dispatchEvent(new Event("click"));
+      flush();
       expect(onPanelClick).toHaveBeenCalledTimes(1);
     },
   );

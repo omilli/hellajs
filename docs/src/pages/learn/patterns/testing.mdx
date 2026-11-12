@@ -113,15 +113,13 @@ app.unmount(); // Clean up the entire tree
 After updating signals, use `flush()` from `@hellajs/core` to propagate changes and assert on computed state (no microtask needed):
 
 ```typescript
-import { signal, computed, flush, batch } from "@hellajs/core";
+import { signal, computed, flush } from "@hellajs/core";
 
 const count = signal(0);
 const doubled = computed(() => count() * 2);
 
-batch(() => {
-  count(3);
-  count(5); // Only the final value triggers propagation
-});
+count(3);
+count(5); // Same-tick writes coalesce; only the final value reaches effects
 
 flush(); // Synchronously propagate; no await needed
 console.log(doubled()); // 10

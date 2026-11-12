@@ -156,12 +156,12 @@ console.log(todoTotals()); // { total: 4, active: 3 }: entire chain updates
 
 ## Optimization Strategies
 
-### Batching Updates
+### Automatic Batching
 
-Group multiple signal writes into a single execution with [`batch`](/reference/core/batch). Effects are deferred until the batch completes.
+Signal writes coalesce automatically: each microtask drains the effect queue once, so consecutive synchronous writes (event handlers, loops, store updates) run every effect exactly once against final state.
 
 ```typescript
-import { signal, computed, effect, batch } from '@hellajs/core';
+import { signal, computed, effect, flush } from '@hellajs/core';
 
 const count = signal(0);
 const multiplier = signal(1);
@@ -171,16 +171,17 @@ effect(() => {
   console.log(`Result: ${result()}`);
 });
 
-// Without batching: effect runs twice
-count(5);        // Logs: "Result: 5"
-multiplier(2);   // Logs: "Result: 10"
+// Two writes in one tick: one effect run at the microtask boundary
+count(10);     // No effect execution yet
+multiplier(3); // No effect execution yet
+// Logs: "Result: 30"
 
-// With batching: effect runs once
-batch(() => {
-  count(10);     // No effect execution yet
-  multiplier(3); // No effect execution yet
-});              // Logs: "Result: 30"
+// Need the effects before the next line? flush() drains synchronously.
+count(4);
+flush();       // Logs: "Result: 12"
 ```
+
+Reads stay synchronous between writes and the drain: a signal getter or computed read always observes the freshest committed value.
 
 ### Fine-grained Updates
 

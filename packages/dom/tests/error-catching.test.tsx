@@ -1,9 +1,9 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
-import { resetTestState, setupContainer, suppressConsole } from "@utils/test-helpers.js";
+import { resetTestState, setupContainer, suppressConsole, delay } from "@utils/test-helpers.js";
 import { mount, onError } from "@hellajs/dom";
 import type { ErrorContext } from "@hellajs/dom";
-import { fallbackHandler } from "./helpers";
+import { createList, fallbackHandler, getListTexts } from "./helpers";
 
 beforeEach(() => {
   resetTestState();
@@ -198,6 +198,7 @@ describe("dom", () => {
       expect(container.textContent).toBe("OK");
 
       shouldThrow(true);
+      flush();
       app.flush();
 
       expect(container.textContent).toBe("E: effect");
@@ -255,6 +256,39 @@ describe("dom", () => {
       const call = errorMock.mock.calls[0] as unknown[];
       expect((call[0] as Error).message).toBe("au");
       expect((call[1] as ErrorContext).phase).toBe("update");
+    });
+
+    test("a scheduled reconciler error dispatches to onError at phase flush with no element", async () => {
+      const errorMock = vi.fn(() => null);
+      onError(errorMock);
+
+      const items = signal(["A", "B"]);
+      const conditionalRenderer = (item: string) =>
+        item === "FRAG" ? (
+          <>
+            <li>{item}</li>
+            <span>({item})</span>
+          </>
+        ) : (
+          <li>{item}</li>
+        );
+
+      mount(() => createList(items, conditionalRenderer));
+      expect(getListTexts()).toEqual(["A", "B"]);
+
+      // The write schedules the drain; the reconciler throws inside it and the
+      // scheduled catch dispatches to the core handler dom registered
+      items(["FRAG", "B"]);
+      await delay();
+
+      expect(errorMock).toHaveBeenCalledTimes(1);
+      const call = errorMock.mock.calls[0] as unknown[];
+      expect((call[0] as Error).message).toBe("[dom] ForEach: use must return a single element");
+      const context = call[1] as ErrorContext;
+      expect(context.phase).toBe("flush");
+      expect(context.element).toBeUndefined();
+
+      flush(); // drain the aborted pass's survivors so nothing leaks into later tests
     });
 
     test("beforeUpdate hook error does not prevent subsequent updates", () => {

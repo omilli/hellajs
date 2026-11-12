@@ -51,7 +51,7 @@ Not for: raw `signal`/`computed`/`effect` usage outside stores (`core-best-pract
 
 - `snap-update-never-recreate` - Change state through $update, never by recreating the store
 - `snap-snapshot-copy` - $snapshot() returns a point-in-time copy, never live state
-- `snap-draft-structural-batching` - Draft mutators apply structural diffs and are not auto-batched
+- `snap-draft-structural-batching` - Draft mutators apply structural diffs and auto-batch their writes
 - `snap-grow-via-returned-store` - Grow stores through the reference $update returns
 - `snap-equals-gates-writes` - Gate equal writes with per-key equals comparators
 

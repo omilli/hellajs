@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
-import { signal } from "@hellajs/core";
+import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components import the bare
 // specifier, so the harness mount and the component's roving wiring share one dom instance.
@@ -82,11 +82,13 @@ describe("radio-group", () => {
         "true",
         "false",
       ]);
+      flush();
       expect(rendered.map((item) => item.getAttribute("data-state"))).toEqual([
         "unchecked",
         "checked",
         "unchecked",
       ]);
+      flush();
       expect(rendered[1]!.querySelector("[data-slot='radio-group-indicator'] svg")).not.toBeNull();
       expect(rendered[0]!.querySelector("[data-slot='radio-group-indicator'] svg")).toBeNull();
       expect(rendered.map((item) => item.tabIndex)).toEqual([-1, 0, -1]);
@@ -100,6 +102,7 @@ describe("radio-group", () => {
       const { items: rendered } = mountRadioGroup(variant, { items, onValueChange });
       await awaitWiring(rendered[0]!.closest("[role='radiogroup']") as HTMLElement);
       rendered[2]!.dispatchEvent(new Event("click"));
+      flush();
       expect(onValueChange).toHaveBeenCalledTimes(1);
       expect(onValueChange.mock.calls[0]).toEqual(["gamma"]);
       expect(rendered.map((item) => item.getAttribute("aria-checked"))).toEqual([
@@ -109,6 +112,7 @@ describe("radio-group", () => {
       ]);
       // Radios never unset: clicking the active item is a no-op.
       rendered[2]!.dispatchEvent(new Event("click"));
+      flush();
       expect(onValueChange).toHaveBeenCalledTimes(1);
     },
   );
@@ -125,6 +129,7 @@ describe("radio-group", () => {
       });
       await awaitWiring(rendered[0]!.closest("[role='radiogroup']") as HTMLElement);
       rendered[1]!.dispatchEvent(new Event("click"));
+      flush();
       expect(onValueChange).toHaveBeenCalledTimes(1);
       expect(onValueChange.mock.calls[0]).toEqual(["beta"]);
       expect(rendered.map((item) => item.getAttribute("aria-checked"))).toEqual([
@@ -146,20 +151,26 @@ describe("radio-group", () => {
       });
       await awaitWiring(rendered[0]!.closest("[role='radiogroup']") as HTMLElement);
       rendered[0]!.focus();
+      flush();
       expect(document.activeElement).toBe(rendered[0]!);
       press(rendered[0]!, "ArrowRight");
+      flush();
       expect(document.activeElement).toBe(rendered[1]!);
       // Selection follows focus: the arrow lands on beta and checks it.
       expect(onValueChange.mock.calls.at(-1)).toEqual(["beta"]);
       expect(rendered.map((item) => item.tabIndex)).toEqual([-1, 0, -1]);
       press(rendered[1]!, "ArrowRight");
+      flush();
       expect(document.activeElement).toBe(rendered[2]!);
       press(rendered[2]!, "ArrowLeft");
+      flush();
       expect(document.activeElement).toBe(rendered[1]!);
       rendered[0]!.focus();
       press(rendered[0]!, "ArrowUp");
+      flush();
       expect(document.activeElement).toBe(rendered[2]!);
       press(rendered[2]!, "ArrowDown");
+      flush();
       expect(document.activeElement).toBe(rendered[0]!);
     },
   );
@@ -182,9 +193,11 @@ describe("radio-group", () => {
       expect(rendered[1]!.hasAttribute("disabled")).toBe(true);
       rendered[0]!.focus();
       press(rendered[0]!, "ArrowRight");
+      flush();
       expect(document.activeElement).toBe(rendered[2]!);
       expect(onValueChange.mock.calls.at(-1)).toEqual(["gamma"]);
       rendered[1]!.dispatchEvent(new Event("click"));
+      flush();
       expect(onValueChange).toHaveBeenCalledTimes(1);
       expect(rendered[1]!.getAttribute("aria-checked")).toBe("false");
     },
@@ -216,8 +229,10 @@ describe("radio-group", () => {
       rendered[0]!.focus();
       const before = document.activeElement;
       press(rendered[0]!, "ArrowRight");
+      flush();
       expect(document.activeElement).toBe(before);
       rendered[1]!.dispatchEvent(new Event("click"));
+      flush();
       expect(onValueChange).not.toHaveBeenCalled();
     },
   );
@@ -249,12 +264,16 @@ describe("radio-group", () => {
       const { root } = mountRadioGroup(variant, { items: liveItems });
       const values = () =>
         Array.from(root.querySelectorAll("[role='radio']")).map((el) => el.getAttribute("value"));
+      flush();
       expect(values()).toEqual(["alpha", "beta", "gamma"]);
       liveItems([...liveItems(), { value: "delta", label: "Delta" }]);
+      flush();
       expect(values()).toEqual(["alpha", "beta", "gamma", "delta"]);
       liveItems(liveItems().filter((entry) => entry.value !== "beta"));
+      flush();
       expect(values()).toEqual(["alpha", "gamma", "delta"]);
       liveItems([liveItems()[2]!, liveItems()[0]!, liveItems()[1]!]);
+      flush();
       expect(values()).toEqual(["delta", "alpha", "gamma"]);
     },
   );
@@ -269,8 +288,10 @@ describe("radio-group", () => {
         Array.from(root.querySelectorAll("[data-slot='radio-group-row']")) as HTMLElement[];
       rows()[1]!.querySelector("[role='radio']")!.dispatchEvent(new Event("click"));
       const rowBefore = rows()[1]!;
+      flush();
       expect(rowBefore.querySelector("[role='radio']")!.getAttribute("aria-checked")).toBe("true");
       liveItems([liveItems()[2]!, liveItems()[0]!, liveItems()[1]!]);
+      flush();
       expect(rows().map((el) => el.querySelector("[role='radio']")!.getAttribute("value"))).toEqual(
         ["gamma", "alpha", "beta"],
       );

@@ -38,10 +38,12 @@ describe("switch", () => {
       expect(root.getAttribute("data-state")).toBe("unchecked");
       expect(thumb.getAttribute("data-state")).toBe("unchecked");
       root.dispatchEvent(new Event("click"));
+      flush();
       expect(root.getAttribute("aria-checked")).toBe("true");
       expect(root.getAttribute("data-state")).toBe("checked");
       expect(thumb.getAttribute("data-state")).toBe("checked");
       root.dispatchEvent(new Event("click"));
+      flush();
       expect(root.getAttribute("aria-checked")).toBe("false");
     },
   );
@@ -55,6 +57,7 @@ describe("switch", () => {
       expect(root.tagName).toBe("BUTTON");
       expect(root.getAttribute("type")).toBe("button");
       root.dispatchEvent(new Event("click"));
+      flush();
       expect(root.getAttribute("aria-checked")).toBe("true");
     },
   );
@@ -64,6 +67,7 @@ describe("switch", () => {
     const { root } = mountSwitch(variant, { onCheckedChange });
     root.dispatchEvent(new Event("click"));
     root.dispatchEvent(new Event("click"));
+    flush();
     expect(onCheckedChange).toHaveBeenCalledTimes(2);
     expect(onCheckedChange.mock.calls[0]).toEqual([true]);
     expect(onCheckedChange.mock.calls[1]).toEqual([false]);
@@ -80,6 +84,7 @@ describe("switch", () => {
       flush();
       expect(root.getAttribute("aria-checked")).toBe("false");
       root.dispatchEvent(new Event("click"));
+      flush();
       expect(onCheckedChange).toHaveBeenCalledTimes(1);
       expect(onCheckedChange.mock.calls[0]).toEqual([true]);
       expect(root.getAttribute("aria-checked")).toBe("false");
@@ -91,6 +96,7 @@ describe("switch", () => {
     const { root } = mountSwitch(variant, { disabled: true, onCheckedChange });
     expect(root.hasAttribute("disabled")).toBe(true);
     root.dispatchEvent(new Event("click"));
+    flush();
     expect(root.getAttribute("aria-checked")).toBe("false");
     expect(onCheckedChange).not.toHaveBeenCalled();
   });
@@ -114,6 +120,7 @@ describe("switch", () => {
     });
     const { root } = mountSwitch(variant, { "on:click": userClick });
     root.dispatchEvent(new Event("click"));
+    flush();
     expect(userClick).toHaveBeenCalledTimes(1);
     expect(root.getAttribute("aria-checked")).toBe("true");
     expect(root.getAttribute("data-state")).toBe("checked");

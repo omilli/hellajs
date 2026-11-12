@@ -114,7 +114,7 @@ Each gated subsystem's wiring lives in a feature module that registers into alwa
 
 | Feature | Loads via | Registers into | Moves |
 |---|---|---|---|
-| `features/errors.ts` | `error:` JSX, `lib/error.ts` | `dispatch.setErrorDispatch` (`dispatchError`/`findBoundary`/`resolveErrorConfig`/`resetErrorState`) | handler Set + boundary walk + dispatch + onError + mount-time `errorConfig` application (the runtime's `errorConfig()` fn snapshots `originalBuild` for the reset arm) |
+| `features/errors.ts` | `error:` JSX, `lib/error.ts` | `dispatch.setErrorDispatch` (`dispatchError`/`findBoundary`/`resolveErrorConfig`/`resetErrorState`) + core `setFlushErrorHandler` (scheduled-drain errors dispatch `phase: 'flush'`, no element, no boundary fallback; `resetErrorState` re-installs it, so `resetDom()` restores the routing a core-side unregister removed) | handler Set + boundary walk + dispatch + onError + mount-time `errorConfig` application (the runtime's `errorConfig()` fn snapshots `originalBuild` for the reset arm) |
 | `features/hooks.ts` | `hook:` JSX, `$ref`/`$collection` | `registry.setHooksFeature` (`addHook` + `runEffectHooks`), `queue.setMountQueueArm` | hook registration, effect update-hook bracket, mount queue + drain + observer additions |
 | `features/direct-events.ts` | `e:` JSX | `cleanup.setDirectEventFeature` (`bindDirectHandler`/`removeDirectHandlers`) | direct listener wrap + cleanup removal |
 | `features/raw.ts` | `raw` import (`lib/raw.ts` re-export) | `render.setRawHtmlParser` | `raw()` + template parse |
@@ -293,7 +293,7 @@ Integration-style, public API only. Runtime and type imports from **`@hellajs/do
 - `component.test.tsx`, `registry.test.tsx` — `component()` scope wrapping, `addEffect`/`addHook` stacking.
 - `runtime.test.tsx` — the compiler-contract wiring fns directly: every compiled input class through `child`, the hand-built throw, raw/html/template/component arms.
 
-**Pattern across all tests:** `mount` → drive signals → `flush()` (core, sync, no `await`) → assert DOM. `afterMount` fires during `mount()`/`hydrate()` already; the handle's `flush()` is only needed to drain the cleanup queue synchronously (e.g. `afterDestroy` assertions). For removal assertions, `el.remove()` then `await delay()` to let the MutationObserver fire and process cleanup. Never test two behaviors in one test; aim for 100% coverage.
+**Pattern across all tests:** `mount` → drive signals → `flush()` (core's synchronous drain after the final write of a cluster; sync, no `await`) → assert DOM. Signal writes schedule core's microtask drain, so every write-then-assert pair inserts `flush()` between them (or `await delay()` when the test pins the microtask path itself). `afterMount` fires during `mount()`/`hydrate()` already; the handle's `flush()` is only needed to drain the cleanup queue synchronously (e.g. `afterDestroy` assertions). For removal assertions, `el.remove()` then `await delay()` to let the MutationObserver fire and process cleanup. Never test two behaviors in one test; aim for 100% coverage.
 
 Run with `vp run coverage dom`.
 </dom-package-instructions>

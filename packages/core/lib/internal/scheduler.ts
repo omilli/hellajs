@@ -3,6 +3,7 @@ import { unlink, checkDirty, setSystemHost } from "./system";
 import type { EffectNode } from "../effect";
 import type { SignalNode } from "../signal";
 import type { ComputedNode } from "../computed";
+import type { FlushErrorHandler } from "../types";
 import { NONE, MUTABLE, WATCHING, RECURSED_CHECK, DIRTY, PENDING, SIGNAL_DEPS } from "./flags";
 import { setCurrentSub } from "./context";
 import { purgeDeps } from "./tracking";
@@ -15,6 +16,26 @@ const effectQueue: (ReactiveNode | undefined)[] = [];
 /** Index of the next effect to run and the total number of queued effects. */
 let queueIndex = 0,
   queuedLength = 0;
+
+/** Whether a microtask drain is already scheduled for the current tick. */
+let flushScheduled = false;
+
+/** Whether a drain pass is currently executing; writes inside it append to the same pass. */
+let draining = false;
+
+/** Handler for scheduled-drain errors; undefined restores the rethrow path. */
+let flushErrorHandler: FlushErrorHandler | undefined;
+
+/**
+ * Sets the handler invoked when a scheduled (microtask) drain aborts on a
+ * thrown error. Manual `flush()` calls never dispatch — they throw to their
+ * caller. Passing `null` unregisters, restoring the rethrow path where the
+ * error surfaces as an unhandled microtask rejection.
+ * @param handler The handler to register, or `null` to unregister.
+ */
+export function setFlushErrorHandler(handler: FlushErrorHandler | null): void {
+  flushErrorHandler = handler ?? undefined;
+}
 
 /**
  * @internal Host `update` callback: re-evaluates a mutable node, dispatching on
@@ -34,8 +55,8 @@ export function update(node: ReactiveNode): boolean {
  * without stale validation.
  *
  * No ancestor walk: parents order through their own dependency writes (a write
- * inside the parent's run nests a flush after the direct subscribers), which is
- * the ordering the existing suites pin. Pulling ancestors into the queue at the
+ * inside the parent's run appends the parent after the direct subscribers),
+ * which is the ordering the existing suites pin. Pulling ancestors into the queue at the
  * child's position would run a parent gate ahead of same-write direct
  * subscribers that sit later in the subscription list — the vendored walk fits
  * vendored's own disposal semantics, not this host's.
@@ -127,20 +148,55 @@ function executeEffect(effect: EffectNode, flags: number): void {
 }
 
 /**
- * Drains the effect queue: each dequeue clears its slot (GC), then the effect
- * runs. Effects queued during the drain are appended and run in the same pass.
- * A throw aborts the drain with the remaining entries intact — the indices only
- * reset on a completed pass, so the next `flush` recovers the survivors.
+ * @internal Schedules one microtask drain of the effect queue: consecutive
+ * synchronous writes coalesce into a single effect pass at the microtask
+ * boundary. No-op while a drain is already scheduled or executing — writes
+ * inside an effect body during a drain append to the current pass (no nested
+ * drain, no re-schedule).
+ *
+ * A throw from the drain routes through the handler registered with
+ * {@link setFlushErrorHandler} when one is registered: `flush()` has already
+ * aborted by then (indices untouched — survivors recover on the next flush;
+ * `draining` reset in its finally), so the handler runs against settled state
+ * and its own writes schedule a fresh drain. No handler registered → rethrow,
+ * surfacing as an unhandled microtask rejection.
+ */
+export function scheduleFlush(): void {
+  if (flushScheduled || draining) return;
+  flushScheduled = true;
+  queueMicrotask(() => {
+    flushScheduled = false;
+    try {
+      flush();
+    } catch (error) {
+      if (flushErrorHandler === undefined) throw error;
+      flushErrorHandler(error);
+    }
+  });
+}
+
+/**
+ * Drains the effect queue synchronously (flushSync semantics): each dequeue
+ * clears its slot (GC), then the effect runs. Effects queued during the drain
+ * are appended and run in the same pass. A throw aborts the drain with the
+ * remaining entries intact — the indices only reset on a completed pass, so
+ * the next `flush` recovers the survivors.
  */
 export function flush(): void {
-  while (queueIndex < queuedLength) {
-    const effect = effectQueue[queueIndex]!;
-    effectQueue[queueIndex++] = undefined; // Clear queue slot for GC
-    // Only notify queues entries, and notify only ever receives armed effects
-    executeEffect(effect as EffectNode, effect.flags);
+  if (draining) return; // A pass is already running and owns the shared indices
+  draining = true;
+  try {
+    while (queueIndex < queuedLength) {
+      const effect = effectQueue[queueIndex]!;
+      effectQueue[queueIndex++] = undefined; // Clear queue slot for GC
+      // Only notify queues entries, and notify only ever receives armed effects
+      executeEffect(effect as EffectNode, effect.flags);
+    }
+    queueIndex = 0;
+    queuedLength = 0;
+  } finally {
+    draining = false; // The queue must not stay "draining" after a throw
   }
-  queueIndex = 0;
-  queuedLength = 0;
 }
 
 /**

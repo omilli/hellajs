@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach, vi } from "vite-plus/test";
+import { flush } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { mount, peekState, resetDom } from "@hellajs/dom";
 import { resetHeadless } from "@hellajs/headless";
@@ -51,6 +52,7 @@ describe("tooltip", () => {
   test.each(tooltipVariants)("$style opens after the open delay", async (variant) => {
     const trigger = renderVariant(variant, { content: "Hi", delayDuration: 5 });
     pointerEnter(trigger);
+    flush();
     expect(newestPortaled("tooltip-content")).toBeUndefined();
     await delay(30);
     const content = await awaitPortaled("tooltip-content");
@@ -63,11 +65,12 @@ describe("tooltip", () => {
     async (variant) => {
       const first = await openTooltip(variant);
       pointerDownOutside();
+      flush();
       expect(first.content.getAttribute("data-state")).toBe("closed");
       const second = renderVariant(variant, { content: "Two", delayDuration: 5000 });
       now += 100;
       pointerEnter(second);
-      const secondContent = await awaitPortaled("tooltip-content");
+      const secondContent = await awaitPortaled("tooltip-content", 2);
       expect(secondContent.textContent).toBe("Two");
     },
   );
@@ -165,6 +168,7 @@ describe("tooltip", () => {
       await delay(30);
       const first = await awaitPortaled("tooltip-content");
       pointerDownOutside();
+      flush();
       expect(first.getAttribute("data-state")).toBe("closed");
       first.dispatchEvent(new Event("animationend"));
       await awaitDetached(first);
@@ -216,6 +220,7 @@ describe("tooltip", () => {
       const userClick = vi.fn(() => {});
       const trigger = renderVariant(variant, { content: "Hi", "on:click": userClick });
       trigger.dispatchEvent(new Event("click"));
+      flush();
       expect(userClick).toHaveBeenCalledTimes(1);
     },
   );

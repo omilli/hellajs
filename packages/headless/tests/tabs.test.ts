@@ -61,6 +61,7 @@ describe("tabs", () => {
     expect(alphaPanel.hasAttribute("hidden")).toBe(false);
     expect(betaPanel.hasAttribute("hidden")).toBe(true);
     items[1]!.dispatchEvent(new Event("click"));
+    flush();
     expect(onValueChange).toHaveBeenCalledTimes(1);
     expect(onValueChange.mock.calls[0]).toEqual(["beta"]);
     expect(items[1]!.getAttribute("aria-selected")).toBe("true");
@@ -77,6 +78,7 @@ describe("tabs", () => {
     const { root, items } = mountList(parts);
     await awaitWiring(root);
     items[0]!.dispatchEvent(new Event("click"));
+    flush();
     expect(onValueChange).not.toHaveBeenCalled();
   });
 
@@ -89,6 +91,7 @@ describe("tabs", () => {
       "true",
       "false",
     ]);
+    flush();
     expect(items.map((item) => item.tabIndex)).toEqual([-1, 0, -1]);
   });
 
@@ -98,6 +101,7 @@ describe("tabs", () => {
     await awaitWiring(root);
     expect(items.map((item) => item.tabIndex)).toEqual([0, -1, -1]);
     items[0]!.dispatchEvent(new Event("click"));
+    flush();
     expect(items[0]!.getAttribute("aria-selected")).toBe("true");
   });
 
@@ -109,6 +113,7 @@ describe("tabs", () => {
     await awaitWiring(root);
     const gammaPanel = mountPart(parts.Content({ value: "gamma", children: "Gamma body" }));
     items[2]!.dispatchEvent(new Event("click"));
+    flush();
     expect(onValueChange).toHaveBeenCalledTimes(1);
     expect(onValueChange.mock.calls[0]).toEqual(["gamma"]);
     flush();
@@ -123,20 +128,27 @@ describe("tabs", () => {
     await awaitWiring(root);
     const betaPanel = mountPart(parts.Content({ value: "beta", children: "Beta body" }));
     items[1]!.focus();
+    flush();
     expect(onValueChange.mock.calls.at(-1)).toEqual(["beta"]);
+    flush();
     expect(betaPanel.hasAttribute("hidden")).toBe(false);
     pressKey(items[1]!, "ArrowRight");
+    flush();
     expect(document.activeElement).toBe(items[2]!);
     expect(items[2]!.getAttribute("aria-selected")).toBe("true");
     expect(items.map((item) => item.tabIndex)).toEqual([-1, -1, 0]);
     pressKey(items[2]!, "ArrowRight");
+    flush();
     expect(document.activeElement).toBe(items[0]!);
     pressKey(items[0]!, "ArrowLeft");
+    flush();
     expect(document.activeElement).toBe(items[2]!);
     pressKey(items[2]!, "Home");
+    flush();
     expect(document.activeElement).toBe(items[0]!);
     expect(items[0]!.getAttribute("aria-selected")).toBe("true");
     pressKey(items[0]!, "End");
+    flush();
     expect(document.activeElement).toBe(items[2]!);
     expect(items[2]!.getAttribute("aria-selected")).toBe("true");
   });
@@ -155,8 +167,10 @@ describe("tabs", () => {
     ]);
     items[0]!.focus();
     pressKey(items[0]!, "ArrowRight");
+    flush();
     expect(document.activeElement).toBe(items[0]!);
     pressKey(items[0]!, "ArrowDown");
+    flush();
     expect(document.activeElement).toBe(items[1]!);
   });
 
@@ -188,12 +202,15 @@ describe("tabs", () => {
     // Non-tab focusins and disabled triggers never drive the selection.
     root.dispatchEvent(new FocusEvent("focusin"));
     items[0]!.dispatchEvent(new Event("click"));
+    flush();
     expect(onValueChange).not.toHaveBeenCalled();
     expect(items[0]!.getAttribute("aria-selected")).toBe("false");
     items[1]!.focus();
     pressKey(items[1]!, "ArrowLeft");
+    flush();
     expect(document.activeElement).toBe(items[2]!);
     pressKey(items[2]!, "ArrowLeft");
+    flush();
     expect(document.activeElement).toBe(items[1]!);
   });
 
@@ -203,11 +220,13 @@ describe("tabs", () => {
     const trigger = mountPart(
       parts.Trigger({ value: "solo", active: true, onActivate, children: "Solo" }),
     );
+    flush();
     expect(trigger.getAttribute("role")).toBe("tab");
     expect(trigger.getAttribute("id")).toBe("hella-tabs-tab-solo");
     expect(trigger.getAttribute("aria-selected")).toBe("true");
     expect(trigger.getAttribute("data-state")).toBe("active");
     trigger.dispatchEvent(new Event("click"));
+    flush();
     expect(onActivate).toHaveBeenCalledTimes(1);
   });
 
@@ -216,6 +235,7 @@ describe("tabs", () => {
     const panel = mountPart(
       parts.Content({ value: "solo", active: () => true, children: "Solo body" }),
     );
+    flush();
     expect(panel.getAttribute("id")).toBe("hella-tabs-panel-solo");
     expect(panel.getAttribute("aria-labelledby")).toBe("hella-tabs-tab-solo");
     expect(panel.getAttribute("data-state")).toBe("active");
@@ -229,6 +249,7 @@ describe("tabs", () => {
     const parts = tabs({ defaultValue: "alpha" });
     const trigger = mountPart(parts.Trigger({ value: "beta", "on:click": userClick }));
     trigger.dispatchEvent(new Event("click"));
+    flush();
     expect(userClick).toHaveBeenCalledTimes(1);
     expect(trigger.getAttribute("aria-selected")).toBe("true");
   });
@@ -271,8 +292,10 @@ describe("tabs", () => {
     expect(peekState(root)).toBeUndefined();
     const before = document.activeElement;
     pressKey(items[0]!, "ArrowRight");
+    flush();
     expect(document.activeElement).toBe(before);
     items[1]!.dispatchEvent(new Event("click"));
+    flush();
     expect(onValueChange).not.toHaveBeenCalled();
   });
 });

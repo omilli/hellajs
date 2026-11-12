@@ -152,11 +152,13 @@ describe("input-otp", () => {
       const root = renderVariant(variant, { length: 6, children: code(), onChange }) as HTMLElement;
       await awaitWiring(root);
       focusInput(root);
+      flush();
       expect(activeSlot(root)).toBe(0);
       const caretWrap = slotsOf(root)[0]!.querySelector("div") as HTMLElement;
       expect(inlineStyles(caretWrap).includes("display:none")).toBe(false);
       edit(root, "1", 1);
       edit(root, "12", 2);
+      flush();
       expect(slotsOf(root)[0]!.textContent).toBe("1");
       expect(slotsOf(root)[1]!.textContent).toBe("2");
       expect(slotsOf(root)[2]!.textContent).toBe("");
@@ -167,6 +169,7 @@ describe("input-otp", () => {
           "display:none",
         ),
       ).toBe(false);
+      flush();
       expect(inlineStyles(caretWrap).includes("display:none")).toBe(true);
     },
   );
@@ -182,8 +185,10 @@ describe("input-otp", () => {
       await awaitWiring(root);
       expect(slotsOf(root)[0]!.textContent).toBe("1");
       focusInput(root);
+      flush();
       expect(activeSlot(root)).toBe(2);
       control(root).blur();
+      flush();
       expect(activeSlot(root)).toBe(-1);
     },
   );
@@ -198,9 +203,11 @@ describe("input-otp", () => {
       edit(root, "1", 1);
       edit(root, "12", 2);
       edit(root, "123", 3);
+      flush();
       expect(activeSlot(root)).toBe(3);
       // Backspace at the collapsed end caret deletes slot 2's char; the remapped selection highlights it.
       edit(root, "12", 2);
+      flush();
       expect(slotsOf(root)[2]!.textContent).toBe("");
       expect(activeSlot(root)).toBe(2);
       expect(onChange.mock.calls[3]).toEqual(["12"]);
@@ -217,21 +224,28 @@ describe("input-otp", () => {
       }) as HTMLElement;
       await awaitWiring(root);
       focusInput(root);
+      flush();
       expect(activeSlot(root)).toBe(4);
       // ArrowLeft from the end caret: native collapse to 3, remapped onto slot 3.
       moveCaret(root, 3);
+      flush();
       expect(activeSlot(root)).toBe(3);
       // ArrowLeft again: native collapse of the [3,4) slot selection back to 3, offset lands on slot 2.
       moveCaret(root, 3);
+      flush();
       expect(activeSlot(root)).toBe(2);
       // ArrowRight: native collapse to the selection's right edge, slot 3 again.
       moveCaret(root, 3);
+      flush();
       expect(activeSlot(root)).toBe(3);
       moveCaret(root, 3);
+      flush();
       expect(activeSlot(root)).toBe(2);
       moveCaret(root, 0);
+      flush();
       expect(activeSlot(root)).toBe(0);
       moveCaret(root, 4);
+      flush();
       expect(activeSlot(root)).toBe(4);
     },
   );
@@ -251,6 +265,7 @@ describe("input-otp", () => {
       await awaitWiring(root);
       focusInput(root);
       paste(root, "345678");
+      flush();
       const chars = slotsOf(root).map((slot) => slot.textContent);
       expect(chars).toEqual(["1", "2", "3", "4", "5", "6"]);
       expect(control(root).value).toBe("123456");
@@ -275,10 +290,12 @@ describe("input-otp", () => {
       expect(control(root).getAttribute("pattern")).toBe("^\\d+$");
       focusInput(root);
       edit(root, "a", 1);
+      flush();
       expect(control(root).value).toBe("");
       expect(slotsOf(root)[0]!.textContent).toBe("");
       expect(onChange).not.toHaveBeenCalled();
       edit(root, "1", 1);
+      flush();
       expect(slotsOf(root)[0]!.textContent).toBe("1");
       expect(onChange.mock.calls[0]).toEqual(["1"]);
     },
@@ -294,6 +311,7 @@ describe("input-otp", () => {
       edit(root, "1", 1);
       edit(root, "12", 2);
       edit(root, "123", 3);
+      flush();
       expect(onChange.mock.calls.map((call) => call[0])).toEqual(["1", "12", "123"]);
     },
   );
@@ -310,15 +328,19 @@ describe("input-otp", () => {
       await awaitWiring(root);
       focusInput(root);
       edit(root, "12345", 5);
+      flush();
       expect(onComplete).not.toHaveBeenCalled();
       edit(root, "123456", 5);
+      flush();
       expect(onComplete).toHaveBeenCalledTimes(1);
       expect(onComplete.mock.calls[0]).toEqual(["123456"]);
       // A redundant write at full does not refire; clearing and refilling does.
       edit(root, "123456", 5);
+      flush();
       expect(onComplete).toHaveBeenCalledTimes(1);
       edit(root, "12345", 5);
       edit(root, "123456", 5);
+      flush();
       expect(onComplete).toHaveBeenCalledTimes(2);
     },
   );
@@ -355,6 +377,7 @@ describe("input-otp", () => {
     focusInput(root);
     edit(root, "9", 1);
     paste(root, "12");
+    flush();
     expect(onChange).not.toHaveBeenCalled();
     expect(slotsOf(root)[0]!.textContent).toBe("");
   });
@@ -389,6 +412,7 @@ describe("input-otp", () => {
       }
       expect(peekState(root)).toBeUndefined();
       edit(root, "9", 1);
+      flush();
       expect(onChange).not.toHaveBeenCalled();
     },
   );

@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
-import { signal } from "@hellajs/core";
+import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { mount, peekState } from "@hellajs/dom";
 import { assertStructuralParity, classTokens, renderVariant } from "../../helpers/variants-core";
@@ -39,6 +39,7 @@ describe("dropdown-menu", () => {
     async (variant) => {
       const { trigger, content } = await openMenu(variant);
       pressEscape();
+      flush();
       expect(content.getAttribute("data-state")).toBe("closed");
       expect(trigger.getAttribute("aria-expanded")).toBe("false");
       expect(document.activeElement).toBe(trigger);
@@ -50,6 +51,7 @@ describe("dropdown-menu", () => {
     async (variant) => {
       const { trigger, content } = await openMenu(variant);
       pointerDownOutside();
+      flush();
       expect(content.getAttribute("data-state")).toBe("closed");
       expect(trigger.getAttribute("aria-expanded")).toBe("false");
     },
@@ -60,6 +62,7 @@ describe("dropdown-menu", () => {
     async (variant) => {
       const { trigger, content } = await openMenu(variant);
       trigger.dispatchEvent(new Event("click"));
+      flush();
       expect(content.getAttribute("data-state")).toBe("closed");
     },
   );
@@ -78,6 +81,7 @@ describe("dropdown-menu", () => {
       ]);
       const items = [...content.querySelectorAll("[role='menuitem']")] as HTMLElement[];
       items[0]!.dispatchEvent(new Event("click", { bubbles: true }));
+      flush();
       expect(content.getAttribute("data-state")).toBe("closed");
     },
   );
@@ -117,12 +121,14 @@ describe("dropdown-menu", () => {
     expect(content.getAttribute("data-state")).toBe("open");
     pressEscape();
     expect(open()).toBe(false);
+    flush();
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
   });
 
   test.each(dropdownMenuVariants)("$style closes under Tab", async (variant) => {
     const { content } = await openMenu(variant);
     pressKey(content, "Tab");
+    flush();
     expect(content.getAttribute("data-state")).toBe("closed");
   });
 
@@ -160,6 +166,7 @@ describe("dropdown-menu", () => {
       trigger.dispatchEvent(new Event("click"));
       const first = await awaitPortaled("dropdown-menu-content");
       pressEscape();
+      flush();
       expect(first.getAttribute("data-state")).toBe("closed");
       first.dispatchEvent(new Event("animationend"));
       await awaitDetached(first);

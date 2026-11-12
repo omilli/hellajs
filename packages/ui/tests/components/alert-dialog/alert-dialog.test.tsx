@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
-import { signal } from "@hellajs/core";
+import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components import the bare
 // specifier, and Portal's hook wiring (observer walk, element state) only works when the test's
@@ -119,6 +119,7 @@ describe("alert-dialog", () => {
       dlg.open(true);
       const panel = await dlg.panel();
       document.body.dispatchEvent(new Event("pointerdown"));
+      flush();
       expect(onClose).not.toHaveBeenCalled();
       expect(panel.getAttribute("data-state")).toBe("open");
     },
@@ -130,6 +131,7 @@ describe("alert-dialog", () => {
     dlg.open(true);
     const panel = await dlg.panel();
     panel.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    flush();
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
@@ -141,6 +143,7 @@ describe("alert-dialog", () => {
       dlg.open(true);
       const panel = await dlg.panel();
       panel.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+      flush();
       expect(onClose).not.toHaveBeenCalled();
     },
   );
@@ -157,6 +160,7 @@ describe("alert-dialog", () => {
       const panel = await dlg.panel();
       const first = document.getElementById("ad-first")!;
       first.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab" }));
+      flush();
       expect(panel.contains(document.activeElement)).toBe(true);
     },
   );
@@ -167,6 +171,7 @@ describe("alert-dialog", () => {
       const onClose = vi.fn(() => {});
       const action = renderPart(variant, [], { onClose });
       action.dispatchEvent(new Event("click"));
+      flush();
       expect(onClose).toHaveBeenCalledTimes(1);
     },
   );
@@ -178,6 +183,7 @@ describe("alert-dialog", () => {
       const userClick = vi.fn(() => {});
       const action = renderPart(variant, [], { onClose, "on:click": userClick });
       action.dispatchEvent(new Event("click"));
+      flush();
       expect(userClick).toHaveBeenCalledTimes(1);
       expect(onClose).toHaveBeenCalledTimes(1);
     },
@@ -189,6 +195,7 @@ describe("alert-dialog", () => {
       const onClose = vi.fn(() => {});
       const cancel = renderPart(variant, [], { onClose });
       cancel.dispatchEvent(new Event("click"));
+      flush();
       expect(onClose).toHaveBeenCalledTimes(1);
     },
   );
@@ -200,6 +207,7 @@ describe("alert-dialog", () => {
       const userClick = vi.fn(() => {});
       const cancel = renderPart(variant, [], { onClose, "on:click": userClick });
       cancel.dispatchEvent(new Event("click"));
+      flush();
       expect(userClick).toHaveBeenCalledTimes(1);
       expect(onClose).toHaveBeenCalledTimes(1);
     },
@@ -231,6 +239,7 @@ describe("alert-dialog", () => {
       dlg.open(true);
       const panel = await dlg.panel();
       panel.dispatchEvent(new Event("click"));
+      flush();
       expect(onPanelClick).toHaveBeenCalledTimes(1);
     },
   );
@@ -257,6 +266,7 @@ describe("alert-dialog", () => {
       dlg.open(true);
       const panel = await dlg.panel();
       dlg.open(false);
+      flush();
       expect(panel.getAttribute("data-state")).toBe("closed");
       expect(panel.isConnected).toBe(true);
       panel.dispatchEvent(new Event("animationend"));
@@ -289,8 +299,10 @@ describe("alert-dialog", () => {
       dlg.open(true);
       const panel = await dlg.panel();
       dlg.open(false);
+      flush();
       expect(panel.getAttribute("data-state")).toBe("closed");
       panel.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+      flush();
       expect(onClose).not.toHaveBeenCalled();
       panel.dispatchEvent(new Event("animationend"));
       await awaitUnmounted(panel);

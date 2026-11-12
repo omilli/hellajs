@@ -59,8 +59,8 @@ export function triggers(bar: Element): HTMLElement[] {
   return [...bar.querySelectorAll("[data-slot='menubar-trigger']")] as HTMLElement[];
 }
 
-/** Opens the menu at the given trigger by clicking it and resolves the portaled content. */
-export async function openMenu(trigger: HTMLElement) {
+/** Opens the menu at the given trigger by clicking it and resolves the portaled content; `min` guards a second open against aliasing the previous menu's content. */
+export async function openMenu(trigger: HTMLElement, min = 1) {
   trigger.dispatchEvent(new Event("click", { bubbles: true }));
-  return awaitPortaled("menubar-content");
+  return awaitPortaled("menubar-content", min);
 }

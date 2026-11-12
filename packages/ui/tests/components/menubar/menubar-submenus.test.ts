@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
+import { flush } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { mount } from "@hellajs/dom";
 import { menubarVariants } from "./variants";
@@ -37,9 +38,11 @@ describe("menubar", () => {
       expect(subContent.getAttribute("data-state")).toBe("open");
       expect(document.activeElement).toBe(subContent.querySelector("[role='menuitem']"));
       pressEscape();
+      flush();
       expect(subContent.getAttribute("data-state")).toBe("closed");
       expect(content.getAttribute("data-state")).toBe("open");
       pressEscape();
+      flush();
       expect(content.getAttribute("data-state")).toBe("closed");
       expect(document.activeElement).toBe(file!);
     },
@@ -65,6 +68,7 @@ describe("menubar", () => {
       const subContent = await awaitPortaled("menubar-sub-content");
       expect(document.activeElement).toBe(subContent.querySelector("[role='menuitem']"));
       pressKey(subContent, "ArrowLeft");
+      flush();
       expect(subContent.getAttribute("data-state")).toBe("closed");
       expect(document.activeElement).toBe(subTrigger);
       expect(content.getAttribute("data-state")).toBe("open");

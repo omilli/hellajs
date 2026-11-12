@@ -1,5 +1,5 @@
 import { describe, test, expect, vi } from "vite-plus/test";
-import { effect } from "@hellajs/core";
+import { effect, flush } from "@hellajs/core";
 import { delay } from "@utils/test-helpers.js";
 import { store } from "@hellajs/store";
 import type { SignalArray } from "@hellajs/core";
@@ -55,9 +55,11 @@ describe("store", () => {
 
       expect(firstCompleted).toHaveBeenLastCalledWith(false);
       data.todos.get(0)!.text("rewrite");
+      flush();
       expect(firstCompleted).toHaveBeenCalledTimes(1); // Field write: only text readers wake
       expect(firstText).toHaveBeenCalledTimes(2);
       data.todos.get(1)!.completed(false);
+      flush();
       expect(secondCompleted).toHaveBeenCalledTimes(2);
       expect(firstCompleted).toHaveBeenCalledTimes(1); // Todo 1 writes never wake todo 0 readers
       expect(firstText).toHaveBeenCalledTimes(2);
@@ -77,6 +79,7 @@ describe("store", () => {
       });
 
       data.todos.get(0)!.completed(true);
+      flush();
 
       expect(completedTracker).toHaveBeenCalledTimes(2);
       expect(textTracker).toHaveBeenCalledTimes(1);
@@ -96,6 +99,7 @@ describe("store", () => {
       });
 
       data.todos.set(0, { completed: true });
+      flush();
 
       expect(data.todos.get(0)!.text()).toBe("write plans"); // Patch keeps untouched fields
       expect(completedTracker).toHaveBeenCalledTimes(2);
@@ -131,6 +135,7 @@ describe("store", () => {
           { id: 2, text: "ship", completed: false },
         ],
       });
+      flush();
 
       expect(firstCompleted).toHaveBeenCalledTimes(2); // Only the changed field's readers wake
       expect(secondText).toHaveBeenCalledTimes(1);
@@ -142,6 +147,7 @@ describe("store", () => {
           { id: 3, text: "rest", completed: false },
         ],
       });
+      flush();
 
       expect(positional).toHaveBeenCalledTimes(2); // Length change is structural: positional readers wake
       expect(data.todos.length()).toBe(3);
@@ -168,6 +174,7 @@ describe("store", () => {
       data.$update((draft) => {
         draft.todos[0]!.completed = true;
       });
+      flush();
 
       expect(firstCompleted).toHaveBeenCalledTimes(2);
       expect(secondCompleted).toHaveBeenCalledTimes(1);
@@ -187,6 +194,7 @@ describe("store", () => {
 
       expect(inner00).toHaveBeenLastCalledWith(1);
       data.grid.get(0)!.set(0, 9);
+      flush();
       expect(inner00).toHaveBeenCalledTimes(2); // Only inner-index-0 readers wake
       expect(inner01).toHaveBeenCalledTimes(1);
       expect(data.grid.get(0)!.get(1)).toBe(2);
@@ -199,6 +207,7 @@ describe("store", () => {
 
       expect(nTracker).toHaveBeenLastCalledWith(1);
       data.lookup.set("a", { n: 2 });
+      flush();
       expect(nTracker).toHaveBeenCalledTimes(2); // Patched, not replaced
       const plain = data.$snapshot().lookup;
       expect(plain).toBeInstanceOf(Map);
@@ -258,10 +267,12 @@ describe("store", () => {
       data.$subscribe("todos", todosSubscriber);
 
       data.items.push(4);
+      flush();
       expect(itemsSubscriber).toHaveBeenCalledTimes(1);
       expect(itemsSubscriber).toHaveBeenLastCalledWith([1, 2, 3, 4], [1, 2, 3]); // Raw elements: plain arrays
 
       data.todos.push({ id: 2, text: "ship", completed: false });
+      flush();
       expect(todosSubscriber).toHaveBeenCalledTimes(1); // Container-level change fires it
 
       data.todos.get(0)!.completed(true); // Element field writes do not touch the container
@@ -339,9 +350,11 @@ describe("store", () => {
       expect(near).toHaveBeenLastCalledWith(0, 2);
       expect(itemsTracker).toHaveBeenCalledTimes(1); // Comparator said equal: no wake
       data.items.set(0, 10);
+      flush();
       expect(itemsTracker).toHaveBeenCalledTimes(2); // Unequal: wakes
 
       data.todos.set(0, { completed: true });
+      flush();
       expect(completedTracker).toHaveBeenCalledTimes(2); // Routed through the patch path
       expect(todoEquals).not.toHaveBeenCalled(); // Store elements never consult the comparator
       expect(data.todos.get(0)!.text()).toBe("write plans");

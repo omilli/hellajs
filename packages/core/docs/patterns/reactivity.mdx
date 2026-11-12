@@ -17,12 +17,12 @@ firstName('John');
 console.log(fullName()); // "John Doe"
 ```
 
-### Batched Updates
+### Automatic Batching
 
-Group multiple signal updates so dependent effects run once with [`batch`](/reference/core/batch).
+Signal writes coalesce automatically: consecutive writes in the same tick run dependent effects once with final values. Call [`flush`](/reference/core/flush) when the effects must run before the next line.
 
 ```typescript
-import { signal, computed, effect, batch } from '@hellajs/core';
+import { signal, computed, effect, flush } from '@hellajs/core';
 
 const base = signal(1);
 const multiplier = signal(2);
@@ -30,11 +30,14 @@ const sum = computed(() => base() + multiplier());
 
 effect(() => console.log(`Sum: ${sum()}`)); // Initial run logs "Sum: 3"
 
-batch(() => {
-  base(10);
-  multiplier(20);
-});
-// Batch causes one additional run: "Sum: 30"
+base(10);
+multiplier(20);
+// One additional run at the microtask boundary: "Sum: 30"
+
+// Need the value before the next line? flush() drains synchronously.
+base(30);
+flush();
+console.log(sum()); // 50: the effect already ran
 ```
 
 ### Effect Cleanup

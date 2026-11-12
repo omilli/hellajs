@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
-import { signal } from "@hellajs/core";
+import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
 import { mount, peekState } from "@hellajs/dom";
 import { slider } from "@hellajs/headless";
@@ -122,6 +122,7 @@ describe("slider", () => {
       { x: 95, y: 0 },
       { x: -20, y: 0 },
     ]);
+    flush();
     expect(onValueChange.mock.calls.map((call) => call[0])).toEqual([[30], [50], [100], [0]]);
     expect(mounted.thumbs[0]!.getAttribute("aria-valuenow")).toBe("0");
     expect(onValueCommit).toHaveBeenCalledTimes(1);
@@ -139,6 +140,7 @@ describe("slider", () => {
       [25, 80],
       [25, 25],
     ]);
+    flush();
     expect(mounted.thumbs[1]!.getAttribute("aria-valuenow")).toBe("25");
     expect(mounted.range.style.left).toBe("25%");
     expect(mounted.range.style.width).toBe("0%");
@@ -168,16 +170,22 @@ describe("slider", () => {
 
     const right = pressKey(thumb, "ArrowRight");
     expect(right.defaultPrevented).toBe(true);
+    flush();
     expect(thumb.getAttribute("aria-valuenow")).toBe("60");
     pressKey(thumb, "ArrowLeft");
+    flush();
     expect(thumb.getAttribute("aria-valuenow")).toBe("50");
     pressKey(thumb, "PageUp");
+    flush();
     expect(thumb.getAttribute("aria-valuenow")).toBe("100");
     pressKey(thumb, "PageDown");
+    flush();
     expect(thumb.getAttribute("aria-valuenow")).toBe("0");
     pressKey(thumb, "End");
+    flush();
     expect(thumb.getAttribute("aria-valuenow")).toBe("100");
     pressKey(thumb, "Home");
+    flush();
     expect(thumb.getAttribute("aria-valuenow")).toBe("0");
 
     const unbound = pressKey(thumb, "b");
@@ -251,6 +259,7 @@ describe("slider", () => {
     expect(mounted.thumbs[0]!.getAttribute("aria-valuenow")).toBe("40");
 
     controlled([70]);
+    flush();
     expect(mounted.thumbs[0]!.getAttribute("aria-valuenow")).toBe("70");
   });
 

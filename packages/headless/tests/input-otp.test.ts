@@ -83,12 +83,15 @@ describe("inputOtp", () => {
     const { root, input, slots } = await mountOtp(parts);
     input.focus();
     edit(input, "1", 1);
+    flush();
     expect(slots[0]!.textContent).toBe("1");
     expect(activeSlot(root)).toBe(1);
     edit(input, "12", 2);
+    flush();
     expect(slots[1]!.textContent).toBe("2");
     expect(activeSlot(root)).toBe(2);
     edit(input, "123456", 6);
+    flush();
     expect(slots.map((slot) => slot.textContent)).toEqual(["1", "2", "3", "4", "5", "6"]);
     expect(onValueChange).toHaveBeenCalledTimes(3);
     expect(onValueChange.mock.calls.map((call) => call[0])).toEqual(["1", "12", "123456"]);
@@ -104,6 +107,7 @@ describe("inputOtp", () => {
     edit(input, "12", 2);
     onValueChange.mockClear();
     edit(input, "1", 1);
+    flush();
     expect(slots[0]!.textContent).toBe("1");
     expect(slots[1]!.textContent).toBe("");
     expect(activeSlot(root)).toBe(1);
@@ -123,6 +127,7 @@ describe("inputOtp", () => {
     const event = paste(input, "3456");
     expect(event.defaultPrevented).toBe(true);
     expect(input.value).toBe("123456");
+    flush();
     expect(slots.map((slot) => slot.textContent)).toEqual(["1", "2", "3", "4", "5", "6"]);
     expect(activeSlot(root)).toBe(5);
     expect(onValueChange).toHaveBeenCalledTimes(1);
@@ -137,6 +142,7 @@ describe("inputOtp", () => {
     const { input, slots } = await mountOtp(parts);
     input.focus();
     edit(input, "1", 1);
+    flush();
     expect(onValueChange).toHaveBeenCalledTimes(1);
     expect(onValueChange.mock.calls[0]).toEqual(["1"]);
     value("998877");
@@ -150,11 +156,13 @@ describe("inputOtp", () => {
     const { root, input, slots } = await mountOtp(parts);
     expect(activeSlot(root)).toBe(-1);
     input.focus();
+    flush();
     expect(activeSlot(root)).toBe(0);
     expect(slots[0]!.hasAttribute("data-active")).toBe(true);
     const caretWrap = slots[0]!.querySelector("div") as HTMLElement;
     expect(caretWrap.style.display).toBe("");
     input.blur();
+    flush();
     expect(activeSlot(root)).toBe(-1);
     expect(caretWrap.style.display).toBe("none");
   });
@@ -167,7 +175,9 @@ describe("inputOtp", () => {
     expect(input.value).toBe("12");
     input.focus();
     paste(input, "345678");
+    flush();
     expect(input.value).toBe("1234");
+    flush();
     expect(slots.map((slot) => slot.textContent)).toEqual(["1", "2", "3", "4"]);
     expect(onValueChange).toHaveBeenCalledTimes(1);
     expect(onValueChange.mock.calls[0]).toEqual(["1234"]);

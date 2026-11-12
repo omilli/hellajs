@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach } from "vite-plus/test";
-import { signal } from "@hellajs/core";
+import { flush, signal } from "@hellajs/core";
 import { calendarVariants, type CalendarVariantProps } from "./variants";
 import { resetTestState } from "@utils/test-helpers.js";
 import {
@@ -129,6 +129,7 @@ describe("calendar", () => {
       const stops = Array.from(root.querySelectorAll("[data-slot='calendar-day-button']")).filter(
         (b) => (b as HTMLElement).tabIndex === 0,
       );
+      flush();
       expect(stops.length).toBe(1);
 
       press(root, "2025-03-14", "ArrowRight");
@@ -138,6 +139,7 @@ describe("calendar", () => {
 
       press(root, "2025-03-31", "ArrowRight");
       await awaitCell(root, "2025-04-01");
+      flush();
       await awaitFocus(root, "2025-04-01");
       expect(caption(root)).toBe("April 2025");
 
@@ -155,8 +157,10 @@ describe("calendar", () => {
       await awaitFocus(root, "2025-04-19");
 
       press(root, "2025-04-19", "Enter");
+      flush();
       expect(dayCell(root, "2025-04-19")!.getAttribute("data-selected")).toBe("true");
       press(root, "2025-04-18", " ");
+      flush();
       expect(dayCell(root, "2025-04-18")!.getAttribute("data-selected")).toBe("true");
       expect(dayCell(root, "2025-04-19")!.hasAttribute("data-selected")).toBe(false);
     },

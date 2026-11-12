@@ -1,5 +1,5 @@
 import { describe, test, expect, vi } from "vite-plus/test";
-import { signalMap, effect, batch, untracked } from "@hellajs/core";
+import { signalMap, effect, flush, untracked } from "@hellajs/core";
 
 describe("signalMap", () => {
   test("get readers wake on their key's value writes only", () => {
@@ -12,6 +12,7 @@ describe("signalMap", () => {
     scores.set("bob", 20);
     expect(alice).toHaveBeenCalledTimes(1);
     scores.set("alice", 10);
+    flush();
     expect(alice).toHaveBeenCalledTimes(2);
     expect(alice).toHaveBeenLastCalledWith(10);
   });
@@ -21,6 +22,7 @@ describe("signalMap", () => {
     const alice = vi.fn((value: number | undefined) => value);
     effect(() => alice(scores.get("alice")));
     expect(scores.delete("alice")).toBe(true);
+    flush();
     expect(alice).toHaveBeenCalledTimes(2);
     expect(alice).toHaveBeenLastCalledWith(undefined);
     expect(scores.delete("alice")).toBe(false);
@@ -33,9 +35,11 @@ describe("signalMap", () => {
     scores.set("alice", 10); // Value-only write
     expect(keys).toHaveBeenCalledTimes(1);
     scores.set("bob", 2);
+    flush();
     expect(keys).toHaveBeenCalledTimes(2);
     expect(keys).toHaveBeenLastCalledWith(["alice", "bob"]);
     scores.delete("alice");
+    flush();
     expect(keys).toHaveBeenCalledTimes(3);
     expect(keys).toHaveBeenLastCalledWith(["bob"]);
   });
@@ -47,6 +51,7 @@ describe("signalMap", () => {
     scores.set("alice", 10); // Value write: membership unchanged
     expect(aliceHas).toHaveBeenCalledTimes(1);
     scores.delete("alice");
+    flush();
     expect(aliceHas).toHaveBeenCalledTimes(2);
     expect(aliceHas).toHaveBeenLastCalledWith(false);
   });
@@ -57,6 +62,7 @@ describe("signalMap", () => {
     effect(() => size(scores.size()));
     expect(size).toHaveBeenLastCalledWith(0);
     scores.set("alice", 1);
+    flush();
     expect(size).toHaveBeenCalledTimes(2);
     expect(size).toHaveBeenLastCalledWith(1);
   });
@@ -68,10 +74,12 @@ describe("signalMap", () => {
     const reader = vi.fn((value: number | undefined) => value);
     effect(() => reader(alice()));
     scores.set("alice", 5);
+    flush();
     expect(reader).toHaveBeenCalledTimes(2);
     expect(reader).toHaveBeenLastCalledWith(5);
     expect(scores.entry("alice") === alice).toBe(true); // Stable identity
     scores.delete("alice");
+    flush();
     expect(reader).toHaveBeenCalledTimes(3);
     expect(reader).toHaveBeenLastCalledWith(undefined);
     scores.set("carol", 9); // Unrelated structural change: absorbed by the equality gate
@@ -88,8 +96,10 @@ describe("signalMap", () => {
     const reader = vi.fn((value: Map<string, number>) => value);
     effect(() => reader(scores()));
     scores.set("alice", 10);
+    flush();
     expect(reader).toHaveBeenCalledTimes(2);
     scores.delete("alice");
+    flush();
     expect(reader).toHaveBeenCalledTimes(3);
     expect(reader).toHaveBeenLastCalledWith(new Map());
   });
@@ -103,6 +113,7 @@ describe("signalMap", () => {
     effect(() => scores.forEach(each));
     expect(each).toHaveBeenCalledTimes(2);
     scores.set("alice", 10);
+    flush();
     expect(each).toHaveBeenCalledTimes(4); // Full re-iteration
 
     const values = vi.fn((value: number[]) => value);
@@ -151,14 +162,13 @@ describe("signalMap", () => {
     expect(rows.get("a")?.n).toBe(5);
   });
 
-  test("mutations inside batch propagate once", () => {
+  test("mutations in one tick propagate once", () => {
     const scores = signalMap<string, number>([["alice", 1]]);
     const reader = vi.fn((value: Map<string, number>) => value);
     effect(() => reader(scores()));
-    batch(() => {
-      scores.set("alice", 10);
-      scores.set("bob", 2);
-    });
+    scores.set("alice", 10);
+    scores.set("bob", 2);
+    flush();
     expect(reader).toHaveBeenCalledTimes(2);
     expect(reader).toHaveBeenLastCalledWith(
       new Map([

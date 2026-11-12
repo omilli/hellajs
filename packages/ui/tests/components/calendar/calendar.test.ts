@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
+import { flush } from "@hellajs/core";
 import {
   assertAttrForwarded,
   assertStructuralParity,
@@ -137,6 +138,7 @@ describe("calendar", () => {
       click(root, "2025-03-14");
       expect(userClick).toHaveBeenCalledTimes(1);
       const cell = dayCell(root, "2025-03-14")!;
+      flush();
       expect(cell.getAttribute("data-selected")).toBe("true");
     }
   });
@@ -164,6 +166,7 @@ describe("calendar", () => {
       const userClick = vi.fn(() => {});
       const root = renderVariant(variant, { day: new Date(2025, 2, 14), "on:click": userClick });
       root.dispatchEvent(new Event("click", { bubbles: true }));
+      flush();
       expect(userClick).toHaveBeenCalledTimes(1);
     }
   });

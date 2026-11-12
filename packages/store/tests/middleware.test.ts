@@ -1,5 +1,5 @@
 import { describe, test, expect, vi } from "vite-plus/test";
-import { effect } from "@hellajs/core";
+import { effect, flush } from "@hellajs/core";
 import { store } from "@hellajs/store";
 
 describe("store", () => {
@@ -228,6 +228,7 @@ describe("store", () => {
       // Same value middleware returns same, signal still does ref-eq check
       expect(tracker).toHaveBeenCalledTimes(1);
       data.count(1);
+      flush();
       expect(tracker).toHaveBeenCalledTimes(2);
     });
   });

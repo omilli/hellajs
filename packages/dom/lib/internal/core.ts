@@ -4,6 +4,7 @@ export {
   effect,
   scope,
   flush,
+  setFlushErrorHandler,
   isFunction,
   isPlainObject,
   isString,

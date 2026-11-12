@@ -6,13 +6,12 @@ export { signalMap } from "./signalMap";
 export { signalSet } from "./signalSet";
 export { computed } from "./computed";
 export { effect } from "./effect";
-export { batch } from "./batch";
 export { untracked } from "./untracked";
 export { scope } from "./scope";
 export type * from "./types";
 
-/* flush: scheduler drain. Utils + env probes: shared kernel for sibling packages. */
-export { flush } from "./internal/scheduler";
+/* flush: scheduler drain + scheduled-error routing. Utils + env probes: shared kernel for sibling packages. */
+export { flush, setFlushErrorHandler } from "./internal/scheduler";
 export {
   isFunction,
   isPlainObject,

@@ -76,11 +76,13 @@ describe("toggle-group", () => {
         "false",
         "false",
       ]);
+      flush();
       expect(rendered.map((item) => item.getAttribute("data-state"))).toEqual([
         "off",
         "off",
         "off",
       ]);
+      flush();
       expect(rendered[0]!.textContent).toContain("Bold");
     },
   );
@@ -102,11 +104,13 @@ describe("toggle-group", () => {
       await awaitWiring(rendered[0]!.closest("[role='group']") as HTMLElement);
       expect(rendered.map((item) => item.getAttribute("data-state"))).toEqual(["off", "on", "off"]);
       rendered[2]!.dispatchEvent(new Event("click"));
+      flush();
       expect(onValueChange).toHaveBeenCalledTimes(1);
       expect(onValueChange.mock.calls[0]).toEqual(["underline"]);
       expect(rendered.map((item) => item.getAttribute("data-state"))).toEqual(["off", "off", "on"]);
       // Single mode unsets the active item on re-click, reporting "".
       rendered[2]!.dispatchEvent(new Event("click"));
+      flush();
       expect(onValueChange).toHaveBeenCalledTimes(2);
       expect(onValueChange.mock.calls[1]).toEqual([""]);
       expect(rendered.map((item) => item.getAttribute("data-state"))).toEqual([
@@ -129,6 +133,7 @@ describe("toggle-group", () => {
       await awaitWiring(rendered[0]!.closest("[role='group']") as HTMLElement);
       rendered[0]!.dispatchEvent(new Event("click"));
       rendered[2]!.dispatchEvent(new Event("click"));
+      flush();
       expect(onValueChange).toHaveBeenCalledTimes(2);
       expect(onValueChange.mock.calls[0]).toEqual([["bold"]]);
       expect(onValueChange.mock.calls[1]).toEqual([["bold", "underline"]]);
@@ -138,6 +143,7 @@ describe("toggle-group", () => {
         "true",
       ]);
       rendered[0]!.dispatchEvent(new Event("click"));
+      flush();
       expect(onValueChange.mock.calls[2]).toEqual([["underline"]]);
     },
   );
@@ -170,11 +176,13 @@ describe("toggle-group", () => {
         "on",
       ]);
       single.items[0]!.dispatchEvent(new Event("click"));
+      flush();
       expect(onValueChange).toHaveBeenCalledTimes(1);
       expect(onValueChange.mock.calls[0]).toEqual(["bold"]);
       expect(single.items[0]!.getAttribute("data-state")).toBe("off");
       await awaitWiring(multiple.root);
       multiple.items[2]!.dispatchEvent(new Event("click"));
+      flush();
       expect(onValueChange).toHaveBeenCalledTimes(2);
       expect(onValueChange.mock.calls[1]).toEqual([["bold", "italic", "underline"]]);
       expect(values()).toEqual(["bold", "italic"]);
@@ -193,6 +201,7 @@ describe("toggle-group", () => {
       await awaitWiring(rendered[0]!.closest("[role='group']") as HTMLElement);
       rendered[0]!.focus();
       press(rendered[0]!, "ArrowRight");
+      flush();
       expect(document.activeElement).toBe(rendered[1]!);
       expect(rendered.map((item) => item.tabIndex)).toEqual([-1, 0, -1]);
       // Arrows only move focus; selection stays untouched.
@@ -203,11 +212,14 @@ describe("toggle-group", () => {
         "off",
       ]);
       press(rendered[1]!, "ArrowRight");
+      flush();
       expect(document.activeElement).toBe(rendered[2]!);
       press(rendered[2]!, "ArrowLeft");
+      flush();
       expect(document.activeElement).toBe(rendered[1]!);
       rendered[0]!.focus();
       press(rendered[0]!, "ArrowUp");
+      flush();
       expect(document.activeElement).toBe(rendered[2]!);
     },
   );
@@ -230,8 +242,10 @@ describe("toggle-group", () => {
       expect(rendered[1]!.hasAttribute("disabled")).toBe(true);
       rendered[0]!.focus();
       press(rendered[0]!, "ArrowRight");
+      flush();
       expect(document.activeElement).toBe(rendered[2]!);
       rendered[1]!.dispatchEvent(new Event("click"));
+      flush();
       expect(onValueChange).not.toHaveBeenCalled();
       expect(rendered[1]!.getAttribute("data-state")).toBe("off");
     },
@@ -280,8 +294,10 @@ describe("toggle-group", () => {
       rendered[0]!.focus();
       const before = document.activeElement;
       press(rendered[0]!, "ArrowRight");
+      flush();
       expect(document.activeElement).toBe(before);
       rendered[1]!.dispatchEvent(new Event("click"));
+      flush();
       expect(onValueChange).not.toHaveBeenCalled();
     },
   );
@@ -327,12 +343,16 @@ describe("toggle-group", () => {
         Array.from(root.querySelectorAll("[data-slot='toggle-group-item']")).map((el) =>
           el.getAttribute("value"),
         );
+      flush();
       expect(values()).toEqual(["bold", "italic", "underline"]);
       liveItems([...liveItems(), { value: "strikethrough", label: "Strikethrough" }]);
+      flush();
       expect(values()).toEqual(["bold", "italic", "underline", "strikethrough"]);
       liveItems(liveItems().filter((entry) => entry.value !== "italic"));
+      flush();
       expect(values()).toEqual(["bold", "underline", "strikethrough"]);
       liveItems([liveItems()[2]!, liveItems()[0]!, liveItems()[1]!]);
+      flush();
       expect(values()).toEqual(["strikethrough", "bold", "underline"]);
     },
   );
@@ -351,8 +371,10 @@ describe("toggle-group", () => {
         Array.from(root.querySelectorAll("[data-slot='toggle-group-item']")) as HTMLElement[];
       itemEls()[1]!.dispatchEvent(new Event("click"));
       const italicBefore = itemEls().find((el) => el.getAttribute("value") === "italic")!;
+      flush();
       expect(italicBefore.getAttribute("data-state")).toBe("on");
       liveItems([liveItems()[2]!, liveItems()[0]!, liveItems()[1]!]);
+      flush();
       expect(itemEls().map((el) => el.getAttribute("value"))).toEqual([
         "underline",
         "bold",

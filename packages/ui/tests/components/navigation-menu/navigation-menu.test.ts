@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
-import { signal } from "@hellajs/core";
+import { flush, signal } from "@hellajs/core";
 import { resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { mount } from "@hellajs/dom";
 import { assertStructuralParity, classTokens, renderVariant } from "../../helpers/variants-core";
@@ -64,6 +64,7 @@ describe("navigation-menu", () => {
       const { bar, learnTrigger, clickTrigger } = buildNav(variant);
       const content = await clickTrigger(learnTrigger);
       document.body.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+      flush();
       expect(
         bar.querySelector("[data-slot='navigation-menu-viewport']")!.getAttribute("data-state"),
       ).toBe("closed");
@@ -107,6 +108,7 @@ describe("navigation-menu", () => {
       document
         .querySelector("[data-value='learn']")!
         .dispatchEvent(new Event("click", { bubbles: true }));
+      flush();
       expect(valueA()).toBe("learn");
       expect(valueB()).toBe("");
       expect(onValueChangeB).not.toHaveBeenCalled();
@@ -121,10 +123,11 @@ describe("navigation-menu", () => {
     async (variant) => {
       const { bar, value, learnTrigger, referenceTrigger, clickTrigger } = buildNav(variant);
       const first = await clickTrigger(learnTrigger);
-      const second = await clickTrigger(referenceTrigger);
+      const second = await clickTrigger(referenceTrigger, 2);
       const viewport = bar.querySelector("[data-slot='navigation-menu-viewport']")!;
       expect(value()).toBe("reference");
       expect(viewport.contains(second)).toBe(true);
+      flush();
       expect(second.textContent).toContain("API");
       expect(first.getAttribute("data-state")).toBe("closed");
       expect(second.getAttribute("data-state")).toBe("open");
@@ -140,6 +143,7 @@ describe("navigation-menu", () => {
       const { value, learnTrigger, clickTrigger } = buildNav(variant);
       await clickTrigger(learnTrigger);
       learnTrigger().dispatchEvent(new Event("click", { bubbles: true }));
+      flush();
       expect(value()).toBe("");
       expect(learnTrigger().getAttribute("data-state")).toBe("closed");
     },
@@ -152,6 +156,7 @@ describe("navigation-menu", () => {
       const viewport = bar.querySelector("[data-slot='navigation-menu-viewport']")!;
       expect(viewport.getAttribute("data-state")).toBe("closed");
       value("learn");
+      flush();
       expect(viewport.getAttribute("data-state")).toBe("open");
       expect(learnTrigger().getAttribute("data-state")).toBe("open");
     },
@@ -180,6 +185,7 @@ describe("navigation-menu", () => {
       const userClick = vi.fn(() => {});
       const bar = renderVariant(variant, { "on:click": userClick });
       bar.dispatchEvent(new Event("click"));
+      flush();
       expect(userClick).toHaveBeenCalledTimes(1);
     },
   );
@@ -197,6 +203,7 @@ describe("navigation-menu", () => {
     (variant) => {
       const container = setupContainer();
       mount(variant.render({ id: "custom-viewport", active: () => false }), container);
+      flush();
       expect(
         container.querySelector("[data-slot='navigation-menu-viewport']")!.getAttribute("id"),
       ).toBe("custom-viewport");

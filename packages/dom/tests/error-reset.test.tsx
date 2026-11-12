@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
-import { signal } from "@hellajs/core";
+import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { mount, onError } from "@hellajs/dom";
 import { child, component, errorConfig, mark, prop, template } from "@hellajs/dom/runtime";
@@ -175,6 +175,7 @@ describe("dom", () => {
       expect(container.textContent).toBe("Original");
 
       shouldThrow(true);
+      flush();
       app.flush();
       expect(container.textContent).toBe("Error");
 

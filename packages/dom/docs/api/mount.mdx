@@ -74,7 +74,7 @@ interface MountHandle {
 ```
 
 - `container`: The DOM element or shadow root the tree was mounted into.
-- `flush()`: Escape hatch that drains mount and cleanup queues synchronously. `afterMount` already fires during `mount()`; reach for it only when you must observe cleanup immediately (common in tests).
+- `flush()`: Escape hatch that drains the mount and cleanup queues synchronously (dom's own queues; core's effect queue drains at its own microtask, or immediately via core's [`flush()`](/reference/core/flush)). `afterMount` already fires during `mount()`; reach for it only when you must observe cleanup immediately (common in tests).
 - `unmount()`: Clean up and remove the mounted tree. A multi-root mount removes and disposes every root.
 
 ## Key Concepts

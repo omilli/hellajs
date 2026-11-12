@@ -1,4 +1,4 @@
-import { signal, effect, batch, isObject, isFunction, hasWindow } from "./internal/core";
+import { signal, effect, isObject, isFunction, hasWindow } from "./internal/core";
 import type {
   Store,
   Snapshot,
@@ -143,11 +143,10 @@ export function persistStore<T extends Record<string, unknown>>(
       return;
     }
     try {
-      // batch flushes the effect once, while `hydrated` is still false — the
-      // pre-hydration branch suppresses any hydrate write-back.
-      batch(() => {
-        store.$update(deserialize(raw));
-      });
+      // Effects drain at the microtask boundary, after `finish()` has flipped
+      // `hydrated` — the persist effect's write-back dedupes against
+      // `lastWritten`, so hydration never echoes to storage.
+      store.$update(deserialize(raw));
       lastWritten = serialize(partialize(store.$snapshot()));
     } catch (error) {
       // Corrupt or shape-drifted: self-heal storage, keep the initial state.

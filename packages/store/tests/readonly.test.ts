@@ -1,5 +1,5 @@
 import { describe, test, expect, vi } from "vite-plus/test";
-import { effect } from "@hellajs/core";
+import { effect, flush } from "@hellajs/core";
 import { store } from "@hellajs/store";
 import type { Store } from "@hellajs/store";
 
@@ -135,6 +135,7 @@ describe("store", () => {
       expect(data.$snapshot().config.theme).toBe("dark");
 
       data.counter(1);
+      flush();
 
       expect(tracker).toHaveBeenCalledTimes(2);
     });

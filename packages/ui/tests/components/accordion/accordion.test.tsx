@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
-import { signal } from "@hellajs/core";
+import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components import the bare
 // specifier, so the harness mount shares one dom instance with the components.
@@ -102,10 +102,12 @@ describe("accordion", () => {
     (variant) => {
       const { itemEls, triggers } = mountAccordion(variant, { items, defaultValue: "beta" });
       triggers[2]!.dispatchEvent(new Event("click"));
+      flush();
       expect(openIndexes(itemEls)).toEqual([2]);
       expect(triggers[2]!.getAttribute("aria-expanded")).toBe("true");
       expect(triggers[1]!.getAttribute("aria-expanded")).toBe("false");
       triggers[2]!.dispatchEvent(new Event("click"));
+      flush();
       expect(openIndexes(itemEls)).toEqual([2]);
     },
   );
@@ -120,6 +122,7 @@ describe("accordion", () => {
       });
       expect(openIndexes(itemEls)).toEqual([1]);
       triggers[1]!.dispatchEvent(new Event("click"));
+      flush();
       expect(openIndexes(itemEls)).toEqual([]);
       expect(triggers[1]!.getAttribute("data-state")).toBe("closed");
     },
@@ -135,8 +138,10 @@ describe("accordion", () => {
       });
       triggers[0]!.dispatchEvent(new Event("click"));
       triggers[2]!.dispatchEvent(new Event("click"));
+      flush();
       expect(openIndexes(itemEls)).toEqual([0, 1, 2]);
       triggers[1]!.dispatchEvent(new Event("click"));
+      flush();
       expect(openIndexes(itemEls)).toEqual([0, 2]);
       expect(openIndexes(contents)).toEqual([0, 2]);
     },
@@ -162,6 +167,7 @@ describe("accordion", () => {
         ).toBe(true);
       }
       triggers[3]!.dispatchEvent(new Event("click"));
+      flush();
       expect(openIndexes(itemEls)).toEqual([]);
     },
   );
@@ -177,6 +183,7 @@ describe("accordion", () => {
       expect(contents[0]!.isConnected).toBe(true);
       expect(contents[1]!.isConnected).toBe(true);
       expect(contents[0]!.getAttribute("data-state")).toBe("closed");
+      flush();
       expect(contents[1]!.getAttribute("data-state")).toBe("closed");
       expect(contents[2]!.getAttribute("data-state")).toBe("open");
     },
@@ -212,6 +219,7 @@ describe("accordion", () => {
         "beta",
         "gamma",
       ]);
+      flush();
       expect(itemEls[0]!.getAttribute("data-state")).toBe("open");
       expect(itemEls[1]!.getAttribute("data-state")).toBe("closed");
       expect(triggers[0]!.querySelector("[data-slot='accordion-icon']")).not.toBeNull();
@@ -233,12 +241,16 @@ describe("accordion", () => {
         Array.from(root.querySelectorAll('[data-slot="accordion-item"]')).map((el) =>
           el.getAttribute("data-value"),
         );
+      flush();
       expect(values()).toEqual(["alpha", "beta", "gamma"]);
       liveItems([...liveItems(), { value: "delta", trigger: "Delta", content: "Delta body" }]);
+      flush();
       expect(values()).toEqual(["alpha", "beta", "gamma", "delta"]);
       liveItems(liveItems().filter((entry) => entry.value !== "beta"));
+      flush();
       expect(values()).toEqual(["alpha", "gamma", "delta"]);
       liveItems([liveItems()[2]!, liveItems()[0]!, liveItems()[1]!]);
+      flush();
       expect(values()).toEqual(["delta", "alpha", "gamma"]);
     },
   );
@@ -257,6 +269,7 @@ describe("accordion", () => {
       const betaBefore = itemEls().find((el) => el.getAttribute("data-value") === "beta")!;
       expect(betaBefore.getAttribute("data-state")).toBe("open");
       liveItems([liveItems()[2]!, liveItems()[0]!, liveItems()[1]!]);
+      flush();
       expect(itemEls().map((el) => el.getAttribute("data-value"))).toEqual([
         "gamma",
         "alpha",
@@ -284,16 +297,21 @@ describe("accordion", () => {
       expect(triggers.map((trigger) => trigger.tabIndex)).toEqual([0, -1, -1]);
       triggers[0]!.focus();
       press(triggers[0]!, "ArrowDown");
+      flush();
       expect(document.activeElement).toBe(triggers[1]!);
       expect(triggers[1]!.getAttribute("data-state")).toBe("open");
       expect(triggers.map((trigger) => trigger.tabIndex)).toEqual([-1, 0, -1]);
       press(triggers[1]!, "ArrowDown");
+      flush();
       expect(document.activeElement).toBe(triggers[2]!);
       press(triggers[2]!, "ArrowUp");
+      flush();
       expect(document.activeElement).toBe(triggers[1]!);
       press(triggers[1]!, "Home");
+      flush();
       expect(document.activeElement).toBe(triggers[0]!);
       press(triggers[0]!, "End");
+      flush();
       expect(document.activeElement).toBe(triggers[2]!);
       expect(
         openIndexes(Array.from(root.querySelectorAll("[data-slot='accordion-item']"))),
@@ -327,6 +345,7 @@ describe("accordion", () => {
       });
       expect(openIndexes(itemEls)).toEqual([1]);
       triggers[2]!.dispatchEvent(new Event("click"));
+      flush();
       expect(onValueChange).toHaveBeenCalledTimes(1);
       expect(onValueChange).toHaveBeenCalledWith("gamma");
       // Controlled: the root never writes its internal set, so beta stays open.
@@ -345,6 +364,7 @@ describe("accordion", () => {
       });
       expect(openIndexes(itemEls)).toEqual([1]);
       triggers[2]!.dispatchEvent(new Event("click"));
+      flush();
       expect(open()).toBe("gamma");
       expect(openIndexes(itemEls)).toEqual([2]);
     },
@@ -362,6 +382,7 @@ describe("accordion", () => {
       });
       expect(openIndexes(itemEls)).toEqual([0]);
       triggers[1]!.dispatchEvent(new Event("click"));
+      flush();
       expect(onValueChange).toHaveBeenCalledTimes(1);
       expect(onValueChange).toHaveBeenCalledWith(["alpha", "beta"]);
     },

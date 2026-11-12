@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
+import { flush } from "@hellajs/core";
 import { resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { mount } from "@hellajs/dom";
 import { assertStructuralParity, classTokens, renderVariant } from "../../helpers/variants-core";
@@ -36,7 +37,8 @@ describe("menubar", () => {
       expect(file!.getAttribute("aria-expanded")).toBe("true");
       expect(file!.getAttribute("aria-haspopup")).toBe("menu");
       expect(onValueChange).toHaveBeenCalledWith("file");
-      const second = await openMenu(edit!);
+      flush();
+      const second = await openMenu(edit!, 2);
       expect(second.getAttribute("data-state")).toBe("open");
       expect(first.getAttribute("data-state")).toBe("closed");
       expect(file!.getAttribute("aria-expanded")).toBe("false");
@@ -53,6 +55,7 @@ describe("menubar", () => {
       const [file] = triggers(bar);
       const content = await openMenu(file!);
       pressEscape();
+      flush();
       expect(content.getAttribute("data-state")).toBe("closed");
       expect(file!.getAttribute("aria-expanded")).toBe("false");
       expect(document.activeElement).toBe(file!);
@@ -73,6 +76,7 @@ describe("menubar", () => {
       const content = await openMenu(file!);
       const item = content.querySelector("[role='menuitem']") as HTMLElement;
       item.dispatchEvent(new Event("click", { bubbles: true }));
+      flush();
       expect(onclick).toHaveBeenCalledTimes(1);
       expect(content.getAttribute("data-state")).toBe("closed");
     },
@@ -85,6 +89,7 @@ describe("menubar", () => {
     const [file] = triggers(bar);
     const content = await openMenu(file!);
     pointerDownOutside();
+    flush();
     expect(content.getAttribute("data-state")).toBe("closed");
   });
 
@@ -117,6 +122,7 @@ describe("menubar", () => {
       await openMenu(file!);
       expect(onValueChange).toHaveBeenCalledWith("file");
       pressEscape();
+      flush();
       expect(onValueChange).toHaveBeenLastCalledWith("");
     },
   );
@@ -133,9 +139,11 @@ describe("menubar", () => {
     const [file] = triggers(bar);
     await openMenu(file!);
     handle.unmount();
+    flush();
     expect(bar.isConnected).toBe(false);
     // Drained coordination listeners: announcements after unmount are inert.
     document.dispatchEvent(new CustomEvent("hella:menubar-open", { detail: { id: "other" } }));
+    flush();
     expect(bar.isConnected).toBe(false);
   });
 
@@ -153,6 +161,7 @@ describe("menubar", () => {
       const userClick = vi.fn(() => {});
       const bar = renderVariant(variant, { "on:click": userClick });
       bar.dispatchEvent(new Event("click"));
+      flush();
       expect(userClick).toHaveBeenCalledTimes(1);
     },
   );

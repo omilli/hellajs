@@ -1,10 +1,28 @@
 # flush
 
-Drains the scheduled-effect queue, running every queued [`effect`](/reference/core/effect) synchronously.
+Drains the scheduled-effect queue synchronously: every queued [`effect`](/reference/core/effect) runs before the call returns.
 
 ## Basic Usage
 
-An error thrown inside an effect aborts the drain and leaves the remaining queued effects waiting. Call `flush()` to run them at a known point:
+Signal writes schedule one microtask drain, so consecutive writes coalesce and effects observe final state. Call `flush()` when the effects must run before the next line:
+
+```typescript
+import { signal, effect, flush } from '@hellajs/core';
+
+const count = signal(0);
+const filter = signal('all');
+effect(() => console.log(`count=${count()} filter=${filter()}`)); // subscriber
+
+count(1);        // No effect run yet
+filter('done');  // Still none
+// At the microtask boundary the effect runs once, observing count=1, filter='done'
+
+count(2);        // Scheduled
+flush();         // Synchronous drain: the effect runs now, before the microtask fires
+// (the pending microtask then drains an empty queue: no double run)
+```
+
+An error thrown inside an effect aborts a manual drain and propagates to the `flush()` caller; the remaining queued effects stay queued. Call `flush()` again to run them at a known point:
 
 ```typescript
 import { signal, effect, flush } from '@hellajs/core';
@@ -26,9 +44,10 @@ effect(() => {
 });
 
 try {
-  count(1); // First effect runs, the second throws: the drain aborts
+  count(1);
+  flush(); // First effect runs, the second throws: the drain aborts
 } catch {
-  // The error surfaces at the write that triggered it
+  // The error surfaces at the flush call
 }
 
 flush(); // Runs the third effect left queued by the aborted drain
@@ -46,7 +65,7 @@ function flush(): void
 
 ### Automatic Draining
 
-The queue drains without an explicit call: a [`signal`](/reference/core/signal) write outside [`batch`](/reference/core/batch) flushes before the setter returns, and the outermost `batch` flushes on exit. At rest the queue is empty, so an explicit `flush()` is a no-op; it earns its keep in tests and integration code that catch effect errors and need the leftover queue drained deterministically.
+The queue drains without an explicit call: signal writes share one microtask drain, so consecutive synchronous writes (event handlers, loops, store updates) coalesce into a single effect pass observing final state. At rest the queue is empty, so an explicit `flush()` is a no-op; it earns its keep in tests and integration code that need effects run before the next line, or that catch effect errors and need the leftover queue drained deterministically.
 
 ### Same-Pass Scheduling
 
@@ -62,10 +81,28 @@ const events: string[] = [];
 effect(() => trigger(src()));
 effect(() => events.push(`trigger is ${trigger()}`));
 
-src(1); // First effect writes trigger mid-drain; the second is appended and runs in the same pass
+flush(); // First effect writes trigger mid-drain; the second is appended and runs in the same pass
 console.log(events); // Logs: ["trigger is 0", "trigger is 1"]
 ```
 
 ### Error Recovery
 
-A throw inside an effect unwinds out of the write or `flush()` call that triggered it, keeping the remaining queue entries intact. The next flush (an explicit `flush()` or the next un-batched write) picks up where the drain stopped; reactive state is never corrupted. See [error propagation](/reference/core/effect#error-propagation) for the full effect error rules.
+A throw inside an effect unwinds out of the `flush()` call that triggered it, keeping the remaining queue entries intact. The next flush picks up where the drain stopped; reactive state is never corrupted. See [error propagation](/reference/core/effect#error-propagation) for the full effect error rules.
+
+A scheduled drain has no caller to receive a throw, so its errors route through a settable handler instead: register one with `setFlushErrorHandler`, and every scheduled-drain error dispatches there while the surviving queue stays intact for the next flush. Passing `null` unregisters; with no handler registered the error surfaces as an unhandled microtask rejection. Manual `flush()` drains never dispatch: they always throw to their caller.
+
+```typescript
+function setFlushErrorHandler(handler: FlushErrorHandler | null): void
+```
+
+- **`handler`**: Called with the thrown error when a scheduled drain aborts; `null` unregisters.
+
+[`onError`](/reference/dom/onerror) pairs with this hook automatically: `@hellajs/dom`'s errors feature registers itself as the core handler at load (importing `onError` or using `error:` JSX loads it), so a scheduled-drain error arrives at your handlers with `context.phase` of `'flush'`, no element attached and no boundary fallback:
+
+```jsx
+import { onError } from '@hellajs/dom';
+
+onError((error, context) => {
+  if (context.phase === 'flush') reportToService(error); // A scheduled effect threw
+});
+```

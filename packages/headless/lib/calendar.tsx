@@ -314,12 +314,18 @@ export function calendar(options: CalendarOptions = {}): CalendarComponents {
   });
 
   // Roving-focus landing: tracks the grid so a month spill focuses the target
-  // button after the rebuild effect has rendered it (same-flush ordering).
+  // button after the rebuild has rendered it. In-month targets resolve sync
+  // (the button already exists); a spill target is absent until the grid
+  // re-renders, so the query skips other views' outside cells — landing then
+  // rides the rebuilt cell's afterMount (DayCell below) once the new rows
+  // mount.
   effect(() => {
     const key = pendingFocus();
     if (key === undefined) return;
     weeks();
-    const button = gridEl?.querySelector<HTMLButtonElement>(`[data-date="${key}"] button`);
+    const button = gridEl?.querySelector<HTMLButtonElement>(
+      `[data-date="${key}"]:not([data-outside="true"]) button`,
+    );
     if (button) {
       button.focus();
       pendingFocus(undefined);
@@ -452,6 +458,17 @@ export function calendar(options: CalendarOptions = {}): CalendarComponents {
         data-range-middle={props.rangeMiddle() ? "true" : undefined}
         data-range-end={props.rangeEnd() ? "true" : undefined}
         class={props.dayClass}
+        hook:afterMount={(node) => {
+          // A month spill's target cell mounts with the rebuilt rows: the
+          // deferred-flush landing pass runs before the rows render, so the
+          // spill landing completes here instead (see the landing effect).
+          if (!(node instanceof HTMLElement) || pendingFocus() !== props.cell.key) return;
+          const button = node.querySelector("button");
+          if (button) {
+            button.focus();
+            pendingFocus(undefined);
+          }
+        }}
       >
         <CalendarRows.DayButton
           day={props.cell.date}

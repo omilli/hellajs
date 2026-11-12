@@ -41,12 +41,14 @@ describe("checkbox", () => {
       expect(root.getAttribute("data-state")).toBe("unchecked");
       expect(indicator.querySelector("svg")).toBeNull();
       root.dispatchEvent(new Event("click"));
+      flush();
       expect(root.getAttribute("aria-checked")).toBe("true");
       expect(root.getAttribute("data-state")).toBe("checked");
       const icon = indicator.querySelector("svg path");
       expect(icon).not.toBeNull();
       expect(icon!.getAttribute("d")).toBe("M20 6 9 17l-5-5");
       root.dispatchEvent(new Event("click"));
+      flush();
       expect(root.getAttribute("aria-checked")).toBe("false");
       expect(root.getAttribute("data-state")).toBe("unchecked");
       expect(indicator.querySelector("svg")).toBeNull();
@@ -62,6 +64,7 @@ describe("checkbox", () => {
       expect(root.getAttribute("data-state")).toBe("indeterminate");
       expect(root.querySelector("[data-slot='checkbox-indicator'] svg")).not.toBeNull();
       root.dispatchEvent(new Event("click"));
+      flush();
       expect(onCheckedChange).toHaveBeenCalledTimes(1);
       expect(onCheckedChange.mock.calls[0]).toEqual([true]);
       // The uncontrolled mixed state clears on click: the checkbox lands checked.
@@ -77,6 +80,7 @@ describe("checkbox", () => {
       const { root } = mountCheckbox(variant, { onCheckedChange });
       root.dispatchEvent(new Event("click"));
       root.dispatchEvent(new Event("click"));
+      flush();
       expect(onCheckedChange).toHaveBeenCalledTimes(2);
       expect(onCheckedChange.mock.calls[0]).toEqual([true]);
       expect(onCheckedChange.mock.calls[1]).toEqual([false]);
@@ -95,6 +99,7 @@ describe("checkbox", () => {
       expect(root.getAttribute("aria-checked")).toBe("true");
       expect(root.getAttribute("data-state")).toBe("checked");
       root.dispatchEvent(new Event("click"));
+      flush();
       expect(onCheckedChange).toHaveBeenCalledTimes(1);
       expect(onCheckedChange.mock.calls[0]).toEqual([false]);
       expect(root.getAttribute("aria-checked")).toBe("true");
@@ -106,6 +111,7 @@ describe("checkbox", () => {
     const { root } = mountCheckbox(variant, { disabled: true, onCheckedChange });
     expect(root.hasAttribute("disabled")).toBe(true);
     root.dispatchEvent(new Event("click"));
+    flush();
     expect(root.getAttribute("aria-checked")).toBe("false");
     expect(onCheckedChange).not.toHaveBeenCalled();
   });
@@ -128,6 +134,7 @@ describe("checkbox", () => {
     });
     const { root } = mountCheckbox(variant, { "on:click": userClick });
     root.dispatchEvent(new Event("click"));
+    flush();
     expect(userClick).toHaveBeenCalledTimes(1);
     expect(root.getAttribute("aria-checked")).toBe("true");
     expect(root.getAttribute("data-state")).toBe("checked");

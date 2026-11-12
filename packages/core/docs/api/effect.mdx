@@ -26,6 +26,8 @@ cleanup();
 count(3); // (nothing is logged)
 ```
 
+The first run executes at creation; re-runs drain once at the microtask boundary after the writes that triggered them. Use [`flush()`](/reference/core/flush) when the re-run must land before the next line.
+
 ## API
 
 ```typescript
@@ -193,9 +195,9 @@ effect(() => {
 
 ### Error Propagation
 
-Errors thrown inside an effect propagate to the signal setter that triggered it and abort the current flush (remaining queued effects are skipped). Subsequent signal changes start a fresh flush and the reactive system continues normally.
+Errors thrown inside an effect follow two paths. A manual `flush()` drain throws to the `flush()` caller and aborts the drain (remaining queued effects stay queued). The scheduled microtask drain that follows signal writes has no caller to receive the error: it aborts the drain the same way, leaves the survivors queued, and dispatches the throw to the handler registered with [`setFlushErrorHandler`](/reference/core/flush) when one is registered, surfacing as an unhandled microtask rejection otherwise. Either way, subsequent writes schedule a fresh drain, recover the survivors, and the reactive system continues normally.
 
-A throw on the ***first*** run is different: the effect never started, so it is disposed before the error propagates. No re-runs occur and no cleanup handle exists to call; subsequent writes to any dependency it read before throwing do nothing. Re-run throws keep the effect alive: the flush aborts and the error propagates to the triggering setter, but the effect stays subscribed and re-runs on the next dependency change; call the returned cleanup when it should not recover.
+A throw on the ***first*** run is different: the effect never started, so it is disposed before the error propagates. No re-runs occur and no cleanup handle exists to call; subsequent writes to any dependency it read before throwing do nothing. Re-run throws keep the effect alive: the drain aborts and the error surfaces through its path (the `flush()` caller, or the registered scheduled-drain handler on the scheduled drain), but the effect stays subscribed and re-runs on the next dependency change; call the returned cleanup when it should not recover.
 
 ```typescript
 import { signal, effect } from "@hellajs/core";
@@ -227,11 +229,13 @@ const cleanup = effect(() => {
   console.log(value);
 });
 
-// Error throws from the signal setter call
-shouldThrow(true); // throws Error: "boom"
+// Error throws from the flush() drain
+shouldThrow(true);
+flush(); // throws Error: "boom"
 
 // Signal state is not corrupted
-shouldThrow(false); // Effect recovers and re-runs normally
+shouldThrow(false);
+flush(); // Effect recovers and re-runs normally
 
 cleanup();
 ```

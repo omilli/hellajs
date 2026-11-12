@@ -58,11 +58,13 @@ describe("collapsible", () => {
       expect(root.getAttribute("data-state")).toBe("closed");
       expect(trigger.getAttribute("aria-expanded")).toBe("false");
       trigger.dispatchEvent(new Event("click"));
+      flush();
       expect(trigger.getAttribute("aria-expanded")).toBe("true");
       expect(trigger.getAttribute("data-state")).toBe("open");
       expect(root.getAttribute("data-state")).toBe("open");
       expect(content.getAttribute("data-state")).toBe("open");
       trigger.dispatchEvent(new Event("click"));
+      flush();
       expect(trigger.getAttribute("aria-expanded")).toBe("false");
       expect(root.getAttribute("data-state")).toBe("closed");
     },
@@ -79,6 +81,7 @@ describe("collapsible", () => {
       });
       trigger.dispatchEvent(new Event("click"));
       trigger.dispatchEvent(new Event("click"));
+      flush();
       expect(onOpenChange).toHaveBeenCalledTimes(2);
       expect(onOpenChange.mock.calls[0]).toEqual([true]);
       expect(onOpenChange.mock.calls[1]).toEqual([false]);
@@ -102,6 +105,7 @@ describe("collapsible", () => {
       expect(trigger.getAttribute("aria-expanded")).toBe("true");
       expect(content.getAttribute("data-state")).toBe("open");
       trigger.dispatchEvent(new Event("click"));
+      flush();
       expect(onOpenChange).toHaveBeenCalledTimes(1);
       expect(onOpenChange.mock.calls[0]).toEqual([false]);
       expect(trigger.getAttribute("aria-expanded")).toBe("true");
@@ -118,6 +122,7 @@ describe("collapsible", () => {
       });
       expect(content.getAttribute("data-state")).toBe("open");
       trigger.dispatchEvent(new Event("click"));
+      flush();
       expect(content.isConnected).toBe(true);
       expect(content.getAttribute("data-state")).toBe("closed");
       expect(content.querySelector("[data-slot='collapsible-content'] > div")).not.toBeNull();

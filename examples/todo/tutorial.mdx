@@ -153,11 +153,10 @@ const done = style({
 
 ## Todo Actions
 
-Now let's add the functions that modify our state. All state updates create new arrays to trigger reactivity, and each user action wraps its writes in [`batch`](/reference/core/batch) so every effect observes the action once.
+Now let's add the functions that modify our state. All state updates create new arrays to trigger reactivity, and same-tick writes coalesce automatically so every effect observes the action once.
 
 ```tsx
-//... add batch to the core import
-import { batch, signal } from "@hellajs/core";
+import { signal } from "@hellajs/core";
 
 const TodoApp = () => {
   //... after this signal
@@ -167,10 +166,8 @@ const TodoApp = () => {
     const text = newTodoText().trim();
     if (!text) return;
 
-    batch(() => {
-      todos([...todos(), { id: Date.now(), text, completed: false }]);
-      newTodoText("");
-    });
+    todos([...todos(), { id: Date.now(), text, completed: false }]);
+    newTodoText("");
   };
 
   const toggleTodo = (id: number) => {
@@ -189,7 +186,7 @@ const TodoApp = () => {
 
 - **`todos([...todos(), newTodo])`**:  Creates a new array with spread to trigger reactive updates
 - **`Date.now()`**:  Generates unique IDs for new todos
-- **[`batch`](/reference/core/batch)`(() => { ... })`**:  Groups the two writes (list update + input clear) into one flush: effects run once, not once per write
+- **Two writes in one tick**:  The list update and input clear coalesce on core's microtask drain: effects run once with both changes applied
 - **`todos().map(...)`**:  Creates a new array with the toggled todo
 - **`todos().filter(...)`**:  Creates a new array without the removed todo
 
@@ -301,7 +298,7 @@ Let's add filtering and live statistics using [computed](/reference/core/compute
 
 ```tsx
 //... import computed at the top
-import { batch, signal, computed } from "@hellajs/core";
+import { signal, computed } from "@hellajs/core";
 
 //... CSS code
 
@@ -409,7 +406,7 @@ Update the import to include `effect`:
 
 ```tsx
 //... import effects at the top
-import { batch, signal, computed, effect } from "@hellajs/core";
+import { signal, computed, effect } from "@hellajs/core";
 ```
 
 Add a `loadTodos` function outside the component:
@@ -519,7 +516,7 @@ The patterns you learned here - complex state management, computed derivations, 
 ## Complete Code
 
 ```tsx
-import { batch, signal, computed, effect } from "@hellajs/core";
+import { signal, computed, effect } from "@hellajs/core";
 import { css, style } from "@hellajs/css";
 import { mount, ForEach } from "@hellajs/dom";
 
@@ -615,10 +612,8 @@ const TodoApp = () => {
   const addTodo = () => {
     const text = newTodoText().trim();
     if (!text) return;
-    batch(() => {
-      todos([...todos(), { id: Date.now(), text, completed: false }]);
-      newTodoText("");
-    });
+    todos([...todos(), { id: Date.now(), text, completed: false }]);
+    newTodoText("");
   };
 
   const toggleTodo = (id: number) => {

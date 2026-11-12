@@ -33,9 +33,11 @@ describe("press family", () => {
     expect(root.getAttribute("aria-pressed")).toBe("false");
     expect(root.getAttribute("data-state")).toBe("off");
     root.dispatchEvent(new Event("click"));
+    flush();
     expect(root.getAttribute("aria-pressed")).toBe("true");
     expect(root.getAttribute("data-state")).toBe("on");
     root.dispatchEvent(new Event("click"));
+    flush();
     expect(root.getAttribute("aria-pressed")).toBe("false");
     expect(root.getAttribute("data-state")).toBe("off");
   });
@@ -44,6 +46,7 @@ describe("press family", () => {
     const root = mountPart(toggle({ pressed: true }).Root({ children: "Bold" }));
     expect(root.getAttribute("aria-pressed")).toBe("true");
     root.dispatchEvent(new Event("click"));
+    flush();
     expect(root.getAttribute("aria-pressed")).toBe("false");
   });
 
@@ -54,6 +57,7 @@ describe("press family", () => {
       toggle({ pressed: () => pressed(), onPressedChange }).Root({ children: "Bold" }),
     );
     root.dispatchEvent(new Event("click"));
+    flush();
     expect(onPressedChange).toHaveBeenCalledTimes(1);
     expect(onPressedChange.mock.calls[0]).toEqual([true]);
     expect(root.getAttribute("aria-pressed")).toBe("false");
@@ -67,6 +71,7 @@ describe("press family", () => {
     const root = mountPart(toggle({ onPressedChange }).Root({ disabled: true, children: "Bold" }));
     expect(root.hasAttribute("disabled")).toBe(true);
     root.dispatchEvent(new Event("click"));
+    flush();
     expect(root.getAttribute("aria-pressed")).toBe("false");
     expect(onPressedChange).not.toHaveBeenCalled();
   });
@@ -77,6 +82,7 @@ describe("press family", () => {
     });
     const root = mountPart(toggle().Root({ "on:click": userClick, children: "Bold" }));
     root.dispatchEvent(new Event("click"));
+    flush();
     expect(userClick).toHaveBeenCalledTimes(1);
     expect(root.getAttribute("aria-pressed")).toBe("true");
   });
@@ -96,12 +102,14 @@ describe("press family", () => {
     expect(root.getAttribute("data-state")).toBe("unchecked");
     expect(root.textContent).not.toContain("icon");
     root.dispatchEvent(new Event("click"));
+    flush();
     expect(root.getAttribute("aria-checked")).toBe("true");
     expect(root.getAttribute("data-state")).toBe("checked");
     expect(root.textContent).toContain("icon");
     expect(onCheckedChange).toHaveBeenCalledTimes(1);
     expect(onCheckedChange.mock.calls[0]).toEqual([true]);
     root.dispatchEvent(new Event("click"));
+    flush();
     expect(root.getAttribute("aria-checked")).toBe("false");
     expect(root.textContent).not.toContain("icon");
   });
@@ -114,6 +122,7 @@ describe("press family", () => {
     expect(root.getAttribute("data-state")).toBe("indeterminate");
     expect(root.querySelector("[data-slot='checkbox-check-icon']")).not.toBeNull();
     root.dispatchEvent(new Event("click"));
+    flush();
     expect(onCheckedChange.mock.calls[0]).toEqual([true]);
     expect(root.getAttribute("aria-checked")).toBe("true");
     expect(root.getAttribute("data-state")).toBe("checked");
@@ -123,6 +132,7 @@ describe("press family", () => {
     const parts = checkbox({ checked: () => false, indeterminate: () => true });
     const root = mountPart(parts.Root({ children: parts.Indicator({}) }));
     root.dispatchEvent(new Event("click"));
+    flush();
     expect(root.getAttribute("aria-checked")).toBe("mixed");
     expect(root.getAttribute("data-state")).toBe("indeterminate");
   });
@@ -133,6 +143,7 @@ describe("press family", () => {
     const parts = checkbox({ checked: () => checked(), onCheckedChange });
     const root = mountPart(parts.Root({ children: parts.Indicator({}) }));
     root.dispatchEvent(new Event("click"));
+    flush();
     expect(onCheckedChange).toHaveBeenCalledTimes(1);
     expect(onCheckedChange.mock.calls[0]).toEqual([true]);
     expect(root.getAttribute("aria-checked")).toBe("false");
@@ -145,6 +156,7 @@ describe("press family", () => {
     const onCheckedChange = vi.fn((value: boolean) => value);
     const root = mountPart(checkbox({ onCheckedChange }).Root({ disabled: true }));
     root.dispatchEvent(new Event("click"));
+    flush();
     expect(root.getAttribute("aria-checked")).toBe("false");
     expect(onCheckedChange).not.toHaveBeenCalled();
   });
@@ -168,6 +180,7 @@ describe("press family", () => {
     expect(root.getAttribute("aria-checked")).toBe("false");
     expect(thumb.getAttribute("data-state")).toBe("unchecked");
     root.dispatchEvent(new Event("click"));
+    flush();
     expect(root.getAttribute("aria-checked")).toBe("true");
     expect(root.getAttribute("data-state")).toBe("checked");
     expect(thumb.getAttribute("data-state")).toBe("checked");
@@ -179,6 +192,7 @@ describe("press family", () => {
     const onCheckedChange = vi.fn((value: boolean) => value);
     const root = mountPart(toggleSwitch({ checked: () => checked(), onCheckedChange }).Root({}));
     root.dispatchEvent(new Event("click"));
+    flush();
     expect(onCheckedChange.mock.calls.at(-1)).toEqual([false]);
     expect(root.getAttribute("aria-checked")).toBe("true");
     checked(false);
@@ -191,6 +205,7 @@ describe("press family", () => {
     expect(root.tagName).toBe("BUTTON");
     expect(root.getAttribute("type")).toBe("button");
     root.dispatchEvent(new Event("click"));
+    flush();
     expect(root.getAttribute("aria-checked")).toBe("true");
   });
 
@@ -198,6 +213,7 @@ describe("press family", () => {
     const onCheckedChange = vi.fn((value: boolean) => value);
     const root = mountPart(toggleSwitch({ onCheckedChange }).Root({ disabled: true }));
     root.dispatchEvent(new Event("click"));
+    flush();
     expect(root.getAttribute("aria-checked")).toBe("false");
     expect(onCheckedChange).not.toHaveBeenCalled();
   });
@@ -215,9 +231,11 @@ describe("press family", () => {
     expect(root.getAttribute("title")).toBe("styles");
     expect(item.getAttribute("title")).toBe("bold-item");
     item.dispatchEvent(new Event("click"));
+    flush();
     expect(onValueChange.mock.calls[0]).toEqual(["bold"]);
     expect(item.getAttribute("data-state")).toBe("on");
     item.dispatchEvent(new Event("click"));
+    flush();
     expect(onValueChange.mock.calls[1]).toEqual([""]);
     expect(item.getAttribute("data-state")).toBe("off");
   });
@@ -237,10 +255,13 @@ describe("press family", () => {
       root.querySelectorAll("[data-slot='toggle-group-item']"),
     ) as HTMLElement[];
     items[0]!.dispatchEvent(new Event("click"));
+    flush();
     expect(onValueChange.mock.calls[0]).toEqual([["bold"]]);
     items[1]!.dispatchEvent(new Event("click"));
+    flush();
     expect(onValueChange.mock.calls[1]).toEqual([["bold", "italic"]]);
     items[0]!.dispatchEvent(new Event("click"));
+    flush();
     expect(onValueChange.mock.calls[2]).toEqual([["italic"]]);
   });
 
@@ -278,6 +299,7 @@ describe("press family", () => {
     const item = root.querySelector("[data-slot='toggle-group-item']") as HTMLElement;
     expect(item.getAttribute("data-state")).toBe("on");
     item.dispatchEvent(new Event("click"));
+    flush();
     expect(onValueChange.mock.calls[0]).toEqual([""]);
     expect(item.getAttribute("data-state")).toBe("on");
     value("");
@@ -332,6 +354,7 @@ describe("press family", () => {
     pressKey(items[0]!, "ArrowRight");
     expect(document.activeElement).toBe(items[0]!);
     items[1]!.dispatchEvent(new Event("click"));
+    flush();
     expect(onValueChange).not.toHaveBeenCalled();
   });
 
@@ -344,6 +367,7 @@ describe("press family", () => {
     expect(root.getAttribute("aria-pressed")).toBe("true");
     expect(root.getAttribute("data-state")).toBe("on");
     root.dispatchEvent(new Event("click"));
+    flush();
     expect(onSelect).toHaveBeenCalledTimes(1);
   });
 
@@ -373,6 +397,7 @@ describe("press family", () => {
     pressKey(items[0]!, "ArrowRight");
     expect(document.activeElement).toBe(before);
     items[1]!.dispatchEvent(new Event("click"));
+    flush();
     expect(onValueChange).not.toHaveBeenCalled();
   });
 
@@ -397,10 +422,12 @@ describe("press family", () => {
     const items = Array.from(root.querySelectorAll("[role='radio']")) as HTMLElement[];
     expect(items[0]!.getAttribute("title")).toBe("alpha-item");
     items[1]!.dispatchEvent(new Event("click"));
+    flush();
     expect(onValueChange.mock.calls[0]).toEqual(["beta"]);
     expect(items.map((item) => item.getAttribute("aria-checked"))).toEqual(["false", "true"]);
     expect(items[1]!.querySelector("[data-slot='radio-group-icon']")).not.toBeNull();
     items[1]!.dispatchEvent(new Event("click"));
+    flush();
     expect(onValueChange).toHaveBeenCalledTimes(1);
   });
 
@@ -418,6 +445,7 @@ describe("press family", () => {
     );
     const items = Array.from(root.querySelectorAll("[role='radio']")) as HTMLElement[];
     items[1]!.dispatchEvent(new Event("click"));
+    flush();
     expect(onValueChange.mock.calls[0]).toEqual(["beta"]);
     expect(items.map((item) => item.getAttribute("aria-checked"))).toEqual(["true", "false"]);
     value("beta");
@@ -488,6 +516,7 @@ describe("press family", () => {
     await awaitWiring(root);
     // Non-radio focusins and disabled radios never drive the selection.
     root.dispatchEvent(new FocusEvent("focusin"));
+    flush();
     expect(onValueChange).not.toHaveBeenCalled();
     items[1]!.focus();
     expect(onValueChange).not.toHaveBeenCalled();
@@ -497,6 +526,7 @@ describe("press family", () => {
     pressKey(items[0]!, "ArrowRight");
     expect(document.activeElement).toBe(items[0]!);
     items[1]!.dispatchEvent(new Event("click"));
+    flush();
     expect(onValueChange).not.toHaveBeenCalled();
   });
 
@@ -538,6 +568,7 @@ describe("press family", () => {
     expect(root.getAttribute("data-state")).toBe("checked");
     expect(root.textContent).toContain("dot");
     root.dispatchEvent(new Event("click"));
+    flush();
     expect(onSelect).toHaveBeenCalledTimes(1);
   });
 
@@ -565,6 +596,7 @@ describe("press family", () => {
     pressKey(items[0]!, "ArrowRight");
     expect(document.activeElement).toBe(before);
     items[1]!.dispatchEvent(new Event("click"));
+    flush();
     expect(onValueChange).not.toHaveBeenCalled();
   });
 });

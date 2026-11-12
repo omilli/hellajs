@@ -1,5 +1,5 @@
 import { describe, test, expect, vi } from "vite-plus/test";
-import { signalSet, effect, batch, untracked } from "@hellajs/core";
+import { signalSet, effect, flush, untracked } from "@hellajs/core";
 
 describe("signalSet", () => {
   test("has readers wake on add and delete of their value only", () => {
@@ -11,9 +11,11 @@ describe("signalSet", () => {
     tags.delete("b");
     expect(hasA).toHaveBeenCalledTimes(1);
     tags.delete("a");
+    flush();
     expect(hasA).toHaveBeenCalledTimes(2);
     expect(hasA).toHaveBeenLastCalledWith(false);
     tags.add("a");
+    flush();
     expect(hasA).toHaveBeenCalledTimes(3);
     expect(hasA).toHaveBeenLastCalledWith(true);
   });
@@ -34,15 +36,18 @@ describe("signalSet", () => {
     const size = vi.fn((value: number) => value);
     effect(() => size(tags.size()));
     expect(size).toHaveBeenLastCalledWith(0);
-    expect(tags.add("a")).toBe(tags); // add returns the container
+    tags.add("a");
+    flush();
     expect(size).toHaveBeenCalledTimes(2);
     const snapshot = tags();
     snapshot.add("z");
     expect(tags.size()).toBe(1); // Snapshot mutation never touches the container
     tags.add("b");
+    flush();
     expect(size).toHaveBeenCalledTimes(3);
     expect(size).toHaveBeenLastCalledWith(2);
     tags.delete("a");
+    flush();
     expect(tags()).toEqual(new Set(["b"]));
   });
 
@@ -60,8 +65,10 @@ describe("signalSet", () => {
     effect(() => tags.forEach(each));
     expect(each).toHaveBeenCalledTimes(1);
     tags.add("b");
+    flush();
     expect(each).toHaveBeenCalledTimes(3); // Full re-iteration: a + b
     tags.delete("a");
+    flush();
     expect(each).toHaveBeenCalledTimes(4); // b only
   });
 
@@ -73,14 +80,13 @@ describe("signalSet", () => {
     expect(tags.size()).toBe(2);
   });
 
-  test("mutations inside batch propagate once", () => {
+  test("mutations in one tick propagate once", () => {
     const tags = signalSet(["a"]);
     const reader = vi.fn((value: Set<string>) => value);
     effect(() => reader(tags()));
-    batch(() => {
-      tags.add("b");
-      tags.delete("a");
-    });
+    tags.add("b");
+    tags.delete("a");
+    flush();
     expect(reader).toHaveBeenCalledTimes(2);
     expect(reader).toHaveBeenLastCalledWith(new Set(["b"]));
   });

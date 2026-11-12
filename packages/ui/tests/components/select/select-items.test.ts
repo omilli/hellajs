@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
-import { signal } from "@hellajs/core";
+import { flush, signal } from "@hellajs/core";
 import { classTokens, renderVariant } from "../../helpers/variants-core";
 import { selectVariants, type SelectEntryVariant } from "./variants";
 import { awaitPortaled, pressKey } from "../../helpers/anchored";
@@ -66,8 +66,10 @@ describe("select", () => {
     expect(disabled.getAttribute("aria-disabled")).toBe("true");
     // Roving skips the disabled option; activation is blocked.
     pressKey(content, "ArrowDown");
+    flush();
     expect(document.activeElement).toBe(options[2]!);
     options[1]!.dispatchEvent(new Event("click", { bubbles: true }));
+    flush();
     expect(onValueChange).not.toHaveBeenCalled();
     expect(content.getAttribute("data-state")).toBe("open");
   });
@@ -79,12 +81,16 @@ describe("select", () => {
       const { content } = await openSelect(variant, { items: liveItems });
       const values = () =>
         [...content.querySelectorAll("[role='option']")].map((el) => el.getAttribute("data-value"));
+      flush();
       expect(values()).toEqual(["apple", "blueberry", "canteloupe"]);
       liveItems([...liveItems(), { value: "date", label: "Date" }]);
+      flush();
       expect(values()).toEqual(["apple", "blueberry", "canteloupe", "date"]);
       liveItems(liveItems().filter((entry) => entry.value !== "blueberry"));
+      flush();
       expect(values()).toEqual(["apple", "canteloupe", "date"]);
       liveItems([liveItems()[2]!, liveItems()[0]!, liveItems()[1]!]);
+      flush();
       expect(values()).toEqual(["date", "apple", "canteloupe"]);
     },
   );
@@ -104,6 +110,7 @@ describe("select", () => {
       )!;
       expect(blueberryBefore.getAttribute("data-state")).toBe("checked");
       liveItems([liveItems()[2]!, liveItems()[0]!, liveItems()[1]!]);
+      flush();
       expect(itemEls().map((el) => el.getAttribute("data-value"))).toEqual([
         "canteloupe",
         "apple",

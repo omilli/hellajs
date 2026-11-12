@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vite-plus/test";
-import { batch, effect, scope, signal } from "@hellajs/core";
+import { effect, flush, scope, signal } from "@hellajs/core";
 import { delay } from "@utils/test-helpers.js";
 
 describe("core", () => {
@@ -18,6 +18,7 @@ describe("core", () => {
       expect(lastValue).toBe(0);
 
       count(5);
+      flush();
       expect(runs).toHaveBeenCalledTimes(2);
       expect(lastValue).toBe(5);
 
@@ -34,6 +35,7 @@ describe("core", () => {
       expect(runs).toHaveBeenCalledTimes(1);
 
       count(1);
+      flush();
       expect(runs).toHaveBeenCalledTimes(2);
 
       // An options object without `separate` still links to the running parent:
@@ -46,6 +48,7 @@ describe("core", () => {
       expect(childRuns).toHaveBeenCalledTimes(1);
       childStop();
       count(2);
+      flush();
       expect(childRuns).toHaveBeenCalledTimes(1);
       expect(runs).toHaveBeenCalledTimes(3);
 
@@ -64,25 +67,28 @@ describe("core", () => {
 
       expect(nestedRuns).toHaveBeenCalledTimes(1);
       trigger(1);
+      flush();
       expect(nestedRuns).toHaveBeenCalledTimes(2);
     });
 
-    test("errors in effect are thrown from signal setter", () => {
+    test("errors in an effect throw from the manual flush drain", () => {
       const count = signal(0);
 
       const cleanupBad = effect(() => {
         if (count() > 1) throw new Error("effect error");
       });
 
-      // Effect throws when count exceeds threshold
-      expect(() => count(2)).toThrow("effect error");
+      // Effect throws when count exceeds threshold: the write schedules, the
+      // manual drain surfaces the error to its caller
+      count(2);
+      expect(() => flush()).toThrow("effect error");
 
       // Error doesn't corrupt signal state
       expect(count()).toBe(2);
 
       // After cleanup, no more throws
       cleanupBad();
-      expect(() => count(5)).not.toThrow();
+      count(5);
       expect(count()).toBe(5);
     });
 
@@ -105,9 +111,11 @@ describe("core", () => {
       expect(effectValue).toBe(-1);
 
       shouldThrow(false);
+      flush();
       expect(effectValue).toBe(10);
 
       data(25);
+      flush();
       expect(effectValue).toBe(25);
     });
 
@@ -127,8 +135,10 @@ describe("core", () => {
       await delay();
       expect(result()).toBe("data-1");
 
+      // Multi-hop: the drain runs the effect, then the .then chain's result
+      // write schedules a second drain — cross them all with one macrotask
       id(2);
-      await delay();
+      await delay(0);
       expect(result()).toBe("data-2");
     });
 
@@ -144,10 +154,9 @@ describe("core", () => {
       expect(runs).toHaveBeenCalledTimes(1);
 
       // Both signals change: effect should run exactly once per flush
-      batch(() => {
-        a(1);
-        b(1);
-      });
+      a(1);
+      b(1);
+      flush();
 
       expect(runs).toHaveBeenCalledTimes(2);
     });
@@ -165,18 +174,22 @@ describe("core", () => {
 
       expect(effectValue).toBe(10);
 
-      // shouldThrow change triggers effect re-run, which throws
-      expect(() => shouldThrow(true)).toThrow("boom");
+      // shouldThrow change triggers effect re-run, which throws — from the
+      // manual drain now, not the setter
+      shouldThrow(true);
+      expect(() => flush()).toThrow("boom");
 
       // Signal state unaffected by the error
       expect(data()).toBe(10);
 
       // Recover: setting shouldThrow to false triggers effect without error
       shouldThrow(false);
+      flush();
       expect(effectValue).toBe(10);
 
       // After recovery, effect still tracks data
       data(30);
+      flush();
       expect(effectValue).toBe(30);
 
       cleanup();
@@ -202,10 +215,12 @@ describe("core", () => {
 
       // a change re-runs parent, creating new nested effects (old ones persist)
       a(2);
+      flush();
       expect(level3Count).toHaveBeenCalledTimes(2); // new L3 created, old L3 not triggered (c unchanged)
 
       // c change triggers ALL L3 instances (old + new)
       c(200);
+      flush();
       expect(level3Count).toHaveBeenCalledTimes(4); // 2 existing L3 effects each run
     });
 
@@ -220,6 +235,7 @@ describe("core", () => {
 
       // Re-execution triggers cleanup
       count(1);
+      flush();
       expect(cleanupRuns).toHaveBeenCalledTimes(1);
 
       // Disposal triggers cleanup
@@ -241,6 +257,7 @@ describe("core", () => {
       });
 
       count(1); // Re-runs both effects
+      flush();
       expect(fnCleanup).toHaveBeenCalledTimes(1);
 
       stopValue(); // Disposal of a value-returning effect performs no cleanup
@@ -272,13 +289,18 @@ describe("core", () => {
 
       expect(effectAMock).toHaveBeenCalled();
       expect(effectBMock).not.toHaveBeenCalled();
-      // Error from throwing effect aborts flush: remaining queue not processed
-      expect(() => a(1)).toThrow("flush error");
+      // The drain aborts at the thrower: the manual drain surfaces the throw,
+      // the remaining queue (effectBMock) is not processed
+      expect(() => {
+        a(1);
+        flush();
+      }).toThrow("flush error");
       expect(effectBMock).not.toHaveBeenCalled();
 
-      // After cleanup, subsequent updates process normally
+      // After cleanup, the next drain processes the queue normally
       cleanupBad();
       b(1);
+      flush();
       expect(effectBMock).toHaveBeenCalled();
     });
 

@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach, vi } from "vite-plus/test";
-import { effect } from "@hellajs/core";
+import { effect, flush } from "@hellajs/core";
 
 import { router, navigate, route } from "@hellajs/router";
 import { setupRouterEnv } from "./helpers";
@@ -95,6 +95,7 @@ describe("router", () => {
       const pathBefore = route().path;
       window.location.hash = "faq";
       window.dispatchEvent(new Event("hashchange"));
+      flush();
       expect(notFoundSpy).not.toHaveBeenCalled();
       expect(route().path).toBe(pathBefore);
     });
@@ -115,6 +116,7 @@ describe("router", () => {
       tracker.mockClear();
       window.location.hash = "/test";
       window.dispatchEvent(new Event("hashchange"));
+      flush();
       expect(tracker).toHaveBeenCalledTimes(1);
     });
   });

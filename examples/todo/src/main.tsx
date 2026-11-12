@@ -1,4 +1,4 @@
-import { batch, signal, computed, effect } from "@hellajs/core";
+import { signal, computed, effect } from "@hellajs/core";
 import { css, style } from "@hellajs/css";
 import { mount, ForEach } from "@hellajs/dom";
 
@@ -94,10 +94,8 @@ const TodoApp = () => {
   const addTodo = () => {
     const text = newTodoText().trim();
     if (!text) return;
-    batch(() => {
-      todos([...todos(), { id: Date.now(), text, completed: false }]);
-      newTodoText("");
-    });
+    todos([...todos(), { id: Date.now(), text, completed: false }]);
+    newTodoText("");
   };
 
   const toggleTodo = (id: number) => {

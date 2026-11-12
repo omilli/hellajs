@@ -25,7 +25,7 @@ Best practices for @hellajs/store, the deeply reactive state package: store() co
   - 1.4 Function properties are behavior, not state (`shape-functions-preserved`)
   - 1.5 Read and write store state through the property calls (`shape-properties-are-the-signals`)
 - 2. Snapshots and updates
-  - 2.1 Draft mutators apply structural diffs and are not auto-batched (`snap-draft-structural-batching`)
+  - 2.1 Draft mutators apply structural diffs and auto-batch their writes (`snap-draft-structural-batching`)
   - 2.2 Gate equal writes with per-key equals comparators (`snap-equals-gates-writes`)
   - 2.3 Grow stores through the reference $update returns (`snap-grow-via-returned-store`)
   - 2.4 $snapshot() returns a point-in-time copy, never live state (`snap-snapshot-copy`)
@@ -228,40 +228,45 @@ Reference: `packages/store/lib/internal/utils.ts defineStoreProperty` and `packa
 
 ## 2. Snapshots and updates
 
-### 2.1 Draft mutators apply structural diffs and are not auto-batched
+### 2.1 Draft mutators apply structural diffs and auto-batch their writes
 
-**Impact: HIGH** - untouched values are never rewritten, but each extracted change is a separate signal write, so un-batched multi-key drafts fire effects repeatedly
+**Impact: HIGH** - untouched values are never rewritten, and the extracted writes coalesce per tick, but the draft path still materializes the full snapshot first
 
-`$update(draft => ...)` clones the snapshot, runs the mutator, then `extractChanges` walks the draft and records only structural differences: arrays, Dates, Maps, Sets, and class instances compare by content, so untouched values are never rewritten and their subscribers sleep. Two contract points. Each extracted change is a separate signal write - wrap multi-key drafts in `batch()` from `@hellajs/core` to flush effects once. And the draft path materializes the full snapshot first, so calling it inside an effect subscribes that effect to every signal in the tree - keep drafts out of narrow effects.
+`$update(draft => ...)` clones the snapshot, runs the mutator, then `extractChanges` walks the draft and records only structural differences: arrays, Dates, Maps, Sets, and class instances compare by content, so untouched values are never rewritten and their subscribers sleep. Two contract points. Each extracted change is a separate signal write, and core's microtask drain coalesces them: multi-key drafts fire subscribed effects once, with final values (`flush()` forces that drain synchronously). And the draft path materializes the full snapshot first, so calling it inside an effect subscribes that effect to every signal in the tree - keep drafts out of narrow effects.
 
 **Incorrect (what is wrong):**
 
 ```ts
+import { effect, flush, signal } from "@hellajs/core";
 import { store } from "@hellajs/store";
 
 const form = store({ email: "", name: "", touched: false });
+const saveCount = signal(0);
 
-// Two separate signal writes: effects over form fire twice
+effect(() => {
+  form.email();
+  form.touched();
+  saveCount(saveCount() + 1);
+});
 form.$update((draft) => {
   draft.email = "ada@example.com";
   draft.touched = true;
 });
+flush();
+flush(); // Second drain is a no-op: same-tick writes already coalesced
 ```
 
 **Correct (what is right):**
 
 ```ts
-import { batch } from "@hellajs/core";
 import { store } from "@hellajs/store";
 
 const form = store({ email: "", name: "", touched: false });
 
-// One flush: both changes land inside the batch
-batch(() => {
-  form.$update((draft) => {
-    draft.email = "ada@example.com";
-    draft.touched = true;
-  });
+// Both extracted writes land in one drain: effects fire once with final values
+form.$update((draft) => {
+  draft.email = "ada@example.com";
+  draft.touched = true;
 });
 ```
 

@@ -25,11 +25,11 @@ function pinRect(el: Element, top: number, left: number, width: number, height: 
     }) as DOMRect;
 }
 
-/** Polls (microtask hops) until the newest portaled content finished its observer-driven mount walk. */
-async function openContent(): Promise<HTMLElement> {
+/** Polls (microtask hops) until the newest portaled content finished its observer-driven mount walk; `min` guards stacked opens against aliasing a previous layer's content. */
+async function openContent(min = 1): Promise<HTMLElement> {
   for (let i = 0; i < 50; i++) {
     const nodes = document.querySelectorAll("[data-slot='popover-content']");
-    const node = nodes.length === 0 ? undefined : (nodes[nodes.length - 1] as HTMLElement);
+    const node = nodes.length < min ? undefined : (nodes[nodes.length - 1] as HTMLElement);
     if (node && peekState(node)?.isMounted) return node;
     await delay();
   }
@@ -98,12 +98,13 @@ describe("popover", () => {
     const second = popover();
     const secondTrigger = mountPopover(second);
     secondTrigger.dispatchEvent(new Event("click"));
-    const secondContent = await openContent();
+    const secondContent = await openContent(2);
     expect(secondContent.textContent).toBe("Body");
 
     pressKey(document.body, "Escape");
     flush();
     expect(secondContent.getAttribute("data-state")).toBe("closed");
+    flush();
     expect(firstContent.getAttribute("data-state")).toBe("open");
 
     pressKey(document.body, "Escape");
@@ -120,11 +121,12 @@ describe("popover", () => {
     const second = popover();
     const secondTrigger = mountPopover(second);
     secondTrigger.dispatchEvent(new Event("click"));
-    const secondContent = await openContent();
+    const secondContent = await openContent(2);
 
     pointerDown(document.body);
     flush();
     expect(secondContent.getAttribute("data-state")).toBe("closed");
+    flush();
     expect(firstContent.getAttribute("data-state")).toBe("open");
 
     pointerDown(document.body);
@@ -202,6 +204,7 @@ describe("popover", () => {
 
     pressKey(document.body, "Escape");
     pointerDown(document.body);
+    flush();
     expect(onOpenChange).not.toHaveBeenCalled();
   });
 });

@@ -154,3 +154,11 @@ export interface SignalSet<T, W = T> {
   /** Iterates values, tracking the version. */
   forEach(fn: (value: T) => void): void;
 }
+
+/**
+ * Handler invoked when a scheduled (microtask) effect drain aborts on a thrown
+ * error. The drain has already unwound when the handler runs: the surviving
+ * queue stays intact for the next flush, and a manual `flush()` never dispatches
+ * here (it throws to its caller instead).
+ */
+export type FlushErrorHandler = (error: unknown) => void;

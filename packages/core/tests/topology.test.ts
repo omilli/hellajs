@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vite-plus/test";
-import { computed, effect, signal } from "@hellajs/core";
+import { computed, effect, flush, signal } from "@hellajs/core";
 
 /** Tests adopted with thanks from preact-signals implementation at
  * https://github.com/preactjs/signals/blob/main/packages/core/test/signal.test.tsx
@@ -228,11 +228,13 @@ describe("core", () => {
       expect(spy).toHaveBeenCalledTimes(1);
 
       branch(false);
+      flush();
       expect(spy).toHaveBeenCalledTimes(2);
       spy.mockClear();
 
       b(1);
       c(2);
+      flush();
       expect(spy).not.toHaveBeenCalled();
     });
 

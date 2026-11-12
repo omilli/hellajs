@@ -1,5 +1,5 @@
 import { describe, test, expect, vi } from "vite-plus/test";
-import { signalArray, effect, batch, untracked } from "@hellajs/core";
+import { signalArray, effect, flush, untracked } from "@hellajs/core";
 
 describe("signalArray", () => {
   test("wakes only the reader of the written index", () => {
@@ -10,6 +10,7 @@ describe("signalArray", () => {
     items.set(1, 20);
     expect(first).toHaveBeenCalledTimes(1);
     items.set(0, 10);
+    flush();
     expect(first).toHaveBeenCalledTimes(2);
     expect(first).toHaveBeenLastCalledWith(10);
   });
@@ -20,6 +21,7 @@ describe("signalArray", () => {
     effect(() => second(items.get(1)));
     expect(second).toHaveBeenLastCalledWith(2);
     items.splice(0, 1);
+    flush();
     expect(second).toHaveBeenCalledTimes(2);
     expect(second).toHaveBeenLastCalledWith(3); // The element formerly at index 2 shifted into position 1
   });
@@ -32,6 +34,7 @@ describe("signalArray", () => {
     items.splice(0, 1); // The element moves from index 2 to index 1
     expect(reader).toHaveBeenCalledTimes(1);
     items.set(1, 20); // Writes the relocated element
+    flush();
     expect(reader).toHaveBeenCalledTimes(2);
     expect(reader).toHaveBeenLastCalledWith(20);
   });
@@ -71,6 +74,7 @@ describe("signalArray", () => {
     effect(() => reader(items.get(2)));
     expect(reader).toHaveBeenLastCalledWith(undefined);
     items.push(2, 3);
+    flush();
     expect(reader).toHaveBeenCalledTimes(2);
     expect(reader).toHaveBeenLastCalledWith(3);
   });
@@ -85,8 +89,10 @@ describe("signalArray", () => {
     const reader = vi.fn((values: number[]) => values);
     effect(() => reader(items()));
     items.set(0, 10);
+    flush();
     expect(reader).toHaveBeenCalledTimes(2);
     items.push(3);
+    flush();
     expect(reader).toHaveBeenCalledTimes(3);
     expect(reader).toHaveBeenLastCalledWith([10, 2, 3]);
   });
@@ -101,11 +107,13 @@ describe("signalArray", () => {
     const second = vi.fn((value: number | undefined) => value);
     effect(() => second(items.get(2)));
     items([1, 2, 31]); // Changed index 2 only
+    flush();
     expect(zero).toHaveBeenCalledTimes(1);
     expect(second).toHaveBeenCalledTimes(2);
     expect(second).toHaveBeenLastCalledWith(31);
 
     items([5]); // Removal: positional readers wake and read undefined past the end
+    flush();
     expect(second).toHaveBeenCalledTimes(3);
     expect(second).toHaveBeenLastCalledWith(undefined);
   });
@@ -116,8 +124,10 @@ describe("signalArray", () => {
     effect(() => doubled(items.map((value) => value * 2)));
     expect(doubled).toHaveBeenLastCalledWith([2, 4]);
     items.set(0, 5);
+    flush();
     expect(doubled).toHaveBeenCalledTimes(2);
     items.push(6);
+    flush();
     expect(doubled).toHaveBeenCalledTimes(3);
     expect(doubled).toHaveBeenLastCalledWith([10, 4, 12]);
 
@@ -125,17 +135,17 @@ describe("signalArray", () => {
     effect(() => items.forEach(each));
     expect(each).toHaveBeenCalledTimes(3);
     items.set(1, 9);
+    flush();
     expect(each).toHaveBeenCalledTimes(6);
   });
 
-  test("mutations inside batch propagate once", () => {
+  test("mutations in one tick propagate once", () => {
     const items = signalArray([1, 2]);
     const reader = vi.fn((values: number[]) => values);
     effect(() => reader(items()));
-    batch(() => {
-      items.set(0, 10);
-      items.push(3);
-    });
+    items.set(0, 10);
+    items.push(3);
+    flush();
     expect(reader).toHaveBeenCalledTimes(2);
     expect(reader).toHaveBeenLastCalledWith([10, 2, 3]);
   });
@@ -156,6 +166,7 @@ describe("signalArray", () => {
     items.set(0, { n: 1 }); // Content-equal: write skipped
     expect(reader).toHaveBeenCalledTimes(1);
     items.set(0, { n: 2 });
+    flush();
     expect(reader).toHaveBeenCalledTimes(2);
     expect(reader).toHaveBeenLastCalledWith({ n: 2 });
   });
@@ -230,6 +241,7 @@ describe("signalArray", () => {
       const fallReader = vi.fn((value: { n: number }) => value);
       effect(() => fallReader(freshHandle()));
       falling.set(0, { n: 2 }); // merge declines: default wrap/equals/write path
+      flush();
       expect(fallReader).toHaveBeenCalledTimes(2);
       expect(freshHandle().n).toBe(2);
     });

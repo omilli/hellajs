@@ -1,5 +1,5 @@
 import { describe, test, expect, vi } from "vite-plus/test";
-import { effect } from "@hellajs/core";
+import { effect, flush } from "@hellajs/core";
 import { delay } from "@utils/test-helpers.js";
 import { store, persistStore } from "@hellajs/store";
 import { withoutWindow } from "./helpers";
@@ -82,6 +82,7 @@ describe("store", () => {
       expect(write).not.toHaveBeenCalled();
 
       data.theme("red");
+      flush();
       expect(write).toHaveBeenCalledWith('{"theme":"red"}');
     });
 
@@ -112,6 +113,7 @@ describe("store", () => {
       persistStore(data, adaptor);
 
       data.theme("blue");
+      flush();
       expect(adaptor.write).toHaveBeenCalledWith('{"theme":"blue"}');
     });
 
@@ -134,6 +136,7 @@ describe("store", () => {
       });
 
       data.theme("dark");
+      flush();
       expect(adaptor.write.mock.calls.at(-1)).toEqual(['{"theme":"dark"}']);
     });
 
@@ -148,6 +151,7 @@ describe("store", () => {
       expect(data.theme()).toBe("dark");
 
       data.theme("blue");
+      flush();
       expect(serialize.mock.calls.at(-1)).toEqual([{ theme: "blue" }]);
       expect(adaptor.write.mock.calls.at(-1)).toEqual(["theme=blue"]);
     });
@@ -199,6 +203,7 @@ describe("store", () => {
       await handle.ready;
 
       data.theme("dark");
+      flush();
       expect(write).toHaveBeenCalledWith('{"theme":"dark"}');
     });
 
@@ -269,6 +274,7 @@ describe("store", () => {
       persistStore(data, { read, write, clear }, { onError });
 
       data.theme("red");
+      flush();
       expect(onError).toHaveBeenCalledTimes(1);
       expect(data.theme()).toBe("red");
     });
@@ -308,6 +314,7 @@ describe("store", () => {
       persistStore(data, adaptor, { debounce: 100 });
 
       data.count(1);
+      flush(); // drain arms the debounced write before pagehide flushes it
       expect(adaptor.write).not.toHaveBeenCalled();
 
       window.dispatchEvent(new Event("pagehide"));

@@ -1,42 +1,47 @@
 ---
-title: Draft mutators apply structural diffs and are not auto-batched
+title: Draft mutators apply structural diffs and auto-batch their writes
 impact: HIGH
-impactDescription: untouched values are never rewritten, but each extracted change is a separate signal write, so un-batched multi-key drafts fire effects repeatedly
-tags: draft, extractChanges, batch, structural
+impactDescription: untouched values are never rewritten, and the extracted writes coalesce per tick, but the draft path still materializes the full snapshot first
+tags: draft, extractChanges, structural
 ---
 
-## Draft mutators apply structural diffs and are not auto-batched
+## Draft mutators apply structural diffs and auto-batch their writes
 
-`$update(draft => ...)` clones the snapshot, runs the mutator, then `extractChanges` walks the draft and records only structural differences: arrays, Dates, Maps, Sets, and class instances compare by content, so untouched values are never rewritten and their subscribers sleep. Two contract points. Each extracted change is a separate signal write - wrap multi-key drafts in `batch()` from `@hellajs/core` to flush effects once. And the draft path materializes the full snapshot first, so calling it inside an effect subscribes that effect to every signal in the tree - keep drafts out of narrow effects.
+`$update(draft => ...)` clones the snapshot, runs the mutator, then `extractChanges` walks the draft and records only structural differences: arrays, Dates, Maps, Sets, and class instances compare by content, so untouched values are never rewritten and their subscribers sleep. Two contract points. Each extracted change is a separate signal write, and core's microtask drain coalesces them: multi-key drafts fire subscribed effects once, with final values (`flush()` forces that drain synchronously). And the draft path materializes the full snapshot first, so calling it inside an effect subscribes that effect to every signal in the tree - keep drafts out of narrow effects.
 
 **Incorrect (what is wrong):**
 
 ```ts
+import { effect, flush, signal } from "@hellajs/core";
 import { store } from "@hellajs/store";
 
 const form = store({ email: "", name: "", touched: false });
+const saveCount = signal(0);
 
-// Two separate signal writes: effects over form fire twice
+effect(() => {
+  form.email();
+  form.touched();
+  saveCount(saveCount() + 1);
+});
 form.$update((draft) => {
   draft.email = "ada@example.com";
   draft.touched = true;
 });
+flush();
+flush(); // Second drain is a no-op: same-tick writes already coalesced
 ```
 
 **Correct (what is right):**
 
 ```ts
-import { batch } from "@hellajs/core";
 import { store } from "@hellajs/store";
 
 const form = store({ email: "", name: "", touched: false });
 
-// One flush: both changes land inside the batch
-batch(() => {
-  form.$update((draft) => {
-    draft.email = "ada@example.com";
-    draft.touched = true;
-  });
+// Both extracted writes land in one drain: effects fire once with final values
+form.$update((draft) => {
+  draft.email = "ada@example.com";
+  draft.touched = true;
 });
 ```
 

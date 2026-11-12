@@ -1,7 +1,7 @@
 import { setActiveScope } from "./internal/context";
 import { isFunction } from "./internal/utils";
 /**
- * Effect scope for collecting and batch-disposing effects.
+ * Effect scope for collecting effects and disposing them together.
  * @internal
  */
 export interface EffectScope {

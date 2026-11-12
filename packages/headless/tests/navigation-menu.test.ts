@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
-import { signal } from "@hellajs/core";
+import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
 import { mount, peekState } from "@hellajs/dom";
 import { navigationMenu, NavRows } from "@hellajs/headless";
@@ -24,11 +24,11 @@ function pinRect(el: Element, top: number, left: number, width: number, height: 
     }) as DOMRect;
 }
 
-/** Polls (microtask hops) until the newest portaled content finished its observer-driven mount walk. */
-async function openContent(): Promise<HTMLElement> {
+/** Polls (microtask hops) until the newest portaled content finished its observer-driven mount walk; `min` guards a second open against aliasing the previous panel. */
+async function openContent(min = 1): Promise<HTMLElement> {
   for (let i = 0; i < 50; i++) {
     const nodes = document.querySelectorAll("[data-slot='navigation-menu-content']");
-    const node = nodes.length === 0 ? undefined : (nodes[nodes.length - 1] as HTMLElement);
+    const node = nodes.length < min ? undefined : (nodes[nodes.length - 1] as HTMLElement);
     if (node && peekState(node)?.isMounted) return node;
     await delay();
   }
@@ -58,7 +58,7 @@ interface NavFixture {
   viewport: HTMLElement;
   learnTrigger: HTMLElement;
   referenceTrigger: HTMLElement;
-  clickTrigger: (trigger: HTMLElement) => Promise<HTMLElement>;
+  clickTrigger: (trigger: HTMLElement, min?: number) => Promise<HTMLElement>;
 }
 
 /** Mounts a coordinated two-item bar (one factory instance, no manual wiring) and returns its handles. */
@@ -96,9 +96,9 @@ function mountNav(
   const root = container.firstElementChild as HTMLElement;
   const learnTrigger = root.querySelector("[data-value='learn']") as HTMLElement;
   const referenceTrigger = root.querySelector("[data-value='reference']") as HTMLElement;
-  const clickTrigger = async (trigger: HTMLElement): Promise<HTMLElement> => {
+  const clickTrigger = async (trigger: HTMLElement, min = 1): Promise<HTMLElement> => {
     trigger.dispatchEvent(new Event("click", { bubbles: true }));
-    return openContent();
+    return openContent(min);
   };
   return {
     root,
@@ -133,8 +133,9 @@ describe("navigationMenu", () => {
     const nav = mountNav(parts);
     await awaitWiring(nav.root);
     const first = await nav.clickTrigger(nav.learnTrigger);
-    const second = await nav.clickTrigger(nav.referenceTrigger);
+    const second = await nav.clickTrigger(nav.referenceTrigger, 2);
     expect(nav.viewport.contains(second)).toBe(true);
+    flush();
     expect(second.textContent).toBe("Reference body");
     expect(first.getAttribute("data-state")).toBe("closed");
     expect(second.getAttribute("data-state")).toBe("open");
@@ -162,6 +163,7 @@ describe("navigationMenu", () => {
       expect(nav.viewport.style.getPropertyValue("--radix-navigation-menu-viewport-width")).toBe(
         `${content.offsetWidth}px`,
       );
+      flush();
       expect(nav.viewport.style.getPropertyValue("--radix-navigation-menu-viewport-height")).toBe(
         `${content.offsetHeight}px`,
       );
@@ -249,6 +251,7 @@ describe("navigationMenu", () => {
     await awaitWiring(nav.root);
     const content = await nav.clickTrigger(nav.learnTrigger);
     document.body.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+    flush();
     expect(nav.viewport.getAttribute("data-state")).toBe("closed");
     content.dispatchEvent(new Event("animationend"));
     await awaitDetached(content);
@@ -274,6 +277,7 @@ describe("navigationMenu", () => {
     await awaitWiring(nav.root);
     await nav.clickTrigger(nav.learnTrigger);
     nav.learnTrigger.dispatchEvent(new Event("click", { bubbles: true }));
+    flush();
     expect(nav.learnTrigger.getAttribute("data-state")).toBe("closed");
     expect(nav.viewport.getAttribute("data-state")).toBe("closed");
   });
@@ -301,6 +305,7 @@ describe("navigationMenu", () => {
     trigger.dispatchEvent(new Event("click", { bubbles: true }));
     const content = await openContent();
     trigger.dispatchEvent(new Event("click", { bubbles: true }));
+    flush();
     expect(content.getAttribute("data-state")).toBe("closed");
     expect(content.isConnected).toBe(true);
     expect(onExited).not.toHaveBeenCalled();
@@ -315,6 +320,7 @@ describe("navigationMenu", () => {
     await awaitWiring(nav.root);
     const content = await nav.clickTrigger(nav.learnTrigger);
     nav.learnTrigger.dispatchEvent(new Event("click", { bubbles: true }));
+    flush();
     expect(content.getAttribute("data-state")).toBe("closed");
     await delay(300);
     expect(content.isConnected).toBe(false);
@@ -326,8 +332,10 @@ describe("navigationMenu", () => {
     await awaitWiring(nav.root);
     const content = await nav.clickTrigger(nav.learnTrigger);
     nav.learnTrigger.dispatchEvent(new Event("click", { bubbles: true }));
+    flush();
     expect(content.getAttribute("data-state")).toBe("closed");
     nav.learnTrigger.dispatchEvent(new Event("click", { bubbles: true }));
+    flush();
     expect(content.getAttribute("data-state")).toBe("open");
     expect(content.isConnected).toBe(true);
     await delay(300);
@@ -351,11 +359,13 @@ describe("navigationMenu", () => {
     expect(indicator.style.transform).toBe("translateX(40px)");
     pinRect(nav.learnTrigger, 0, 60, 120, 40);
     window.dispatchEvent(new Event("resize"));
+    flush();
     expect(indicator.style.transform).toBe("translateX(60px)");
     await nav.clickTrigger(nav.referenceTrigger);
     expect(indicator.style.width).toBe("80px");
     expect(indicator.style.transform).toBe("translateX(150px)");
     nav.referenceTrigger.dispatchEvent(new Event("click", { bubbles: true }));
+    flush();
     expect(indicator.getAttribute("data-state")).toBe("hidden");
   });
 
@@ -378,6 +388,7 @@ describe("navigationMenu", () => {
     document.dispatchEvent(
       new CustomEvent("hella:navigation-menu-activate", { detail: { id: "manual", open: true } }),
     );
+    flush();
     expect(indicator.getAttribute("data-state")).toBe("visible");
     expect(indicator.style.width).toBe("70px");
     expect(indicator.style.transform).toBe("translateX(200px)");
@@ -395,6 +406,7 @@ describe("navigationMenu", () => {
     expect(value()).toBe("learn");
     expect(nav.learnTrigger.getAttribute("data-state")).toBe("open");
     value("");
+    flush();
     expect(nav.learnTrigger.getAttribute("data-state")).toBe("closed");
     expect(nav.viewport.getAttribute("data-state")).toBe("closed");
   });
@@ -451,6 +463,7 @@ describe("navigationMenu", () => {
     expect(trigger.getAttribute("data-state")).toBe("open");
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
     trigger.dispatchEvent(new Event("click", { bubbles: true }));
+    flush();
     expect(onActivate).toHaveBeenCalledTimes(1);
   });
 
@@ -464,6 +477,7 @@ describe("navigationMenu", () => {
     const inactive = NavRows.Link({ href: "#api", children: "API" });
     const scratch = document.createElement("div");
     mount(inactive, scratch);
+    flush();
     expect(
       scratch.querySelector("[data-slot='navigation-menu-link']")!.hasAttribute("data-active"),
     ).toBe(false);
@@ -501,6 +515,7 @@ describe("navigationMenu", () => {
     expect(root.getAttribute("aria-label")).toBe("site");
     const trigger = root.querySelector("[data-value='learn']") as HTMLElement;
     trigger.dispatchEvent(new Event("click", { bubbles: true }));
+    flush();
     expect(userClick).toHaveBeenCalledTimes(1);
     root.dispatchEvent(new Event("click"));
   });
@@ -528,6 +543,7 @@ describe("navigationMenu", () => {
     document.dispatchEvent(
       new CustomEvent("hella:navigation-menu-activate", { detail: { id: "learn", open: true } }),
     );
+    flush();
     expect(onValueChange).not.toHaveBeenCalled();
   });
 
@@ -538,6 +554,7 @@ describe("navigationMenu", () => {
     const indicator = container.firstElementChild as HTMLElement;
     await awaitWiring(indicator);
     handle.unmount();
+    flush();
     expect(container.contains(indicator)).toBe(false);
     expect(() => {
       window.dispatchEvent(new Event("resize"));

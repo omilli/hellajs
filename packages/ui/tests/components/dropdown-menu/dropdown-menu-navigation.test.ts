@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
+import { flush } from "@hellajs/core";
 import { renderVariant } from "../../helpers/variants-core";
 import { dropdownMenuVariants } from "./variants";
 import { awaitPortaled, pressKey } from "../../helpers/anchored";
@@ -36,16 +37,22 @@ describe("dropdown-menu", () => {
       const items = [...content.querySelectorAll("[role='menuitem']")] as HTMLElement[];
       expect(document.activeElement).toBe(items[0]!);
       pressKey(content, "ArrowDown");
+      flush();
       expect(document.activeElement).toBe(items[1]!);
       pressKey(content, "ArrowDown");
+      flush();
       expect(document.activeElement).toBe(items[2]!);
       pressKey(content, "ArrowDown");
+      flush();
       expect(document.activeElement).toBe(items[0]!);
       pressKey(content, "ArrowUp");
+      flush();
       expect(document.activeElement).toBe(items[2]!);
       pressKey(content, "Home");
+      flush();
       expect(document.activeElement).toBe(items[0]!);
       pressKey(content, "End");
+      flush();
       expect(document.activeElement).toBe(items[2]!);
     },
   );
@@ -57,15 +64,22 @@ describe("dropdown-menu", () => {
       Item(variant, { children: "Beta" }),
     ]);
     pressKey(content, "Enter");
+    flush();
     expect(onclick).toHaveBeenCalledTimes(1);
+    flush();
     expect(content.getAttribute("data-state")).toBe("closed");
-    const second = await openMenu(variant, [
-      Item(variant, { children: "Alpha" }),
-      Item(variant, { children: "Beta", "on:click": onclick }),
-    ]);
+    const second = await openMenu(
+      variant,
+      [
+        Item(variant, { children: "Alpha" }),
+        Item(variant, { children: "Beta", "on:click": onclick }),
+      ],
+      2,
+    );
     const items = [...second.content.querySelectorAll("[role='menuitem']")] as HTMLElement[];
     items[1]!.focus();
     pressKey(second.content, " ");
+    flush();
     expect(onclick).toHaveBeenCalledTimes(2);
     expect(second.content.getAttribute("data-state")).toBe("closed");
   });
@@ -85,6 +99,7 @@ describe("dropdown-menu", () => {
     const locked = content.querySelector("[data-disabled]")!;
     expect(locked.getAttribute("aria-disabled")).toBe("true");
     locked.dispatchEvent(new Event("click", { bubbles: true }));
+    flush();
     expect(onclick).not.toHaveBeenCalled();
     expect(content.getAttribute("data-state")).toBe("open");
     expect(onOpenChange).toHaveBeenCalledTimes(1);
@@ -102,6 +117,7 @@ describe("dropdown-menu", () => {
       expect(items).toHaveLength(3);
       expect(menuActiveCount(content)).toBe(2);
       pressKey(content, "ArrowDown");
+      flush();
       expect(document.activeElement).toBe(items[2]!);
     },
   );
