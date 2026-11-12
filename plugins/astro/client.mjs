@@ -1,4 +1,5 @@
-import { hydrate, component, raw } from "@hellajs/dom";
+import { hydrate, raw } from "@hellajs/dom";
+import { component } from "@hellajs/dom/runtime";
 
 /**
  * HellaJS Astro client entry. Astro's `<astro-island>` runtime calls the default export with the

@@ -7,9 +7,10 @@ import {
   runCompiledModule,
 } from "@utils/test-helpers.js";
 import { suppressWarn } from "./helpers";
-import { hydrate, component } from "@hellajs/dom";
+import { hydrate } from "@hellajs/dom";
 import { ssr } from "@hellajs/ssr";
 import * as runtimeNs from "@hellajs/dom/runtime";
+import { component } from "@hellajs/dom/runtime";
 import * as domNs from "@hellajs/dom";
 import * as coreNs from "@hellajs/core";
 import type { HellaNode, ComponentFn, TemplateBuildFn } from "@hellajs/dom";

@@ -193,10 +193,9 @@ describe("compiler dom target", () => {
       ),
     ).toBe(
       `const _hellaTpl = _hellaTemplate("<span>ok</span>"), _hellaTpl2 = _hellaTemplate("<div></div>"); ` +
-        `import {template as _hellaTemplate, mark as _hellaMark, child as _hellaChild} from "@hellajs/dom/runtime"; ` +
-        `import {component} from "@hellajs/dom"; ` +
+        `import {component as _hellaComponent, template as _hellaTemplate, mark as _hellaMark, child as _hellaChild} from "@hellajs/dom/runtime"; ` +
         `_hellaMark(() => { const _hellaRoot = _hellaTpl2(); ` +
-        `_hellaChild(_hellaRoot, component(Button, { children: ["Go"] })); ` +
+        `_hellaChild(_hellaRoot, _hellaComponent(Button, { children: ["Go"] })); ` +
         `_hellaChild(_hellaRoot, _hellaMark(() => { const _hellaRoot = _hellaTpl(); return _hellaRoot; })); ` +
         `return _hellaRoot; });`,
     );
@@ -252,8 +251,7 @@ describe("compiler dom target", () => {
   test("still compiles component call sites through component() under the dom target", () => {
     const output = transformJSX(`<Row row={row} />`, { target: "dom" }).code;
     expect(normalize(output)).toBe(
-      `import {component} from "@hellajs/dom"; component(Row, { row: row });`,
+      `import {component as _hellaComponent} from "@hellajs/dom/runtime"; _hellaComponent(Row, { row: row });`,
     );
-    expect(output).not.toContain("@hellajs/dom/runtime");
   });
 });

@@ -18,17 +18,16 @@ import { mount } from "@hellajs/dom";
 // silently never mounts.
 mount(async () => {
   const mod = await Promise.reject(new Error("chunk failed"));
-  return component(mod as never, {});
+  return <mod.App />;
 }, "#app");
 ```
 
 **Correct (what is right):**
 
 ```tsx
-import { component, mount, onError } from "@hellajs/dom";
-import type { ComponentFn, TemplateBuildFn } from "@hellajs/dom";
+import { mount, onError } from "@hellajs/dom";
 
-const loadApp = (): Promise<{ App: ComponentFn }> =>
+const loadApp = (): Promise<{ App: () => JSX.Element }> =>
   Promise.resolve({ App: () => <div id="root">app</div> });
 const reportToTelemetry = (error: Error, phase: string): void => void console.info(phase, error);
 
@@ -39,7 +38,7 @@ onError((error, context) => {
 
 mount(async () => {
   const mod = await loadApp(); // rejections land in the handler above
-  return component(mod.App, {}) as TemplateBuildFn;
+  return <mod.App />;
 }, "#app");
 ```
 

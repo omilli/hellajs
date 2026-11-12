@@ -130,7 +130,7 @@ HellaJS delegates every `on:` type uniformly rather than a curated set (verified
 
 ## 7. Component Model & Composition
 
-Components are plain functions returning HellaNodes. There is no class component and no framework-injected props object; the compiler wraps component references in `component()`, which creates a disposal scope for automatic effect cleanup and catches render errors into the error system (`lib/component.ts`).
+Components are plain functions returning HellaNodes. There is no class component and no framework-injected props object; the compiler wraps component references in `component()`, which creates a disposal scope for automatic effect cleanup and catches render errors into the error system (`lib/runtime.ts`, the `@hellajs/dom/runtime` compiler-contract subpath).
 
 ```jsx
 // Plain function; no special API, runs once per mount

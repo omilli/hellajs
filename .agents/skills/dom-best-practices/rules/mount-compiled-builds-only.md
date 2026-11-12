@@ -7,7 +7,7 @@ tags: mount, hydrate, component, TemplateBuildFn
 
 ## Mount compiled or component-wrapped trees, never hand-built node objects
 
-`mount` and `hydrate` accept flagged build functions - the output of compiled JSX (a `component()` result, a compiled element, or a wrapper returning one), typed as `TemplateBuildFn`. There is no virtual-DOM object input: a plain `{ tag, props, children }` tree is the server/compiler currency (`HellaNode`, consumed by `@hellajs/ssr`), and passing one throws `[dom] mount: hand-built HellaNode input is not supported - compile via hellajs-compiler or build imperatively via @hellajs/dom/runtime`. Build trees as JSX components (or call the `@hellajs/dom/runtime` wiring fns imperatively), wrap in `component()` when you need a disposal scope, and mount that.
+`mount` and `hydrate` accept flagged build functions - the output of compiled JSX (a compiled component call's result, a compiled element, or a wrapper returning one), typed as `TemplateBuildFn`. There is no virtual-DOM object input: a plain `{ tag, props, children }` tree is the server/compiler currency (`HellaNode`, consumed by `@hellajs/ssr`), and passing one throws `[dom] mount: hand-built HellaNode input is not supported - compile via hellajs-compiler or build imperatively via @hellajs/dom/runtime`. Build trees as JSX components (or call the `@hellajs/dom/runtime` wiring fns imperatively) and mount them directly - the compiler attaches the disposal scope to every component call it emits.
 
 **Incorrect (what is wrong):**
 
@@ -23,13 +23,12 @@ mount(tree as never, "#app");
 **Correct (what is right):**
 
 ```tsx
-import { component, mount } from "@hellajs/dom";
-import type { TemplateBuildFn } from "@hellajs/dom";
+import { mount } from "@hellajs/dom";
 
 const App = () => <div id="root">hello</div>;
-// component() wraps the render in a disposal scope and flags the build; the
-// cast narrows ComponentReturn to its client arm for the mount parameter.
-mount(() => component(App, {}) as TemplateBuildFn, "#app");
+// Compiled JSX already flags the build and attaches the disposal scope;
+// mount the component function directly.
+mount(App, "#app");
 ```
 
 Reference: `packages/dom/lib/mount.ts mount` and `packages/dom/lib/runtime.ts TemplateBuildFn` and `packages/dom/docs/api/mount.mdx`

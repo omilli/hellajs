@@ -10,13 +10,17 @@ import {
 } from "./vnode.mjs";
 
 /**
- * Build component() or passthrough Tag() call expression.
+ * Build component() or passthrough Tag() call expression. The wrap branch emits
+ * the transform-collected runtime uid identifier for `component` (aliased in the
+ * Program-exit runtime import); the passthrough branch calls the tag directly
+ * and never touches it.
  * @param {import("estree").Expression} tagCallee
  * @param {import("estree").Property[]} props
  * @param {import("estree").Expression[]} children
+ * @param {import("estree").Identifier} componentCallee Runtime uid identifier for `component` (unused on the passthrough branch).
  * @returns {import("estree").CallExpression}
  */
-export function buildComponentCall(tagCallee, props, children) {
+export function buildComponentCall(tagCallee, props, children, componentCallee) {
   let finalProps;
 
   if (children && children.length > 0) {
@@ -36,6 +40,7 @@ export function buildComponentCall(tagCallee, props, children) {
     return callExpression(tagCallee, [finalProps]);
   }
 
-  // Wrap component call in component for automatic scope management
-  return callExpression(identifier("component"), [tagCallee, finalProps]);
+  // Wrap component call in component for automatic scope management; the callee
+  // is the transform-collected runtime uid, not a bare specifier.
+  return callExpression(componentCallee, [tagCallee, finalProps]);
 }

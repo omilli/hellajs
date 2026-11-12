@@ -69,17 +69,16 @@ import { mount } from "@hellajs/dom";
 // silently never mounts.
 mount(async () => {
   const mod = await Promise.reject(new Error("chunk failed"));
-  return component(mod as never, {});
+  return <mod.App />;
 }, "#app");
 ```
 
 **Correct (what is right):**
 
 ```tsx
-import { component, mount, onError } from "@hellajs/dom";
-import type { ComponentFn, TemplateBuildFn } from "@hellajs/dom";
+import { mount, onError } from "@hellajs/dom";
 
-const loadApp = (): Promise<{ App: ComponentFn }> =>
+const loadApp = (): Promise<{ App: () => JSX.Element }> =>
   Promise.resolve({ App: () => <div id="root">app</div> });
 const reportToTelemetry = (error: Error, phase: string): void => void console.info(phase, error);
 
@@ -90,7 +89,7 @@ onError((error, context) => {
 
 mount(async () => {
   const mod = await loadApp(); // rejections land in the handler above
-  return component(mod.App, {}) as TemplateBuildFn;
+  return <mod.App />;
 }, "#app");
 ```
 
@@ -100,7 +99,7 @@ Reference: `packages/dom/lib/mount.ts mount` and `packages/dom/lib/features/erro
 
 **Impact: CRITICAL** - hand-built HellaNode input throws at mount, so nothing renders and the error names an API that does not exist for hand-authoring
 
-`mount` and `hydrate` accept flagged build functions - the output of compiled JSX (a `component()` result, a compiled element, or a wrapper returning one), typed as `TemplateBuildFn`. There is no virtual-DOM object input: a plain `{ tag, props, children }` tree is the server/compiler currency (`HellaNode`, consumed by `@hellajs/ssr`), and passing one throws `[dom] mount: hand-built HellaNode input is not supported - compile via hellajs-compiler or build imperatively via @hellajs/dom/runtime`. Build trees as JSX components (or call the `@hellajs/dom/runtime` wiring fns imperatively), wrap in `component()` when you need a disposal scope, and mount that.
+`mount` and `hydrate` accept flagged build functions - the output of compiled JSX (a compiled component call's result, a compiled element, or a wrapper returning one), typed as `TemplateBuildFn`. There is no virtual-DOM object input: a plain `{ tag, props, children }` tree is the server/compiler currency (`HellaNode`, consumed by `@hellajs/ssr`), and passing one throws `[dom] mount: hand-built HellaNode input is not supported - compile via hellajs-compiler or build imperatively via @hellajs/dom/runtime`. Build trees as JSX components (or call the `@hellajs/dom/runtime` wiring fns imperatively) and mount them directly - the compiler attaches the disposal scope to every component call it emits.
 
 **Incorrect (what is wrong):**
 
@@ -116,13 +115,12 @@ mount(tree as never, "#app");
 **Correct (what is right):**
 
 ```tsx
-import { component, mount } from "@hellajs/dom";
-import type { TemplateBuildFn } from "@hellajs/dom";
+import { mount } from "@hellajs/dom";
 
 const App = () => <div id="root">hello</div>;
-// component() wraps the render in a disposal scope and flags the build; the
-// cast narrows ComponentReturn to its client arm for the mount parameter.
-mount(() => component(App, {}) as TemplateBuildFn, "#app");
+// Compiled JSX already flags the build and attaches the disposal scope;
+// mount the component function directly.
+mount(App, "#app");
 ```
 
 Reference: `packages/dom/lib/mount.ts mount` and `packages/dom/lib/runtime.ts TemplateBuildFn` and `packages/dom/docs/api/mount.mdx`
@@ -180,14 +178,13 @@ const handle = mount(App, "#app");
 **Correct (what is right):**
 
 ```tsx
-import { component, mount } from "@hellajs/dom";
-import type { TemplateBuildFn } from "@hellajs/dom";
+import { mount } from "@hellajs/dom";
 
 const App = () => <p>Mounted content</p>;
 const host = document.getElementById("shell")!;
 // Mount the element directly: no selector race, and the intent to replace
 // the shell's content is explicit at the call site.
-const handle = mount(() => component(App, {}) as TemplateBuildFn, host);
+const handle = mount(App, host);
 ```
 
 Reference: `packages/dom/lib/mount.ts mount` and `packages/dom/docs/api/mount.mdx`
@@ -823,10 +820,9 @@ Per-node state (effects, handlers, hooks, cleanup slots) lives in a WeakMap keye
 **Incorrect (what is wrong):**
 
 ```tsx
-import { mount, component } from "@hellajs/dom";
-import type { TemplateBuildFn } from "@hellajs/dom";
+import { mount } from "@hellajs/dom";
 
-mount(() => component(App, {}) as TemplateBuildFn, "#app");
+mount(App, "#app");
 // State stashed on the node: invisible to cleanup, leaks across tests.
 (document.getElementById("app") as Record<string, unknown>)["myState"] = { x: 1 };
 ```
@@ -979,13 +975,12 @@ HellaJS does no diffing - every rendered reactive value is owned by an effect th
 **Incorrect (what is wrong):**
 
 ```tsx
-import { mount, component } from "@hellajs/dom";
-import type { TemplateBuildFn } from "@hellajs/dom";
+import { mount } from "@hellajs/dom";
 import { signal } from "@hellajs/core";
 
 const count = signal(0);
 const App = () => <output>{count}</output>;
-mount(() => component(App, {}) as TemplateBuildFn, "#app");
+mount(App, "#app");
 
 // Hand-write into the reconciler's output: the next count write overwrites
 // it, and nothing reactive knows this happened.
@@ -995,13 +990,12 @@ mount(() => component(App, {}) as TemplateBuildFn, "#app");
 **Correct (what is right):**
 
 ```tsx
-import { mount, component } from "@hellajs/dom";
-import type { TemplateBuildFn } from "@hellajs/dom";
+import { mount } from "@hellajs/dom";
 import { signal } from "@hellajs/core";
 
 const count = signal(0);
 const App = () => <output>{count}</output>;
-mount(() => component(App, {}) as TemplateBuildFn, "#app");
+mount(App, "#app");
 
 // The same change through the owner: the effect updates the text node.
 count(42);
@@ -1018,10 +1012,9 @@ Cleanup is removal-driven: a scoped MutationObserver watches every mount contain
 **Incorrect (what is wrong):**
 
 ```tsx
-import { mount, component } from "@hellajs/dom";
-import type { TemplateBuildFn } from "@hellajs/dom";
+import { mount } from "@hellajs/dom";
 
-const handle = mount(() => component(App, {}) as TemplateBuildFn, "#app");
+const handle = mount(App, "#app");
 document.getElementById("app")?.replaceChildren();
 // Asserting disposal NOW fails: the observer has not run its microtask yet.
 ```
@@ -1029,11 +1022,10 @@ document.getElementById("app")?.replaceChildren();
 **Correct (what is right):**
 
 ```tsx
-import { mount, component } from "@hellajs/dom";
-import type { TemplateBuildFn } from "@hellajs/dom";
+import { mount } from "@hellajs/dom";
 
 const App = () => <p>Disposable content</p>;
-const handle = mount(() => component(App, {}) as TemplateBuildFn, "#app");
+const handle = mount(App, "#app");
 
 // Synchronous teardown of the whole tree: no microtask wait, no manual walks.
 handle.unmount();

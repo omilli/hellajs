@@ -1,7 +1,8 @@
 import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState, suppressConsole } from "@utils/test-helpers.js";
-import { mount, Transition, component } from "@hellajs/dom";
+import { mount, Transition } from "@hellajs/dom";
+import { component } from "@hellajs/dom/runtime";
 
 beforeEach(() => {
   resetTestState();

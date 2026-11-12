@@ -22,14 +22,13 @@ const handle = mount(App, "#app");
 **Correct (what is right):**
 
 ```tsx
-import { component, mount } from "@hellajs/dom";
-import type { TemplateBuildFn } from "@hellajs/dom";
+import { mount } from "@hellajs/dom";
 
 const App = () => <p>Mounted content</p>;
 const host = document.getElementById("shell")!;
 // Mount the element directly: no selector race, and the intent to replace
 // the shell's content is explicit at the call site.
-const handle = mount(() => component(App, {}) as TemplateBuildFn, host);
+const handle = mount(App, host);
 ```
 
 Reference: `packages/dom/lib/mount.ts mount` and `packages/dom/docs/api/mount.mdx`

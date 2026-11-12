@@ -14,7 +14,7 @@ Jump to the [Complete Code](#complete-code) for the finished application.
 - **[`vars`](/reference/css/vars)** + **[`cssText`](/reference/css/csstext)**: vars registers custom properties and css registers rules (both platforms), and cssText collects them into one `<style>` through `doc()`
 - **[`hydrate`](/reference/dom/hydrate)**: Re-bind the server-rendered tree in place (no flash, no rebuild)
 
-This example runs on [Node](https://nodejs.org) with [Hono](https://hono.dev): `@hono/node-server` serves every request, and an esbuild build step compiles both entries (the client for the browser, the server for node) through `hellajs-compiler`, the same compile pass every HellaJS app uses to turn JSX into [`HellaNode`](/reference/dom/component) objects.
+This example runs on [Node](https://nodejs.org) with [Hono](https://hono.dev): `@hono/node-server` serves every request, and an esbuild build step compiles both entries (the client for the browser, the server for node) through `hellajs-compiler`, the same compile pass every HellaJS app uses to turn JSX into [`HellaNode`](/reference/dom) objects.
 
 ## Project Setup
 

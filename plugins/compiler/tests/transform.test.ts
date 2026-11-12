@@ -109,30 +109,30 @@ describe("compiler ast target", () => {
     );
   });
 
-  test("detects components and injects the component import", () => {
+  test("detects components and emits the runtime component import", () => {
     expect(normalize(transformJSX("<Button />").code)).toBe(
-      'import {component} from "@hellajs/dom"; component(Button, {});',
+      'import {component as _hellaComponent} from "@hellajs/dom/runtime"; _hellaComponent(Button, {});',
     );
     expect(normalize(transformJSX("<UI.Button />").code)).toBe(
-      'import {component} from "@hellajs/dom"; component(UI.Button, {});',
+      'import {component as _hellaComponent} from "@hellajs/dom/runtime"; _hellaComponent(UI.Button, {});',
     );
     expect(normalize(transformJSX("<div><Button /></div>").code)).toBe(
-      'import {component} from "@hellajs/dom"; ({ tag: "div", children: [component(Button, {})] });',
+      'import {component as _hellaComponent} from "@hellajs/dom/runtime"; ({ tag: "div", children: [_hellaComponent(Button, {})] });',
     );
   });
 
   test("keeps prefixed attrs verbatim in component props", () => {
     expect(normalize(transformJSX("<Button on:click={h}>x</Button>").code)).toBe(
-      'import {component} from "@hellajs/dom"; component(Button, { "on:click": h, children: ["x"] });',
+      'import {component as _hellaComponent} from "@hellajs/dom/runtime"; _hellaComponent(Button, { "on:click": h, children: ["x"] });',
     );
   });
 
   test("component children and props pass through unwrapped", () => {
     expect(normalize(transformJSX("<Comp>{foo()}</Comp>").code)).toBe(
-      'import {component} from "@hellajs/dom"; component(Comp, { children: [foo()] });',
+      'import {component as _hellaComponent} from "@hellajs/dom/runtime"; _hellaComponent(Comp, { children: [foo()] });',
     );
     expect(normalize(transformJSX("<Btn class={foo()} />").code)).toBe(
-      'import {component} from "@hellajs/dom"; component(Btn, { class: foo() });',
+      'import {component as _hellaComponent} from "@hellajs/dom/runtime"; _hellaComponent(Btn, { class: foo() });',
     );
   });
 
@@ -144,13 +144,18 @@ describe("compiler ast target", () => {
       "Portal",
     );
     expect(getNamedImports("<Lazy component={Comp} />", "@hellajs/dom")).toContain("Lazy");
+    // Passthrough injection still merges into an existing user dom import.
+    const merged =
+      "import { mount as m } from '@hellajs/dom';\nconst n = <ForEach each={items} use={item => item} />;";
+    expect(getNamedImports(merged, "@hellajs/dom")).toEqual(["mount as m", "ForEach"]);
   });
 
-  test("merges component specifiers into an existing aliased import", () => {
-    const code = "import { component as c } from '@hellajs/dom';\nconst n = <Button />;";
-    expect(getNamedImports(code, "@hellajs/dom")).toEqual(["component as c", "component"]);
+  test("passes a user dom import through beside the emitted runtime import", () => {
+    const code = "import { mount as m } from '@hellajs/dom';\nconst n = <Button />;";
+    expect(getNamedImports(code, "@hellajs/dom")).toEqual(["mount as m"]);
+    expect(getNamedImports(code, "@hellajs/dom/runtime")).toEqual(["component as _hellaComponent"]);
     expect(normalize(transformJSX(code).code)).toBe(
-      "import {component as c, component} from '@hellajs/dom'; const n = component(Button, {});",
+      "import {component as _hellaComponent} from \"@hellajs/dom/runtime\"; import {mount as m} from '@hellajs/dom'; const n = _hellaComponent(Button, {});",
     );
   });
 

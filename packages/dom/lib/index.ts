@@ -14,7 +14,6 @@ export { hydrate } from "./hydrate";
 export { element } from "./element";
 export { $ref } from "./$ref";
 export { $collection } from "./$collection";
-export { component } from "./component";
 export { raw } from "./raw";
 export { registry } from "./registry";
 export { onError } from "./error";

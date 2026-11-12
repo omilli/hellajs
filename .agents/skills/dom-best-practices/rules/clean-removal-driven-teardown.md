@@ -12,10 +12,9 @@ Cleanup is removal-driven: a scoped MutationObserver watches every mount contain
 **Incorrect (what is wrong):**
 
 ```tsx
-import { mount, component } from "@hellajs/dom";
-import type { TemplateBuildFn } from "@hellajs/dom";
+import { mount } from "@hellajs/dom";
 
-const handle = mount(() => component(App, {}) as TemplateBuildFn, "#app");
+const handle = mount(App, "#app");
 document.getElementById("app")?.replaceChildren();
 // Asserting disposal NOW fails: the observer has not run its microtask yet.
 ```
@@ -23,11 +22,10 @@ document.getElementById("app")?.replaceChildren();
 **Correct (what is right):**
 
 ```tsx
-import { mount, component } from "@hellajs/dom";
-import type { TemplateBuildFn } from "@hellajs/dom";
+import { mount } from "@hellajs/dom";
 
 const App = () => <p>Disposable content</p>;
-const handle = mount(() => component(App, {}) as TemplateBuildFn, "#app");
+const handle = mount(App, "#app");
 
 // Synchronous teardown of the whole tree: no microtask wait, no manual walks.
 handle.unmount();

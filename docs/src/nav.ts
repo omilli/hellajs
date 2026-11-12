@@ -90,7 +90,6 @@ export const navigation: Record<NavSection, NavEntry[]> = {
         "onError",
         "$ref",
         "$collection",
-        "component",
         "registry",
       ]
     },

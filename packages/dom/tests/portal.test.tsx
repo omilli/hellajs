@@ -1,7 +1,8 @@
 import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { mount, Portal, component } from "@hellajs/dom";
+import { mount, Portal } from "@hellajs/dom";
+import { component } from "@hellajs/dom/runtime";
 
 beforeEach(() => {
   resetTestState('<div id="app"></div><div id="modal-root"></div>');

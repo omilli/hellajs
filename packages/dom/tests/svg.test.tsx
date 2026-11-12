@@ -1,7 +1,8 @@
 import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { mount, hydrate, component, ForEach, Lazy, Suspense } from "@hellajs/dom";
+import { mount, hydrate, ForEach, Lazy, Suspense } from "@hellajs/dom";
+import { component } from "@hellajs/dom/runtime";
 import type { TemplateBuildFn } from "@hellajs/dom";
 
 import { suppressWarn, twoTargetContainer } from "./helpers";

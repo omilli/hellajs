@@ -1,8 +1,8 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { signal } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
-import { component, mount, onError } from "@hellajs/dom";
-import { child, errorConfig, mark, prop, template } from "@hellajs/dom/runtime";
+import { mount, onError } from "@hellajs/dom";
+import { child, component, errorConfig, mark, prop, template } from "@hellajs/dom/runtime";
 import type { ComponentFn } from "@hellajs/dom";
 
 beforeEach(() => {

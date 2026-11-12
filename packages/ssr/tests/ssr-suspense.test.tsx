@@ -1,7 +1,8 @@
 import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { flush } from "@hellajs/core";
 import { setupContainer, resetTestState } from "@utils/test-helpers.js";
-import { Suspense, component, hydrate } from "@hellajs/dom";
+import { Suspense, hydrate } from "@hellajs/dom";
+import { component } from "@hellajs/dom/runtime";
 import { ssr } from "@hellajs/ssr";
 import type { HellaNode, TemplateBuildFn } from "@hellajs/dom";
 import { collect, extractSwapIds, twoTargetStreamed } from "./helpers";

@@ -1,9 +1,10 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { effect, flush, signal } from "@hellajs/core";
 import { delay, resetTestState, suppressConsole } from "@utils/test-helpers.js";
-import { component, hasState, mount, onError, peekState, raw, registry } from "@hellajs/dom";
+import { hasState, mount, onError, peekState, raw, registry } from "@hellajs/dom";
 import {
   child,
+  component,
   direct,
   errorConfig,
   fragment,

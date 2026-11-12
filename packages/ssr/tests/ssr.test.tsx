@@ -1,7 +1,8 @@
 import { describe, test, expect, vi } from "vite-plus/test";
 import { signal } from "@hellajs/core";
 import { suppressConsole } from "@utils/test-helpers.js";
-import { ForEach, Transition, Portal, Lazy, component } from "@hellajs/dom";
+import { ForEach, Transition, Portal, Lazy } from "@hellajs/dom";
+import { component } from "@hellajs/dom/runtime";
 import { ssr } from "@hellajs/ssr";
 import type { HellaNode } from "@hellajs/dom";
 import { headParityCases, unknownKindNode, SlotBox } from "./helpers";

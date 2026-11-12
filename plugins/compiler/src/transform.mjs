@@ -26,7 +26,6 @@ import {
 import { buildComponentCall } from "./builders/component.mjs";
 import { buildImperativeSite } from "./builders/imperative.mjs";
 import {
-  ensureCreateComponentImport,
   ensureHooksFeatureImport,
   ensureErrorsFeatureImport,
   ensureDirectEventsFeatureImport,
@@ -263,10 +262,14 @@ function replaceJSXElement(node, ctx) {
   const children = filterEmptyChildren(node.children, isComponent);
 
   if (isComponent) {
+    /** @type {import("estree").Identifier | undefined} */
+    let componentCallee;
     if (tagName !== null && PASSTHROUGH_INJECTORS[tagName]) {
+      // Passthrough tags are @hellajs/dom barrel fns — traversal-time injection.
       PASSTHROUGH_INJECTORS[tagName](ctx.program);
     } else {
-      ensureCreateComponentImport(ctx.program);
+      // Component calls ride the Program-exit runtime import on both targets.
+      componentCallee = collectRuntime(ctx, "component");
     }
 
     const allProps = [...props];
@@ -274,7 +277,7 @@ function replaceJSXElement(node, ctx) {
     if (e.length > 0) allProps.push(...e);
     if (hooks.length > 0) allProps.push(...hooks);
     if (error.length > 0) allProps.push(...error);
-    return buildComponentCall(tagCallee, allProps, children);
+    return buildComponentCall(tagCallee, allProps, children, componentCallee);
   }
   return buildHellaNode(
     opening.name.name,

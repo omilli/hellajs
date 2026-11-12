@@ -1,7 +1,8 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { effect, flush, signal } from "@hellajs/core";
 import { resetTestState } from "@utils/test-helpers.js";
-import { mount, component } from "@hellajs/dom";
+import { mount } from "@hellajs/dom";
+import { component } from "@hellajs/dom/runtime";
 import type { ComponentFn, TemplateBuildFn } from "@hellajs/dom";
 
 beforeEach(() => {

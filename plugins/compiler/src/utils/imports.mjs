@@ -3,9 +3,9 @@ import { identifier, importDeclaration, importSpecifier } from "../builders/vnod
 
 /**
  * Check if any specifier provides a local binding named `name`.
- * Emitted code (`component(Tag, props)`, `ForEach(props)`) references the
- * local binding, so injection keys on it: `import { component as c }` does
- * not bind `component`, while `import { x as component }` does.
+ * Emitted code (`ForEach(props)`) references the local binding, so injection
+ * keys on it: `import { ForEach as F }` does not bind `ForEach`, while
+ * `import { x as ForEach }` does.
  * @param {import("estree").ImportDeclaration["specifiers"]} specifiers
  * @param {string} name Local binding name the emitted code requires.
  */
@@ -18,7 +18,7 @@ function hasNamedImport(specifiers, name) {
  * `source`, or unshift a new declaration onto `program.body`.
  * Idempotent on the local binding name: an existing binding short-circuits,
  * an alias of the required name gains a fresh specifier
- * (`import { component as c, component }` is legal).
+ * (`import { ForEach as F, ForEach }` is legal).
  * @param {import("estree").Program} program
  * @param {string} source Module specifier to import from.
  * @param {string} name Local binding name to ensure.
@@ -42,14 +42,6 @@ function ensureNamedImport(program, source, name) {
   program.body.unshift(
     importDeclaration([importSpecifier(identifier(name), identifier(name))], source),
   );
-}
-
-/**
- * Ensure `import { component } from "@hellajs/dom"` in the program.
- * @param {import("estree").Program} program
- */
-export function ensureCreateComponentImport(program) {
-  ensureNamedImport(program, "@hellajs/dom", "component");
 }
 
 /**
@@ -140,14 +132,18 @@ export function ensureCustomElementsFeatureImport(program) {
   ensureSideEffectImport(program, "@hellajs/dom/features/custom-elements");
 }
 
-// The dom-target compiler contract: named runtime imports come from the public
-// subpath (@hellajs/dom/runtime), never from dom internals — emitted code lists
-// exactly the helpers the file's emission uses, in this canonical order. Locals
-// are aliased to `_hella*` uids: bare names like `text`/`prop`/`on` collide with
-// ordinary user variables (a component prop named `text` would shadow the import
-// inside its own build body).
+// The compiler contract: named runtime imports come from the public subpath
+// (@hellajs/dom/runtime), never from dom internals — emitted code lists exactly
+// the helpers the file's emission uses, in this canonical order, `component`
+// now included (both targets wrap component calls through it). Locals are
+// aliased to `_hella*` uids: bare names like `text`/`prop`/`on` collide with
+// ordinary user variables (a component prop named `text` would shadow the
+// import inside its own build body), and uids never touch user declarations —
+// the old `import { component as c }` alias interplay died with the bare
+// component injection.
 const RUNTIME_SOURCE = "@hellajs/dom/runtime";
 const RUNTIME_HELPERS = [
+  "component",
   "template",
   "fragment",
   "mark",

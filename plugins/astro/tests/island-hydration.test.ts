@@ -6,10 +6,11 @@ import {
   compileJsx,
   runCompiledModule,
 } from "@utils/test-helpers.js";
-import { hydrate, component } from "@hellajs/dom";
+import { hydrate } from "@hellajs/dom";
 import type { ComponentFn, TemplateBuildFn } from "@hellajs/dom";
 import server from "../server.mjs";
 import * as runtimeNs from "@hellajs/dom/runtime";
+import { component } from "@hellajs/dom/runtime";
 import * as domNs from "@hellajs/dom";
 import * as coreNs from "@hellajs/core";
 

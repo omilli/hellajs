@@ -1,9 +1,10 @@
 import { signal } from "@hellajs/core";
 import * as coreNs from "@hellajs/core";
 import { compileJsx, runCompiledModule, setupContainer } from "@utils/test-helpers.js";
-import { ForEach, Transition, component, raw } from "@hellajs/dom";
+import { ForEach, Transition, raw } from "@hellajs/dom";
 import * as domNs from "@hellajs/dom";
 import * as domRuntimeNs from "@hellajs/dom/runtime";
+import { component } from "@hellajs/dom/runtime";
 import { ssr } from "@hellajs/ssr";
 import type { HellaNode } from "@hellajs/dom";
 import type { HeadOptions } from "@hellajs/ssr";

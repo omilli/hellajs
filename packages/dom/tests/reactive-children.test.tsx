@@ -1,7 +1,8 @@
 import { describe, test, expect, beforeEach } from "vite-plus/test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState, setupContainer } from "@utils/test-helpers.js";
-import { mount, hydrate, component, ForEach } from "@hellajs/dom";
+import { mount, hydrate, ForEach } from "@hellajs/dom";
+import { component } from "@hellajs/dom/runtime";
 import type { HellaChildren, ComponentFn, TemplateBuildFn } from "@hellajs/dom";
 
 beforeEach(() => {

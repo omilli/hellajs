@@ -12,10 +12,9 @@ Per-node state (effects, handlers, hooks, cleanup slots) lives in a WeakMap keye
 **Incorrect (what is wrong):**
 
 ```tsx
-import { mount, component } from "@hellajs/dom";
-import type { TemplateBuildFn } from "@hellajs/dom";
+import { mount } from "@hellajs/dom";
 
-mount(() => component(App, {}) as TemplateBuildFn, "#app");
+mount(App, "#app");
 // State stashed on the node: invisible to cleanup, leaks across tests.
 (document.getElementById("app") as Record<string, unknown>)["myState"] = { x: 1 };
 ```

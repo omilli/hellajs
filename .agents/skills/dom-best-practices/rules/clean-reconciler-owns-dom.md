@@ -12,13 +12,12 @@ HellaJS does no diffing - every rendered reactive value is owned by an effect th
 **Incorrect (what is wrong):**
 
 ```tsx
-import { mount, component } from "@hellajs/dom";
-import type { TemplateBuildFn } from "@hellajs/dom";
+import { mount } from "@hellajs/dom";
 import { signal } from "@hellajs/core";
 
 const count = signal(0);
 const App = () => <output>{count}</output>;
-mount(() => component(App, {}) as TemplateBuildFn, "#app");
+mount(App, "#app");
 
 // Hand-write into the reconciler's output: the next count write overwrites
 // it, and nothing reactive knows this happened.
@@ -28,13 +27,12 @@ mount(() => component(App, {}) as TemplateBuildFn, "#app");
 **Correct (what is right):**
 
 ```tsx
-import { mount, component } from "@hellajs/dom";
-import type { TemplateBuildFn } from "@hellajs/dom";
+import { mount } from "@hellajs/dom";
 import { signal } from "@hellajs/core";
 
 const count = signal(0);
 const App = () => <output>{count}</output>;
-mount(() => component(App, {}) as TemplateBuildFn, "#app");
+mount(App, "#app");
 
 // The same change through the owner: the effect updates the text node.
 count(42);

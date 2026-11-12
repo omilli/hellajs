@@ -1,7 +1,8 @@
 import { describe, test, expect, beforeEach, vi } from "vite-plus/test";
 import { effect, flush, signal } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { mount, component, ForEach, peekState } from "@hellajs/dom";
+import { mount, ForEach, peekState } from "@hellajs/dom";
+import { component } from "@hellajs/dom/runtime";
 import type { HellaElement } from "@hellajs/dom";
 
 beforeEach(() => {
