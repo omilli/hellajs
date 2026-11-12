@@ -92,7 +92,6 @@ export const navigation: Record<NavSection, NavEntry[]> = {
         "$collection",
         "component",
         "registry",
-        "runtime",
       ]
     },
     {

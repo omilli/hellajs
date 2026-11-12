@@ -59,7 +59,7 @@ function mount(
 ): MountHandle
 ```
 
-- `node`: A [flagged build fn](/reference/dom/runtime) (the compiled component result), a function returning one, or an async function resolving to one.
+- `node`: A flagged build function (the compiled component result), a function returning one, or an async function resolving to one.
 - `target`: A CSS selector string, DOM Element, or ShadowRoot for the container. Defaults to `"#app"`.
 - **Returns**: A [`MountHandle`](#mounthandle) with `flush()` and `unmount()` methods.
 
@@ -143,7 +143,7 @@ A selector string is resolved with `querySelector` at call time; no match throws
 
 ### Hand-Built Input Is Rejected
 
-`mount` accepts compiled build functions only; a hand-built tree object throws at mount time. JSX sources go through the [compiler](/plugins/compiler) automatically. To construct DOM without the compiler, build imperatively via the [runtime](/reference/dom/runtime) module.
+`mount` accepts compiled build functions only; a hand-built tree object throws at mount time. JSX sources go through the [compiler](/plugins/compiler) automatically.
 
 ### Async Component Errors
 

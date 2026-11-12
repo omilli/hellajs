@@ -117,4 +117,4 @@ One edge: error fallback UI (from [`error:fallback`](/reference/dom/error)) alwa
 
 The compiler detects every prefix and namespace your templates use and loads just the matching runtime wiring: [`hook:`](/reference/dom/hook) and [`error:`](/reference/dom/error) load their features, [`e:`](/reference/dom/e) loads direct events, `<svg>`/`<math>` load namespace resolution. Features your code never uses never load and tree-shake out entirely: a hook-free, error-free app ships the mount core only.
 
-Templates require the compiler: hand-built tree objects throw at [`mount`](/reference/dom/mount) and [`hydrate`](/reference/dom/hydrate). To build DOM without JSX, use the imperative [runtime](/reference/dom/runtime) module.
+Templates require the compiler: hand-built tree objects throw at [`mount`](/reference/dom/mount) and [`hydrate`](/reference/dom/hydrate).

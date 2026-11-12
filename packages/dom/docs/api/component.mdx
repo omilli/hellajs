@@ -54,7 +54,7 @@ function component<P extends Record<string, unknown>>(
 
 - `fn`: The component function to wrap. Invoked immediately, inside the disposal scope.
 - `props`: Props object passed to the component function; JSX children arrive as `props.children`.
-- **Returns**: The component's build result with the disposal scope attached: a [flagged build fn](/reference/dom/runtime) ready for [`mount`](/reference/dom/mount) and children wiring when the result is a build function.
+- **Returns**: The component's build result with the disposal scope attached: a flagged build function ready for [`mount`](/reference/dom/mount) and children wiring when the result is a build function.
 
 ## Key Concepts
 
@@ -93,7 +93,7 @@ A throw inside the component dispatches with phase `"render"` through [`onError`
 
 ### Component Calls Only, Not Tree Building
 
-`component()` wraps component calls; it does not make hand-built tree objects mountable. [`mount`](/reference/dom/mount) and [`hydrate`](/reference/dom/hydrate) reject hand-built trees with the documented throw: build DOM imperatively through the [runtime](/reference/dom/runtime) module instead.
+`component()` wraps component calls; it does not make hand-built tree objects mountable. [`mount`](/reference/dom/mount) and [`hydrate`](/reference/dom/hydrate) reject hand-built trees with the documented throw.
 
 ### The Result Is One Build, Not a Factory
 
