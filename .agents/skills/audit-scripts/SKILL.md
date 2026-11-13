@@ -20,7 +20,7 @@ Scripts carry no dedicated test suite (`scripts/AGENTS.md` §Testing) — `vp ru
 
 Each finding is exactly one of:
 
-- **A runnable check** — exact command, expected, actual. "`bun audits core --dry-run` exits 1 on a valid package" not "arg parsing broken."
+- **A runnable check** — exact command, expected, actual. "`vp run dead-exports` exits 1 on an unreferenced export" not "arg parsing broken."
 - **A quoted rule** — file + section + rule verbatim + the violation. "`guides/scripts.md` §Canonical paths places shared logic in `scripts/utils/`; `coverage.ts` re-implements `execCommand` inline."
 
 Neither → taste, drop. Severity (blocker / should-fix / nit) + one clause naming the blast radius (which entries/pipelines/CI it risks).

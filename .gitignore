@@ -6,6 +6,7 @@ bun.lock
 pnpm-lock.yaml
 yarn.lock
 plans
+pi
 
 # output
 out

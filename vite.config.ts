@@ -37,6 +37,7 @@ export default defineConfig({
       "**/*.mdx",
       "memory/**",
       "plans/**",
+      "pi/**",
       ".agents/**",
       ".bench/**",
       "docs/**",
@@ -63,6 +64,7 @@ export default defineConfig({
       ".doc-snippets/**",
       ".plans-runner/**",
       "plans/**",
+      "pi/**",
     ],
     rules: {
       "hella/no-iterator-loops": "error",

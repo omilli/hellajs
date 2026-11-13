@@ -43,7 +43,7 @@ Performance is **off the list**. Scripts are not hot paths. `for…of`, temporar
 |---|---|---|
 | Top-level script (CLI entry) | `scripts/[name].ts` | One entry per `package.json` scripts row |
 | Shared helper | `scripts/utils/[concern].ts` | Single noun (`fs`, `exec`, `logger`, `paths`) |
-| Shared cross-pipeline concern | `scripts/[concern]/` | Multi-file infra consumed by 2+ pipelines, no CLI entry (e.g. `agent/`) |
+| Shared cross-pipeline concern | `scripts/[concern]/` | Multi-file infra consumed by 2+ pipelines, no CLI entry (e.g. `snippets/`) |
 | Utils barrel | `scripts/utils/index.ts` | Re-exports every helper; the only import path scripts use |
 | Test helper | `utils/test-helpers.js` | Non-scripts JS exception: the shared test helper only |
 
@@ -58,7 +58,7 @@ New script or helper?
 ├─ Shared logic used by 2+ scripts
 │   └─ scripts/utils/[concern].ts — single noun, re-exported by utils/index.ts
 ├─ A shared multi-file concern consumed by 2+ pipelines (no CLI entry)
-│   └─ scripts/[concern]/ — e.g. scripts/agent/ (rpc, relay, stream, driver, worktree)
+│   └─ scripts/[concern]/ — e.g. scripts/snippets/ (blocks, emit, tsc)
 ├─ A concern that is large (caching, esbuild, terser, declarations, orchestration)
 │   └─ scripts/[pipeline]/[concern].ts — split by concern, NOT one giant file
 └─ A file exceeding ~300 lines

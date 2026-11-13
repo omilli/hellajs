@@ -1,6 +1,6 @@
 <scripts-instructions>
 
-  Build tooling and CI automation. These scripts bundle, test, lint, and release the nine packages. They run under bare `node` in dev and CI (canonical invocation `vp run <name>` — in agent shells that is `./node_modules/.bin/vp`, bare `vp` is not on PATH; `bun` only inside the pi cluster), are authored in TS (one concern per file, shared utils), and follow `guides/scripts.md`.
+  Build tooling and CI automation. These scripts bundle, test, lint, and release the nine packages. They run under bare `node` in dev and CI (canonical invocation `vp run <name>` — in agent shells that is `./node_modules/.bin/vp`, bare `vp` is not on PATH), are authored in TS (one concern per file, shared utils), and follow `guides/scripts.md`.
 
   ## Scripts (CLI entries under `scripts/`)
 
@@ -10,9 +10,6 @@
   | `coverage.ts` | bundle, then `vp test --coverage` — no lint; `vp run lint` is its own gate. Coverage instruments the entry-graph per-module dist artifacts (`packages/*/dist/*.js` + `dist/internal/*.js` + `dist/utils/*.js`), the ui registry minus `cn.js`/`tokens*.js`, and `plugins/**/*.mjs` via include flags (`bundle.js`/`*.min.js` excluded — `bundle.js` is verified by each package's `tests/bundle.test.ts` smoke test, not measured), reporting through vitest's stock text reporter (uncovered-line numbers included — they reference the dist files, near-verbatim lib copies; `reportOnFailure` keeps the table on red runs; `--coverage` must precede the `--coverage.*` flags on the command line or they are silently ignored). With `[package|plugin]`: tests scope to it and the includes narrow to the workspace (`packages/<p>/dist/**`; ui adds the registry minus cn/tokens; `plugins/<p>/**/*.mjs` — plugins have no dist), so the stock table scopes itself and `All files` is vitest's count-weighted total over the scope (sibling dists loaded by test helpers stay uninstrumented — `plugins/astro` tests import `@hellajs/core`'s dist, so the bundle stage runs for plugins too). Plugin scope resolves via `isValidPlugin` after `isValidPackage`; plugins without suites (`vite`/`rollup`) fail the tests-dir check. CI runs coverage + lint, both unscoped (the badge step greps the `All files` row's `% Stmts` field from the stock text format). Unscoped runs continue into `e2e.ts` as a subprocess after the vitest run (`timeout: 0` — the 120s default cannot hold eight browser suites; requires system Chrome); scoped runs never execute e2e. |
   | `bench.ts` | Thin entry: parse args (`--runs`, `--throttle`, `--label`, `--ops`, `--headed`) → build + stage → serve → drive → report. Playwright + system Chrome macro-benchmark over `examples/bench`; appends self-describing entries to `.bench/results.md`. |
   | `e2e.ts` | Thin entry: parse `[example]`/`--headed` → bundle → per-example install-if-missing → root `node_modules/.bin/playwright test` with cwd = example → summary/exit. Also fired by unscoped `coverage.ts`. |
-  | `worker.ts` | Thin entry: parse args (`<set-folder>`, `--wt=single|split`, `--probe`, `--model=<provider/id>` (default `glm-5.3-flash`), `--thinking=<off|minimal|low|medium|high|xhigh|max>`, `--quiet`) → validate set → run pipeline → report → exit. Fresh `pi --mode rpc` instance per unticked plan unit, executed inside a component worktree by the worker skill (`single`: one venue for the whole set; `split`: one per dependency-connected component, sequential); unit selection reads main-tree markers AND standing worktree copies of the set (a unit ticked in either is delivered — skipped, never re-dispatched), and a component's venue adopts the standing carrier holding its delivered units so the component continues inside its worktree (merge-side mirror: `deriveQueue`, `scripts/merge/queue.ts`); dialogs + steering relayed to the terminal (`--quiet`: unattended — prompt tells instances no operator, dialogs auto-answered with the recommended/first option); worktree-copy markers gate progress (auto-continue on tick progress, else retry / deliver-incomplete / abandon / halt — `--quiet` auto-delivers — no per-unit skip inside a venue); the runner never merges — completed components stand and the run lists the set's outstanding slugs for the user-run `bun merge` (the single human checkpoint); the runner invokes `worktree.mjs` read-only (`list`/`status`) plus `clean` on explicit abandon — never `new` (worker-owned), never `diff`/`apply` (merge-owned). |
-  | `merge.ts` | Thin entry: parse args (`<set-folder>`, `--model=<provider/id>` (default `glm-5.3-flash`), `--thinking=<off|minimal|low|medium|high|xhigh|max>` (default `low`), `--dry-run`) → validate set → run merge → report → exit. Fresh `pi --mode rpc` instance per outstanding component worktree of the set (the `/skill:merge` per-component contract); queue derivation + completeness pre-check are mechanical; per-component progress gate on main-tree plan ticks + worktree cleanup; orchestrator-owned set index flip + union gate with one fix instance per red round, then removal of the fully-ticked set folder (empty parents pruned; also on an empty-queue re-run of an already-complete set, never on `--dry-run`); `--dry-run` previews the derived queue without spawning. |
-  | `audits.ts` | Thin entry: parse args (`<package>`, `--section=code\|tests\|docs`, `--model=<provider/id>` (default `glm-5.3`), `--thinking=<off|minimal|low|medium|high|xhigh|max>` (default `max`), `--dry-run`) → resolve target (bare name or `packages/<name>`, `isValidPackage`) → run pipeline → report → exit. Fresh `pi --mode rpc` instance per package section (fixed code → tests → docs order) over the shared agent driver: `/skill:audit-<section>` prompt naming targets + the pre-computed findings set dir; the instance audits, then authors its own plan set under `plans/<pkg>/audit/<section>/` via the plan skill (three separate sets, one per section with findings). Set dir holds `NN-*.md` → findings captured; neither a set nor a clean statement → operator gate (retry / accept-clean / skip / halt; no auto-continue — no tick file progresses an audit). `--dry-run` prints derived sections + set dirs without spawning. The runner never audits and never writes plan content — instances do. |
   | `clean.ts` | Remove `dist/` + `.build-cache/` per package. `vp run clean [package]` scopes to one workspace. |
   | `release.ts` | Update `@hellajs/core` peer deps + `hellajs-compiler` deps across packages, commit (`--no-verify`), then `changeset publish`. Run via `vp run release` (the npm script bundles first). |
   | `type-visibility.ts` | Guard (`vp run visibility`): fail if any `lib/types*.d.ts` that is wholesale re-exported (`export type * from "./types[…]"`) contains `@internal`-tagged types — those would leak as public. No package scoping; scans every package. |
@@ -97,18 +94,6 @@
   | `bench/driver.ts` | Playwright driver: capture-phase click listener (t0), rAF predicate poll (t1), 30s watchdog, CDP throttle, warmup + measured runs |
   | `bench/report.ts` | Env header + per-op median/mean table to stdout; append-only self-describing entry to `.bench/results.md` (only after every op verified) |
 
-  ## Shared agent-driving concern (`scripts/agent/`, one concern per file)
-
-  The pi-instance driving machinery shared by the worker, merge, audits, and memory runners — a shared cross-pipeline concern (`guides/scripts.md` §Canonical paths): no CLI entry, consumed via direct imports.
-
-  | File | Concern |
-  |---|---|
-  | `agent/rpc.ts` | pi RPC client: spawn, strict JSONL, command/event dispatch, dialog registry, `waitForSettled`, dispose |
-  | `agent/relay.ts` | `Relay` interface (the dialog-surface contract) + `TerminalRelay`: terminal dialog rendering + answering, steer routing (`.stop` = abort), orchestrator prompts; owns the process-wide stdin singleton |
-  | `agent/stream.ts` | Terminal stream view: text deltas verbatim, tool one-liners with args, live partial output diffing |
-  | `agent/driver.ts` | One-instance driving: `driveAgent` (spawn → prompt → settle → report), `dialogHook`, `autoDialogHook` (quiet: auto-answer select dialogs with the "(Recommended)"/first option, confirms proceed, free-text cancels), `makeRelay` (the terminal relay wiring: dialogs + orchestrator gates on stdin), idempotent `installSigint`, active-instance probe |
-  | `agent/worktree.ts` | `worktree.mjs` invocation (`worktreeScript`) + `WT_ROOT` — the protocol entry both runners share |
-
   ## Shared snippet pipeline (`scripts/snippets/`, one concern per file)
 
   The markdown-fence extraction, module emission, and tsc driver shared by `doc-snippets.ts` (audit) and `skills-check.ts` (guard) — ported verbatim out of `doc-snippets.ts`; skip policy, corpus roots, and diagnostic exemptions stay with each consumer. No CLI entry.
@@ -119,47 +104,7 @@
   | `snippets/emit.ts` | `emitModules(blocks, outFileBase, breadcrumb)`: import-union hoisting + merge (`splitImports`/`EXTERNAL_IMPORT_RE`), per-block `{ }` scopes inside an async IIFE (ambient declarations hoist), defensive `;` after statement-ending JSX/template closers (backtick parity), `isExecutableBlock` signature-only classification; ts/js family split |
   | `snippets/tsc.ts` | `writeTsconfig` (extends `tsconfig.base.json`, `jsx: preserve`, `@hellajs/*` path mappings), raw `spawnSync` `runTsc` (tsc exits 2 on findings — captured, not rejected), `parseDiagnostics`, `typecheckDir` two-pass grammar quarantine |
 
-  ## Worker runner pipeline (`scripts/worker/`, one concern per file)
-
-  Entry `worker.ts` → `set.ts` (list `NN-*.md` units in filename order, read top markers, parse `depends_on` frontmatter, partition into dependency-connected components, `setSlug` + `resolveSetFolder` — read-only; the worker skill owns every tick) → `run.ts` (per-unit orchestration over worktree venues, driving instances through the shared `../agent/` concern: `/skill:worker` prompt naming the target slug, settle → `get_last_assistant_text` report → worktree-copy marker check, auto-continue on tick progress / retry-deliver-abandon-halt gate when stalled (auto deliver-incomplete under `--quiet`), end-of-run outstanding-worktree listing (user-run `bun merge`), SIGINT abort-and-exit-1, final summary with session names). The runner never writes plan files and never starts the next unit after SIGINT or halt. Instances keep `cwd` = main tree (skills and AGENTS.md must resolve from the working tree); all worktree paths are named absolutely in the prompts. `worktree.mjs` invocations stay read-only (`list`/`status`) plus `clean` on explicit abandon.
-
-  | File | Concern |
-  |---|---|
-  | `worker.ts` | Thin entry: args → validate set → run → report → exit |
-  | `worker/set.ts` | Plan-set listing (`NN-*.md`, filename order), top-marker reads, `depends_on` parsing + component partition, `setSlug` + `resolveSetFolder`; read-only |
-  | `worker/run.ts` | Per-unit orchestration over worktree venues: fresh instance (shared driver), worktree-copy marker gate, failure gate (quiet: auto deliver-incomplete; `runProbe` self-test in both relay and quiet modes), end-of-run outstanding listing, summary |
-
-  ## Merge runner pipeline (`scripts/merge/`, one concern per file)
-
-  Entry `merge.ts` → `queue.ts` (mechanical queue derivation: parse `worktree.mjs list`, match protocol slugs back to plan components — `<setSlug>` = whole set, `<setSlug>-<first-unit-stem>` = one dependency-connected component — skip main-tree-merged components, ascending-first-unit order, completeness pre-check against worktree copies) → `run.ts` (per-component orchestration via the shared `../agent/` concern: `/skill:merge` prompt naming the component; success = worktree cleaned AND main-tree ticks; auto-continue on partial progress / retry-skip-halt gate when stalled; set `index.md` top-marker flip after the last merge; union gate run directly (`vp run coverage <pkg|plugin>` from the set's scope or its runtime-delta packages, `vp run lint` fallback) with one fix instance per red round; fully-ticked set-folder removal (`rm` strictly under `plans/`, empty parents pruned — exit-0 runs and empty-queue re-runs of already-complete sets, never `--dry-run`); summary + exit code). The runner commits nothing itself — the instances do, via `worktree.mjs commit` + `git cherry-pick` under the merge skill's contract; refused (incomplete) components keep their worktrees standing.
-
-  | File | Concern |
-  |---|---|
-  | `merge.ts` | Thin entry: args → validate set → run merge → report → exit |
-  | `merge/queue.ts` | Worktree-inventory parsing + queue derivation (slug → component matching, merged-state skip, ordering) + completeness/tick reads |
-  | `merge/gate.ts` | Union gate: command derivation (package scope → coverage; plugin scope → `bun coverage <plugin>` + lint; non-package scope → runtime-delta packages parsed from unit Files, `vp run lint` when none), terminal-passthrough run, fix instance + operator gate on red |
-  | `merge/run.ts` | Per-component instance loop, operator gates, set-aggregate flip, spent-set folder removal, summary |
-
-  ## Audits runner pipeline (`scripts/audits/`, one concern per file)
-
-Entry `audits.ts` → `run.ts` (section derivation from the package dir, set-dir naming `plans/<pkg>/audit/<section>/` with colliding suffixes, per-section instance loop over the shared `../agent/` concern: `/skill:audit-<section>` prompt → settle → `NN-*.md` presence check in the set dir → operator gate retry / accept-clean / skip / halt when neither a findings set nor a clean statement materialized; dry-run mode; per-section summary + the `bun worker <set>` invocation per findings set; SIGINT abort-and-exit-1). No worktree machinery — audit is read-only assessment plus plan authoring in the main tree; instances keep `cwd` = main tree and the runner passes absolute set-dir paths in the prompts.
-
-| File | Concern |
-|---|---|
-| `audits.ts` | Thin entry: args → resolve target → run → report → exit |
-| `audits/run.ts` | Section derivation, set-dir naming, per-section instance loop, operator gate, dry-run, summary |
-
-## Memory runner pipeline (`scripts/memory/`, one concern per file)
-
-Entry `memory.ts` → `queue.ts` (read-only KB listing: flat `memory/*.md`, `confirmed`/`title` frontmatter parse, numeric-ID ascending order with `--start-id` floor and `--limit` cap (default 10, `0` = no cap), pre-run content snapshot + post-run outcome classification: changed / unchanged / removed) → `run.ts` (per-entry AFK instance loop over the shared `../agent/` concern: `/skill:memory` prompt scoping the skill's Step 5 refresh to one entry — still true → `confirm` date bump (+ in-place drift fix), false/reversed → delete the entry, author the corrected fact fresh, blocked → write nothing; instances decide autonomously, never prompting; outcome signal = the entry file's before/after state; unchanged → one retry, then the entry is recorded skipped; dry-run mode; summary + exit code). The runner never verifies and never writes KB content — instances do; an empty queue exits 0 ("nothing to verify"). No worktree machinery, no plan files — verification is read-assess + KB-write in the main tree.
-
-| File | Concern |
-|---|---|
-| `memory.ts` | Thin entry: args → run → report → exit |
-| `memory/queue.ts` | KB entry listing (ID order, `--start-id` floor, `--limit` cap), outcome classification; read-only |
-| `memory/run.ts` | Per-entry AFK instance loop (one retry on unchanged), dry-run, summary |
-
-## Testing
+  ## Testing
 
   Scripts have no dedicated tests. Each entry guards execution with `if (process.argv[1] === import.meta.filename)`, so importing a script (e.g. from a test) does not run it. Coverage instruments `dist/` (the package bundles), not the scripts — script correctness is validated by the coverage gate.
 </scripts-instructions>

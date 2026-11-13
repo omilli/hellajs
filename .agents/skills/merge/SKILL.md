@@ -1,14 +1,14 @@
 ---
 name: merge
 description: >
-  Merge ONE component worktree of a plan set into the main tree as one conventional commit (plan files never committed — ticks updated agent-side, unstaged). Invoked per component by `bun merge <set-folder>` — a fresh instance per outstanding worktree, this skill as its prompt target. Queue derivation, the set index top-marker flip, the union gate, and the completed-set folder removal are runner-owned. Use when a merge instance is driven against a named component, or when asked to hand-merge one specific component worktree; for a whole set, run `bun merge <set-folder>` instead of hand-merging components one by one.
+  Merge ONE component worktree of a plan set into the main tree as one conventional commit (plan files never committed — ticks updated agent-side, unstaged). Invoked per component by the merge runner — a fresh instance per outstanding worktree, this skill as its prompt target. Queue derivation, the set index top-marker flip, the union gate, and the completed-set folder removal are runner-owned. Use when a merge instance is driven against a named component, or when asked to hand-merge one specific component worktree; for a whole set, run the merge runner over the set instead of hand-merging components one by one.
 ---
 
 # Merge
 
 Apply ONE component worktree of a plan set to the main tree as **one conventional commit**. The component's carried plans are the complete merge context — commit message, conflict resolution, and completeness all draw on them.
 
-The orchestrator (`bun merge <set-folder>`, `scripts/merge/run.ts`) derives the queue from plan state, spawns a fresh instance per outstanding component with this skill as the prompt, and gates progress mechanically: main-tree plan ticks + worktree cleanup = merged; partial progress auto-continues with a fresh instance; a stalled attempt reaches the operator (retry / skip / halt). Worker worktree runs end delivered for exactly this handoff.
+The orchestrator (the operator-run merge runner) derives the queue from plan state, spawns a fresh instance per outstanding component with this skill as the prompt, and gates progress mechanically: main-tree plan ticks + worktree cleanup = merged; partial progress auto-continues with a fresh instance; a stalled attempt reaches the operator (retry / skip / halt). Worker worktree runs end delivered for exactly this handoff.
 
 Two standing rules, user-authorized here, overriding the never-commit default for exactly these commits:
 
