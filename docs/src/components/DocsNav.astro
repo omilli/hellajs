@@ -1,6 +1,7 @@
 ---
 /**
- * Docs left navigation — server-rendered, zero client JS. The item look
+ * Docs left navigation — server-rendered markup; its one script (below the
+ * aside) keeps the active link scrolled into view. The item look
  * comes from the shared menu vocabulary in ../styles/menu (`.site-menu-link`;
  * the registry's built output keeps style constants module-private, so the
  * copies are docs-owned); groups and the rail/drawer shell are inlined
@@ -193,3 +194,25 @@ const mainNavLinks = [
     </ul>
   </nav>
 </aside>
+
+<script>
+  // Every navigation is a full page load (no view transitions), so the
+  // rail's overflow-y: auto box re-renders at scrollTop 0 and the active
+  // leaf lands below the fold on long sections. Center it — "nearest"
+  // merely unpins it, center keeps the surrounding group scannable.
+  // behavior: "instant" overrides the global smooth scroll-behavior
+  // (styles/global.ts) so loads don't glide; the readyState dance matches
+  // CodeExample/InstallSection (Astro dedupes this module per page).
+  const init = () => {
+    const active = document.querySelector<HTMLElement>(
+      ".site-nav a[aria-current='page']",
+    );
+    active?.scrollIntoView({ behavior: "instant", block: "center" });
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+</script>
