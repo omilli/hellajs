@@ -177,8 +177,8 @@ const result = computed(() => count() * multiplier());
 
 effect(() => console.log(`Result: ${result()}`)); // Initial run: "Result: 0"
 
-count(10);      // No effect run yet: the drain is scheduled
-multiplier(3);  // Coalesced into the same pass
+count(10); // No effect run yet: the drain is scheduled
+multiplier(3); // Coalesced into the same pass
 console.log(result()); // 30: reads are synchronous
 // Script ends, the boundary fires: one run logs "Result: 30"
 ```
@@ -220,7 +220,7 @@ const counterMultiplier = signal(1);
 
 const display = computed(() => `Count: ${counterValue()}`);
 counterMultiplier(2); // display unaffected
-counterValue(1);      // display recalculates
+counterValue(1); // display recalculates
 
 console.log(display()); // "Count: 1"
 ```
