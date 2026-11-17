@@ -19,7 +19,7 @@ console.log(fullName()); // "John Doe"
 
 ### Automatic Batching
 
-Signal writes coalesce automatically: consecutive writes in the same tick run dependent effects once with final values. Call [`flush`](/reference/core/flush) when the effects must run before the next line.
+Consecutive writes coalesce into one effect run at the next microtask boundary; call [`flush`](/reference/core/flush) to drain before the next line.
 
 ```typescript
 import { signal, computed, effect, flush } from '@hellajs/core';
@@ -28,16 +28,13 @@ const base = signal(1);
 const multiplier = signal(2);
 const sum = computed(() => base() + multiplier());
 
-effect(() => console.log(`Sum: ${sum()}`)); // Initial run logs "Sum: 3"
+effect(() => console.log(`Sum: ${sum()}`)); // Initial run: "Sum: 3"
 
 base(10);
 multiplier(20);
-// One additional run at the microtask boundary: "Sum: 30"
+// No effect run yet: the drain waits for the boundary
 
-// Need the value before the next line? flush() drains synchronously.
-base(30);
-flush();
-console.log(sum()); // 50: the effect already ran
+flush(); // Drains now, ahead of it: one run logs "Sum: 30"
 ```
 
 ### Effect Cleanup
