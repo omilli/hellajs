@@ -86,7 +86,7 @@ todos([
 
 ### Signal Collections
 
-[`signalArray`](/reference/core/signalarray), [`signalMap`](/reference/core/signalmap), and [`signalSet`](/reference/core/signalset) replace immutable spreads. Each element or key lives in its own child signal. A value write wakes only that element's readers. In-place structural operation (`push`, `splice`, `set.add`) wakes positional readers without cloning anything.
+[`signalArray`](/reference/core/signalarray), [`signalMap`](/reference/core/signalmap), and [`signalSet`](/reference/core/signalset) replace immutable spreads and each item lives in its own child signal. A value write wakes only that element's readers and in-place structural operations (`push`, `splice`, `set.add`) wakes positional readers without cloning anything.
 
 ```typescript
 import { signalArray, effect } from '@hellajs/core';
@@ -166,7 +166,7 @@ console.log(todoTotals()); // { total: 4, active: 3 }: entire chain updates
 
 ### Effect Timing
 
-Signal writes defer effects to the next microtask: consecutive synchronous writes (event handlers, loops, store updates) coalesce, and every effect runs exactly once against final state. Reads never wait: a signal or computed read always observes the freshest committed value, even between the write and the drain.
+Signal writes defer effects to the next microtask. Consecutive synchronous writes coalesce, and every effect runs once against final state. Signals always observe the freshest value, even between write and drain.
 
 ```typescript
 import { signal, computed, effect } from '@hellajs/core';
@@ -263,7 +263,9 @@ multiplier(20);
 
 ### Error Handling
 
-An error thrown inside an [`effect`](/reference/core/effect) aborts the current drain and surfaces at the `flush()` caller or from the scheduled drain. Nothing is corrupted: queued effects stay queued, and the next signal change starts a fresh drain. Catch expected failures with `try/catch` inside the effect so it keeps running. See [error propagation](/reference/core/effect#error-propagation) and [error recovery](/reference/core/computed#error-recovery) for the full rules.
+An error thrown inside an [`effect`](/reference/core/effect) aborts the current drain and surfaces at the [`flush`](/reference/core/flush) caller or from the scheduled drain. Queued effects stay queued, and the next signal change starts a fresh drain.
+
+Catch expected failures with `try/catch` inside the effect so it keeps running. See [error propagation](/reference/core/effect#error-propagation) and [error recovery](/reference/core/computed#error-recovery) for the full rules.
 
 ```typescript
 import { signal, effect } from '@hellajs/core';
