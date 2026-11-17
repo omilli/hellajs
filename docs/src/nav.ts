@@ -60,84 +60,84 @@ export const navigation: Record<NavSection, NavEntry[]> = {
   reference: [
     {
       core: [
+        "computed",
+        "effect",
+        "flush",
+        "scope",
         "signal",
         "signalArray",
         "signalMap",
         "signalSet",
-        "computed",
-        "effect",
-        "scope",
-        "untracked",
-        "flush"
-      ]
-    },
-    {
-      dom: [
-        { label: "on:", slug: "on" },
-        { label: "e:", slug: "e" },
-        { label: "hook:", slug: "hook" },
-        { label: "error:", slug: "error" },
-        "mount",
-        "hydrate",
-        "element",
-        "raw",
-        "ForEach",
-        "Portal",
-        "Lazy",
-        "Transition",
-        "Suspense",
-        "onError",
-        "$ref",
-        "$collection",
-        "registry",
+        "untracked"
       ]
     },
     {
       css: [
         "css",
-        "reset",
-        "style",
+        "cssText",
         "cva",
         "cx",
-        "vars",
         "keyframes",
-        "cssText",
         "removeCss",
+        "removeKeyframes",
         "removeStyle",
         "removeVars",
-        "removeKeyframes",
+        "reset",
         "resetCss",
-        "resetVars"
+        "resetVars",
+        "style",
+        "vars"
       ]
     },
     {
-      store: [
-        "store",
-        "persiststore",
-        "localstorageadaptor",
-        "sessionstorageadaptor"
-      ]
-    },
-    {
-      router: [
-        "router",
-        "route",
-        "navigate",
-        "href",
-        "resetrouter"
+      dom: [
+        "$collection",
+        "$ref",
+        { label: "e:", slug: "e" },
+        "element",
+        { label: "error:", slug: "error" },
+        "ForEach",
+        { label: "hook:", slug: "hook" },
+        "hydrate",
+        "Lazy",
+        "mount",
+        { label: "on:", slug: "on" },
+        "onError",
+        "Portal",
+        "raw",
+        "registry",
+        "Suspense",
+        "Transition",
       ]
     },
     {
       resource: [
+        "resetresource",
         "resource",
-        "resourcecache",
-        "resetresource"
+        "resourcecache"
+      ]
+    },
+    {
+      router: [
+        "href",
+        "navigate",
+        "resetrouter",
+        "route",
+        "router"
       ]
     },
     {
       ssr: [
-        "ssr",
-        "doc"
+        "doc",
+        "ssr"
+      ]
+    },
+    {
+      store: [
+        "localstorageadaptor",
+        "persiststore",
+        "sessionstorageadaptor",
+        "store"
       ]
     },
   ],
