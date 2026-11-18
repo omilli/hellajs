@@ -99,7 +99,9 @@ The `equals` option replaces the default reference check. When it returns `true`
 import { signal, effect } from '@hellajs/core';
 
 const todos = signal([{ id: 1, done: false }], {
-  equals: (a, b) => a.length === b.length && a.every((t, i) => t.id === b[i]?.id)
+  equals: (previous, next) =>
+    previous.length === next.length &&
+    previous.every((todo, index) => todo.id === next[index]?.id)
 });
 
 const stable = todos();
@@ -115,7 +117,7 @@ An equal write keeps the old reference, so consumers comparing by identity never
 
 `NaN` needs no comparator; the default already treats it as self-equal. Use `Object.is` as `equals` only to also distinguish `+0` from `-0`; under the default they compare equal.
 
-The comparator compares against the most recent write, so sequential writes compare against the last write, not the initial value. `{ equals: undefined }` behaves as no options.
+The comparator runs against the most recent value, so sequential writes compare against the last write, not the initial value. `{ equals: undefined }` behaves as no options.
 
 ## Important Considerations
 
@@ -139,7 +141,7 @@ todos(todos().map(todo =>
 
 ### Writing undefined Clears the Value
 
-The getter/setter split is the argument count, not the value: calling the signal with `undefined` is a write, not a read. A signal created without an initial value legitimately holds `undefined`, so a stored `undefined` is indistinguishable from never-set. Put fallbacks at read sites.
+Whether a call reads or writes depends on the argument count, not the value: calling the signal with `undefined` is a write, not a read. A signal created without an initial value legitimately holds `undefined`, so a stored `undefined` is indistinguishable from never-set. Put fallbacks at read sites.
 
 ```typescript
 import { signal } from '@hellajs/core';

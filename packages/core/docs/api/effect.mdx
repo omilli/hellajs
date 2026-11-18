@@ -9,7 +9,7 @@ Runs immediately, then again whenever a dependency changes.
 Call the returned function to stop the effect when no longer needed.
 
 ```typescript
-import { signal, effect } from "@hellajs/core";
+import { signal, effect } from '@hellajs/core';
 
 const count = signal(0);
 
@@ -48,11 +48,11 @@ interface EffectOptions {
 Only reacts to the signals that are read during the ***last*** execution.
 
 ```typescript
-import { signal, effect } from "@hellajs/core";
+import { signal, effect } from '@hellajs/core';
 
 const showData = signal(true);
-const data = signal("value");
-const backup = signal("backup");
+const data = signal('value');
+const backup = signal('backup');
 
 effect(() => {
   if (showData()) {
@@ -63,12 +63,12 @@ effect(() => {
 });
 
 // Initially tracks showData and data
-data("updated"); // Effect re-runs
-backup("fallback"); // Effect does NOT re-run: backup is not a dependency yet
+data('updated'); // Effect re-runs
+backup('fallback'); // Effect does NOT re-run: backup is not a dependency yet
 
 showData(false); // Effect re-runs, now tracks showData and backup instead of data
-backup("new fallback"); // Effect re-runs: backup is now a dependency
-data("still updated"); // Effect does NOT re-run: data is no longer a dependency
+backup('new fallback'); // Effect re-runs: backup is now a dependency
+data('still updated'); // Effect does NOT re-run: data is no longer a dependency
 ```
 
 ### Cleanup Return Value
@@ -76,13 +76,13 @@ data("still updated"); // Effect does NOT re-run: data is no longer a dependency
 An effect can return a cleanup function that runs before re-execution and on disposal. Useful for clearing intervals, removing listeners, and cancelling subscriptions.
 
 ```typescript
-import { signal, effect } from "@hellajs/core";
+import { signal, effect } from '@hellajs/core';
 
 const active = signal(true);
 
 const cleanup = effect(() => {
   if (!active()) return;
-  const id = setInterval(() => console.log("polling..."), 1000);
+  const id = setInterval(() => console.log('polling...'), 1000);
   return () => clearInterval(id); // Cleanup on re-run or dispose
 });
 
@@ -95,20 +95,20 @@ cleanup();     // Effect stopped (no cleanup pending: last execution returned un
 Passing `{ separate: true }` registers an effect that never links to the effect running at creation time. The separate effect still tracks the signals it reads and re-runs when they change, but only its own returned cleanup disposes it: re-running or disposing a surrounding effect leaves it untouched. Use it when an external registry owns the effect's lifetime.
 
 ```typescript
-import { signal, effect } from "@hellajs/core";
+import { signal, effect } from '@hellajs/core';
 
-const name = signal("Ada");
-let rendered = "";
+const name = signal('Ada');
+let rendered = '';
 
 // Registered separate: no parent link, the caller owns the lifetime
 const dispose = effect(() => {
   rendered = name();
 }, { separate: true });
 
-name("Grace"); // rendered updates to "Grace"
+name('Grace'); // rendered updates to "Grace"
 
 dispose(); // The caller disposes it when done
-name("Alan"); // No further updates
+name('Alan'); // No further updates
 ```
 
 ## Important Considerations
@@ -118,14 +118,14 @@ name("Alan"); // No further updates
 The effect function must be synchronous. Dependency tracking is active only while the function runs; an `async` function returns a pending Promise at its first `await`, so signal reads after that point subscribe nothing and the effect never re-runs. Start async work inside the synchronous body and write results into a signal from the `.then` callbacks.
 
 ```typescript
-import { signal, effect } from "@hellajs/core";
+import { signal, effect } from '@hellajs/core';
 
-const query = signal("");
+const query = signal('');
 const results = signal<string[]>([]);
 
 // ❌ query() runs after the first await: untracked, the effect never re-runs
 effect(async () => {
-  const res = await fetch("/api/search");
+  const res = await fetch('/api/search');
   const items = (await res.json()) as string[];
   results(items.filter(item => item.includes(query())));
 });
@@ -144,10 +144,10 @@ effect(() => {
 Effects do not auto-dispose their children. Every re-run of a parent that creates a child effect adds another live child, and the old children keep firing on their own dependencies, duplicating side effects on every later change. Express the varying condition inside a single effect instead: dependencies are re-collected on every run, so reads in the inactive branch drop out automatically.
 
 ```typescript
-import { signal, effect } from "@hellajs/core";
+import { signal, effect } from '@hellajs/core';
 
 const enabled = signal(false);
-const query = signal("");
+const query = signal('');
 
 // ❌ Every enabled flip creates another child; the old children never stop
 // firing on query changes
@@ -163,7 +163,7 @@ effect(() => {
   if (enabled()) {
     console.log(query().toUpperCase());
   } else {
-    console.log("idle");
+    console.log('idle');
   }
 });
 ```
@@ -177,7 +177,7 @@ Writing to a signal the effect also reads does not run forever. Propagation skip
 Use [`untracked`](/reference/core/untracked) to read a signal without creating a dependency at all.
 
 ```typescript
-import { signal, effect, untracked } from "@hellajs/core";
+import { signal, effect, untracked } from '@hellajs/core';
 
 const count = signal(0);
 
@@ -195,12 +195,14 @@ effect(() => {
 
 ### Error Propagation
 
-Errors thrown inside an effect follow two paths. A manual `flush()` drain throws to the `flush()` caller and aborts the drain (remaining queued effects stay queued). The scheduled microtask drain that follows signal writes has no caller to receive the error: it aborts the drain the same way, leaves the survivors queued, and dispatches the throw to the handler registered with [`setFlushErrorHandler`](/reference/core/flush) when one is registered, surfacing as an unhandled microtask rejection otherwise. Either way, subsequent writes schedule a fresh drain, recover the survivors, and the reactive system continues normally.
+An error thrown inside an effect never corrupts signal state: the remaining queued effects stay queued, and later writes schedule a fresh drain that runs them. Where the error surfaces depends on which drain ran the effect.
 
-A throw on the ***first*** run is different: the effect never started, so it is disposed before the error propagates. No re-runs occur and no cleanup handle exists to call; subsequent writes to any dependency it read before throwing do nothing. Re-run throws keep the effect alive: the drain aborts and the error surfaces through its path (the `flush()` caller, or the registered scheduled-drain handler on the scheduled drain), but the effect stays subscribed and re-runs on the next dependency change; call the returned cleanup when it should not recover.
+A manual `flush()` drain throws to the `flush()` caller. The scheduled microtask drain has no caller: the error dispatches to the handler registered with [`setFlushErrorHandler`](/reference/core/flush) when one is registered, and surfaces as an unhandled microtask rejection otherwise.
+
+A throw on the ***first*** run is different: the effect never started, so it is disposed before the error escapes. No cleanup handle exists to call, and later writes to the signals it read do nothing.
 
 ```typescript
-import { signal, effect } from "@hellajs/core";
+import { signal, effect } from '@hellajs/core';
 
 const count = signal(0);
 
@@ -208,7 +210,7 @@ const count = signal(0);
 try {
   effect(() => {
     count();
-    throw new Error("boom");
+    throw new Error('boom');
   });
 } catch {
   // Recovered here; the effect is already gone
@@ -217,15 +219,17 @@ try {
 count(1); // No throw, no re-run: the effect no longer exists
 ```
 
+A throw on a later run keeps the effect alive: the error surfaces through its drain (the `flush()` caller, or the registered handler), the effect stays subscribed, and it re-runs on the next dependency change. Call the returned cleanup when it should not recover.
+
 ```typescript
-import { signal, effect } from "@hellajs/core";
+import { signal, effect, flush } from '@hellajs/core';
 
 const count = signal(0);
 const shouldThrow = signal(false);
 
 const cleanup = effect(() => {
   const value = count();
-  if (shouldThrow()) throw new Error("boom");
+  if (shouldThrow()) throw new Error('boom');
   console.log(value);
 });
 
@@ -245,9 +249,9 @@ cleanup();
 A run's return value is checked with a function test: returning a function installs it as the cleanup for that run, even when returning it was accidental. Any other return value is ignored. Return nothing unless cleanup is intended.
 
 ```typescript
-import { signal, effect } from "@hellajs/core";
+import { signal, effect } from '@hellajs/core';
 
-const save = () => console.log("saved");
+const save = () => console.log('saved');
 const onSave = signal(save);
 
 // ❌ Returns the resolved function; it is captured as cleanup and invoked on re-run/dispose

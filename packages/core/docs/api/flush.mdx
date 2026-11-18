@@ -13,45 +13,13 @@ const count = signal(0);
 const filter = signal('all');
 effect(() => console.log(`count=${count()} filter=${filter()}`)); // subscriber
 
-count(1);        // No effect run yet
-filter('done');  // Still none
+count(1); // No effect run yet
+filter('done'); // Still none
 // At the microtask boundary the effect runs once, observing count=1, filter='done'
 
-count(2);        // Scheduled
-flush();         // Synchronous drain: the effect runs now, before the microtask fires
+count(2); // Scheduled
+flush(); // Synchronous drain: the effect runs now, before the microtask fires
 // (the pending microtask then drains an empty queue: no double run)
-```
-
-An error thrown inside an effect aborts a manual drain and propagates to the `flush()` caller; the remaining queued effects stay queued. Call `flush()` again to run them at a known point:
-
-```typescript
-import { signal, effect, flush } from '@hellajs/core';
-
-const count = signal(0);
-const events: string[] = [];
-
-effect(() => events.push(`first: ${count()}`));
-
-let runs = 0;
-effect(() => {
-  count();
-  if (++runs > 1) throw new Error('boom'); // Throws on re-run only
-});
-
-effect(() => {
-  count();
-  events.push('third effect ran');
-});
-
-try {
-  count(1);
-  flush(); // First effect runs, the second throws: the drain aborts
-} catch {
-  // The error surfaces at the flush call
-}
-
-flush(); // Runs the third effect left queued by the aborted drain
-console.log(events); // Logs: ["first: 0", "third effect ran", "first: 1", "third effect ran"]
 ```
 
 ## API
@@ -87,7 +55,39 @@ console.log(events); // Logs: ["trigger is 0", "trigger is 1"]
 
 ### Error Recovery
 
-A throw inside an effect unwinds out of the `flush()` call that triggered it, keeping the remaining queue entries intact. The next flush picks up where the drain stopped; reactive state is never corrupted. See [error propagation](/reference/core/effect#error-propagation) for the full effect error rules.
+A throw inside an effect unwinds out of the `flush()` call that triggered it, keeping the remaining queue entries intact. Reactive state is never corrupted, and the next flush picks up where the drain stopped. Call `flush()` again to run the leftover effects at a known point:
+
+```typescript
+import { signal, effect, flush } from '@hellajs/core';
+
+const count = signal(0);
+const events: string[] = [];
+
+effect(() => events.push(`first: ${count()}`));
+
+let runs = 0;
+effect(() => {
+  count();
+  if (++runs > 1) throw new Error('boom'); // Throws on re-run only
+});
+
+effect(() => {
+  count();
+  events.push('third effect ran');
+});
+
+try {
+  count(1);
+  flush(); // First effect runs, the second throws: the drain aborts
+} catch {
+  // The error surfaces at the flush call
+}
+
+flush(); // Runs the third effect left queued by the aborted drain
+console.log(events); // Logs: ["first: 0", "third effect ran", "first: 1", "third effect ran"]
+```
+
+See [error propagation](/reference/core/effect#error-propagation) for the full effect error rules.
 
 A scheduled drain has no caller to receive a throw, so its errors route through a settable handler instead: register one with `setFlushErrorHandler`, and every scheduled-drain error dispatches there while the surviving queue stays intact for the next flush. Passing `null` unregisters; with no handler registered the error surfaces as an unhandled microtask rejection. Manual `flush()` drains never dispatch: they always throw to their caller.
 
@@ -103,6 +103,6 @@ function setFlushErrorHandler(handler: FlushErrorHandler | null): void
 import { onError } from '@hellajs/dom';
 
 onError((error, context) => {
-  if (context.phase === 'flush') reportToService(error); // A scheduled effect threw
+  if (context.phase === 'flush') console.error(error); // A scheduled effect threw
 });
 ```

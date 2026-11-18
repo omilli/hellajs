@@ -13,7 +13,7 @@ const scores = signalMap([['alice', 1], ['bob', 2]]);
 
 effect(() => console.log('Alice:', scores.get('alice'))); // Logs: "Alice: 1"
 
-scores.set('bob', 20);  // No rerun: bob is not tracked
+scores.set('bob', 20); // No rerun: bob is not tracked
 scores.set('alice', 5); // Logs: "Alice: 5" - only alice readers wake
 
 console.log(scores()); // Map { 'alice' => 5, 'bob' => 20 } - fresh plain Map
@@ -48,7 +48,7 @@ interface SignalMap<K, V, W = V> {
 }
 ```
 
-The write-side parameter exists for host packages converting values on entry (`@hellajs/store` deep collection keys instantiate it so writes accept raw objects while reads return element stores); standalone usage never sees it, because `W` defaults to `V`.
+The write-side parameter exists for host packages converting values on entry: `@hellajs/store` instantiates it so writes accept raw objects while reads return element stores. Standalone usage never sees it, because `W` defaults to `V`.
 
 ## Key Concepts
 
@@ -58,7 +58,7 @@ Each key's value lives in its own signal. `set` on an existing key writes that s
 
 ### Membership Changes Are Structural
 
-`set` on a new key and `delete` of a present key change membership: they bump the structural version with zero child writes, waking `get`, `has`, `keys`, `values`, `size`, iteration, and whole-callable readers. This is container-level granularity: every structural change wakes every membership reader, coarser than per-key tracking elsewhere.
+`set` on a new key and `delete` of a present key change membership: they bump the structural version with zero child writes, waking `get`, `has`, `keys`, `values`, `size`, iteration, and whole-callable readers. Every structural change wakes every membership reader, coarser than the per-key tracking above.
 
 | Operation | `get(k)` readers | `entry(k)` readers | `has` / `keys` / `size` / iteration |
 |---|---|---|---|
@@ -94,9 +94,9 @@ const aliceScore = scores.entry('alice');
 
 effect(() => console.log('Alice:', aliceScore())); // Logs: "Alice: undefined"
 
-scores.set('alice', 5);  // Logs: "Alice: 5"
-scores.set('bob', 2);    // No rerun: bob's membership does not change alice's handle value
-scores.delete('alice');  // Logs: "Alice: undefined"
+scores.set('alice', 5); // Logs: "Alice: 5"
+scores.set('bob', 2); // No rerun: bob's membership does not change alice's handle value
+scores.delete('alice'); // Logs: "Alice: undefined"
 console.log(scores.entry('alice') === aliceScore); // true - one handle per key, forever
 ```
 
@@ -110,7 +110,7 @@ Passing handles to [`effect`](/reference/core/effect) or [`computed`](/reference
 2. `wrap(next)`: transforms the raw incoming value.
 3. Child write: the per-element `equals` decides whether propagation happens.
 
-Merge-before-wrap is load-bearing: `merge` sees the raw incoming value against the stored (already wrapped) element, which is what a host package needs to match raw input against its own converted nodes. Keys are never wrapped, only values. New keys (initial entries and additions) skip `merge` and go straight through `wrap`. The `@hellajs/store` package builds its deep collection reactivity on these two hooks.
+Merge-before-wrap is deliberate: `merge` sees the raw incoming value against the stored (already wrapped) element, which is what a host package needs to match raw input against its own converted nodes. Keys are never wrapped, only values. New keys (initial entries and additions) skip `merge` and go straight through `wrap`. The `@hellajs/store` package builds its deep collection reactivity on these two hooks.
 
 ```typescript
 import { signalMap, effect } from '@hellajs/core';

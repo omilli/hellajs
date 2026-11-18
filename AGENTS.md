@@ -103,7 +103,7 @@
   |---|---|---|
   | `astro-best-practices` | `astro-plugin-hellajs` | Exclusive Astro 7 renderer registration, `client:*` island hydration, `raw()` slot passthrough, frontmatter style folding, ssr-condition server resolution. |
   | `compiler-best-practices` | `hellajs-compiler` | dom/ast target selection per build environment, `transform()` call contract, chained-sourcemap pipeline ownership, direct use vs the vite/rollup wrappers. |
-  | `core-best-practices` | `@hellajs/core` | Signals and collection signals (replace-not-mutate writes), pure synchronous `computed`, effect tracking and cleanup, deferred flush + `scope` lifecycle, SSR env guards. |
+  | `core-best-practices` | `@hellajs/core` | Signals and collection signals (replace-not-mutate writes), pure synchronous `computed`, effect tracking and cleanup, deferred flush + `scope` lifecycle. |
   | `css-best-practices` | `@hellajs/css` | Scoped `style()` and global `css()`, reactive `vars()`, hashed `keyframes()`, `cva()`/`cx()` recipes, `cssText()` SSR collection. |
   | `dom-best-practices` | `@hellajs/dom` | Mount/hydrate parity, reactive function props and templates, keyed `ForEach` lists, portals and async boundaries, `on:`/`e:` events, error boundaries, reconciler-owned cleanup. |
   | `headless-best-practices` | `@hellajs/headless` | Dispose-handle cleanup over listeners, focus/dismissal/gesture primitives, anchor positioning, layered dismissal and `modal`, component part factories with state in user signals. |

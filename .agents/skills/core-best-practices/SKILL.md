@@ -1,7 +1,7 @@
 ---
 name: core-best-practices
 description: >
-  Best practices for @hellajs/core reactive primitives: signal, signalArray, signalMap, signalSet, computed, effect, flush, untracked, scope, hasWindow, hasDocument, hasNavigator. Use when writing or reviewing code that imports @hellajs/core - creating or writing signals, deriving state with computed, running side effects with effect, forcing the synchronous effect drain with flush, disposing effects with scope, reading without subscribing via untracked, or guarding browser-only code with the env probes. Covers the silent failure modes: in-place mutation never propagates, async effect bodies lose dependency tracking, async or side-effecting computed corrupt the graph, manual per-write flush calls fight the auto-batched scheduler, discarded disposers leak ghost effects. Use ONLY for @hellajs/core primitives - DOM rendering and components belong to dom-best-practices, deep reactive state containers to store-best-practices.
+  Best practices for @hellajs/core reactive primitives: signal, signalArray, signalMap, signalSet, computed, effect, flush, untracked, scope. Use when writing or reviewing code that imports @hellajs/core - creating or writing signals, deriving state with computed, running side effects with effect, forcing the synchronous effect drain with flush, disposing effects with scope, or reading without subscribing via untracked. Covers the silent failure modes: in-place mutation never propagates, async effect bodies lose dependency tracking, async or side-effecting computed corrupt the graph, manual per-write flush calls fight the auto-batched scheduler, discarded disposers leak ghost effects. Use ONLY for @hellajs/core primitives - DOM rendering and components belong to dom-best-practices, deep reactive state containers to store-best-practices.
 ---
 
 # core-best-practices
@@ -12,7 +12,6 @@ Grounded rules for `@hellajs/core`: signals (sources), computed (transforms), ef
 
 - Any code importing `@hellajs/core` or creating/writing signals, computeds, or effects.
 - Deriving state, running reactive side effects, forcing effect drains, or disposing effect lifecycles.
-- Guarding browser-only code that runs in Node or SSR environments.
 
 Not for: DOM rendering and components (`dom-best-practices`), deep reactive state containers (`store-best-practices`).
 
@@ -33,7 +32,6 @@ Not for: DOM rendering and components (`dom-best-practices`), deep reactive stat
 | cmp | Computed derivation | CRITICAL |
 | eff | Effects and tracking | CRITICAL |
 | sched | Batching and lifecycle | HIGH |
-| env | Environment guards | LOW |
 
 ## Rules
 
@@ -62,9 +60,5 @@ Not for: DOM rendering and components (`dom-best-practices`), deep reactive stat
 - `sched-deferred-flush` - Trust auto-batching for same-tick writes
 - `sched-scope-dispose` - Collect effects in scopes and dispose on teardown
 - `sched-flush-advanced` - Reach for flush only to drain a stalled queue
-
-### Environment guards (env)
-
-- `env-probe-globals` - Probe the platform with hasWindow, hasDocument, hasNavigator
 
 Full rule text, incorrect/correct examples, and source references: `AGENTS.md` in this folder (compiled from `rules/` by `vp run skills-build`).

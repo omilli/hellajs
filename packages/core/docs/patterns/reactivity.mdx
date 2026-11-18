@@ -1,287 +1,262 @@
 # Reactivity
 
-Short patterns for common tasks using [`@hellajs/core`](/reference/core).
+Copy-paste recipes for common reactive-state tasks using [`@hellajs/core`](/reference/core). Each recipe is self-contained; the [reactivity concepts](/learn/concepts/reactivity) page explains the model behind them.
 
-### Derived State
+### Debounced Search Input
 
-Chain [`computed`](/reference/core/computed) values to derive state from multiple signals.
-
-```typescript
-import { signal, computed } from '@hellajs/core';
-
-const firstName = signal('Jane');
-const lastName = signal('Doe');
-const fullName = computed(() => `${firstName()} ${lastName()}`);
-
-firstName('John');
-console.log(fullName()); // "John Doe"
-```
-
-### Automatic Batching
-
-Consecutive writes coalesce into one effect run at the next microtask boundary; call [`flush`](/reference/core/flush) to drain before the next line.
-
-```typescript
-import { signal, computed, effect, flush } from '@hellajs/core';
-
-const base = signal(1);
-const multiplier = signal(2);
-const sum = computed(() => base() + multiplier());
-
-effect(() => console.log(`Sum: ${sum()}`)); // Initial run: "Sum: 3"
-
-base(10);
-multiplier(20);
-// No effect run yet: the drain waits for the boundary
-
-flush(); // Drains now, ahead of it: one run logs "Sum: 30"
-```
-
-### Effect Cleanup
-
-[`effect`](/reference/core/effect) returns a function that stops tracking. Use it for cleaning up intervals, listeners, and subscriptions.
+Delay a downstream write until the input settles: every keystroke re-runs the [`effect`](/reference/core/effect), and the returned cleanup cancels the pending timer before the next wait starts.
 
 ```typescript
 import { signal, effect } from '@hellajs/core';
 
-const active = signal(true);
+const searchInput = signal('');
+const settledQuery = signal('');
 
-const cleanup = effect(() => {
-  if (!active()) return;
-  const id = setInterval(() => console.log('polling...'), 1000);
-  // Store cleanup to run when effect re-executes or is disposed
-  return () => clearInterval(id);
+const stopDebounce = effect(() => {
+  const input = searchInput(); // tracked: every keystroke re-runs the effect
+  const timer = setTimeout(() => settledQuery(input), 300);
+  return () => clearTimeout(timer); // runs before each re-run: the wait resets
 });
 
-// Stop the effect entirely
-cleanup();
+searchInput('hel');
+searchInput('hell');
+searchInput('hello');
+// One effect re-run at the microtask boundary, one fresh 300ms timer;
+// settledQuery receives 'hello' 300ms after the last keystroke
+
+stopDebounce();
 ```
 
-### Conditional Dependencies
+### Validation With Equality Gate
 
-A [`computed`](/reference/core/computed) only tracks signals read during its last execution.
-
-```typescript
-import { signal, computed } from '@hellajs/core';
-
-const view = signal('first');
-const first = signal(1);
-const second = signal(2);
-
-const value = computed(() => view() === 'first' ? first() : second());
-
-console.log(value()); // 1: tracks view and first
-second(99); // value doesn't update: second is not a dependency
-view('second');
-console.log(value()); // 99: now tracks view and second instead of first
-```
-
-### Untracked Reads
-
-Read a signal without creating a dependency using [`untracked`](/reference/core/untracked).
-
-```typescript
-import { signal, effect, untracked } from '@hellajs/core';
-
-const data = signal('hello');
-const logPrefix = signal('[app]');
-
-effect(() => {
-  // Read logPrefix without tracking it
-  const prefix = untracked(() => logPrefix());
-  console.log(`${prefix} ${data()}`);
-});
-
-logPrefix('[debug]'); // Effect does NOT re-run
-data('world');       // Effect re-runs, uses current logPrefix
-```
-
-### Scope for Multiple Effects
-
-[`scope`](/reference/core/scope) wraps multiple effects with a single cleanup call.
-
-```typescript
-import { signal, effect, scope } from '@hellajs/core';
-
-const userId = signal(1);
-
-const cleanup = scope(() => {
-  effect(() => console.log(`User: ${userId()}`));
-  effect(() => console.log(`Loading data for ${userId()}...`));
-});
-
-userId(2); // Both effects re-run
-
-cleanup(); // All effects stopped
-```
-
-### Incremental Computation
-
-[`computed`](/reference/core/computed) receives the previous value as an argument for incremental calculations.
-
-```typescript
-import { signal, computed } from '@hellajs/core';
-
-const items = signal<number[]>([]);
-
-const total = computed<{ sum: number; count: number }>((prev = { sum: 0, count: 0 }) => {
-  const current = items();
-  const newItems = current.slice(prev.count);
-  const newSum = newItems.reduce((s, v) => s + v, 0);
-  return { sum: prev.sum + newSum, count: current.length };
-});
-
-items([10, 20]);
-console.log(total()); // { sum: 30, count: 2 }
-
-items([10, 20, 15]);
-console.log(total()); // { sum: 45, count: 3 }
-```
-
-### Error Handling in Effects
-
-Use `try/catch` inside [`effect`](/reference/core/effect) to handle errors without breaking dependency tracking.
-
-```typescript
-import { signal, effect } from '@hellajs/core';
-
-const data = signal(10);
-const shouldThrow = signal(false);
-let result = 0;
-
-effect(() => {
-  const throwFlag = shouldThrow();
-  const value = data();
-  try {
-    if (throwFlag) throw new Error('fail');
-    result = value;
-  } catch {
-    result = -1;
-  }
-});
-
-shouldThrow(true);  // result: -1
-shouldThrow(false); // result: 10
-data(25);           // result: 25 (tracking preserved)
-```
-
-### Error Propagation
-
-Errors thrown in one effect abort the flush queue so remaining effects are skipped.
-
-```typescript
-import { signal, effect } from '@hellajs/core';
-
-const data = signal(0);
-
-effect(() => { data(); });
-const cleanup = effect(() => {
-  if (data() > 1) throw new Error('fail');
-  data();
-});
-effect(() => { data(); });
-
-data(1); // All three effects run (no error)
-data(2); // Throws: second effect aborts the flush, third effect never runs
-
-// After cleanup, subsequent updates process normally
-cleanup();
-data(3); // All remaining effects run
-```
-
-### Computed Auto-GC
-
-A [`computed`](/reference/core/computed) with no subscribers releases its dependencies. Re-subscribing rebuilds the graph.
+Derive an errors array with [`computed`](/reference/core/computed) and gate it with a content `equals` comparator: a fresh-but-equal recompute stops at the derivation instead of waking downstream effects.
 
 ```typescript
 import { signal, computed, effect } from '@hellajs/core';
 
-const source = signal(1);
-const doubled = computed(() => source() * 10);
+const email = signal('');
+const password = signal('');
 
-const cleanup1 = effect(() => doubled());
-console.log(doubled()); // 10
+const errors = computed(
+  () => {
+    const found: string[] = [];
+    if (!email().includes('@')) found.push('enter a valid email');
+    if (password().length < 8) found.push('password needs 8+ characters');
+    return found; // a new array reference on every recompute
+  },
+  {
+    // without the gate, every fresh array propagates by reference
+    equals: (previous, next) =>
+      previous.length === next.length &&
+      previous.every((message, index) => message === next[index]),
+  },
+);
 
-cleanup1(); // Computed has no subscribers: dependencies released
+effect(() => console.log('errors:', errors().join('; ') || 'valid'));
 
-source(2); // doubled is not notified: no propagation
+email('ada@hella.dev');
+password('correct-horse');
+// drain recompute: [] differs from the initial two errors, the effect logs "valid"
 
-const cleanup2 = effect(() => doubled());
-console.log(doubled()); // 20 (graph rebuilt, recomputed)
-
-cleanup2();
+email('grace@hella.dev');
+// recompute allocates a fresh [], content-equal: propagation stops, no log
 ```
 
-### Granular Element Effects
+### Fetch Data as Input Changes
 
-Run an effect for one element of a collection without waking on writes to the others.
+Refetch whenever a key signal changes: the effect body stays synchronous, results land through signal writes, and the cleanup flags stale responses so a slow previous fetch never overwrites a newer one.
 
 ```typescript
-import { signalArray, effect } from '@hellajs/core';
+import { signal, effect } from '@hellajs/core';
 
-const temperatures = signalArray([21, 19, 25]);
+type Profile = { id: number; name: string };
 
-effect(() => {
-  const reading = temperatures.get(0);
-  console.log(`Sensor 0: ${reading}°C`);
+const userId = signal(1);
+const profile = signal<Profile | null>(null);
+const loading = signal(false);
+
+const stopFetch = effect(() => {
+  const id = userId(); // tracked: writing a new id refetches
+  loading(true);
+  let stale = false; // set by the cleanup when this fetch is superseded
+  fetch(`/api/users/${id}`)
+    .then((res) => res.json())
+    .then((data: Profile) => {
+      if (stale) return;
+      profile(data);
+      loading(false);
+    });
+  return () => {
+    stale = true; // runs before each refetch and on dispose
+  };
 });
-// Structural ops (push, splice) rerun positional readers; set(0, v) is the only value write that reruns this effect
 
-temperatures.set(0, 22); // Sensor effect reruns
-temperatures.set(2, 30); // Sensor effect stays asleep
+userId(2); // refetch starts; a late response for id 1 is discarded
+
+stopFetch();
 ```
 
-### Reconciling Collections Without False Wakes
+### Persist State to localStorage
 
-Assign through the callable setter: equal elements write nothing, so effects rerun only for real changes.
+Write every change through to storage, and keep multiple tabs in sync through the browser's `storage` event.
+
+```typescript
+import { signal, effect } from '@hellajs/core';
+
+const settings = signal({ theme: 'dark', compact: false });
+
+const stopPersist = effect(() => {
+  localStorage.setItem('settings', JSON.stringify(settings()));
+});
+
+const onStorage = (event: StorageEvent) => {
+  if (event.key !== 'settings' || event.newValue === null) return;
+  settings(JSON.parse(event.newValue) as { theme: string; compact: boolean });
+};
+window.addEventListener('storage', onStorage);
+// A tab never receives its own writes as events: no feedback loop
+
+// Teardown
+stopPersist();
+window.removeEventListener('storage', onStorage);
+```
+
+### Mirror Browser State into Signals
+
+Bridge non-reactive browser state into a [`signal`](/reference/core/signal) with a listener whose lifetime is bound to the effect: the handler writes each change into the signal, and the returned cleanup unsubscribes on disposal.
+
+```typescript
+import { signal, effect } from '@hellajs/core';
+
+const viewportWidth = signal(0);
+
+const stopTracking = effect(() => {
+  const measure = () => viewportWidth(window.innerWidth);
+  measure(); // capture the size as it stands right now
+  window.addEventListener('resize', measure);
+  return () => window.removeEventListener('resize', measure);
+});
+// Reads no signals: the effect is a lifecycle-bound listener, not a reactor
+
+stopTracking();
+```
+
+### Row-Level List Effects
+
+Track one element of a [`signalArray`](/reference/core/signalarray) without waking the other elements' effects: a value write wakes only that element's readers, while a structural operation wakes every positional reader.
 
 ```typescript
 import { signalArray, effect } from '@hellajs/core';
 
-const items = signalArray(['a', 'b', 'c']);
-effect(() => console.log(items.map((value) => value.toUpperCase()))); // Logs: ['A', 'B', 'C']
+const readings = signalArray([21, 19, 25]);
 
-items(['a', 'b', 'changed']); // Effect reruns once; equal positions wrote nothing
-items(['a', 'b', 'changed']); // No rerun anywhere: content-equal reconcile
+const trackSensor = (index: number) =>
+  effect(() => {
+    console.log(`sensor ${index}: ${readings.get(index)}`);
+  });
+
+trackSensor(0);
+trackSensor(2);
+
+readings.set(0, 22); // wakes sensor 0's effect only; sensor 2 stays asleep
+readings.push(31); // structural: every get() reader re-runs, the index mapping may shift
 ```
 
-### Stable Identity Handles
+### Undo History
 
-Hold onto an element across reorders with `nodeAt`, or a key across deletes with `entry`; the handle tracks the element, not the position.
-
-```typescript
-import { signalMap, effect } from '@hellajs/core';
-
-const scores = signalMap([['alice', 1]]);
-const aliceScore = scores.entry('alice');
-
-effect(() => console.log('Alice:', aliceScore())); // Logs: "Alice: 1"
-
-scores.set('bob', 2);   // No rerun: bob's membership does not change alice's value
-scores.set('alice', 5); // Logs: "Alice: 5"
-scores.delete('alice'); // Logs: "Alice: undefined"
-```
-
-### Layering Deep Reactivity via wrap and merge
-
-The collection primitives store raw elements. Host packages convert elements on entry with `wrap` and patch writes in place with `merge`; `@hellajs/store` builds its deep collection reactivity on exactly these hooks.
+Keep past and future stacks as separate signals and build new array references on every transition so each write propagates.
 
 ```typescript
-import { signalArray, effect } from '@hellajs/core';
+import { signal } from '@hellajs/core';
 
-type Todo = { id: number; text: string; done: boolean };
+type Draft = { text: string };
 
-// Sketches of the conversions a host package supplies
-const toDeep = (element: Todo): Todo => element; // convert a plain draft into a deeply reactive store
-const patch = (prev: Todo, next: Todo): boolean => {
-  prev.done = next.done; // field-precise patch instead of a child write
-  return true;
+const present = signal<Draft>({ text: '' });
+const past = signal<Draft[]>([]);
+const future = signal<Draft[]>([]);
+
+const edit = (text: string) => {
+  past([...past(), present()]);
+  future([]);
+  present({ text });
 };
 
-const todos = signalArray<Todo>([{ id: 1, text: 'Ship', done: false }], {
-  wrap: (element) => toDeep(element),
-  merge: (prev, next) => patch(prev, next),
+const undo = () => {
+  const history = past();
+  const previous = history[history.length - 1];
+  if (previous === undefined) return;
+  future([present(), ...future()]);
+  present(previous);
+  past(history.slice(0, -1));
+};
+
+edit('Hello');
+edit('Hello, world');
+undo();
+console.log(present().text); // "Hello"; redo is the same move in reverse
+```
+
+### Telemetry Without Retriggers
+
+Read context inside an effect with [`untracked`](/reference/core/untracked) so changing the context never re-runs the effect, while each run still logs the current value.
+
+```typescript
+import { signal, effect, untracked } from '@hellajs/core';
+
+const query = signal('');
+const auditTag = signal('[prod]');
+
+const stopAudit = effect(() => {
+  const tag = untracked(() => auditTag()); // read without subscribing
+  console.log(`${tag} query changed: ${query()}`);
 });
 
-todos.set(0, { id: 1, text: 'Ship', done: true }); // Patched in place; the container never woke
+auditTag('[debug]'); // no re-run: auditTag is not a dependency
+query('hella'); // re-runs, and the log picks up the current tag
+
+stopAudit();
+```
+
+### A Feature's Full Lifecycle
+
+Collect every effect a feature creates into one [`scope`](/reference/core/scope): the returned stop function retires the interval and all effects with a single call.
+
+```typescript
+import { signal, effect, scope } from '@hellajs/core';
+
+const createStopwatch = () => {
+  const elapsed = signal(0);
+  const stop = scope(() => {
+    effect(() => {
+      const timer = setInterval(() => elapsed(elapsed() + 1), 1000);
+      return () => clearInterval(timer);
+    });
+    effect(() => console.log(`elapsed: ${elapsed()}`));
+  });
+  return { elapsed, stop };
+};
+
+const stopwatch = createStopwatch();
+
+// Later, one call disposes every effect the feature created
+stopwatch.stop();
+```
+
+### Deterministic Effects in Tests
+
+Effects drain at the microtask boundary; call [`flush`](/reference/core/flush) when the next line must observe their output, with consecutive writes coalesced into one run.
+
+```typescript
+import { signal, effect, flush } from '@hellajs/core';
+
+const count = signal(0);
+const observed: number[] = [];
+
+effect(() => observed.push(count()));
+
+count(1);
+count(2);
+
+flush(); // drain now, ahead of the microtask
+console.log(observed); // [0, 2]: initial run, then one run for both writes
 ```

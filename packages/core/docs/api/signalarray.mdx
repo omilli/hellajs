@@ -1,6 +1,6 @@
 # signalArray
 
-Holds an array with one signal per element, so value writes wake only the readers of that element and in-place structural operations replace immutable spreads.
+Holds an array with one signal per element, so writing one element wakes only that element's readers and structural operations like `push` and `splice` need no cloning.
 
 ## Basic Usage
 
@@ -13,9 +13,9 @@ const items = signalArray([1, 2, 3]);
 
 effect(() => console.log('First:', items.get(0))); // Logs: "First: 1"
 
-items.set(0, 9);   // Logs: "First: 9" - only index-0 readers wake
-items.set(1, 20);  // No log: index-0 readers stay asleep
-items.push(4);     // Logs: "First: 9" - structural ops wake positional readers
+items.set(0, 9); // Logs: "First: 9" - only index-0 readers wake
+items.set(1, 20); // No log: index-0 readers stay asleep
+items.push(4); // Logs: "First: 9" - structural ops wake positional readers
 
 console.log(items()); // [9, 2, 4] - fresh plain array, tracks everything
 ```
@@ -50,7 +50,7 @@ interface SignalArray<T, W = T> {
 }
 ```
 
-The write-side parameter exists for host packages converting elements on entry (`@hellajs/store` deep collection keys instantiate it so writes accept raw objects while reads return element stores); standalone usage never sees it, because `W` defaults to `T`.
+The write-side parameter exists for host packages converting elements on entry: `@hellajs/store` instantiates it so writes accept raw objects while reads return element stores. Standalone usage never sees it, because `W` defaults to `T`.
 
 ## Key Concepts
 
@@ -64,8 +64,8 @@ import { signalArray, effect } from '@hellajs/core';
 const items = signalArray(['a', 'b', 'c']);
 
 effect(() => console.log(items.get(0))); // Logs: "a"
-items.set(2, 'z');                       // No rerun: index 2 is not tracked
-items.set(0, 'x');                       // Logs: "x"
+items.set(2, 'z'); // No rerun: index 2 is not tracked
+items.set(0, 'x'); // Logs: "x"
 ```
 
 An equal write (by `===` with `NaN` self-equal, or by the per-element `options.equals`) skips the child write entirely: no wake, the old element reference stays.
@@ -95,7 +95,7 @@ effect(() => console.log('First:', items.get(0))); // Logs: "First: 1"
 
 items([1, 2, 30]); // No rerun for index 0: same length, the value is equal
 items([7, 2, 30]); // Logs: "First: 7"
-items([7]);        // Logs: "First: 7" again - the length change wakes positional readers; reads past the end now return undefined
+items([7]); // Logs: "First: 7" again - the length change wakes positional readers; reads past the end now return undefined
 ```
 
 ### Identity Handles with nodeAt
@@ -109,8 +109,8 @@ const items = signalArray([1, 2, 3]);
 
 effect(() => console.log(items.nodeAt(2)?.())); // Logs: 3
 
-items.splice(0, 1);  // The element moved to index 1; no rerun: the handle tracks the element, not the position
-items.set(1, 30);    // Logs: 30 - a write to the element the handle follows
+items.splice(0, 1); // The element moved to index 1; no rerun: the handle tracks the element, not the position
+items.set(1, 30); // Logs: 30 - a write to the element the handle follows
 ```
 
 Passing a handle to [`effect`](/reference/core/effect) or [`computed`](/reference/core/computed) builds element-precise dependencies that ignore all structural churn.
@@ -122,7 +122,7 @@ Passing a handle to [`effect`](/reference/core/effect) or [`computed`](/referenc
 ```typescript
 interface CollectionOptions<T> extends EqualsOptions<T> {
   equals?: (oldValue: T, newValue: T) => boolean; // per element, gates each child write
-  wrap?: (element: T) => T;   // transforms every value entering a node
+  wrap?: (element: T) => T; // transforms every value entering a node
   merge?: (prev: T, next: T) => boolean; // in-place update attempt
 }
 ```
@@ -133,7 +133,7 @@ The write pipeline for an existing element runs in a fixed order:
 2. `wrap(next)`: transforms the raw incoming value.
 3. Child write: the per-element `equals` decides whether propagation happens.
 
-The merge-before-wrap order is load-bearing: `merge` sees the raw incoming value against the stored (already wrapped) element, which is exactly what a host package needs to match raw input against its own converted nodes.
+The merge-before-wrap order is deliberate: `merge` sees the raw incoming value against the stored (already wrapped) element, which is exactly what a host package needs to match raw input against its own converted nodes.
 
 ```typescript
 import { signalArray, effect } from '@hellajs/core';
@@ -148,7 +148,7 @@ const patchInPlace = (prev: Todo, next: Todo): boolean => {
 };
 
 const todos = signalArray<Todo>(drafts, {
-  wrap: (element) => toStore(element),          // every element entering a node
+  wrap: (element) => toStore(element), // every element entering a node
   merge: (prev, next) => patchInPlace(prev, next), // writes to existing nodes
 });
 

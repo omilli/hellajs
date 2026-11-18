@@ -88,7 +88,7 @@ Identical objects derive identical CSS text, and the text is the registration id
 
 `css()` returns the same value on both platforms: always `""`. What differs is the write target:
 
-- **Client** (`hasDocument()`): injects rules into the CSSOM.
+- **Client**: injects rules into the CSSOM.
 - **Server** (no DOM): registration is state-only: no DOM write. [`cssText`](/reference/css/csstext) collects the generated text (a peek, never a drain).
 
 ```typescript

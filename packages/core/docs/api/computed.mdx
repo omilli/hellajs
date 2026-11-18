@@ -9,13 +9,13 @@ Values update automatically when any of their dependencies change.
 ```typescript
 import { signal, computed } from '@hellajs/core';
 
-const firstName = signal("John");
-const lastName = signal("Doe");
+const firstName = signal('John');
+const lastName = signal('Doe');
 const fullName = computed(() => `${firstName()} ${lastName()}`);
 
 console.log(fullName()); // "John Doe"
 
-firstName("Jane");
+firstName('Jane');
 
 console.log(fullName()); // "Jane Doe"
 ```
@@ -81,11 +81,11 @@ effect(() => {
   console.log('Effect:', doubled());
 });
 
-// Triggers the effect - value changed from 2 to 4
-count(2);  // Logs: "Effect: 4"
+// Triggers the effect: the value changed from 2 to 4
+count(2); // Logs: "Effect: 4"
 
-// Same result (4) - no recomputation, no effect triggered
-count(2);  // Nothing logged
+// Same result (4): no recomputation, no effect triggered
+count(2); // Nothing logged
 ```
 
 New object or array references always trigger updates, even with identical content.
@@ -102,8 +102,8 @@ effect(() => {
   console.log('Effect:', doubled());
 });
 
-items([2, 4, 6]);  // Logs: "Effect: [4, 8, 12]"
-items([2, 4, 6]);  // Logs: "Effect: [4, 8, 12]" again (new array reference)
+items([2, 4, 6]); // Logs: "Effect: [4, 8, 12]"
+items([2, 4, 6]); // Logs: "Effect: [4, 8, 12]" again (new array reference)
 ```
 
 ### Custom Equality
@@ -115,7 +115,9 @@ import { signal, computed, effect } from '@hellajs/core';
 
 const items = signal([1, 2, 3]);
 const doubled = computed(() => items().map(value => value * 2), {
-  equals: (a, b) => a.length === b.length && a.every((v, i) => v === b[i])
+  equals: (previous, next) =>
+    previous.length === next.length &&
+    previous.every((value, index) => value === next[index])
 });
 
 effect(() => console.log('Effect:', doubled()));
@@ -188,7 +190,7 @@ const setting = computed(() => {
 
 // Initially, `setting` only depends on `showAdvanced` and `basic`.
 // Changing `advanced` will not trigger a re-computation.
-advanced('new advanced'); 
+advanced('new advanced');
 console.log(setting()); // "Basic: basic"
 
 // After this, `setting` depends on `showAdvanced` and `advanced`.
@@ -219,7 +221,7 @@ const doubled = computed(() => count() * 2);
 
 ### Async Getters Cache the Promise
 
-The getter must be synchronous. An `async` getter returns a pending Promise at its first `await`, and that Promise becomes the cached value: subscribers receive the Promise, never the resolved payload. Signal reads after the first `await` also subscribe nothing, so the derivation never updates. Keep the getter synchronous; move async work into an [`effect`](/reference/core/effect) that writes a signal when it resolves.
+The getter must be synchronous. An `async` getter returns a pending Promise at its first `await`, and that Promise becomes the cached value: subscribers receive the Promise, never the resolved payload. Signal reads after the first `await` subscribe nothing, so the derivation never updates. Keep the getter synchronous; move async work into an [`effect`](/reference/core/effect) that writes a signal when it resolves.
 
 ```typescript
 import { signal, computed, effect } from '@hellajs/core';
@@ -245,9 +247,9 @@ effect(() => {
 });
 ```
 
-### Auto-GC
+### Released When Unsubscribed
 
-A [`computed`](/reference/core/computed) with no subscribers releases its dependencies and is marked for lazy recomputation. When a new subscriber reads the value, the dependency graph is rebuilt and the value recomputed on demand.
+A computed with no subscribers releases its dependencies and goes dormant. When a new subscriber reads the value, the dependencies are rebuilt and the value recomputed on demand.
 
 ```typescript
 import { signal, computed, effect } from '@hellajs/core';
@@ -258,12 +260,12 @@ const doubled = computed(() => source() * 10);
 const cleanup1 = effect(() => doubled());
 console.log(doubled()); // 10
 
-cleanup1(); // doubled has no subscribers: dependencies released, marked DIRTY
+cleanup1(); // No subscribers left: dependencies released, goes dormant
 
 source(2); // doubled is not notified: no propagation
 
 const cleanup2 = effect(() => doubled());
-console.log(doubled()); // 20 (graph rebuilt, recomputed)
+console.log(doubled()); // 20 (dependencies rebuilt, recomputed)
 ```
 
 ### Error Recovery

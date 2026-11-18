@@ -13,9 +13,9 @@ const tags = signalSet(['urgent']);
 
 effect(() => console.log('Urgent:', tags.has('urgent'))); // Logs: "Urgent: true"
 
-tags.add('draft');      // No rerun: draft is not watched
-tags.delete('urgent');  // Logs: "Urgent: false" - only urgent readers wake
-tags.add('urgent');     // Logs: "Urgent: true"
+tags.add('draft'); // No rerun: draft is not watched
+tags.delete('urgent'); // Logs: "Urgent: false" - only urgent readers wake
+tags.add('urgent'); // Logs: "Urgent: true"
 
 console.log(tags()); // Set { 'draft', 'urgent' } - fresh plain Set
 ```
@@ -59,8 +59,8 @@ import { signalSet, effect } from '@hellajs/core';
 const tags = signalSet(['a']);
 
 effect(() => console.log('Has b:', tags.has('b'))); // Logs: "Has b: false"
-tags.add('a');    // No rerun anywhere: present value, no-op
-tags.add('b');    // Logs: "Has b: true" - the membership signal flipped
+tags.add('a'); // No rerun anywhere: present value, no-op
+tags.add('b'); // Logs: "Has b: true" - the membership signal flipped
 ```
 
 Membership checks against a never-seen value lazily create its membership signal, so a reader established before the first `add` still wakes when the value arrives.
@@ -86,7 +86,7 @@ import { signalSet, effect } from '@hellajs/core';
 const tags = signalSet(['a', 'b']);
 effect(() => console.log('Size:', tags.size())); // Logs: "Size: 2"
 
-tags(new Set(['b', 'c'])); // Logs: "Size: 2" again - membership changed, so the version woke the reader
+tags(new Set(['b', 'c'])); // Logs: "Size: 2" again - membership changed, so size readers wake
 tags(new Set(['b', 'c'])); // No rerun: membership unchanged
 ```
 
