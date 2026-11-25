@@ -1,29 +1,25 @@
 # resetVars
 
-Clears all CSS variables, caches, and reactive effects, resetting the CSS variables system to its initial state.
+Clears every CSS-variable registration, cache, and reactive effect, resetting the vars system to its initial state. Css-side registrations (`css()`, `style()`, `keyframes()`) are untouched.
 
 ## Basic Usage
 
 ```jsx
-import { vars, resetVars } from '@hellajs/css';
+import { resetVars, vars } from '@hellajs/css';
 
-// Create some CSS variables
 const theme = vars({
   colors: {
     primary: '#3b82f6',
-    secondary: '#64748b',
   },
   spacing: {
     base: '1rem',
-    large: '2rem',
   },
 });
 
-// Later, reset everything
+// Later: every vars registration goes at once
 resetVars();
 
-// All CSS variables are removed from DOM and memory
-// All reactive effects are disposed
+// All declarations are removed from the sheet; all effects are disposed
 ```
 
 ## API
@@ -37,70 +33,48 @@ function resetVars(): void
 
 ### What the Reset Covers
 
-`resetVars()` disposes every reactive effect [`vars`](/reference/css/vars) created, clears the vars registries and the static cache, and resets the `hella-vars` style element. The reset is vars-side only: css-side registrations ([`css`](/reference/css/css), [`style`](/reference/css/style), [`keyframes`](/reference/css/keyframes)) are untouched; call [`resetCss`](/reference/css/resetcss) for those.
+`resetVars()` disposes every reactive effect [`vars`](/reference/css/vars) created, clears the vars registries and the static cache, and empties the `hella-vars` style element. The reset is vars-side only: css-side registrations ([`css`](/reference/css/css), [`style`](/reference/css/style), [`keyframes`](/reference/css/keyframes)) are untouched; call [`resetCss`](/reference/css/resetcss) for those.
 
 ```jsx
 import { vars, resetVars } from '@hellajs/css';
 
 const theme = vars({
-  colors: {
-    primary: '#ff0000',
-  },
+  primary: '#ff0000',
 });
 
 resetVars();
 
-// theme.colors.primary === 'var(--colors-primary)' still; a var() reference is a
-// plain string, but its --colors-primary declaration is gone from the sheet
+// theme.primary === 'var(--primary)' still; a var() reference is a plain
+// string, but its --primary declaration is gone from the sheet
 ```
 
-### Reactive Effects Cleanup
+### Reactive Effects Stop Updating
 
-Disposing the effects stops stylesheet updates; the signals themselves keep their values and listeners:
+Disposing the effects stops stylesheet updates; the signals themselves keep their values and every other consumer:
 
 ```jsx
 import { signal } from '@hellajs/core';
-import { vars, resetVars } from '@hellajs/css';
+import { resetVars, vars } from '@hellajs/css';
 
 const primaryColor = signal('#3b82f6');
 const isDark = signal(false);
 
 const theme = vars({
-  colors: {
-    primary: primaryColor,
-    background: () => isDark() ? '#1a1a1a' : '#ffffff',
-  },
+  primary: primaryColor,
+  background: () => isDark() ? '#1a1a1a' : '#ffffff',
 });
 
 resetVars();
 
 primaryColor('#ff0000'); // No CSS update after reset
-isDark(true);           // No CSS update after reset
-```
-
-### Testing Scenarios
-
-```jsx
-import { vars, resetVars } from '@hellajs/css';
-
-// Clean slate before creating variables
-resetVars();
-
-const theme = vars({
-  colors: {
-    primary: '#ff0000',
-  },
-});
-
-// theme.colors.primary === 'var(--colors-primary)'
-// document.getElementById('hella-vars')?.sheet?.cssRules[0]?.cssText includes '--colors-primary: #ff0000'
+isDark(true);            // No CSS update after reset
 ```
 
 ## Important Considerations
 
-### Use Cases
+### When to Reach for It
 
-Reach for `resetVars()` when every vars registration should go at once: between test runs, or when tearing down an app instance that owned its theme. For removing one registration while the rest live on, use [`removeVars`](/reference/css/removevars) (reactive entries dispose their effect at zero references). For a complete reset of both sides, pair it with [`resetCss`](/reference/css/resetcss).
+Use `resetVars()` when every vars registration should go at once: between test runs, or when tearing down an app instance that owned its theme. For removing one registration while the rest live on, use [`removeVars`](/reference/css/removevars) (reactive entries dispose their effect at zero references). For a complete reset of both sides, pair it with [`resetCss`](/reference/css/resetcss).
 
 ### Safety
 

@@ -19,14 +19,13 @@ css(reset);
 ```typescript
 declare const reset: CSSObject;
 ```
-- A global CSS object keyed by element selectors (plus one `@supports` block), a rule-for-rule port of tailwindcss's preflight
-- Pass it to `css(reset)`; the call registers the rules and returns `""` on both platforms
+- A global CSS object keyed by element selectors (plus one `@supports` block): a rule-for-rule port of tailwindcss's preflight. Pass it to `css(reset)`; the call registers the rules and returns `""` on both platforms
 
 ## Key Concepts
 
 ### What the Reset Covers
 
-The sheet removes default margins, padding, and borders from every element and sets `box-sizing: border-box`. Typography normalizes to inherited values: headings drop their sizes and weights, links drop their color and underline, `code` and friends get a monospace stack at `1em`, and lists render unstyled. Media elements (`img`, `video`, `svg`, ...) become block-level and constrained to their parent width. Form controls (`button`, `input`, `select`, `textarea`) inherit the page font and lose their default backgrounds, radii, and disabled dimming; the `[hidden]` attribute keeps working even against author `display` rules.
+The sheet removes default margins, padding, and borders from every element and sets `box-sizing: border-box`. Typography normalizes to inherited values: headings drop their sizes and weights, links drop their color and underline, `code` and friends get a monospace stack at `1em`, and lists render unstyled. Media elements (`img`, `video`, `svg`, ...) become block-level and constrained to the parent width. Form controls (`button`, `input`, `select`, `textarea`) inherit the page font and lose their default backgrounds, radii, and disabled dimming; the `[hidden]` attribute keeps working even against author `display` rules.
 
 ### Composing with Styles and Tokens
 
@@ -49,7 +48,7 @@ const card = style({
 });
 ```
 
-On the server the same `css(reset)` call registers state-only and [`cssText`](/reference/css/csstext) collects the reset alongside every other registration, so the emitted `<style>` ships the reset to first paint.
+On the server the same `css(reset)` call registers state-only and [`cssText`](/reference/css/csstext) collects the reset alongside every other registration, so the emitted `<style>` ships it to first paint.
 
 ## Important Considerations
 

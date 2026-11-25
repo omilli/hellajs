@@ -9,27 +9,38 @@ import { style } from '@hellajs/css';
 
 const card = style('card', {
   padding: '1rem',
-  borderRadius: '8px',
+  borderRadius: '0.5rem',
   backgroundColor: '#f8f9fa',
-  // Nested selectors and pseudo-states compose under the class
   'h2': {
-    marginTop: 0,
+    margin: '0 0 0.5rem 0',
   },
   '&:hover': {
     backgroundColor: '#e9ecef',
   },
-  // Responsive design inherits the class
   '@media (max-width: 768px)': {
     padding: '0.5rem',
   },
 });
-// "card-cqknezd"; client AND server. style({ ... }, { label: 'card' }) is the equivalent bag form
+// "card-izfpuyv"; client AND server derive the same class
 
 const Card = ({ title }: { title: string }) => (
   <div class={card}>
     <h2>{title}</h2>
   </div>
 );
+```
+
+The string argument is a label for readable class names. The equivalent options-bag form:
+
+```jsx
+import { style } from '@hellajs/css';
+
+const card = style({
+  padding: '1rem',
+  borderRadius: '0.5rem',
+}, {
+  label: 'card',
+});
 ```
 
 ## API
@@ -49,96 +60,141 @@ function style(base: StyleObject, override: StyleObject, options?: StyleOptions)
 - `base`: Style object to compose onto
 - `override`: Style object contributing the new declarations
 - `options`: Optional configuration
-  - `label`: Readable segment embedded in the class name (`{label}-{hash}`), sanitized to `[a-zA-Z0-9-]`; a label empty after sanitization is treated as absent
-  - `layer`: Cascade layer name the emitted rules wrap in (`@layer <name>`), interpolated verbatim. Unlayered author CSS beats layered rules, so consumer overrides win by construction; composes outermost of `@media` when both apply
-  - `host`: Node the `<style>` element is created in; e.g. a `ShadowRoot` for web components. Defaults to `document.head`
-- **Returns**: The class name (`{label}-{hash}` / a bare letter-only hash) for `class` attributes
+  - `label`: Segment embedded in the class name (`{label}-{hash}`), sanitized to `[a-zA-Z0-9-]`; a label empty after sanitization is treated as absent
+  - `layer`: Cascade layer name the emitted rules wrap in (`@layer <name>`). Unlayered author CSS beats layered rules, so consumer overrides win by construction; composes outermost of `@media` when both apply
+  - `host`: Node the `<style>` element is created in, e.g. a `ShadowRoot` for web components. Defaults to `document.head`
+- **Returns**: The class name (`{label}-{hash}`, a bare letter-only hash without a label) for `class` attributes
 
 ## Key Concepts
 
-### Content-Hashed Identity
+### Content-Hashed Class Names
 
-The class name is derived from the object's content: the same object always produces the same class, on every platform and every render. No user-chosen names to collide, no coordination between server and client: both derive `card-cqknezd` independently and agree.
+The class is a hash of the object's contents, never a name you invent: no collisions between components, no coordination between server and client. The same object always produces the same class, and key order never matters.
 
 ```jsx
 import { style } from '@hellajs/css';
 
-const card = style({
-  color: 'red',
+const primary = style({
+  color: 'blue',
 }, {
-  label: 'card',
+  label: 'text',
 });
 const again = style({
-  color: 'red',
+  color: 'blue',
 }, {
-  label: 'card',
+  label: 'text',
 });
-// card === again; identical content, identical class
+// primary === again; identical content, identical class
 ```
 
-Key-order independence comes free: `stringify` sorts keys before hashing, so `{ color: 'red', padding: 0 }` and `{ padding: 0, color: 'red' }` hash identically.
+The label rides in front of the hash for humans; it does not affect which rule the class points at (see [Same Object, Different Labels](#same-object-different-labels)).
+
+### Nested Selectors
+
+Nested keys compose against the generated class: `&` refers to it at every occurrence, plain keys become descendants, and conditional at-rules (`@media`, `@container`, `@supports`, `@starting-style`) inherit it. Definitional at-rules (`@keyframes`, `@font-face`, `@layer`) stay global.
+
+```jsx
+import { style } from '@hellajs/css';
+
+const article = style('article', {
+  lineHeight: 1.6,
+  'p': {
+    margin: '0 0 1rem 0',
+  },
+  '&:first-child': {
+    marginTop: 0,
+  },
+  'h2, h3': {
+    fontWeight: 600,
+  },
+});
+// .article-… p { … }
+// .article-…:first-child { … }
+// .article-… h2, .article-… h3 { … }
+```
+
+Every part of a comma group composes on its own, so no part escapes the scope. Value rules match [`css`](/reference/css/css) exactly: numbers append `px` (unitless properties excepted), array values join with commas, `content` auto-quotes strings, and `null`/`undefined` values drop.
+
+### Composition
+
+A second object argument deep-merges into the first and returns one class. The typical shape is a base object authored once and reused, plus a small override: the override wins, nested selector blocks merge key by key, and arrays replace. Class strings join with [`cx`](/reference/css/cx) instead.
+
+```jsx
+import { cx, style } from '@hellajs/css';
+
+// Shared base, authored once and reused by every variant
+const fieldBase = {
+  padding: '0.75rem',
+  borderRadius: '0.5rem',
+  border: '1px solid #d1d5db',
+  '&:focus': {
+    borderColor: '#3b82f6',
+  },
+};
+
+// One merged class: the focus block merges key by key,
+// the red borderColor wins over the base's blue
+const errorField = style(fieldBase, {
+  borderColor: '#dc2626',
+  '&:focus': {
+    borderColor: '#dc2626',
+  },
+});
+
+// Two classes, two rules; cx joins the strings
+const card = style('card', {
+  padding: '1rem',
+});
+const alert = cx(
+  card,
+  style('alert', {
+    border: '1px solid #dc2626',
+  }),
+);
+// "card-… alert-…"
+```
 
 ### Identical on Both Platforms
 
-On the client the rules are injected into the CSSOM. On the server the registration is state-only; the return value is still the class string, never CSS text. Collect the generated CSS with [`cssText`](/reference/css/csstext):
+`style()` returns the class string everywhere. On the client the rules are injected into the CSSOM; on the server the registration is state-only and [`cssText`](/reference/css/csstext) collects the rule text for the response's `<style>` tag.
 
-```jsx
-import { style, cssText } from '@hellajs/css';
+```typescript
+import { cssText, style } from '@hellajs/css';
 
 const card = style({
   background: 'white',
 }, {
   label: 'card',
 });
-// card === "card-…" on the server too
 
-const head = `<style>${cssText()}</style>`;
+// Server: the class string, never the CSS text
+const head = `<style id="hella-css">${cssText()}</style>`;
 ```
-
-### Composition
-
-An object base deep-merges two style objects into one class; class strings join with [`cx`](/reference/css/cx):
-
-```jsx
-import { style, cx } from '@hellajs/css';
-
-const card = style('card', {
-  padding: '1rem',
-});
-
-// Object base: deep-merge into ONE class; override wins,
-// nested objects merge, arrays replace
-const compact = style({
-  padding: '1rem',
-  margin: '1rem',
-}, {
-  padding: '0.5rem',
-});
-// one class, { padding: '0.5rem', margin: '1rem' }
-
-// Class strings join through cx; each style keeps its own rule
-const alert = cx(
-  card,
-  style({
-    color: 'red',
-  }),
-);
-// "card-bcgbryh mgmyaqx"
-```
-
-The former class-string argument (`style(card, { … })`) is removed: a string first argument is now the label, and class-string joins route through `cx`.
-
-### Nested Selectors
-
-Nested objects compose against the class exactly as they do under [`css`](/reference/css/css) with a `name`: `&` refers to the generated class (every occurrence), plain keys become descendants, conditional at-rules (`@media`, `@container`, `@supports`, `@starting-style`) inherit the class, and definitional at-rules (`@keyframes`, `@font-face`, `@layer`) stay global.
-
-Every part of a comma group composes the same way: `'h1, h2': { … }` under the class compiles to `.{class} h1, .{class} h2` with both parts scoped, and parts carrying `&` substitute it. See [`css`: Comma Groups Compose Per Part](/reference/css/css#comma-groups-compose-per-part).
 
 ## Important Considerations
 
+### Function Values Throw
+
+Style objects are static: a function passed as a property value throws, at any nesting depth, on both platforms. Reactive values belong in [`vars`](/reference/css/vars); for classes that change with state, resolve the condition before the call.
+
+```jsx
+// ❌ Throws; functions are not CSS values
+try {
+  style({
+    padding: () => '1rem',
+  });
+} catch {}
+
+// ✅ Resolve conditions outside the object, pick classes at the attribute
+const compactBtn = style({
+  padding: '0.5rem',
+});
+// class={isCompact() ? compactBtn : regularBtn}
+```
+
 ### Same Object, Different Labels
 
-The hash covers the object only, never the label: the same object with different labels produces distinct classes whose rule bodies are identical. Each label registers its own rule; this is documented behavior, not a dedup miss.
+The hash covers the object only, never the label: the same object with different labels produces two classes whose rule bodies are identical. Each registers its own rule; use one label per distinct style.
 
 ```jsx
 import { style } from '@hellajs/css';
@@ -153,30 +209,9 @@ const info = style({
 }, {
   label: 'info',
 });
-// Two classes, two identical rules; use one label per distinct style
-```
-
-### Function Values Throw
-
-Value semantics match [`css`](/reference/css/css) exactly, including the throw on function leaves. Reactive values belong to [`vars`](/reference/css/vars); for state-dependent classes, resolve the condition before calling:
-
-```jsx
-// ❌ Throws; functions are not CSS values
-try {
-  style({
-    padding: () => '1rem',
-  });
-} catch {}
-
-// ✅ Resolve conditions outside the object
-const btn = style({
-  padding: '0.5rem',
-}, {
-  label: 'btn',
-});
-// then pick classes: class={big() ? btn : compactBtn}
+// Two classes, two identical rules
 ```
 
 ### Removal
 
-Every registration holds a reference count. [`removeStyle`](/reference/css/removestyle) with the same arguments decrements it and drops the rule at zero; [`resetCss`](/reference/css/resetcss) clears everything.
+Every registration holds a reference count. [`removeStyle`](/reference/css/removestyle) with the same arguments decrements it and drops the rule at zero; [`resetCss`](/reference/css/resetcss) clears every css-side registration at once. Removing a DOM node that used the class does not decrement anything: call `removeStyle` for styles tied to a component's lifetime.

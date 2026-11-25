@@ -1,11 +1,11 @@
 # cssText
 
-Collects the CSS text registered by [`css`](/reference/css/css), [`style`](/reference/css/style), [`keyframes`](/reference/css/keyframes), and [`vars`](/reference/css/vars) calls on the default host. A callable namespace: `cssText()` joins every contribution into one string, the server-side `<style>` source; `cssText.css()` collects the css-side half and `cssText.vars()` the vars half, so server rendering can emit each into its own `<style>` tag the client claims at hydration.
+Collects the CSS text registered by [`css`](/reference/css/css), [`style`](/reference/css/style), [`keyframes`](/reference/css/keyframes), and [`vars`](/reference/css/vars), in first-registration order: the server-side `<style>` source. A callable namespace: the base call joins every contribution into one string, while `cssText.css()` and `cssText.vars()` split the contributions so each embeds into the `<style>` tag carrying its sheet id.
 
 ## Basic Usage
 
 ```typescript
-import { css, style, vars, keyframes, cssText } from '@hellajs/css';
+import { css, cssText, keyframes, style, vars } from '@hellajs/css';
 
 css({
   body: {
@@ -18,11 +18,6 @@ const card = style({
 }, {
   label: 'card',
 });
-const theme = vars({
-  color: {
-    primary: '#3b82f6',
-  },
-});
 const spin = keyframes({
   from: {
     transform: 'rotate(0deg)',
@@ -31,12 +26,14 @@ const spin = keyframes({
     transform: 'rotate(360deg)',
   },
 });
+const tokens = vars({
+  accent: '#3b82f6',
+});
 
+// In the response handler; one embed per response.
+// The id lets hydration adopt the delivered rules (see below)
 const head = `<style id="hella-css">${cssText()}</style>`;
-// "body {\n  margin: 0px;\n  font-family: system-ui, sans-serif;\n}" + "\n\n"
-// + ".card-… {\n  background: white;\n}" + "\n\n"
-// + "@keyframes kf-… {\n  from {\n    transform: rotate(0deg);\n  }\n  to {\n    transform: rotate(360deg);\n  }\n}" + "\n\n"
-// + ":root {\n  --color-primary: #3b82f6;\n}"
+// "body { … }\n\n.card-… { … }\n\n@keyframes kf-… { … }\n\n:root { --accent: #3b82f6; }"
 ```
 
 ## API
@@ -49,14 +46,14 @@ declare const cssText: {
 };
 ```
 
-- **Returns**: The joined rule text of all default-host registrations, in first-registration order (statement-leading texts, e.g. an `@import`, hoist ahead of braced-only texts).
+- **Returns**: The joined rule text of all default-host registrations, css side first, then the vars contribution (statement-leading texts such as `@import` hoist ahead of braced-only ones)
 
-### css
+### `css`
 
-The css-side member: every registration except the vars buckets, collected for the rules sheet.
+The css-side member: every [`css`](/reference/css/css), [`style`](/reference/css/style), and [`keyframes`](/reference/css/keyframes) registration, for the rules sheet.
 
 ```typescript
-import { css, keyframes, style, cssText } from '@hellajs/css';
+import { css, cssText, style } from '@hellajs/css';
 
 css({
   body: {
@@ -68,28 +65,20 @@ const panel = style({
 }, {
   label: 'panel',
 });
-const fadeIn = keyframes({
-  from: {
-    opacity: '0',
-  },
-  to: {
-    opacity: '1',
-  },
-});
 
-// Rules and keyframes only; the vars half is excluded
+// Rules only; the vars half is excluded
 const rulesText = cssText.css();
-// "body {\n  margin: 0px;\n}" + ".panel-… {\n  background: white;\n}" + "@keyframes kf-… {…}"
+// "body { margin: 0px; }\n\n.panel-… { background: white; }"
 ```
 
-- **Returns**: The css-side text ([`css`](/reference/css/css), [`style`](/reference/css/style), [`keyframes`](/reference/css/keyframes) registrations, statements hoisted ahead of braced-only texts). `""` when nothing css-side is registered.
+- **Returns**: The css-side text, `""` when nothing css-side is registered
 
-### vars
+### `vars`
 
-The vars member: the custom-property bucket rules, collected for the vars sheet.
+The vars member: the custom-property bucket rules, for the vars sheet.
 
 ```typescript
-import { vars, cssText } from '@hellajs/css';
+import { cssText, vars } from '@hellajs/css';
 
 vars({
   color: {
@@ -97,40 +86,28 @@ vars({
   },
 });
 
-// ":root {\n  --color-primary: #3b82f6;\n}"; media-wrapped when the bucket's media option was set
+// ":root { --color-primary: #3b82f6; }"; media-wrapped when set
 const varsText = cssText.vars();
 ```
 
-- **Returns**: The vars text ([`vars`](/reference/css/vars) bucket rules, media-wrapped when the bucket's `media` option was set). `""` when nothing vars-side is registered.
+- **Returns**: The vars-side text, `""` when nothing vars-side is registered
 
 ## Key Concepts
 
 ### A Peek, Never a Drain
 
-`cssText()` and its members read the registration state without consuming it; repeated calls return the same string (equal parts for the members) until [`resetCss`](/reference/css/resetcss) / [`resetVars`](/reference/css/resetvars) clear it or [`removeStyle`](/reference/css/removestyle) / [`removeCss`](/reference/css/removecss) / [`removeKeyframes`](/reference/css/removekeyframes) / [`removeVars`](/reference/css/removevars) drop a registration to zero. Host-qualified registrations (a `host` option, e.g. a shadow root) are excluded from the combined text and from both members.
-
-### Identical on Both Platforms
-
-Registration runs without a DOM, so the collector works the same on client and server. On the server it is the only way to obtain the generated CSS: [`css`](/reference/css/css), [`style`](/reference/css/style), and [`keyframes`](/reference/css/keyframes) return `""` / the class name / the animation name on both platforms, and [`vars`](/reference/css/vars) returns its `var()` proxy everywhere.
-
-### Vars Append After the CSS-Side Text
-
-Two style elements exist on the client (`hella-css` for rules, `hella-vars` for custom properties), and the combined call mirrors that split: css-side registrations (`css`, `style`, `keyframes`) join in call order (statement-leading texts hoist ahead of braced-only ones), then the vars contribution appends (each scope+media bucket's rule, in registration order, media-wrapped when the `media` option was set). The members expose the same split directly.
+The collector reads the registration state without consuming it: repeated calls return the same string until [`resetCss`](/reference/css/resetcss) / [`resetVars`](/reference/css/resetvars) clear it or a `remove*` call drops a registration to zero. Host-qualified registrations (a `host` option, e.g. a shadow root) are excluded: their rules live in host sheets, not `document.head`.
 
 ### Formatted Output
 
-Every emission is pretty-printed: one declaration per line (`prop: value;` with a trailing semicolon), two-space indentation per nesting level (at-rule bodies indent their contents), and rules of one registration separated by single newlines. Separately-registered blocks join with a blank line, css side and vars buckets alike, so each `css()` / `style()` / `keyframes()` / `vars()` call reads as its own paragraph in the collected text.
+Every registered text is pretty-printed: one declaration per line, two-space indentation per nesting level, and separately-registered blocks joined with a blank line so each `css()` / `style()` / `keyframes()` / `vars()` call reads as its own paragraph.
 
-### One Tag Per Sheet
+### The Two-Sheet Split
 
-The client keeps two style elements (`hella-css` for rules, `hella-vars` for custom properties), and the combined `cssText()` joins both sides into one string. Emitting that string through a single `hella-css` tag lands the vars declarations in the rules element, off the sheet the client keeps them on.
-
-### Two Tags, One Per Sheet
-
-`cssText.css()` and `cssText.vars()` restore the two-tag split: each part embeds into the tag carrying its id, so the delivered text mirrors the client's own element split:
+The client keeps two style elements: `hella-css` for rules, `hella-vars` for custom properties, in that order. The combined call mirrors the split (css side, then vars); the members expose it directly. Embedding the combined string through a single `hella-css` tag is correct and adopted on hydration, but lands the vars declarations on the rules sheet; emit two tags to mirror the client exactly:
 
 ```js
-import { css, vars, cssText } from '@hellajs/css';
+import { css, cssText, vars } from '@hellajs/css';
 
 css({
   body: {
@@ -138,27 +115,23 @@ css({
   },
 });
 vars({
-  color: {
-    primary: '#3b82f6',
-  },
+  accent: '#3b82f6',
 });
 
 const head = `<style id="hella-css">${cssText.css()}</style>
 <style id="hella-vars">${cssText.vars()}</style>`;
-// cssText.css(): "body {\n  margin: 0px;\n}"
-// cssText.vars(): ":root {\n  --color-primary: #3b82f6;\n}"
 ```
 
-### Adopting the Server Tag on Hydration
+### Hydration Adopts the Delivered Tag
 
-Emit the collected text through a tag carrying the `hella-css` id (as in [Basic Usage](#basic-usage)) and the client adopts it: the first registration after hydration finds the existing element, splits the delivered text into the same rule texts its registrations produce, verifies the split against what the platform actually parsed, and claims each matching rule in place (no duplicate insert, and no window where the stylesheet is empty; the delivery is never deleted). Rules the platform dropped at parse (e.g. vendor-prefixed selectors in another engine) align through the same check and claim without them. A delivered text the client cannot match (e.g. an altered emission) inserts a fresh copy alongside it instead. Only when the delivered text cannot be aligned with the sheet at all (a quoted blank line mis-splits a rule on platforms whose `insertRule` is strict) does the client fall back to clearing the delivered braced rules and re-registering into the same element (one `hella-css` element before and after hydration either way): no duplicate rules, no flash of unstyled content. The vars contribution trailing the collected text lands in the same element and re-lands in the client's `hella-vars` sheet. For a delivery that mirrors the client's two-element split (each side in its own adoptable tag), collect with `cssText.css()` and `cssText.vars()` (see [Two Tags, One Per Sheet](#two-tags-one-per-sheet)).
+Emit the collected text through a tag carrying the `hella-css` id and the client claims it: the first registration after hydration finds the existing element, matches the delivered rules against its own re-registrations, and adopts each matching rule in place. No duplicate rules ship and there is no window where the stylesheet is empty. A delivery the client cannot align with falls back to clearing the delivered rules and re-registering into the same element; one `hella-css` element exists before and after hydration either way. The `hella-vars` tag adopts the same way.
 
 ## Important Considerations
 
-### Hydration Duplicates Without the Id
+### Missing Id Duplicates Rules
 
-Embedding `cssText()` in server HTML through a tag with no `hella-css` id gives the client nothing to adopt: hydration registers the same styles into a fresh element, and the DOM carries both rule sets. The class names agree (content-hashed), so styling is correct; the duplication is cosmetic and bounded by the number of styles. Emit the tag with the id to get adoption instead.
+A tag with no `hella-css` id gives the client nothing to adopt: hydration registers the same styles into a fresh element, and the DOM carries both rule sets. The class names agree (content-hashed), so styling stays correct; the duplication is cosmetic and bounded. Emit the tag with the id to get adoption instead.
 
-### Join With a Blank Line
+### Registration Order Is Call Order
 
-`cssText()`'s output equals `cssText.css() + "\n\n" + cssText.vars()` whenever both sides are non-empty; when only one side has registrations, that member alone equals `cssText()`'s output. Emit two tags rather than re-joining, so each side lands on its own sheet id.
+The collected text follows first-registration order within each side (statements hoisted ahead), not source order across modules: a `vars()` call that runs before a `style()` call still collects after it, because the vars contribution always appends to the css side. The client inserts its sheets in the same fixed order, so same-specificity cross-sheet rules resolve identically on both platforms.

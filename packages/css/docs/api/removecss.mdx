@@ -1,6 +1,6 @@
 # removeCss
 
-Removes specific CSS rules and decrements their reference count for memory management. Registration state is decremented on both platforms; the CSSOM rules drop at zero references (a no-op without a DOM).
+Removes rules registered by [`css`](/reference/css/css) and decrements their reference count. The rules leave the stylesheet when the count reaches zero; above it they stay injected.
 
 ## Basic Usage
 
@@ -14,10 +14,9 @@ const styles = {
   },
 };
 
-// Inject the style
 css(styles);
 
-// Later, remove it when no longer needed
+// Later, when the rules are no longer needed
 removeCss(styles);
 ```
 
@@ -26,20 +25,16 @@ removeCss(styles);
 ```typescript
 function removeCss(obj: CSSObject, options?: CSSOptions): void
 ```
-- `obj`: CSS object to remove (structurally identical objects match)
-- `options`: Optional configuration object (must match the options used in `css()`)
-  - `host`: Parent node the style was injected into; a removal without the same `host` targets a different entry
+- `obj`: CSS object to remove (structurally identical objects match, same reference not required)
+- `options`: Optional configuration, must match the options used in `css()`
+  - `host`: Node the rules were injected into; a removal without the same `host` targets a different entry
 - **Returns**: `void`
 
 ## Key Concepts
 
 ### Reference Counting
 
-Each `css()` call increments the reference count of the registration its text resolves to; each `removeCss()` call decrements it. The rules leave the stylesheet when the count reaches zero, and stay injected above it.
-
-### Usage Pattern
-
-Styles are deduplicated by their derived text: all `css()` calls with the same object land on the same registration. Each call increments the reference count, so `removeCss()` must be called the same number of times to fully remove the style.
+All `css()` calls deriving the same text land on one registration; each call increments the count, each `removeCss` decrements it, and the rules leave the stylesheet at zero.
 
 ```jsx
 import { css, removeCss } from '@hellajs/css';
@@ -51,22 +46,22 @@ const sharedStyle = {
   },
 };
 
-// Each call increments the reference count: CSS is injected once
-css(sharedStyle); // refCount = 1
+css(sharedStyle); // refCount = 1, injected once
 css(sharedStyle); // refCount = 2
-css(sharedStyle); // refCount = 3
 
-// Remove one reference: style persists (refCount = 2)
-removeCss(sharedStyle);
-
-// Remove remaining references to fully clear
-removeCss(sharedStyle);
-removeCss(sharedStyle); // refCount = 0, CSS removed from DOM
+removeCss(sharedStyle); // refCount = 1, rules stay
+removeCss(sharedStyle); // refCount = 0, rules removed
 ```
 
-For styles tied to a component's lifetime, keep the objects together and remove them together when it goes away; for clearing everything at once, use [`resetCss`](/reference/css/resetcss) instead.
+For styles tied to a component's lifetime, keep the objects together and remove them together when it goes away.
 
-### With Host
+### Deterministic Matching
+
+The CSS text is re-derived from `(obj, options)` through the same transform [`css`](/reference/css/css) uses, so structurally identical objects in any key order locate the registration; no reference needs to be held. On the server (no DOM) the decrement still runs; only the sheet write is DOM-gated.
+
+### Removing from a Host
+
+Styles injected with a `host` option (e.g. a shadow root) remove from that host only when the same `host` is passed:
 
 ```jsx
 import { css, removeCss } from '@hellajs/css';
@@ -79,140 +74,29 @@ const shadowRoot = el.attachShadow({
 
 css({
   ':host': {
-    fontSize: '1.5rem',
     padding: '1rem',
   },
 }, {
   host: shadowRoot,
 });
 
-// Later remove with matching host
 removeCss({
   ':host': {
-    fontSize: '1.5rem',
     padding: '1rem',
   },
 }, {
   host: shadowRoot,
-});
-```
-
-### Component Cleanup
-
-```jsx
-import { css, removeCss } from '@hellajs/css';
-
-const overlayStyles = {
-  '.overlay': {
-    position: 'fixed',
-    inset: 0,
-  },
-};
-
-const Overlay = () => {
-  css(overlayStyles);
-
-  const destroy = () => removeCss(overlayStyles);
-
-  return (
-    <div class="overlay" on:click={destroy}>
-      Click to dismiss
-    </div>
-  );
-};
-```
-
-### Dynamic Style Management
-
-```typescript
-import { css, removeCss } from '@hellajs/css';
-
-type ThemeStyles = { 'body': { background: string; color: string } };
-
-let currentTheme: ThemeStyles | null = null;
-
-const applyTheme = (colors: { background: string; text: string }) => {
-  // Remove old theme if exists
-  if (currentTheme) {
-    removeCss(currentTheme);
-  }
-
-  // Apply new theme, store for removal on next switch
-  currentTheme = {
-    body: {
-      background: colors.background,
-      color: colors.text,
-    },
-  };
-
-  css(currentTheme);
-};
-
-// Switch themes
-applyTheme({
-  background: '#fff',
-  text: '#000',
-});
-applyTheme({
-  background: '#000',
-  text: '#fff',
 });
 ```
 
 ## Important Considerations
 
-### Exact Matching Required
+### Mismatched Arguments Miss
 
-`removeCss()` re-derives the CSS text from `(obj, options)` using the same deterministic transform as [`css`](/reference/css/css); no hash key or cached reference needed. Structurally identical objects produce the same text and match:
-
-```jsx
-// ✅ Works - structurally identical objects match
-css({
-  body: {
-    margin: '0',
-  },
-});
-removeCss({
-  body: {
-    margin: '0',
-  },
-}); // Same CSS text
-
-// ✅ Works - same reference (also works, and is clearer)
-const style = {
-  body: {
-    margin: '0',
-  },
-};
-css(style);
-removeCss(style);
-
-// ❌ Won't work - different CSS content
-css({
-  body: {
-    margin: '0',
-  },
-});
-removeCss({
-  body: {
-    margin: '1rem',
-  },
-}); // Different CSS text
-```
+A removal that derives different text finds no entry: it is a no-op, never a throw. Every option (`host` included) must match the creating call.
 
 ### Function Values Throw
 
-`removeCss()` re-derives the CSS text through the same transform as [`css`](/reference/css/css), so an object containing a function property value throws here too, the same error both entry points report. Build reactive values with [`vars`](/reference/css/vars) instead:
+`removeCss` re-derives the text through the same transform as [`css`](/reference/css/css), so an object containing a function property value throws here too, with the same error both entry points report. Build reactive values with [`vars`](/reference/css/vars) instead.
 
-```jsx
-// ❌ Throws; functions are not CSS values in css() or removeCss()
-try {
-  removeCss({
-    '.card': {
-      padding: () => '1rem',
-    },
-  });
-} catch {}
-// Error: [css] function values are not supported in css objects
-//        (message continues: use vars() for reactive values, key: padding)
-```
+For clearing every css-side registration at once, use [`resetCss`](/reference/css/resetcss).

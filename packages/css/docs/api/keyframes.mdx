@@ -23,21 +23,19 @@ const loader = style({
 
 // Generated:
 // @keyframes kf-uwtnhf {
-//   from {
-//     transform: rotate(0deg);
-//   }
-//   to {
-//     transform: rotate(360deg);
-//   }
+//   from { transform: rotate(0deg); }
+//   to { transform: rotate(360deg); }
 // }
 ```
+
+Step keys are `from`, `to`, or any percentage stop (`'50%'`); mix them freely.
 
 ## API
 
 ```typescript
 function keyframes(obj: KeyframesObject): string
 ```
-- `obj`: Keyframes object: step keys (`from`, `to`, percentage stops) mapped to declaration objects
+- `obj`: Keyframes object: step keys mapped to declaration objects
 - **Returns**: The animation name (`kf-{hash}`) for `animation` / `animation-name` values
 
 ### Types
@@ -46,13 +44,13 @@ function keyframes(obj: KeyframesObject): string
 type KeyframesObject = Record<string, StyleObject>;
 ```
 
-- **`KeyframesObject`**: Step keys mapped to style objects of declarations. Keys serialize as the step selectors: `from`, `to`, `50%`, or any percentage stop
+- **`KeyframesObject`**: Step keys mapped to style objects of declarations; keys serialize as the step selectors
 
 ## Key Concepts
 
 ### Hashed Names Are Collision-Free
 
-The name is derived from the object's content (`kf-` + hash), never hand-authored: two different keyframes definitions can never collide on one name, and the same steps always derive the same name regardless of key order. A repeat call with a structurally equal object returns the same name and bumps the reference count instead of injecting a second rule.
+The name is derived from the definition's content (`kf-` + hash), never hand-authored: two different definitions can never collide on one name, and the same steps always derive the same name regardless of key order. A repeat call with a structurally equal object returns the same name and bumps the reference count instead of injecting a second rule.
 
 ```typescript
 import { keyframes } from '@hellajs/css';
@@ -78,43 +76,9 @@ const fadeInAgain = keyframes({
 // fadeInAgain === fadeIn; one rule in the stylesheet, refCount 2
 ```
 
-### Identical on Both Platforms
-
-Registration runs without a DOM: on the client the rule is injected into the CSSOM; on the server it is state-only and [`cssText()`](/reference/css/csstext) carries the text for the server's `<style>` tag. The returned name is the same string everywhere, safe to use in isomorphic style modules.
-
-```typescript
-import { keyframes, cssText } from '@hellajs/css';
-
-const bounce = keyframes({
-  '0%': {
-    transform: 'translateY(0)',
-  },
-  '50%': {
-    transform: 'translateY(-10px)',
-  },
-  '100%': {
-    transform: 'translateY(0)',
-  },
-});
-
-// Client: rule injected into the hella-css sheet
-// Server: cssText() carries:
-// @keyframes kf-… {
-//   0% {
-//     transform: translateY(0);
-//   }
-//   50% {
-//     transform: translateY(-10px);
-//   }
-//   100% {
-//     transform: translateY(0);
-//   }
-// }
-```
-
 ### Composing with style() and css()
 
-The name is a plain string: interpolate it into `animation` shorthands or `animation-name` declarations in [`style`](/reference/css/style), [`css`](/reference/css/css), or [`cva`](/reference/css/cva) recipes:
+The name is a plain string: interpolate it into `animation` shorthands or `animation-name` declarations in [`style`](/reference/css/style), [`css`](/reference/css/css), or [`cva`](/reference/css/cva) recipes.
 
 ```typescript
 import { css, keyframes, style } from '@hellajs/css';
@@ -138,54 +102,44 @@ css({
 });
 ```
 
-### Percentage and from/to Steps
+### Identical on Both Platforms
 
-Step keys serialize verbatim; use `from` / `to` or any percentage stop, and mix them freely:
+Registration runs without a DOM: on the client the rule is injected into the CSSOM; on the server it is state-only and [`cssText`](/reference/css/csstext) carries the text for the `<style>` tag. The returned name is the same string everywhere, safe in isomorphic style modules.
 
 ```typescript
-import { keyframes } from '@hellajs/css';
+import { cssText, keyframes } from '@hellajs/css';
 
-const progress = keyframes({
-  from: {
-    width: '0%',
+const bounce = keyframes({
+  '0%': {
+    transform: 'translateY(0)',
   },
   '50%': {
-    width: '60%',
+    transform: 'translateY(-10px)',
   },
-  to: {
-    width: '100%',
+  '100%': {
+    transform: 'translateY(0)',
   },
 });
 
-// Generated:
-// @keyframes kf-… {
-//   from {
-//     width: 0%;
-//   }
-//   50% {
-//     width: 60%;
-//   }
-//   to {
-//     width: 100%;
-//   }
-// }
+// Client: rule injected into the hella-css sheet
+// Server: cssText() carries the @keyframes text for the response
 ```
 
 ## Important Considerations
 
 ### Function Values Throw
 
-Value semantics match [`css`](/reference/css/css) exactly; a function passed as a declaration value throws on both platforms. Reactive values belong to [`vars`](/reference/css/vars); animate between stable keyframe states and drive timing through the `animation` shorthand instead:
+Value semantics match [`css`](/reference/css/css): a function passed as a declaration value throws on both platforms. Animate between stable states and drive timing through the `animation` shorthand instead; reactive values belong to [`vars`](/reference/css/vars).
 
 ```typescript
 // ❌ Throws; keyframes evaluate values eagerly
 keyframes({
   from: {
-    opacity: () => baseOpacity(),
+    opacity: () => '0.5',
   },
 });
 
-// ✅ Static steps, dynamic duration
+// ✅ Static steps, dynamic duration at the call site
 const fade = keyframes({
   from: {
     opacity: '0',
@@ -193,9 +147,6 @@ const fade = keyframes({
   to: {
     opacity: '1',
   },
-});
-style({
-  animation: `${fade} ${duration()}s ease`,
 });
 ```
 
@@ -205,4 +156,4 @@ A `@keyframes` rule is a definitional at-rule: it never nests under a class scop
 
 ### Memory Management
 
-Each `keyframes()` call increments a reference count; [`removeKeyframes`](/reference/css/removekeyframes) decrements it and drops the rule at zero. [`resetCss`](/reference/css/resetcss) clears keyframes together with all other css-side registrations.
+Each call increments a reference count; [`removeKeyframes`](/reference/css/removekeyframes) decrements it and drops the rule at zero. [`resetCss`](/reference/css/resetcss) clears keyframes together with every other css-side registration.

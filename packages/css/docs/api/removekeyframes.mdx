@@ -1,6 +1,6 @@
 # removeKeyframes
 
-Removes a `@keyframes` rule created by `keyframes()` and decrements its reference count for memory management.
+Removes a `@keyframes` rule registered by `keyframes()` and decrements its reference count. The rule leaves the stylesheet when the count reaches zero; above it it stays.
 
 ## Basic Usage
 
@@ -16,13 +16,13 @@ const spin = keyframes({
   },
 });
 
-// Later, remove when no longer needed
+// Later, when the animation is no longer needed; key order never matters
 removeKeyframes({
-  from: {
-    transform: 'rotate(0deg)',
-  },
   to: {
     transform: 'rotate(360deg)',
+  },
+  from: {
+    transform: 'rotate(0deg)',
   },
 });
 ```
@@ -39,7 +39,7 @@ function removeKeyframes(obj: KeyframesObject): void
 
 ### Reference Counting
 
-`removeKeyframes` mirrors the reference counting model of [`removeStyle`](/reference/css/removestyle). Each [`keyframes`](/reference/css/keyframes) call increments the reference count. `removeKeyframes` decrements it. The rule persists until all references are removed:
+Each `keyframes()` call with a structurally equal object bumps one reference count and reuses one rule; each `removeKeyframes` decrements it. The rule persists until the last reference drops.
 
 ```typescript
 import { keyframes, removeKeyframes } from '@hellajs/css';
@@ -53,16 +53,16 @@ const steps = {
   },
 };
 
-keyframes(steps);  // refCount = 1
-keyframes(steps);  // refCount = 2; same name, one rule
+keyframes(steps); // refCount = 1
+keyframes(steps); // refCount = 2; same name, one rule
 
-removeKeyframes(steps);  // refCount = 1, rule still present
-removeKeyframes(steps);  // refCount = 0, rule removed from stylesheet
+removeKeyframes(steps); // refCount = 1, rule still present
+removeKeyframes(steps); // refCount = 0, rule removed
 ```
 
 ### Deterministic Re-Derivation
 
-`removeKeyframes` re-derives the name and rule text from the same object (the deterministic transform `keyframes()` uses), so structurally identical objects always locate the injected entry, in any key order. No reference needs to be held.
+The name and rule text are re-derived from the object through the same canonical transform [`keyframes`](/reference/css/keyframes) uses (steps key-sorted before hashing), so structurally identical objects locate the registration in any key order. No reference needs to be held. On the server (no DOM) the decrement still runs; only the sheet write is DOM-gated.
 
 ## Important Considerations
 
@@ -70,6 +70,4 @@ removeKeyframes(steps);  // refCount = 0, rule removed from stylesheet
 
 `removeKeyframes` is a no-op for inputs not previously registered by a `keyframes` call: no throw, no stylesheet change.
 
-### Both Platforms
-
-Registration state is decremented on client and server alike; the CSSOM rule drops at zero references (a no-op without a DOM).
+For clearing every css-side registration at once, use [`resetCss`](/reference/css/resetcss).

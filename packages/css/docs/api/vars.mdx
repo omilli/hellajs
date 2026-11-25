@@ -1,39 +1,42 @@
 # vars
 
-Creates CSS custom properties (variables) from JavaScript objects with automatic reactivity support.
+Creates CSS custom properties from an object of tokens and returns a same-shaped proxy of `var()` references. Function leaves (signals, getters) make the declarations reactive: when they change, the custom property updates without rebuilding any rule.
 
 ## Basic Usage
 
 ```jsx
-import { vars } from '@hellajs/css';
+import { style, vars } from '@hellajs/css';
 
-const theme = vars({
-  colors: {
+const tokens = vars({
+  color: {
     primary: '#3b82f6',
-    secondary: '#64748b',
+    surface: '#ffffff',
   },
-  spacing: {
-    small: '0.5rem',
-    medium: '1rem',
-    large: '2rem',
-  },
+  radius: '0.5rem',
 });
 
-// theme.colors.primary = 'var(--colors-primary)'
-// theme.colors.secondary = 'var(--colors-secondary)'
-// theme.spacing.small = 'var(--spacing-small)'
+// tokens.color.primary === 'var(--color-primary)'
+// tokens.color.surface === 'var(--color-surface)'
+// tokens.radius     === 'var(--radius)'
+
+const card = style('card', {
+  background: tokens.color.surface,
+  color: tokens.color.primary,
+  borderRadius: tokens.radius,
+  padding: '1rem',
+});
 ```
+
+Nested objects flatten into hyphenated names (`color.primary` registers `--color-primary`); the proxy keeps the authored shape.
 
 ## API
 
 ```typescript
 function vars<T extends CSSVarInputObject>(vars: T, options?: VarsOptions): CSSVars<T>
 ```
-- `vars`: Object containing CSS variable definitions. Can include nested objects and reactive signals.
-- `options`: Optional configuration for scoping, prefixing, media conditions, and cascade layers
-- **Returns**: A same-shaped proxy of `var()` references, on BOTH platforms: on the client the declarations are injected into the CSSOM; on the server the registration is state-only (collect it with [`cssText`](/reference/css/csstext)).
-
-### Options
+- `vars`: Object of CSS variable definitions. Leaves are strings, numbers, or functions returning a string or number; values can nest
+- `options`: Optional configuration
+- **Returns**: A same-shaped proxy of `var()` reference strings, on both platforms
 
 ```typescript
 interface VarsOptions {
@@ -45,11 +48,11 @@ interface VarsOptions {
 }
 ```
 
-- **`scoped`**: CSS selector to limit variable scope (e.g., `.theme-container`, `#app`, `[data-theme]`)
-- **`prefix`**: Prefix added to all CSS variable names for namespace organization
-- **`media`**: Media condition wrapping the declarations, e.g. `(prefers-color-scheme: dark)`, interpolated verbatim into `@media (…)`
-- **`layer`**: Cascade layer name wrapping the declarations, e.g. `hella`, interpolated verbatim into `@layer <name>`. Unlayered author CSS beats layered rules, so consumer overrides win by construction; composes outermost of `@media` when both apply
-- **`host`**: Parent node the `<style>` element is created in; e.g. a `ShadowRoot`. Defaults to `document.head`. Shadow roots don't match `:root`, so pair `host` with `scoped: ':host'` to apply variables to the host element
+- **`scoped`**: CSS selector the declarations sit under (`.theme-container`, `[data-theme]`). Defaults to `:root`
+- **`prefix`**: Namespace prepended to every variable name
+- **`media`**: Media condition wrapping the declarations, e.g. `(prefers-color-scheme: dark)`, interpolated verbatim
+- **`layer`**: Cascade layer name wrapping the declarations, interpolated verbatim. Unlayered author CSS beats layered rules, so consumer overrides win by construction; composes outermost of `media` when both apply
+- **`host`**: Node the `<style>` element is created in, e.g. a `ShadowRoot`. Shadow roots don't match `:root`, so pair `host` with `scoped: ':host'`
 
 ### Types
 
@@ -65,175 +68,95 @@ type CSSVars<T> = {
 };
 ```
 
-- **`CSSVarLeaf`**: Accepted leaf value types: `string`, `number`, or a function returning `string | number` (signals, computed, plain getters)
-- **`CSSVarInputObject`**: Plain object whose values are `CSSVarLeaf` or nested `CSSVarInputObject`, used as the input constraint
-- **`CSSVars<T>`**: Mapped type transforming an input object into a proxy with `var()` reference strings at every leaf
+- **`CSSVarLeaf`**: Accepted leaf: a string, a number, or a function returning a string or number (signals, computed values, plain getters)
+- **`CSSVarInputObject`**: Input constraint: leaves or nested input objects
+- **`CSSVars<T>`**: Output: the input shape with every leaf mapped to its `var()` reference string
 
 ## Key Concepts
 
-### Custom-Property Names
+### Reactive Values
 
-Flat keys convert at emission: dots fold to hyphens, camel and letter-digit boundaries insert a hyphen, then the name lowercases. `primaryForeground` registers `--primary-foreground`, `base50` registers `--base-50`, and an authored kebab key such as `'primary-foreground'` passes through byte-identically. Proxy access keeps the authored key shape:
+A function leaf re-resolves when its dependencies change and the custom property updates in place. No rule is rebuilt, no component re-renders: every style consuming the `var()` reference follows along.
 
 ```jsx
-import { vars, cssText } from '@hellajs/css';
+import { signal } from '@hellajs/core';
+import { style, vars } from '@hellajs/css';
+
+const isDark = signal(false);
+
+const tokens = vars({
+  background: () => isDark() ? '#1a1a1a' : '#ffffff',
+  text: () => isDark() ? '#e5e7eb' : '#111827',
+  primary: '#3b82f6',  // static leaves mix in freely
+});
+
+const panel = style('panel', {
+  background: tokens.background,
+  color: tokens.text,
+  padding: '1rem',
+});
+
+<button class={panel} on:click={() => isDark(!isDark())}>
+  Toggle theme
+</button>
+```
+
+Multiple signal updates in one tick drain together; the sheet updates once at the microtask boundary (core's [`flush`](/reference/core/flush) forces it synchronously).
+
+The function wrapper is what makes a leaf reactive: without it, the expression evaluates once at registration and the token freezes at that value, silently. A signal passed bare stays reactive because a signal is itself a function; any composed expression needs the wrapper:
+
+```jsx
+import { signal } from '@hellajs/core';
+import { vars } from '@hellajs/css';
+
+const theme = signal('light');
+const accent = signal('#3b82f6');
+const isDark = () => theme() === 'dark';
+
+// ❌ Frozen: the ternary runs once; the leaf is the string '#ffffff'
+vars({
+  bg: isDark() ? '#1a1a1a' : '#ffffff',
+});
+
+// ✅ Reactive: the wrapper defers the expression to each update
+vars({
+  surface: () => isDark() ? '#1a1a1a' : '#ffffff',
+});
+
+// ✅ Also reactive: a signal passed bare is a function
+vars({
+  accent: accent,
+});
+```
+
+### Name Conversion
+
+Flat keys convert at emission: dots fold to hyphens, camelCase and letter-digit boundaries insert a hyphen, then the name lowercases. Proxy access keeps the authored key shape.
+
+```jsx
+import { cssText, vars } from '@hellajs/css';
 
 const tokens = vars({
   primaryForeground: 'oklch(0.985 0 0)',
+  base50: '#f9fafb',
 });
 
-// tokens.primaryForeground = 'var(--primary-foreground)'
+// tokens.primaryForeground === 'var(--primary-foreground)'
+// tokens.base50 === 'var(--base-50)'
 // cssText() collects:
 // :root {
 //   --primary-foreground: oklch(0.985 0 0);
+//   --base-50: #f9fafb;
 // }
 ```
 
-Registration, proxy references, prefixing, and removal all emit the same converted name: `vars({ primaryForeground: 'x' }, { prefix: 'hj' })` writes `--hj-primary-foreground`, and [`removeVars`](/reference/css/removevars) removes that declaration.
+An authored kebab key such as `'primary-foreground'` passes through byte-identically, and `prefix` prepends before the conversion: `vars({ primaryForeground: 'x' }, { prefix: 'hj' })` writes `--hj-primary-foreground`.
 
-### Using Variables in CSS
+### Static and Reactive Registration
 
-```jsx
-import { style, vars } from '@hellajs/css';
+Objects with no function leaves are static: they register by a hash of the object and its options, so structurally equal objects share one registration regardless of reference identity. Objects with any function leaf are reactive: they register by object reference, so each object owns exactly one reactive effect.
 
-const theme = vars({
-  colors: {
-    primary: '#3b82f6',
-    background: '#ffffff',
-  },
-});
-
-const buttonStyle = style({
-  backgroundColor: theme.colors.primary,
-  color: theme.colors.background,
-  padding: '0.75rem 1.5rem',
-  border: 'none',
-  borderRadius: '0.5rem',
-}, {
-  label: 'btn',
-});
-```
-
-### Reactive CSS Variables
-
-CSS variables automatically update when signals change. Multiple signal updates in one tick drain together; the sheet updates once at the microtask boundary (core's [`flush`](/reference/core/flush) forces it synchronously):
-
-```jsx
-import { signal } from '@hellajs/core';
-import { vars, style } from '@hellajs/css';
-
-const ThemeExample = () => {
-  const isDark = signal(false);
-  const primaryColor = signal('#3b82f6');
-
-  // Reactive CSS variables - automatically update when signals change
-  const theme = vars({
-    colors: {
-      primary: primaryColor,  // Direct signal
-      background: () => isDark() ? '#1a1a1a' : '#ffffff',
-      text: () => isDark() ? '#ffffff' : '#000000',
-    },
-  });
-
-  const buttonStyle = style({
-    backgroundColor: theme.colors.primary,
-    color: theme.colors.text,
-    padding: '0.75rem 1.5rem',
-    border: 'none',
-    borderRadius: '0.5rem',
-  }, {
-    label: 'btn',
-  });
-
-  return (
-    <div>
-      <button
-        class={buttonStyle}
-        on:click={() => isDark(!isDark())}
-      >
-        Toggle Theme
-      </button>
-      <button on:click={() => primaryColor('#059669')}>
-        Change Color
-      </button>
-    </div>
-  );
-};
-```
-
-### Mixed Static and Reactive Variables
-
-```jsx
-import { signal } from '@hellajs/core';
-import { vars } from '@hellajs/css';
-
-const primaryColor = signal('#3b82f6');
-const accentColor = () => '#64748b';
-
-const mixedTheme = vars({
-  // Static values (no reactivity)
-  fonts: {
-    body: 'system-ui, sans-serif',
-    mono: 'Menlo, monospace',
-  },
-  // Reactive values (with signals)
-  colors: {
-    primary: primaryColor,  // Direct signal
-    accent: () => accentColor(),
-    surface: '#ffffff',  // Static value
-  },
-});
-```
-
-### Identical on Both Platforms
-
-On the client, [`vars`](/reference/css/vars) injects custom properties into the CSSOM and returns the `var()` proxy. On the server (no DOM), it returns the **same** proxy and registers the declarations state-only: function leaves resolve once to their initial values, no effects are created, and [`cssText()`](/reference/css/csstext) carries the rule text for the server's `<style>` tag:
-
-```typescript
-import { signal } from '@hellajs/core';
-import { vars, cssText } from '@hellajs/css';
-
-const color = signal('red');
-
-// Client: { theme: { color: 'var(--theme-color)' } }, injects:
-// :root {
-//   --theme-color: red;
-// }
-// Server: { theme: { color: 'var(--theme-color)' } }, same cssText() text
-const theme = vars({
-  theme: { color },
-});
-```
-
-### Variable Accumulation
-
-Multiple `vars()` calls to the same scope merge variables rather than overwrite:
-
-```jsx
-import { vars } from '@hellajs/css';
-
-// First call sets colors
-vars({
-  colors: {
-    primary: '#3b82f6',
-    secondary: '#64748b',
-  },
-});
-
-// Second call adds spacing; colors are preserved
-vars({
-  spacing: {
-    small: '0.5rem',
-    large: '2rem',
-  },
-});
-
-// Both color and spacing variables are available
-```
-
-### Reactive Vars Are Keyed by Reference
-
-A **reactive** vars object (one with any function leaf) is registered by object **reference**, not by value. A second `vars()` call passing the *same* reference returns the same result proxy and bumps its reference count. Passing the same reference a second time with *different* `scoped`/`prefix`/`media`/`layer` options throws; use a distinct object per scope so each gets its own reactive effect:
+A reactive object registered a second time with different `scoped`/`prefix`/`media`/`layer`/`host` options throws; use a separate object per scope so each gets its own effect.
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -241,80 +164,76 @@ import { vars } from '@hellajs/css';
 
 const isDark = signal(false);
 const theme = {
-  bg: () => (isDark() ? '#000' : '#fff'),
+  bg: () => isDark() ? '#000' : '#fff',
 };
 
-vars(theme);                             // ok; :root, reactive
-vars(theme);                             // ok; same options, refCount++
+vars(theme);  // ok; :root, reactive
+vars(theme);  // ok; same options, reference count bumps
+
 vars(theme, {
   scoped: '.dark',
-});        // throws; same ref, different scope
+});  // ❌ throws; same reference, different options
+
 vars({
   ...theme,
 }, {
   scoped: '.dark',
-}); // ok; separate reference, own effect
+});  // ✅ separate object, own effect
 ```
-
-Static vars (no function leaves) are instead keyed by a hash of the object and its options, so structurally equal static objects share one registration regardless of reference identity.
 
 ### Scoping and Prefixing
 
-Control where CSS variables are applied and how they're named:
+`scoped` limits where the variables apply; `prefix` namespaces the names. The two combine.
 
 ```jsx
 import { vars } from '@hellajs/css';
 
-// Scoped to a specific selector; variables only apply within .theme-container
 const themeVars = vars({
   primary: '#3b82f6',
-  secondary: '#64748b',
+  radius: '0.5rem',
 }, {
   scoped: '.theme-container',
-});
-
-// themeVars.primary = 'var(--primary)'
-// Generated:
-// .theme-container {
-//   --primary: #3b82f6;
-//   --secondary: #64748b;
-// }
-```
-
-```jsx
-import { vars } from '@hellajs/css';
-
-// Prefix adds a namespace to all variable names
-const appVars = vars({
-  fontFamily: 'system-ui, sans-serif',
-  borderRadius: '0.25rem',
-}, {
   prefix: 'app',
 });
 
-// appVars.fontFamily = 'var(--app-font-family)'
-// appVars.borderRadius = 'var(--app-border-radius)'
+// themeVars.primary === 'var(--app-primary)'
+// themeVars.radius === 'var(--app-radius)'
+// Generated:
+// .theme-container {
+//   --app-primary: #3b82f6;
+//   --app-radius: 0.5rem;
+// }
+```
 
-// Combine both: scoped + prefixed
-const themed = vars({
-  primary: '#3b82f6',
-  spacing: {
-    small: '0.5rem',
-    medium: '1rem',
-  },
-}, {
-  scoped: '.theme-container',
-  prefix: 'my-theme',
+Values only apply within `.theme-container`; consumers outside it fall back to whatever else defines those names.
+
+### Media-Scoped Variables
+
+The `media` option places the declarations under a media condition: variables that follow the environment instead of JavaScript state. The canonical case is system-driven dark mode with zero reactivity:
+
+```jsx
+import { vars } from '@hellajs/css';
+
+// Default (light) values
+vars({
+  bg: '#ffffff',
+  text: '#111827',
 });
 
-// themed.primary = 'var(--my-theme-primary)'
-// themed.spacing.small = 'var(--my-theme-spacing-small)'
-// Only available within .theme-container
+// Dark values; applied only when the OS prefers dark
+vars({
+  bg: '#1a1a1a',
+  text: '#e5e7eb',
+}, {
+  media: '(prefers-color-scheme: dark)',
+});
 ```
+
+`media` composes with `scoped` and `prefix`, and the same scope under different conditions coexists as separate rules. For JS-driven theming (a toggle signal), use reactive leaves; the two modes combine freely.
 
 ### Shadow DOM Hosts
 
-`host` redirects the variables into a shadow root. The default `:root` scope doesn't match inside one; `scoped: ':host'` targets the host element itself:
+`host` redirects the declarations into a shadow root. The default `:root` scope does not match inside one; `scoped: ':host'` targets the host element itself.
 
 ```typescript
 import { vars } from '@hellajs/css';
@@ -337,115 +256,75 @@ const theme = vars({
 // }
 ```
 
-Sheets are per host: the same vars injected into two hosts create independent rules with separate reference counting, and [`removeVars`](/reference/css/removevars) with the same `host` removes from that host's bucket. See [Shadow DOM Hosts](/reference/css/css#shadow-dom-hosts) for the full web-components example.
+Sheets are per host, and [`removeVars`](/reference/css/removevars) with the same `host` removes from that host's bucket. See [Shadow DOM Hosts](/reference/css/css#shadow-dom-hosts) for the full web-components example.
 
-### Media-Scoped Variables
+### Server Behavior
 
-The `media` option places the declarations under a `@media` at-rule: variables that follow the environment instead of JavaScript state. The canonical case is system-driven dark mode with [`prefers-color-scheme`](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-color-scheme): declare light values unscoped, dark values under the media condition, and the OS setting picks the winner with zero reactivity:
+The proxy and the registration are identical on both platforms. On the server no effects are created: function leaves resolve once to their initial values, and [`cssText`](/reference/css/csstext) carries the declarations for the `<style>` tag. Hydration re-registers reactively from the same object.
 
-```jsx
+```typescript
+import { signal } from '@hellajs/core';
+import { cssText, vars } from '@hellajs/css';
+
+const color = signal('red');
+const theme = vars({
+  accent: color,
+});
+
+// Client: injects ":root { --accent: red; }" and tracks the signal
+// Server: same proxy, same cssText() text, no effect created
+```
+
+### Accepted Leaf Values
+
+Leaves are typed at compile time: `string`, `number`, or a function returning `string | number`. Booleans and class instances fail to compile; convert them explicitly.
+
+```typescript
+import { signal } from '@hellajs/core';
 import { vars } from '@hellajs/css';
 
-// Default (light) values
-vars({
-  colors: {
-    background: '#ffffff',
-    text: '#111827',
-  },
-});
-
-// Dark values; applied only when the OS prefers dark
-vars({
-  colors: {
-    background: '#1a1a1a',
-    text: '#e5e7eb',
-  },
-}, {
-  media: '(prefers-color-scheme: dark)',
-});
-
-// Generated:
-// :root {
-//   --colors-background: #ffffff;
-//   --colors-text: #111827;
-// }
-// @media (prefers-color-scheme: dark) {
-//   :root {
-//     --colors-background: #1a1a1a;
-//     --colors-text: #e5e7eb;
-//   }
-// }
-```
-
-`media` composes with `scoped` and `prefix`, and the same scope under different conditions coexists as separate rules: each `(scope, media)` pair is its own bucket. It interpolates verbatim (no validation), matching `scoped`'s permissive contract. For JS-driven theming (a toggle signal instead of the OS), see [Reactive CSS Variables](#reactive-css-variables); the two modes combine freely.
-
-### Accepted Value Types
-
-`vars` accepts specific leaf value types at compile time. Invalid types are rejected:
-
-```typescript
-type CSSVarLeaf = string | number | ((...args: never[]) => string | number);
-```
-
-Accepted leaf values:
-- **`string`**: Static text values like `'#ff0000'` or `'1rem'`
-- **`number`**: Numeric values like `16` or `0.5`
-- **`(...args: never[]) => string | number`**: Functions returning `string | number`: includes signals (`Signal<string>`), computed values, and plain getter functions
-
-❌ **Rejected at compile time:**
-- **`boolean`**: `vars({ flag: true })` is rejected
-- **`Date`** and other class instances: `vars({ date: new Date() })` is rejected
-- Functions returning `boolean` or `object`: `vars({ fn: () => true })` is rejected
-
-✅ **Convert boolean signals explicitly:**
-```typescript
 const isActive = signal(true);
 
-// ❌ Rejected; function returning boolean
-vars({
-  flag: isActive,
-});
+// ❌ Rejected; a boolean is not a CSS value
+// vars({ flag: isActive });
 
 // ✅ Explicit conversion
-vars({
+const flags = vars({
   flag: () => isActive() ? '1' : '0',
 });
+// flags.flag === 'var(--flag)'
 ```
+
+Replace class instances (`Date`, ...) with plain values before passing them in: serialize what the CSS needs, keep the object out.
 
 ## Important Considerations
 
-### Type Safety
+### Scopes Accumulate
 
-Maintains full TypeScript support with nested object typing:
+Multiple `vars()` calls writing the same scope merge rather than overwrite: each call adds its own keys to the bucket. [`removeVars`](/reference/css/removevars) removes only the keys of the call it matches, so other calls' contributions survive.
 
-```typescript
-const primary = signal('#3b82f6');
+```jsx
+import { removeVars, vars } from '@hellajs/css';
 
-const theme = vars({
-  colors: {
-    primary: '#3b82f6',  // Valid
-    secondary: primary,  // Valid (signal)
+vars({
+  color: {
+    primary: 'red',
   },
+});
+vars({
   spacing: {
-    base: '1rem',  // Valid
+    small: '0.5rem',
   },
 });
 
-// theme.colors.primary: string (= 'var(--colors-primary)')
-// theme.spacing.base: string (= 'var(--spacing-base)')
+removeVars({
+  color: {
+    primary: 'red',
+  },
+});
+// --spacing-small remains registered
 ```
-
-### Boolean and Object Leaves Are Compile-Time Errors
-
-Leaf values outside the accepted set fail to compile; the enumeration and the conversion recipes live under [Accepted Value Types](#accepted-value-types). Convert booleans explicitly (`() => isActive() ? '1' : '0'`) and replace class instances with plain values before passing them to `vars`.
 
 ### Memory Management
 
-Use [`removeVars`](/reference/css/removevars) to decrement a specific registration (reactive entries dispose their effect at zero references), or [`resetVars`](/reference/css/resetvars) to clear all CSS variables and reactive effects at once:
-
-```jsx
-import { resetVars } from '@hellajs/css';
-
-// Clean up all CSS variables and reactive effects
-resetVars();
-```
+[`removeVars`](/reference/css/removevars) decrements one registration (reactive entries dispose their effect at zero references); [`resetVars`](/reference/css/resetvars) clears every registration, cache, and reactive effect at once. Reach for `removeVars` for component-lifetime tokens and `resetVars` for teardown between test runs or app instances.

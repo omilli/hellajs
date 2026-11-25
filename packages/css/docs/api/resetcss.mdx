@@ -1,13 +1,12 @@
 # resetCss
 
-Clears all css-side rules and resets the CSS system to its initial state: every `css()`, `style()`, and `keyframes()` registration, on both platforms. The sheet reset is DOM-only (a no-op without a document); `vars()` registrations are untouched.
+Clears every css-side registration and resets the rules system to its initial state: all `css()`, `style()`, and `keyframes()` registrations, on both platforms. `vars()` registrations are untouched.
 
 ## Basic Usage
 
 ```jsx
-import { style, resetCss } from '@hellajs/css';
+import { resetCss, style } from '@hellajs/css';
 
-// Create some styles
 const button = style({
   background: 'blue',
   color: 'white',
@@ -16,15 +15,12 @@ const button = style({
 });
 const card = style({
   padding: '1rem',
-  border: '1px solid #ccc',
 }, {
   label: 'card',
 });
 
-// Later, reset everything
+// Later: everything css-side goes at once
 resetCss();
-
-// All previous styles are removed from DOM and memory
 ```
 
 ## API
@@ -38,13 +34,13 @@ function resetCss(): void
 
 ### What the Reset Covers
 
-`resetCss()` clears the css side only: the injected-rules registry (including `keyframes()` registrations and their reference counts) and the `hella-css` style element. Two isolation rules hold:
+`resetCss()` clears the css side only: the registration map (including `keyframes()` registrations and their reference counts) and the `hella-css` style element. Two isolation rules hold:
 
-- [`vars`](/reference/css/vars) registrations and the `hella-vars` sheet are untouched; call [`resetVars`](/reference/css/resetvars) for those.
-- Hosted sheets (a `host` option, e.g. a shadow root) are abandoned, not cleared: their `<style>` elements keep their rules, and re-registering into the same host creates fresh sheets.
+- [`vars`](/reference/css/vars) registrations and the `hella-vars` sheet are untouched; call [`resetVars`](/reference/css/resetvars) for those
+- Hosted sheets (a `host` option, e.g. a shadow root) are abandoned, not cleared: their `<style>` elements keep their rules, and re-registering into the same host creates fresh sheets
 
 ```jsx
-import { css, style, resetCss } from '@hellajs/css';
+import { css, resetCss, style } from '@hellajs/css';
 
 const buttonClass = style({
   color: 'white',
@@ -59,30 +55,16 @@ css({
 
 resetCss();
 
-// The hella-css element stays in the DOM, emptied; nothing css-side remains registered
+// The hella-css element stays in the DOM, emptied; nothing css-side remains
 ```
 
-### Testing Scenarios
-
-```jsx
-import { css, resetCss } from '@hellajs/css';
-
-// Reset before each test suite for a predictable starting state
-resetCss();
-
-const buttonStyle = css({
-  body: {
-    margin: 0,
-  },
-});
-// buttonStyle === ''; styles injected cleanly
-```
+The sheet reset itself is DOM-only (a no-op without a document); the registration state clears on both platforms.
 
 ## Important Considerations
 
-### Use Cases
+### When to Reach for It
 
-Reach for `resetCss()` when every css-side registration should go at once: between test runs, during hot-module replacement in development, or when tearing down an app instance that owned its styles. For removing one registration while the rest live on, use [`removeCss`](/reference/css/removecss) / [`removeStyle`](/reference/css/removestyle) / [`removeKeyframes`](/reference/css/removekeyframes); for a complete reset of both sides, pair it with [`resetVars`](/reference/css/resetvars).
+Use `resetCss()` when every css-side registration should go at once: between test runs, during hot-module replacement in development, or when tearing down an app instance that owned its styles. For removing one registration while the rest live on, use [`removeCss`](/reference/css/removecss) / [`removeStyle`](/reference/css/removestyle) / [`removeKeyframes`](/reference/css/removekeyframes); for a complete reset of both sides, pair it with [`resetVars`](/reference/css/resetvars).
 
 ### Safety
 

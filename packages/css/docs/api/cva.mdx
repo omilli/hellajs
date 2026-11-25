@@ -23,10 +23,10 @@ const button = cva({
     },
     tone: {
       primary: {
-        background: 'blue',
+        background: '#3b82f6',
       },
       danger: {
-        background: 'red',
+        background: '#dc2626',
       },
     },
   },
@@ -35,18 +35,13 @@ const button = cva({
   },
 });
 
-<button
-  class={button({
-    size: 'lg',
-    tone: 'danger',
-  })}
->
+<button class={button({
+  tone: 'danger',
+})}>
   Delete
 </button>
-// "base-… size-lg-… tone-danger-…"
+// "base-… size-sm-… tone-danger-…"; size falls back to its default
 ```
-
-Unselected variants contribute nothing; no `sm` class ships while `lg` is selected.
 
 ## API
 
@@ -61,8 +56,8 @@ function cva<V extends CVAVariants, M extends CVAMedia>(config: {
 ```
 - `config`: Variant configuration
   - `base`: Style object hashed into the base class (`base-{hash}`), or a class string passed through verbatim
-  - `media`: Breakpoint map: breakpoint name → media condition, interpolated verbatim (e.g. `{ md: '(min-width: 768px)' }`)
-  - `variants`: Variant map: variant key → value name → style object or class string
+  - `media`: Breakpoint map: breakpoint name to media condition, interpolated verbatim (e.g. `{ md: '(min-width: 768px)' }`)
+  - `variants`: Variant map: variant key to value name to style object or class string
   - `defaultVariants`: Selections applied when a prop omits the variant (the un-wrapped `initial` slot)
   - `compoundVariants`: Styles emitted when every stated selection equals the resolved one
 - **Returns**: The recipe callable: resolves props to a space-joined class string
@@ -71,7 +66,7 @@ function cva<V extends CVAVariants, M extends CVAMedia>(config: {
 
 ### Resolution Order
 
-The callable joins fragments with single spaces, in this order: `base` first, then each selected variant in config order, then every matching `compoundVariants` entry in config order. Each variant value, breakpoint selection, and compound owns its own class (`{label}-{hash}`, the label derived from the selection: `size-lg-…`), so variants compose on the element instead of competing in one rule.
+The callable joins fragments with single spaces, in this order: `base` first, then each selected variant in config order, then every matching `compoundVariants` entry in config order. Each selection owns its own hashed class (`size-lg-…`, `tone-danger-…`), so variants compose on the element instead of competing in one rule. Selecting the same value at `initial` and a breakpoint contributes one class entry while registering both rules.
 
 ```jsx
 import { cva } from '@hellajs/css';
@@ -106,7 +101,7 @@ badge({
 
 ### Compound Variants
 
-A compound emits its `css` only when **every** stated selection matches the resolved props; a partial match emits nothing. Compound keys absent from `variants` are compile-time errors.
+A compound emits its `css` only when every stated selection matches the resolved props; a partial match emits nothing. Compound keys absent from `variants` are compile-time errors.
 
 ```jsx
 import { cva } from '@hellajs/css';
@@ -123,10 +118,10 @@ const button = cva({
     },
     tone: {
       primary: {
-        background: 'blue',
+        background: '#3b82f6',
       },
       danger: {
-        background: 'red',
+        background: '#dc2626',
       },
     },
   },
@@ -151,7 +146,7 @@ button({
 
 ### Responsive Variants
 
-A prop value can be a responsive object: `initial` is the un-wrapped base selection, breakpoint keys select under their media conditions. The recipe's `media` map defines which breakpoints exist (both in props and in compounds), so the type system rejects unknown breakpoint keys. Share one breakpoint const across recipes instead of repeating queries:
+A prop value can be a responsive object: `initial` is the un-wrapped base selection, breakpoint keys select under their media conditions. The recipe's `media` map defines which breakpoints exist, so the type system rejects unknown breakpoint keys. Share one breakpoint const across recipes instead of repeating queries:
 
 ```jsx
 import { cva } from '@hellajs/css';
@@ -166,12 +161,10 @@ const layout = cva({
   media: MEDIA,
   base: {
     display: 'flex',
+    flexDirection: 'column',
   },
   variants: {
     direction: {
-      column: {
-        flexDirection: 'column',
-      },
       row: {
         flexDirection: 'row',
       },
@@ -181,13 +174,12 @@ const layout = cva({
 
 layout({
   direction: {
-    initial: 'column',
     md: 'row',
   },
 });
-// "base-… direction-column-… direction-row-…"
-// The row class is registered under @media (min-width: 768px); the browser
-// picks the winner, no resize listeners
+// "base-… direction-row-…"; the row class is registered under
+// @media (min-width: 768px), the base column applies below it; pure CSS,
+// no resize listeners
 ```
 
 `defaultVariants` fills the `initial` slot when a responsive object omits it; the mobile-first pattern needs one default, not one per breakpoint. Compounds match breakpoint selections with the same object shape:
@@ -212,7 +204,7 @@ const grid = cva({
     },
   },
   compoundVariants: [
-    // Two columns only from md up
+    // Wide gap only from md up
     {
       cols: {
         md: 'two',
@@ -227,10 +219,10 @@ const grid = cva({
 
 ### Lazy Generation and Critical CSS
 
-Creating a recipe registers nothing. Each variant value, breakpoint selection, and compound generates its class on **first resolution** and caches it per recipe; the CSS that ships is exactly the CSS a render actually resolved. Uncalled variants cost nothing, and [`cssText`](/reference/css/csstext) collects exactly the called styles for the server's `<style>`:
+Creating a recipe registers nothing. Each variant value, breakpoint selection, and compound generates its class on first resolution and caches it per recipe, so the CSS that ships is exactly the CSS a render resolved. Uncalled variants cost nothing, and [`cssText`](/reference/css/csstext) collects exactly the called styles on the server.
 
 ```jsx
-import { cva, cssText } from '@hellajs/css';
+import { cssText, cva } from '@hellajs/css';
 
 const button = cva({
   base: {
@@ -239,10 +231,10 @@ const button = cva({
   variants: {
     tone: {
       primary: {
-        background: 'blue',
+        background: '#3b82f6',
       },
       danger: {
-        background: 'red',
+        background: '#dc2626',
       },
     },
   },
@@ -251,20 +243,40 @@ const button = cva({
 button({
   tone: 'primary',
 });
-// Registered: the base rule and tone-primary only; tone-danger never generates
+// Registered: the base rule and tone-primary; tone-danger never generates
 
-const head = `<style>${cssText()}</style>`;
+const head = `<style id="hella-css">${cssText()}</style>`;
 ```
 
-### Identical on Both Platforms
+The callable returns the class string (never CSS text) on both platforms; hydration derives the same classes from the same props and re-registers them.
 
-The recipe callable returns the class string (never CSS text) on the client and the server alike. Registration runs on both platforms; only the CSSOM write is client-only. Hydration derives the same classes from the same props and re-registers them, matching the server's collected text.
+### Verbatim Strings Bypass Generation
+
+String values in `base`, variant, and compound slots pass through with no rule generated, for composing external classes (Tailwind utilities, third-party class contracts):
+
+```jsx
+import { cva } from '@hellajs/css';
+
+const input = cva({
+  base: 'form-control',
+  variants: {
+    state: {
+      invalid: 'is-invalid',
+    },
+  },
+});
+
+input({
+  state: 'invalid',
+});
+// "form-control is-invalid"; nothing registered, nothing collected
+```
 
 ## Important Considerations
 
 ### Reactivity Lives at the Call Site
 
-Variant props are plain values, not signals; recipes stay static like [`style`](/reference/css/style). For state-driven variants, wrap the call in a function and let the reactive system re-run it:
+Variant props are plain values, not signals; recipes stay static like [`style`](/reference/css/style). For state-driven variants, call the recipe inside the reactive expression and let the class re-derive when the signal changes:
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -288,65 +300,44 @@ const button = cva({
 });
 
 // The class attribute re-resolves when size changes
-<button
-  class={button({
-    size: size(),
-  })}
->
+<button class={button({
+  size: size(),
+})}>
   Resize me
 </button>
 ```
 
-Reactive *values* inside declarations belong to [`vars`](/reference/css/vars); combine a recipe for structure with vars for reactive theming.
+Reactive values inside declarations belong to [`vars`](/reference/css/vars); combine a recipe for structure with vars for reactive theming.
 
-### Verbatim Strings Bypass Generation
+### Composition Happens at the Attribute
 
-String values in `base`, variant, and compound slots pass through with no rule generated; for composing external classes (Tailwind utilities, third-party class contracts):
-
-```jsx
-import { cva } from '@hellajs/css';
-
-const input = cva({
-  base: 'form-control',
-  variants: {
-    state: {
-      invalid: 'is-invalid',
-    },
-  },
-});
-
-input({
-  state: 'invalid',
-});
-// "form-control is-invalid"; nothing registered, nothing collected
-```
-
-### Composition
-
-Recipes return class strings, and every style API accepts class strings; compose recipes with [`style`](/reference/css/style) bases, other recipes, or [`cx`](/reference/css/cx) joins. There is no second recipe argument: composition happens at the `class` attribute.
+Recipes return class strings, so composition is a join at the `class` attribute with [`cx`](/reference/css/cx), never a second recipe argument:
 
 ```jsx
-import { cva, cx } from '@hellajs/css';
+import { cx, cva } from '@hellajs/css';
 
 const card = cva({
   base: {
     borderRadius: '0.5rem',
   },
-  variants: { /* … */ },
-});
-const panel = cva({
-  base: {
-    padding: '1rem',
+  variants: {
+    tone: {
+      info: {
+        borderColor: 'gray',
+      },
+    },
   },
-  variants: { /* … */ },
 });
+const isFullWidth = true;
 
 <div class={cx(
-  card(),
-  panel({
+  card({
     tone: 'info',
   }),
-)}>…</div>
+  isFullWidth && 'w-full',
+)}>
+  Content
+</div>
 ```
 
 ### Invalid Configs and Unknown Values Throw

@@ -1,20 +1,20 @@
 # removeVars
 
-Removes CSS custom properties by decrementing the reference count. Variables are removed from the stylesheet only when the reference count reaches zero.
+Removes CSS custom properties registered by [`vars`](/reference/css/vars) and decrements the reference count. The declarations leave the stylesheet when the count reaches zero; above it they stay.
 
 ## Basic Usage
 
 ```jsx
-import { vars, removeVars } from '@hellajs/css';
+import { removeVars, vars } from '@hellajs/css';
 
-const varsObj = vars({
+vars({
   colors: {
     primary: 'red',
     secondary: 'blue',
   },
 });
 
-// Later, remove when no longer needed
+// Later, when the tokens are no longer needed; structurally equal object
 removeVars({
   colors: {
     primary: 'red',
@@ -29,81 +29,66 @@ removeVars({
 function removeVars<T extends CSSVarInputObject>(vars: T, options?: VarsOptions): void
 ```
 - `vars`: Object containing CSS variable definitions. For reactive vars, must be the same reference passed to `vars`; for static vars, a structurally equal object matches by hash
-- `options`: Optional configuration. Reactive entries are matched by vars reference and use the options recorded at the first `vars` call; `options` is consulted only to locate the static entry by hash
+- `options`: Optional configuration. Reactive entries are matched by reference and use the options recorded at the first `vars` call; `options` is consulted only to locate the static entry by hash
 - **Returns**: `void`
 
 ## Key Concepts
 
-### Reference Counting
+### Static Removal Matches by Structure
 
-`removeVars` mirrors the reference counting model of [`removeCss`](/reference/css/removecss). Each [`vars`](/reference/css/vars) call increments the reference count. `removeVars` decrements it. The variables persist until all references are removed:
-
-```jsx
-import { vars, removeVars } from '@hellajs/css';
-
-const varsObj = {
-  theme: {
-    color: 'red',
-  },
-};
-
-vars(varsObj);  // refCount = 1
-vars(varsObj);  // refCount = 2, same scope, same vars
-
-removeVars(varsObj);  // refCount = 1, vars still present
-removeVars(varsObj);  // refCount = 0, vars removed from stylesheet
-```
-
-### Static vs Reactive Removal
-
-For **static** vars (no signals or functions), `removeVars` uses a deterministic hash computed from the object and options. Structurally identical objects match regardless of reference identity:
+Static vars (no function leaves) register by a hash of the object and its options, so a structurally equal object removes them regardless of reference identity. The `options` must match the creating call (`scoped`, `prefix`, `host` all feed the hash):
 
 ```jsx
-// Static objects match by structure
+import { removeVars, vars } from '@hellajs/css';
+
 vars({
   color: 'red',
+}, {
+  scoped: '.card',
+  prefix: 'ui',
 });
+
 removeVars({
   color: 'red',
-}); // Same hash; matches
+}, {
+  scoped: '.card',
+  prefix: 'ui',
+}); // ✅ same hash; matches
+
+removeVars({
+  color: 'red',
+}); // ❌ different hash; no-op
 ```
 
-For **reactive** vars (with signals or functions), `removeVars` uses the exact object reference passed to `vars`. Hold onto the original object reference:
+### Reactive Removal Matches by Reference
+
+Reactive vars (any function leaf) register by object reference. Hold the original object and pass that same reference to remove; a structurally equal copy locates nothing.
 
 ```jsx
 import { signal } from '@hellajs/core';
-import { vars, removeVars } from '@hellajs/css';
+import { removeVars, vars } from '@hellajs/css';
 
 const color = signal('red');
-const varsObj = {
+const tokens = {
   primary: color,
 };
 
-vars(varsObj);
-// Must pass the same reference to remove
-removeVars(varsObj);
+vars(tokens); // refCount = 1, one reactive effect
+
+removeVars(tokens); // refCount = 0, effect disposed, declaration dropped
+
+color('blue'); // No stylesheet update; no longer tracked
 ```
 
-When a reactive set is removed, its effect is disposed: subsequent signal updates no longer mutate the stylesheet:
+Disposal stops the stylesheet updates; the signals themselves keep their values and every other consumer.
+
+### Scopes Keep Their Remainder
+
+Multiple `vars()` calls writing the same scope merge their keys. `removeVars` removes only the keys of the registration it matches; other calls' contributions survive.
 
 ```jsx
-const color = signal('red');
-const varsObj = {
-  primary: color,
-};
+import { removeVars, vars } from '@hellajs/css';
 
-vars(varsObj);
-removeVars(varsObj); // Effect is now disposed
-
-color('blue');
-// Stylesheet unaffected; effect was cleaned up
-```
-
-### Shared Scopes
-
-Multiple `vars` calls to the same scope merge their variables. `removeVars` only removes the keys from the matching call; other calls' contributions remain:
-
-```jsx
 vars({
   theme: {
     primary: 'red',
@@ -111,7 +96,7 @@ vars({
 });
 vars({
   spacing: {
-    small: '8px',
+    small: '0.5rem',
   },
 });
 
@@ -120,7 +105,7 @@ removeVars({
     primary: 'red',
   },
 });
-// --spacing-small: 8px remains
+// --spacing-small remains registered
 ```
 
 ## Important Considerations
@@ -129,28 +114,6 @@ removeVars({
 
 `removeVars` is a no-op for inputs not previously registered by a `vars` call: no throw, no stylesheet change.
 
-### Exact Options Match (Static Path)
+### Bulk Reset
 
-For **static** vars, the `options` argument must match the `options` used in the original `vars` call, including `scoped`, `prefix`, and `host`; they feed the hash that locates the entry:
-
-```jsx
-vars({
-  color: 'red',
-}, {
-  scoped: '.card',
-  prefix: 'ui',
-});
-removeVars({
-  color: 'red',
-}, {
-  scoped: '.card',
-  prefix: 'ui',
-}); // ✅ matches
-removeVars({
-  color: 'red',
-}); // ❌ different hash; no-op
-```
-
-### Interaction with resetVars
-
-[`resetVars`](/reference/css/resetvars) remains the nuclear option: it clears all variables, caches, reactive effects, and per-call registries in one go. `removeVars` is the granular alternative for per-call cleanup.
+[`resetVars`](/reference/css/resetvars) is the nuclear option: it clears all variables, caches, and reactive effects in one go. `removeVars` is the granular alternative for per-call cleanup.

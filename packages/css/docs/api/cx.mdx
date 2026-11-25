@@ -19,7 +19,7 @@ cx('card', isHighlighted && 'card-highlight', {
 ## API
 
 ```typescript
-function cx(...args: CXArg[]): string;
+function cx(...args: CXArg[]): string
 ```
 - `args`: Fragments to join: strings and numbers contribute themselves, falsy values drop, objects contribute the keys whose values are truthy, and arrays recurse
 - **Returns**: The joined class string, `""` when nothing survives
@@ -28,9 +28,9 @@ function cx(...args: CXArg[]): string;
 
 ### What Joins
 
-- Strings join verbatim; numbers stringify (`cx('col', 4)` → `"col 4"`)
+- Strings join verbatim; numbers stringify (`cx('col', 4)` gives `"col 4"`)
 - Falsy values drop: `false`, `null`, `undefined`, `0`, `""` never reach the output
-- Objects keep the keys whose values are truthy; value shapes are ignored, only key names join
+- Objects keep the keys whose values are truthy; only key names join, value shapes are ignored
 - Arrays recurse to any depth; falsy items and empty results contribute nothing
 
 ```typescript
@@ -45,7 +45,7 @@ cx('menu', ['item', ['selected', null]], {
 
 ### Composing Recipes and Styles
 
-[`cva`](/reference/css/cva) recipes and [`style`](/reference/css/style) classes are plain strings; `cx` is the join point when several sources feed one `class` attribute:
+[`cva`](/reference/css/cva) recipes and [`style`](/reference/css/style) classes are plain strings; `cx` is the join point when several sources feed one `class` attribute.
 
 ```jsx
 import { cx, cva } from '@hellajs/css';
@@ -76,6 +76,8 @@ const isFullWidth = true;
   Save
 </div>
 ```
+
+The `class` attribute itself accepts arrays and re-resolves functions, so `cx` and the attribute overlap; use `cx` when the joined value is computed once or shared, and the array form when the fragments are reactive.
 
 ## Important Considerations
 

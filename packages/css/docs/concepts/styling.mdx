@@ -1,113 +1,257 @@
 # Styling
 
-HellaJS styles components with CSS-in-JS: `style()` scopes declarations under a content-hashed class, `css()` writes explicit globals, `cva()` resolves typed variants, `vars()` drives reactive theming, and `keyframes()` hashes animation definitions. Every creator returns the same value on client and server; `cssText()` collects the registered text for server rendering.
+HellaJS styles apps with CSS-in-JS. You write JavaScript objects; the library registers them as real CSS rules.
+
+Five tools cover the ground:
+
+- [`vars`](/reference/css/vars): theme tokens as CSS variables, reactive through signals.
+- [`style`](/reference/css/style): one component's look. Returns a class name.
+- [`css`](/reference/css/css): global rules: resets, element defaults and more.
+- [`cva`](/reference/css/cva): variant props resolved to class strings.
+- [`keyframes`](/reference/css/keyframes): animations.
+
+Every creator returns the same value on client and server. [`cssText`](/reference/css/csstext) collects the registered rules for the server's `<style>` tag.
 
 ## Scoped Styles
 
-[`style`](/reference/css/style) takes a declarations-first object and returns a content-hashed class: `{label}-{hash}` with a label, a bare letter-only hash without. The hash covers the object alone, so the same object always derives the same class, on every render and both platforms.
+Reach for [`style`](/reference/css/style) first. It takes CSS declarations and returns a class name.
 
 ```jsx
-import { signal } from '@hellajs/core';
 import { style } from '@hellajs/css';
 
-const Counter = () => {
-  const count = signal(0);
+const card = style('card', {
+  padding: '1rem',
+  borderRadius: '0.5rem',
+  backgroundColor: '#f8f9fa',
+  'h2': {
+    margin: '0 0 0.5rem 0',
+  },
+  '&:hover': {
+    backgroundColor: '#e9ecef',
+  },
+});
 
-  const buttonStyle = style('btn', {
-    padding: '0.75rem 1.5rem',
-    border: 'none',
-    borderRadius: '0.5rem',
-    background: '#3b82f6',
-    color: 'white',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    '&:hover': {
-      background: '#2563eb',
-      transform: 'translateY(-1px)',
-    },
-  });
-  // "btn-nficjjz"; identical on client and server
-  // style({ ... }, { label: 'btn' }) is the equivalent bag form
-
-  return (
-    <div>
-      <h1>Count: {count}</h1>
-      <button class={buttonStyle} on:click={() => count(count() + 1)}>
-        Increment
-      </button>
-    </div>
-  );
-};
+const Card = ({ title }: { title: string }) => (
+  <div class={card}>
+    <h2>{title}</h2>
+  </div>
+);
 ```
 
-Nested keys compose under the generated class: `&` refers to the class at every occurrence, plain keys become descendants (`h2` → `.{class} h2`), every comma-separated part composes on its own (`'h1, h2'` scopes both), and conditional at-rules (`@media`, `@container`, `@supports`) inherit it. Value semantics carry over from `css()`: numbers append `px` (unitless properties excepted), `content` strings auto-quote, array values join with commas, and `--` custom properties pass through verbatim.
+The *optional* string `'card'` is a label. It keeps the class readable in DevTools: `card-{hash}`.
 
-### Composing Styles
+The hash is computed from the object's contents. The same object always produces the same class on the server and client. Two components writing the same style share one rule.
 
-A second object argument composes: an object base deep-merges with the override into a single class where the override wins. A string first argument is a positional label, not a base; class strings join with [`cx`](/reference/css/cx).
+Nested keys scope under the class. `&` refers to the class itself (`&:hover` is the hover state).
+
+Plain keys become descendants (`h2` compiles to `.card-{hash} h2`).
+
+`@media`, `@container`, and `@supports` blocks all inherit the class.
+
+Values follow plain rules:
+
+- Numbers mean pixels
+- Strings pass through verbatim
+- Arrays join with commas
+- `null` and `undefined` drop.
+
+## Merging Style Objects
+
+Reach for a merge when two styles are variants of one design and you want a single class that carries both. Pass an object as the first argument and an override as the second: the result is one class, and nested selector blocks merge key by key with the override winning.
 
 ```jsx
-import { style, cx } from '@hellajs/css';
+import { style } from '@hellajs/css';
+
+// Authored once, never registered on its own: every consumer merges it
+const fieldBase = {
+  padding: '0.75rem',
+  borderRadius: '0.5rem',
+  border: '1px solid #d1d5db',
+  '&:focus': {
+    borderColor: '#3b82f6',
+  },
+};
+
+// The red border wins; the focus block merges instead of replacing
+const errorField = style(fieldBase, {
+  borderColor: '#dc2626',
+}, {
+  label: 'field-error',
+});
+
+const successField = style(fieldBase, {
+  borderColor: '#16a34a',
+}, {
+  label: 'field-success',
+});
+```
+
+The override wins on flat keys, and a nested block such as `'&:focus'` merges with the base's block rather than replacing it. Arrays and scalars replace. A merge takes its label through the options bag, not a leading string.
+
+Keep the base a plain object and register only the merged results. Each merged class is a complete rule: if the base is also registered on its own, its declarations are emitted twice, once under the base class and once inside every merge. When the two styles are independent concerns instead of variants of one design, join the class strings with [`cx`](/reference/css/cx) as shown next.
+
+## Joining Classes with cx
+
+Reach for [`cx`](/reference/css/cx) when the classes come from different places and should stay separate rules: a layout class plus a theme class, a hashed class plus an external utility, or a class plus a conditional one. It joins its arguments into one string and registers nothing.
+
+```jsx
+import { cx, style } from '@hellajs/css';
 
 const card = style('card', {
   padding: '1rem',
   borderRadius: '0.5rem',
 });
-const alert = cx(
-  card,
-  style({
-    border: '1px solid red',
-  }),
-);
-// "card-drokihk …"; the second class carries only the added declarations
 
-const denseCard = style({
-  padding: '1rem',
-  borderRadius: '0.5rem',
-}, {
-  padding: '0.5rem',
+const alert = style('alert', {
+  border: '1px solid #dc2626',
 });
-// One merged class; "jptpugw" with the override's padding
+
+const isPinned = true;
+
+// Two classes, two rules; cx joins the strings
+const alertCard = cx(card, alert, isPinned && 'pinned');
+// "card-… alert-… pinned"
 ```
+
+Falsy arguments drop, so a conditional class is just `condition && 'name'`. Objects join the keys whose values are truthy, which reads well for state-driven classes:
+
+```jsx
+import { cx } from '@hellajs/css';
+
+const isComplete = true;
+const isEditing = false;
+
+const itemClass = cx('todo', {
+  done: isComplete,
+  editing: isEditing,
+});
+// "todo done"
+```
+
+Class strings from any source compose here: [`style`](/reference/css/style) classes, [`cva`](/reference/css/cva) output, and classes from other frameworks. When the fragments depend on signals, bind them at the attribute instead so the class re-derives; the dom package covers the array and function forms in [templates](/learn/concepts/templates).
+
+## Reusing a Class as a Recipe Base
+
+A [`cva`](/reference/css/cva) recipe's `base` can be a class string instead of a style object. The string passes through verbatim, so the recipe output already carries your class and no second base rule is generated. Reach for this when one shared look should pair with several variant sets.
+
+```jsx
+import { cva, style } from '@hellajs/css';
+
+// One shared look, registered once
+const field = style('field', {
+  padding: '0.5rem',
+  borderRadius: '0.25rem',
+  border: '1px solid #d1d5db',
+});
+
+// Variants add to it; the base slot passes the class through
+const input = cva({
+  base: field,
+  variants: {
+    state: {
+      invalid: {
+        borderColor: '#dc2626',
+      },
+    },
+  },
+});
+
+<input class={input({
+  state: 'invalid',
+})} />
+// "field-… state-invalid-…"
+```
+
+String values in variant and compound slots pass through the same way, which is how external classes such as utility-framework names join a recipe. See the [cva reference](/reference/css/cva) for the full rules.
+
+## Combining Variants with compoundVariants
+
+Reach for `compoundVariants` when one style should apply only when several variants are selected together and no single variant owns it: a large danger button gets a heavier border, but neither `size` alone nor `tone` alone should.
+
+```jsx
+import { cva } from '@hellajs/css';
+
+const button = cva({
+  base: {
+    cursor: 'pointer',
+  },
+  variants: {
+    size: {
+      sm: {
+        padding: '0.25rem 0.5rem',
+      },
+      lg: {
+        padding: '0.75rem 1.5rem',
+      },
+    },
+    tone: {
+      primary: {
+        background: '#3b82f6',
+      },
+      danger: {
+        background: '#dc2626',
+      },
+    },
+  },
+  compoundVariants: [
+    {
+      size: 'lg',
+      tone: 'danger',
+      css: {
+        borderWidth: 2,
+      },
+    },
+  ],
+});
+
+<button class={button({
+  size: 'lg',
+  tone: 'danger',
+})}>
+  Delete
+</button>
+// "base-… size-lg-… tone-danger-… size-lg-tone-danger-…"
+```
+
+The compound contributes its own class only when every stated variant matches, so the pairing gets its own rule instead of being copied into each variant. Each piece stays an independent class on the element, which is what lets the selection change at the attribute without rebuilding a rule.
 
 ## Global Styles
 
-[`css`](/reference/css/css) covers what belongs to no component: resets, element defaults, `@font-face`. Top-level keys are CSS selectors and at-rules; the call registers the rules and returns an empty string on both platforms.
+[`css`](/reference/css/css) covers what belongs to no component: element defaults, `@font-face`, page-wide rules. Top-level keys are raw selectors; the call registers the rules and returns an empty string.
 
 ```jsx
-import { css } from '@hellajs/css';
+import { css, reset } from '@hellajs/css';
+
+// The shipped preflight: margins, borders, typography, form controls
+// normalized to a clean baseline
+css(reset);
 
 css({
   body: {
     margin: 0,
     fontFamily: 'system-ui, sans-serif',
   },
-  '*': {
-    boxSizing: 'border-box',
+  '@font-face': {
+    fontFamily: '"Inter"',
+    src: 'url("/fonts/inter.woff2") format("woff2")',
   },
 });
 ```
 
-All CSS `@` rules are supported (`@media`, `@keyframes`, `@font-face`, `@container`, `@supports`, `@layer`). See the [css reference](/reference/css/css) for the nesting and at-rule scoping rules.
+Declarations must sit under a selector; a bare top-level declaration throws. Every `@` rule works as a key: conditional ones (`@media`, `@container`, `@supports`) keep the scope they are nested in, definitional ones (`@keyframes`, `@font-face`, `@layer`) stay global. Full nesting and value rules live in the [css reference](/reference/css/css).
 
 ## Variant Recipes
 
-[`cva`](/reference/css/cva) maps typed variant props to a composed class string: one class per selection, generated lazily on first resolution so unselected variants never produce CSS.
+Components with visual variants (size, tone, state) get a [`cva`](/reference/css/cva) recipe. Call it with props, get a class string.
 
 ```jsx
 import { cva } from '@hellajs/css';
-
-const MEDIA = {
-  md: '(min-width: 768px)',
-};
 
 const button = cva({
   base: {
     borderRadius: '0.5rem',
     cursor: 'pointer',
   },
-  media: MEDIA,
   variants: {
     size: {
       sm: {
@@ -129,35 +273,54 @@ const button = cva({
   defaultVariants: {
     size: 'sm',
   },
-  compoundVariants: [
-    {
-      size: 'lg',
-      tone: 'danger',
-      css: {
-        fontWeight: 700,
-      },
-    },
-  ],
 });
 
-<button
-  class={button({
-    tone: 'danger',
-    size: {
-      initial: 'sm',
-      md: 'lg',
-    },
-  })}
->
+<button class={button({
+  tone: 'danger',
+  size: 'lg',
+})}>
   Delete
 </button>
 ```
 
-Responsive selections emit their class under the breakpoint's media condition, pure CSS, no listeners. Variant classes are static once resolved; reactivity rides the call site with `class={button({ size: size() })}`.
+Each selection resolves to its own hashed class, so variants stack on the element instead of competing in one rule. Selections you never make never generate CSS, and omitted props fall back to `defaultVariants`.
 
-## Reactive CSS Variables
+When the selection depends on state, call the recipe at the attribute; the class re-derives when the signal changes.
 
-[`vars`](/reference/css/vars) (formerly `cssVars`) creates CSS custom properties from signals. It returns a same-shaped proxy of `var()` references; when signals change, the declarations update through effects; no re-render, no rule rebuild.
+```jsx
+import { signal } from '@hellajs/core';
+import { cva } from '@hellajs/css';
+
+const size = signal<'sm' | 'lg'>('lg');
+
+const toggle = cva({
+  base: {
+    cursor: 'pointer',
+  },
+  variants: {
+    size: {
+      sm: {
+        padding: '0.25rem',
+      },
+      lg: {
+        padding: '0.75rem',
+      },
+    },
+  },
+});
+
+<button class={toggle({
+  size: size(),
+})}>
+  Sized by state
+</button>
+```
+
+Recipes also take a `media` map for responsive selections and `compoundVariants` for combinations. See the [cva reference](/reference/css/cva).
+
+## Reactive Theming
+
+[`vars`](/reference/css/vars) turns an object of tokens into CSS custom properties. It returns a same-shaped proxy of `var()` references; put them in any style.
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -165,35 +328,53 @@ import { style, vars } from '@hellajs/css';
 
 const theme = signal('light');
 
-const themeVars = vars({
-  button: {
-    background: () => theme() === 'dark' ? '#374151' : '#3b82f6',
-    color: '#ffffff',
-  },
+// A plain function is enough: leaves track whatever signals they read
+const isDark = () => theme() === 'dark';
+
+const tokens = vars({
+  bg: () => isDark() ? '#1a1a1a' : '#ffffff',
+  text: () => isDark() ? '#e5e7eb' : '#111827',
 });
 
-const buttonStyle = style('theme-btn', {
-  padding: '0.75rem 1.5rem',
-  border: 'none',
+const panel = style('panel', {
+  background: tokens.bg,
+  color: tokens.text,
+  padding: '1rem',
   borderRadius: '0.5rem',
-  background: themeVars.button.background,
-  color: themeVars.button.color,
-  cursor: 'pointer',
 });
 
-<button
-  class={buttonStyle}
-  on:click={() => theme(theme() === 'light' ? 'dark' : 'light')}
->
-  Toggle Theme ({theme()})
+<button class={panel} on:click={() => theme(isDark() ? 'light' : 'dark')}>
+  Toggle theme
 </button>
 ```
 
-Property values in `style()` and `css()` objects are static; function values throw. Reactive values belong in `vars()`.
+Static leaves are plain values. Function leaves re-resolve when their signals change: one custom property updates, no rule is rebuilt. This is the only reactive path, and function values inside `style` and `css` objects throw.
+
+Themes can also ride the cascade with no JavaScript state: register two sets and let CSS pick the winner.
+
+```jsx
+import { vars } from '@hellajs/css';
+
+// Light values by default
+vars({
+  bg: '#ffffff',
+  text: '#111827',
+});
+
+// Dark values when the OS prefers dark; no signals, no effects
+vars({
+  bg: '#1a1a1a',
+  text: '#e5e7eb',
+}, {
+  media: '(prefers-color-scheme: dark)',
+});
+```
+
+Scopes (`scoped: '[data-theme="dark"]'`) and prefixes (`prefix: 'app'`) are options on the call. See the [vars reference](/reference/css/vars).
 
 ## Keyframe Animations
 
-[`keyframes`](/reference/css/keyframes) registers a `@keyframes` rule and returns its content-hashed animation name (`kf-{hash}`), so hand-authored animation names cannot collide. Key order never matters: structurally equal definitions derive the same name.
+[`keyframes`](/reference/css/keyframes) registers a `@keyframes` rule and returns its name. The name is derived from the definition's content: two animations never collide, and the same definition reuses one rule.
 
 ```jsx
 import { keyframes, style } from '@hellajs/css';
@@ -217,9 +398,11 @@ const spinner = style('spinner', {
 });
 ```
 
+The name is a plain string; interpolate it into `animation` shorthands anywhere, including `css` globals and `cva` recipes.
+
 ## Server Rendering
 
-Every creator registers its rules on both platforms and returns the same value everywhere: the class, the empty string, or the proxy. On the server there is no DOM to inject into; [`cssText`](/reference/css/csstext) collects the registered text (css, style, and keyframes rules in registration order, statement-leading texts such as `@import` hoisted ahead of braced-only ones, then the `vars` buckets) for the response's single `<style>` embed. The client mirrors this order: `hella-css` is always inserted before `hella-vars`, regardless of which creator ran first, so same-specificity cross-sheet rules resolve identically on both platforms.
+On the server there is no DOM to inject into. Creators still register their rules; [`cssText`](/reference/css/csstext) collects the text for the response.
 
 ```typescript
 import { css, cssText, style, vars } from '@hellajs/css';
@@ -227,12 +410,14 @@ import { css, cssText, style, vars } from '@hellajs/css';
 const tokens = vars({
   bg: '#ffffff',
 });
+
 css({
   body: {
     margin: 0,
     backgroundColor: tokens.bg,
   },
 });
+
 const card = style('card', {
   padding: '1rem',
 });
@@ -241,37 +426,35 @@ const card = style('card', {
 const page = `<!DOCTYPE html><html><head><style id="hella-css">${cssText()}</style></head><body>…</body></html>`;
 ```
 
-`cssText()` peeks, never drains; repeated calls return the same string. Emit the tag with the `hella-css` id and hydration adopts it: the client claims the delivered rules against its own re-registrations in the same element, so no duplicate rules ship (see [cssText](/reference/css/csstext)). Without the id, hydration re-registers the same styles into a second element; the duplicated rules are identical and harmless.
+Emit the tag with the `hella-css` id and hydration adopts the delivered rules, so no duplicates ship. `cssText()` peeks, never drains: repeated calls return the same string. To mirror the client's element split, `cssText.css()` / `cssText.vars()` embed rules and variables into their own tags.
 
 ## Reactive Class Bindings
 
-The `class` attribute accepts a function or an array: both recalculate when signals change, and falsy entries drop out. This is how hashed classes compose at runtime, alongside [`cx`](/reference/css/cx) and variant recipes.
+The `class` attribute also accepts a function or an array. Both re-resolve when signals change, and falsy entries drop.
 
 ```jsx
-type Todo = { done: boolean; text: string; priority: string; editing: boolean };
-
-const TodoItem = ({ todo }: {
-  todo: () => Todo,
-}) => {
-  return (
-    <div class={[
-      'todo-item',
-      todo().done && 'completed',
-      todo().priority === 'high' && 'priority-high',
-      todo().editing && 'editing'
-    ]}>
-      {todo().text}
-    </div>
-  );
+type Todo = { done: boolean; text: string; priority: string };
+type TodoItemProps = {
+  todo: () => Todo;
 };
+
+const TodoItem = ({ todo }: TodoItemProps) => (
+  <div class={[
+    'todo-item',
+    todo().done && 'completed',
+    todo().priority === 'high' && 'priority-high',
+  ]}>
+    {todo().text}
+  </div>
+);
 ```
 
 ## Web Components and Shadow DOM
 
-The `host` option on [`style`](/reference/css/style), [`css`](/reference/css/css), and [`vars`](/reference/css/vars) redirects the generated `<style>` elements into any parent node, most commonly a shadow root. Each host gets its own sheets: the same styles injected into two hosts produce independent `<style>` elements with separate reference counting, so N web component instances never share or dedup into one sheet.
+The `host` option on `style`, `css`, and `vars` redirects the generated `<style>` element into any parent node, most commonly a shadow root you create:
 
 ```typescript
-import { css, style, vars } from '@hellajs/css';
+import { style, vars } from '@hellajs/css';
 
 const hostElement = document.createElement('my-card');
 const root = hostElement.attachShadow({
@@ -286,13 +469,31 @@ const theme = vars({
   scoped: ':host',
 });
 
-const card = style('card', {
+const title = style('title', {
   color: theme.accent,
 }, {
   host: root,
 });
-// <style> created inside the shadow root, not document.head
+
+hostElement.innerHTML = `<h2 class="${title}">Hello</h2>`;
 ```
 
-Styles injected with a host never reach `document.head`. [`removeStyle`](/reference/css/removestyle), [`removeCss`](/reference/css/removecss), and [`removeVars`](/reference/css/removevars) remove from the same host when passed the same option. See [Shadow DOM Hosts](/reference/css/css#shadow-dom-hosts) for the full web-components example.
+Sheets are per host, so component instances never share. Hosted styles never reach `document.head`, and the removers ([`removeStyle`](/reference/css/removestyle), [`removeCss`](/reference/css/removecss), [`removeVars`](/reference/css/removevars)) need the same `host` option.
 
+Custom elements the HellaJS way are [`element`](/reference/dom/element) from the dom package. Light DOM is the default, so every `style()` and `vars()` registration applies with no `host` needed:
+
+```jsx
+import { element } from '@hellajs/dom';
+import { style } from '@hellajs/css';
+
+const card = style('card', {
+  padding: '1rem',
+  borderRadius: '0.5rem',
+});
+
+element('info-card', (props: { children?: Node[] }) => (
+  <div class={card}>{props.children}</div>
+));
+```
+
+Pass `{ shadow: true }` to `element()` for encapsulation. Its render function receives props only, not the root, so pair `host` styling with a root you created yourself, as above. See [Custom Elements](/learn/concepts/custom-elements) for the element flow.

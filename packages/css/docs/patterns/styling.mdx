@@ -1,35 +1,81 @@
 # Styling
 
-Short patterns for common tasks using [`@hellajs/css`](/reference/css).
+Copy-paste recipes for common styling tasks with [`@hellajs/css`](/reference/css/style).
 
 ### Preflight Reset
 
-Register the shipped preflight object once at the app entry to normalize browser default margins, borders, typography, and form controls; component styles layer on top by specificity.
+Register the shipped preflight once at the app entry to normalize browser defaults; component styles win over it by specificity.
 
 ```typescript
-import { css, reset } from '@hellajs/css';
+import { css, reset, style } from '@hellajs/css';
 
-// App entry: defaults cleared, ready for tokens and scoped styles
+// App entry: margins, borders, typography, and form controls reset
 css(reset);
+
+// Component styles layer cleanly on top
+const card = style('card', {
+  padding: '1rem',
+  borderRadius: '0.5rem',
+});
+```
+
+### Scoped Component Styles
+
+Use [`style`](/reference/css/style) for isolated styles with nested selectors and pseudo-states; pass the returned class straight to `class`.
+
+```jsx
+import { style } from '@hellajs/css';
+
+const card = style('card', {
+  padding: '1rem',
+  borderRadius: '0.5rem',
+  backgroundColor: '#fff',
+  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+  'h2': {
+    margin: '0 0 0.5rem 0',
+  },
+  '&:hover': {
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+  },
+});
+
+<div class={card}>
+  <h2>Title</h2>
+</div>
+```
+
+### Class Composition
+
+Join class strings from any source with [`cx`](/reference/css/cx): hashed classes, recipe output, conditional fragments.
+
+```jsx
+import { cx, style } from '@hellajs/css';
+
+const card = style('card', {
+  padding: '1rem',
+});
+const isHighlighted = true;
+
+<div class={cx(
+  card,
+  isHighlighted && 'highlighted',
+)}>
+  Content
+</div>
 ```
 
 ### Variant Recipes
 
-Use [`cva`](/reference/css/cva) to drive conditional classes from typed variant props (defaults, compounds, and one class per selection), and join extra fragments with [`cx`](/reference/css/cx).
+Drive conditional classes from typed variant props with [`cva`](/reference/css/cva): defaults, compounds, and one class per selection.
 
 ```jsx
-import { cx, cva } from '@hellajs/css';
-
-const MEDIA = {
-  md: '(min-width: 768px)',
-};
+import { cva } from '@hellajs/css';
 
 const button = cva({
   base: {
     borderRadius: '0.5rem',
     cursor: 'pointer',
   },
-  media: MEDIA,
   variants: {
     size: {
       sm: {
@@ -41,10 +87,10 @@ const button = cva({
     },
     tone: {
       primary: {
-        background: 'blue',
+        background: '#3b82f6',
       },
       danger: {
-        background: 'red',
+        background: '#dc2626',
       },
     },
   },
@@ -62,75 +108,76 @@ const button = cva({
   ],
 });
 
-// Responsive: sm below 768px, lg from md up; pure CSS, no listeners
-<button class={cx(
-  button({
-    tone: 'danger',
-    size: {
-      initial: 'sm',
-      md: 'lg',
-    },
-  }),
-  'w-full',
-)}>Delete</button>
+<button class={button({
+  tone: 'danger',
+  size: 'lg',
+})}>
+  Delete
+</button>
 ```
 
-### Scoped Component Styles
+### Responsive Variants
 
-Use [`style`](/reference/css/style) to create isolated styles with nested selectors and pseudo-states. The returned class is content-hashed, pass it straight to `class`.
+Declare breakpoints once in the recipe's `media` map and select per breakpoint; the emitted classes live under media conditions, pure CSS, no listeners.
 
 ```jsx
-import { style } from '@hellajs/css';
+import { cva } from '@hellajs/css';
 
-const card = style({
-  padding: '1rem',
-  borderRadius: '0.5rem',
-  backgroundColor: '#fff',
-  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-  'h2': {
-    margin: '0 0 0.5rem 0',
+const MEDIA = {
+  md: '(min-width: 768px)',
+};
+
+const layout = cva({
+  media: MEDIA,
+  base: {
+    display: 'flex',
+    flexDirection: 'column',
   },
-  '&:hover': {
-    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+  variants: {
+    direction: {
+      row: {
+        flexDirection: 'row',
+      },
+    },
   },
-}, {
-  label: 'card',
 });
 
-<div class={card}>
-  <h2>Title</h2>
-  <p>Content</p>
+// Column below 768px, row from md up
+<div class={layout({
+  direction: {
+    md: 'row',
+  },
+})}>
+  Sidebar, content
 </div>
 ```
 
-### Reactive CSS Variables
+### Signal-Driven Theming
 
-Use [`vars`](/reference/css/vars) with signals for reactive theming.
+Use [`vars`](/reference/css/vars) with signals for theme tokens; every consumer updates through one custom-property write.
 
 ```jsx
 import { signal } from '@hellajs/core';
 import { style, vars } from '@hellajs/css';
 
 const theme = signal('light');
+
+const isDark = () => theme() === 'dark';
+
 const tokens = vars({
-  bg: () => theme() === 'dark' ? '#1a1a1a' : '#ffffff',
-  text: () => theme() === 'dark' ? '#e0e0e0' : '#333333',
+  bg: () => isDark() ? '#1a1a1a' : '#ffffff',
+  text: () => isDark() ? '#e5e7eb' : '#111827',
 });
 
-const box = style({
+const box = style('box', {
   background: tokens.bg,
   color: tokens.text,
   padding: '1rem',
-  borderRadius: '0.5rem',
-}, {
-  label: 'box',
 });
 
-<div class={box}>
-  <button on:click={() => theme(theme() === 'dark' ? 'light' : 'dark')}>
-    Toggle Theme
-  </button>
-</div>
+<button class={box} on:click={() => theme(isDark() ? 'light' : 'dark')}>
+  Toggle theme
+</button>
 ```
 
 ### Multi-Scope Theming
@@ -163,7 +210,9 @@ effect(() => {
 });
 ```
 
-For a theme that follows the OS setting instead of app state, pass `media` to [`vars`](/reference/css/vars): the declarations live under `@media (prefers-color-scheme: dark)` with no signals, and the browser picks the winner:
+### OS-Driven Dark Mode
+
+For a theme that follows the system setting instead of app state, pass `media` to [`vars`](/reference/css/vars): the declarations live under a media condition and the browser picks the winner.
 
 ```jsx
 import { vars } from '@hellajs/css';
@@ -174,7 +223,7 @@ vars({
   text: '#111827',
 });
 
-// Dark values when the OS prefers dark; pure CSS, no JS state
+// Dark values when the OS prefers dark; no signals, no effects
 vars({
   bg: '#1a1a1a',
   text: '#e5e7eb',
@@ -185,12 +234,12 @@ vars({
 
 ### Responsive Styles
 
-Use `@media` queries inside [`style`](/reference/css/style); the condition inherits the generated class.
+Use `@media` inside [`style`](/reference/css/style); the condition inherits the generated class.
 
 ```jsx
 import { style } from '@hellajs/css';
 
-const grid = style({
+const grid = style('grid', {
   display: 'grid',
   gridTemplateColumns: '1fr',
   gap: '1rem',
@@ -200,14 +249,12 @@ const grid = style({
   '@media (min-width: 1024px)': {
     gridTemplateColumns: '1fr 1fr 1fr',
   },
-}, {
-  label: 'grid',
 });
 ```
 
 ### Keyframe Animations
 
-Use [`keyframes`](/reference/css/keyframes) for animation definitions; the returned name is content-hashed, so it cannot collide with another animation.
+Use [`keyframes`](/reference/css/keyframes) for animation definitions; the returned name is content-hashed and cannot collide.
 
 ```jsx
 import { keyframes, style } from '@hellajs/css';
@@ -221,61 +268,56 @@ const spin = keyframes({
   },
 });
 
-const spinner = style({
+const spinner = style('spinner', {
   width: '2rem',
   height: '2rem',
   border: '3px solid #e5e7eb',
   borderTopColor: '#3b82f6',
   borderRadius: '50%',
   animation: `${spin} 0.8s linear infinite`,
-}, {
-  label: 'spinner',
 });
 ```
 
 ### Conditional Styles
 
-Use `undefined` to omit properties from the output. Style objects are static; resolve conditions before calling.
+Use `undefined` to omit properties from the output. Style objects are static; resolve conditions before the call.
 
 ```jsx
 import { style } from '@hellajs/css';
 
 const isActive = true;
 
-const button = style({
+const tab = style('tab', {
   padding: '0.5rem 1rem',
-  background: '#3b82f6',
-  color: 'white',
-  border: isActive ? '2px solid #1d4ed8' : undefined,
-}, {
-  label: 'button',
+  borderBottom: isActive ? '2px solid #3b82f6' : undefined,
 });
 ```
 
-For classes that change at runtime, resolve a [`cva`](/reference/css/cva) recipe per render (`class={button({ size: size() })}`), and for style values that react to signals, use [`vars`](/reference/css/vars).
+For classes that change at runtime, resolve a [`cva`](/reference/css/cva) recipe at the call site; for style values that track signals, author the value as a [`vars`](/reference/css/vars) token.
 
 ### Style Cleanup
 
-Use [`removeStyle`](/reference/css/removestyle) to clean up styles when they are no longer needed. Pass the same object and options used to create the style. Rules are reference-counted; removing a DOM node that used the class does not decrement the count, so call `removeStyle` for styles tied to a component's lifetime, and reserve [`resetCss`](/reference/css/resetcss) for app-level teardown.
+Use [`removeStyle`](/reference/css/removestyle) with the same arguments to drop styles tied to a component's lifetime. Rules are reference-counted: removing a DOM node does not decrement the count, so call it yourself.
 
 ```jsx
 import { removeStyle, style } from '@hellajs/css';
 
 const styles = {
-  color: 'red',
+  color: '#dc2626',
 };
 const className = style(styles, {
-  label: 'test',
+  label: 'error',
 });
 
+// When the owning component goes away
 removeStyle(styles, {
-  label: 'test',
+  label: 'error',
 });
 ```
 
 ### CSS Variable Cleanup
 
-Use [`removeVars`](/reference/css/removevars) to clean up reactive CSS variables when a component unmounts. Each [`vars`](/reference/css/vars) call increments a reference count; `removeVars` decrements it. Variables are removed from the stylesheet only when the count reaches zero.
+Use [`removeVars`](/reference/css/removevars) to dispose a [`vars`](/reference/css/vars) registration. Reactive entries dispose their effect at zero references.
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -287,14 +329,15 @@ const tokens = {
 };
 
 vars(tokens);  // refCount = 1
-removeVars(tokens);  // refCount = 0, effect disposed, vars removed
 
-color('blue');  // No longer tracked; no stylesheet update
+removeVars(tokens);  // refCount = 0, effect disposed, declaration dropped
+
+color('blue');  // No stylesheet update; no longer tracked
 ```
 
 ### SSR Critical CSS
 
-Every creator registers on both platforms; on the server, collect everything registered into a single `<style>` embed per response with [`cssText`](/reference/css/csstext).
+On the server, collect everything registered into one `<style>` embed per response with [`cssText`](/reference/css/csstext). The id lets hydration adopt the delivered rules instead of duplicating them.
 
 ```typescript
 import { css, cssText, style, vars } from '@hellajs/css';
@@ -308,16 +351,13 @@ css({
     margin: 0,
   },
 });
-const card = style({
+const card = style('card', {
   padding: '1rem',
   color: tokens.accent,
-}, {
-  label: 'card',
 });
 
-// Per response; one embed collects the css, style, and vars rules.
-// The id lets hydration adopt the delivered rules instead of duplicating them
+// Per response; one embed collects the css, style, keyframes, and vars rules
 const page = `<!DOCTYPE html><html><head><style id="hella-css">${cssText()}</style></head><body>…</body></html>`;
 ```
 
-`cssText()` peeks, never drains; repeated calls return the same string. To mirror the client's two-element split, embed `cssText.css()` and `cssText.vars()` into their own `hella-css` / `hella-vars` tags instead ([cssText](/reference/css/csstext)).
+To mirror the client's two-element split, embed `cssText.css()` and `cssText.vars()` into their own `hella-css` / `hella-vars` tags ([cssText](/reference/css/csstext)).

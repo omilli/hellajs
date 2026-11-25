@@ -1,6 +1,6 @@
 ## CSS
 
-Type-safe CSS-in-JS with runtime style generation and automatic memory management. `style()` returns a content-hashed class, the same string on client and server; `css()` registers explicit globals; `cva()` layers typed variant recipes over them and `cx()` joins class fragments; `vars()` drives reactive theming; `keyframes()` hashes animation names. Every creator pairs with a reference-counted remove call, `cssText()` collects the registered text for server rendering, and `cssText.css()` / `cssText.vars()` split it into per-sheet adoptable tags.
+Type-safe CSS-in-JS with a tiny runtime: [`style`](/reference/css/style) scopes declarations under a content-hashed class, [`css`](/reference/css/css) registers globals, [`cva`](/reference/css/cva) builds typed variant recipes, [`vars`](/reference/css/vars) drives reactive theming, and [`keyframes`](/reference/css/keyframes) hashes animation names. Every creator returns the same value on client and server, so server-rendered HTML and hydrated markup agree without coordination. [`cssText`](/reference/css/csstext) collects the registered rules for server rendering.
 
 ### Installation
 
@@ -10,77 +10,62 @@ npm install @hellajs/core @hellajs/css
 
 ### Example
 
+A themed button in three moves: tokens live in [`vars`](/reference/css/vars), declarations in [`style`](/reference/css/style), and the returned class lands straight on the element.
+
 ```jsx
 import { signal } from '@hellajs/core';
-import { css, cssText, cva, style, vars } from '@hellajs/css';
+import { style, vars } from '@hellajs/css';
 
-// Globals: css() registers on both platforms and returns ""
-css({
-  body: {
-    margin: 0,
-    fontFamily: 'system-ui, sans-serif',
-  },
-});
-
-// Reactive tokens: vars() returns a var() proxy; client and server alike
 const darkMode = signal(false);
+
+// A var() proxy; values re-resolve when their signals change
 const tokens = vars({
   accent: () => darkMode() ? '#93c5fd' : '#3b82f6',
 });
 
-// The class is the identity: style() returns the same string on both platforms
-const card = style({
-  padding: '1rem',
-  backgroundColor: '#f8f9fa',
-}, {
-  label: 'card',
-});
-
-// Variant recipes: cva() resolves typed props to a composed class string
-const button = cva({
-  base: {
-    borderRadius: '0.5rem',
-    cursor: 'pointer',
-  },
-  variants: {
-    tone: {
-      primary: {
-        background: tokens.accent,
-      },
-      danger: {
-        background: '#dc2626',
-      },
-    },
+// A class name derived from the object's content: "button-{hash}"
+const button = style('button', {
+  padding: '0.5rem 1rem',
+  borderRadius: '0.5rem',
+  border: 'none',
+  background: tokens.accent,
+  color: 'white',
+  cursor: 'pointer',
+  '&:hover': {
+    opacity: 0.9,
   },
 });
 
-// On the server, cssText.css() / cssText.vars() split the registrations for
-// two adoptable tags; hydration claims the delivered rules instead of re-injecting them
-const head = `<style id="hella-css">${cssText.css()}</style>
-<style id="hella-vars">${cssText.vars()}</style>`;
+const ThemeToggle = () => (
+  <button class={button} on:click={() => darkMode(!darkMode())}>
+    Toggle theme
+  </button>
+);
 ```
+
+Clicking the button rewrites one custom property on `:root`; no rule is rebuilt and no component re-renders.
 
 ### API
 
-- **[css](/reference/css/css)**: Create global styles with nested selectors and pseudo-states
-- **[reset](/reference/css/reset)**: Preflight reset sheet: register once with `css(reset)` to normalize browser defaults
 - **[style](/reference/css/style)**: Scoped styles returning a content-hashed class name, identical on client and server
-- **[cva](/reference/css/cva)**: Variant recipes: typed props, responsive breakpoints, and compounds resolving to a composed class string
-- **[cx](/reference/css/cx)**: Clsx-compatible class-name joiner with no styling side effects
-- **[vars](/reference/css/vars)**: Reactive CSS custom properties that update when signals change (formerly `cssVars`)
-- **[keyframes](/reference/css/keyframes)**: Hashed, collision-free `@keyframes` definitions returning an animation name
-- **[cssText](/reference/css/csstext)**: Collect the registered CSS text (css, style, keyframes, and vars), the server-side `<style>` source; `cssText.css()` / `cssText.vars()` split it into per-sheet adoptable tags
-- **[removeCss](/reference/css/removecss)**: Manually remove a generated stylesheet
-- **[removeStyle](/reference/css/removestyle)**: Manually remove a `style()` registration
-- **[removeVars](/reference/css/removevars)**: Remove specific CSS variable declarations with reference counting
-- **[removeKeyframes](/reference/css/removekeyframes)**: Manually remove a `keyframes()` registration
-- **[resetCss](/reference/css/resetcss)**: Remove all generated stylesheets
-- **[resetVars](/reference/css/resetvars)**: Remove all generated CSS variable stylesheets
+- **[css](/reference/css/css)**: Global styles with nested selectors and at-rules
+- **[vars](/reference/css/vars)**: Reactive CSS custom properties that update when signals change
+- **[cva](/reference/css/cva)**: Variant recipes with typed props, responsive breakpoints, and compounds
+- **[cx](/reference/css/cx)**: Class-name joiner with no styling side effects
+- **[keyframes](/reference/css/keyframes)**: Collision-free `@keyframes` definitions returning a hashed animation name
+- **[reset](/reference/css/reset)**: Preflight reset sheet; register once with `css(reset)` to normalize browser defaults
+- **[cssText](/reference/css/csstext)**: The server-side `<style>` source; `cssText.css()` / `cssText.vars()` split it into per-sheet tags
+- **[removeStyle](/reference/css/removestyle)**: Remove a `style()` registration
+- **[removeCss](/reference/css/removecss)**: Remove a `css()` registration
+- **[removeVars](/reference/css/removevars)**: Remove a `vars()` registration
+- **[removeKeyframes](/reference/css/removekeyframes)**: Remove a `keyframes()` registration
+- **[resetCss](/reference/css/resetcss)**: Clear every css-side registration
+- **[resetVars](/reference/css/resetvars)**: Clear every vars registration and reactive effect
 
 ### Concepts
 
-- **[Styling](/learn/concepts/styling)**: Traditional CSS classes and CSS-in-JS approaches
+- **[Styling](/learn/concepts/styling)**: The styling model end to end: scoped styles, theming, variants, server rendering
 
 ### Patterns
 
-- **[Styling](/learn/patterns/styling)**: Scoped styles, themes, reactive CSS variables
+- **[Styling](/learn/patterns/styling)**: Copy-paste recipes: resets, themes, responsive variants, SSR critical CSS
