@@ -57,7 +57,7 @@ Usage in HTML:
 
 ## Consuming Third-Party Custom Elements
 
-Custom elements you consume (rather than author with [`element`](/reference/dom/element)) get property pass-through: on a hyphenated tag, a prop whose key exists as a property on the element is assigned to that property directly (objects and arrays included, by reference) instead of stringifying through `setAttribute`.
+Custom elements you consume (rather than author with `element`) get property pass-through: on a hyphenated tag, a prop whose key exists as a property on the element is assigned to that property directly (objects and arrays included, by reference) instead of stringifying through `setAttribute`.
 
 ```jsx
 import { mount } from "@hellajs/dom";
@@ -77,4 +77,4 @@ When a custom element is disconnected from the DOM, all effects are disposed and
 
 **Important:** Custom elements render to light DOM by default; pass `{ shadow: true }` for style encapsulation (see [Shadow DOM](#shadow-dom)).
 
-See [`element`](/reference/dom/element) for full API details.
+See `element` for full API details.

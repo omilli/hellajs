@@ -15,7 +15,7 @@ onError((error, context) => {
 });
 ```
 
-[`onError(null)`](/reference/dom/onerror) removes all registered handlers.
+`onError(null)` removes all registered handlers.
 
 ## Element Error Configuration
 
@@ -60,4 +60,4 @@ The error context includes `phase`, `element`, `event`, `config`, and `reset`. W
 
 The error system prevents infinite loops when error handlers themselves throw errors.
 
-See [`onError`](/reference/dom/onerror) and [`error:`](/reference/dom/error) for full details.
+See `onError` and [`error:`](/reference/dom/error) for full details.

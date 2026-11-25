@@ -178,7 +178,7 @@ When the passed element is detached (not in the document yet), `text`, `attr`, `
 
 ### Single Element Only
 
-`$ref` returns the **first** matching element. For multiple elements with auto-watching for dynamically added nodes, use [`$collection`](/reference/dom/$collection).
+`$ref` returns the **first** matching element. For multiple elements with auto-watching for dynamically added nodes, use `$collection`.
 
 ```js
 // Only selects the FIRST .item
@@ -204,4 +204,4 @@ ref.text("Hello");
 ref.on("click", () => console.log("clicked"));
 ```
 
-An element passed directly is always resolved, so it never starts watching. This differs from [`$collection`](/reference/dom/$collection), which continuously watches for all matching elements.
+An element passed directly is always resolved, so it never starts watching. This differs from `$collection`, which continuously watches for all matching elements.

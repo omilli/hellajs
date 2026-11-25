@@ -47,7 +47,7 @@ function href<T extends string>(
 
 ### Typed Params
 
-Param names are inferred from the pattern via `ExtractParams<T>`, the same typing as [`navigate`](/reference/router/navigate). A wrong key fails at compile time; no codegen, no route-tree build step.
+Param names are inferred from the pattern via `ExtractParams<T>`, the same typing as `navigate`. A wrong key fails at compile time; no codegen, no route-tree build step.
 
 ```typescript
 // ❌ Compile error; the pattern declares `id`, not `userId`
@@ -59,7 +59,7 @@ href('/users/:id', { params: { id: '123' } });
 
 ### Substitution Semantics
 
-Identical to [`navigate`](/reference/router/navigate); both call the same builder:
+Identical to `navigate`; both call the same builder:
 
 - `:param` values are **URL-encoded automatically** (`'hello world'` → `hello%20world`)
 - `"*"` wildcard values are inserted **raw**; they may contain `/`
@@ -80,7 +80,7 @@ href('/users/:id'); // '/users/'
 
 ### Base Path
 
-`href()` returns **logical** paths, the same targets [`navigate`](/reference/router/navigate) accepts. In history mode with a `base` configured, a physical anchor `href` carries the base prefix (middle-click and hard reload hit the server):
+`href()` returns **logical** paths, the same targets `navigate` accepts. In history mode with a `base` configured, a physical anchor `href` carries the base prefix (middle-click and hard reload hit the server):
 
 ```jsx
 // router({ base: '/app', ... })

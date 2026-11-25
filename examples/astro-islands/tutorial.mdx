@@ -137,9 +137,9 @@ export default function Counter({ initial = 0 }: CounterProps) {
 - **[`signal`](/reference/core/signal)`(initial)`**: Holds the count. `initial` arrives as a prop from the `.astro` page
 - **`{count()}`**: The compiler wraps child expressions that call signals into reactive thunks, so the button label tracks `count` without manual wiring
 - **`on:click`**: The HellaJS event prefix. Handlers attach through global event delegation after hydration
-- **[`style`](/reference/css/style)`({ ... })`**: Declares the button's class in the module, above the component; `class={counterBtn}` applies the returned name. The name is content-hashed, and the hash derives from the rule text, so the server and the client always produce the same class name
+- **`style``({ ... })`**: Declares the button's class in the module, above the component; `class={counterBtn}` applies the returned name. The name is content-hashed, and the hash derives from the rule text, so the server and the client always produce the same class name
 
-When Astro renders the page, the integration's server entry runs `Counter({ initial: 0 })` and stringifies the resulting tree with [`ssr`](/reference/ssr/ssr). Reactive regions are wrapped in `<!--[-->...<!--]-->` markers. On the client, Astro's island runtime loads the component and [`hydrate`](/reference/dom/hydrate) re-runs it against the existing server DOM, attaching state and handlers in place instead of replacing the HTML.
+When Astro renders the page, the integration's server entry runs `Counter({ initial: 0 })` and stringifies the resulting tree with [`ssr`](/reference/ssr/ssr). Reactive regions are wrapped in `<!--[-->...<!--]-->` markers. On the client, Astro's island runtime loads the component and `hydrate` re-runs it against the existing server DOM, attaching state and handlers in place instead of replacing the HTML.
 
 Start the dev server and open the page:
 
@@ -246,7 +246,7 @@ export default function NameSync() {
 
 **Code Explanation**
 
-- **[`$ref`](/reference/dom/$ref)`("#name-input")`**: Queries `document` at call time and wraps the first match in a chainable reference. Operations on an element that doesn't exist yet queue until it appears
+- **`$ref``("#name-input")`**: Queries `document` at call time and wraps the first match in a chainable reference. Operations on an element that doesn't exist yet queue until it appears
 - **`.text(name)`**: On a form element, text targets `value`, so the field tracks the `name` signal
 - **`.on("input", ...)`**: Attaches a delegated listener. Every keystroke writes the field's value back into `name`, closing the loop with `.text`
 - **`.text(() => ...)`** on `#greeting`: Binds a reactive function to the element's text. The greeting updates whenever `name` changes
@@ -295,7 +295,7 @@ css({
 
 **Code Explanation**
 
-- **[`css`](/reference/css/css)`({...})`**: Registers global rules. The `#name-input` selector reaches HTML that Astro itself rendered, outside any island
+- **`css``({...})`**: Registers global rules. The `#name-input` selector reaches HTML that Astro itself rendered, outside any island
 - **Frontmatter folding**: The integration evaluates this call at build, folds it to a no-op (its rules are already collected), and injects an import for the page's collected CSS. Astro bundles that import as a page-scoped style tag, so none of these rules ship to the client
 - **Import-graph collection**: Starting from the page, the integration follows the imports the server module actually carries, so `Counter`'s co-located `style()` call is collected and spliced into a `<style id="hella-css">` in the page's head; the server-rendered button arrives styled at first paint. `MouseTracker` never joins that module (`client:only` skips the server entirely), so its call stays runtime-only. At hydration the islands' re-registrations claim the delivered rules in place, so nothing duplicates
 

@@ -134,7 +134,7 @@ router({
 });
 ```
 
-While the guard is in flight, [`route`](/reference/router/route)`().pending` is `true`; render a loading state off it (see [Pending State](/reference/router/route#pending-state)); the handler runs only after the guard settles, so no handler-side revalidation is needed.
+While the guard is in flight, `route``().pending` is `true`; render a loading state off it (see [Pending State](/reference/router/route#pending-state)); the handler runs only after the guard settles, so no handler-side revalidation is needed.
 
 ### Nested Routes
 
@@ -167,7 +167,7 @@ router({
 
 ### Query Parameter Handling
 
-Query parameters are parsed automatically and passed as the second argument. Pass query strings with the `query` option in [`navigate`](/reference/router/navigate).
+Query parameters are parsed automatically and passed as the second argument. Pass query strings with the `query` option in `navigate`.
 
 ```jsx
 import { router, navigate } from '@hellajs/router';
@@ -288,7 +288,7 @@ router({
 
 ### Active Links
 
-Use [`route`](/reference/router/route)`().active()` to highlight the current section in a nav bar. The predicate reads route().path reactively and uses ancestor semantics: a parent link stays lit while a child route is active.
+Use `route``().active()` to highlight the current section in a nav bar. The predicate reads route().path reactively and uses ancestor semantics: a parent link stays lit while a child route is active.
 
 ```jsx
 import { router, route } from '@hellajs/router';
@@ -328,7 +328,7 @@ const Nav = () => (
 
 ### Breadcrumbs
 
-Render a breadcrumb trail from [`route`](/reference/router/route)`().crumbs`. Each crumb's `path` is a linkable href; `segment` keys into a label dictionary.
+Render a breadcrumb trail from `route``().crumbs`. Each crumb's `path` is a linkable href; `segment` keys into a label dictionary.
 
 ```jsx
 import { router, route } from '@hellajs/router';
@@ -396,11 +396,11 @@ const App = () => (
 export { routes, App, notFound };
 ```
 
-The view-signal style is the isomorphic handler form: the same handlers fire on the server (driven by [`router`](/reference/router/router)`({ url })`) and on the client (driven by [`router`](/reference/router/router)`({ routes })` + [`hydrate`](/reference/dom/hydrate)). The `() => mount(...)` style is client-only: [`mount`](/reference/dom/mount) needs a document and throws on the server.
+The view-signal style is the isomorphic handler form: the same handlers fire on the server (driven by `router``({ url })`) and on the client (driven by `router``({ routes })` + [`hydrate`](/reference/dom/hydrate)). The `() => mount(...)` style is client-only: [`mount`](/reference/dom/mount) needs a document and throws on the server.
 
 ### Server: ssr()
 
-[`ssr`](/reference/ssr/ssr) is synchronous, so resolve the route before stringifying: pass the request URL via the `url` option, the full request URL (`req.url`) or a path (`pathname + search`); see [`router`](/reference/router/router) for `url` semantics.
+[`ssr`](/reference/ssr/ssr) is synchronous, so resolve the route before stringifying: pass the request URL via the `url` option, the full request URL (`req.url`) or a path (`pathname + search`); see `router` for `url` semantics.
 
 ```jsx
 import { createServer } from 'node:http';
@@ -423,7 +423,7 @@ createServer((req, res) => {
 
 ### Server: ssr.async()
 
-For server-fetched data, return a Promise from a getter child; [`ssr.async`](/reference/ssr/ssr#async) awaits it in tree order. Everything else is identical to the [`ssr`](/reference/ssr/ssr) recipe.
+For server-fetched data, return a Promise from a getter child; [`ssr.async`](/reference/ssr/ssr#async) awaits it in tree order. Everything else is identical to the `ssr` recipe.
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -495,14 +495,14 @@ createServer((req, res) => {
 }).listen(3000);
 ```
 
-Streamed [`<Suspense>`](/reference/dom/suspense) regions stage their resolved children in `<template>` elements; [`hydrate`](/reference/dom/hydrate) swaps each staged template in automatically, so the streamed and sync paths share one client entry: `router({ routes })` (no `url` option) resolves `window.location` synchronously, and [`hydrate`](/reference/dom/hydrate) adopts the existing nodes instead of rebuilding them.
+Streamed `<Suspense>` regions stage their resolved children in `<template>` elements; `hydrate` swaps each staged template in automatically, so the streamed and sync paths share one client entry: `router({ routes })` (no `url` option) resolves `window.location` synchronously, and `hydrate` adopts the existing nodes instead of rebuilding them.
 
 ### Keep Handlers Pure
 
-Route handlers should be pure state-setters (`() => currentView(<View />)`). Put side effects (analytics, subscriptions, `localStorage`) in component [`effect`](/reference/core/effect) bodies, not in the handler: [`ssr`](/reference/ssr/ssr) walks the tree once and never flushes the scheduler, so effects do not run during the server render, only on the client after [`hydrate`](/reference/dom/hydrate). The initial route's handler fires on both the server render and the client hydrate, harmless for a pure setter, visible for an impure one.
+Route handlers should be pure state-setters (`() => currentView(<View />)`). Put side effects (analytics, subscriptions, `localStorage`) in component [`effect`](/reference/core/effect) bodies, not in the handler: `ssr` walks the tree once and never flushes the scheduler, so effects do not run during the server render, only on the client after `hydrate`. The initial route's handler fires on both the server render and the client hydrate, harmless for a pure setter, visible for an impure one.
 
 ### Concurrency
 
-Synchronous [`ssr`](/reference/ssr/ssr) is concurrency-safe: [`router`](/reference/router/router)`({ url })` + the render is one synchronous block with no `await`, so no second request can interleave and overwrite the router's module-level signals mid-render. [`ssr.async`](/reference/ssr/ssr#async) and [`ssr.stream`](/reference/ssr/ssr#stream) yield at each awaited Promise; they stay correct while every shared-signal read (the router's [`route`](/reference/router/route)`()`, your `currentView`) happens before the first `await` in tree order. Full safety under arbitrary streaming concurrency needs a router instance per request; revisit it only when a real concurrent-streaming workload demands it.
+Synchronous `ssr` is concurrency-safe: `router``({ url })` + the render is one synchronous block with no `await`, so no second request can interleave and overwrite the router's module-level signals mid-render. `ssr.async` and `ssr.stream` yield at each awaited Promise; they stay correct while every shared-signal read (the router's `route``()`, your `currentView`) happens before the first `await` in tree order. Full safety under arbitrary streaming concurrency needs a router instance per request; revisit it only when a real concurrent-streaming workload demands it.
 
-One consequence of the synchronous server resolution: async guards cannot block on the server. A `Promise`-returning `before` proceeds immediately (only its rejection is logged), so [`route`](/reference/router/route)`().pending` stays `false` (see [Pending State](/reference/router/route#pending-state)); keep server-gating guards synchronous and do async data work in [`ssr.async`](/reference/ssr/ssr#async) children instead.
+One consequence of the synchronous server resolution: async guards cannot block on the server. A `Promise`-returning `before` proceeds immediately (only its rejection is logged), so `route``().pending` stays `false` (see [Pending State](/reference/router/route#pending-state)); keep server-gating guards synchronous and do async data work in `ssr.async` children instead.

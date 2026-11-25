@@ -115,7 +115,7 @@ mount(
 
 ### Element-Level Fallbacks Come First
 
-An element's own [`error:fallback`](/reference/dom/error) handles its subtree's errors; reach it from the global handler through `context.config.fallback`. The full element-side contract (fallback, category, boundaries, config resolution) lives in the [`error:`](/reference/dom/error) doc.
+An element's own [`error:fallback`](/reference/dom/error) handles its subtree's errors; reach it from the global handler through `context.config.fallback`. The full element-side contract (fallback, category, boundaries, config resolution) lives in the `error:` doc.
 
 ```jsx
 onError((error, context) =>

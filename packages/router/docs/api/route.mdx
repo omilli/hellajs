@@ -256,7 +256,7 @@ effect(() => {
 
 ### Atomic Updates
 
-Every navigation, programmatic ([`navigate`](/reference/router/navigate)), browser back/forward (`popstate`), or hash change (`hashchange`), writes the full resolved route into the [`route`](/reference/router/route) signal in a single update. `path`, `params`, `query`, `handler`, `meta`, and `crumbs` always describe the same matched route.
+Every navigation, programmatic ([`navigate`](/reference/router/navigate)), browser back/forward (`popstate`), or hash change (`hashchange`), writes the full resolved route into the `route` signal in a single update. `path`, `params`, `query`, `handler`, `meta`, and `crumbs` always describe the same matched route.
 
 ```typescript
 import { effect } from '@hellajs/core';

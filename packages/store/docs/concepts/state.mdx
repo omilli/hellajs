@@ -4,7 +4,7 @@ Signals are the foundation for all reactive state in HellaJS. Use them directly 
 
 ## Creating Stores
 
-A [`store`](/reference/store/store) converts a plain object into deeply reactive state where each property is an independently reactive signal. Only the specific properties that change trigger re-computation.
+A `store` converts a plain object into deeply reactive state where each property is an independently reactive signal. Only the specific properties that change trigger re-computation.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -32,7 +32,7 @@ A store keeps one identity for its lifetime: update it in place (property calls 
 
 ## What Stores Provide
 
-Beyond basic get/set, stores offer several capabilities, each covered in a section below or in the [`store`](/reference/store/store) reference.
+Beyond basic get/set, stores offer several capabilities, each covered in a section below or in the `store` reference.
 
 - **Readonly**: Restrict specific properties or the entire store to read-only access, enforced with throwing guards at runtime and getter-only types.
 - **Snapshots**: Get a plain object representation of the entire store state. Reactive: recomputes when any property changes.
@@ -259,7 +259,7 @@ Prefer the draft path for fine-grained array edits and reserve `'structural'` fo
 
 ### `PartialDeep<T>`
 
-Recursive optional mapping used by [`$update()`](/reference/store/store#update).
+Recursive optional mapping used by `$update()`.
 
 ```typescript
 type PartialDeep<T> = {
@@ -427,7 +427,7 @@ app.$snapshot();      // { count: 0, tags: ['a'] }; runtime sees the key, app's 
 
 When the future keys are known at creation, declare them optional in the type parameter instead: `store<{ count: number; tags?: string[] }>({ count: 0 })` grows on the same binding, reads stay `string[] | undefined` and use optional chaining (`appStore.tags?.()` is `undefined` until the first write materializes the property), and draft additions of declared keys type-check. Optional declaration works for leaf and array values; nested future objects need placeholder values (`store({ user: { name: '' } })`) or the returned reference, because an optional plain-object member types as a leaf signal instead of a nested store.
 
-Plain-object values become nested stores, middleware and [write equality](#write-equality) are keyed by the declared shape (declare a key in the initial object or type parameter when it needs either), and [`persistStore`](/reference/store/persiststore) materializes persisted keys beyond the initial shape on hydration. See [Growing Stores](/reference/store/store#growing-stores) for the full contract.
+Plain-object values become nested stores, middleware and [write equality](#write-equality) are keyed by the declared shape (declare a key in the initial object or type parameter when it needs either), and `persistStore` materializes persisted keys beyond the initial shape on hydration. See [Growing Stores](/reference/store/store#growing-stores) for the full contract.
 
 ### Non-Writable Properties
 

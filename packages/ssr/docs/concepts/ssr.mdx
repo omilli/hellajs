@@ -22,7 +22,7 @@ Because no DOM is involved, `ssr` runs in Bun, Node, Deno, and workers alike.
 
 ## Zero Runtime Dependencies
 
-`ssr` imports nothing at runtime from any `@hellajs/*` package; the [`HellaNode`](/reference/dom) import is type-only and erased. This keeps the server bundle minimal and lets `ssr` operate whether or not the other packages are installed.
+`ssr` imports nothing at runtime from any `@hellajs/*` package; the `HellaNode` import is type-only and erased. This keeps the server bundle minimal and lets `ssr` operate whether or not the other packages are installed.
 
 ## Control Flow on the Server
 
@@ -44,7 +44,7 @@ ssr(<main>{raw('<h1>Hi</h1>')}</main>);
 
 The shipped HTML is the source of truth. The client can either hydrate the full tree or enhance the static HTML selectively.
 
-- [`hydrate`](/reference/dom/hydrate) re-executes the component tree against the existing DOM, locating each `<!--[-->…<!--]-->` marker region and attaching effects/handlers/state without replacing it. Pass the same node the server passed to `ssr`; reactive state must initialize to the server-rendered values. See [Hydration](/learn/concepts/hydration).
+- `hydrate` re-executes the component tree against the existing DOM, locating each `<!--[-->…<!--]-->` marker region and attaching effects/handlers/state without replacing it. Pass the same node the server passed to `ssr`; reactive state must initialize to the server-rendered values. See [Hydration](/learn/concepts/hydration).
 - Bind individual existing server-rendered nodes into reactivity with [`$ref`](/reference/dom/$ref) and [`$collection`](/reference/dom/$collection).
 - Mount a reactive island into an empty placeholder the template left for it.
 
@@ -77,6 +77,6 @@ const { user } = JSON.parse(document.getElementById('hella-data').textContent);
 
 `ssr` walks the tree once. Reactive values are read at their current value with no effect scheduling or batching. Resolve server-side data before building the tree.
 
-For data that must be fetched during render, [`ssr.async`](/reference/ssr/ssr#async) is the async counterpart: it awaits any Promise a resolved value returns, so a getter can fetch directly. Output and markers are identical to `ssr`; [`hydrate`](/reference/dom/hydrate) consumes either unchanged.
+For data that must be fetched during render, [`ssr.async`](/reference/ssr/ssr#async) is the async counterpart: it awaits any Promise a resolved value returns, so a getter can fetch directly. Output and markers are identical to `ssr`; `hydrate` consumes either unchanged.
 
-[`ssr.stream`](/reference/ssr/ssr#stream) streams the same walk as `ReadableStream` chunks, flushing the static prefix before each awaited Promise (progressive paint), and [`doc`](/reference/ssr/doc) wraps that stream in a full document (head, `lang`, and a mount-point wrapper) without collecting it.
+`ssr.stream` streams the same walk as `ReadableStream` chunks, flushing the static prefix before each awaited Promise (progressive paint), and `doc` wraps that stream in a full document (head, `lang`, and a mount-point wrapper) without collecting it.

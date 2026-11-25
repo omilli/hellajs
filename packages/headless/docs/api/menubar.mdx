@@ -27,7 +27,7 @@ function menu(options?: MenubarMenuOptions): MenuComponents
 
 - `options.value`: This menu's id in the bar's open-menu value; a generated id stands in when omitted.
 - `options.open`, `options.onOpenChange`: The same controlled-or-internal open state as [`menu`](/headless/menu).
-- **Returns**: The stateful menu pair (`Trigger`, `Content`); the rows come from the static `MenuRows`, and nested submenus from [`menuSub`](/headless/menu).
+- **Returns**: The stateful menu pair (`Trigger`, `Content`); the rows come from the static `MenuRows`, and nested submenus from `menuSub`.
 
 ## Key Concepts
 
@@ -41,7 +41,7 @@ Inside an open bar menu, both horizontal arrows hand off to the adjacent trigger
 
 ### Bar Menu Content Defaults
 
-A bar menu's content drops below its trigger with a wider gap (`sideOffset` 8, `alignOffset` -4) and the same stateful pair as [`menu`](/headless/menu), with `menuSub()` for nested submenus.
+A bar menu's content drops below its trigger with a wider gap (`sideOffset` 8, `alignOffset` -4) and the same stateful pair as `menu`, with `menuSub()` for nested submenus.
 
 ## Important Considerations
 

@@ -70,7 +70,7 @@ The pairing is uniform across the package: `open`/`onOpenChange` on the layer fa
 
 ## Compose Past the Defaults
 
-Each component takes the override props for its role, so a partially composed tree stays consistent. A [`tabs`](/headless/tabs) trigger accepts `active` and `onActivate` to replace the factory's defaults; a menu checkbox item takes a controlled `checked`; a select's `Content` accepts `side`, `align`, and an `anchor` override. Unspecified util falls back to the closure, so you compose only the piece you need to change.
+Each component takes the override props for its role, so a partially composed tree stays consistent. A `tabs` trigger accepts `active` and `onActivate` to replace the factory's defaults; a menu checkbox item takes a controlled `checked`; a select's `Content` accepts `side`, `align`, and an `anchor` override. Unspecified util falls back to the closure, so you compose only the piece you need to change.
 
 Attribute forwarding is uniform: every component spreads rest attributes onto its root element, and a component that owns a handler chains yours, so an `on:click` on a trigger fires before the internal toggle.
 

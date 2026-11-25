@@ -1,6 +1,6 @@
 # Build a Blog App
 
-Build a post browsing app with search, pagination, post details, and user profiles, powered by [store](/reference/store/store), [router](/reference/router/router), and [resource](/reference/resource/resource) working together.
+Build a post browsing app with search, pagination, post details, and user profiles, powered by [`store`](/reference/store/store), [`router`](/reference/router/router), and [`resource`](/reference/resource/resource) working together.
 
 Jump to the [Complete Code](#complete-code) for the finished application.
 
@@ -12,11 +12,11 @@ Jump to the [Complete Code](#complete-code) for the finished application.
 - **[signal](/reference/core/signal)**: Reactive values for the swapped page view
 - **[computed](/reference/core/computed)**: Derived pagination state from resource data
 - **[effect](/reference/core/effect)**: Keeping the document title in sync with the store
-- **[style](/reference/css/style) / [vars](/reference/css/vars)**: Design tokens and scoped hashed classes
+- **[style](/reference/css/style) / [`vars`](/reference/css/vars)**: Design tokens and scoped hashed classes
 - **[ForEach](/reference/dom/foreach)**: Rendering lists with keyed reconciliation
 - **[navigate](/reference/router/navigate)**: Programmatic navigation with query strings
 
-The core pattern: router handlers write the store and render page components into a view [signal](/reference/core/signal). Resources derive their cache keys from store state, so a key change is the whole trigger - submit a search, turn a page, or open a post and the fetch fires by itself. No component ever calls `fetch()` manually. Components that need to move the user dispatch [navigate](/reference/router/navigate) instead.
+The core pattern: router handlers write the store and render page components into a view [`signal`](/reference/core/signal). Resources derive their cache keys from store state, so a key change is the whole trigger - submit a search, turn a page, or open a post and the fetch fires by itself. No component ever calls `fetch()` manually. Components that need to move the user dispatch [`navigate`](/reference/router/navigate) instead.
 
 ## Project Setup
 
@@ -97,7 +97,7 @@ Finally, replace the scaffold's `index.html` with the mount point and the entry 
 
 ## App State
 
-This app uses [store](/reference/store/store) for centralized state and [resource](/reference/resource/resource) for data fetching. The store holds the search draft, the submitted query, the page number, the selected ids, and the page title. Resources derive their cache keys from store properties, so a key change is the whole trigger: submit a search or turn a page and the fetch fires by itself.
+This app uses `store` for centralized state and `resource` for data fetching. The store holds the search draft, the submitted query, the page number, the selected ids, and the page title. Resources derive their cache keys from store properties, so a key change is the whole trigger: submit a search or turn a page and the fetch fires by itself.
 
 Create `src/state.ts`:
 
@@ -191,13 +191,13 @@ export const userPostsResource = resource<PostsResponse, string | null>(
 
 **Code Explanation**
 
-- **[`store`](/reference/store/store)`<{ ... }>({ ... })`**: Creates a deeply reactive store where each property is an independent signal, typed by the generic
+- **`store``<{ ... }>({ ... })`**: Creates a deeply reactive store where each property is an independent signal, typed by the generic
 - **`searchValue` vs `query`**: `searchValue` is the input draft, updated on every keystroke. `query` is the submitted search, written only when the user presses Enter or the Search button. The posts key reads `query` only, so typing alone never fires a request
 - **`page`**: The current page number, set from the URL by the `/posts` route handler
 - **`postId` and `userId`**: Selected items for the detail and profile views. They start `null`, and a `null` key makes the fetch skip until a route sets the id
 - **`title`**: The current page heading. Route handlers write it, the header reads it, and the effect below mirrors it into the browser tab
 - **[`effect`](/reference/core/effect)`(() => ...)`**: Reads `appStore.title()` and re-runs whenever it changes, keeping `document.title` in sync
-- **[`resource`](/reference/resource/resource)`<PostsResponse, string>`**: Creates a reactive async data container. The first type parameter is the data shape, the second is the key shape
+- **`resource``<PostsResponse, string>`**: Creates a reactive async data container. The first type parameter is the data shape, the second is the key shape
 - **`key: () => ...`**: A function reading store properties. It builds the request path from the submitted query and the page, picking the `posts/search` endpoint when a query exists and adding `q` and `skip` params. The key doubles as the cache identity
 - **`refetchOnKeyChange: true`**: Turns the key into the whole trigger. The initial fetch fires on its own, and every later key change (a submitted search, a new page, a new post id) refetches automatically. No component calls `fetch()`
 - **`keepPreviousData: false`**: On a key change the list data clears and the loading state shows, instead of displaying the previous page's rows while the next page loads
@@ -207,7 +207,7 @@ export const userPostsResource = resource<PostsResponse, string | null>(
 
 ## Shared Styles
 
-Define reusable design tokens with [`vars`](/reference/css/vars) and global element styles with [`css`](/reference/css/css). Each component file adds its own [`style`](/reference/css/style) call for component-specific styles.
+Define reusable design tokens with `vars` and global element styles with [`css`](/reference/css/css). Each component file adds its own [`style`](/reference/css/style) call for component-specific styles.
 
 Create `src/theme.ts`:
 
@@ -253,15 +253,15 @@ css({
 
 **Code Explanation**
 
-- **[`css`](/reference/css/css)`(reset)`**: Applies the preflight reset that ships with `@hellajs/css`, normalizing browser default styles across the app
-- **[`vars`](/reference/css/vars)`({ ... })`**: Creates CSS custom properties and returns an object where each value is a `var()` reference. `theme.color.bg` resolves to `var(--color-bg)`; use it anywhere you'd use a CSS value
+- **`css``(reset)`**: Applies the preflight reset that ships with `@hellajs/css`, normalizing browser default styles across the app
+- **`vars``({ ... })`**: Creates CSS custom properties and returns an object where each value is a `var()` reference. `theme.color.bg` resolves to `var(--color-bg)`; use it anywhere you'd use a CSS value
 - **Nested objects**: `color: { bg: "..." }` becomes `--color-bg`. Dots become hyphens in the variable name. Pass a `prefix` option if the tokens could collide with another app's variables on the same page
-- **[`css`](/reference/css/css)`({ body: ..., a: ... })`**: Registers global element selectors. The `a` rules give every link the theme link color with an underline on hover, so plain anchors anywhere in the app look consistent without per-component work
+- **`css``({ body: ..., a: ... })`**: Registers global element selectors. The `a` rules give every link the theme link color with an underline on hover, so plain anchors anywhere in the app look consistent without per-component work
 - **`"&:hover"`**: The `&` refers to the parent selector, producing `a:hover { text-decoration: underline }`
 
 ## Routing
 
-The router maps URL patterns to handlers. Each handler writes the store through `$update` and swaps the page component into `currentView`, a [signal](/reference/core/signal) holding the rendered DOM. Store writes are what make the resources fetch: a new `postId` or a new `page` changes a resource key, and `refetchOnKeyChange` does the rest.
+The router maps URL patterns to handlers. Each handler writes the store through `$update` and swaps the page component into `currentView`, a `signal` holding the rendered DOM. Store writes are what make the resources fetch: a new `postId` or a new `page` changes a resource key, and `refetchOnKeyChange` does the rest.
 
 Create `src/router.tsx`:
 
@@ -312,8 +312,8 @@ router({
 
 **Code Explanation**
 
-- **[`signal`](/reference/core/signal)`(<Placeholder ... />)`**: `currentView` holds a DOM node, initialized to a loading placeholder that shows before the first route resolves
-- **[`router`](/reference/router/router)`({ routes, ... })`**: Maps URL patterns to handler functions and starts listening for navigation immediately
+- **`signal``(<Placeholder ... />)`**: `currentView` holds a DOM node, initialized to a loading placeholder that shows before the first route resolves
+- **`router``({ routes, ... })`**: Maps URL patterns to handler functions and starts listening for navigation immediately
 - **`"/": "/posts"`**: Redirect from the root path to `/posts`
 - **`appStore.$update({ ... })`**: Writes several store properties in one call. Each handler resets the ids it does not own, so navigating from a profile back to the list clears `userId` and the user resources stop being keyed
 - **`query.page ? Number(query.page) : 1`**: The `/posts` handler's second argument carries the query string. The page comes from `?page=2` style URLs, defaulting to 1 - this keeps pagination shareable and back-button friendly
@@ -358,9 +358,9 @@ mount(App, "#app");
 **Code Explanation**
 
 - **`import "./theme"`**: A side-effect import. Registering the reset, the tokens, and the global styles only needs the module to run; nothing is imported from it here
-- **[`style`](/reference/css/style)`({ ..., h1: { ... } })`**: Returns a content-hashed class. Nested selectors scope under the generated class, so the `h1` rules only apply to headings inside the container
+- **`style``({ ..., h1: { ... } })`**: Returns a content-hashed class. Nested selectors scope under the generated class, so the `h1` rules only apply to headings inside the container
 - **`{appStore.title}` and `{currentView}`**: Store properties and signals passed as children bind reactively. Both update the DOM when the value behind them changes
-- **[`mount`](/reference/dom/mount)`(App, "#app")`**: Renders the app into the `#app` div from `index.html`
+- **`mount``(App, "#app")`**: Renders the app into the `#app` div from `index.html`
 
 Start the development server to see your app in action.
 
@@ -372,7 +372,7 @@ Your app will be running at `http://localhost:5173`. With only the shell in plac
 
 ## Display Components
 
-These components render without owning state. They demonstrate component functions, props, [ForEach](/reference/dom/foreach), and plain-anchor navigation.
+These components render without owning state. They demonstrate component functions, props, [`ForEach`](/reference/dom/foreach), and plain-anchor navigation.
 
 ### Placeholder
 
@@ -431,7 +431,7 @@ export const BackLink = () => (
 
 ### Tags
 
-Renders a list of tag badges using [ForEach](/reference/dom/foreach).
+Renders a list of tag badges using `ForEach`.
 
 Create `src/components/Tags.tsx`:
 
@@ -468,7 +468,7 @@ export const Tags = ({ tags = [] }: TagsProps) => (
 
 **Code Explanation**
 
-- **[`ForEach`](/reference/dom/foreach)` each={tags} use={(tag) => ...}`**: Renders each item through the `use` callback. Items are keyed by an explicit `key` attribute if present, then by the item's `id` property, then by index - tags have neither, so they fall back to index keys, which is fine for a static per-post list
+- **`ForEach`` each={tags} use={(tag) => ...}`**: Renders each item through the `use` callback. Items are keyed by an explicit `key` attribute if present, then by the item's `id` property, then by index - tags have neither, so they fall back to index keys, which is fine for a static per-post list
 - **`tags = []`**: Default parameter handles a post with no tags
 - **`theme.radius.pill`**: Resolves to `var(--radius-pill)` for consistent rounded badges
 
@@ -702,7 +702,7 @@ export const Pagination = () => {
 **Code Explanation**
 
 - **[`computed`](/reference/core/computed)`(() => ...)`**: Derives the total page count from the resource data. It caches until `data()` changes, and a `null` response (before the first fetch) yields 0 pages, which hides the whole control
-- **[`navigate`](/reference/router/navigate)`("/posts", { query })`**: Pagination navigates instead of writing the store. The `/posts` route handler reads `query.page` back out of the URL and writes `page` itself, producing shareable `/posts?page=2` URLs
+- **`navigate``("/posts", { query })`**: Pagination navigates instead of writing the store. The `/posts` route handler reads `query.page` back out of the URL and writes `page` itself, producing shareable `/posts?page=2` URLs
 - **`Math.max(1, page() - 1)` and `Math.min(pages, page() + 1)`**: Clamp the target page so the buttons can never navigate out of range
 - **`disabled={() => page() <= 1}`**: A function-valued attribute is reactive - the buttons disable and enable as the page changes, with `Prev` dead on page 1 and `Next` dead on the last page
 - **`{page} of {pages}`**: `page` renders as the signal itself (reactive), while `pages` is the plain number captured above - it only needs to be current for this render, since `totalPages()` changing re-runs the component's expression
@@ -749,7 +749,7 @@ export const PostList = () => (
 
 - **`const posts = computed(() => data()?.posts ?? [])`**: A derived list that is always an array, so the length check below never fights `undefined`. It recomputes when the resource data changes
 - **`{isFetching() ? ... : ... ? ... : ...}`**: Expression children that read signals are reactive by default - the compiler wraps them, so this ternary re-runs whenever `isFetching()` or `posts()` change. It covers the three states in one expression: loading, results, empty
-- **[`ForEach`](/reference/dom/foreach)` each={posts}`**: The computed list renders each post through `Post`. Posts carry an `id`, so items are keyed by id: reordering or replacing the array reuses DOM nodes instead of rebuilding them
+- **`ForEach`` each={posts}`**: The computed list renders each post through `Post`. Posts carry an `id`, so items are keyed by id: reordering or replacing the array reuses DOM nodes instead of rebuilding them
 - **`searchValue()` in the empty message**: Reads the live draft so the message echoes exactly what the user typed when the search came back empty
 - **`<Pagination />` rendered unconditionally**: The component itself decides visibility from the derived page count, keeping the page's markup free of pagination wiring
 

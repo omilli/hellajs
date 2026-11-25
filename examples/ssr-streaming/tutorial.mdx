@@ -8,8 +8,8 @@ Jump to the [Complete Code](#complete-code) for the finished application.
 
 ## What You'll Learn
 
-- **[`ssr.stream`](/reference/ssr/ssr#stream)**: Serialize a template into a streaming `ReadableStream`, flushing the shell before async values resolve
-- **[`<Suspense>`](/reference/dom/suspense)**: Mark a subtree for out-of-order streaming: a `fallback` flushes first, then resolved children stream in (and swap) as they resolve
+- **`ssr.stream`**: Serialize a template into a streaming `ReadableStream`, flushing the shell before async values resolve
+- **`<Suspense>`**: Mark a subtree for out-of-order streaming: a `fallback` flushes first, then resolved children stream in (and swap) as they resolve
 - **Multiple independent regions**: several `<Suspense>` boundaries at different latencies make streaming's value visible: cards fill in one by one as their data resolves
 - **[`hydrate`](/reference/dom/hydrate)**: Adopt the streamed HTML on the client; each region's inline swap script already swapped it in on arrival, and hydrate just binds the already-present nodes
 - **[`css`](/reference/css/css) + [`style`](/reference/css/style)**: Register global and scoped styles on both platforms; [`cssText`](/reference/css/csstext) collects the text injected into the streamed shell
@@ -154,9 +154,9 @@ Note the middleware passes `req.url` to `render()`: a single page, so the URL is
 
 ## The Dashboard
 
-The app is a single page: a static shell (`<header>`) plus three independent cards, each fetching its own data behind a [`<Suspense>`](/reference/dom/suspense) boundary. Each card uses a different latency so streaming's value is obvious: the shell and all three skeletons paint at TTFB, then the cards fill in as their data resolves (fast → slow).
+The app is a single page: a static shell (`<header>`) plus three independent cards, each fetching its own data behind a `<Suspense>` boundary. Each card uses a different latency so streaming's value is obvious: the shell and all three skeletons paint at TTFB, then the cards fill in as their data resolves (fast → slow).
 
-A `<Suspense>` child that is a function returning a `Promise` is what opts the subtree into streaming: the `fallback` flushes inline immediately, then the resolved children stream as a `<template>` followed by an inline `<script>$hs(id)</script>` that swaps them in the moment they arrive (progressive, like React/Solid). [`hydrate`](/reference/dom/hydrate) later binds the already-present nodes.
+A `<Suspense>` child that is a function returning a `Promise` is what opts the subtree into streaming: the `fallback` flushes inline immediately, then the resolved children stream as a `<template>` followed by an inline `<script>$hs(id)</script>` that swaps them in the moment they arrive (progressive, like React/Solid). `hydrate` later binds the already-present nodes.
 
 Create `src/app.tsx`:
 
@@ -252,14 +252,14 @@ export const Dashboard = () => (
 **Code Explanation**
 
 - **`after(data, ms)`**: a simulated async fetch; resolves with `data` after `ms`. Deterministic (no backend), so the streamed shape is reproducible
-- **[`<Suspense>`](/reference/dom/suspense)**` fallback={<Skeleton …/>}`: a streaming boundary. The `fallback` (skeleton) flushes inline; the resolved card streams in (and swaps) as it resolves
-- **`() => after(...).then(d => <section/>)`**: a getter child returning a `Promise`. [`ssr.stream`](/reference/ssr/ssr#stream) defers it inside the `<Suspense>` region and streams the result as a `<template>` + swap script
+- **`<Suspense>`**` fallback={<Skeleton …/>}`: a streaming boundary. The `fallback` (skeleton) flushes inline; the resolved card streams in (and swaps) as it resolves
+- **`() => after(...).then(d => <section/>)`**: a getter child returning a `Promise`. `ssr.stream` defers it inside the `<Suspense>` region and streams the result as a `<template>` + swap script
 - **Fast → slow ordering**: the three regions resolve top-to-bottom, so the page fills in naturally as you watch
 - **Static shell**: `<header>` renders synchronously, so it paints at TTFB before any card resolves
 
 ## The Streaming Server
 
-The server exports a `render()` that returns a web `ReadableStream`: a full streamed document. [`doc`](/reference/ssr/doc) wraps the body stream in the document shell: the `head` (with the CSS text [`cssText`](/reference/css/csstext) collected from the registration), `lang`, and the `mount` wrapper flush first, each body chunk pipes through as it renders, and the closing tags land only after every staged [`<Suspense>`](/reference/dom/suspense) swap has streamed; nothing is collected, so progressive paint holds end-to-end. This is a single page, so `render()` takes no argument.
+The server exports a `render()` that returns a web `ReadableStream`: a full streamed document. [`doc`](/reference/ssr/doc) wraps the body stream in the document shell: the `head` (with the CSS text `cssText` collected from the registration), `lang`, and the `mount` wrapper flush first, each body chunk pipes through as it renders, and the closing tags land only after every staged `<Suspense>` swap has streamed; nothing is collected, so progressive paint holds end-to-end. This is a single page, so `render()` takes no argument.
 
 First the theme, deliberately minimal, since the CSS is incidental to the streaming story: layout and skeleton visibility, not visual polish. `css()` registers the global rules, `style()` one hashed class per styled element, and `cssText()` then collects the generated text for the server to inject. Create `src/theme.ts`:
 
@@ -332,9 +332,9 @@ export const bone = style({
 
 **Code Explanation**
 
-- **[`cssText`](/reference/css/csstext)`()`**: collects the registered rule text: a peek over the registration state, identical on both platforms; the server embeds it in the shell's `<style>`
-- **[`css`](/reference/css/css)`(obj)`**: global styles, defined once in a module any platform can import
-- **[`style`](/reference/css/style)`(obj)`**: scoped styles; each call returns a hashed class the markup consumes as `class={card}`. nested keys compose descendant selectors (`header h1` under `dashboard`, `dl` under `card`), so only elements that carry a generated class need one
+- **`cssText``()`**: collects the registered rule text: a peek over the registration state, identical on both platforms; the server embeds it in the shell's `<style>`
+- **`css``(obj)`**: global styles, defined once in a module any platform can import
+- **`style``(obj)`**: scoped styles; each call returns a hashed class the markup consumes as `class={card}`. nested keys compose descendant selectors (`header h1` under `dashboard`, `dl` under `card`), so only elements that carry a generated class need one
 - **`bone`**: a self-contained loading-bar class; the skeleton card is just `card` + three `bone` spans
 - **`'& ul, & ol'`**: every `&` expands to the parent selector, so both list types share one rule
 - **Platform-independent collection**: the server receives the CSS text for its `<style>` tag via `cssText()`; the shell is static, so the client never imports this module; nothing re-injects
@@ -366,9 +366,9 @@ export function render(): ReadableStream<string> {
 **Code Explanation**
 
 - **[`router`](/reference/router/router)** (*not used here*): this is a single page. For URL → view routing on the server, see [SSR Routing](/learn/tutorials/ssr-routing)
-- **[`ssr.stream`](/reference/ssr/ssr#stream)`(<Dashboard />)`**: returns a `ReadableStream<string>`. The shell and each `<Suspense>` `fallback` flush first; each resolved region then streams as `<template id="hsN">…</template><script>$hs("hsN")</script>` (a one-time `$hs` bootstrap precedes them) so the browser swaps it in the moment it arrives
+- **`ssr.stream``(<Dashboard />)`**: returns a `ReadableStream<string>`. The shell and each `<Suspense>` `fallback` flush first; each resolved region then streams as `<template id="hsN">…</template><script>$hs("hsN")</script>` (a one-time `$hs` bootstrap precedes them) so the browser swaps it in the moment it arrives
 - **`mount: '#app'`**: emits `<div id="app">…</div>` around the streamed body; the same selector the client's `hydrate(<Dashboard />, '#app')` targets, so server and client share one string
-- **[`doc`](/reference/ssr/doc)`({...})`**: assembles the full streamed document: shell first, every body chunk as it arrives, closing tags only after the body closes (so after all staged swaps); the consumer (the dev middleware, or a production server) writes the chunks in order
+- **`doc``({...})`**: assembles the full streamed document: shell first, every body chunk as it arrives, closing tags only after the body closes (so after all staged swaps); the consumer (the dev middleware, or a production server) writes the chunks in order
 
 The streamed HTML looks like this: the shell and all three fallbacks arrive before any fetch resolves, then each card's resolved content streams as a `<template>` + an inline swap script that swaps it in the moment it arrives:
 
@@ -391,7 +391,7 @@ Each region's `<template>` streams the moment its own async work completes, imme
 
 ## The Client
 
-No router init; this is a single streaming page. By the time [`hydrate`](/reference/dom/hydrate) runs, each region's inline `$hs` script has already swapped its resolved card in on arrival; hydrate just binds the already-present nodes (its `swapSuspenseStage` is the no-script fallback, used in test environments that don't execute inline scripts).
+No router init; this is a single streaming page. By the time `hydrate` runs, each region's inline `$hs` script has already swapped its resolved card in on arrival; hydrate just binds the already-present nodes (its `swapSuspenseStage` is the no-script fallback, used in test environments that don't execute inline scripts).
 
 Create `src/client.tsx`:
 
@@ -405,7 +405,7 @@ hydrate(<Dashboard />, "#app");
 
 **Code Explanation**
 
-- **[`hydrate`](/reference/dom/hydrate)`(<Dashboard />, "#app")`**: Adopts the server-rendered nodes, the streamed-in cards included, instead of rebuilding them. `afterMount` hooks fire automatically during hydrate, so no `flush()` is needed
+- **`hydrate``(<Dashboard />, "#app")`**: Adopts the server-rendered nodes, the streamed-in cards included, instead of rebuilding them. `afterMount` hooks fire automatically during hydrate, so no `flush()` is needed
 
 <Callout variant="warning">A bare getter that returns a <em>rejected</em> <code>Promise</code> errors the stream. If the static shell has already flushed, the failure is partial; catch it at the stream consumer (the read loop in the middleware). A getter inside a <code>&lt;Suspense&gt;</code> region that rejects is isolated instead: the region's <code>&lt;template&gt;</code> is skipped (its fallback stays), the stream completes with the healthy regions, and <code>hydrate</code> re-suspends the failed region on the client, where the rejection reaches the nearest error boundary.</Callout>
 

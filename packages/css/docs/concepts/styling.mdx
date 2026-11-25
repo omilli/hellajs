@@ -14,7 +14,7 @@ Every creator returns the same value on client and server. [`cssText`](/referenc
 
 ## Scoped Styles
 
-[`style`](/reference/css/style) takes CSS declarations and returns a class name.
+`style` takes CSS declarations and returns a class name.
 
 ```jsx
 import { style } from '@hellajs/css';
@@ -92,7 +92,7 @@ const itemClass = cx('todo', {
 // "todo done"
 ```
 
-Class strings from any source compose here: [`style`](/reference/css/style) classes, [`cva`](/reference/css/cva) output, and classes from other frameworks.
+Class strings from any source compose here: `style` classes, `cva` output, and classes from other frameworks.
 
 `cx` returns a plain string, so the signals it reads count only when the call sits in a reactive binding. In a template, keep the `cx()` call in the `class` attribute.
 
@@ -187,7 +187,7 @@ A recipe base takes the same door: `base: style([defaults, overrides])` merges a
 
 ## Reusing a Class as a Recipe Base
 
-A [`cva`](/reference/css/cva) recipe's `base` can be a class string instead of a style object. The string passes through verbatim, so the recipe output already carries your class and no second base rule is generated. Reach for this when one shared look should pair with several variant sets.
+A `cva` recipe's `base` can be a class string instead of a style object. The string passes through verbatim, so the recipe output already carries your class and no second base rule is generated. Reach for this when one shared look should pair with several variant sets.
 
 ```jsx
 import { cva, style } from '@hellajs/css';
@@ -272,7 +272,7 @@ The compound contributes its own class only when every stated variant matches, s
 
 ## Global Styles
 
-[`css`](/reference/css/css) covers what belongs to no component: element defaults, `@font-face`, page-wide rules. Top-level keys are raw selectors; the call registers the rules and returns an empty string.
+`css` covers what belongs to no component: element defaults, `@font-face`, page-wide rules. Top-level keys are raw selectors; the call registers the rules and returns an empty string.
 
 ```jsx
 import { css, reset } from '@hellajs/css';
@@ -297,7 +297,7 @@ Declarations must sit under a selector; a bare top-level declaration throws. Eve
 
 ## Variant Recipes
 
-Components with visual variants (size, tone, state) get a [`cva`](/reference/css/cva) recipe. Call it with props, get a class string.
+Components with visual variants (size, tone, state) get a `cva` recipe. Call it with props, get a class string.
 
 ```jsx
 import { cva } from '@hellajs/css';
@@ -375,7 +375,7 @@ Recipes also take a `media` map for responsive selections and `compoundVariants`
 
 ## Reactive Theming
 
-[`vars`](/reference/css/vars) turns an object of tokens into CSS custom properties. It returns a same-shaped proxy of `var()` references; put them in any style.
+`vars` turns an object of tokens into CSS custom properties. It returns a same-shaped proxy of `var()` references; put them in any style.
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -429,7 +429,7 @@ Scopes (`scoped: '[data-theme="dark"]'`) and prefixes (`prefix: 'app'`) are opti
 
 ## Keyframe Animations
 
-[`keyframes`](/reference/css/keyframes) registers a `@keyframes` rule and returns its name. The name is derived from the definition's content: two animations never collide, and the same definition reuses one rule.
+`keyframes` registers a `@keyframes` rule and returns its name. The name is derived from the definition's content: two animations never collide, and the same definition reuses one rule.
 
 ```jsx
 import { keyframes, style } from '@hellajs/css';
@@ -457,7 +457,7 @@ The name is a plain string; interpolate it into `animation` shorthands anywhere,
 
 ## Server Rendering
 
-On the server there is no DOM to inject into. Creators still register their rules; [`cssText`](/reference/css/csstext) collects the text for the response.
+On the server there is no DOM to inject into. Creators still register their rules; `cssText` collects the text for the response.
 
 ```typescript
 import { css, cssText, style, vars } from '@hellajs/css';

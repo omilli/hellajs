@@ -43,7 +43,7 @@ Pass `open` and the factory never holds state: the getter is the single source o
 
 ### The Modal Engine and the Exit Machine
 
-While open, the panel is armed through [`modal`](/headless/modal): focus traps inside (Tab wraps, the first focusable child receives focus on open, and focus returns to the pre-open element on close), and Escape or an outside pointerdown asks the factory to close. `escape: false` or `outside: false` holds the panel open against that path and leaves dismissal to your own controls.
+While open, the panel is armed through `modal`: focus traps inside (Tab wraps, the first focusable child receives focus on open, and focus returns to the pre-open element on close), and Escape or an outside pointerdown asks the factory to close. `escape: false` or `outside: false` holds the panel open against that path and leaves dismissal to your own controls.
 
 Flipping to closed starts the exit: the panel stays mounted under `data-state="closed"` until its `animationend` (or the `fallbackMs` budget when no animation runs) unmounts it. Flipping back to open mid-exit cancels the unmount and re-arms in place. Call the factory in component scope so the machine's effect disposes with the component.
 

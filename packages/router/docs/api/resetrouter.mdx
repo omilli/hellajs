@@ -39,15 +39,15 @@ Reading `route()` immediately after `resetRouter()` returns these defaults, not 
 
 ### Listener Cleanup
 
-The popstate/hashchange listener and the same-origin click interceptor attached by [`router()`](/reference/router/router) are detached, so a later re-init never double-fires handlers.
+The popstate/hashchange listener and the same-origin click interceptor attached by [`router`](/reference/router/router) are detached, so a later re-init never double-fires handlers.
 
 ### Reinitializing
 
-Configure fresh routes by calling [`router()`](/reference/router/router) again after the reset. `resetRouter()` is the teardown half; `router()` is the setup half, and re-initializing in a URL mode replaces the previous listeners on its own.
+Configure fresh routes by calling `router` again after the reset. `resetRouter()` is the teardown half; `router()` is the setup half, and re-initializing in a URL mode replaces the previous listeners on its own.
 
 ### URL and History Are External
 
-`resetRouter()` never mutates `window.location` or `history`. The address bar keeps whatever path it had; drive it with [`navigate()`](/reference/router/navigate) after re-init if the URL must move.
+`resetRouter()` never mutates `window.location` or `history`. The address bar keeps whatever path it had; drive it with [`navigate`](/reference/router/navigate) after re-init if the URL must move.
 
 ## Important Considerations
 

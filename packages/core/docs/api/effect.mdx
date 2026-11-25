@@ -26,7 +26,7 @@ cleanup();
 count(3); // (nothing is logged)
 ```
 
-The first run executes at creation; re-runs drain once at the microtask boundary after the writes that triggered them. Use [`flush()`](/reference/core/flush) when the re-run must land before the next line.
+The first run executes at creation; re-runs drain once at the microtask boundary after the writes that triggered them. Use [`flush`](/reference/core/flush) when the re-run must land before the next line.
 
 ## API
 
@@ -197,7 +197,7 @@ effect(() => {
 
 An error thrown inside an effect never corrupts signal state: the remaining queued effects stay queued, and later writes schedule a fresh drain that runs them. Where the error surfaces depends on which drain ran the effect.
 
-A manual `flush()` drain throws to the `flush()` caller. The scheduled microtask drain has no caller: the error dispatches to the handler registered with [`setFlushErrorHandler`](/reference/core/flush) when one is registered, and surfaces as an unhandled microtask rejection otherwise.
+A manual `flush()` drain throws to the `flush()` caller. The scheduled microtask drain has no caller: the error dispatches to the handler registered with `setFlushErrorHandler` when one is registered, and surfaces as an unhandled microtask rejection otherwise.
 
 A throw on the ***first*** run is different: the effect never started, so it is disposed before the error escapes. No cleanup handle exists to call, and later writes to the signals it read do nothing.
 

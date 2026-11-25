@@ -78,7 +78,7 @@ interface StreamOptions extends SsrOptions {
 }
 ```
 
-The client receives the static shell before any async value settles. Pipe it into a `Response` for a streaming server handler. Bare Promises are awaited in tree order; a rejected bare Promise errors the stream, while a rejected `<Suspense>` region is isolated (see [Errors Propagate](#errors-propagate)). [`Lazy`](/reference/dom/lazy) loaders are awaited like bare Promises: in-order outside [`<Suspense>`](/reference/dom/suspense), resolved within the staged `<template>` inside one.
+The client receives the static shell before any async value settles. Pipe it into a `Response` for a streaming server handler. Bare Promises are awaited in tree order; a rejected bare Promise errors the stream, while a rejected `<Suspense>` region is isolated (see [Errors Propagate](#errors-propagate)). `Lazy` loaders are awaited like bare Promises: in-order outside [`<Suspense>`](/reference/dom/suspense), resolved within the staged `<template>` inside one.
 
 ```jsx
 import { createServer } from 'node:http';
@@ -114,11 +114,11 @@ createServer((req, res) => {
 
 Without a `nonce`, the swap scripts carry no `nonce` attribute.
 
-The `head` option (inherited from `SsrOptions`) also works under `ssr.stream`, with one limit: the bag fills as the walk proceeds (staged [`<Suspense>`](/reference/dom/suspense) swaps keep filling it as they resolve), but a streamed document emits its `<head>` up front, so the collected entries are post-hoc. When streaming, pass head entries to [`doc`](/reference/ssr/doc) explicitly (see [`head`](#head)): either statically, or by running one [`ssr.async`](#async) pass with `{ head }` over the same tree first and handing the filled bag to `doc` (see [Per-route head entries](/learn/patterns/ssr)).
+The `head` option (inherited from `SsrOptions`) also works under `ssr.stream`, with one limit: the bag fills as the walk proceeds (staged `<Suspense>` swaps keep filling it as they resolve), but a streamed document emits its `<head>` up front, so the collected entries are post-hoc. When streaming, pass head entries to [`doc`](/reference/ssr/doc) explicitly (see [`head`](#head)): either statically, or by running one [`ssr.async`](#async) pass with `{ head }` over the same tree first and handing the filled bag to `doc` (see [Per-route head entries](/learn/patterns/ssr)).
 
 ### head
 
-Creates a fresh head collection bag: `{ meta: [], links: [], styles: [] }`, the same shape [`doc`](/reference/ssr/doc)'s `head` option consumes. Pass it to any member as `{ head }` and the walk hoists the tree's `<title>`/`<meta>`/`<link>`/`<style>` elements into the bag instead of emitting them; a route component owns its head entries, and the caller no longer assembles them by hand.
+Creates a fresh head collection bag: `{ meta: [], links: [], styles: [] }`, the same shape `doc`'s `head` option consumes. Pass it to any member as `{ head }` and the walk hoists the tree's `<title>`/`<meta>`/`<link>`/`<style>` elements into the bag instead of emitting them; a route component owns its head entries, and the caller no longer assembles them by hand.
 
 ```typescript
 declare namespace ssr {
@@ -196,7 +196,7 @@ const page = `<style id="hella-css">${cssText()}</style><div id="app">${body}</d
 
 ### Hydration markers
 
-`ssr()` wraps every dynamic region (a reactive child, a [`raw`](/reference/dom/raw) child, a [`ForEach`](/reference/dom/foreach) / [`Transition`](/reference/dom/transition) / [`Portal`](/reference/dom/portal) / [`Lazy`](/reference/dom/lazy) / [`Suspense`](/reference/dom/suspense), or a nested fragment) in `<!--[-->…<!--]-->` comment markers. The browser parses these to `Comment` nodes that [`hydrate`](/reference/dom/hydrate) (`@hellajs/dom`) locates to bind each region in place, without structural inference and without rebuilding coalesced text. Static elements and text are emitted unwrapped (matched by position), so the marker payload stays minimal.
+`ssr()` wraps every dynamic region (a reactive child, a [`raw`](/reference/dom/raw) child, a [`ForEach`](/reference/dom/foreach) / [`Transition`](/reference/dom/transition) / [`Portal`](/reference/dom/portal) / `Lazy` / `Suspense`, or a nested fragment) in `<!--[-->…<!--]-->` comment markers. The browser parses these to `Comment` nodes that [`hydrate`](/reference/dom/hydrate) (`@hellajs/dom`) locates to bind each region in place, without structural inference and without rebuilding coalesced text. Static elements and text are emitted unwrapped (matched by position), so the marker payload stays minimal.
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -211,7 +211,7 @@ The markers are part of the output contract: if you parse or snapshot `ssr()` ou
 
 ### Awaits Promises In Place
 
-Where the sync call reads each getter once and cannot await, `ssr.async` awaits any resolved value that is a `Promise`: a child, a function-ref prop attribute, a [`ForEach`](/reference/dom/foreach) `each`, or a [`Transition`](/reference/dom/transition) `show`. Nested thenables unwrap fully. Use `ssr.async` when a subtree needs server-fetched data; use the sync call when every value is already resolved (zero Promise overhead).
+Where the sync call reads each getter once and cannot await, `ssr.async` awaits any resolved value that is a `Promise`: a child, a function-ref prop attribute, a `ForEach` `each`, or a `Transition` `show`. Nested thenables unwrap fully. Use `ssr.async` when a subtree needs server-fetched data; use the sync call when every value is already resolved (zero Promise overhead).
 
 ### Progressive Flush
 
@@ -219,7 +219,7 @@ Where the sync call reads each getter once and cannot await, `ssr.async` awaits 
 
 ### Identical Output Contract
 
-All three members emit byte-identical markers: every dynamic region is bounded by `<!--[-->…<!--]-->`, so [`hydrate`](/reference/dom/hydrate) consumes any output unchanged. Collecting every chunk of `ssr.stream(node)` equals `await ssr.async(node)` (and the sync call when no value is a Promise). Awaiting or streaming changes *when* values resolve, not the output contract.
+All three members emit byte-identical markers: every dynamic region is bounded by `<!--[-->…<!--]-->`, so `hydrate` consumes any output unchanged. Collecting every chunk of `ssr.stream(node)` equals `await ssr.async(node)` (and the sync call when no value is a Promise). Awaiting or streaming changes *when* values resolve, not the output contract.
 
 ### Resource Fetching Suppressed
 
@@ -233,15 +233,15 @@ The shipped HTML is the source of truth on the client. Bind existing static node
 
 ### Portal renders nothing
 
-[`Portal`](/reference/dom/portal) teleports content to a DOM target: there is no document on the server, so portals render as empty. Render portal content inline in the template if it must appear in the HTML.
+`Portal` teleports content to a DOM target: there is no document on the server, so portals render as empty. Render portal content inline in the template if it must appear in the HTML.
 
 ### Lazy awaits the loader under the async members; `ssr` emits `loading`
 
-The base `ssr` call is synchronous, so a [`Lazy`](/reference/dom/lazy) region emits its `loading` fallback (or nothing if none was provided) and never calls the loader. [`ssr.async`](#async) and [`ssr.stream`](#stream) await it instead: the loaded component renders into the HTML, and `hydrate` keeps that server content in place until the client's fresh loader run replaces it, with no loading flash. The loader must be server-executable (a dynamic `import()` needs a server-resolvable module); on rejection it renders `fallback`, or rejects/errors the render when none is provided.
+The base `ssr` call is synchronous, so a `Lazy` region emits its `loading` fallback (or nothing if none was provided) and never calls the loader. [`ssr.async`](#async) and [`ssr.stream`](#stream) await it instead: the loaded component renders into the HTML, and `hydrate` keeps that server content in place until the client's fresh loader run replaces it, with no loading flash. The loader must be server-executable (a dynamic `import()` needs a server-resolvable module); on rejection it renders `fallback`, or rejects/errors the render when none is provided.
 
 ### Full re-mount over server HTML wipes it
 
-Calling [`mount`](/reference/dom/mount) over the server-rendered container replaces its children and rebuilds the tree, discarding the server HTML and any user state in that subtree. Use [`$ref`](/reference/dom/$ref) / [`$collection`](/reference/dom/$collection) to bind existing nodes, or mount islands into empty placeholders. Full re-mount is only appropriate for throwaway (SEO-only) content.
+Calling [`mount`](/reference/dom/mount) over the server-rendered container replaces its children and rebuilds the tree, discarding the server HTML and any user state in that subtree. Use `$ref` / `$collection` to bind existing nodes, or mount islands into empty placeholders. Full re-mount is only appropriate for throwaway (SEO-only) content.
 
 ### Synchronous render required
 
@@ -249,17 +249,17 @@ The base `ssr(node)` call walks the tree once and returns. Reactive getters are 
 
 ### Fetch Directly; Resource Is Unchanged
 
-`ssr.async` provides a generic await mechanism: return a `Promise` from a getter. [`Lazy`](/reference/dom/lazy) loaders run server-side under the async members (see the Lazy note above); [`resource`](/reference/resource/resource) never fetches during a server render (see [Resource Fetching Suppressed](#resource-fetching-suppressed)).
+`ssr.async` provides a generic await mechanism: return a `Promise` from a getter. `Lazy` loaders run server-side under the async members (see the Lazy note above); `resource` never fetches during a server render (see [Resource Fetching Suppressed](#resource-fetching-suppressed)).
 
 ### In-Order Streaming
 
-Bare Promises (no [`<Suspense>`](/reference/dom/suspense)) are awaited in tree order under `ssr.stream`, so a slow Promise delays everything after it. A `<Suspense>` boundary opts out: its `fallback` flushes inline immediately, then each region's resolved children stream as a `<template>` followed by an inline swap script that replaces the fallback **the moment the region arrives**; the user sees each region fill in progressively, not all at once at hydrate. Multiple regions swap concurrently (completion order, not document order); a one-time `$hs` bootstrap script precedes them, and `hydrate` later adopts the already-swapped nodes. A rejecting region is isolated, not fatal (see [Errors Propagate](#errors-propagate)). Prefer `ssr.stream` when you want progressive paint; prefer the sync call or `ssr.async` when streaming isn't needed (no Promise overhead).
+Bare Promises (no `<Suspense>`) are awaited in tree order under `ssr.stream`, so a slow Promise delays everything after it. A `<Suspense>` boundary opts out: its `fallback` flushes inline immediately, then each region's resolved children stream as a `<template>` followed by an inline swap script that replaces the fallback **the moment the region arrives**; the user sees each region fill in progressively, not all at once at hydrate. Multiple regions swap concurrently (completion order, not document order); a one-time `$hs` bootstrap script precedes them, and `hydrate` later adopts the already-swapped nodes. A rejecting region is isolated, not fatal (see [Errors Propagate](#errors-propagate)). Prefer `ssr.stream` when you want progressive paint; prefer the sync call or `ssr.async` when streaming isn't needed (no Promise overhead).
 
 ### Errors Propagate
 
 The sync call throws, a rejected `Promise` rejects `ssr.async`'s returned `Promise`, and a rejected bare `Promise` in the main walk errors `ssr.stream`'s `ReadableStream` (reading it throws). A rejecting `<Suspense>` region is the exception: the stream skips its `<template>` (the `fallback` and sentinel stay in the shell) and completes with its healthy siblings; `hydrate` re-suspends that region on the client, where the rejection reaches the nearest [`onError`](/reference/dom/onerror) / `error:fallback` boundary. Wrap the render in your own error handling if a value may throw; handle stream errors at the consumer (your server handler). A throwing *component* does not propagate: `component()` catches render errors and emits an empty fragment. See [Error handling](/learn/patterns/ssr#error-handling) for a try/catch-fallback recipe.
 
-This isolation composes with a client hydrate script that executes mid-stream: a region whose staged `<template>` has not arrived yet, whether still pending or skipped by a rejection, keeps its `fallback`, and [`hydrate`](/reference/dom/hydrate) adopts the region when its content lands. The swap scripts and `hydrate` coordinate over the same markers in either arrival order; nothing doubles or flashes.
+This isolation composes with a client hydrate script that executes mid-stream: a region whose staged `<template>` has not arrived yet, whether still pending or skipped by a rejection, keeps its `fallback`, and `hydrate` adopts the region when its content lands. The swap scripts and `hydrate` coordinate over the same markers in either arrival order; nothing doubles or flashes.
 
 ### Throws on invalid input
 

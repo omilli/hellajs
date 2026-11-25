@@ -21,7 +21,7 @@ const card = style('card', {
 
 ### Scoped Component Styles
 
-Use [`style`](/reference/css/style) for isolated styles with nested selectors and pseudo-states; pass the returned class straight to `class`.
+Use `style` for isolated styles with nested selectors and pseudo-states; pass the returned class straight to `class`.
 
 ```jsx
 import { style } from '@hellajs/css';
@@ -212,7 +212,7 @@ effect(() => {
 
 ### OS-Driven Dark Mode
 
-For a theme that follows the system setting instead of app state, pass `media` to [`vars`](/reference/css/vars): the declarations live under a media condition and the browser picks the winner.
+For a theme that follows the system setting instead of app state, pass `media` to `vars`: the declarations live under a media condition and the browser picks the winner.
 
 ```jsx
 import { vars } from '@hellajs/css';
@@ -234,7 +234,7 @@ vars({
 
 ### Responsive Styles
 
-Use `@media` inside [`style`](/reference/css/style); the condition inherits the generated class.
+Use `@media` inside `style`; the condition inherits the generated class.
 
 ```jsx
 import { style } from '@hellajs/css';
@@ -293,7 +293,7 @@ const tab = style('tab', {
 });
 ```
 
-For classes that change at runtime, resolve a [`cva`](/reference/css/cva) recipe at the call site; for style values that track signals, author the value as a [`vars`](/reference/css/vars) token.
+For classes that change at runtime, resolve a `cva` recipe at the call site; for style values that track signals, author the value as a `vars` token.
 
 ### Style Cleanup
 
@@ -317,7 +317,7 @@ removeStyle(styles, {
 
 ### CSS Variable Cleanup
 
-Use [`removeVars`](/reference/css/removevars) to dispose a [`vars`](/reference/css/vars) registration. Reactive entries dispose their effect at zero references.
+Use [`removeVars`](/reference/css/removevars) to dispose a `vars` registration. Reactive entries dispose their effect at zero references.
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -360,4 +360,4 @@ const card = style('card', {
 const page = `<!DOCTYPE html><html><head><style id="hella-css">${cssText()}</style></head><body>…</body></html>`;
 ```
 
-To mirror the client's two-element split, embed `cssText.css()` and `cssText.vars()` into their own `hella-css` / `hella-vars` tags ([cssText](/reference/css/csstext)).
+To mirror the client's two-element split, embed `cssText.css()` and `cssText.vars()` into their own `hella-css` / `hella-vars` tags (`cssText`).

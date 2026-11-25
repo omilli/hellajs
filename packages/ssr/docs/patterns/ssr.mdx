@@ -58,7 +58,7 @@ const page = doc({
 
 ### Express handler
 
-Use `ssr` inside any Node framework; the stringifier is framework-agnostic, with the document assembled via [`doc`](/reference/ssr/doc).
+Use `ssr` inside any Node framework; the stringifier is framework-agnostic, with the document assembled via `doc`.
 
 ```jsx
 import express from 'express';
@@ -165,7 +165,7 @@ const body = await ssr.async(view("1"));
 
 ### Ship server data to the client
 
-Fetch on the server, render it, and send the data with the markup: [`doc`](/reference/ssr/doc)'s `data` option serializes it into a JSON payload script the client reads back to seed [`resource`](/reference/resource/resource) with `initialData`, so the server's fetch is the fetch.
+Fetch on the server, render it, and send the data with the markup: `doc`'s `data` option serializes it into a JSON payload script the client reads back to seed [`resource`](/reference/resource/resource) with `initialData`, so the server's fetch is the fetch.
 
 ```jsx
 import { ssr, doc } from '@hellajs/ssr';
@@ -188,7 +188,7 @@ userResource.isLoading(); // false; initialData counts as data
 
 ### Per-route head entries
 
-Let each route component carry its own `<title>`/`<meta>` instead of assembling the head at the handler: [`ssr.head()`](/reference/ssr/ssr#head) creates the bag, the walk hoists the tree's head tags into it, and [`doc`](/reference/ssr/doc) emits them.
+Let each route component carry its own `<title>`/`<meta>` instead of assembling the head at the handler: [`ssr.head()`](/reference/ssr/ssr#head) creates the bag, the walk hoists the tree's head tags into it, and `doc` emits them.
 
 ```jsx
 import { createServer } from 'node:http';
@@ -234,7 +234,7 @@ const page = doc({ body: ssr.stream(Page()), head, mount: '#app' });
 
 ### Streaming responses
 
-Stream HTML to the client as it renders with [`ssr.stream`](/reference/ssr/ssr#stream): the static shell flushes before async values resolve.
+Stream HTML to the client as it renders with `ssr.stream`: the static shell flushes before async values resolve.
 
 ```jsx
 import { createServer } from 'node:http';
@@ -249,7 +249,7 @@ createServer((req, res) => {
 }).listen(3000);
 ```
 
-Wrap the stream in a full document with [`doc`](/reference/ssr/doc): the shell (head, `lang`, the `mount` wrapper) flushes first and the closing tags land only after the body closes, so nothing is collected:
+Wrap the stream in a full document with `doc`: the shell (head, `lang`, the `mount` wrapper) flushes first and the closing tags land only after the body closes, so nothing is collected:
 
 ```jsx
 import { createServer } from 'node:http';
@@ -294,7 +294,7 @@ const stream = ssr.stream(<App />);
 
 ### Error handling
 
-`ssr`, [`ssr.async`](/reference/ssr/ssr#async), and [`ssr.stream`](/reference/ssr/ssr#stream) propagate render failures instead of swallowing them: a throwing child, function-ref prop getter, or `use` callback surfaces to the caller (see [Errors Propagate](/reference/ssr/ssr#errors-propagate)). Catch the failure at the server handler: render a fallback page for the sync/async renderers (`await` the render inside the `try` for `ssr.async`), or catch at the stream consumer for `ssr.stream`.
+`ssr`, `ssr.async`, and `ssr.stream` propagate render failures instead of swallowing them: a throwing child, function-ref prop getter, or `use` callback surfaces to the caller (see [Errors Propagate](/reference/ssr/ssr#errors-propagate)). Catch the failure at the server handler: render a fallback page for the sync/async renderers (`await` the render inside the `try` for `ssr.async`), or catch at the stream consumer for `ssr.stream`.
 
 ```jsx
 import { ssr } from '@hellajs/ssr';

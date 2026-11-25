@@ -129,7 +129,7 @@ const bounce = keyframes({
 
 ### Function Values Throw
 
-Value semantics match [`css`](/reference/css/css): a function passed as a declaration value throws on both platforms. Animate between stable states and drive timing through the `animation` shorthand instead; reactive values belong to [`vars`](/reference/css/vars).
+Value semantics match `css`: a function passed as a declaration value throws on both platforms. Animate between stable states and drive timing through the `animation` shorthand instead; reactive values belong to [`vars`](/reference/css/vars).
 
 ```typescript
 // ❌ Throws; keyframes evaluate values eagerly
@@ -152,7 +152,7 @@ const fade = keyframes({
 
 ### Keyframes Stay Global
 
-A `@keyframes` rule is a definitional at-rule: it never nests under a class scope, matching [`css`](/reference/css/css)'s treatment of `@keyframes` bodies. The hashed name makes hand-named global keyframes and their collision risk unnecessary.
+A `@keyframes` rule is a definitional at-rule: it never nests under a class scope, matching `css`'s treatment of `@keyframes` bodies. The hashed name makes hand-named global keyframes and their collision risk unnecessary.
 
 ### Memory Management
 

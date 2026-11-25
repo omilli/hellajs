@@ -30,4 +30,4 @@ function localStorageAdaptor(key: string): StoreAdaptor
 
 ### Lazy, Server-Safe Access
 
-Storage is touched only when `persistStore` reads or writes, never at factory time, so calling `localStorageAdaptor` anywhere is safe and `persistStore` never touches it on the server. See [`persistStore`](/reference/store/persiststore) for the full hydration contract: synchronous reads apply before `persistStore` returns, and corrupt stored state self-heals.
+Storage is touched only when `persistStore` reads or writes, never at factory time, so calling `localStorageAdaptor` anywhere is safe and `persistStore` never touches it on the server. See `persistStore` for the full hydration contract: synchronous reads apply before `persistStore` returns, and corrupt stored state self-heals.

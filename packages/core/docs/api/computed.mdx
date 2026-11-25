@@ -221,7 +221,7 @@ const doubled = computed(() => count() * 2);
 
 ### Async Getters Cache the Promise
 
-The getter must be synchronous. An `async` getter returns a pending Promise at its first `await`, and that Promise becomes the cached value: subscribers receive the Promise, never the resolved payload. Signal reads after the first `await` subscribe nothing, so the derivation never updates. Keep the getter synchronous; move async work into an [`effect`](/reference/core/effect) that writes a signal when it resolves.
+The getter must be synchronous. An `async` getter returns a pending Promise at its first `await`, and that Promise becomes the cached value: subscribers receive the Promise, never the resolved payload. Signal reads after the first `await` subscribe nothing, so the derivation never updates. Keep the getter synchronous; move async work into an `effect` that writes a signal when it resolves.
 
 ```typescript
 import { signal, computed, effect } from '@hellajs/core';

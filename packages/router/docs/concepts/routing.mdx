@@ -50,7 +50,7 @@ router({
 });
 ```
 
-The `notFound` handler receives the attempted path (query included, same shape as [`route().path`](/reference/router/route)), so the 404 view can show what the user tried to reach.
+The `notFound` handler receives the attempted path (query included, same shape as `route().path`), so the 404 view can show what the user tried to reach.
 
 `notFound` also accepts a string to redirect to another route:
 
@@ -210,7 +210,7 @@ router({
 
 A nested match always beats a flat one, regardless of map order. When two flat patterns compete for the same paths, move the shared prefix into a nested route and let the sort handle precedence.
 
-The route map is cached by identity when [`router`](/reference/router/router) runs. Mutating the registered object in place is invisible to nested matching and redirect scans; reconfigure by calling `router()` again with a fresh routes object.
+The route map is cached by identity when `router` runs. Mutating the registered object in place is invisible to nested matching and redirect scans; reconfigure by calling `router()` again with a fresh routes object.
 
 ## Route Hooks
 
@@ -238,7 +238,7 @@ router({
 });
 ```
 
-Return the redirect path from the guard instead of calling [`navigate`](/reference/router/navigate) inside it. The returned string redirects with a history replace; a `navigate()` call inside the guard starts a second navigation while the first is still resolving, and the guard's own verdict commits on top of it.
+Return the redirect path from the guard instead of calling `navigate` inside it. The returned string redirects with a history replace; a `navigate()` call inside the guard starts a second navigation while the first is still resolving, and the guard's own verdict commits on top of it.
 
 Hooks execute in cascade order for nested routes:
 
@@ -275,7 +275,7 @@ router({
 });
 ```
 
-Global hooks receive `(to, from)` paths: `to` is the incoming path with its query string (the same shape as [`route()`](/reference/router/route).path) and `from` is the path being left, captured before the route commits. A `before` hook still sees the previous route in [`route()`](/reference/router/route); by the time `after` runs the route is already committed, so `from` is the only way to see where navigation started.
+Global hooks receive `(to, from)` paths: `to` is the incoming path with its query string (the same shape as `route`.path) and `from` is the path being left, captured before the route commits. A `before` hook still sees the previous route in `route`; by the time `after` runs the route is already committed, so `from` is the only way to see where navigation started.
 
 The login-redirect guard uses `to` to preserve the attempted destination:
 
@@ -302,7 +302,7 @@ router({
 
 The login handler reads the encoded target from `query.next` and navigates back after sign-in. Zero-argument global hooks keep working: the paths are additional arguments, ignored by hooks that don't declare them.
 
-See the [`router`](/reference/router/router) reference for all hook configuration options.
+See the `router` reference for all hook configuration options.
 
 ## Route Guards
 
@@ -360,7 +360,7 @@ router({
 });
 ```
 
-Async `before` hooks block. A `Promise`-returning guard defers the commit: [`route`](/reference/router/route)`().pending` is `true` while the previous match stays current, and the resolution is interpreted as the verdict (`false` cancels, a non-empty string redirects, anything else proceeds; a rejection cancels and logs). Async auth is just an async guard:
+Async `before` hooks block. A `Promise`-returning guard defers the commit: `route``().pending` is `true` while the previous match stays current, and the resolution is interpreted as the verdict (`false` cancels, a non-empty string redirects, anything else proceeds; a rejection cancels and logs). Async auth is just an async guard:
 
 ```jsx
 const checkAuth = async () => {
@@ -442,7 +442,7 @@ navigate('/dashboard'); // cancelled; unsaved changes, URL and route unchanged
 navigate('/dashboard', { force: true }); // override; leave guards skipped
 ```
 
-[`navigate()`](/reference/router/navigate) accepts `{ force: true }` to skip leave guards, the override for a "discard changes?" confirmation. Force skips only leave guards; incoming `before` guards on the target still run, so target auth checks are never bypassable.
+`navigate` accepts `{ force: true }` to skip leave guards, the override for a "discard changes?" confirmation. Force skips only leave guards; incoming `before` guards on the target still run, so target auth checks are never bypassable.
 
 Leave guards never fire on same-path navigation (a query-only change stays on the route), on the initial resolution, or when the current position came from a `notFound` landing. A cancelled back/forward restores the previous URL via `replaceState`, same as a cancelled `before`.
 
@@ -491,11 +491,11 @@ router({
 
 Redirect chains stop after 20 hops: a cyclic configuration logs `[router] redirect loop detected` and cancels the navigation (URL unchanged) instead of overflowing the stack.
 
-See [`router`](/reference/router/router) for the redirect configuration options.
+See `router` for the redirect configuration options.
 
 ## Navigation
 
-The [`navigate`](/reference/router/navigate) function provides programmatic routing with parameter substitution, query strings, and scroll control. Navigation is synchronous: `route()` is updated before `navigate()` returns.
+The `navigate` function provides programmatic routing with parameter substitution, query strings, and scroll control. Navigation is synchronous: `route()` is updated before `navigate()` returns.
 
 Same-origin `<a href>` clicks are automatically intercepted and routed through `navigate()` by default. Pass `intercept: false` to `router()` to disable and restore full page reload behavior.
 
@@ -552,11 +552,11 @@ const TodoList = ({ todos }: { todos: Todo[] }) => {
 };
 ```
 
-See [`navigate`](/reference/router/navigate) for all navigation options including scroll overrides and metadata.
+See `navigate` for all navigation options including scroll overrides and metadata.
 
 ## Route Signal
 
-The [`route`](/reference/router/route) signal provides reactive access to the current route information. Components can read it directly to respond to navigation changes.
+The `route` signal provides reactive access to the current route information. Components can read it directly to respond to navigation changes.
 
 ```jsx
 import { route } from '@hellajs/router';
@@ -596,9 +596,9 @@ router({
 });
 ```
 
-See [`route`](/reference/router/route) for the complete `RouteInfo` structure.
+See `route` for the complete `RouteInfo` structure.
 
-Set `inheritMeta: true` on the [`router()`](/reference/router/router) configuration to inherit parent meta through the nested route chain, the same [parent-to-leaf merge order](#nested-routes) as parameter inheritance. Child keys override parent keys on conflict, and inline meta from [`navigate()`](/reference/router/navigate) always wins over the inherited result. Without `inheritMeta`, only the leaf route's meta is exposed.
+Set `inheritMeta: true` on the `router` configuration to inherit parent meta through the nested route chain, the same [parent-to-leaf merge order](#nested-routes) as parameter inheritance. Child keys override parent keys on conflict, and inline meta from `navigate` always wins over the inherited result. Without `inheritMeta`, only the leaf route's meta is exposed.
 
 ```typescript
 import { router, route, navigate } from '@hellajs/router';
@@ -755,4 +755,4 @@ router({
 
 **Scroll priority:** Inline `navigate()` > Route-level `scroll` > Global `scrollBehavior`
 
-See [`router`](/reference/router/router) for all scroll configuration options.
+See `router` for all scroll configuration options.

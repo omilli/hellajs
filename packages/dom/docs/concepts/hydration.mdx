@@ -35,9 +35,9 @@ Component bodies run again on the client (they create signals and effects that c
 
 ## When to Hydrate, Enhance, or Mount an Island
 
-- [`hydrate`](/reference/dom/hydrate): the right tool when you want a fully interactive app from server-rendered HTML.
+- `hydrate`: the right tool when you want a fully interactive app from server-rendered HTML.
 - [`$ref`](/reference/dom/$ref) / [`$collection`](/reference/dom/$collection): bind a few existing elements into reactivity, no component tree at all. Lightest option.
-- Island [`mount`](/reference/dom/mount): mount a reactive component into an empty placeholder the server left. Use it when most of the page is static and only one region is interactive.
+- Island `mount`: mount a reactive component into an empty placeholder the server left. Use it when most of the page is static and only one region is interactive.
 
 Do not run a full-tree `mount` over the server container: `mount` replaces the container's children, discarding the server HTML.
 

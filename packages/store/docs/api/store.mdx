@@ -246,7 +246,7 @@ appStore.count(6); // silent; unsubscribed
 - `callback`: Receives the next and previous values. Runs untracked; reading signals inside it never widens the subscription. Skipped when a write compares equal to the current value.
 - **Returns**: An unsubscribe function; calling it more than once is safe.
 
-Unlike an [`effect`](/reference/core/effect) reading [`$snapshot()`](#snapshot), `$subscribe` tracks one property only (no whole-store dependency) and hands you the previous value, which effects never see. Multiple same-tick writes fire the callback once per subscribed key at core's microtask drain.
+Unlike an `effect` reading [`$snapshot()`](#snapshot), `$subscribe` tracks one property only (no whole-store dependency) and hands you the previous value, which effects never see. Multiple same-tick writes fire the callback once per subscribed key at core's microtask drain.
 
 Subscriptions belong to the store that owns the key: a composed parent exposes only its own signal-backed keys, so `appStore.$subscribe('user', cb)` throws; subscribe on the nested store itself:
 

@@ -68,11 +68,11 @@ const TodoList = () => {
 mount(TodoList, "#app");
 ```
 
-A bare `{todos().map(...)}` is reactive (it reads the signal). For a one-time static snapshot, hoist the read (`const items = todos()`) or wrap it in [`untracked`](/reference/core/untracked); or, for lists that change, prefer [`ForEach`](/reference/dom/foreach).
+A bare `{todos().map(...)}` is reactive (it reads the signal). For a one-time static snapshot, hoist the read (`const items = todos()`) or wrap it in [`untracked`](/reference/core/untracked); or, for lists that change, prefer `ForEach`.
 
 ForEach tracks items by key: an explicit `key` attribute, then the item's `id` property, then the array index as fallback. Keys use key-only comparison, so the same key always reuses its DOM node even when the item reference changes (for example after a `.map()` spread); index-keyed items fall back to reference equality instead. A reused item keeps its DOM node and skips the renderer, so mutable item content (`done` above) lives in signals inside the item. Updates that change membership always set a fresh array reference (`items([...items(), "D"])`); mutating the array in place does not trigger reactivity. List items and their effects are cleaned up automatically when removed from the DOM, or when a reactive condition switches away from the list.
 
-See [`ForEach`](/reference/dom/foreach) for full keyed reconciliation details.
+See `ForEach` for full keyed reconciliation details.
 
 ## Portals
 
@@ -103,7 +103,7 @@ const Modal = () => {
 mount(Modal, "#app");
 ```
 
-**Portal types:** `append` (default), `prepend`, `replace`, `before`, `after`, controlling how content is inserted relative to the target:
+**`Portal` types:** `append` (default), `prepend`, `replace`, `before`, `after`, controlling how content is inserted relative to the target:
 
 ```jsx
 // Append as last child (default)
@@ -170,7 +170,7 @@ Plain `() => Promise` loaders work unchanged; the options argument is silently i
 />
 ```
 
-See [`Lazy`](/reference/dom/lazy) for full details.
+See `Lazy` for full details.
 
 ## Transitions
 
@@ -196,4 +196,4 @@ mount(App, "#app");
 
 When `show` turns `false` and a `leave` class is set, the class is added and the node is removed after `duration + 50` ms so the animation finishes; without a `leave` class, hiding removes the node synchronously. The `enter` class is suppressed on first render unless `appear` is set (`true` reuses `enter`, a string names a dedicated class). Toggling `show` back to `true` during a leave cancels the removal timer; repeated toggling is safe.
 
-See [`Transition`](/reference/dom/transition) for full details.
+See `Transition` for full details.

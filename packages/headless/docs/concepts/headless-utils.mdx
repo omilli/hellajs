@@ -32,7 +32,7 @@ The `hook:afterMount` hook fires when the `<nav>` enters the DOM and hands you t
 
 | Job | Util |
 |---|---|
-| Dismiss on Escape or outside click | [`onEscape`](/headless/onescape), [`onOutside`](/headless/onoutside), [`layerDismissal`](/headless/layerdismissal) |
+| Dismiss on Escape or outside click | [`onEscape`](/headless/onescape), `onOutside`, [`layerDismissal`](/headless/layerdismissal) |
 | Keyboard navigation | [`trapFocus`](/headless/trapfocus), [`rovingTabIndex`](/headless/rovingtabindex), [`menuTypeahead`](/headless/menutypeahead) |
 | Position a floating element | [`anchorPosition`](/headless/anchorposition), [`computeAnchorPosition`](/headless/computeanchorposition) |
 | Open and close on a delay | [`hoverIntent`](/headless/hoverintent) |
@@ -49,7 +49,7 @@ Each has its own reference page with the full options.
 
 ## The modal Util
 
-`modal` layers the utils into one wiring for a component family: it composes [`trapFocus`](/headless/trapfocus), [`onEscape`](/headless/onescape), and [`onOutside`](/headless/onoutside) the way every dialog, alert dialog, sheet, and drawer panel arms them, re-arms with your state getter on reopen, and disposes with the node instead of a dispose handle. Call it from `hook:afterMount`; there is no cleanup to track.
+`modal` layers the utils into one wiring for a component family: it composes `trapFocus`, `onEscape`, and `onOutside` the way every dialog, alert dialog, sheet, and drawer panel arms them, re-arms with your state getter on reopen, and disposes with the node instead of a dispose handle. Call it from `hook:afterMount`; there is no cleanup to track.
 
 ## Components
 
@@ -85,9 +85,9 @@ State is controlled-or-internal, the same contract as the registry's `value`/`on
 
 The components tier pays for itself when a component coordinates state across components: an open machine shared by a trigger and content, a selection model behind a list, roving focus over a group. When a component wires exactly one util locally and holds no cross-component state, calling the util directly is the better contract: fewer factory options, no versioned components surface, and the wiring reads inline where it runs. The registry keeps three such raw users deliberately:
 
-- `drawer` dismisses from a drag: [`onDrag`](/headless/ondrag) watches the panel edge while [`modal`](/headless/modal) arms the trap and dismissal. One gesture wiring, no shared state.
-- `sidebar` opens its rail on hover and pins popover content to a trigger: [`hoverIntent`](/headless/hoverintent) plus [`anchorPosition`](/headless/anchorposition), each a single local wiring.
-- `resizable` maps pointer drags to pane sizes: [`onDrag`](/headless/ondrag) with the value math living in the component itself.
+- `drawer` dismisses from a drag: `onDrag` watches the panel edge while `modal` arms the trap and dismissal. One gesture wiring, no shared state.
+- `sidebar` opens its rail on hover and pins popover content to a trigger: `hoverIntent` plus `anchorPosition`, each a single local wiring.
+- `resizable` maps pointer drags to pane sizes: `onDrag` with the value math living in the component itself.
 
 The decision rule: a local single-util wiring with no cross-component state stays raw. Reach for a factory when components must share state, when dismissal needs layer coordination, or when a keyboard and aria contract would otherwise be reinvented inline.
 
@@ -132,7 +132,7 @@ const Dialog = () => (
 mount(<div>{() => (open() ? <Dialog /> : <p>Nothing open</p>)}</div>, "#app");
 ```
 
-[`trapFocus`](/headless/trapfocus) keeps Tab and Shift+Tab inside the panel, wrapping from the last focusable child to the first. When the dialog closes, `beforeDestroy` fires and every handle runs.
+`trapFocus` keeps Tab and Shift+Tab inside the panel, wrapping from the last focusable child to the first. When the dialog closes, `beforeDestroy` fires and every handle runs.
 
 ## Wire Existing HTML
 
@@ -140,7 +140,7 @@ For markup you did not render (static HTML, server-generated pages), [`$ref`](/r
 
 ## Anchor a Floating Element
 
-[`anchorPosition`](/headless/anchorposition) pins a floating element to an anchor and keeps it placed while the page scrolls or resizes. One `options` object controls placement, offset, and matching the floating width to the anchor.
+`anchorPosition` pins a floating element to an anchor and keeps it placed while the page scrolls or resizes. One `options` object controls placement, offset, and matching the floating width to the anchor.
 
 ```jsx
 import { mount } from "@hellajs/dom";
@@ -170,11 +170,11 @@ const MenuButton = () => (
 mount(<MenuButton />, "#app");
 ```
 
-Need a one-shot position with no tracking? [`computeAnchorPosition`](/headless/computeanchorposition) computes placement over plain rects, no listeners attached.
+Need a one-shot position with no tracking? `computeAnchorPosition` computes placement over plain rects, no listeners attached.
 
 ## Open on Hover With a Delay
 
-[`hoverIntent`](/headless/hoverintent) is the tooltip timing contract: open after a hover or focus delay, close after a leave delay, close instantly on an outside press. The delay is shared across the page: when any trigger opened within the last 500ms, the next open fires instantly, so moving between adjacent triggers never feels laggy.
+`hoverIntent` is the tooltip timing contract: open after a hover or focus delay, close after a leave delay, close instantly on an outside press. The delay is shared across the page: when any trigger opened within the last 500ms, the next open fires instantly, so moving between adjacent triggers never feels laggy.
 
 ```jsx
 import { signal } from "@hellajs/core";
@@ -206,7 +206,7 @@ Delays are configurable through the same options object.
 
 ## Search a Menu by Typing
 
-[`menuTypeahead`](/headless/menutypeahead) lets a menu user type to select: printable keystrokes buffer into a case-insensitive query and the first match is selected, preferring items that start with the query. The query resets 500ms after the last keystroke. Arrow keys and modifier chords pass through untouched, so typeahead composes with [`rovingTabIndex`](/headless/rovingtabindex) navigation.
+`menuTypeahead` lets a menu user type to select: printable keystrokes buffer into a case-insensitive query and the first match is selected, preferring items that start with the query. The query resets 500ms after the last keystroke. Arrow keys and modifier chords pass through untouched, so typeahead composes with `rovingTabIndex` navigation.
 
 ```jsx
 import { mount } from "@hellajs/dom";
@@ -240,7 +240,7 @@ mount(<Menu />, "#app");
 
 ## Track Pointer Gestures
 
-[`onDrag`](/headless/ondrag) reports cumulative `{ dx, dy }` deltas from the drag start and leaves all value math to you: slider thumbs clamp, drawer swipes measure distance. One drag ends on `pointerup`, `pointercancel`, or a lost capture.
+`onDrag` reports cumulative `{ dx, dy }` deltas from the drag start and leaves all value math to you: slider thumbs clamp, drawer swipes measure distance. One drag ends on `pointerup`, `pointercancel`, or a lost capture.
 
 ```jsx
 import { signal } from "@hellajs/core";
@@ -267,11 +267,11 @@ mount(<Thumb />, "#app");
 
 Give draggable elements `touch-action: none` in your CSS so native scrolling does not steal the pointer; the wiring never touches styles.
 
-The gesture family covers the rest: [`onSwipe`](/headless/onswipe) commits a swipe past a threshold or velocity, [`onPinch`](/headless/onpinch) reports scale and translation for two-finger pinches, [`onLongPress`](/headless/onlongpress) fires after a timed press with drift tolerance, and [`onDoubleTap`](/headless/ondoubletap) fires on a second tap within a window.
+The gesture family covers the rest: `onSwipe` commits a swipe past a threshold or velocity, `onPinch` reports scale and translation for two-finger pinches, `onLongPress` fires after a timed press with drift tolerance, and `onDoubleTap` fires on a second tap within a window.
 
 ## Dismiss Stacked Overlays One Layer at a Time
 
-When overlays stack (a submenu over a menu over a popover), a dismissal should close one surface, not all of them. [`layerDismissal`](/headless/layerdismissal) keeps a page-wide stack: Escape or an outside click dismisses only the top layer. Your `onDismiss` callback must dispose the wiring in the same path.
+When overlays stack (a submenu over a menu over a popover), a dismissal should close one surface, not all of them. `layerDismissal` keeps a page-wide stack: Escape or an outside click dismisses only the top layer. Your `onDismiss` callback must dispose the wiring in the same path.
 
 ```jsx
 import { mount } from "@hellajs/dom";

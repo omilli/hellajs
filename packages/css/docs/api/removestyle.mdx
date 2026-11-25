@@ -68,7 +68,7 @@ Removing a DOM node that used the class does not decrement anything: call `remov
 
 ### Deterministic Matching
 
-The class and rule text are re-derived from the arguments through the same transform [`style`](/reference/css/style) uses, so no cached reference is needed: structurally identical objects in any key order locate the registration. On the server (no DOM) the decrement still runs; only the sheet write is DOM-gated.
+The class and rule text are re-derived from the arguments through the same transform `style` uses, so no cached reference is needed: structurally identical objects in any key order locate the registration. On the server (no DOM) the decrement still runs; only the sheet write is DOM-gated.
 
 ## Important Considerations
 
@@ -94,6 +94,6 @@ removeStyle({
 
 ### Function Values Throw
 
-`removeStyle` re-derives the rule text through the same transform as [`style`](/reference/css/style), so an object containing a function property value throws here too. Build reactive values with [`vars`](/reference/css/vars) instead.
+`removeStyle` re-derives the rule text through the same transform as `style`, so an object containing a function property value throws here too. Build reactive values with [`vars`](/reference/css/vars) instead.
 
 For clearing every css-side registration at once, use [`resetCss`](/reference/css/resetcss).

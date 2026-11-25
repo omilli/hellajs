@@ -301,7 +301,7 @@ Replace class instances (`Date`, ...) with plain values before passing them in: 
 
 ### Scopes Accumulate
 
-Multiple `vars()` calls writing the same scope merge rather than overwrite: each call adds its own keys to the bucket. [`removeVars`](/reference/css/removevars) removes only the keys of the call it matches, so other calls' contributions survive.
+Multiple `vars()` calls writing the same scope merge rather than overwrite: each call adds its own keys to the bucket. `removeVars` removes only the keys of the call it matches, so other calls' contributions survive.
 
 ```jsx
 import { removeVars, vars } from '@hellajs/css';
@@ -327,4 +327,4 @@ removeVars({
 
 ### Memory Management
 
-[`removeVars`](/reference/css/removevars) decrements one registration (reactive entries dispose their effect at zero references); [`resetVars`](/reference/css/resetvars) clears every registration, cache, and reactive effect at once. Reach for `removeVars` for component-lifetime tokens and `resetVars` for teardown between test runs or app instances.
+`removeVars` decrements one registration (reactive entries dispose their effect at zero references); [`resetVars`](/reference/css/resetvars) clears every registration, cache, and reactive effect at once. Reach for `removeVars` for component-lifetime tokens and `resetVars` for teardown between test runs or app instances.

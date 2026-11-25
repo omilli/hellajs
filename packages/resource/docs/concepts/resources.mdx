@@ -107,7 +107,7 @@ Each evaluation of `key: () => ({ ...filters() })` builds a fresh object; only a
 
 ⚠️ Structural comparison covers arrays and plain objects. A `Date`, `Map`, `Set`, or class instance used as the key itself (or nested inside a key) falls back to reference equality: the same object reference hits, an equal-looking fresh one misses. Use primitives or plain objects for shareable keys, and remember `invalidateByPrefix`/`invalidateByPattern` match string keys only; structurally-hashed keys are opaque to them.
 
-For the full API surface including `initialData`, `enabled`, `timeout`, `deduplicate`, and all reactive getters, see [`resource`](/reference/resource/resource).
+For the full API surface including `initialData`, `enabled`, `timeout`, `deduplicate`, and all reactive getters, see `resource`.
 
 ## Mutations
 
@@ -145,7 +145,7 @@ const addTodoResource = resource(
 addTodoResource.mutate({ text: 'Learn mutations', completed: false }).catch(() => { /* handled in onSettled */ });
 ```
 
-The mutation lifecycle (`onMutate`, `onSettled`) provides the hooks needed for optimistic updates with rollback. See [`resource`](/reference/resource/resource) for the full lifecycle API.
+The mutation lifecycle (`onMutate`, `onSettled`) provides the hooks needed for optimistic updates with rollback. See `resource` for the full lifecycle API.
 
 ### Concurrent Mutations
 
@@ -162,7 +162,7 @@ const submitTodo = () => {
 
 ## Features
 
-Resources provide several built-in features for production data fetching. Each is documented in full detail in the [`resource`](/reference/resource/resource) reference.
+Resources provide several built-in features for production data fetching. Each is documented in full detail in the `resource` reference.
 
 ### Stale-While-Revalidate (SWR)
 

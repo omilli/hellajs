@@ -77,7 +77,7 @@ Finally, give the app a mount point. Replace the contents of `index.html` with a
 
 ## Theme State
 
-Start by creating a [signal](/reference/core/signal) for the dark mode flag and rendering the app shell.
+Start by creating a [`signal`](/reference/core/signal) for the dark mode flag and rendering the app shell.
 
 Replace the content of `main.tsx` with the component shell.
 
@@ -108,7 +108,7 @@ Your app will be running at `http://localhost:5173`.
 
 **Code Explanation**
 
-- **[`signal`](/reference/core/signal)`(false)`**:  Creates reactive state for the dark mode flag, starting in light mode
+- **`signal``(false)`**:  Creates reactive state for the dark mode flag, starting in light mode
 - **`<>`**:  Fragment syntax: renders the children with no wrapper element
 - **[`mount`](/reference/dom/mount)`(ThemeSwitcher, '#app')`**:  Renders the component into the DOM
 
@@ -135,7 +135,7 @@ const theme = vars({
 
 **Code Explanation**
 
-- **[`vars`](/reference/css/vars)`({...})`**:  Creates reactive CSS custom properties; function leaves re-evaluate when the signals they read change
+- **`vars``({...})`**:  Creates reactive CSS custom properties; function leaves re-evaluate when the signals they read change
 - **`colors.dark`, `colors.light`**:  Static palette leaves: fixed values, so no function is needed
 - **`theme.bg`**:  A derived leaf that reads `isDark()` and picks from the palette, recalculating when the flag flips
 - **Two `vars` calls**:  The palette holds raw values while `theme` holds the switching logic, so each concern stays separate
@@ -171,7 +171,7 @@ const ThemeSwitcher = () => (
 
 **Code Explanation**
 
-- **[`css`](/reference/css/css)`({...})`**:  Registers global styles for the `body` and `button` selectors, consuming the reactive variables
+- **`css``({...})`**:  Registers global styles for the `body` and `button` selectors, consuming the reactive variables
 - **`backgroundColor: theme.bg`**:  Reads a derived variable, so the page background follows the flag
 - **`isDark(!isDark())`**:  Reads the flag and writes the flipped value back to the signal
 - **`{isDark() ? "☀️ Light" : "🌙 Dark"}`**:  Conditional button label that updates reactively

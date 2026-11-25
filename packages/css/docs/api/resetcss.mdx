@@ -64,7 +64,7 @@ The sheet reset itself is DOM-only (a no-op without a document); the registratio
 
 ### When to Reach for It
 
-Use `resetCss()` when every css-side registration should go at once: between test runs, during hot-module replacement in development, or when tearing down an app instance that owned its styles. For removing one registration while the rest live on, use [`removeCss`](/reference/css/removecss) / [`removeStyle`](/reference/css/removestyle) / [`removeKeyframes`](/reference/css/removekeyframes); for a complete reset of both sides, pair it with [`resetVars`](/reference/css/resetvars).
+Use `resetCss()` when every css-side registration should go at once: between test runs, during hot-module replacement in development, or when tearing down an app instance that owned its styles. For removing one registration while the rest live on, use [`removeCss`](/reference/css/removecss) / [`removeStyle`](/reference/css/removestyle) / [`removeKeyframes`](/reference/css/removekeyframes); for a complete reset of both sides, pair it with `resetVars`.
 
 ### Safety
 

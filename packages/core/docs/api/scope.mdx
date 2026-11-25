@@ -4,7 +4,7 @@ Batch-collect multiple [`effect`](/reference/core/effect) functions for a single
 
 ## Basic Usage
 
-Run multiple [`effect`](/reference/core/effect) cleanup functions at once.
+Run multiple `effect` cleanup functions at once.
 
 ```typescript
 import { signal, effect, scope } from '@hellajs/core';
@@ -27,14 +27,14 @@ count(10); // Nothing logged
 ```typescript
 function scope(fn: () => void): () => void
 ```
-- `fn`: All [`effect`](/reference/core/effect) functions created during execution are collected
+- `fn`: All `effect` functions created during execution are collected
 - **Returns**: A cleanup function that disposes all collected effects
 
 ## Key Concepts
 
 ### Nested Scopes
 
-Scopes can be nested, with each scope managing its own set of [`effect`](/reference/core/effect) functions independently.
+Scopes can be nested, with each scope managing its own set of `effect` functions independently.
 ```typescript
 import { signal, effect, scope } from '@hellajs/core';
 
@@ -60,7 +60,7 @@ value(3); // Nothing logged (both stopped)
 
 ### Lazy Scopes
 
-A scope without [`effect`](/reference/core/effect) functions returns a cleanup function that does nothing.
+A scope without `effect` functions returns a cleanup function that does nothing.
 
 ```typescript
 import { scope } from '@hellajs/core';
@@ -95,7 +95,7 @@ dispose(); // Safe, does nothing
 
 ### Effects Outside Scope
 
-Only [`effect`](/reference/core/effect) functions created **within** the scope callback are collected.
+Only `effect` functions created **within** the scope callback are collected.
 
 ```typescript
 import { signal, effect, scope } from '@hellajs/core';

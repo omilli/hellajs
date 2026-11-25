@@ -142,7 +142,7 @@ css({
 
 **Code Explanation**
 
-- **[`css`](/reference/css/css)`({ ... })`**:  Writes global CSS rules from the object; every top-level key is a raw CSS selector
+- **`css``({ ... })`**:  Writes global CSS rules from the object; every top-level key is a raw CSS selector
 - **`body` / `button`**:  Tag selectors center the page and add breathing room between the buttons
 - **Module level**:  The call sits outside the component, so it runs once at startup instead of on every render
 
@@ -179,10 +179,10 @@ const Counter = () => {
 
 **Code Explanation**
 
-- **[`computed`](/reference/core/computed)`(() => count() === 0)`**:  Creates a cached derived value that updates when `count` changes
+- **`computed``(() => count() === 0)`**:  Creates a cached derived value that updates when `count` changes
 - **`isDisabled`**:  Tracks whether the count is zero; the next section binds it to button `disabled` attributes
 
-Regular functions work fine for derived state, but [`computed`](/reference/core/computed) caches the result and skips recomputation when the value has not changed.
+Regular functions work fine for derived state, but `computed` caches the result and skips recomputation when the value has not changed.
 
 **Cached:** `const isDisabled = computed(() => count() === 0)` (skips recomputation when `count` is unchanged)
 

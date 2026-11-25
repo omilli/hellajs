@@ -8,7 +8,7 @@ Jump to the [Complete Code](#complete-code) for the finished application.
 
 ## What You'll Learn
 
-- **[`ssr`](/reference/ssr/ssr)**: Serialize a view tree to an HTML string on the server
+- **`ssr`**: Serialize a view tree to an HTML string on the server
 - **[`doc`](/reference/ssr/doc)**: Wrap rendered HTML into a full document with a stylesheet and script tag
 - **[`css`](/reference/css/css)**: Register styles on both platforms, collected by [`cssText`](/reference/css/csstext) for `doc()` to emit
 - **[`mount`](/reference/dom/mount)**: Mount a reactive island into an empty slot the server left open
@@ -123,7 +123,7 @@ if (watch) {
 
 ## The App Template
 
-The shared module is pure data, no DOM: a global button rule and a static shell (a heading plus an empty `#app` slot for the island). The server renders the view with [`ssr`](/reference/ssr/ssr); the client mounts an island into the slot by selector.
+The shared module is pure data, no DOM: a global button rule and a static shell (a heading plus an empty `#app` slot for the island). The server renders the view with `ssr`; the client mounts an island into the slot by selector.
 
 Create `src/app.tsx`:
 
@@ -149,12 +149,12 @@ export const App = () => (
 **Code Explanation**
 
 - **`<div id="app"></div>`**: An empty placeholder. The client mounts a reactive island here
-- **[`css`](/reference/css/css)`({ button: { ... } })`**: Registers the rules on both platforms (state-only on the server); the server entry later collects the text with [`cssText`](/reference/css/csstext)`()`
+- **`css``({ button: { ... } })`**: Registers the rules on both platforms (state-only on the server); the server entry later collects the text with `cssText``()`
 - **`App`**: A component returning JSX. The build step compiles it to a HellaNode tree; nothing parses at runtime
 
 ## Server Rendering
 
-The server stringifies the view with [`ssr`](/reference/ssr/ssr) and wraps it into a full document with [`doc`](/reference/ssr/doc). Importing `./app` runs the module's `css()` registration; the server then calls [`cssText`](/reference/css/csstext)`()` and delivers the collected text through `doc()`'s `head.raw`, inside a `<style>` carrying the `hella-css` id: the adoption contract that keeps a hydrating client from re-registering the same rules into a second tag. A [Hono](https://hono.dev) app serves the document plus the client bundle `build.mjs` emitted.
+The server stringifies the view with `ssr` and wraps it into a full document with `doc`. Importing `./app` runs the module's `css()` registration; the server then calls `cssText``()` and delivers the collected text through `doc()`'s `head.raw`, inside a `<style>` carrying the `hella-css` id: the adoption contract that keeps a hydrating client from re-registering the same rules into a second tag. A [Hono](https://hono.dev) app serves the document plus the client bundle `build.mjs` emitted.
 
 Create `src/server.tsx`:
 
@@ -195,12 +195,12 @@ serve({ fetch: app.fetch, port: Number(process.env.PORT) || 3000 });
 **Code Explanation**
 
 - **`import { App } from "./app"`**: Pulls the view from the shared module; the import also runs its `css()` registration on the server
-- **[`cssText`](/reference/css/csstext)`()`**: Collects the registered CSS text at call time (after the `./app` import ran the registrations) into the `hella-css`-tagged `<style>`
+- **`cssText``()`**: Collects the registered CSS text at call time (after the `./app` import ran the registrations) into the `hella-css`-tagged `<style>`
 - **`readFileSync(new URL('../dist/client.js', import.meta.url))`**: Loads the client bundle `build.mjs` emitted, relative to this file inside `dist/`
 - **`app.get(path, handler)`**: Registers a Hono route. `/client.js` serves the bundle from disk; the catch-all renders the document
-- **[`ssr`](/reference/ssr/ssr)`(App())`**: Walks the view tree to an HTML string. `App()` runs server-side; the compiled output is DOM-free
+- **`ssr``(App())`**: Walks the view tree to an HTML string. `App()` runs server-side; the compiled output is DOM-free
 - **[`serve`](https://hono.dev/docs/getting-started/nodejs)`({ fetch: app.fetch, port: Number(process.env.PORT) || 3000 })`**: Runs the Hono app on Node's HTTP server
-- **[`doc`](/reference/ssr/doc)`({ head, body })`**: Assembles a full document. `head.raw` carries the `hella-css`-tagged `<style>` verbatim; `scripts` emits each tag
+- **`doc``({ head, body })`**: Assembles a full document. `head.raw` carries the `hella-css`-tagged `<style>` verbatim; `scripts` emits each tag
 
 ## Client Enhancement
 
@@ -230,7 +230,7 @@ mount(Counter, "#app");
 - **[`signal`](/reference/core/signal)`(0)`**: Holds the click count
 - **`<p>Count: {count}</p>`**: A reactive text binding. Interpolating the signal creates a node that updates automatically when `count` changes
 - **`on:click={() => count(count() + 1)}`**: Updates the signal value on click
-- **[`mount`](/reference/dom/mount)`(Counter, "#app")`**: Renders the island into the empty slot. The server left `#app` empty, so nothing is wiped
+- **`mount``(Counter, "#app")`**: Renders the island into the empty slot. The server left `#app` empty, so nothing is wiped
 
 <Callout variant="error">mount calls replaceChildren on its target: pointing it at any element the server already populated wipes that HTML. Always mount into an empty slot.</Callout>
 

@@ -1,6 +1,6 @@
 ## API
 
-The controller, per-field signals, validation timing, and submit handling live in the [`createForm()`](/headless/createform) factory from `@hellajs/headless`; the copied file re-exports the factory and wraps the headless components (`FormItem`, `FormLabel`, `FormControl`, `FormDescription`, `FormMessage`) with the styled classes, so wiring upgrades land through the package while the pasted styles stay yours.
+The controller, per-field signals, validation timing, and submit handling live in the [`createForm`](/headless/createform) factory from `@hellajs/headless`; the copied file re-exports the factory and wraps the headless components (`FormItem`, `FormLabel`, `FormControl`, `FormDescription`, `FormMessage`) with the styled classes, so wiring upgrades land through the package while the pasted styles stay yours.
 
 One `createForm` call drives the whole row: field state flows into each component as explicit props, and the message re-renders as validation runs.
 

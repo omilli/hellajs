@@ -153,7 +153,7 @@ The generated text is the registration identity: every `css()` call producing th
 
 ### Shadow DOM Hosts
 
-Pass `host` to create the `<style>` element inside a shadow root instead of `document.head`. Sheets are per host: the same styles injected into two hosts produce two independent `<style>` elements with separate reference counting, and [`removeCss`](/reference/css/removecss) with the same `host` removes from that host's sheet.
+Pass `host` to create the `<style>` element inside a shadow root instead of `document.head`. Sheets are per host: the same styles injected into two hosts produce two independent `<style>` elements with separate reference counting, and `removeCss` with the same `host` removes from that host's sheet.
 
 ```typescript
 import { css, vars } from '@hellajs/css';
@@ -196,7 +196,7 @@ Styles injected with a `host` never reach `document.head`, and `resetCss()` clea
 
 ### Declarations Need a Selector
 
-A declaration with no selector in scope would be silently dropped by the browser, so `css()` rejects it loudly instead. The same object throws in [`removeCss`](/reference/css/removecss) and on the server; the check runs before any platform branching.
+A declaration with no selector in scope would be silently dropped by the browser, so `css()` rejects it loudly instead. The same object throws in `removeCss` and on the server; the check runs before any platform branching.
 
 ```jsx
 // ❌ Throws: top-level declarations have no selector

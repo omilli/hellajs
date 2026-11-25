@@ -57,7 +57,7 @@ For styles tied to a component's lifetime, keep the objects together and remove 
 
 ### Deterministic Matching
 
-The CSS text is re-derived from `(obj, options)` through the same transform [`css`](/reference/css/css) uses, so structurally identical objects in any key order locate the registration; no reference needs to be held. On the server (no DOM) the decrement still runs; only the sheet write is DOM-gated.
+The CSS text is re-derived from `(obj, options)` through the same transform `css` uses, so structurally identical objects in any key order locate the registration; no reference needs to be held. On the server (no DOM) the decrement still runs; only the sheet write is DOM-gated.
 
 ### Removing from a Host
 
@@ -97,6 +97,6 @@ A removal that derives different text finds no entry: it is a no-op, never a thr
 
 ### Function Values Throw
 
-`removeCss` re-derives the text through the same transform as [`css`](/reference/css/css), so an object containing a function property value throws here too, with the same error both entry points report. Build reactive values with [`vars`](/reference/css/vars) instead.
+`removeCss` re-derives the text through the same transform as `css`, so an object containing a function property value throws here too, with the same error both entry points report. Build reactive values with [`vars`](/reference/css/vars) instead.
 
 For clearing every css-side registration at once, use [`resetCss`](/reference/css/resetcss).

@@ -281,7 +281,7 @@ router({ routes: { ...routes, '/new': () => currentView('New') } });
 
 ### Router Return Value
 
-`router()` resolves the initial route synchronously and returns the matched [`RouteInfo`](/reference/router/route). `handler`, `params`, `query`, and `path` are all set when the call returns.
+`router()` resolves the initial route synchronously and returns the matched `RouteInfo`. `handler`, `params`, `query`, and `path` are all set when the call returns.
 
 ```typescript
 import { effect } from "@hellajs/core";
