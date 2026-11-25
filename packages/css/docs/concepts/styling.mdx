@@ -55,44 +55,30 @@ Values follow plain rules:
 - Arrays join with commas
 - `null` and `undefined` drop.
 
-## Merging Style Objects
+## Joining Classes with cx
 
-Reach for a merge when two styles are variants of one design and you want a single class that carries both. Pass an object as the first argument and an override as the second: the result is one class, and nested selector blocks merge key by key with the override winning.
+Reach for [`cx`](/reference/css/cx) when several classes should stay separate rules. The common case is one design with modifiers: register the shared look once, give each modifier a class that carries only its delta, and join the two strings.
 
-```jsx
-import { style } from '@hellajs/css';
+```typescript
+import { cx, style } from '@hellajs/css';
 
-// Authored once, never registered on its own: every consumer merges it
-const fieldBase = {
+// One rule holds the shared declarations
+const field = style('field', {
   padding: '0.75rem',
   borderRadius: '0.5rem',
   border: '1px solid #d1d5db',
-  '&:focus': {
-    borderColor: '#3b82f6',
-  },
-};
+});
 
-// The red border wins; the focus block merges instead of replacing
-const errorField = style(fieldBase, {
+// Each modifier carries only its delta
+const fieldError = style('field-error', {
   borderColor: '#dc2626',
-}, {
-  label: 'field-error',
 });
 
-const successField = style(fieldBase, {
-  borderColor: '#16a34a',
-}, {
-  label: 'field-success',
-});
+const errorField = cx(field, fieldError);
+// "field-… field-error-…"
 ```
 
-The override wins on flat keys, and a nested block such as `'&:focus'` merges with the base's block rather than replacing it. Arrays and scalars replace. A merge takes its label through the options bag, not a leading string.
-
-Keep the base a plain object and register only the merged results. Each merged class is a complete rule: if the base is also registered on its own, its declarations are emitted twice, once under the base class and once inside every merge. When the two styles are independent concerns instead of variants of one design, join the class strings with [`cx`](/reference/css/cx) as shown next.
-
-## Joining Classes with cx
-
-Reach for [`cx`](/reference/css/cx) when the classes come from different places and should stay separate rules: a layout class plus a theme class, a hashed class plus an external utility, or a class plus a conditional one. It joins its arguments into one string and registers nothing.
+Independent classes join the same way: a layout class plus a theme class, a hashed class plus an external utility, or a class plus a conditional one. `cx` joins its arguments into one string and registers nothing.
 
 ```jsx
 import { cx, style } from '@hellajs/css';
@@ -129,6 +115,74 @@ const itemClass = cx('todo', {
 ```
 
 Class strings from any source compose here: [`style`](/reference/css/style) classes, [`cva`](/reference/css/cva) output, and classes from other frameworks. When the fragments depend on signals, bind them at the attribute instead so the class re-derives; the dom package covers the array and function forms in [templates](/learn/concepts/templates).
+
+## Merging Style Objects
+
+Reach for a merge when the new style must stay one class and an override adds into one of the base's nested blocks. Pass an array of style objects to [`style`](/reference/css/style): they merge left to right, the last entry wins, nested selector blocks merge key by key, and arrays and scalars replace.
+
+```typescript
+import { style } from '@hellajs/css';
+
+// Authored once, never registered on its own: every consumer merges it
+const surfacePreset = {
+  padding: '1rem',
+  borderRadius: '0.5rem',
+  '&:hover': {
+    borderColor: '#adb5bd',
+    boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
+  },
+};
+
+// One registration; the hover block keeps the preset's border and shadow
+const tile = style([surfacePreset, {
+  padding: '1.5rem',
+  '&:hover': {
+    backgroundColor: '#f8f9fa',
+  },
+}]);
+```
+
+The override wins on flat keys, and a nested block such as `'&:hover'` merges with the base's block rather than replacing it. A merge takes its label through the options bag, not a leading string.
+
+Keep the base a plain object and register only the merged results. Each merged class is a complete rule, so two merges from one base emit the base's declarations twice. Variants of one design are a job for `cx`, not one merge per variant:
+
+```typescript
+import { style } from '@hellajs/css';
+
+const fieldBase = {
+  padding: '0.75rem',
+  border: '1px solid #d1d5db',
+};
+
+// ❌ Two merges from one base: its declarations ship twice, once per rule
+const errorField = style([fieldBase, {
+  borderColor: '#dc2626',
+}]);
+const successField = style([fieldBase, {
+  borderColor: '#16a34a',
+}]);
+```
+
+```typescript
+import { cx, style } from '@hellajs/css';
+
+// ✅ One registered base; each modifier carries only its delta
+const field = style('field', {
+  padding: '0.75rem',
+  border: '1px solid #d1d5db',
+});
+const fieldError = style('field-error', {
+  borderColor: '#dc2626',
+});
+const fieldSuccess = style('field-success', {
+  borderColor: '#16a34a',
+});
+
+const errorField = cx(field, fieldError);
+const successField = cx(field, fieldSuccess);
+```
+
+A recipe base takes the same door: `base: style([defaults, overrides])` merges a recipe's defaults with its overrides into the base class.
 
 ## Reusing a Class as a Recipe Base
 

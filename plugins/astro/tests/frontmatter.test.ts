@@ -115,7 +115,7 @@ describe("astro", () => {
           [`import { style } from "@hellajs/css";`],
           [
             `  const base = { fontSize: "14px" };`,
-            `  const merged = style(base, { color: "blue" });`,
+            `  const merged = style([base, { color: "blue" }]);`,
             `  const labeledBtn = style("btn", { color: "red" });`,
             `  const labeled = style({ margin: 0 }, { label: "card" });`,
           ].join("\n"),
@@ -145,7 +145,7 @@ describe("astro", () => {
       const { code, css, island, watched } = run(
         compiled(
           [`import { style } from "@hellajs/css";`, `import { base, spin } from "../theme";`],
-          "  const hero = style(base, { animation: `${spin} 1s linear` });",
+          "  const hero = style([base, { animation: `${spin} 1s linear` }]);",
           "<body><div></div></body>",
         ),
         { resolve, load },

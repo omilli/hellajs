@@ -41,9 +41,9 @@ Not for: DOM rendering and components (`dom-best-practices`), the copy/paste com
 ### Scoped styles (style)
 
 - `style-component-scoped` - Scope component styles with style, not global classes
-- `style-compose-objects` - Compose styles with style(base, override), not object spreads
 - `style-function-values` - Reactive values belong in vars, never in style objects
 - `style-layer-precedence` - Cascade layers rank below unlayered CSS
+- `style-merge-arrays` - Merge style objects with style([base, override]), not object spreads
 - `style-remove-mirror` - Mirror style options exactly in removeStyle
 - `style-shadow-host` - Host web component styles with the host option
 

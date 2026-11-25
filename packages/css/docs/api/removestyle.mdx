@@ -32,13 +32,12 @@ function removeStyle(obj: StyleObject, options?: StyleOptions): void;
 // Remove a labeled style (matching the style() label overload)
 function removeStyle(label: string, obj: StyleObject, options?: StyleOptions): void;
 
-// Remove a composed style (matching the style() overload)
-function removeStyle(base: StyleObject, override: StyleObject, options?: StyleOptions): void;
+// Remove a merged style (matching the style() array overload)
+function removeStyle(objs: readonly StyleObject[], options?: StyleOptions): void;
 ```
 - `obj`: Style object to remove (structurally identical objects match, same reference not required)
 - `label`: Label used when creating the style; `removeStyle('card', obj)` matches `style('card', obj)`
-- `base`: Style object used in the `style()` call
-- `override`: Style object used in the `style()` call
+- `objs`: The array passed to the matching `style()` call, in the same order (structurally identical objects match, same reference not required)
 - `options`: Optional configuration, must match the options used in `style()`
   - `label`: Label used when creating the style
   - `host`: Node the style was injected into; a removal without the same `host` targets a different entry

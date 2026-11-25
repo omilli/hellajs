@@ -20,9 +20,9 @@ Best practices for @hellajs/css, the type-safe CSS-in-JS package: scoped style()
 ## Contents
 - 1. Scoped styles
   - 1.1 Scope component styles with style, not global classes (`style-component-scoped`)
-  - 1.2 Compose styles with style(base, override), not object spreads (`style-compose-objects`)
-  - 1.3 Reactive values belong in vars, never in style objects (`style-function-values`)
-  - 1.4 Cascade layers rank below unlayered CSS (`style-layer-precedence`)
+  - 1.2 Reactive values belong in vars, never in style objects (`style-function-values`)
+  - 1.3 Cascade layers rank below unlayered CSS (`style-layer-precedence`)
+  - 1.4 Merge style objects with style([base, override]), not object spreads (`style-merge-arrays`)
   - 1.5 Mirror style options exactly in removeStyle (`style-remove-mirror`)
   - 1.6 Host web component styles with the host option (`style-shadow-host`)
 - 2. Global rules and value semantics
@@ -95,55 +95,7 @@ Nested keys compose under the generated class: `&` refers to the class at every 
 
 Reference: `packages/css/lib/style.ts` and `packages/css/lib/internal/identity.ts scopedClassName` and `packages/css/docs/api/style.mdx`
 
-### 1.2 Compose styles with style(base, override), not object spreads
-
-**Impact: MEDIUM** - shallow spreads replace nested objects wholesale and rehash the whole object per variant, while the compose overload deep-merges into one class
-
-Two object arguments compose: `style(base, override)` deep-merges into a single class where the override wins, nested plain objects merge recursively, and arrays and scalars replace. Spreading by hand is shallow: a nested selector object (`&:hover`) is replaced wholesale instead of merged, and every variant rehashes the full base object. Composing class strings is `cx()`'s job, not string concatenation.
-
-**Incorrect (what is wrong):**
-
-```ts
-import { style } from "@hellajs/css";
-
-const base = {
-  padding: "1rem",
-  "&:hover": {
-    background: "#f9fafb",
-  },
-};
-
-// Shallow spread: the nested hover object is dropped, not merged,
-// and the dense variant hashes a fresh full-size object
-const dense = style({
-  ...base,
-  padding: "0.5rem",
-});
-```
-
-**Correct (what is right):**
-
-```ts
-import { style } from "@hellajs/css";
-
-const base = {
-  padding: "1rem",
-  "&:hover": {
-    background: "#f9fafb",
-  },
-};
-
-// One merged class: override wins, nested objects merge, arrays replace
-const dense = style(base, {
-  padding: "0.5rem",
-});
-```
-
-A second plain object reads as an options bag only when every own key is `label`, `layer`, or `host` and no third argument is present; anything else is the override. A positional string first argument is a label, never a base.
-
-Reference: `packages/css/lib/style.ts mergeStyles` and `packages/css/docs/concepts/styling.mdx`
-
-### 1.3 Reactive values belong in vars, never in style objects
+### 1.2 Reactive values belong in vars, never in style objects
 
 **Impact: MEDIUM** - function property values throw at any nesting depth in css() and style() objects; the throw fires at the call, so the component never styles at all
 
@@ -182,7 +134,7 @@ const button = style("theme-btn", {
 
 Reference: `packages/css/lib/css.ts process` and `packages/css/docs/concepts/styling.mdx`
 
-### 1.4 Cascade layers rank below unlayered CSS
+### 1.3 Cascade layers rank below unlayered CSS
 
 **Impact: HIGH** - the layer option wraps rules in @layer, and layered rules lose to unlayered author CSS by construction, so a layered style silently loses to any unlayered rule regardless of specificity
 
@@ -231,6 +183,54 @@ const cta = style("cta", {
 ```
 
 Reference: `packages/css/lib/internal/identity.ts scopedRule` and `packages/css/tests/style-layer.test.ts` and `packages/css/docs/api/style.mdx`
+
+### 1.4 Merge style objects with style([base, override]), not object spreads
+
+**Impact: MEDIUM** - shallow spreads replace nested objects wholesale and rehash the whole object per variant, while the array form deep-merges into one class
+
+Pass an array of style objects: `style([base, override])` deep-merges left to right into a single class where later entries win, nested plain objects merge recursively, and arrays and scalars replace. Spreading by hand is shallow: a nested selector object (`&:hover`) is replaced wholesale instead of merged, and every variant rehashes the full base object. Variants of one design are `cx(field, modifier)`, not one merge per variant; composing class strings is `cx()`'s job, not string concatenation.
+
+**Incorrect (what is wrong):**
+
+```ts
+import { style } from "@hellajs/css";
+
+const base = {
+  padding: "1rem",
+  "&:hover": {
+    background: "#f9fafb",
+  },
+};
+
+// Shallow spread: the nested hover object is dropped, not merged,
+// and the dense variant hashes a fresh full-size object
+const dense = style({
+  ...base,
+  padding: "0.5rem",
+});
+```
+
+**Correct (what is right):**
+
+```ts
+import { style } from "@hellajs/css";
+
+const base = {
+  padding: "1rem",
+  "&:hover": {
+    background: "#f9fafb",
+  },
+};
+
+// One merged class: later entries win, nested objects merge, arrays replace
+const dense = style([base, {
+  padding: "0.5rem",
+}]);
+```
+
+After the array, the second argument is always the options bag (`label`, `layer`, `host`). The array takes style objects only: class strings and other non-objects throw, and so does an empty array. A positional string first argument is a label, never a base.
+
+Reference: `packages/css/lib/style.ts mergeStyles` and `packages/css/docs/concepts/styling.mdx`
 
 ### 1.5 Mirror style options exactly in removeStyle
 

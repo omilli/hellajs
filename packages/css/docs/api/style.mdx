@@ -52,13 +52,12 @@ function style(obj: StyleObject, options?: StyleOptions): string;
 // Positional label: the string wins over a bag `label`
 function style(label: string, obj: StyleObject, options?: StyleOptions): string;
 
-// Composition: an object base plus an override
-function style(base: StyleObject, override: StyleObject, options?: StyleOptions): string;
+// Merging: an array of style objects deep-merges into one class
+function style(objs: readonly StyleObject[], options?: StyleOptions): string;
 ```
 - `obj`: Style object to scope under the generated class
 - `label`: Readable segment embedded in the class name; wins over a bag `label`
-- `base`: Style object to compose onto
-- `override`: Style object contributing the new declarations
+- `objs`: One or more style objects merged left to right (later entries win, nested plain objects merge, arrays and scalars replace; class strings are rejected, compose existing classes with [`cx`](/reference/css/cx))
 - `options`: Optional configuration
   - `label`: Segment embedded in the class name (`{label}-{hash}`), sanitized to `[a-zA-Z0-9-]`; a label empty after sanitization is treated as absent
   - `layer`: Cascade layer name the emitted rules wrap in (`@layer <name>`). Unlayered author CSS beats layered rules, so consumer overrides win by construction; composes outermost of `@media` when both apply
@@ -115,14 +114,14 @@ const article = style('article', {
 
 Every part of a comma group composes on its own, so no part escapes the scope. Value rules match [`css`](/reference/css/css) exactly: numbers append `px` (unitless properties excepted), array values join with commas, `content` auto-quotes strings, and `null`/`undefined` values drop.
 
-### Composition
+### Merging Style Objects
 
-A second object argument deep-merges into the first and returns one class. The typical shape is a base object authored once and reused, plus a small override: the override wins, nested selector blocks merge key by key, and arrays replace. Class strings join with [`cx`](/reference/css/cx) instead.
+An array of style objects deep-merges left to right into a single class: later entries win, nested selector blocks merge key by key, and arrays replace. Two shapes cover the common cases: a base object authored once plus a small override, and a recipe base that merges the defaults with overrides.
 
-```jsx
-import { cx, style } from '@hellajs/css';
+```typescript
+import { cva, style } from '@hellajs/css';
 
-// Shared base, authored once and reused by every variant
+// Authored once, never registered on its own
 const fieldBase = {
   padding: '0.75rem',
   borderRadius: '0.5rem',
@@ -132,27 +131,56 @@ const fieldBase = {
   },
 };
 
-// One merged class: the focus block merges key by key,
-// the red borderColor wins over the base's blue
-const errorField = style(fieldBase, {
+const overrides = {
+  padding: '0.5rem',
+};
+
+// One class, one rule; the red border wins over the base's
+const errorField = style([fieldBase, {
   borderColor: '#dc2626',
-  '&:focus': {
-    borderColor: '#dc2626',
+}], {
+  label: 'field-error',
+});
+
+// The recipe's base class merges the same defaults with overrides
+const field = cva({
+  base: style([fieldBase, overrides]),
+  variants: {
+    state: {
+      invalid: {
+        borderColor: '#dc2626',
+      },
+    },
+  },
+});
+```
+
+The result is one class and one rule. Nothing registers the base on its own, so keep it a plain object and register only the merged results.
+
+The second shape is a style utility: a helper that returns a style object, which the caller merges into one class. The override can add a key inside one of the base's nested blocks, which a spread cannot do.
+
+```typescript
+import { style } from '@hellajs/css';
+
+// A style utility returns a style object, never a class
+const surface = (padding: string) => ({
+  padding,
+  borderRadius: '0.5rem',
+  '&:hover': {
+    backgroundColor: '#f9fafb',
   },
 });
 
-// Two classes, two rules; cx joins the strings
-const card = style('card', {
-  padding: '1rem',
-});
-const alert = cx(
-  card,
-  style('alert', {
-    border: '1px solid #dc2626',
-  }),
-);
-// "card-… alert-…"
+// One merged class; the hover block gains a border color instead of being replaced
+const tile = style([surface('1rem'), {
+  border: '1px solid #d1d5db',
+  '&:hover': {
+    borderColor: '#d1d5db',
+  },
+}]);
 ```
+
+Variants of one design are not merges: compose them as `cx` base plus modifier classes or as a [`cva`](/reference/css/cva) recipe, never one merge per variant.
 
 ### Identical on Both Platforms
 

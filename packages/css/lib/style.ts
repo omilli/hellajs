@@ -1,4 +1,4 @@
-import { isObject, isPlainObject, isString } from "./internal/core";
+import { isPlainObject, isString } from "./internal/core";
 import { registerText } from "./internal/injection";
 import { scopedRule } from "./internal/identity";
 import type { StyleObject, StyleOptions } from "./types";
@@ -40,80 +40,60 @@ function mergeStyles(base: StyleObject, override: StyleObject): StyleObject {
 }
 
 /**
- * A second plain-object argument is an options bag only when every own key is
- * `label` (string), `layer` (string), or `host` (object) — mirroring the
- * overload types, where a value shaped like `{ label: 'x' }` is assignable to
- * StyleOptions but not to a StyleObject override, and `{ label: { … } }` (a
- * nested `label` element selector) only to the override. The bag reading
- * holds only for the two-argument form: a third argument marks the second as
- * the override per the compose overload.
- */
-function isOptionBag(value: StyleObject | StyleOptions): value is StyleOptions {
-  const record = value as Record<string, unknown>;
-  const keys = Object.keys(record);
-  let i = 0;
-  const len = keys.length;
-  while (i < len) {
-    const key = keys[i++] as string;
-    const v = record[key];
-    if (key === "label") {
-      if (v !== undefined && !isString(v)) return false;
-    } else if (key === "host") {
-      if (v !== undefined && !isObject(v)) return false;
-    } else if (key === "layer") {
-      if (v !== undefined && !isString(v)) return false;
-    } else {
-      return false;
-    }
-  }
-  return true;
-}
-
-/**
  * @internal
  * Normalizes the shared style()/removeStyle() overloads and derives their
  * deterministic identity — no registration, no DOM. A string base is a
- * positional label (it wins over a bag `label`); an object base deep-merges
- * with the override into one class; a lone object hashes directly. The class
- * is derived from the object alone (never the emitted text), so the same
- * arguments always resolve identically — which is what lets removeStyle()
- * locate what style() registered.
+ * positional label (it wins over a bag `label`); an array base deep-merges
+ * its style objects left to right into one class; a lone object hashes
+ * directly. The class is derived from the object alone (never the emitted
+ * text), so the same arguments always resolve identically — which is what
+ * lets removeStyle() locate what style() registered.
  * @param fn Caller name for error messages
- * @param base Style object, or a label for the generated class
- * @param overrideOrOptions Override object or options bag
- * @param optionsArg Options when an override occupies the second argument
+ * @param base Style object, an array of style objects, or a label for the generated class
+ * @param objOrOptions Style object under a positional label, otherwise the options bag
+ * @param optionsArg Options under a positional label
  * @returns The resolved class list, rule text, and host
- * @throws {Error} When base is neither a string nor a plain object, or an override argument is not a plain object.
+ * @throws {Error} When base is neither a string, a plain object, nor a non-empty array of plain objects, when a label-form style object is not a plain object, or when the options bag `label` is not a string.
  */
 export function resolveStyle(
   fn: string,
-  base: string | StyleObject,
-  overrideOrOptions?: StyleObject | StyleOptions,
+  base: string | StyleObject | readonly StyleObject[],
+  objOrOptions?: StyleObject | StyleOptions,
   optionsArg?: StyleOptions,
 ): ResolvedStyle {
   let obj: StyleObject;
   let options: StyleOptions;
 
   if (isString(base)) {
-    if (!isPlainObject(overrideOrOptions)) {
-      throw new Error(`[css] ${fn}: expected a CSS object, received ${String(overrideOrOptions)}`);
+    if (!isPlainObject(objOrOptions)) {
+      throw new Error(`[css] ${fn}: expected a CSS object, received ${String(objOrOptions)}`);
     }
-    obj = overrideOrOptions;
+    obj = objOrOptions;
     options = { ...optionsArg, label: base };
+  } else if (Array.isArray(base)) {
+    if (base.length === 0) {
+      throw new Error(`[css] ${fn}: expected at least one style object`);
+    }
+    let i = 0;
+    const len = base.length;
+    while (i < len) {
+      const element = base[i++];
+      if (!isPlainObject(element)) {
+        throw new Error(`[css] ${fn}: expected a CSS object, received ${String(element)}`);
+      }
+    }
+    obj = base.reduce(mergeStyles);
+    options = (objOrOptions as StyleOptions | undefined) ?? {};
   } else {
     if (!isPlainObject(base)) {
       throw new Error(`[css] ${fn}: expected a CSS object, received ${String(base)}`);
     }
-    if (
-      overrideOrOptions === undefined ||
-      (optionsArg === undefined && isOptionBag(overrideOrOptions))
-    ) {
-      options = (overrideOrOptions as StyleOptions | undefined) ?? optionsArg ?? {};
-      obj = base;
-    } else {
-      obj = mergeStyles(base, overrideOrOptions as StyleObject);
-      options = optionsArg ?? {};
-    }
+    obj = base;
+    options = (objOrOptions as StyleOptions | undefined) ?? {};
+  }
+
+  if (options.label !== undefined && !isString(options.label)) {
+    throw new Error(`[css] ${fn}: label must be a string, received ${String(options.label)}`);
   }
 
   const { cls, cssText: text } = scopedRule(obj, options);
@@ -134,7 +114,7 @@ export function resolveStyle(
  * @param obj Style object to scope under the generated class
  * @param options Optional configuration. `label` embeds a readable segment in the class name; `layer` wraps the emitted rules in a named `@layer` (layered rules lose to unlayered author CSS); `host` creates the `<style>` element in a shadow root or other parent node instead of `document.head`.
  * @returns The class name (`{label}-{hash}` / a bare letter-only `{hash}`) for `class` attributes.
- * @throws {Error} When obj is not a plain object, or when a property value is a function — use `vars()` for reactive values.
+ * @throws {Error} When obj is not a plain object, when `label` is not a string, or when a property value is a function — use `vars()` for reactive values.
  */
 export function style(obj: StyleObject, options?: StyleOptions): string;
 /**
@@ -148,21 +128,22 @@ export function style(obj: StyleObject, options?: StyleOptions): string;
  */
 export function style(label: string, obj: StyleObject, options?: StyleOptions): string;
 /**
- * Composes styles: an object base deep-merges with the override into a
- * single class (override wins, nested objects merge, arrays replace).
- * @param base Style object to compose onto
- * @param override Style object contributing the new declarations
+ * Merges style objects: an array of one or more objects deep-merges left to
+ * right into a single class (later entries win, nested plain objects merge
+ * recursively, arrays and scalars replace). Class strings are not accepted;
+ * compose existing classes with `cx`.
+ * @param objs Style objects merged left to right into one class
  * @param options Optional configuration. `label` embeds a readable segment in the class name; `layer` wraps the emitted rules in a named `@layer` (layered rules lose to unlayered author CSS); `host` creates the `<style>` element in a shadow root or other parent node instead of `document.head`.
- * @returns The composed class for `class` attributes.
- * @throws {Error} When a style argument is not a plain object, or when a property value is a function — use `vars()` for reactive values.
+ * @returns The class name (`{label}-{hash}` / a bare letter-only `{hash}`) for `class` attributes.
+ * @throws {Error} When the array is empty, when an element is not a plain object, when `label` is not a string, or when a property value is a function — use `vars()` for reactive values.
  */
-export function style(base: StyleObject, override: StyleObject, options?: StyleOptions): string;
+export function style(objs: readonly StyleObject[], options?: StyleOptions): string;
 export function style(
-  base: string | StyleObject,
-  overrideOrOptions?: StyleObject | StyleOptions,
+  base: string | StyleObject | readonly StyleObject[],
+  objOrOptions?: StyleObject | StyleOptions,
   optionsArg?: StyleOptions,
 ): string {
-  const resolved = resolveStyle("style", base, overrideOrOptions, optionsArg);
+  const resolved = resolveStyle("style", base, objOrOptions, optionsArg);
   registerText(resolved.text, resolved.host);
   return resolved.classList;
 }

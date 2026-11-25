@@ -27,7 +27,7 @@ describe("style layer", () => {
     );
   });
 
-  test("a label and layer bag reads as options, not an override", () => {
+  test("a label and layer bag applies both options", () => {
     const obj = { padding: "4px" };
     const labeled = style(obj, { label: "btn" });
     const layered = style(obj, { label: "btn", layer: "hella" });
