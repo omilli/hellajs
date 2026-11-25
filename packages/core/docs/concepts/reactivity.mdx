@@ -16,7 +16,7 @@ The primitives compose: signals are the sources, computeds the transforms, effec
 
 ### Reactive State
 
-A signal is a value container that notifies its readers when it changes. Call it with no argument to read the current value, call it with an argument to write a new one.
+[`signal`](/reference/core/signal) is a value container that notifies its readers when it changes. Call it with no argument to read the current value, call it with an argument to write a new one.
 
 ```typescript
 import { signal } from '@hellajs/core';
@@ -34,7 +34,7 @@ Objects and arrays compare by reference; [Working with Objects and Arrays](#work
 
 ### Derived Values
 
-A computed derives its value from other signals and re-evaluates only when one of them changed. The getter runs lazily, on read, not on every write.
+[`computed`](/reference/core/computed) is a read-only function that derives its value from other signals, re-evaluating only when one of them changed. The getter runs lazily, on read, not on every write. 
 
 ```typescript
 import { signal, computed } from '@hellajs/core';
@@ -49,11 +49,9 @@ count(5);
 console.log(doubled()); // 10
 ```
 
-A computed is read-only: it updates through its dependencies, never by writing to it.
-
 ### Side Effects
 
-An effect runs a function that re-runs whenever a signal it read changes. Dependencies are collected automatically on every run: whatever the function reads, it subscribes to.
+[`effect`](/reference/core/effect) runs a function that re-runs whenever a signal it read changes. Dependencies are collected automatically on every run: whatever the function reads, it subscribes to.
 
 ```typescript
 import { signal, computed, effect } from '@hellajs/core';
@@ -319,7 +317,7 @@ console.log(balance()); // 180
 
 ## Handling Errors
 
-An error thrown inside an effect aborts the current pass. The error surfaces at the caller of `flush`, or from the scheduled pass when it runs on its own. Effects still queued stay queued; the next signal change drains them again.
+An error thrown inside an effect aborts the current pass. The error surfaces at the caller of [`flush`](/reference/core/flush), or from the scheduled pass when it runs on its own. Effects still queued stay queued; the next signal change drains them again.
 
 Catch expected failures with `try/catch` inside the effect so it keeps running. See [error propagation](/reference/core/effect#error-propagation) and [error recovery](/reference/core/computed#error-recovery) for the full rules.
 

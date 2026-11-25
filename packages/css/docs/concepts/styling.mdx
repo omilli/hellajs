@@ -14,7 +14,7 @@ Every creator returns the same value on client and server. [`cssText`](/referenc
 
 ## Scoped Styles
 
-Reach for [`style`](/reference/css/style) first. It takes CSS declarations and returns a class name.
+[`style`](/reference/css/style) takes CSS declarations and returns a class name.
 
 ```jsx
 import { style } from '@hellajs/css';
@@ -50,14 +50,13 @@ Plain keys become descendants (`h2` compiles to `.card-{hash} h2`).
 
 Values follow plain rules:
 
-- Numbers mean pixels
-- Strings pass through verbatim
-- Arrays join with commas
+- Numbers *intelligently* convert to pixels.
+- Arrays `join` with commas.
 - `null` and `undefined` drop.
 
-## Joining Classes with cx
+## Joining Classes
 
-Reach for [`cx`](/reference/css/cx) when several classes should stay separate rules. The common case is one design with modifiers: register the shared look once, give each modifier a class that carries only its delta, and join the two strings.
+Use [`cx`](/reference/css/cx) when several classes should stay separate rules.
 
 ```typescript
 import { cx, style } from '@hellajs/css';
@@ -78,28 +77,7 @@ const errorField = cx(field, fieldError);
 // "field-… field-error-…"
 ```
 
-Independent classes join the same way: a layout class plus a theme class, a hashed class plus an external utility, or a class plus a conditional one. `cx` joins its arguments into one string and registers nothing.
-
-```jsx
-import { cx, style } from '@hellajs/css';
-
-const card = style('card', {
-  padding: '1rem',
-  borderRadius: '0.5rem',
-});
-
-const alert = style('alert', {
-  border: '1px solid #dc2626',
-});
-
-const isPinned = true;
-
-// Two classes, two rules; cx joins the strings
-const alertCard = cx(card, alert, isPinned && 'pinned');
-// "card-… alert-… pinned"
-```
-
-Falsy arguments drop, so a conditional class is just `condition && 'name'`. Objects join the keys whose values are truthy, which reads well for state-driven classes:
+Falsy arguments drop, so a conditional class is just `condition && 'name'`.
 
 ```jsx
 import { cx } from '@hellajs/css';
@@ -114,11 +92,30 @@ const itemClass = cx('todo', {
 // "todo done"
 ```
 
-Class strings from any source compose here: [`style`](/reference/css/style) classes, [`cva`](/reference/css/cva) output, and classes from other frameworks. When the fragments depend on signals, bind them at the attribute instead so the class re-derives; the dom package covers the array and function forms in [templates](/learn/concepts/templates).
+Class strings from any source compose here: [`style`](/reference/css/style) classes, [`cva`](/reference/css/cva) output, and classes from other frameworks.
+
+`cx` returns a plain string, so the signals it reads count only when the call sits in a reactive binding. In a template, keep the `cx()` call in the `class` attribute.
+
+```jsx
+import { signal } from '@hellajs/core';
+import { cx } from '@hellajs/css';
+
+const isComplete = signal(false);
+
+// Re-derives: the call reads the signal inside the attribute
+<li class={cx('todo', isComplete() && 'done')}>Milk</li>
+// "todo", then "todo done" once isComplete flips
+```
+
+If you hoist the result into a variable the class freezes at its first value: the string is a snapshot, not a live binding.
+
+The `class` attribute also accepts an array of fragments, see [templates](/learn/concepts/templates#array-attributes) for array and function forms.
 
 ## Merging Style Objects
 
-Reach for a merge when the new style must stay one class and an override adds into one of the base's nested blocks. Pass an array of style objects to [`style`](/reference/css/style): they merge left to right, the last entry wins, nested selector blocks merge key by key, and arrays and scalars replace.
+Merge when the new style must stay one class and an override adds to the base.
+
+Pass an array of style objects: they merge left to right, the last entry wins.
 
 ```typescript
 import { style } from '@hellajs/css';
@@ -139,12 +136,16 @@ const tile = style([surfacePreset, {
   '&:hover': {
     backgroundColor: '#f8f9fa',
   },
-}]);
+}], {
+  label: 'tile',
+});
 ```
 
-The override wins on flat keys, and a nested block such as `'&:hover'` merges with the base's block rather than replacing it. A merge takes its label through the options bag, not a leading string.
+The override wins on flat keys, and a nested block such as `'&:hover'` merges, rather than replacing it.
 
-Keep the base a plain object and register only the merged results. Each merged class is a complete rule, so two merges from one base emit the base's declarations twice. Variants of one design are a job for `cx`, not one merge per variant:
+A merge label is set using `style`'s options object, not a leading string.
+
+Keep base styles a plain object and register only the merged results as two merges from one base emit duplicate declarations. Variants of one design are a job for `cx`.
 
 ```typescript
 import { style } from '@hellajs/css';

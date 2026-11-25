@@ -77,10 +77,14 @@ const isFullWidth = true;
 </div>
 ```
 
-The `class` attribute itself accepts arrays and re-resolves functions, so `cx` and the attribute overlap; use `cx` when the joined value is computed once or shared, and the array form when the fragments are reactive.
+The `class` attribute also accepts an array of fragments, so inside a template the two overlap: both re-derive when the signals they read change. `cx` earns its call when you need the keyed object form, nested arrays, or the string outside a template, as a recipe `base`, a stored value, or a class for another framework.
 
 ## Important Considerations
 
 ### No Styling Side Effects
 
 `cx` generates and registers nothing; it never touches the stylesheet. Every fragment it joins must already exist: a recipe class from [`cva`](/reference/css/cva), a hashed class from [`style`](/reference/css/style), or an external class.
+
+### A Hoisted Result Never Updates
+
+`cx` returns a plain string, not a live binding. Resolving it into a variable and binding that variable freezes the class at its first value; keep the `cx()` call inside the `class` attribute so it re-derives on change. The [Styling concept](/learn/concepts/styling#joining-classes) shows both forms.

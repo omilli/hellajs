@@ -94,6 +94,41 @@ describe("dom", () => {
       expect(peekState(el)?.effects?.length).toBe(1);
     });
 
+    test("a call-containing class expression re-derives when its signal changes", () => {
+      const active = signal(false);
+      mount(<div id="rt" class={["todo", active() && "active"].filter(Boolean).join(" ")} />);
+      const el = document.getElementById("rt")!;
+      expect(el.className).toBe("todo");
+
+      active(true);
+      flush();
+      expect(el.className).toBe("todo active");
+    });
+
+    test("an array class prop with a call inside re-derives when its signal changes", () => {
+      const active = signal(true);
+      mount(<div id="rt" class={["base", active() && "active", "always"]} />);
+      const el = document.getElementById("rt")!;
+      expect(el.className).toBe("base active always");
+
+      active(false);
+      flush();
+      expect(el.className).toBe("base always");
+    });
+
+    test("a class expression hoisted into a variable stays a static snapshot", () => {
+      const active = signal(true);
+      // The compiler wraps only expressions that contain a call; a bare identifier binds once
+      const snapshot = ["todo", active() && "active"].filter(Boolean).join(" ");
+      mount(<div id="rt" class={snapshot} />);
+      const el = document.getElementById("rt")!;
+      expect(el.className).toBe("todo active");
+
+      active(false);
+      flush();
+      expect(el.className).toBe("todo active");
+    });
+
     test("a function-ref prop that throws dispatches to error:fallback at phase update", () => {
       fallbackHandler();
       const container = setupContainer();
