@@ -21,7 +21,7 @@ Persistent self-improvement layer. The KB is a flat dir of self-contained `memor
 
 Filename `NNN-slug.md` — slug derived from the title at creation; ID = max existing numeric prefix + 1 (`memory.ts add` allocates both). Entries are self-contained: never reference other entries, never cite plans in any form — `plans/` paths, unit/set names (`Unit-06`), plan provenance — plans are deletable at any time, so every plan citation is a future ghost; evidence cites commands, source, and dates only, never session-relative phrasing ("This session:") — the frontmatter `confirmed` date is the only time anchor; a future reader has no session to resolve the reference against. Quote any frontmatter value containing `: `, leading YAML indicators, or `"`.
 
-**Command form:** `bun .agents/skills/memory/memory.ts <cmd>` (repo KB resolved automatically). Commands: `add "<imperative title>"`, `confirm <id>`, `stale [days=180]`.
+**Command form:** `node .agents/skills/memory/memory.ts <cmd>` (repo KB resolved automatically). Commands: `add "<imperative title>"`, `confirm <id>`, `stale [days=180]`.
 
 ## Step 1 — Confirm memory event, not feedback event
 

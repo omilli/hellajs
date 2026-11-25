@@ -22,7 +22,8 @@ Decision index — jump to the section for the decision you are making. This gui
 | Language tag for a code block? | §Code Examples → Language Tags |
 | Import style? | §Code Examples → Import Style |
 | Example code style (attribute values, prop types, children type, css layout)? | §Code Examples → Example Code Style |
-| Cross-reference link format? | §Cross-References |
+| API name in prose: backtick, link, or plain? | §Cross-References → API Names in Prose |
+| Cross-reference link format? | §Cross-References → Link Format |
 | Frontmatter rules? | §File Locations & Naming → Frontmatter |
 | Length ranges per doc type? | §Length Targets |
 | Em/en dash usage? | §Typography |
@@ -644,15 +645,29 @@ JSX is the only example syntax in every package, `dom` included. Write every exa
 
 ## Cross-References
 
+### API Names in Prose
+
+Every API name in prose is exactly one of three forms. Audit-policed: English-word collisions (`route`, `store`, `effect`, `signal`) make the split non-mechanical, so `vp run doc-links` sees only the linked form.
+
+| The mention names... | Form | Example |
+|---|---|---|
+| a code identifier: an export, method, property, option, param, type, CSS class, or literal, linked or not | backticked | `` `pending` is `true` ``; `` `flush()` throws to its caller `` |
+| an export at its first mention in the doc | backticked + linked | `` A [`signal`](/reference/core/signal) holds a value `` |
+| a concept: the English word for the thing the API produces | plain | a signal holds a value; route handlers; a store keeps one identity |
+
+- **Identifier vs concept**: the symbol the reader types is an identifier (backticks); the value or idea the reader gets is a concept (plain). `route()` is an identifier; "the current route" is a concept. When one word is both, the article test decides: "a signal" / "signals" is the concept; `signal` / `signal()` is the callable.
+- **Backticks are unconditional for identifiers**: a mention after the linked first is backticked without a link. A bare `flush` in prose is a defect.
+- **Link the first mention per doc, never again**: a doc never links to its own page as a cross-reference. In-page `#anchor` navigation (a `## API` intro pointing at its own `###` members) is not a cross-reference and is exempt.
+
 ### Link Format
 
 ```markdown
 [`name`](/reference/{package}/{name})
 ```
 
-- Always backtick-wrap function/method names in cross-references. Plain text for concept references and subpath modules: a backticked display name must be a barrel export of the target package, or `vp run doc-links` fails it.
+- Display name is the bare export name, no call parens: [`flush`](/reference/core/flush), never [`flush()`](/reference/core/flush). `vp run doc-links` skips `name()` display names as non-identifiers, so they ship unchecked; `flush()` belongs in prose, where the parens show a call.
+- Concept pages and subpath modules link in plain text, never backticked: a backticked display name must be a barrel export of the target package, or `vp run doc-links` fails it.
 - Always use full path format — never relative links.
-- Link on first mention of an export within a doc. Subsequent mentions don't need links.
 - Section headings should not contain links.
 - No `## Related` section — use inline cross-references in text.
 - **Index bullets**: The bold-link format in index docs (`**[name](/reference/...)**`) follows the Index Docs template and does not require backticks. The backtick-wrapping rule applies to inline prose references only.
@@ -660,6 +675,7 @@ JSX is the only example syntax in every package, `dom` included. Write every exa
 ```
 [signal](/reference/core/signal)  → WRONG
 [`signal`](/reference/core/signal) → CORRECT
+[`flush()`](/reference/core/flush) → WRONG (call parens; the guard skips it unchecked)
 [templates](/learn/concepts/templates) → CORRECT (concept, not a function)
 ```
 
@@ -803,8 +819,9 @@ Run this when holding a Docs file (`.mdx` / `.md`). Each item is a yes/no or a c
 - [ ] Callback parameter types match what the implementation passes
 
 **Cross-references & tone**
-- [ ] Function/method names backtick-wrapped in cross-references; concepts and subpath modules in plain text (backticked names must be barrel exports; enforced by `vp run doc-links`)
-- [ ] Full path format `/reference/{package}/{export}`; link on first mention only
+- [ ] Every identifier mention backticked, linked or not (exports, methods, properties, options, params, types, CSS classes, literals); concept nouns plain (§Cross-References → API Names in Prose; audit-policed)
+- [ ] Link display names are bare exports without call parens; concepts and subpath modules in plain text (backticked names must be barrel exports; enforced by `vp run doc-links`)
+- [ ] Full path format `/reference/{package}/{export}`; link on first mention only, later mentions backticked unlinked (in-page `#anchor` nav exempt)
 - [ ] No `## Related` section; cross-references inline
 - [ ] Present tense, no hedging; tone matches doc type (§Content Strategy → Tone by Doc Type)
 

@@ -22,7 +22,7 @@ One sentence: "The reader wants to ___." It names the one-line description and t
 
 ## Step 3 — Draft example-first
 
-Follow the doc type's template in `guides/docs.md`; per topic: runnable example, then prose naming what the example shows, then constraints the code cannot show. The opening example is the smallest complete use case, copy-pasteable, with imports. Advanced compositions and edge cases follow the basics, never open the doc (§Content Strategy → Progressive Depth). A new, renamed, or moved page updates its website wrapper and `nav.ts` registration in the same pass (§Website Wrapper Pages).
+Follow the doc type's template in `guides/docs.md`; per topic: runnable example, then prose naming what the example shows, then constraints the code cannot show. API names in prose take exactly one of three forms: identifier backticked (linked or not), first mention linked, concept noun plain (§Cross-References → API Names in Prose). The opening example is the smallest complete use case, copy-pasteable, with imports. Advanced compositions and edge cases follow the basics, never open the doc (§Content Strategy → Progressive Depth). A new, renamed, or moved page updates its website wrapper and `nav.ts` registration in the same pass (§Website Wrapper Pages).
 
 ## Step 4 — Hold the internals budget
 

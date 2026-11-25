@@ -340,7 +340,7 @@ function cmdStale(days: number): number {
 /** Print usage to stderr and exit nonzero. */
 function usage(): never {
   console.error(
-    "usage: bun .agents/skills/memory/memory.ts <command> [args]\n" +
+    "usage: node .agents/skills/memory/memory.ts <command> [args]\n" +
       'commands: add "<imperative title>" | confirm <id> | stale [days=180]'
   );
   process.exit(2);
