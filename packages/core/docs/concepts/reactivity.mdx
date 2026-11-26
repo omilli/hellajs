@@ -2,21 +2,23 @@ import Callout from "@components/Callout.astro";
 
 # Reactivity
 
-HellaJS reactivity keeps your interface in sync with your state: you declare the data, the library tracks every dependency, and only the computations affected by a change re-run.
+Declare data and track dependencies, only computations affected by a change re-run.
 
-Three primitives carry the whole model. A [`signal`](/reference/core/signal) holds a value. A [`computed`](/reference/core/computed) derives a value from other signals. An [`effect`](/reference/core/effect) runs a side effect whenever its dependencies change.
+Every value computes at most once per update, and effects never observe partially updated state.
 
-Updates are glitch-free: every value computes at most once per update, and an effect never observes a half-updated state.
-
-<Callout variant="info">The core package is a heavily modified fork of the excellent Alien Signals library.</Callout>
+<Callout variant="info"><p style="margin:0">The core package is a heavily modified fork of the excellent <strong>Alien Signals</strong> library.</p></Callout>
 
 ## Reactive Primitives
 
-The primitives compose: signals are the sources, computeds the transforms, effects the sinks.
+Reactive data starts with a [`signal`](/reference/core/signal) which holds a value, writing to it triggers an update.
+
+A [`computed`](/reference/core/computed) function derives a new value from whatever signals it reads.
+
+An [`effect`](/reference/core/effect) runs and re-runs whenever any signals it reads changes.
 
 ### Reactive State
 
-`signal` is a value container that notifies its readers when it changes. Call it with no argument to read the current value, call it with an argument to write a new one.
+Call a `signal` with no argument to read the current value, or call it with an argument to write a new one.
 
 ```typescript
 import { signal } from '@hellajs/core';
@@ -30,11 +32,11 @@ count(5); // Write a new value
 console.log(count()); // 5
 ```
 
-Objects and arrays compare by reference; [Working with Objects and Arrays](#working-with-objects-and-arrays) covers what that means for updates.
+New values are compared by reference. See [Objects and Arrays](#working-with-objects-and-arrays) for working with those data types.
 
 ### Derived Values
 
-`computed` is a read-only function that derives its value from other signals, re-evaluating only when one of them changed. The getter runs lazily, on read, not on every write. 
+`computed` is a read-only function that derives its value from other signals, re-evaluating only when one of them changes. The getter runs lazily, on read, not every write. 
 
 ```typescript
 import { signal, computed } from '@hellajs/core';
@@ -51,7 +53,7 @@ console.log(doubled()); // 10
 
 ### Side Effects
 
-`effect` runs a function that re-runs whenever a signal it read changes. Dependencies are collected automatically on every run: whatever the function reads, it subscribes to.
+`effect` runs a function that re-runs whenever a `signal` it read changes. Dependencies are collected automatically on every run: whatever the function reads, it subscribes to.
 
 ```typescript
 import { signal, computed, effect } from '@hellajs/core';
@@ -66,28 +68,11 @@ effect(() => {
 count(5); // Logs: "Count: 5, Doubled: 10"
 ```
 
-### Glitch-Free Updates
+`effect` re-runs whenever a `signal` it read changes. Dependencies are collected automatically on every run, and whatever the function reads, it subscribes to.
 
-When one change reaches an effect through several paths, the effect still sees a single consistent update: each value computes once, and the effect runs once.
+## Objects and Arrays
 
-```typescript
-import { signal, computed, effect } from '@hellajs/core';
-
-const count = signal(1);
-const doubled = computed(() => count() * 2);
-const tripled = computed(() => count() * 3);
-
-// Reads two derivations of the same signal
-effect(() => console.log(`${doubled()} x ${tripled()}`)); // Initial run: "2 x 3"
-
-count(2); // Logs: "4 x 6"
-// Never a half-updated "4 x 3", and the effect runs once
-// however many of its dependencies changed
-```
-
-## Working with Objects and Arrays
-
-Signals compare new values with reference equality. For objects and arrays that has a practical consequence: mutating in place changes no reference, so nothing updates.
+Signals compare using reference equality. Mutating objects and arrays changes no reference, so nothing updates.
 
 ### Replace, Don't Mutate
 
@@ -114,7 +99,9 @@ todos([
 
 ### Signal Collections
 
-Replacing a whole array on every change is safe but coarse: every reader of the list re-runs even when a single element changed. Collection signals split the collection into one child signal per element: [`signalArray`](/reference/core/signalarray), [`signalMap`](/reference/core/signalmap), and [`signalSet`](/reference/core/signalset). Writing one element wakes only that element's readers; structural operations (`push`, `splice`, adding keys) wake readers of the collection shape, without cloning anything.
+Collection signals split the collection into one child `signal` per element: [`signalArray`](/reference/core/signalarray), [`signalMap`](/reference/core/signalmap), and [`signalSet`](/reference/core/signalset).
+
+Writing one element wakes only that element's readers; structural operations (`push`, `splice`, adding keys) wake readers of the collection shape, without cloning anything.
 
 ```typescript
 import { signalArray, effect } from '@hellajs/core';
@@ -129,13 +116,13 @@ items.set(0, 9); // "First: 9"; only index-0 readers wake
 items([9, 2, 3, 4]); // Equal elements write nothing; nothing wakes
 ```
 
-## How Dependency Tracking Works
+## Dependency Tracking
 
-Dependency tracking is dynamic: a dependency exists only when a signal is actually read during a run, and the dependency set refreshes on every run.
+A dependency exists only when a `signal` is actually read, and the dependency set refreshes on every run.
 
 ### Conditional Dependencies
 
-A computed that reads different signals on different branches tracks only what its last run actually read.
+A `computed` that reads different signals on different branches tracks only what its last run actually read.
 
 ```typescript
 import { signal, computed } from '@hellajs/core';
@@ -169,7 +156,7 @@ count(10); // No update: count is no longer a dependency
 
 ### Transformation Chains
 
-Chained computeds form a pipeline: a change at the top propagates through every level, each level computing at most once.
+A change to chained computeds propagates through every level, each level computing at most once.
 
 ```typescript
 import { signal, computed } from '@hellajs/core';
@@ -193,9 +180,15 @@ todos([...todos(), { id: 4, text: 'New task', done: false }]);
 console.log(todoTotals()); // { total: 4, active: 3 }: the whole chain updated
 ```
 
-## When Effects Run
+## How Effects Run
 
-Effects do not run at the moment of a write. Signal writes schedule one pass at the end of the current synchronous code, so consecutive writes batch together and every effect runs once against the final state. Reads are never deferred: reading a signal or computed always returns the freshest value, even before the effects have run.
+Effects are optimized to run only once per update, even if multiple dependencies change.
+
+### Automatic Batching
+
+All `signal` writes schedule one pass at the end of the current synchronous code. Consecutive writes batch together so every `effect` runs only once against the final state.
+
+Reading a `signal` or `computed` always returns the freshest value, even before effects run.
 
 ```typescript
 import { signal, computed, effect } from '@hellajs/core';
@@ -211,10 +204,28 @@ multiplier(3); // Batches into the same pass
 console.log(result()); // 30: reads are never deferred
 // The synchronous code ends, the batch runs: one log, "Result: 30"
 ```
+### Glitch Free Updates
+
+When one change reaches an `effect` through several paths, the `effect` still sees a single consistent update: each value computes once, and the `effect` runs once.
+
+```typescript
+import { signal, computed, effect } from '@hellajs/core';
+
+const count = signal(1);
+const doubled = computed(() => count() * 2);
+const tripled = computed(() => count() * 3);
+
+// Reads two derivations of the same signal
+effect(() => console.log(`${doubled()} x ${tripled()}`)); // Initial run: "2 x 3"
+
+count(2); // Logs: "4 x 6"
+// Never a half-updated "4 x 3", and the effect runs once
+// however many of its dependencies changed
+```
 
 ### Draining Effects Early
 
-When the next line needs the effects already run, reading a log written by an effect, or handing control to non-reactive code, call [`flush`](/reference/core/flush) to run the queued effects synchronously.
+When the next line needs the effects already run, reading a log written by an `effect`, or handing control to non-reactive code, call [`flush`](/reference/core/flush) to run the queued effects synchronously.
 
 ```typescript
 import { signal, effect, flush } from '@hellajs/core';
@@ -262,7 +273,7 @@ console.log(display()); // "Count: 1"
 
 ### Custom Equality
 
-Both signal and computed accept an optional `{ equals }` comparator that replaces the default reference check. An equal value skips the update entirely: the old reference is kept and nothing propagates.
+Both `signal` and `computed` accept an optional `{ equals }` comparator that replaces the default reference check. An equal value skips the update entirely: the old reference is kept and nothing propagates.
 
 ```typescript
 import { signal, effect } from '@hellajs/core';
@@ -278,7 +289,7 @@ username('ADA'); // Same name, different casing: effect does not re-run
 
 ### Untracked Reads
 
-Read a signal inside [`untracked`](/reference/core/untracked) to use its value without subscribing to it.
+Read a `signal` inside [`untracked`](/reference/core/untracked) to use its value without subscribing to it.
 
 ```typescript
 import { signal, computed, untracked } from '@hellajs/core';
@@ -298,7 +309,7 @@ multiplier(20);
 
 ### Building on the Previous Value
 
-The computed getter receives its previous result as an optional parameter, `undefined` on the first run. An incremental calculation can extend the last result instead of re-deriving it.
+The `computed` getter receives its previous result as an optional parameter, `undefined` on the first run.
 
 ```typescript
 import { signal, computed } from '@hellajs/core';
@@ -317,9 +328,9 @@ console.log(balance()); // 180
 
 ## Handling Errors
 
-An error thrown inside an effect aborts the current pass. The error surfaces at the caller of `flush`, or from the scheduled pass when it runs on its own. Effects still queued stay queued; the next signal change drains them again.
+An error thrown inside an `effect` aborts the current pass. The error surfaces at the caller of `flush`, or the scheduled pass when it runs on its own. Queued effects stay queued and the next `signal` change drains them again.
 
-Catch expected failures with `try/catch` inside the effect so it keeps running. See [error propagation](/reference/core/effect#error-propagation) and [error recovery](/reference/core/computed#error-recovery) for the full rules.
+Catch expected failures with `try/catch` inside the `effect` so it keeps running. See [error propagation](/reference/core/effect#error-propagation) and [error recovery](/reference/core/computed#error-recovery) for the full usage rules.
 
 ```typescript
 import { signal, effect } from '@hellajs/core';
@@ -340,7 +351,7 @@ raw('{"count":5}'); // Logs: "count: 5"
 
 ## Stopping Effects with scope
 
-Effects keep running until disposed. [`scope`](/reference/core/scope) collects every effect created inside its callback and returns one cleanup that disposes them all. See the `scope` reference for nested scopes, lazy scopes, and cleanup edge cases.
+Effects keep running until disposed. [`scope`](/reference/core/scope) collects every `effect` created inside its callback and returns a cleanup that disposes them. See the `scope` reference for nested scopes, lazy scopes, and cleanup edge cases.
 
 ```typescript
 import { signal, effect, scope } from '@hellajs/core';
