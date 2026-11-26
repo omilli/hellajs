@@ -91,7 +91,7 @@
   | `feedback` | After a run: thread-scan the session transcript (failed/repeated commands, context bloat, wasted round-trips) for ground-truth evidence, then conservatively apply config/skill edits, uncommitted. |
   | `memory` | Persist verified decisions/facts to `memory/`; refresh/nuke. |
   | `author` | Author/revise `AGENTS.md`, agent prompts, rules files, skills. Standalone. |
-  | `docs-writer` | Produce/revise package docs: read the source contract, frame by reader task, draft example-first, hold internals to the budget; pairs with `guides/docs.md` (rules) as its production counterpart. Standalone. |
+  | `docs-writer` | Produce/revise package docs in the reference-page shape (`packages/core/docs/concepts/reactivity.mdx`): read the source contract, frame by reader task, draft lead-example-gaps, hold internals to the budget, pass the sentence rules. Owns the prose content rules (`rules/`, one file per rule, read directly; `skills-build` compiles `*-best-practices` only) and pairs with `guides/docs.md` (structure, mechanics) as its production counterpart. Standalone. |
 
   Plus one standalone project skill outside the pack: `comparison` (`.agents/skills/comparison/`) — generate a package comparison doc vs competitors.
 
@@ -136,7 +136,7 @@
   |---|---|
   | Writing/editing source, types, JSDoc, imports, package structure | `guides/code.md` |
   | Writing tests or assertions | `guides/tests.md` |
-  | Writing docs, `.mdx`, or examples | `guides/docs.md` + `docs-writer` skill (production method) |
+  | Writing docs, `.mdx`, or examples | `guides/docs.md` (structure, mechanics) + `docs-writer` skill (production method + prose rules in its `rules/`) |
   | Writing build scripts (`scripts/**`, `utils/**`) | `guides/scripts.md` |
 
   Config files (`tsconfig*`, `vite.config.ts`, `lint/*.js`, `package.json`, build plugins) follow `guides/code.md` plus its Config verification checklist. A file is verified against the guide matching its *own* extension, not the task's Type tag — a `*.test.ts` against `tests.md`, `.md`/`.mdx` against `docs.md`, `*.ts`/`*.tsx`/`*.mjs` under `lib/`/`scripts/`/`plugins/` against `code.md`.

@@ -15,6 +15,7 @@ Decision index — jump to the section for the decision you are making. This gui
 | Multi-method export (`resource`, `resourceCache`, `store`)? | §Multi-Method Exports |
 | Which section does new content go in? | §Content Scope → What Goes Where |
 | Content depth or internals disclosure? | §Content Strategy → Internals Budget |
+| Page opener, title length, sentence and paragraph length, jargon, emphasis, mechanism, result comments? | §Content Strategy → Prose Rules |
 | Tone for a doc type? | §Content Strategy → Tone by Doc Type |
 | Signature format in `## API`? | §API Section |
 | Overloaded function? | §API Section → Overloaded Functions |
@@ -27,7 +28,7 @@ Decision index — jump to the section for the decision you are making. This gui
 | Frontmatter rules? | §File Locations & Naming → Frontmatter |
 | Length ranges per doc type? | §Length Targets |
 | Em/en dash usage? | §Typography |
-| Section heading naming (banned generics)? | §Section Headings |
+| Section heading naming (word cap, banned generics and scaffolds)? | §Section Headings |
 | Tutorial progressive-build? | §Tutorial Docs |
 | Website wrapper page? | §Website Wrapper Pages |
 | Site-only / cross-package page? | §Website Wrapper Pages → Site-Authored Content Pages |
@@ -73,11 +74,11 @@ Docs serve a developer new to HellaJS reading top-down to accomplish a task. Eve
 
 ### Task-First Framing
 
-Open with the job the reader gets done, not the library's design. The one-line description states the outcome ("Animate elements in and out of the DOM with CSS classes"), never the internal shape ("returns a function with `isDynamic: true`" — that is implementation, and it lives in `## API` at most).
+Open with the job the reader gets done, not the library's design. The one-line description states the outcome ("Animate elements in and out of the DOM with CSS classes"), never the internal shape ("returns a function with `isDynamic: true`" — that is implementation, and it lives in `## API` at most). One or two sentences, no feature list, no selling, no mechanism claim, no comparison to another library (`lead-page-opener`).
 
 ### Examples First
 
-The example precedes its explanation. Per topic: runnable example, then prose naming what the example shows, then constraints and gotchas the example cannot show. Where a claim can be demonstrated, demonstrate it; prose carries only what code cannot (constraints, ordering, failure modes).
+Per topic: one or two lead sentences stating the behavior in plain words, the runnable example with each result in a trailing comment, then only what the code cannot show (constraints, ordering, failure modes). Where a claim can be demonstrated, demonstrate it; prose never restates a result a comment shows (`shape-lead-example-gaps`, `code-comments-carry-output`).
 
 ### Internals Budget
 
@@ -86,15 +87,21 @@ Internal mechanism appears only when it changes what the reader does. Test each 
 - **Passes**: state the observable behavior plus the required action; the mechanism gets at most one clause.
 - **Fails**: cut it. Marker comments, reconciliation maps, module-level clocks, algorithm names, and design rationale ("a component layer would rebuild machinery HellaJS already has") never appear.
 
-A mechanism the reader must act on is a contract, not an internal: document it as behavior ("call the dispose handle in the same path that closes the UI; several behaviors listen on `document`, and a skipped dispose leaks a live listener").
+A mechanism the reader must act on is a contract, not an internal: document it as behavior ("call the dispose handle in the same path that closes the UI; several behaviors listen on `document`, and a skipped dispose leaks a live listener"). A section whose title is a mechanism claim (`## Static Markup Is Cheap`) goes with its content (`sent-behavior-not-mechanism`).
 
 ### Plain Language
 
-Define package vocabulary on first use or replace it with everyday words; never stack unexplained terms. One idea per sentence; 1-4 sentences per paragraph. Present tense, direct voice, no hedging.
+Write for a developer who knows JavaScript and nothing about HellaJS: define package vocabulary on first use or replace it with everyday words; never two undefined terms in a sentence. One idea per sentence, two clauses and 30 prose words at most; 1-3 sentences per paragraph. Present tense, direct voice, no hedging. No bold or italics in prose (`sent-short-sentences`, `sent-plain-words`, `sent-no-emphasis`).
 
 ### Progressive Depth
 
-Simplest to advanced within every doc: the opening example is the smallest complete use case; edge cases and advanced compositions follow the basics, never open the doc.
+Simplest to advanced within every doc: the opening example is the smallest complete use case; edge cases and advanced compositions follow the basics, never open the doc (`shape-smallest-first`).
+
+### Prose Rules
+
+The reference page is `packages/core/docs/concepts/reactivity.mdx`: every page is written to its shape. The rules live in `.agents/skills/docs-writer/rules/` (one file per rule; the Incorrect passage quoted from a current doc, the Correct passage in the reference page's shape, the exemplifying reference section cited; `_template.md` is the authoring contract). The index (rule → one-liner, by category: `lead` openings, `shape` section and example shape, `sent` sentences, `code` comments) is the `docs-writer` SKILL.md §Content rules; bare rule names in this guide are `rules/<name>.md`.
+
+Measurement: a prose probe counts paragraphs over three sentences (`P3`), sentences over thirty prose words (`S30`), headings over five words (`H5`) or scaffolded (`HBAN`), headings whose next content is a list, fence, table or sub-heading outside the template-fixed sections (`HJUMP`), emphasis in prose outside the sanctioned labels (`EM`), internals vocabulary (`VOC`, a candidate list for disposition), and backticked API names linked more than once per page (`LINK2`). The reference page reads zero on every counter; the overhaul plans under `plans/<pkg>/docs/plain-language-overhaul/` carry the probe. `audit-docs` ticks the Prose block of §Verification Checklist against these rules; the probe counters are its mechanical floor.
 
 ### Tone by Doc Type
 
@@ -744,7 +751,7 @@ Rewrites must not change meaning, link targets, identifiers, or fenced code sema
 
 ## Section Headings
 
-Headings at every level (`#`, `##`, `###`, `####`) must describe their specific topic. Generic labels — `Overview`, `Summary`, `Comparison`, `Implementation`, `Lifecycle`, `Details` — communicate nothing to a reader scanning the table of contents and are **banned**. Internal implementation mechanics are not documented at all — no source dumps and no internals sections; §Content Strategy → Internals Budget is the governing rule. Name the subject directly or cut the content.
+Headings at every level (`#`, `##`, `###`, `####`) name their specific topic in five words or fewer: a noun phrase (`## How Effects Run`), an imperative (`### Replace, Don't Mutate`), or the thing explained (`### Custom Equality`). Generic labels — `Overview`, `Summary`, `Comparison`, `Implementation`, `Lifecycle`, `Details`, `Basics`, `How it works` — communicate nothing to a reader scanning the table of contents and are **banned**. Scaffolds that describe a section's role instead of its subject — `Mental Model`, `The Shape of a Template`, `Understanding X`, `Working with X` — are banned for the same reason. Mechanism claims (`## Static Markup Is Cheap`, `## Only What You Use Ships`) sell how the library works and name no reader task: cut them with their content (§Content Strategy → Internals Budget). Template-fixed headings (`## Basic Usage`, `## API`, `## Key Concepts`, `## Important Considerations`) are never reworded. Name the subject directly or cut the content (`lead-section-titles`).
 
 Name the subject directly: `### JSX vs Raw AST` instead of `### Comparison`; `### Connection, Disconnection, and Reconnection` instead of `### Lifecycle`.
 
@@ -788,8 +795,18 @@ Run this when holding a Docs file (`.mdx` / `.md`). Each item is a yes/no or a c
 **Content strategy**
 - [ ] Every topic: runnable example before its explanation; prose carries only what code cannot show (§Content Strategy → Examples First)
 - [ ] Internals pass the budget test — observable behavior plus required action, mechanism at most one clause; no marker comments, module-level clocks, algorithm names, or design rationale (§Content Strategy → Internals Budget)
-- [ ] No unexplained vocabulary; first use is defined or replaced with everyday words (§Content Strategy → Plain Language)
 - [ ] Content ordered simplest to advanced; the opening example is the smallest complete use case (§Content Strategy → Progressive Depth)
+
+**Prose (reference shape; rules under `.agents/skills/docs-writer/rules/`, §Content Strategy → Prose Rules)**
+- [ ] Opener: one or two sentences stating what the reader does and gets; no feature list, selling, mechanism, or comparison (`lead-page-opener`)
+- [ ] Every heading names its topic in five words or fewer; no scaffold or mechanism-claim titles (`lead-section-titles`)
+- [ ] Every `##`/`###` outside the template-fixed sections runs lead, example, gaps: one or two lead sentences, the example, then only what the code cannot show; no list-first, no heading-into-fence (`shape-lead-example-gaps`)
+- [ ] First example per page and per section is the smallest complete use case (`shape-smallest-first`)
+- [ ] One idea per sentence (two clauses, 30 prose words); 1-3 sentences per paragraph (`sent-short-sentences`)
+- [ ] Every library word defined on first use or replaced with everyday words; never two undefined terms in a sentence (`sent-plain-words`)
+- [ ] No bold or italics in prose outside the sanctioned labels (`**Returns**`, index/tutorial link bullets, Code Explanation bullet labels, blockquote labels) (`sent-no-emphasis`)
+- [ ] Behavior plus required action only; no mechanism, allocation/hashing/tree-shaking prose, or design rationale (`sent-behavior-not-mechanism`)
+- [ ] Every result the prose relies on sits in a trailing comment on the line that produces it; comments state results, not what the line is (`code-comments-carry-output`)
 
 **Code examples**
 - [ ] `typescript` for annotated API code; `js` for plain JavaScript; `jsx` for JSX; correct tag per §Language Tags

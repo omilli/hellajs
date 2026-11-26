@@ -1,7 +1,7 @@
 ---
 name: audit-docs
 description: >
-  Check or grade package documentation (.md/.mdx: docs/ pages, README.md, comparison docs, examples' tutorial.mdx) against `guides/docs.md` — structure, typography, snippets, section conventions — and audit package AGENTS.md file maps for drift (anchors resolve, citations resolve, invariant one-liners match source). Findings are grounded: each a runnable check or a quoted rule, never taste. Use ONLY for rule-grounded review of package docs and package agent files — source → `audit-code`, test files → `audit-tests`, scripts/** → `audit-scripts`, root-level agent files (guides/, skills/, root AGENTS.md) drift → `feedback`, judgment critique → `audit-code` (its cost-gated lenses).
+  Check or grade package documentation (.md/.mdx: docs/ pages, README.md, comparison docs, examples' tutorial.mdx) against `guides/docs.md` (structure, typography, snippets, section conventions) and the prose content rules in `.agents/skills/docs-writer/rules/` (reference-page shape: openers, titles, lead-example-gaps, short plain sentences, no emphasis, no mechanism, result comments), and audit package AGENTS.md file maps for drift (anchors resolve, citations resolve, invariant one-liners match source). Findings are grounded: each a runnable check or a quoted rule, never taste. Use ONLY for rule-grounded review of package docs and package agent files — source → `audit-code`, test files → `audit-tests`, scripts/** → `audit-scripts`, root-level agent files (guides/, skills/, root AGENTS.md) drift → `feedback`, judgment critique → `audit-code` (its cost-gated lenses).
 ---
 
 # Audit-docs
@@ -12,6 +12,7 @@ Review package documentation against `guides/docs.md` and package `AGENTS.md` fi
 
 - Root AGENTS.md (§Style guides, §Folder structure — the docs-site surface enumeration).
 - `guides/docs.md` — a decision procedure: traverse the relevant trees, then tick §Verification Checklist. Tick the checklist, don't reconstruct rules from prose.
+- `.agents/skills/docs-writer/rules/*.md` — the prose content rules the checklist's Prose block cites (one file per rule: the Incorrect passage quoted from a current doc, the Correct passage in the reference page's shape). Open each cited rule file before grading a prose finding; `packages/core/docs/concepts/reactivity.mdx` is the reference page every page is written to.
 - Docs guards as the mechanical floor: `vp run doc-links`, `vp run lint:structure`, `vp run em-dash` (AGENTS.md §Scripts) — findings these already catch are guard failures, not audit findings; this skill targets what they cannot see.
 
 Rule absent for the case at hand → note the gap, don't substitute taste.
